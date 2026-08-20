@@ -2,13 +2,13 @@ package otoroshi.next.plugins
 
 import org.joda.time.{DateTime, DateTimeZone, LocalTime}
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Results
 
-import scala.concurrent._
-import scala.util._
+import scala.concurrent.*
+import scala.util.*
 
 case class TimeRestrictedAccessPluginConfigRule(
     timeStart: LocalTime = new LocalTime(8, 0),
@@ -68,7 +68,7 @@ object TimeRestrictedAccessPluginConfig {
       val rules    = (json \ "rules")
         .asOpt[Seq[JsObject]]
         .map(_.flatMap(o => TimeRestrictedAccessPluginConfigRule.format.reads(o).asOpt))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
       val timezone = json.select("timezone").asOptString.filter(_.trim.nonEmpty)
       TimeRestrictedAccessPluginConfig(rules, timezone)
     } match {
@@ -131,7 +131,7 @@ class TimeRestrictedAccessPlugin extends NgAccessValidator {
   override def configFlow: Seq[String]                     = TimeRestrictedAccessPluginConfig.configFlow
   override def configSchema: Option[JsObject]              = TimeRestrictedAccessPluginConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(TimeRestrictedAccessPluginConfig.format)
       .getOrElse(TimeRestrictedAccessPluginConfig())

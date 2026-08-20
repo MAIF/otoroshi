@@ -12,7 +12,7 @@ import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, Leade
 import io.kubernetes.client.extended.workqueue.WorkQueue
 import io.kubernetes.client.informer.SharedInformerFactory
 import io.kubernetes.client.openapi.apis.{CoreV1Api, NetworkingV1beta1Api}
-import io.kubernetes.client.openapi.models._
+import io.kubernetes.client.openapi.models.*
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import io.kubernetes.client.util.{CallGeneratorParams, ClientBuilder}
 import okhttp3.Call
@@ -29,7 +29,7 @@ object KubernetesSupport {
 
     def buildController[T, L](name: String, informerFactory: SharedInformerFactory)(
         f: CallGeneratorParams => Call
-    )(implicit c1: ClassTag[T], c2: ClassTag[L]): Controller = {
+    )(using c1: ClassTag[T], c2: ClassTag[L]): Controller = {
       val informer   = informerFactory.sharedIndexInformerFor(
         (params: CallGeneratorParams) => f(params),
         c1.runtimeClass,

@@ -3,9 +3,9 @@ package otoroshi.models
 import otoroshi.env.Env
 import otoroshi.storage.BasicStore
 import otoroshi.utils.RegexPool
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.Base64
 import scala.concurrent.ExecutionContext
@@ -64,7 +64,7 @@ case class ErrorTemplate(
   }
 
   def toJson: JsValue                                 = ErrorTemplate.format.writes(this)
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.errorTemplateDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env) = env.datastores.errorTemplateDataStore.set(this)
 
   override def json: JsValue                    = ErrorTemplate.format.writes(this)
   override def internalId: String               = serviceId
@@ -99,7 +99,7 @@ object ErrorTemplate {
           name = json.select("name").asOpt[String].getOrElse(serviceId),
           description = json.select("description").asOpt[String].getOrElse(serviceId),
           metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+          tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           template40x = json.select("template40x").asString,
           template50x = json.select("template50x").asString,
           templateBuild = json.select("templateBuild").asString,

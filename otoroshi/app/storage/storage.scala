@@ -1,28 +1,28 @@
 package otoroshi.storage
 
-import akka.NotUsed
-import akka.http.scaladsl.util.FastFuture
-import akka.stream._
-import akka.stream.scaladsl._
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.*
+import org.apache.pekko.stream.scaladsl.*
+import org.apache.pekko.util.ByteString
 import next.models.{ApiDataStore, ApiSubscriptionDataStore, RouteTemplateDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterMode, ClusterStateDataStore}
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.gateway.RequestsDataStore
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.analytics.models.{UserAlertDataStore, UserDashboardDataStore}
 import otoroshi.next.models.{NgRouteCompositionDataStore, NgRouteDataStore, StoredNgBackendDataStore}
 import otoroshi.script.{NamedPlugin, PluginType, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import otoroshi.storage.drivers.inmemory.{Memory, SwapStrategy, SwappableRedis}
-import otoroshi.storage.stores._
+import otoroshi.storage.stores.*
 import otoroshi.tcp.TcpServiceDataStore
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
@@ -50,7 +50,7 @@ trait DataStores {
   def redis: RedisLike
   def before(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle): Future[Unit]
   def after(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle): Future[Unit]
-  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth]
+  def health()(using ec: ExecutionContext): Future[DataStoreHealth]
   def privateAppsUserDataStore: PrivateAppsUserDataStore
   def backOfficeUserDataStore: BackOfficeUserDataStore
   def serviceGroupDataStore: ServiceGroupDataStore
@@ -72,7 +72,7 @@ trait DataStores {
   def clientCertificateValidationDataStore: ClientCertificateValidationDataStore
   def scriptDataStore: ScriptDataStore
   def tcpServiceDataStore: TcpServiceDataStore
-  def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed]
+  def rawExport(group: Int)(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed]
   def rawDataStore: RawDataStore
   def webAuthnAdminDataStore: WebAuthnAdminDataStore
   def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore
@@ -91,28 +91,28 @@ trait DataStores {
   def userAlertDataStore: UserAlertDataStore
   def adminPreferencesDatastore: AdminPreferencesDatastore
   ////
-  def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit]
-  def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]]
+  def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit]
+  def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]]
 }
 
 trait RawDataStore {
-  def exists(key: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def pttl(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def get(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ByteString]]
-  def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]]
-  def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def setnx(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def incr(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]           = incrby(key, 1L)
-  def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]]
+  def exists(key: String)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def pttl(key: String)(using ec: ExecutionContext, env: Env): Future[Long]
+  def get(key: String)(using ec: ExecutionContext, env: Env): Future[Option[ByteString]]
+  def mget(keys: Seq[String])(using ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]]
+  def set(key: String, value: ByteString, ttl: Option[Long])(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def setnx(key: String, value: ByteString, ttl: Option[Long])(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def del(keys: Seq[String])(using ec: ExecutionContext, env: Env): Future[Long]
+  def incr(key: String)(using ec: ExecutionContext, env: Env): Future[Long]           = incrby(key, 1L)
+  def incrby(key: String, incr: Long)(using ec: ExecutionContext, env: Env): Future[Long]
+  def keys(pattern: String)(using ec: ExecutionContext, env: Env): Future[Seq[String]]
   def expire(key: String, seconds: Int): Future[Boolean]
-  def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def pexpire(key: String, pttl: Long)(using ec: ExecutionContext, env: Env): Future[Boolean]
   def sadd(key: String, members: Seq[ByteString]): Future[Long]
   def sismember(key: String, member: ByteString): Future[Boolean]
   def smembers(key: String): Future[Seq[ByteString]]
-  def strlen(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Long]] = get(key).map(_.map(_.size))
-  def allMatching(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ByteString]] = {
+  def strlen(key: String)(using ec: ExecutionContext, env: Env): Future[Option[Long]] = get(key).map(_.map(_.size))
+  def allMatching(pattern: String)(using ec: ExecutionContext, env: Env): Future[Seq[ByteString]] = {
     keys(pattern)
       .flatMap {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[Option[ByteString]])
@@ -127,44 +127,45 @@ trait BasicStore[T] {
   // def keyStr(id: String): String                                                                                    = key(id).key
   def extractId(value: T): String
   def extractKey(value: T): String = key(extractId(value))
-  def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
+  def findAll(force: Boolean = false)(using ec: ExecutionContext, env: Env): Future[Seq[T]]
   //def findAllByKeys(ids: Seq[Key], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
   //  findAllById(ids.map(_.key), force)
-  def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
+  def findAllById(ids: Seq[String], force: Boolean = false)(using ec: ExecutionContext, env: Env): Future[Seq[T]]
   // def findByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]                                = findById(id.key)
-  def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]
-  def findByIdAndFillSecrets(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]
+  def findById(id: String)(using ec: ExecutionContext, env: Env): Future[Option[T]]
+  def findByIdAndFillSecrets(id: String)(using ec: ExecutionContext, env: Env): Future[Option[T]]
   // def deleteByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                = delete(id.key)
-  def deleteByIds(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def delete(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def delete(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def set(value: T, pxMilliseconds: Option[Duration] = None)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def deleteByIds(ids: Seq[String])(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def delete(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def delete(value: T)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def deleteAll()(using ec: ExecutionContext, env: Env): Future[Long]
+  def set(value: T, pxMilliseconds: Option[Duration] = None)(using ec: ExecutionContext, env: Env): Future[Boolean]
   // def exists(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                     = exists(id.key)
-  def exists(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def exists(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def exists(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def exists(value: T)(using ec: ExecutionContext, env: Env): Future[Boolean]
   // Streaming
-  def streamedFind(predicate: T => Boolean, fetchSize: Int, page: Int = 0, pageSize: Int = Int.MaxValue)(implicit
+  def streamedFind(predicate: T => Boolean, fetchSize: Int, page: Int = 0, pageSize: Int = Int.MaxValue)(using
       ec: ExecutionContext,
       mat: Materializer,
       env: Env
   ): Source[T, NotUsed]
-  def streamedFindAndMat(predicate: T => Boolean, fetchSize: Int, page: Int = 0, pageSize: Int = Int.MaxValue)(implicit
+  def streamedFindAndMat(predicate: T => Boolean, fetchSize: Int, page: Int = 0, pageSize: Int = Int.MaxValue)(using
       ec: ExecutionContext,
       mat: Materializer,
       env: Env
   ): Future[Seq[T]]
-  def clearFromCache(id: String)(implicit env: Env): Unit
-  def clearCache(id: String)(implicit env: Env): Unit
-  def countAll()(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def findAllAndFillSecrets()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
+  def clearFromCache(id: String)(using env: Env): Unit
+  def clearCache(id: String)(using env: Env): Unit
+  def countAll()(using ec: ExecutionContext, env: Env): Future[Long]
+  def findAllAndFillSecrets()(using ec: ExecutionContext, env: Env): Future[Seq[T]]
 }
 
 trait RedisLike {
   def optimized: Boolean              = false
   def asOptimized: OptimizedRedisLike = this.asInstanceOf[OptimizedRedisLike]
-  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth]
-  def start(): Unit = {}
+  def health()(using ec: ExecutionContext): Future[DataStoreHealth]
+  def start(): Unit = {
+}
   def stop(): Unit
   def flushall(): Future[Boolean]
   def get(key: String): Future[Option[ByteString]]
@@ -175,7 +176,7 @@ trait RedisLike {
       exSeconds: Option[Long] = None,
       pxMilliseconds: Option[Long] = None
   ): Future[Boolean]
-  def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+  def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -225,29 +226,29 @@ trait OptimizedRedisLike {
   def findAllOptimized(kind: String, kindKey: String): Future[Seq[JsValue]]
   def serviceDescriptors_findByHost(
       query: ServiceDescriptorQuery
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     FastFuture.failed(new NotImplementedError())
   }
   def serviceDescriptors_findByEnv(
       ev: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     env.datastores.serviceDescriptorDataStore.findAll().map(_.filter(_.env == ev))
   }
   def serviceDescriptors_findByGroup(
       id: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     env.datastores.serviceDescriptorDataStore.findAll().map(_.filter(_.groups.contains(id)))
   }
   def apiKeys_findByService(
       service: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
     env.datastores.apiKeyDataStore.findAll().map { keys =>
       keys.filter { key =>
         key.authorizedOnService(service.id) || key.authorizedOnOneGroupFrom(service.groups)
       }
     }
   }
-  def apiKeys_findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
+  def apiKeys_findByGroup(groupId: String)(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
     env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
       case Some(group) => {
         env.datastores.apiKeyDataStore.findAll().map { keys =>
@@ -260,13 +261,13 @@ trait OptimizedRedisLike {
     }
   }
   def extractKind(key: String, env: Env): Option[String] = {
-    KindExtractorHelper.findKind(key)(env)
+    KindExtractorHelper.findKind(key)(using env)
   }
 }
 
 object KindExtractorHelper {
   private val cache = new UnboundedTrieMap[String, Option[String]]()
-  def findKind(key: String)(implicit env: Env): Option[String] = {
+  def findKind(key: String)(using env: Env): Option[String] = {
     cache.get(key) match {
       case Some(value) => value
       case None        => {
@@ -286,8 +287,8 @@ object KindExtractorHelper {
 trait RedisLikeStore[T] extends BasicStore[T] {
   def fmt: Format[T]
   private lazy val name                          = this.getClass.getSimpleName.replace("$", "")
-  def _findAllCached(implicit env: Env): Boolean = env.useCache
-  def redisLike(implicit env: Env): RedisLike
+  def _findAllCached(using env: Env): Boolean = env.useCache
+  def redisLike(using env: Env): RedisLike
   def reader: Reads[T]                           = fmt
   def writer: Writes[T]                          = fmt
   def toJson(value: T): JsValue                  = writer.writes(value)
@@ -305,11 +306,11 @@ trait RedisLikeStore[T] extends BasicStore[T] {
   private val findAllCache     = new java.util.concurrent.atomic.AtomicReference[Seq[T]](null)
   private val lastFindAllCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
-  def countAll()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+  def countAll()(using ec: ExecutionContext, env: Env): Future[Long] = {
     redisLike.keys(key("*")).map(_.size)
   }
 
-  def clearFromCache(id: String)(implicit env: Env): Unit = {
+  def clearFromCache(id: String)(using env: Env): Unit = {
     if (_findAllCached) {
       val values = findAllCache.get
       if (values != null) {
@@ -318,29 +319,29 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     }
   }
 
-  def clearCache(id: String)(implicit env: Env): Unit = {
+  def clearCache(id: String)(using env: Env): Unit = {
     if (_findAllCached) {
       findAllCache.set(null)
     }
   }
 
-  def deleteByIds(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def deleteByIds(ids: Seq[String])(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     if (ids.isEmpty) {
       FastFuture.successful(true)
     } else {
       val ks = ids.map(v => key(v))
-      redisLike.del(ks: _*).map(_ > 0)
+      redisLike.del(ks*).map(_ > 0)
     }
   }
 
-  def findAllAndFillSecrets()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
+  def findAllAndFillSecrets()(using ec: ExecutionContext, env: Env): Future[Seq[T]] = {
     if (env.vaults.enabled) {
       Source
         .single(key("*"))
         .mapAsync(1)(redisLike.keys)
         .mapAsync(1) { keys =>
           if (keys.isEmpty) FastFuture.successful(Seq.empty[(Option[ByteString], String)])
-          else redisLike.mget(keys: _*).map(seq => seq.zip(keys))
+          else redisLike.mget(keys*).map(seq => seq.zip(keys))
         }
         .map(seq => seq.filter(_._1.isDefined).map(t => (t._1.get.utf8String, t._2)))
         .flatMapConcat(values => Source(values.toList))
@@ -356,13 +357,13 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         .collect { case JsSuccess(i, _) =>
           i
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
     } else {
       redisLike
         .keys(key("*"))
         .flatMap(keys =>
           if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-          else redisLike.mget(keys: _*)
+          else redisLike.mget(keys*)
         )
         .map(seq =>
           seq
@@ -379,7 +380,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     }
   }
 
-  def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
+  def findAll(force: Boolean = false)(using ec: ExecutionContext, env: Env): Future[Seq[T]] =
     /*env.metrics.withTimerAsync("otoroshi.core.store.find-all")*/ {
 
       def actualFindAll() = {
@@ -390,7 +391,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
             .keys(key("*"))
             .flatMap(keys =>
               if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-              else redisLike.mget(keys: _*)
+              else redisLike.mget(keys*)
             )
             .map(seq =>
               seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
@@ -444,7 +445,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         actualFindAll()
       }
     }
-  def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
+  def findAllById(ids: Seq[String], force: Boolean = false)(using ec: ExecutionContext, env: Env): Future[Seq[T]] =
     ids match {
       case keys if keys.isEmpty                                 => FastFuture.successful(Seq.empty[T])
       case keys if _findAllCached && findAllCache.get() != null => {
@@ -453,16 +454,16 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
       }
       case keys                                                 =>
-        redisLike.mget(keys.map(key): _*).map { values: Seq[Option[ByteString]] =>
+        redisLike.mget(keys.map(key)*).map { (values: Seq[Option[ByteString]]) =>
           values.flatMap { opt =>
             opt.flatMap(bs => fromJsonSafe(Json.parse(bs.utf8String)).asOpt)
           }
         }
     }
-  def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]                               =
+  def findById(id: String)(using ec: ExecutionContext, env: Env): Future[Option[T]]                               =
     redisLike.get(key(id)).map(_.flatMap(v => fromJsonSafe(Json.parse(v.utf8String)).asOpt))
 
-  def findByIdAndFillSecrets(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]] = {
+  def findByIdAndFillSecrets(id: String)(using ec: ExecutionContext, env: Env): Future[Option[T]] = {
     redisLike.get(key(id)).flatMap {
       case None           => None.vfuture
       case Some(rawValue) => {
@@ -478,23 +479,23 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     }
   }
 
-  def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long]                                               =
+  def deleteAll()(using ec: ExecutionContext, env: Env): Future[Long]                                               =
     redisLike.keys(key("*")).flatMap { keys =>
-      redisLike.del(keys: _*)
+      redisLike.del(keys*)
     }
-  def delete(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                     =
+  def delete(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean]                                     =
     redisLike.del(key(id)).map(_ > 0)
-  def delete(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                       = delete(extractId(value))
-  def set(value: T, pxMilliseconds: Option[Duration] = None)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def delete(value: T)(using ec: ExecutionContext, env: Env): Future[Boolean]                                       = delete(extractId(value))
+  def set(value: T, pxMilliseconds: Option[Duration] = None)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     redisLike.set(
       key(extractId(value)),
       Json.stringify(toJson(value)),
       pxMilliseconds = pxMilliseconds.map(d => d.toMillis)
     )
-  def exists(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                     = redisLike.exists(key(id))
-  def exists(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                       = exists(extractId(value))
+  def exists(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean]                                     = redisLike.exists(key(id))
+  def exists(value: T)(using ec: ExecutionContext, env: Env): Future[Boolean]                                       = exists(extractId(value))
   // Streamed
-  def streamedFind(predicate: T => Boolean, fetchSize: Int, page: Int = 1, pageSize: Int = Int.MaxValue)(implicit
+  def streamedFind(predicate: T => Boolean, fetchSize: Int, page: Int = 1, pageSize: Int = Int.MaxValue)(using
       ec: ExecutionContext,
       mat: Materializer,
       env: Env
@@ -511,7 +512,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
       .grouped(fetchSize)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[Option[ByteString]])
-        case keys                 => redisLike.mget(keys: _*)
+        case keys                 => redisLike.mget(keys*)
       }
       .map { items =>
         items
@@ -524,7 +525,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
       .drop(position)
       .take(pageSize)
   }
-  def streamedFindAndMat(predicate: T => Boolean, fetchSize: Int, page: Int = 0, pageSize: Int = Int.MaxValue)(implicit
+  def streamedFindAndMat(predicate: T => Boolean, fetchSize: Int, page: Int = 0, pageSize: Int = Int.MaxValue)(using
       ec: ExecutionContext,
       mat: Materializer,
       env: Env
@@ -560,7 +561,7 @@ trait MetricsWrapper {
 
 class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike with MetricsWrapper {
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
   override def start(): Unit                                                    = redis.start()
   override def stop(): Unit                                                     = redis.stop()
 
@@ -579,7 +580,7 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
     countRead(keys.mkString(", "))
-    redis.mget(keys: _*)
+    redis.mget(keys*)
   }
   override def set(
       key: String,
@@ -601,7 +602,7 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def del(keys: String*): Future[Long] = {
     countWrite(keys.mkString(", "), "del")
-    redis.del(keys: _*)
+    redis.del(keys*)
   }
   override def incr(key: String): Future[Long] = {
     countWrite(key, "incr")
@@ -621,7 +622,7 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def hdel(key: String, fields: String*): Future[Long] = {
     countWrite(key, "hdel")
-    redis.hdel(key, fields: _*)
+    redis.hdel(key, fields*)
   }
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
     countRead(key)
@@ -641,15 +642,15 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def lpush(key: String, values: String*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpush(key, values: _*)
+    redis.lpush(key, values*)
   }
   override def lpushLong(key: String, values: Long*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpushLong(key, values: _*)
+    redis.lpushLong(key, values*)
   }
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpushBS(key, values: _*)
+    redis.lpushBS(key, values*)
   }
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     countRead(key)
@@ -677,11 +678,11 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def sadd(key: String, members: String*): Future[Long] = {
     countWrite(key, "sadd")
-    redis.sadd(key, members: _*)
+    redis.sadd(key, members*)
   }
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     countWrite(key, "sadd")
-    redis.saddBS(key, members: _*)
+    redis.saddBS(key, members*)
   }
   override def sismember(key: String, member: String): Future[Boolean] = {
     countRead(key)
@@ -697,17 +698,17 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def srem(key: String, members: String*): Future[Long] = {
     countWrite(key, "srem")
-    redis.srem(key, members: _*)
+    redis.srem(key, members*)
   }
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     countWrite(key, "srem")
-    redis.sremBS(key, members: _*)
+    redis.sremBS(key, members*)
   }
   override def scard(key: String): Future[Long] = {
     countRead(key)
     redis.scard(key)
   }
-  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -716,14 +717,14 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
 }
 
-class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val env: Env)
+class SwappableRedisLikeMetricsWrapper(redis: RedisLike & SwappableRedis, val env: Env)
     extends RedisLike
     with MetricsWrapper
     with SwappableRedis {
 
   private val incropt = new IncrOptimizer(200, 10000)
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
   override def start(): Unit                                                    = redis.start()
   override def stop(): Unit                                                     = redis.stop()
 
@@ -742,7 +743,7 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
     countRead(keys.mkString(", "))
-    redis.mget(keys: _*)
+    redis.mget(keys*)
   }
   override def set(
       key: String,
@@ -764,19 +765,19 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def del(keys: String*): Future[Long] = {
     countWrite(keys.mkString(", "), "del")
-    redis.del(keys: _*)
+    redis.del(keys*)
   }
   override def incr(key: String): Future[Long] = {
     incropt.incrBy(key, 1L) { _ =>
       countWrite(key, "incr")
       redis.incr(key)
-    }(env.otoroshiExecutionContext)
+    }(using env.otoroshiExecutionContext)
   }
   override def incrby(key: String, increment: Long): Future[Long] = {
     incropt.incrBy(key, increment) { by =>
       countWrite(key, "incrby")
       redis.incrby(key, by)
-    }(env.otoroshiExecutionContext)
+    }(using env.otoroshiExecutionContext)
   }
   override def exists(key: String): Future[Boolean] = {
     countRead(key)
@@ -788,7 +789,7 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def hdel(key: String, fields: String*): Future[Long] = {
     countWrite(key, "hdel")
-    redis.hdel(key, fields: _*)
+    redis.hdel(key, fields*)
   }
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
     countRead(key)
@@ -808,15 +809,15 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def lpush(key: String, values: String*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpush(key, values: _*)
+    redis.lpush(key, values*)
   }
   override def lpushLong(key: String, values: Long*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpushLong(key, values: _*)
+    redis.lpushLong(key, values*)
   }
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpushBS(key, values: _*)
+    redis.lpushBS(key, values*)
   }
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     countRead(key)
@@ -844,11 +845,11 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def sadd(key: String, members: String*): Future[Long] = {
     countWrite(key, "sadd")
-    redis.sadd(key, members: _*)
+    redis.sadd(key, members*)
   }
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     countWrite(key, "sadd")
-    redis.saddBS(key, members: _*)
+    redis.saddBS(key, members*)
   }
   override def sismember(key: String, member: String): Future[Boolean] = {
     countRead(key)
@@ -864,17 +865,17 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def srem(key: String, members: String*): Future[Long] = {
     countWrite(key, "srem")
-    redis.srem(key, members: _*)
+    redis.srem(key, members*)
   }
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     countWrite(key, "srem")
-    redis.sremBS(key, members: _*)
+    redis.sremBS(key, members*)
   }
   override def scard(key: String): Future[Long] = {
     countRead(key)
     redis.scard(key)
   }
-  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -894,7 +895,7 @@ case class IncrOptimizerItem(
     curOps: AtomicInteger
 ) {
   def setCurrent(value: Long): Unit = current.set(value)
-  def incrBy(increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
+  def incrBy(increment: Long)(f: Long => Future[Long])(using ec: ExecutionContext): Future[Long] = {
     val elapsed     = System.currentTimeMillis() - last.get()
     val tooMuchOps  = curOps.incrementAndGet() > ops
     val tooMuchTime = elapsed > time
@@ -917,7 +918,7 @@ case class IncrOptimizerItem(
 
 class IncrOptimizer(ops: Int, time: Int) {
   private val cache = new UnboundedTrieMap[String, IncrOptimizerItem]()
-  def incrBy(key: String, increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
+  def incrBy(key: String, increment: Long)(f: Long => Future[Long])(using ec: ExecutionContext): Future[Long] = {
     cache.get(key) match {
       case None       =>
         f(increment).map { r =>

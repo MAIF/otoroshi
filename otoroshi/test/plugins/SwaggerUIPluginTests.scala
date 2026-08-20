@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.SwaggerUIConfig.DefaultSwaggerUIVersion
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -9,7 +10,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class SwaggerUIPluginTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def run() = {
     val route = createRouteWithExternalTarget(
@@ -47,7 +48,7 @@ class SwaggerUIPluginTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    val html = resp.body
+    val html = resp.body[String]
 
     html.contains("<title>My Swagger UI Configuration</title>") mustBe true
     html.contains("layout: \"BaseLayout\"") mustBe true

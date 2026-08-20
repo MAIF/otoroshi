@@ -3,12 +3,12 @@ package otoroshi.plugins.jobs.kubernetes
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
 import otoroshi.next.models.NgRoute
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import otoroshi.security.OtoroshiClaim
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -72,16 +72,16 @@ case class KubernetesMutatingWebhookConfiguration(raw: JsValue) extends Kubernet
 
 case class KubernetesOpenshiftDnsOperatorServer(raw: JsValue) {
   lazy val name: String                        = raw.select("name").as[String]
-  lazy val zones: Seq[String]                  = raw.select("zones").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val zones: Seq[String]                  = raw.select("zones").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val forwardPluginUpstreams: Seq[String] =
-    raw.select("forwardPlugin").select("upstreams").asOpt[Seq[String]].getOrElse(Seq.empty)
+    raw.select("forwardPlugin").select("upstreams").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 }
 
 case class KubernetesOpenshiftDnsOperator(raw: JsValue) extends KubernetesEntity {
   lazy val servers = (raw \ "spec" \ "servers")
     .asOpt[JsArray]
     .map(_.value.map(KubernetesOpenshiftDnsOperatorServer.apply))
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
 }
 
 case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity
@@ -129,19 +129,19 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
     ().future
   }
   def asDescriptors(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(
-      implicit
+      using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[ServiceDescriptor]] = {
-    KubernetesIngressToDescriptor.asDescriptors(this)(conf, otoConfig, client, logger)(env, ec)
+    KubernetesIngressToDescriptor.asDescriptors(this)(conf, otoConfig, client, logger)(using env, ec)
   }
 
   def asRoutes(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(
-      implicit
+      using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[NgRoute]] = {
-    KubernetesIngressToDescriptor.asRoutes(this)(conf, otoConfig, client, logger)(env, ec)
+    KubernetesIngressToDescriptor.asRoutes(this)(conf, otoConfig, client, logger)(using env, ec)
   }
 }
 
@@ -170,7 +170,7 @@ case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
 case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {
   lazy val theType: String                         = (raw \ "type").as[String]
   lazy val base64Data: Map[String, String]         = (raw \ "data").asOpt[Map[String, String]].getOrElse(Map.empty)
-  lazy val data                                    = base64Data.mapValues(v => new String(OtoroshiClaim.decoder.decode(v)))
+  lazy val data                                    = base64Data.view.mapValues(v => new String(OtoroshiClaim.decoder.decode(v))).toMap
   lazy val stringData: Option[Map[String, String]] = (raw \ "stringData").asOpt[Map[String, String]]
   lazy val hasStringData: Boolean                  = stringData.isDefined
   def cert: KubernetesCertSecret                   = KubernetesCertSecret(raw)

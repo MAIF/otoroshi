@@ -1,10 +1,10 @@
 package otoroshi.statefulclients
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.Executors
 import scala.collection.concurrent.TrieMap
@@ -15,7 +15,7 @@ trait StatefulClientConfig[A] {
   def isOpen(client: A): Boolean
   def start(env: Env): A
   def stop(client: A): Unit
-  def isSameConfig(other: StatefulClientConfig[_]): Boolean
+  def isSameConfig(other: StatefulClientConfig[?]): Boolean
 }
 
 case class StatefulClientWrapper[A](config: StatefulClientConfig[A], client: A) {
@@ -30,9 +30,9 @@ case class StatefulClientWrapper[A](config: StatefulClientConfig[A], client: A) 
 class StatefulClientsManager(env: Env) {
 
   private val logger                                                     = Logger("otoroshi-stateful-clients-manager")
-  private val statefulClients: TrieMap[String, StatefulClientWrapper[_]] =
-    new TrieMap[String, StatefulClientWrapper[_]]()
-  private implicit val ec                                                = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  private val statefulClients: TrieMap[String, StatefulClientWrapper[?]] =
+    new TrieMap[String, StatefulClientWrapper[?]]()
+  private implicit val ec: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   def client[T](id: String, config: StatefulClientConfig[T]): T = synchronized {
     statefulClients.get(id) match {
@@ -83,27 +83,27 @@ class StatefulClientsManager(env: Env) {
     FastFuture.successful(())
   }
 
-  private def getClientConfigsFromConfig(): List[(String, StatefulClientConfig[_])] = {
+  private def getClientConfigsFromConfig(): List[(String, StatefulClientConfig[?])] = {
     val staticConfigs     = env.configurationJson
       .select("otoroshi")
       .select("stateful-clients")
       .asOpt[Seq[JsObject]]
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
       .toList
     val staticJsonConfigs = env.configurationJson
       .select("otoroshi")
       .select("stateful-clients-json")
       .asOpt[String]
       .flatMap(str => str.parseJson.asOpt[Seq[JsObject]])
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
       .toList
     val dynConfigs        = env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .plugins
       .config
       .select("stateful-clients")
       .asOpt[Seq[JsObject]]
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
       .toList
     val configs           = staticConfigs ++ staticJsonConfigs ++ dynConfigs
     configs.flatMap { config =>

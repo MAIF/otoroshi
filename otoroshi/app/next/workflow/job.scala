@@ -2,10 +2,10 @@ package otoroshi.next.workflow
 
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -75,7 +75,7 @@ class WorkflowJob(ref: String, config: WorkflowJobConfig) extends Job {
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = config.cronExpression
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = Try {
     env.adminExtensions
       .extension[WorkflowAdminExtension]
       .map { ext =>

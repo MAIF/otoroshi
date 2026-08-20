@@ -1,19 +1,19 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.headers.`Last-Modified`
-import akka.stream.alpakka.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.{Attributes, Materializer}
-import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Settings}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.headers.`Last-Modified`
+import org.apache.pekko.stream.connectors.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.stream.connectors.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Exception, S3Settings}
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.storage.drivers.inmemory.S3Configuration
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -83,7 +83,7 @@ object StaticBackendConfig {
 
 class StaticBackend extends NgBackendCall {
 
-  private val fileCache    = Scaffeine().maximumSize(100).expireAfterWrite(2.minutes).build[String, (String, ByteString)]
+  private val fileCache    = Scaffeine().maximumSize(100).expireAfterWrite(2.minutes).build[String, (String, ByteString)]()
   private val fileUtilsRef = new AtomicReference[FileUtils]()
 
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
@@ -101,7 +101,7 @@ class StaticBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -148,7 +148,7 @@ case class S3BackendConfig(s3: S3Configuration) extends NgPluginConfig {
 class S3Backend extends NgBackendCall {
 
   private val fileCache    =
-    Scaffeine().maximumSize(100).expireAfterWrite(2.minutes).build[String, (ObjectMetadata, ByteString)]
+    Scaffeine().maximumSize(100).expireAfterWrite(2.minutes).build[String, (ObjectMetadata, ByteString)]()
   private val fileUtilsRef = new AtomicReference[FileUtils]()
 
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
@@ -180,7 +180,7 @@ class S3Backend extends NgBackendCall {
     S3Attributes.settings(settings)
   }
 
-  private def fileExists(key: String, config: S3Configuration)(implicit
+  private def fileExists(key: String, config: S3Configuration)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Boolean] = {
@@ -195,28 +195,48 @@ class S3Backend extends NgBackendCall {
       }
   }
 
-  private def fileContent(key: String, config: S3Configuration)(implicit
-      ec: ExecutionContext,
-      mat: Materializer
+  // private def fileContent(key: String, config: S3Configuration)(using
+  //     ec: ExecutionContext,
+  //     mat: Materializer
+  // ): Future[Option[(ObjectMetadata, ByteString)]] = {
+  //   S3.download(config.bucket, key)
+  //     .withAttributes(s3ClientSettingsAttrs(config))
+  //     .runWith(Sink.headOption)
+  //     .map(_.flatten)
+  //     .flatMap { opt =>
+  //       opt
+  //         .map {
+  //           case (source, om) => {
+  //             source.runFold(ByteString.empty)(_ ++ _).map { content =>
+  //               (om, content).some
+  //             }
+  //           }
+  //         }
+  //         .getOrElse(None.vfuture)
+  //     }
+  // }
+
+  private def fileContent(key: String, config: S3Configuration)(using
+    ec: ExecutionContext,
+    mat: Materializer
   ): Future[Option[(ObjectMetadata, ByteString)]] = {
-    S3.download(config.bucket, key)
+    val (metadataFuture, contentFuture) = S3
+      .getObject(config.bucket, key)
       .withAttributes(s3ClientSettingsAttrs(config))
-      .runWith(Sink.headOption)
-      .map(_.flatten)
-      .flatMap { opt =>
-        opt
-          .map {
-            case (source, om) => {
-              source.runFold(ByteString.empty)(_ ++ _).map { content =>
-                (om, content).some
-              }
-            }
-          }
-          .getOrElse(None.vfuture)
-      }
+      .toMat(Sink.fold(ByteString.empty)(_ ++ _))(Keep.both)
+      .run()
+
+    for {
+      metadata <- metadataFuture
+      content <- contentFuture
+    } yield {
+      Some((metadata, content))
+    }
+  }.recover { case _: S3Exception =>
+    None
   }
 
-  private def normalizeKey(key: String, config: S3Configuration)(implicit
+  private def normalizeKey(key: String, config: S3Configuration)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[String] = {
@@ -251,7 +271,7 @@ class S3Backend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

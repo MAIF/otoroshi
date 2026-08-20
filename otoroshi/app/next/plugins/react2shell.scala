@@ -1,14 +1,14 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.AlertEvent
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.utils.JsonHelpers
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.util.UUID
@@ -80,7 +80,7 @@ class React2SShellDetector extends NgRequestTransformer {
     "constructor:constructor"
   )
 
-  private def sendAlert(ctx: NgTransformerRequestContext, payload: String, suspiciousScore: Int)(implicit
+  private def sendAlert(ctx: NgTransformerRequestContext, payload: String, suspiciousScore: Int)(using
       env: Env
   ): Unit = {
     ReactToShellDetectedAlert(UUID.randomUUID().toString, ctx, payload, suspiciousScore).toAnalytics()
@@ -88,7 +88,7 @@ class React2SShellDetector extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     if (ctx.otoroshiRequest.hasBody && ctx.otoroshiRequest.method.toLowerCase == "post") {
       val config       =
         ctx.cachedConfig(internalName)(React2SShellDetectorConfig.format).getOrElse(React2SShellDetectorConfig())
@@ -133,7 +133,7 @@ case class ReactToShellDetectedAlert(
 
   val `@timestamp`: DateTime = DateTime.now()
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"              -> `@id`,
       "@timestamp"       -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),

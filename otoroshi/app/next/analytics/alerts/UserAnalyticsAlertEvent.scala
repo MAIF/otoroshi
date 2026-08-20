@@ -4,7 +4,7 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.AlertEvent
 import otoroshi.next.analytics.models.UserAlert
-import play.api.libs.json._
+import play.api.libs.json.*
 
 /**
  * Per-condition evaluation snapshot included in the emitted alert payload so
@@ -45,7 +45,7 @@ case class UserAnalyticsAlertEvent(
     evaluations: Seq[AlertConditionEval],
     `@id`: String,
     `@timestamp`: DateTime = DateTime.now()
-)(implicit _env: Env)
+)(using _env: Env)
     extends AlertEvent {
 
   val alert: String                 = "UserAnalyticsAlert"
@@ -55,7 +55,7 @@ case class UserAnalyticsAlertEvent(
   override val fromOrigin: Option[String]    = None
   override val fromUserAgent: Option[String] = None
 
-  override def toJson(implicit env: Env): JsValue = {
+  override def toJson(using env: Env): JsValue = {
     Json.obj(
       "@id"              -> `@id`,
       "@timestamp"       -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),

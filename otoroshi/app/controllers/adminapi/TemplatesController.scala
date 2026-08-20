@@ -1,14 +1,14 @@
 package otoroshi.controllers.adminapi
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.actions.ApiAction
-import otoroshi.auth._
+import otoroshi.auth.*
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.ServiceDescriptor.toJson
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.models.{NgRoute, StoredNgBackend}
 import otoroshi.plugins.loggers.{RequestBodyEvent, ResponseBodyEvent}
@@ -16,21 +16,20 @@ import otoroshi.plugins.mirror.MirroringEvent
 import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
-import otoroshi.tcp._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.tcp.*
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.Future
-import scala.reflect.runtime.universe._
 
-class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-templates-api")
 
@@ -93,7 +92,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       ctx.checkRights(RightsChecker.Anyone) {
         val desc = env.datastores.serviceDescriptorDataStore
           .initiateNewDescriptor()
-          .copy(location = EntityLocation.ownEntityLocation(ctx.some)(env))
+          .copy(location = EntityLocation.ownEntityLocation(ctx.some)(using env))
 //        val finaldesc =
 //          desc.copy(location = desc.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
         Ok(process(desc.toJson, ctx.request)).future
@@ -410,79 +409,87 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
 
-        def rec(tpe: Type): List[List[TermSymbol]] = {
-          val collected = tpe.members.collect {
-            case m: TermSymbol if m.isCaseAccessor => m
-          }.toList
-
-          if (collected.nonEmpty)
-            collected
-              .flatMap(m => {
-                m match {
-                  case r: MethodSymbol =>
-                    if (r.returnType.typeArgs.nonEmpty) {
-                      rec(r.returnType.typeArgs.head).map(m :: _)
-                    } else {
-                      rec(r.returnType).map(m :: _)
-                    }
-                  case symbol          => List(List(symbol))
-                }
-              })
-          else
-            List(Nil)
+        // Scala 3 has no runtime `scala.reflect.universe`, so the dotted field paths of an event case
+        // class are derived with plain Java reflection: a Scala case class implements `scala.Product`
+        // and exposes its constructor params as declared fields. We recurse into nested case classes,
+        // unwrapping the first type argument of parameterized fields (Option[X], Seq[X], Map[K, _]…)
+        // and stopping at non-Product leaf types. A visited set guards against cyclic types.
+        def elementClass(t: java.lang.reflect.Type): Class[?] = t match {
+          case pt: java.lang.reflect.ParameterizedType =>
+            pt.getActualTypeArguments.headOption match {
+              case Some(c: Class[?])                                 => c
+              case Some(inner: java.lang.reflect.ParameterizedType) => inner.getRawType.asInstanceOf[Class[?]]
+              case _                                                 => pt.getRawType.asInstanceOf[Class[?]]
+            }
+          case c: Class[?]                             => c
+          case _                                       => classOf[AnyRef]
         }
 
-        val map = Map(
-          "GatewayEvent"                     -> typeOf[GatewayEvent],
-          "MaxConcurrentRequestReachedAlert" -> typeOf[MaxConcurrentRequestReachedAlert],
-          "CircuitBreakerOpenedAlert"        -> typeOf[CircuitBreakerOpenedAlert],
-          "CircuitBreakerClosedAlert"        -> typeOf[CircuitBreakerClosedAlert],
-          "SessionDiscardedAlert"            -> typeOf[SessionDiscardedAlert],
-          "SessionsDiscardedAlert"           -> typeOf[SessionsDiscardedAlert],
-          "PanicModeAlert"                   -> typeOf[PanicModeAlert],
-          "OtoroshiExportAlert"              -> typeOf[OtoroshiExportAlert],
-          "U2FAdminDeletedAlert"             -> typeOf[U2FAdminDeletedAlert],
-          "BlackListedBackOfficeUserAlert"   -> typeOf[BlackListedBackOfficeUserAlert],
-          "AdminLoggedInAlert"               -> typeOf[AdminLoggedInAlert],
-          "AdminFirstLogin"                  -> typeOf[AdminFirstLogin],
-          "AdminLoggedOutAlert"              -> typeOf[AdminLoggedOutAlert],
-          "GlobalConfigModification"         -> typeOf[GlobalConfigModification],
-          "RevokedApiKeyUsageAlert"          -> typeOf[RevokedApiKeyUsageAlert],
-          "ServiceGroupCreatedAlert"         -> typeOf[ServiceGroupCreatedAlert],
-          "ServiceGroupUpdatedAlert"         -> typeOf[ServiceGroupUpdatedAlert],
-          "ServiceGroupDeletedAlert"         -> typeOf[ServiceGroupDeletedAlert],
-          "ServiceCreatedAlert"              -> typeOf[ServiceCreatedAlert],
-          "ServiceUpdatedAlert"              -> typeOf[ServiceUpdatedAlert],
-          "ServiceDeletedAlert"              -> typeOf[ServiceDeletedAlert],
-          "ApiKeyCreatedAlert"               -> typeOf[ApiKeyCreatedAlert],
-          "ApiKeyUpdatedAlert"               -> typeOf[ApiKeyUpdatedAlert],
-          "ApiKeyDeletedAlert"               -> typeOf[ApiKeyDeletedAlert],
-          "TrafficCaptureEvent"              -> typeOf[TrafficCaptureEvent],
-          "TcpEvent"                         -> typeOf[TcpEvent],
-          "HealthCheckEvent"                 -> typeOf[HealthCheckEvent],
-          "RequestBodyEvent"                 -> typeOf[RequestBodyEvent],
-          "ResponseBodyEvent"                -> typeOf[ResponseBodyEvent],
-          "MirroringEvent"                   -> typeOf[MirroringEvent],
-          "BackOfficeEvent"                  -> typeOf[BackOfficeEvent],
-          "AdminApiEvent"                    -> typeOf[AdminApiEvent],
-          "SnowMonkeyOutageRegisteredEvent"  -> typeOf[SnowMonkeyOutageRegisteredEvent],
-          "CircuitBreakerOpenedEvent"        -> typeOf[CircuitBreakerOpenedEvent],
-          "CircuitBreakerClosedEvent"        -> typeOf[CircuitBreakerClosedEvent],
-          "MaxConcurrentRequestReachedEvent" -> typeOf[MaxConcurrentRequestReachedEvent],
-          "JobRunEvent"                      -> typeOf[JobRunEvent],
-          "JobErrorEvent"                    -> typeOf[JobErrorEvent],
-          "JobStoppedEvent"                  -> typeOf[JobStoppedEvent],
-          "JobStartedEvent"                  -> typeOf[JobStartedEvent]
+        def rec(clazz: Class[?], visited: Set[Class[?]]): List[List[String]] = {
+          if (!classOf[Product].isAssignableFrom(clazz) || visited.contains(clazz)) {
+            List(Nil)
+          } else {
+            val fields = clazz.getDeclaredFields.toList
+              .filterNot(f => f.isSynthetic || java.lang.reflect.Modifier.isStatic(f.getModifiers))
+            if (fields.isEmpty) List(Nil)
+            else
+              fields.flatMap { f =>
+                rec(elementClass(f.getGenericType), visited + clazz).map(f.getName :: _)
+              }
+          }
+        }
+
+        val map: Map[String, Class[?]] = Map(
+          "GatewayEvent"                     -> classOf[GatewayEvent],
+          "MaxConcurrentRequestReachedAlert" -> classOf[MaxConcurrentRequestReachedAlert],
+          "CircuitBreakerOpenedAlert"        -> classOf[CircuitBreakerOpenedAlert],
+          "CircuitBreakerClosedAlert"        -> classOf[CircuitBreakerClosedAlert],
+          "SessionDiscardedAlert"            -> classOf[SessionDiscardedAlert],
+          "SessionsDiscardedAlert"           -> classOf[SessionsDiscardedAlert],
+          "PanicModeAlert"                   -> classOf[PanicModeAlert],
+          "OtoroshiExportAlert"              -> classOf[OtoroshiExportAlert],
+          "U2FAdminDeletedAlert"             -> classOf[U2FAdminDeletedAlert],
+          "BlackListedBackOfficeUserAlert"   -> classOf[BlackListedBackOfficeUserAlert],
+          "AdminLoggedInAlert"               -> classOf[AdminLoggedInAlert],
+          "AdminFirstLogin"                  -> classOf[AdminFirstLogin],
+          "AdminLoggedOutAlert"              -> classOf[AdminLoggedOutAlert],
+          "GlobalConfigModification"         -> classOf[GlobalConfigModification],
+          "RevokedApiKeyUsageAlert"          -> classOf[RevokedApiKeyUsageAlert],
+          "ServiceGroupCreatedAlert"         -> classOf[ServiceGroupCreatedAlert],
+          "ServiceGroupUpdatedAlert"         -> classOf[ServiceGroupUpdatedAlert],
+          "ServiceGroupDeletedAlert"         -> classOf[ServiceGroupDeletedAlert],
+          "ServiceCreatedAlert"              -> classOf[ServiceCreatedAlert],
+          "ServiceUpdatedAlert"              -> classOf[ServiceUpdatedAlert],
+          "ServiceDeletedAlert"              -> classOf[ServiceDeletedAlert],
+          "ApiKeyCreatedAlert"               -> classOf[ApiKeyCreatedAlert],
+          "ApiKeyUpdatedAlert"               -> classOf[ApiKeyUpdatedAlert],
+          "ApiKeyDeletedAlert"               -> classOf[ApiKeyDeletedAlert],
+          "TrafficCaptureEvent"              -> classOf[TrafficCaptureEvent],
+          "TcpEvent"                         -> classOf[TcpEvent],
+          "HealthCheckEvent"                 -> classOf[HealthCheckEvent],
+          "RequestBodyEvent"                 -> classOf[RequestBodyEvent],
+          "ResponseBodyEvent"                -> classOf[ResponseBodyEvent],
+          "MirroringEvent"                   -> classOf[MirroringEvent],
+          "BackOfficeEvent"                  -> classOf[BackOfficeEvent],
+          "AdminApiEvent"                    -> classOf[AdminApiEvent],
+          "SnowMonkeyOutageRegisteredEvent"  -> classOf[SnowMonkeyOutageRegisteredEvent],
+          "CircuitBreakerOpenedEvent"        -> classOf[CircuitBreakerOpenedEvent],
+          "CircuitBreakerClosedEvent"        -> classOf[CircuitBreakerClosedEvent],
+          "MaxConcurrentRequestReachedEvent" -> classOf[MaxConcurrentRequestReachedEvent],
+          "JobRunEvent"                      -> classOf[JobRunEvent],
+          "JobErrorEvent"                    -> classOf[JobErrorEvent],
+          "JobStoppedEvent"                  -> classOf[JobStoppedEvent],
+          "JobStartedEvent"                  -> classOf[JobStartedEvent]
         )
 
         map.get(eventType) match {
           case Some(value) =>
-            val fields: Seq[String] = rec(value)
-              .map(term => term.map(_.name).mkString(".").trim)
+            val fields: Seq[String] = rec(value, Set.empty[Class[?]])
+              .map(_.mkString("."))
             Ok(
               JsArray(
                 fields.distinct.sorted
-                  .map(JsString)
+                  .map(JsString.apply)
               )
             ).future
           case None        => BadRequest("Event type unkown").future
@@ -564,7 +571,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             }
             case Some(res) => {
               res.access
-                .template("v1", request.queryString.mapValues(_.last))
+                .template("v1", request.queryString.view.mapValues(_.last).toMap)
                 .as[JsObject]
                 .deepMerge(resource)
                 .vfuture

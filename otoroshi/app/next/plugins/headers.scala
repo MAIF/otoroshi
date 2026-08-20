@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.el.{GlobalExpressionLanguage, HeadersExpressionLanguage, TargetExpressionLanguage}
 import otoroshi.env.Env
@@ -9,12 +9,12 @@ import otoroshi.events.AlertEvent
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, RemainingQuotas}
 import otoroshi.next.models.{NgDomainAndPath, NgRoute}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,7 +34,7 @@ object NgHeaderNamesConfig {
           .filter(_.nonEmpty)
           .orElse(json.select("headers").asOpt[Seq[String]].filter(_.nonEmpty))
           .orElse(json.select("names").asOpt[Seq[String]].filter(_.nonEmpty))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -83,7 +83,7 @@ class OverrideHost extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     ctx.attrs.get(Keys.BackendKey) match {
       case None          => Right(ctx.otoroshiRequest)
       case Some(backend) =>
@@ -120,7 +120,7 @@ object OverrideLocationHeaderConfig {
   val format                         = new Format[OverrideLocationHeaderConfig] {
     override def reads(json: JsValue): JsResult[OverrideLocationHeaderConfig] = Try {
       OverrideLocationHeaderConfig(
-        matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty)
+        matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -166,7 +166,7 @@ class OverrideLocationHeader extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.attrs.get(Keys.BackendKey) match {
       case None          => ctx.otoroshiResponse.rightf
       case Some(backend) => {
@@ -259,7 +259,7 @@ class HeadersValidation extends NgAccessValidator {
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
   override def isAccessAsync: Boolean                      = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val validationHeaders =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.map { case (key, value) =>
         (
@@ -356,7 +356,7 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val additionalHeaders = Map(
       env.Headers.OtoroshiProxiedHost      -> ctx.request.theHost,
       env.Headers.OtoroshiRequestId        -> ctx.attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
@@ -374,7 +374,7 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
         env.Headers.OtoroshiGatewayParentRequest
       )
       .appendAll(additionalHeaders)
-      .mapValues(v =>
+      .view.mapValues(v =>
         otoroshi.el.GlobalExpressionLanguage(
           value = v,
           req = ctx.request.some,
@@ -386,7 +386,7 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
           attrs = ctx.attrs,
           env = env
         )
-      )
+      ).toMap
     Right(ctx.otoroshiRequest.copy(headers = newHeaders))
   }
 }
@@ -413,10 +413,10 @@ class AdditionalHeadersOut extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig())
     val additionalHeaders = {
-      config.headers.mapValues { value =>
+      config.headers.view.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -428,7 +428,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     }
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders))
   }
@@ -456,9 +456,9 @@ class AdditionalHeadersIn extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val additionalHeaders =
-      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.mapValues { value =>
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.view.mapValues { value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -470,7 +470,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
   }
 }
@@ -498,7 +498,7 @@ class MissingHeadersIn extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val additionalHeaders = ctx
       .cachedConfig(internalName)(configReads)
       .getOrElse(NgHeaderValuesConfig())
@@ -506,7 +506,7 @@ class MissingHeadersIn extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiRequest.headers.contains(key) && !ctx.otoroshiRequest.headers.contains(key.toLowerCase)
       }
-      .mapValues { value =>
+      .view.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -518,7 +518,7 @@ class MissingHeadersIn extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
   }
 }
@@ -545,7 +545,7 @@ class MissingHeadersOut extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val additionalHeaders = ctx
       .cachedConfig(internalName)(configReads)
       .getOrElse(NgHeaderValuesConfig())
@@ -553,7 +553,7 @@ class MissingHeadersOut extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiResponse.headers.contains(key) && !ctx.otoroshiResponse.headers.contains(key.toLowerCase)
       }
-      .mapValues { value =>
+      .view.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -565,7 +565,7 @@ class MissingHeadersOut extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders))
   }
 }
@@ -592,7 +592,7 @@ class RemoveHeadersOut extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val headers = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderNamesConfig()).names.map(_.toLowerCase)
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers.filterNot { case (key, _) =>
       headers.contains(key.toLowerCase)
@@ -622,7 +622,7 @@ class RemoveHeadersIn extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val headers = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderNamesConfig()).names.map(_.toLowerCase)
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers.filterNot { case (key, _) =>
       headers.contains(key.toLowerCase)
@@ -651,7 +651,7 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val headers          = ctx.otoroshiResponse.headers.toSeq
     val snowflake        = ctx.attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get
     val requestTimestamp =
@@ -723,7 +723,7 @@ class XForwardedHeaders extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val request           = ctx.request
     val additionalHeaders = if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
       val xForwardedFor   = request.headers
@@ -786,7 +786,7 @@ class ForwardedHeader extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val request           = ctx.request
     val additionalHeaders = if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
       val xForwardedFor   = request.headers
@@ -877,7 +877,7 @@ class RejectHeaderInTooLong extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
     Right(
       ctx.otoroshiRequest.copy(
@@ -925,7 +925,7 @@ class RejectHeaderOutTooLong extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
     Right(
       ctx.otoroshiResponse.copy(
@@ -975,7 +975,7 @@ case class HeaderTooLongAlert(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"                 -> `@id`,
       "@timestamp"          -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1024,7 +1024,7 @@ class LimitHeaderInTooLong extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
     Right(
       ctx.otoroshiRequest.copy(
@@ -1073,7 +1073,7 @@ class LimitHeaderOutTooLong extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
     Right(
       ctx.otoroshiResponse.copy(

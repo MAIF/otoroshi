@@ -2,7 +2,7 @@ package otoroshi.statefulclients
 
 import org.apache.kafka.clients.producer.Producer
 import otoroshi.events.{KafkaConfig, KafkaSettings}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.JsObject
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -28,7 +28,7 @@ case class KafkaStatefulClientConfig(config: KafkaConfig) extends StatefulClient
 
   override def isOpen(client: Producer[Array[Byte], String]): Boolean = open.get()
 
-  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[?]): Boolean = other match {
     case k: KafkaStatefulClientConfig => k.config == config
     case _                            => false
   }

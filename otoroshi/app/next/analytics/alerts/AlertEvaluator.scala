@@ -1,13 +1,13 @@
 package otoroshi.next.analytics.alerts
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.UserAnalyticsExporterRegistry
 import otoroshi.next.analytics.models.{AlertCondition, UserAlert}
 import otoroshi.next.analytics.queries.{AnalyticsRuntime, AnalyticsShape, Bucketing, Filters, QueryResult}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,7 +26,7 @@ object AlertEvaluator {
 
   def evaluate(
       alert: UserAlert
-  )(implicit env: Env, ec: ExecutionContext): Future[(Boolean, Seq[AlertConditionEval])] = {
+  )(using env: Env, ec: ExecutionContext): Future[(Boolean, Seq[AlertConditionEval])] = {
     if (alert.conditions.isEmpty) FastFuture.successful((false, Seq.empty))
     else {
       Future.sequence(alert.conditions.map(c => evaluateCondition(c, alert))).map { evals =>
@@ -43,7 +43,7 @@ object AlertEvaluator {
   // Per-condition evaluation
   // --------------------------------------------------------------------------
 
-  def evaluateCondition(cond: AlertCondition, alert: UserAlert)(implicit
+  def evaluateCondition(cond: AlertCondition, alert: UserAlert)(using
       env: Env,
       ec: ExecutionContext
   ): Future[AlertConditionEval] = {
@@ -131,12 +131,12 @@ object AlertEvaluator {
           (result.data \ "series").asOpt[Seq[JsValue]].flatMap(_.headOption).flatMap { s =>
             (s \ "points").asOpt[Seq[JsValue]]
           }
-        val points            = singlePoints.orElse(firstSeriesPoints).getOrElse(Seq.empty)
+        val points            = singlePoints.orElse(firstSeriesPoints).getOrElse(Seq.empty).toSeq
         val values            = points.flatMap(p => (p \ "value").asOpt[Double])
         reduceValues(values, reducer)
 
       case AnalyticsShape.TopN | AnalyticsShape.Pie =>
-        val items  = (result.data \ "items").asOpt[Seq[JsValue]].getOrElse(Seq.empty)
+        val items  = (result.data \ "items").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq
         val values = items.flatMap(i => (i \ "value").asOpt[Double])
         reduceValues(values, reducer)
 

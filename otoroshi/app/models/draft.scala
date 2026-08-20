@@ -6,8 +6,8 @@ import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,7 +23,7 @@ case class Draft(
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.draftsDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env) = env.datastores.draftsDataStore.set(this)
   override def internalId: String                     = id
   override def json: JsValue                          = Draft.format.writes(this)
   override def theName: String                        = name
@@ -58,7 +58,7 @@ object Draft {
         content = (json \ "content").asOpt[JsValue].getOrElse(Json.obj()),
         kind = (json \ "kind").asOpt[String].getOrElse(""),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    =>
@@ -78,7 +78,7 @@ object Draft {
       env: Env
   ): Future[Either[JsValue, Draft]] = {
 
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
     entity.id
       .split("_")
@@ -87,7 +87,7 @@ object Draft {
         case "api-subscription" =>
           ApiSubscription.format.reads(entity.content) match {
             case JsSuccess(value, _) =>
-              ApiSubscription.validate(value.apiRef, value, action, isDraft = true)(env).map {
+              ApiSubscription.validate(value.apiRef, value, action, isDraft = true)(using env).map {
                 case Left(r)  => JsString(r).left
                 case Right(r) => entity.right
               }
@@ -111,7 +111,7 @@ trait DraftDataStore extends BasicStore[Draft] {
       content = Json.obj()
     )
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .draft
       .map { template =>
@@ -125,7 +125,7 @@ trait DraftDataStore extends BasicStore[Draft] {
 
 class KvDraftDataStore(redisCli: RedisLike, _env: Env) extends DraftDataStore with RedisLikeStore[Draft] {
   override def fmt: Format[Draft]                      = Draft.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:drafts:$id"
   override def extractId(value: Draft): String         = value.id
 }

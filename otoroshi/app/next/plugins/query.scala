@@ -1,15 +1,15 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import scala.concurrent.ExecutionContext
-import scala.util._
+import scala.util.*
 
 case class QueryTransformerConfig(
     remove: Seq[String] = Seq.empty,
@@ -28,7 +28,7 @@ object QueryTransformerConfig {
     )
     override def reads(json: JsValue): JsResult[QueryTransformerConfig] = Try {
       QueryTransformerConfig(
-        remove = json.select("remove").asOpt[Seq[String]].getOrElse(Seq.empty),
+        remove = json.select("remove").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         rename = json.select("rename").asOpt[Map[String, String]].getOrElse(Map.empty),
         add = json.select("add").asOpt[Map[String, String]].getOrElse(Map.empty)
       )
@@ -57,7 +57,7 @@ class QueryTransformer extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config                                  = ctx.cachedConfig(internalName)(QueryTransformerConfig.format).getOrElse(QueryTransformerConfig())
     val uri                                     = ctx.otoroshiRequest.uri
     val queryRemoved: Map[String, List[String]] = config.remove.foldLeft(uri.query().toMultiMap) { case (query, name) =>
@@ -73,7 +73,7 @@ class QueryTransformer extends NgRequestTransformer {
       query.+((key, List(value)))
     }
     val added: Seq[(String, String)]            = queryAdded.toSeq.flatMap(t => t._2.map(v => (t._1, v)))
-    val newUri                                  = uri.copy(rawQueryString = None).withQuery(Uri.Query.apply(added: _*))
+    val newUri                                  = uri.copy(rawQueryString = None).withQuery(Uri.Query.apply(added*))
     ctx.otoroshiRequest.copy(url = newUri.toString()).right
   }
 }

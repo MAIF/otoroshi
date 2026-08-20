@@ -1,20 +1,20 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.IpFiltering
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{Result, Results}
 
 import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -60,9 +60,9 @@ case class Fail2BanConfig(
     if (urlRegex.isEmpty) true
     else {
       urlRegex.find(_.matches(pathAndQuery)) match {
-        case None                                              => true
         case Some(rule) if rule.mode.equalsIgnoreCase("allow") => true
         case Some(rule) if rule.mode.equalsIgnoreCase("block") => false
+        case _                                                 => true
       }
     }
   }
@@ -166,11 +166,11 @@ object Fail2BanConfig {
       val banMs      = parseDurationMillis((js \ "ban_time").asOpt[JsValue].getOrElse(JsString("15m")))
       val identifier = (js \ "identifier").asOpt[String].getOrElse("${req.ip}")
       val maxRetry   = (js \ "max_retry").asOpt[Int].getOrElse(5)
-      val regexes    = (js \ "url_regex").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { obj => RegexRule(obj) }
+      val regexes    = (js \ "url_regex").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map { obj => RegexRule(obj) }
       val scodes     = (js \ "status_codes").asOpt[Seq[String]].getOrElse(Seq("401", "403", "429", "500-599"))
       val ranges     = parseStatusRanges(scodes).getOrElse(defaultRanges)
-      val ignored    = (js \ "ignored").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val blocked    = (js \ "blocked").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val ignored    = (js \ "ignored").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+      val blocked    = (js \ "blocked").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       Fail2BanConfig(
         identifier = identifier,
         detectTimeMs = detectMs,
@@ -297,7 +297,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
       "Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the 'identifier' that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc."
     )
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
@@ -334,7 +334,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
@@ -363,7 +363,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
@@ -391,7 +391,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
 
   override def afterRequest(
       ctx: NgAfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val conf           = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)

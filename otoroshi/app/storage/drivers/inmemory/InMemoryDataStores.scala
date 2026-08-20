@@ -1,11 +1,11 @@
 package otoroshi.storage.drivers.inmemory
 
-import akka.NotUsed
-import akka.actor.ActorSystem
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
 import next.models.{
   ApiDataStore,
@@ -20,17 +20,17 @@ import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.analytics.models.{KvUserDashboardDataStore, UserDashboardDataStore}
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage.stores._
+import otoroshi.storage.stores.*
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore, SwappableRedisLikeMetricsWrapper}
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
 import scala.collection.concurrent.TrieMap
@@ -66,7 +66,7 @@ class InMemoryDataStores(
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
   }
 
-  def redis(): otoroshi.storage.RedisLike = swredis
+  def redis: otoroshi.storage.RedisLike = swredis
 
   lazy val persistence = persistenceKind match {
     case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)
@@ -89,7 +89,7 @@ class InMemoryDataStores(
         _serviceDescriptorDataStore.startCleanup(env)
         _certificateDataStore.startSync()
         FastFuture.successful(())
-      }(actorSystem.dispatcher)
+      }(using actorSystem.dispatcher)
   }
 
   override def after(
@@ -105,7 +105,7 @@ class InMemoryDataStores(
       .flatMap { _ =>
         actorSystem.terminate()
         FastFuture.successful(())
-      }(actorSystem.dispatcher)
+      }(using actorSystem.dispatcher)
   }
 
   private lazy val _privateAppsUserDataStore   = new KvPrivateAppsUserDataStore(redis, env)
@@ -208,10 +208,10 @@ class InMemoryDataStores(
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(using ec)
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -266,11 +266,11 @@ class InMemoryDataStores(
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -308,15 +308,15 @@ class InMemoryDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -331,8 +331,8 @@ class InMemoryDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -349,24 +349,24 @@ class InMemoryDataStores(
 
   private def toJson(value: Any): (String, JsValue) = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     value match {
       case str: String                                                     => ("string", JsString(str))
       case str: ByteString                                                 => ("string", JsString(str.utf8String))
       case lng: Long                                                       => ("string", JsString(lng.toString))
       case lng: java.util.concurrent.atomic.AtomicLong                     => ("string", JsString(lng.get().toString))
-      case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] =>
+      case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] @unchecked =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case map: TrieMap[String, ByteString]                                =>
+      case map: TrieMap[String, ByteString] @unchecked                               =>
         ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     =>
+      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] @unchecked    =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case list: scala.collection.mutable.MutableList[ByteString]          =>
+      case list: scala.collection.mutable.ListBuffer[ByteString] @unchecked         =>
         ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
-      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       =>
+      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] @unchecked      =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case set: scala.collection.mutable.HashSet[ByteString]               =>
+      case set: scala.collection.mutable.HashSet[ByteString] @unchecked              =>
         ("set", JsArray(set.toSeq.map(a => JsString(a.utf8String))))
       case _                                                               => ("none", JsNull)
     }

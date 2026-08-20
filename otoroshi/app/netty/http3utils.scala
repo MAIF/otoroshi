@@ -23,7 +23,7 @@ import io.netty.handler.codec.http.HttpScheme
 import io.netty.handler.codec.http.HttpUtil
 import io.netty.handler.codec.http.HttpVersion
 import io.netty.handler.codec.http.LastHttpContent
-import io.netty.incubator.codec.http3.{
+import io.netty.handler.codec.http3.{
   DefaultHttp3DataFrame,
   DefaultHttp3HeadersFrame,
   Http3ConversionUtil,
@@ -31,8 +31,8 @@ import io.netty.incubator.codec.http3.{
   Http3RequestStreamInboundHandler,
   HttpConversionUtil
 }
-import io.netty.incubator.codec.quic.QuicStreamChannel
-import otoroshi.utils.syntax.implicits._
+import io.netty.handler.codec.quic.QuicStreamChannel
+import otoroshi.utils.syntax.implicits.*
 
 import java.net.SocketAddress;
 
@@ -52,7 +52,7 @@ class CustomHttp3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandl
     }
     if (isLast) {
       if (headers.method() == null && status == null) {
-        val last = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, validateHeaders)
+        val last = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER)
         Http3ConversionUtil.addHttp3ToHttpHeaders(id, headers, last.trailingHeaders(), HttpVersion.HTTP_1_1, true, true)
         ctx.fireChannelRead(last)
       } else {
@@ -78,7 +78,7 @@ class CustomHttp3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandl
 
   override def channelRead(
       ctx: ChannelHandlerContext,
-      frame: io.netty.incubator.codec.http3.Http3DataFrame
+      frame: io.netty.handler.codec.http3.Http3DataFrame
   ): Unit = {
     val isLast = false
     if (isLast) {
@@ -131,7 +131,7 @@ class CustomHttp3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandl
     }
   }
 
-  def toHttp3Headers(msg: HttpMessage): io.netty.incubator.codec.http3.Http3Headers = {
+  def toHttp3Headers(msg: HttpMessage): io.netty.handler.codec.http3.Http3Headers = {
     msg match {
       case r: HttpRequest => msg.headers().set(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), HttpScheme.HTTPS)
       case _              =>
@@ -139,13 +139,13 @@ class CustomHttp3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandl
     Http3ConversionUtil.toHttp3Headers(msg, validateHeaders)
   }
 
-  def newMessage(id: Long, headers: io.netty.incubator.codec.http3.Http3Headers): HttpMessage = {
+  def newMessage(id: Long, headers: io.netty.handler.codec.http3.Http3Headers): HttpMessage = {
     Http3ConversionUtil.toHttpRequest(id, headers, validateHeaders)
   }
 
   def newFullMessage(
       id: Long,
-      headers: io.netty.incubator.codec.http3.Http3Headers,
+      headers: io.netty.handler.codec.http3.Http3Headers,
       alloc: ByteBufAllocator
   ): FullHttpMessage = {
     Http3ConversionUtil.toFullHttpRequest(id, headers, alloc, validateHeaders)

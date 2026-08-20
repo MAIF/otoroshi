@@ -1,13 +1,13 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.gzip.GzipFlow
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc.Result
 
@@ -46,7 +46,7 @@ class NgHtmlPatcher extends NgRequestTransformer {
     "This plugin can inject elements in html pages (in the body or in the head) returned by the service".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHtmlPatcherConfig().some
 
-  private def applyEl(str: String, ctx: NgTransformerResponseContext)(implicit env: Env): String = {
+  private def applyEl(str: String, ctx: NgTransformerResponseContext)(using env: Env): String = {
     GlobalExpressionLanguage(
       value = str,
       req = ctx.request.some,
@@ -62,15 +62,15 @@ class NgHtmlPatcher extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.rawResponse.headers.get("Content-Type").orElse(ctx.rawResponse.headers.get("content-type")) match {
       case Some(ctype) if ctype.contains("text/html") => {
         val newHeaders    =
           ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
         val isGzip        = ctx.otoroshiResponse.headers.getIgnoreCase("Content-Encoding").contains("gzip")
         val newBodySource = Source.future(
-          ctx.otoroshiResponse.body
-            .applyOnIf(isGzip)(_.via(GzipFlow.gunzip()))
+          (ctx.otoroshiResponse.body: org.apache.pekko.stream.scaladsl.Source[org.apache.pekko.util.ByteString, Any])
+            .applyOnIf(isGzip)(src => src.via(GzipFlow.gunzip()))
             .runFold(ByteString.empty)(_ ++ _)
             .map { bodyRaw =>
               val body                = bodyRaw.utf8String
@@ -78,22 +78,22 @@ class NgHtmlPatcher extends NgRequestTransformer {
                 .select("appendHead")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_head").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val prependHead         = ctx.config
                 .select("prependHead")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("prepend_head").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val appendBody          = ctx.config
                 .select("appendBody")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_body").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val prependBody         = ctx.config
                 .select("prependBody")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("prepend_body").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val beforeHeadInjection = applyEl(prependHead.mkString(""), ctx)
               val afterHeadInjection  = applyEl(appendHead.mkString(""), ctx)
               val beforeBodyInjection = applyEl(prependBody.mkString(""), ctx)

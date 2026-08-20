@@ -1,9 +1,9 @@
 package otoroshi.utils.syntax
 
-import akka.NotUsed
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
@@ -15,7 +15,7 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.{AsyncUtils, JsonPathUtils, Regex, RegexPool, TypedMap}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSProxyServer}
 import play.api.mvc.Cookie
 import play.api.{ConfigLoader, Configuration, Logger}
@@ -28,7 +28,7 @@ import java.security.MessageDigest
 import java.security.cert.{CertificateFactory, X509Certificate}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
-import scala.collection.TraversableOnce
+import scala.collection.IterableOnce
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
@@ -256,7 +256,7 @@ object implicits {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
   }
   implicit class BetterString(private val obj: String)         extends AnyVal {
-    import otoroshi.utils.string.Implicits._
+    import otoroshi.utils.string.Implicits.*
     def slugify: String                                        = obj.slug
     def slugifyWithSlash: String                               = obj.slug2
     def wildcard: Regex                                        = RegexPool.apply(obj)
@@ -285,7 +285,7 @@ object implicits {
         .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(obj)))
         .asInstanceOf[X509Certificate]
     }
-    def evaluateEl(attrs: TypedMap)(implicit env: Env): String = GlobalExpressionLanguage.apply(obj, attrs, env)
+    def evaluateEl(attrs: TypedMap)(using env: Env): String = GlobalExpressionLanguage.apply(obj, attrs, env)
   }
   implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
@@ -390,7 +390,7 @@ object implicits {
         case JsBoolean(v)    => v.toString.some
         case o @ JsObject(_) => o.stringify.some
         case a @ JsArray(_)  => a.stringify.some
-        case _               => None
+        // case _               => None
       }
     }
   }
@@ -427,15 +427,15 @@ object implicits {
   }
   implicit class BetterFuture[A](private val obj: Future[A])           extends AnyVal {
     def block(atMost: Duration): A                                            = Await.result(obj, atMost)
-    def awaitf(atMost: Duration)(implicit ec: ExecutionContext): A            = Await.result(obj, atMost)
-    def awaitfsafe(atMost: Duration)(implicit ec: ExecutionContext): Try[A]   = Try(Await.result(obj, atMost))
-    def mono(implicit ec: ExecutionContext): Mono[A]                          = ReactiveStreamUtils.MonoUtils.fromFuture(obj)
-    def fleft[B](implicit ec: ExecutionContext): Future[Either[A, B]]         = obj.map(v => Left(v))
-    def fright[B](implicit ec: ExecutionContext): Future[Either[B, A]]        = obj.map(v => Right(v))
-    def asLeft[R](implicit executor: ExecutionContext): Future[Either[A, R]]  = obj.map(a => Left[A, R](a))
-    def asRight[R](implicit executor: ExecutionContext): Future[Either[R, A]] = obj.map(a => Right[R, A](a))
-    def fold[U](pf: PartialFunction[Try[A], U])(implicit executor: ExecutionContext): Future[U] = {
-      val promise = Promise[U]
+    def awaitf(atMost: Duration)(using ec: ExecutionContext): A            = Await.result(obj, atMost)
+    def awaitfsafe(atMost: Duration)(using ec: ExecutionContext): Try[A]   = Try(Await.result(obj, atMost))
+    def mono(using ec: ExecutionContext): Mono[A]                          = ReactiveStreamUtils.MonoUtils.fromFuture(obj)
+    def fleft[B](using ec: ExecutionContext): Future[Either[A, B]]         = obj.map(v => Left(v))
+    def fright[B](using ec: ExecutionContext): Future[Either[B, A]]        = obj.map(v => Right(v))
+    def asLeft[R](using executor: ExecutionContext): Future[Either[A, R]]  = obj.map(a => Left[A, R](a))
+    def asRight[R](using executor: ExecutionContext): Future[Either[R, A]] = obj.map(a => Right[R, A](a))
+    def fold[U](pf: PartialFunction[Try[A], U])(using executor: ExecutionContext): Future[U] = {
+      val promise = Promise[U]()
       obj.andThen {
         case underlying: Try[A] => {
           try {
@@ -448,8 +448,8 @@ object implicits {
       promise.future
     }
 
-    def foldM[U](pf: PartialFunction[Try[A], Future[U]])(implicit executor: ExecutionContext): Future[U] = {
-      val promise = Promise[U]
+    def foldM[U](pf: PartialFunction[Try[A], Future[U]])(using executor: ExecutionContext): Future[U] = {
+      val promise = Promise[U]()
       obj.andThen {
         case underlying: Try[A] => {
           try {
@@ -466,7 +466,7 @@ object implicits {
     }
     def filterWithCause(cause: String, include: Boolean = false)(
         f: A => Boolean
-    )(implicit ec: ExecutionContext): Future[A] = {
+    )(using ec: ExecutionContext): Future[A] = {
       obj.transform { t =>
         if (t.isSuccess) {
           val value = t.asInstanceOf[Success[A]].value
@@ -499,7 +499,7 @@ object implicits {
   }
   implicit class BetterConfiguration(val configuration: Configuration) extends AnyVal {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     private def readFromFile[A](path: String, loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
       val file = new File(path)
@@ -508,7 +508,7 @@ object implicits {
           val content = Files.readAllLines(file.toPath).asScala.mkString("\n").trim
           Try {
             val config = Configuration(ConfigFactory.parseString(s"""value=${content}""".stripMargin))
-            config.getOptional[A]("value")(loader)
+            config.getOptional[A]("value")(using loader)
           } match {
             case Failure(_)     =>
               classTag.runtimeClass.getName match {
@@ -560,17 +560,17 @@ object implicits {
       configuration.has(path)
     }
 
-    def betterGet[A](_path: String)(implicit loader: ConfigLoader[A]): A = {
-      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
-      configuration.get[A](path)(loader)
+    def betterGet[A](_path: String)(using loader: ConfigLoader[A]): A = {
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(using loader))
+      configuration.get[A](path)(using loader)
     }
 
-    def betterGetOptional[A](_path: String)(implicit loader: ConfigLoader[A]): Option[A] = {
-      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
-      configuration.getOptional[A](path)(loader)
+    def betterGetOptional[A](_path: String)(using loader: ConfigLoader[A]): Option[A] = {
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(using loader))
+      configuration.getOptional[A](path)(using loader)
     }
 
-    def getOpt[A](path: String)(implicit loader: ConfigLoader[A]): Option[A] = {
+    def getOpt[A](path: String)(using loader: ConfigLoader[A]): Option[A] = {
       try {
         if (configuration.underlying.hasPath(path)) Some(configuration.get[A](path)) else None
       } catch {
@@ -580,11 +580,11 @@ object implicits {
 
     def getOptionalWithFileSupport[A](
         _path: String
-    )(implicit loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
-      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
-      Try(configuration.getOptional[A](path)(loader)).toOption.flatten match {
+    )(using loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(using loader))
+      Try(configuration.getOptional[A](path)(using loader)).toOption.flatten match {
         case None        =>
-          Try(configuration.getOptional[String](path)(ConfigLoader.stringLoader)).toOption.flatten match {
+          Try(configuration.getOptional[String](path)(using ConfigLoader.stringLoader)).toOption.flatten match {
             case Some(v) if v.startsWith("file://") => readFromFile[A](v.replace("file://", ""), loader, classTag)
             case _                                  => None
           }
@@ -631,8 +631,8 @@ object implicits {
     }
   }
   implicit class BetterFiniteDuration(val duration: FiniteDuration)           extends AnyVal {
-    def timeout(implicit env: Env, ec: ExecutionContext): Future[Unit] = await(env, ec)
-    def await(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    def timeout(using env: Env, ec: ExecutionContext): Future[Unit] = await(using env, ec)
+    def await(using env: Env, ec: ExecutionContext): Future[Unit] = {
       val promise = Promise.apply[Unit]()
       env.otoroshiScheduler.scheduleOnce(duration) {
         promise.trySuccess(())
@@ -683,12 +683,12 @@ object implicits {
   }
   implicit class BetterTrieMapOfStringAndB[B](val theMap: TrieMap[String, B]) extends AnyVal {
     def add(tuple: (String, B)): TrieMap[String, B]                         = theMap.+=(tuple)
-    def addAll(all: TraversableOnce[(String, B)]): TrieMap[String, B]       = theMap.++=(all)
+    def addAll(all: IterableOnce[(String, B)]): TrieMap[String, B]       = theMap.++=(all)
     def rem(key: String): TrieMap[String, B]                                = theMap.-=(key)
     def remIgnoreCase(key: String): TrieMap[String, B]                      = theMap.-=(key).-=(key.toLowerCase())
-    def remAll(keys: TraversableOnce[String]): TrieMap[String, B]           = theMap.--=(keys)
-    def remAllIgnoreCase(keys: TraversableOnce[String]): TrieMap[String, B] =
-      theMap.--=(keys).--=(keys.map(_.toLowerCase()))
+    def remAll(keys: IterableOnce[String]): TrieMap[String, B]           = theMap.--=(keys)
+    def remAllIgnoreCase(keys: IterableOnce[String]): TrieMap[String, B] =
+      theMap.--=(keys).--=(keys.iterator.map(_.toLowerCase()))
     def containsIgnoreCase(key: String): Boolean                            = theMap.contains(key) || theMap.contains(key.toLowerCase())
     def getIgnoreCase(key: String): Option[B]                               = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
     def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B]         = remIgnoreCase(tuple._1).add(tuple)
@@ -710,50 +710,40 @@ object implicits {
     }
 
     def findFirstSome[B](f: A => Option[B]): Option[B] = {
-      if (seq.isEmpty) {
-        None
-      } else {
-        for (a <- seq) {
-          val res = f(a)
-          if (res.isDefined) {
-            return res
-          }
-        }
-        None
-      }
+      seq.iterator.map(f).collectFirst { case Some(b) => b }
     }
 
-    def mapAsync[O](f: Function[A, Future[O]])(implicit ec: ExecutionContext): Future[Seq[O]] = {
+    def mapAsync[O](f: Function[A, Future[O]])(using ec: ExecutionContext): Future[Seq[O]] = {
       AsyncUtils.mapAsyncF[A, O](seq)(f)
     }
 
-    def flatmapAsync[O](f: Function[A, Future[Seq[O]]])(implicit ec: ExecutionContext): Future[Seq[O]] = {
+    def flatmapAsync[O](f: Function[A, Future[Seq[O]]])(using ec: ExecutionContext): Future[Seq[O]] = {
       AsyncUtils.flatmapAsyncF[A, O](seq)(f)
     }
 
-    def filterAsync(f: Function[A, Future[Boolean]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+    def filterAsync(f: Function[A, Future[Boolean]])(using ec: ExecutionContext): Future[Seq[A]] = {
       AsyncUtils.filterAsyncF[A](seq)(f)
     }
 
-    def findAsync(f: Function[A, Future[Boolean]])(implicit ec: ExecutionContext): Future[Option[A]] = {
+    def findAsync(f: Function[A, Future[Boolean]])(using ec: ExecutionContext): Future[Option[A]] = {
       AsyncUtils.findAsyncF[A](seq)(f)
     }
 
-    def existsAsync(f: Function[A, Future[Boolean]])(implicit ec: ExecutionContext): Future[Boolean] = {
+    def existsAsync(f: Function[A, Future[Boolean]])(using ec: ExecutionContext): Future[Boolean] = {
       AsyncUtils.findAsyncF[A](seq)(f).map(_.isDefined)
     }
 
-    def foreachAsync[O](f: Function[A, Future[O]])(implicit ec: ExecutionContext): Future[Unit] = {
+    def foreachAsync[O](f: Function[A, Future[O]])(using ec: ExecutionContext): Future[Unit] = {
       AsyncUtils.foreachAsyncF[A, O](seq)(f)
     }
 
-    def chainAsync[I](input: I)(f: Function2[A, I, Future[I]])(implicit ec: ExecutionContext): Future[I] = {
+    def chainAsync[I](input: I)(f: Function2[A, I, Future[I]])(using ec: ExecutionContext): Future[I] = {
       AsyncUtils.chainAsyncF[A, I](seq)(input)(f)
     }
 
     def chainAsyncE[Err, I](
         input: I
-    )(f: Function2[A, I, Future[Either[Err, I]]])(implicit ec: ExecutionContext): Future[Either[Err, I]] = {
+    )(f: Function2[A, I, Future[Either[Err, I]]])(using ec: ExecutionContext): Future[Either[Err, I]] = {
       AsyncUtils.chainAsyncFE[Err, A, I](seq)(input)(f)
     }
   }

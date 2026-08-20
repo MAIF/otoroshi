@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.NotUsed
-import akka.stream.FlowShape
-import akka.stream.scaladsl.{Flow, Tcp}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.FlowShape
+import org.apache.pekko.stream.scaladsl.{Flow, Tcp}
+import org.apache.pekko.util.ByteString
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{
@@ -41,7 +41,7 @@ class TcpTunnel extends NgTunnelHandler {
 
   override def handle(
       ctx: NgTunnelHandlerContext
-  )(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _] = {
+  )(using env: Env, ec: ExecutionContext): Flow[Message, Message, ?] = {
     val target                          = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).get
     val elCtx                           = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)
     val apikey                          = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
@@ -80,7 +80,7 @@ class TcpTunnel extends NgTunnelHandler {
     if (logger.isDebugEnabled) logger.debug("------------------------------------------------------------")
     if (logger.isDebugEnabled) logger.debug("")
     if (logger.isDebugEnabled) logger.debug("")
-    val flow: Flow[Message, Message, _] =
+    val flow: Flow[Message, Message, ?] =
       Flow[Message]
         .collect {
           case BinaryMessage(data) =>
@@ -92,7 +92,7 @@ class TcpTunnel extends NgTunnelHandler {
             ByteString.empty
         }
         .via(
-          Tcp()(env.otoroshiActorSystem)
+          Tcp()(using env.otoroshiActorSystem)
             .outgoingConnection(
               remoteAddress = remoteAddress,
               connectTimeout = ctx.route.backend.client.connectionTimeout.millis,
@@ -124,9 +124,9 @@ class UdpTunnel extends NgTunnelHandler {
 
   override def handle(
       ctx: NgTunnelHandlerContext
-  )(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _] = {
-    import akka.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
-    import GraphDSL.Implicits._
+  )(using env: Env, ec: ExecutionContext): Flow[Message, Message, ?] = {
+    import org.apache.pekko.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
+    import GraphDSL.Implicits.*
     val base64decoder                   = java.util.Base64.getDecoder
     val base64encoder                   = java.util.Base64.getEncoder
     val target                          = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).get
@@ -179,7 +179,7 @@ class UdpTunnel extends NgTunnelHandler {
 
     val updFlow: Flow[Datagram, Datagram, Future[InetSocketAddress]] =
       UdpClient
-        .flow(new InetSocketAddress("0.0.0.0", 0))(env.otoroshiActorSystem)
+        .flow(new InetSocketAddress("0.0.0.0", 0))(using env.otoroshiActorSystem)
 
     def nothing[T]: Flow[T, T, NotUsed] = Flow[T].map(identity)
 

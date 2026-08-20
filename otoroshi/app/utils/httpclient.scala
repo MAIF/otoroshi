@@ -1,22 +1,23 @@
 package otoroshi.utils.http
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Limitable, SizeLimit}
-import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
-import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
-import akka.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, OverflowStrategy, QueueOfferResult}
-import akka.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Limitable, SizeLimit}
+import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
+import org.apache.pekko.http.scaladsl.model.*
+import org.apache.pekko.http.scaladsl.model.headers.*
+import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
+import org.apache.pekko.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import com.google.common.base.Charsets
-import com.typesafe.sslconfig.akka.AkkaSSLConfig
+
+import java.nio.charset.StandardCharsets
+import com.typesafe.sslconfig.pekko.PekkoSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
@@ -25,24 +26,24 @@ import otoroshi.gateway.{RequestTimeoutException, Timeout}
 import otoroshi.netty.{NettyClientConfig, NettyHttpClient}
 import otoroshi.next.models.NgOverflowStrategy
 import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.ws._
+import play.api.libs.json.*
+import play.api.libs.ws.*
 import play.api.mvc.MultipartFormData
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import reactor.netty.http.client.HttpClient
 
 import java.io.{File, FileOutputStream}
 import java.net.{InetAddress, InetSocketAddress, URI}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import javax.net.ssl.SSLContext
+import javax.net.ssl.{SSLContext, SSLEngine}
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.TreeMap
-import scala.concurrent.duration.{Duration, _}
+import scala.concurrent.duration.{Duration, *}
 import scala.concurrent.{Await, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
@@ -91,7 +92,7 @@ case class MtlsConfig(
           val dn = DN(id)
           DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
             cert.certificate.exists { c =>
-              val otherDn = DN(c.getSubjectDN.getName)
+              val otherDn = DN(c.getSubjectX500Principal.getName)
               dn.isEqualsTo(otherDn)
             }
           } filter { cert =>
@@ -110,7 +111,7 @@ case class MtlsConfig(
           val dn = DN(id)
           DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
             cert.certificate.exists { c =>
-              val otherDn = DN(c.getSubjectDN.getName)
+              val otherDn = DN(c.getSubjectX500Principal.getName)
               dn.isEqualsTo(otherDn)
             }
           } filter { cert =>
@@ -122,7 +123,7 @@ case class MtlsConfig(
     }
   }
   def json: JsValue       = MtlsConfig.format.writes(this)
-  def toJKS(implicit env: Env): (java.io.File, java.io.File, String) = {
+  def toJKS(using env: Env): (java.io.File, java.io.File, String) = {
     val password      = IdGenerator.token
     val path1         = java.nio.file.Files.createTempFile("oto-kafka-keystore-", ".jks")
     val path2         = java.nio.file.Files.createTempFile("oto-kafka-truststore-", ".jks")
@@ -158,11 +159,11 @@ object MtlsConfig {
             .asOpt[Seq[String]]
             .orElse((json \ "certId").asOpt[String].map(v => Seq(v)))
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           trustedCerts = (json \ "trustedCerts")
             .asOpt[Seq[String]]
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           mtls = (json \ "mtls").asOpt[Boolean].orElse((json \ "tls").asOpt[Boolean]).getOrElse(false),
           loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
           trustAll = (json \ "trustAll").asOpt[Boolean].getOrElse(false)
@@ -282,7 +283,7 @@ class WsClientChooser(
     if (enforceNettyOnAkka || enforceAll) {
       nettyClient.url(url).withClientConfig(clientConfig)
     } else {
-      new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig, env = env)(
+      new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig, env = env)(using 
         akkaClient.mat
       )
     }
@@ -319,7 +320,7 @@ class WsClientChooser(
         HttpProtocols.`HTTP/1.1`,
         clientConfig = ClientConfig(),
         env = env
-      )(
+      )(using 
         akkaClient.mat
       )
     }
@@ -335,7 +336,7 @@ class WsClientChooser(
         HttpProtocols.`HTTP/1.1`,
         clientConfig = clientConfig,
         env = env
-      )(
+      )(using 
         akkaClient.mat
       )
     }
@@ -344,7 +345,7 @@ class WsClientChooser(
     if (enforceNettyOnAkka || enforceAll) {
       nettyClient.url(url).withClientConfig(clientConfig).withProtocol("HTTP/2.0")
     } else {
-      new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/2.0`, clientConfig = clientConfig, env = env)(
+      new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/2.0`, clientConfig = clientConfig, env = env)(using 
         akkaClient.mat
       )
     }
@@ -373,7 +374,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       }
@@ -401,7 +402,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       case "https" if useAkkaHttpClient || fullAkka                   =>
@@ -412,7 +413,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
 
@@ -433,7 +434,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       case "ahc:https" =>
@@ -444,7 +445,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
 
@@ -456,7 +457,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       case "ahttps"                   =>
@@ -467,7 +468,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       case "mtls:https"               =>
@@ -478,7 +479,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       case "mtls"                     =>
@@ -489,7 +490,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       case p if p.startsWith("mtls#") => {
@@ -516,7 +517,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       }
@@ -528,7 +529,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/2.0`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       case "http2s"                   =>
@@ -539,7 +540,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/2.0`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
 
@@ -551,7 +552,7 @@ class WsClientChooser(
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
           env = env
-        )(
+        )(using 
           akkaClient.mat
         )
       case _ if !(useAkkaHttpClient || fullAkka) => standardClient.url(url)
@@ -662,7 +663,7 @@ object SSLConfigSettingsCustomizer {
   }
 }
 
-class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem, materializer: Materializer)
+class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, materializer: Materializer)
     extends WSClient {
 
   val ec     = system.dispatcher
@@ -679,33 +680,34 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
 
   private[utils] val logger                         = Logger("otoroshi-akka-ws-client")
   private[utils] val wsClientConfig: WSClientConfig = config
-  private[utils] val akkaSSLConfig: AkkaSSLConfig   = AkkaSSLConfig(system).withSettings(
-    config.ssl
-      // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
-      // .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
-      .withSslParametersConfig(
-        config.ssl.sslParametersConfig
-          .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
-      )
-      .withDefault(false)
-  )
-  private[utils] val akkaSSLLooseConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
-    config.ssl
-      // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
-      //.callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
-      .withLoose(config.ssl.loose.withAcceptAnyCertificate(true).withDisableHostnameVerification(true))
-      .withSslParametersConfig(
-        config.ssl.sslParametersConfig
-          .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
-      )
-      .withDefault(false)
-  )
+  // private[utils] val akkaSSLConfig: PekkoSSLConfig   = PekkoSSLConfig(system).withSettings(
+  //   config.ssl
+  //     // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
+  //     // .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
+  //     .withSslParametersConfig(
+  //       config.ssl.sslParametersConfig
+  //         .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
+  //     )
+  //     .withDefault(false)
+  // )
+  // private[utils] val akkaSSLLooseConfig: PekkoSSLConfig = PekkoSSLConfig(system).withSettings(
+  //   config.ssl
+  //     // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
+  //     //.callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
+  //     .withLoose(config.ssl.loose.withAcceptAnyCertificate(true).withDisableHostnameVerification(true))
+  //     .withSslParametersConfig(
+  //       config.ssl.sslParametersConfig
+  //         .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
+  //     )
+  //     .withDefault(false)
+  // )
 
   private[utils] val lastSslContext               = new AtomicReference[SSLContext](null)
   private[utils] val connectionContextHolder      =
-    new AtomicReference[HttpsConnectionContext](client.createClientHttpsContext(akkaSSLConfig))
+    new AtomicReference[HttpsConnectionContext](ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = false, SSLContext.getDefault)))
+    //new AtomicReference[HttpsConnectionContext](client.createClientHttpsContext(akkaSSLConfig))
   private[utils] val connectionContextLooseHolder =
-    new AtomicReference[HttpsConnectionContext](connectionContextHolder.get())
+    new AtomicReference[HttpsConnectionContext](ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = false, SSLContext.getDefault)))
 
   // client.validateAndWarnAboutLooseSettings()
 
@@ -725,6 +727,22 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
     .maximumSize(1000)
     .build()
 
+  private[utils] def createSSLEngine(loose: Boolean, clientAuth: Boolean, sslContext: SSLContext): (String, Int) => SSLEngine =
+    (host, port) => {
+      val engine = sslContext.createSSLEngine(host, port)
+      engine.setUseClientMode(true)
+      val params = engine.getSSLParameters
+      params.setNeedClientAuth(clientAuth)
+      // Set endpoint identification algorithm based on loose mode
+      params.setEndpointIdentificationAlgorithm(if (loose) null else "https")
+      engine.setSSLParameters(params)
+      engine
+    }
+
+  private[utils] def createStandardSSLEngine(clientAuth: Boolean, sslContext: SSLContext) = createSSLEngine(loose = false, clientAuth = clientAuth, sslContext = sslContext)
+
+  private[utils] def createLooseSSLEngine(clientAuth: Boolean, sslContext: SSLContext) = createSSLEngine(loose = true, clientAuth = clientAuth, sslContext = sslContext)
+
   private[utils] def executeRequest[T](
       request: HttpRequest,
       loose: Boolean,
@@ -735,7 +753,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
       customizer: ConnectionPoolSettings => ConnectionPoolSettings
   ): Future[HttpResponse] = {
     // TODO: fix warning with
-    // https://github.com/akka/akka/blob/master/akka-stream/src/main/scala/com/typesafe/sslconfig/akka/AkkaSSLConfig.scala#L83-L109
+    // https://github.com/akka/akka/blob/master/akka-stream/src/main/scala/com/typesafe/sslconfig/akka/PekkoSSLConfig.scala#L83-L109
     // https://github.com/lightbend/ssl-config/blob/master/ssl-config-core/src/main/scala/com/typesafe/sslconfig/ssl/SSLContextBuilder.scala#L99-L127
     clientCerts match {
       case certs if (clientCerts ++ trustedCerts).isEmpty  => {
@@ -743,9 +761,11 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
           lastSslContext.set(currentSslContext)
           val connectionContext: HttpsConnectionContext      =
-            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
+            ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = false, currentSslContext))
+            //ConnectionContext.httpsClient(currentSslContext, sslConfig = Some(akkaSSLConfig))
           val connectionContextLoose: HttpsConnectionContext =
-            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
+            ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = false, currentSslContext))
+            //ConnectionContext.httpsClient(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
           connectionContextHolder.set(connectionContext)
           connectionContextLooseHolder.set(connectionContextLoose)
         }
@@ -781,9 +801,11 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val pool = customizer(connectionPoolSettings).withMaxConnections(512)
           val cctx = if (loose) {
-            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
+            ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = true, sslContext))
+            //ConnectionContext.httpsClient(sslContext, sslConfig = Some(akkaSSLLooseConfig))
           } else {
-            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+            ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = true, sslContext))
+            //ConnectionContext.httpsClient(sslContext, sslConfig = Some(akkaSSLConfig))
           }
           if (clientConfig.cacheConnectionSettings.enabled) {
             queueClientRequest(request, pool, cctx, clientConfig.cacheConnectionSettings)
@@ -851,7 +873,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
           FastFuture.failed(
             ClientQueueError("Client queue was closed (pool shut down) while running the request. Try again later.")
           )
-      }(ec)
+      }(using ec)
   }
 
   private[utils] def executeWsRequest[T](
@@ -877,9 +899,11 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
           lastSslContext.set(currentSslContext)
           val connectionContext: HttpsConnectionContext      =
-            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
+            ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = false, currentSslContext))
+            //ConnectionContext.httpsClient(currentSslContext, sslConfig = Some(akkaSSLConfig))
           val connectionContextLoose: HttpsConnectionContext =
-            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
+            ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = false, currentSslContext))
+            //ConnectionContext.httpsClient(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
           connectionContextHolder.set(connectionContext)
           connectionContextLooseHolder.set(connectionContextLoose)
         }
@@ -888,7 +912,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
           clientFlow = clientFlow,
           connectionContext = if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
           settings = customizer(ClientConnectionSettings(system))
-        )(mat)
+        )(using mat)
       }
       case certs if (clientCerts ++ trustedCerts).nonEmpty => {
         if (logger.isDebugEnabled)
@@ -903,16 +927,18 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         // val sslContext = DynamicSSLEngineProvider.setupSslContextFor(clientCerts, trustedCerts, trustAll, env)
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val cctx = if (loose) {
-            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
+            ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = true, sslContext))
+            //ConnectionContext.httpsClient(sslContext, sslConfig = Some(akkaSSLLooseConfig))
           } else {
-            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+            ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = true, sslContext))
+            //ConnectionContext.httpsClient(sslContext, sslConfig = Some(akkaSSLConfig))
           }
           client.singleWebSocketRequest(
             request = request,
             clientFlow = clientFlow,
             connectionContext = cctx,
             settings = customizer(ClientConnectionSettings(system))
-          )(mat)
+          )(using mat)
         }
       }
     }
@@ -924,7 +950,7 @@ case class ClientQueueError(message: String) extends RuntimeException(message) w
 case class CacheConnectionSettings(
     enabled: Boolean = false,
     queueSize: Int = 2048,
-    strategy: NgOverflowStrategy = NgOverflowStrategy.dropNew
+    strategy: NgOverflowStrategy = NgOverflowStrategy.dropTail
 ) {
   def json: JsValue = {
     Json.obj(
@@ -943,10 +969,10 @@ case class AkkWsClientStreamedResponse(
 ) extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
-    val headers                        = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
+    val headers                        = httpResponse.headers.groupBy(_.name()).view.mapValues(_.map(_.value())).toMap.toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
     )
-    val headz                          = TreeMap(headers: _*)(CaseInsensitiveOrdered)
+    val headz                          = TreeMap(headers*)(using CaseInsensitiveOrdered)
     val noContentLengthHeader: Boolean =
       httpResponse.entity.contentLengthOption.isEmpty /*headz.getIgnoreCase("Content-Length").isEmpty*/
     val isContentLengthZero: Boolean   = httpResponse.entity.contentLengthOption.contains(
@@ -981,7 +1007,7 @@ case class AkkWsClientStreamedResponse(
     .getOrElse("")
   private lazy val _bodyAsBytes: ByteString      =
     Await.result(
-      bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat),
+      bodyAsSource.runFold(ByteString.empty)(_ ++ _)(using mat),
       FiniteDuration(10, TimeUnit.MINUTES)
     ) // AWAIT: valid
   private lazy val _bodyAsString: String   = _bodyAsBytes.utf8String
@@ -993,7 +1019,7 @@ case class AkkWsClientStreamedResponse(
   def statusText: String                               = httpResponse.status.defaultMessage()
   def headers: Map[String, Seq[String]]                = allHeaders
   def underlying[T]: T                                 = httpResponse.asInstanceOf[T]
-  def bodyAsSource: Source[ByteString, _] = {
+  def bodyAsSource: Source[ByteString, ?] = {
     if (ClientConfig.logger.isDebugEnabled)
       ClientConfig.logger.debug(s"[httpclient] consuming body in ${requestTimeout}")
     httpResponse.entity.dataBytes.takeWithin(requestTimeout)
@@ -1017,14 +1043,14 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
     extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
-    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
+    val headers = httpResponse.headers.groupBy(_.name()).view.mapValues(_.map(_.value())).toMap.toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
     ) /*++ (if (httpResponse.entity.isChunked()) {
       Seq(("Transfer-Encoding" -> Seq("chunked")))
     } else {
       Seq.empty
     })*/
-    TreeMap(headers: _*)(CaseInsensitiveOrdered)
+    TreeMap(headers*)(using CaseInsensitiveOrdered)
   }
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
@@ -1043,7 +1069,7 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   def statusText: String                               = httpResponse.status.defaultMessage()
   def headers: Map[String, Seq[String]]                = allHeaders
   def underlying[T]: T                                 = httpResponse.asInstanceOf[T]
-  def bodyAsSource: Source[ByteString, _]              = Source.single(rawbody)
+  def bodyAsSource: Source[ByteString, ?]              = Source.single(rawbody)
   override def header(name: String): Option[String]    = headerValues(name).headOption
   override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
   def body: String                                     = _bodyAsString
@@ -1071,11 +1097,11 @@ object WSProxyServerUtils {
   def isIgnoredForHost(hostname: String, nonProxyHosts: Seq[String]): Boolean = {
     Assertions.assertNotNull(hostname, "hostname")
     if (nonProxyHosts.nonEmpty) {
-      val var2: Iterator[_] = nonProxyHosts.iterator
+      val var2: Iterator[?] = nonProxyHosts.iterator
       while ({
         var2.hasNext
       }) {
-        val nonProxyHost: String = var2.next.asInstanceOf[String]
+        val nonProxyHost: String = var2.next().asInstanceOf[String]
         if (this.matchNonProxyHost(hostname, nonProxyHost)) return true
       }
     }
@@ -1116,10 +1142,10 @@ case class AkkaWsClientRequest(
     clientConfig: ClientConfig = ClientConfig(),
     alreadyFailed: AtomicBoolean = AkkaWsClientRequest.atomicFalse,
     env: Env
-)(implicit materializer: Materializer)
+)(using materializer: Materializer)
     extends WSRequest {
 
-  implicit val ec = client.ec
+  implicit val ec: scala.concurrent.ExecutionContext = client.ec
 
   override type Self = WSRequest
 
@@ -1135,7 +1161,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort
-                // host = akka.http.scaladsl.model.Uri.Host(s"${ipAddress}&${u.authority.host.address()}")
+                // host = org.apache.pekko.http.scaladsl.model.Uri.Host(s"${ipAddress}&${u.authority.host.address()}")
               )
             )
           }
@@ -1144,7 +1170,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort,
-                host = akka.http.scaladsl.model.Uri.Host(addr)
+                host = org.apache.pekko.http.scaladsl.model.Uri.Host(addr)
               )
             )
           }
@@ -1152,7 +1178,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort,
-                host = akka.http.scaladsl.model.Uri.Host(InetAddress.getByName(ipAddress))
+                host = org.apache.pekko.http.scaladsl.model.Uri.Host(InetAddress.getByName(ipAddress))
               )
             )
           }
@@ -1167,13 +1193,13 @@ case class AkkaWsClientRequest(
     val connectionTimeout = clientConfig.extractTimeout(relUri, _.connectionTimeout, _.connectionTimeout)
     proxy
       .filter(p =>
-        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
+        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty).toSeq)
       )
       .map { proxySettings =>
         val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
         val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
           case (Some(principal), Some(password)) => {
-            val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+            val auth = org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
             //val realmBuilder = new Realm.Builder(proxySettings.principal.orNull, proxySettings.password.orNull)
             //val scheme: Realm.AuthScheme = proxySettings.protocol.getOrElse("http").toLowerCase(java.util.Locale.ENGLISH) match {
             //  case "http" | "https" => Realm.AuthScheme.BASIC
@@ -1187,7 +1213,7 @@ case class AkkaWsClientRequest(
           }
           case _                                 => ClientTransport.httpsProxy(proxyAddress)
         }
-        a: ConnectionPoolSettings => {
+        (a: ConnectionPoolSettings) => {
           if (ClientConfig.logger.isDebugEnabled)
             ClientConfig.logger.debug(
               s"[httpclient] using idleTimeout: $idleTimeout, connectionTimeout: $connectionTimeout"
@@ -1201,7 +1227,7 @@ case class AkkaWsClientRequest(
                 .withIdleTimeout(idleTimeout)
             )
         }
-      } getOrElse { a: ConnectionPoolSettings =>
+      } getOrElse { (a: ConnectionPoolSettings) =>
       val maybeIpAddress = targetOpt match {
         case None         => None
         case Some(target) =>
@@ -1250,10 +1276,12 @@ case class AkkaWsClientRequest(
     copy(alreadyFailed = af)
   }
 
-  override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest =
+  override def withBody[T](body: T)(using evidence$1: BodyWritable[T]): WSRequest =
     copy(body = evidence$1.transform(body))
 
-  override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers: _*)
+  override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers*)
+  override def withDisableUrlEncoding(disableUrlEncoding: Boolean): Self = this
+  override def addCookies(cookies: play.api.libs.ws.WSCookie*): Self = this
 
   def stream(): Future[WSResponse] = {
     val certs: Seq[Cert]        = targetOpt
@@ -1277,7 +1305,7 @@ case class AkkaWsClientRequest(
       ClientConfig.logger.debug(s"[httpclient] stream request with timeout to ${zeTimeout}")
     if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] start req")
     val failure = Timeout
-      .timeout(Done, zeTimeout)(client.ec, env.otoroshiScheduler)
+      .timeout(Done, zeTimeout)(using client.ec, env.otoroshiScheduler)
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
     val start   = System.currentTimeMillis()
     val reqExec = client
@@ -1338,7 +1366,7 @@ case class AkkaWsClientRequest(
       .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
       .getOrElse(env.longRequestTimeout) // (FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
     val failure = Timeout
-      .timeout(Done, zeTimeout)(client.ec, env.otoroshiScheduler)
+      .timeout(Done, zeTimeout)(using client.ec, env.otoroshiScheduler)
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
     val start   = System.currentTimeMillis()
     val reqExec = client
@@ -1351,7 +1379,7 @@ case class AkkaWsClientRequest(
         clientConfig,
         customizer
       )
-      .flatMap { response: HttpResponse =>
+      .flatMap { (response: HttpResponse) =>
         // FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2)
         val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
         if (alreadyFailed.get()) {
@@ -1484,7 +1512,7 @@ case class AkkaWsClientRequest(
 
   override def withCookies(cookies: WSCookie*): WSRequest = {
     if (cookies.nonEmpty) {
-      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String]).toSeq
       val newCookies = oldCookies :+ cookies.toList
         .map { c =>
           s"${c.name}=${c.value}"
@@ -1501,7 +1529,7 @@ case class AkkaWsClientRequest(
   override def method: String                                                                            = _method.value
   override def queryString: Map[String, Seq[String]]                                                     = _uri.query().toMultiMap
   override def get(): Future[WSResponse]                                                                 = withMethod("GET").execute()
-  override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse]                =
+  override def post[T](body: T)(using evidence$2: BodyWritable[T]): Future[WSResponse]                =
     withMethod("POST")
       .withBody(evidence$2.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$2.contentType)
@@ -1511,7 +1539,7 @@ case class AkkaWsClientRequest(
       .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
-  override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse]               =
+  override def patch[T](body: T)(using evidence$3: BodyWritable[T]): Future[WSResponse]               =
     withMethod("PATCH")
       .withBody(evidence$3.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$3.contentType)
@@ -1521,7 +1549,7 @@ case class AkkaWsClientRequest(
       .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
-  override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse]                 =
+  override def put[T](body: T)(using evidence$4: BodyWritable[T]): Future[WSResponse]                 =
     withMethod("PUT")
       .withBody(evidence$4.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$4.contentType)
@@ -1550,22 +1578,22 @@ case class AkkaWsClientRequest(
       }
     } getOrElse Seq.empty
   }
-  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters: _*)
+  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters*)
   override def withQueryStringParameters(parameters: (String, String)*): WSRequest                       =
-    copy(rawUrl = _uri.withQuery(Uri.Query.apply(parameters: _*)).toString())
+    copy(rawUrl = _uri.withQuery(Uri.Query.apply(parameters*)).toString())
   override def addQueryStringParameters(parameters: (String, String)*): WSRequest = {
     val params: Seq[(String, String)] =
       _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
-    copy(rawUrl = _uri.withQuery(Uri.Query.apply(params: _*)).toString())
+    copy(rawUrl = _uri.withQuery(Uri.Query.apply(params*)).toString())
   }
   override def withProxyServer(proxyServer: WSProxyServer): WSRequest                                    = copy(proxy = Option(proxyServer))
   override def proxyServer: Option[WSProxyServer]                                                        = proxy
-  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]  =
-    post[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    patch[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]   =
-    put[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
+  override def post(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse]  =
+    post[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
+  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse] =
+    patch[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
+  override def put(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse]   =
+    put[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1581,7 +1609,7 @@ case class AkkaWsClientRequest(
     scheme match {
       case WSAuthScheme.BASIC =>
         addHttpHeaders(
-          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(Charsets.UTF_8))}"
+          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(StandardCharsets.UTF_8))}"
         )
       case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }
@@ -1611,10 +1639,10 @@ object Implicits {
         case _                         => req.asInstanceOf[req.Self]
       }
     }
-    def ignore()(implicit mat: Materializer): req.Self = {
+    def ignore()(using mat: Materializer): req.Self = {
       req match {
         case httpRequest: AkkaWsClientRequest =>
-          Try(httpRequest.akkaHttpEntity.dataBytes.runWith(Sink.ignore)(mat)) match {
+          Try(httpRequest.akkaHttpEntity.dataBytes.runWith(Sink.ignore)(using mat)) match {
             case Failure(e) => logger.error("Error while discarding request entity bytes ...", e)
             case _          => ()
           }
@@ -1656,7 +1684,7 @@ object Implicits {
         case _                          => None
       }
     }
-    def ignore()(implicit mat: Materializer): StandaloneWSResponse = {
+    def ignore()(using mat: Materializer): StandaloneWSResponse = {
       resp.underlying[Any] match {
         case httpResponse: HttpResponse =>
           Try(httpResponse.discardEntityBytes()) match {
@@ -1667,7 +1695,7 @@ object Implicits {
         case _                          => resp
       }
     }
-    def ignoreIf(predicate: => Boolean)(implicit mat: Materializer): StandaloneWSResponse = {
+    def ignoreIf(predicate: => Boolean)(using mat: Materializer): StandaloneWSResponse = {
       if (predicate) {
         resp.underlying[Any] match {
           case httpResponse: HttpResponse =>
@@ -1689,7 +1717,7 @@ object ManualResolveTransport {
 
   def resolveTo(address: InetSocketAddress): ClientTransport = {
     new ClientTransport {
-      override def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(implicit
+      override def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(using
           system: ActorSystem
       ): Flow[ByteString, ByteString, Future[Http.OutgoingConnection]] =
         ClientTransport.TCP.connectTo(address.getHostString, address.getPort, settings)
@@ -1701,7 +1729,7 @@ object ManualResolveTransport {
   /*
   private case class ManualResolveTransport() extends ClientTransport {
     def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(
-        implicit system: ActorSystem
+        using system: ActorSystem
     ): Flow[ByteString, ByteString, Future[OutgoingConnection]] = {
       val inetSocketAddress = if (host.contains("&")) {
         val parts      = host.split("&")

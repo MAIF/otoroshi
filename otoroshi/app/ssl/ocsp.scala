@@ -1,9 +1,9 @@
 package otoroshi.ssl
 
 import java.security.cert.X509Certificate
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers
 import org.bouncycastle.asn1.x509.{CRLReason, Extension, Extensions, SubjectPublicKeyInfo}
@@ -28,7 +28,7 @@ import org.bouncycastle.operator.jcajce.{
 }
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.api.libs.json.Json
-import otoroshi.ssl._
+import otoroshi.ssl.*
 import org.joda.time.DateTime
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import play.api.Logger
@@ -36,11 +36,11 @@ import play.api.Logger
 import java.util.Date
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.utils.http.DN
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 
 import java.math.BigInteger
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 object CertParentHelper {
@@ -55,9 +55,9 @@ object CertParentHelper {
 
   def fromOtoroshiRootCa(cert: X509Certificate, level: Int = 0): Boolean = {
     if (logger.isDebugEnabled)
-      logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
+      logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectX500Principal.getName)}")
     if (level > 100) {
-      logger.error(s"failed to find origin for cert ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
+      logger.error(s"failed to find origin for cert ${cert.getSerialNumber} - ${DN(cert.getSubjectX500Principal.getName)}")
       cache.put(cert.getSerialNumber, false)
       false
     } else {
@@ -78,10 +78,10 @@ object CertParentHelper {
                 cache.put(cert.getSerialNumber, true)
                 true
               } else {
-                val issuerDn = DN(cert.getIssuerDN.getName)
+                val issuerDn = DN(cert.getIssuerX500Principal.getName)
                 if (logger.isDebugEnabled) logger.debug(s"searching for $issuerDn")
                 DynamicSSLEngineProvider.certificates.values.find(
-                  _.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(issuerDn))
+                  _.certificate.exists(c => DN(c.getSubjectX500Principal.getName).isEqualsTo(issuerDn))
                 ) match {
                   case None                                                                           =>
                     if (logger.isDebugEnabled) logger.debug("issuer not found")
@@ -91,7 +91,7 @@ object CertParentHelper {
                     if (logger.isDebugEnabled) logger.debug("not from otoroshi")
                     cache.put(cert.getSerialNumber, false)
                     false
-                  case Some(issuer) if cert.getSerialNumber != issuer.certificate.get.getSerialNumber =>
+                  case Some(issuer) =>
                     if (logger.isDebugEnabled) logger.debug("found issuer")
                     fromOtoroshiRootCa(issuer.certificate.get, level + 1)
                 }
@@ -114,7 +114,7 @@ object OcspResponder {
 // test command: openssl ocsp -issuer "ca.cer" -cert "*.oto.tools.cer" -text -urDynamicSSLEngineProviderl http://otoroshi-api.oto.tools:9999/.well-known/otoroshi/ocsp -header "HOST" "otoroshi-api.oto.tools"
 class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
-  private implicit val mat = env.otoroshiMaterializer
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-certificates-ocsp")
 
@@ -122,8 +122,8 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
   val nextUpdateOffset: Int =
     env.configuration.getOptionalWithFileSupport[Int]("app.ocsp.caching.seconds").getOrElse(3600)
 
-  def aia(id: String, req: RequestHeader, possibleCerts: Seq[String])(implicit ec: ExecutionContext): Future[Result] = {
-    import scala.util._
+  def aia(id: String, req: RequestHeader, possibleCerts: Seq[String])(using ec: ExecutionContext): Future[Result] = {
+    import scala.util.*
     if (possibleCerts.isEmpty || (possibleCerts.nonEmpty && possibleCerts.contains(id))) {
       // DynamicSSLEngineProvider.certificates.values.find(c => c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)) match {
       DynamicSSLEngineProvider.certificates.values.find { c =>
@@ -146,7 +146,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def respond(req: RequestHeader, body: Source[ByteString, _], possibleCerts: Seq[String])(implicit
+  def respond(req: RequestHeader, body: Source[ByteString, ?], possibleCerts: Seq[String])(using
       ec: ExecutionContext
   ): Future[Result] = {
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bs =>
@@ -174,8 +174,8 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
   private def manageRequest(ocspReq: OCSPReq, possibleCerts: Seq[BigInteger]): Future[OCSPResp] = {
     for {
-      optRootCA         <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)(ec, env)
-      optIntermediateCA <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)(ec, env)
+      optRootCA         <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)(using ec, env)
+      optIntermediateCA <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)(using ec, env)
     } yield {
       (optRootCA, optIntermediateCA) match {
         case (Some(rootCA), Some(intermediateCA)) if intermediateCA.caFromChain.isDefined =>
@@ -224,8 +224,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
               OCSPRespBuilder.SUCCESSFUL,
               responseBuilder.build(contentSigner, signingCertificateChain, new Date())
             )
-
-        case (None, None) => throw new RuntimeException(s"Missing root CA, intermediate CA or intermediate CA chain")
+        case _ => throw new RuntimeException(s"Missing root CA, intermediate CA or intermediate CA chain")
       }
     }
   }

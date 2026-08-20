@@ -1,7 +1,8 @@
 package plugins
 
-import akka.Done
-import akka.stream.scaladsl.Source
+import org.apache.pekko.Done
+import play.api.libs.ws.WSBodyReadables.given
+import org.apache.pekko.stream.scaladsl.Source
 import com.dimafeng.testcontainers.GenericContainer
 import com.github.dockerjava.api.model.{Bind, ExposedPort, HostConfig, PortBinding, Ports, Volume}
 import functional.PluginsTestSpec
@@ -24,12 +25,12 @@ import java.security.cert.CertificateFactory
 import scala.annotation.tailrec
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
-import scala.sys.process._
+import scala.sys.process.*
 import scala.util.{Failure, Success, Try}
 
 class KubernetesIntegrationTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val instanceId = IdGenerator.uuid
 
@@ -130,7 +131,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
           .trustManager(caCert)
           .keyManager(clientCertFile, clientKeyFile)
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
 
     pureNettyClient
@@ -170,7 +171,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
   }
 
   def callReadyz(container: GenericContainer, token: String) = {
-    println("callReadyz", token)
+    println(("callReadyz", token))
 
     val pureNettyClient = getNettyClient(container)
 
@@ -178,12 +179,12 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
     pureNettyClient
       .headers(h => h.set("Authorization", s"Bearer $token"))
       .get()
-      .uri("/readyz")
+      .uri("/readyz").asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
       .responseSingle { (res, content) =>
         // Need to return a Mono
         content.asString().map { body =>
           val status = res.status().code()
-          println(s"readyz response: status=$status, body=$body")
+          println((s"readyz response: status=$status, body=$body"))
 
           if (status == 200 && body == "ok") {
             println("✓ readyz check passed")
@@ -331,7 +332,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
         throw new RuntimeException(s"Timeout waiting after ${timeoutSeconds}s")
       }
 
-      val getResult = kubectlContainer.execInContainer(commands: _*)
+      val getResult = kubectlContainer.execInContainer(commands*)
       val output    = getResult.getStdout
       val stderr    = getResult.getStderr
 
@@ -340,7 +341,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       println(s"Stderr: $stderr")
 
       if (getResult.getExitCode != 0) {
-        println(s"Command failed, retrying... ($attemptsLeft left)")
+        println((s"Command failed, retrying... ($attemptsLeft left)"))
         Thread.sleep(2000)
         check(attemptsLeft - 1)
       } else if (output.isEmpty || !output.contains("Running") || output.contains("Init")) {
@@ -369,7 +370,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
           .withRequestTimeout(1.second)
           .get()
           .map(r => {
-            println(s"Status: ${r.status}, Body: ${r.body}")
+            println((s"Status: ${r.status}, Body: ${r.body[String]}"))
             r.status mustBe play.mvc.Http.Status.OK
             r.status
           })
@@ -492,7 +493,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       }
 
       sbtContainer.copyFileFromContainer(
-        "/app/otoroshi/target/scala-2.12/otoroshi.jar",
+        "/app/otoroshi/target/scala-3.8.4/otoroshi.jar",
         outputJar.getAbsolutePath
       )
       println(s"✓ JAR built successfully")

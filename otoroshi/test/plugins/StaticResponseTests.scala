@@ -1,15 +1,16 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, StaticResponse, StaticResponseConfig}
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class StaticResponseTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -41,7 +42,7 @@ class StaticResponseTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.OK
   getOutHeader(resp, "baz") mustBe Some("bar")
-  Json.parse(resp.body) mustEqual Json.obj("foo" -> "client value")
+  Json.parse(resp.body[String]) mustEqual Json.obj("foo" -> "client value")
 
   deleteOtoroshiRoute(route).futureValue
 }

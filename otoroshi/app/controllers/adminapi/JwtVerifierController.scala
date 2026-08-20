@@ -13,18 +13,18 @@ import otoroshi.utils.controllers.{
   OptionalEntityAndContext,
   SeqEntityAndContext
 }
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[GlobalJwtVerifier, JsValue]
     with CrudControllerHelper[GlobalJwtVerifier, JsValue] {
 
-  implicit val ec  = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   override def singularName: String = "jwt-verifier"
 
@@ -41,7 +41,7 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   override def writeEntity(entity: GlobalJwtVerifier): JsValue = GlobalJwtVerifier._fmt.writes(entity)
 
-  override def findByIdOps(id: String, req: RequestHeader)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[GlobalJwtVerifier]]] = {
@@ -58,7 +58,7 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
     }
   }
 
-  override def findAllOps(req: RequestHeader)(implicit
+  override def findAllOps(req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[GlobalJwtVerifier]]] = {
@@ -78,7 +78,7 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
   override def createEntityOps(
       entity: GlobalJwtVerifier,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[GlobalJwtVerifier]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[GlobalJwtVerifier]]] = {
     env.datastores.globalJwtVerifierDataStore.set(entity).map {
       case true  => {
         Right(
@@ -105,7 +105,7 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
   override def updateEntityOps(
       entity: GlobalJwtVerifier,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[GlobalJwtVerifier]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[GlobalJwtVerifier]]] = {
     env.datastores.globalJwtVerifierDataStore.set(entity).map {
       case true  => {
         Right(
@@ -129,7 +129,7 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
     }
   }
 
-  override def deleteEntityOps(id: String, req: RequestHeader)(implicit
+  override def deleteEntityOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[GlobalJwtVerifier]]] = {

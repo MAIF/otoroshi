@@ -1,7 +1,8 @@
 package otoroshi.next.analytics.migration
 
-import akka.http.scaladsl.util.FastFuture
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.{PoolOptions, Row, Tuple => VertxTuple}
 import otoroshi.env.Env
 import otoroshi.models.PostgresExporterSettings
@@ -11,12 +12,12 @@ import otoroshi.next.analytics.exporter.{
   EventStripper,
   UserAnalyticsExporterRegistry
 }
-import otoroshi.storage.drivers.reactivepg.pgimplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -87,15 +88,15 @@ object LegacyPgMigrator {
    * @param batchSize number of rows fetched + inserted per round-trip
    * @param dryRun if true, do not insert; just count source rows
    */
-  def migrate(source: PostgresExporterSettings, batchSize: Int, dryRun: Boolean)(implicit
+  def migrate(source: PostgresExporterSettings, batchSize: Int, dryRun: Boolean)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, MigrationResult]] = {
     val sourceTable = s"${source.schema}.${source.table}"
-    val sourcePool  = PgPool.pool(buildConnectOptions(source), new PoolOptions().setMaxSize(2))
+    val sourcePool  = PgBuilder.pool().connectingTo(buildConnectOptions(source)).`with`(new PoolOptions().setMaxSize(2)).build()
 
     val targetFut
-        : Future[Either[String, (String, PgPool, otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings)]] =
+        : Future[Either[String, (String, Pool, otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings)]] =
       UserAnalyticsExporterRegistry.activeRunning.map {
         case None                   => Left("no active user-analytics exporter")
         case Some((settings, pool)) =>
@@ -157,15 +158,15 @@ object LegacyPgMigrator {
 
   /** Recursively page through the source by keyset on `id`. */
   private def runBatches(
-      sourcePool: PgPool,
+      sourcePool: Pool,
       sourceTable: String,
-      targetPool: PgPool,
+      targetPool: Pool,
       insertSql: String,
       batchSize: Int,
       lastId: String,
       processed: Long,
       inserted: Long
-  )(implicit env: Env, ec: ExecutionContext): Future[(Long, Long)] = {
+  )(using env: Env, ec: ExecutionContext): Future[(Long, Long)] = {
     val sql =
       s"SELECT id, event FROM $sourceTable WHERE id > $$1 ORDER BY id ASC LIMIT $$2"
     sourcePool

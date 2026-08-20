@@ -1,30 +1,30 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
-import com.networknt.schema.SpecVersion.VersionFlag
-import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}
+import com.networknt.schema.{InputFormat, SchemaRegistry, SchemaRegistryConfig, SpecificationVersion}
+import com.networknt.schema.path.PathType
 import io.otoroshi.wasm4s.scaladsl.WasmFunctionParameters
 import otoroshi.env.Env
 import otoroshi.gateway.WebSocketProxyActor
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{JsonPathValidator, UrlSanitizer}
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.http.websocket.{CloseCodes, Message}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.ActorFlow
 import reactor.core.publisher.Sinks
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asScalaBufferConverter
-import scala.util._
+import scala.jdk.CollectionConverters.*
+import scala.util.*
 
 sealed trait RejectStrategy {
   def json: JsValue
@@ -138,7 +138,7 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean = false
   override def onRequestFlow: Boolean  = true
 
-  private def validate(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  private def validate(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Boolean] = {
@@ -146,7 +146,7 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
     val config                   =
       ctx.cachedConfig(internalName)(FrameFormatValidatorConfig.format).getOrElse(FrameFormatValidatorConfig())
 
-    message.str
+    message.str()
       .map(message => {
         val json = ctx.json.asObject ++ Json.obj(
           "route"   -> ctx.route.json,
@@ -156,7 +156,7 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
       })
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -188,7 +188,7 @@ class WebsocketTypeValidator extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean = false
   override def onRequestFlow: Boolean  = true
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -237,7 +237,7 @@ class WebsocketTypeValidator extends NgWebsocketValidatorPlugin {
 
 case class WebsocketJsonFormatValidatorConfig(
     schema: Option[String] = None,
-    specification: String = VersionFlag.V202012.getId,
+    specification: String = SpecificationVersion.DRAFT_2020_12.getDialectId,
     rejectStrategy: RejectStrategy = RejectStrategy.Drop
 ) extends NgPluginConfig {
   override def json: JsValue = WebsocketJsonFormatValidatorConfig.format.writes(this)
@@ -255,7 +255,7 @@ object WebsocketJsonFormatValidatorConfig {
       Try {
         WebsocketJsonFormatValidatorConfig(
           schema = json.select("schema").asOpt[String],
-          specification = json.select("specification").asOpt[String].getOrElse(VersionFlag.V202012.getId),
+          specification = json.select("specification").asOpt[String].getOrElse(SpecificationVersion.DRAFT_2020_12.getDialectId),
           rejectStrategy = RejectStrategy.read(json)
         )
       } match {
@@ -280,7 +280,7 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean = false
   override def onRequestFlow: Boolean  = true
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -295,13 +295,16 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
       .map(data => {
         val userSchema = config.schema.getOrElse("")
 
-        val jsonSchemaFactory = JsonSchemaFactory.getInstance(VersionFlag.fromId(config.specification).get())
+        val versionFlag = SpecificationVersion.fromDialectId(config.specification).get()
 
-        val schemaConfig = new SchemaValidatorsConfig()
-        schemaConfig.setPathType(PathType.JSON_POINTER)
-        schemaConfig.setFormatAssertionsEnabled(true)
+        val schemaConfig = SchemaRegistryConfig
+          .builder()
+          .pathType(PathType.JSON_POINTER)
+          .formatAssertionsEnabled(true)
+          .build()
 
-        val schema = jsonSchemaFactory.getSchema(userSchema, schemaConfig)
+        val registry = SchemaRegistry.withDefaultDialect(versionFlag, b => b.schemaRegistryConfig(schemaConfig))
+        val schema = registry.getSchema(userSchema, InputFormat.JSON)
 
         Try {
           schema.validate(data, InputFormat.JSON).isEmpty
@@ -369,7 +372,7 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
   override def onRequestFlow: Boolean  = true
 
   private def internalCanAccess(ctx: NgWebsocketPluginContext, message: WebsocketMessage, maxSize: Int, reason: String)(
-      implicit
+      using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -384,7 +387,7 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
       }
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -400,7 +403,7 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
     config.rejectStrategy
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -451,7 +454,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
   override def onResponseFlow: Boolean                                       = true
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -461,7 +464,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
     onMessage(ctx, message, config.requestFilter)
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -471,11 +474,11 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
     onMessage(ctx, message, config.responseFilter)
   }
 
-  def onMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage, filter: String)(implicit
+  def onMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage, filter: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     if (message.isText) {
       message.str().flatMap { bodyStr =>
         Try(Json.parse(bodyStr)) match {
@@ -529,8 +532,8 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
       ctx: NgWebsocketPluginContext,
       message: WebsocketMessage,
       functionName: Option[String]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    implicit val mat = env.otoroshiMaterializer
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val config       = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -609,14 +612,14 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
     }
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     onMessage(ctx, message, "on_request_message".some)
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -696,8 +699,8 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
       message: WebsocketMessage,
       workflowId: String,
       action: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    implicit val mat = env.otoroshiMaterializer
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     (if (message.isText) {
        message.str().map { str =>
          ctx.wasmJson.as[JsObject] ++ Json.obj(
@@ -764,7 +767,7 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
     }
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -777,7 +780,7 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
     }
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -834,7 +837,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
 
   override def callBackendOrError(
       ctx: NgWebsocketPluginContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, ?]]] = {
     val config  = ctx
       .cachedConfig(internalName)(WebsocketMirrorBackendConfig.format)
       .getOrElse(WebsocketMirrorBackendConfig())
@@ -857,7 +860,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               ctx.attrs,
               env
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          )(using env.otoroshiActorSystem, env.otoroshiMaterializer)
           .rightf
       }
       case Some(url) => {
@@ -882,7 +885,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               ctx.attrs,
               env
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          )(using env.otoroshiActorSystem, env.otoroshiMaterializer)
         val response   = ActorFlow
           .actorRef(out =>
             WebSocketProxyActor.props(
@@ -899,7 +902,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               env,
               Some(cb)
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          )(using env.otoroshiActorSystem, env.otoroshiMaterializer)
           .alsoTo(Sink.onComplete { case _ =>
             hotSource.tryEmitComplete()
           })
@@ -907,9 +910,9 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
         Source
           .fromPublisher(hotFlux)
           .via(mirrorFlow)
-          .runWith(Sink.foreach { m: play.api.http.websocket.Message =>
+          .runWith(Sink.foreach { (m: play.api.http.websocket.Message) =>
             //println("Got sink message: " + m)
-          })(env.otoroshiMaterializer)
+          })(using env.otoroshiMaterializer)
         response
       }
     }

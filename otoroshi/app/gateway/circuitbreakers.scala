@@ -1,16 +1,16 @@
 package otoroshi.gateway
 
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import akka.Done
-import akka.actor.Scheduler
-import akka.http.scaladsl.util.FastFuture
-import akka.pattern.{CircuitBreaker => AkkaCircuitBreaker}
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.Done
+import org.apache.pekko.actor.Scheduler
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.pattern.{CircuitBreaker => AkkaCircuitBreaker}
+import org.apache.pekko.stream.scaladsl.Flow
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.health.HealthCheckLogic
 import otoroshi.models.{ApiKey, ClientConfig, GlobalConfig, LoadBalancing, ServiceDescriptor, Target}
 import otoroshi.utils.TypedMap
@@ -18,18 +18,18 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.{RequestHeader, Result}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.Json
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{duration, ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
 object Timeout {
 
-  def timeout[A](message: => A, duration: FiniteDuration)(implicit
+  def timeout[A](message: => A, duration: FiniteDuration)(using
       ec: ExecutionContext,
       scheduler: Scheduler
   ): Future[A] = {
@@ -45,7 +45,7 @@ object Retry {
 
   lazy val logger = Logger("otoroshi-circuit-breaker")
 
-  private[this] def retryPromise[T](
+  private def retryPromise[T](
       totalCalls: Int,
       times: Int,
       delay: Long,
@@ -55,7 +55,7 @@ object Retry {
       ctx: String,
       f: Int => Future[T],
       counter: AtomicInteger
-  )(implicit ec: ExecutionContext, scheduler: Scheduler): Unit = {
+  )(using ec: ExecutionContext, scheduler: Scheduler): Unit = {
     try {
       (times, failure) match {
         case (0, Some(e)) =>
@@ -82,7 +82,7 @@ object Retry {
                   retryPromise[T](totalCalls, times - 1, newDelay, factor, promise, Some(e), ctx, f, counter)
                 }
               }
-          }(ec)
+          }(using ec)
       }
     } catch {
       case e: Throwable => promise.tryFailure(e)
@@ -97,7 +97,7 @@ object Retry {
       counter: AtomicInteger = new AtomicInteger(0)
   )(
       f: Int => Future[T]
-  )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+  )(using ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
     val promise = Promise[T]()
     retryPromise[T](times, times, delay, factor, promise, None, ctx, f, counter)
     promise.future
@@ -122,7 +122,7 @@ case class AkkaCircuitBreakerWrapper(
     resetTimeout: FiniteDuration
 )
 
-class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler: Scheduler, env: Env) {
+class ServiceDescriptorCircuitBreaker()(using ec: ExecutionContext, scheduler: Scheduler, env: Env) {
 
   val reqCounter = new AtomicInteger(0)
   val breakers   = new UnboundedTrieMap[String, AkkaCircuitBreakerWrapper]()
@@ -318,7 +318,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       counter: AtomicInteger,
       attrs: TypedMap,
       f: (Target, Int, AtomicBoolean) => Future[Either[Result, A]]
-  )(implicit
+  )(using
       env: Env
   ): Future[Either[Result, A]] = {
     callGenNg[A](
@@ -354,7 +354,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       counter: AtomicInteger,
       attrs: TypedMap,
       f: (Target, Int, AtomicBoolean) => Future[Either[Result, A]]
-  )(implicit
+  )(using
       env: Env
   ): Future[Either[Result, A]] = {
 

@@ -6,14 +6,14 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.concurrent.TrieMap
-import scala.concurrent._
-import scala.jdk.CollectionConverters._
-import scala.util._
+import scala.concurrent.*
+import scala.jdk.CollectionConverters.*
+import scala.util.*
 
 // TODO: time budget per node
 // TODO: fuel budget per run, with fuel consumption per node
@@ -60,7 +60,7 @@ class WorkflowEngine(env: Env) {
     wfRun.memory.set("workflow_input", input)
     wfRun.memory.set("input", input)
     node
-      .internalRun(wfRun, Seq(0), Seq.empty)(env, executorContext)
+      .internalRun(wfRun, Seq(0), Seq.empty)(using env, executorContext)
       .flatMap {
         case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
           WorkflowResult(err.details.get.select("access_token").asOpt[JsValue], None, wfRun).future
@@ -101,7 +101,7 @@ class WorkflowEngine(env: Env) {
         }
       }
       .andThen { case Success(value) =>
-        if (!noRunEvent) WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
+        if (!noRunEvent) WorkflowRunEvent(node, input, value, env).toAnalytics()(using env)
       }
   }
 
@@ -115,7 +115,7 @@ class WorkflowEngine(env: Env) {
     val wfRun = wfr.copy(attrs = attrs)
     val input = wfr.memory.get("workflow_input").map(_.asObject).getOrElse(Json.obj())
     node
-      .internalRun(wfRun, Seq(0), from.tail)(env, executorContext)
+      .internalRun(wfRun, Seq(0), from.tail)(using env, executorContext)
       .flatMap {
         case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
           WorkflowResult(err.details.get.select("access_token").asOpt[JsValue], None, wfRun).future
@@ -151,7 +151,7 @@ class WorkflowEngine(env: Env) {
         )
       }
       .andThen { case Success(value) =>
-        if (!noRunEvent) WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
+        if (!noRunEvent) WorkflowRunEvent(node, input, value, env).toAnalytics()(using env)
       }
   }
 }
@@ -338,8 +338,8 @@ trait WorkflowFunction {
   def documentationExample: Option[JsObject]                                                                = None
   def callWithRun(
       args: JsObject
-  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]]      = call(args)
-  def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = Left(
+  )(using env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]]      = call(args)
+  def call(args: JsObject)(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = Left(
     WorkflowError("not implemented", None, None)
   ).vfuture
 }
@@ -375,7 +375,7 @@ trait Node extends NodeLike {
   def breakpoint: Boolean                        = json.select("breakpoint").asOptBoolean.getOrElse(false)
   def result: Option[String]                     = json.select("result").asOptString
   def returned: Option[JsValue]                  = json.select("returned").asOpt[JsValue]
-  def run(wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int])(implicit
+  def run(wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[WorkflowError, JsValue]]
@@ -392,7 +392,7 @@ trait Node extends NodeLike {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (!enabled) {
       // println(s"skipping ${id}")
       JsNull.rightf
@@ -591,7 +591,7 @@ object WorkflowOperator {
       }
     }
     case JsArray(arr)                                                                     => JsArray(arr.map(v => processOperators(v, wfr, env)))
-    case JsObject(map)                                                                    => JsObject(map.mapValues(v => processOperators(v, wfr, env)))
+    case JsObject(map)                                                                    => JsObject(map.view.mapValues(v => processOperators(v, wfr, env)).toMap)
     case JsString("${now}")                                                               => System.currentTimeMillis().json
     case JsString("${rand}")                                                              => JsNumber(Math.random())
     case JsString("${workflow_id}")                                                       => wfr.workflow_ref.json
@@ -603,7 +603,7 @@ object WorkflowOperator {
         .substring(2)
         .init
         .split("\\|\\|")
-        .toStream
+        .to(scala.collection.immutable.LazyList)
         .map(_.trim)
         .filter(_.nonEmpty)
         .map { part =>
@@ -649,7 +649,7 @@ object WorkflowOperator {
           val expr  = m.group(1).trim
           val value = expr
             .split("\\|\\|")
-            .toStream
+            .to(scala.collection.immutable.LazyList)
             .map(_.trim)
             .filter(_.nonEmpty)
             .map { part =>
@@ -697,7 +697,7 @@ case class WorkflowRunEvent(
   val `@service`: String            = "Otoroshi"
   val `@serviceId`: String          = ""
 
-  override def toJson(implicit _env: Env): JsValue = {
+  override def toJson(using _env: Env): JsValue = {
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),

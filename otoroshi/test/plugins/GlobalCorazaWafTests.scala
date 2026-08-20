@@ -71,7 +71,7 @@
 //        )
 //      )
 //      .map(resp => {
-//        println("result", resp.status, resp.json, resp.body)
+//        println(("result", resp.status, resp.json, resp.body[String]))
 //      })
 //  }
 //
@@ -86,7 +86,7 @@
 //        Json.stringify(globalConfig.toJson)
 //      )
 //      .map(resp => {
-//        println("result", resp.status, resp.json, resp.body)
+//        println(("result", resp.status, resp.json, resp.body[String]))
 //      })
 //
 //  }

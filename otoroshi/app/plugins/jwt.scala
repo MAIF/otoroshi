@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.JsonPathUtils
 import otoroshi.script.{PreRouting, PreRoutingContext, PreRoutingError}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
 import play.api.mvc.Results
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
@@ -73,7 +73,7 @@ class JwtUserExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config        = ctx.configFor("JwtUserExtractor")
     val jwtVerifierId = (config \ "verifier").as[String]
     val strict        = (config \ "strict").asOpt[Boolean].getOrElse(true)
@@ -139,6 +139,7 @@ class JwtUserExtractor extends PreRouting {
                 ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
                 Results.Ok(Json.obj()).future
               }
+              case other => throw new IllegalStateException(s"unreachable case: $other")
             }
           }
           .recover { case e: Throwable =>
@@ -158,6 +159,7 @@ class JwtUserExtractor extends PreRouting {
             }
           }
       }
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }

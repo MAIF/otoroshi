@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{
   NgPluginCategory,
@@ -13,7 +13,7 @@ import otoroshi.next.plugins.api.{
 }
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.gzip.GzipConfig.logger
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json, Reads}
 import play.api.mvc.Result
 
@@ -53,9 +53,9 @@ object NgGzipConfig {
     override def reads(json: JsValue): JsResult[NgGzipConfig] =
       Try {
         NgGzipConfig(
-          excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "buffer_size").asOpt[Int].getOrElse(8192),
           chunkedThreshold = (json \ "chunked_threshold").asOpt[Int].getOrElse(102400),
           compressionLevel = (json \ "compression_level").asOpt[Int].getOrElse(5)
@@ -99,7 +99,7 @@ class GzipResponseCompressor extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config                                    = ctx.cachedConfig(internalName)(configReads).getOrElse(NgGzipConfig())
     def transform(result: Result): Future[Result] = config.legacy.handleResult(ctx.request, result)
     ctx.attrs.put(otoroshi.next.plugins.Keys.ResultTransformerKey -> transform)

@@ -1,16 +1,17 @@
 package otoroshi.next.analytics.exporter
 
-import akka.http.scaladsl.util.FastFuture
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.PoolOptions
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
-import otoroshi.storage.drivers.reactivepg.pgimplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class AnalyticsRetentionJob extends Job {
@@ -38,7 +39,7 @@ class AnalyticsRetentionJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     UserAnalyticsExporterSettings.findActiveAnalyticsExporter.flatMap {
       case None         =>
         logger.debug("no active user-analytics exporter, skipping retention job")
@@ -51,7 +52,7 @@ class AnalyticsRetentionJob extends Job {
     }
   }
 
-  private def deleteOld(s: UserAnalyticsExporterSettings)(implicit ec: ExecutionContext): Future[Unit] = {
+  private def deleteOld(s: UserAnalyticsExporterSettings)(using ec: ExecutionContext): Future[Unit] = {
     val opts = s.uri match {
       case Some(uri) => PgConnectOptions.fromUri(uri)
       case None      =>
@@ -63,7 +64,7 @@ class AnalyticsRetentionJob extends Job {
           .setPassword(s.password)
           .applyOnIf(s.ssl)(_.setSslMode(SslMode.REQUIRE))
     }
-    val pool = PgPool.pool(opts, new PoolOptions().setMaxSize(1))
+    val pool = PgBuilder.pool().connectingTo(opts).`with`(new PoolOptions().setMaxSize(1)).build()
     val sql  =
       s"DELETE FROM ${AnalyticsSchema.fullTable(s)} WHERE ts < NOW() - INTERVAL '${s.retentionDays} days'"
     pool

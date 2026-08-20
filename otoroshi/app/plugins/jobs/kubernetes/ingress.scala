@@ -2,7 +2,7 @@ package otoroshi.plugins.jobs.kubernetes
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.cluster.ClusterMode
 import com.google.common.base.CaseFormat
 import otoroshi.env.Env
@@ -11,7 +11,7 @@ import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, Leade
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
-import otoroshi.models._
+import otoroshi.models.*
 import org.joda.time.DateTime
 import otoroshi.next.models.{
   NgBackend,
@@ -24,16 +24,16 @@ import otoroshi.next.models.{
 }
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -86,7 +86,7 @@ class KubernetesIngressControllerJob extends Job {
         //   .asOpt[JsValue]
         //   .orElse(c.plugins.config.select("KubernetesConfig").asOpt[JsValue])
         //   .getOrElse(Json.obj())
-        (env, KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext))
+        (env, KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext))
       }
       .map { case (env, cfg) =>
         env.clusterConfig.mode match {
@@ -102,10 +102,10 @@ class KubernetesIngressControllerJob extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] =
-    KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
+    KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Failure(e) =>
         e.printStackTrace()
         Some(false)
@@ -113,7 +113,7 @@ class KubernetesIngressControllerJob extends Job {
     }
   }
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)
     lastWatchStopped.set(true)
     watchCommand.set(false)
@@ -150,7 +150,7 @@ class KubernetesIngressControllerJob extends Job {
     }
     // TODO: should be dynamic
     if (config.watch) {
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val conf         = KubernetesConfig.theConfig(ctx)
       val client       = new KubernetesClient(conf, env)
       val source       =
@@ -164,7 +164,7 @@ class KubernetesIngressControllerJob extends Job {
     ().future
   }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
     stopCommand.set(true)
     watchCommand.set(false)
@@ -174,7 +174,7 @@ class KubernetesIngressControllerJob extends Job {
     ().future
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.ingresses) {
       if (conf.kubeLeader) {
@@ -193,7 +193,7 @@ class KubernetesIngressControllerJob extends Job {
     }
   }
 
-  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[String]] = {
@@ -206,10 +206,10 @@ class KubernetesIngressControllerJob extends Job {
     }
   }
 
-  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(using env: Env, ec: ExecutionContext): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       watchCommand.set(true)
       lastWatchStopped.set(false)
       env.otoroshiScheduler.scheduleOnce(5.minutes) {
@@ -261,7 +261,7 @@ class KubernetesIngressControllerJob extends Job {
 
   override def defaultConfig: Option[JsObject] = None
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val conf = KubernetesConfig.theConfig(ctx)
     val host = conf.triggerHost.getOrElse("kubernetes-controllers.oto.tools")
     val path = conf.triggerPath.getOrElse("/.well-known/otoroshi/plugins/kubernetes/controllers/trigger")
@@ -272,7 +272,7 @@ class KubernetesIngressControllerJob extends Job {
     ctx.request.theDomain.toLowerCase().equals(host) && ctx.request.relativeUri.startsWith(path) && keyMatch
   }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
     val conf = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     if (conf.crds) {
@@ -289,7 +289,7 @@ class KubernetesIngressControllerJob extends Job {
 }*/
 
 case class OtoAnnotationConfig(annotations: Map[String, String]) {
-  def asSeqString(value: String): Seq[String]         = value.split(",").map(_.trim)
+  def asSeqString(value: String): Seq[String]         = value.split(",").map(_.trim).toIndexedSeq
   def asMapString(value: String): Map[String, String] =
     value
       .split(",")
@@ -331,7 +331,7 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
           case "frontend.query"                  =>
             d.copy(frontend = d.frontend.copy(query = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty)))
           case "frontend.methods"                =>
-            d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty)))
+            d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty).toSeq))
           case "frontend.stripPath"              => d.copy(frontend = d.frontend.copy(stripPath = value.toBoolean))
           case "frontend.exact"                  => d.copy(frontend = d.frontend.copy(exact = value.toBoolean))
           case "backend.rewrite"                 => d.copy(backend = d.backend.copy(rewrite = value.toBoolean))
@@ -631,9 +631,9 @@ object KubernetesIngressSyncJob {
     OtoAnnotationConfig(annotations)
   }
 
-  def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] =
+  def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(using env: Env, ec: ExecutionContext): Future[Unit] =
     env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync") {
-      implicit val mat             = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val syncedServiceDescriptors = new AtomicLong(0L)
       val _client                  = new KubernetesClient(_conf, env)
       if (running.compareAndSet(false, true)) {
@@ -797,7 +797,7 @@ object KubernetesIngressSyncJob {
 
   private val callsCounter = new AtomicLong(0L)
 
-  def warnAboutServiceDescriptorUsage(counter: AtomicLong)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def warnAboutServiceDescriptorUsage(counter: AtomicLong)(using env: Env, ec: ExecutionContext): Unit = {
     val count = counter.get()
     if (count > 0) {
       val calls = callsCounter.incrementAndGet()
@@ -823,7 +823,7 @@ object KubernetesIngressSyncJob {
 object KubernetesIngressToDescriptor {
   def asDescriptors(
       obj: KubernetesIngress
-  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(implicit
+  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[ServiceDescriptor]] = {
@@ -831,12 +831,12 @@ object KubernetesIngressToDescriptor {
     val name      = obj.name
     val namespace = obj.namespace
     val ingress   = obj.ingress
-    asDescriptors(uid, name, namespace, ingress, conf, otoConfig, client, logger)(env, ec)
+    asDescriptors(uid, name, namespace, ingress, conf, otoConfig, client, logger)(using env, ec)
   }
 
   def asRoutes(
       obj: KubernetesIngress
-  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(implicit
+  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[NgRoute]] = {
@@ -844,7 +844,7 @@ object KubernetesIngressToDescriptor {
     val name      = obj.name
     val namespace = obj.namespace
     val ingress   = obj.ingress
-    asRoutes(uid, name, namespace, ingress, conf, otoConfig, client, logger)(env, ec)
+    asRoutes(uid, name, namespace, ingress, conf, otoConfig, client, logger)(using env, ec)
   }
 
   def asDescriptors(
@@ -856,8 +856,8 @@ object KubernetesIngressToDescriptor {
       otoConfig: OtoAnnotationConfig,
       client: KubernetesClient,
       logger: Logger
-  )(implicit env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
-    implicit val mat = env.otoroshiMaterializer
+  )(using env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
       .mapAsync(1) {
         case (rule, path) => {
@@ -874,7 +874,7 @@ object KubernetesIngressToDescriptor {
                 val serviceName                    = kubeService.name
                 val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
                 val maybePortSpec: Option[JsValue] =
-                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
                     path.backend.servicePort match {
                       case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
                       case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -911,14 +911,14 @@ object KubernetesIngressToDescriptor {
                               case _              => Seq.empty
                             }
                           case Some(kubeEndpoint) => {
-                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
                             if (subsets.isEmpty) {
                               Seq.empty
                             } else {
                               subsets.flatMap { subset =>
                                 val endpointPort: Int = (subset \ "ports")
                                   .as[JsArray]
-                                  .value
+                                  .value.toSeq
                                   .find { port =>
                                     (port \ "name").as[String] == portName
                                   }
@@ -926,7 +926,7 @@ object KubernetesIngressToDescriptor {
                                   .getOrElse(80)
                                 val endpointProtocol  =
                                   if (endpointPort == 443 || portName == "https") "https" else "http"
-                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                                 addresses.map { address =>
                                   val serviceIp = (address \ "ip").as[String]
                                   Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
@@ -1004,8 +1004,8 @@ object KubernetesIngressToDescriptor {
       otoConfig: OtoAnnotationConfig,
       client: KubernetesClient,
       logger: Logger
-  )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
-    implicit val mat = env.otoroshiMaterializer
+  )(using env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
       .mapAsync(1) {
         case (rule, path) => {
@@ -1022,7 +1022,7 @@ object KubernetesIngressToDescriptor {
                 val serviceName                    = kubeService.name
                 val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
                 val maybePortSpec: Option[JsValue] =
-                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
                     path.backend.servicePort match {
                       case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
                       case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -1059,14 +1059,14 @@ object KubernetesIngressToDescriptor {
                               case _              => Seq.empty
                             }
                           case Some(kubeEndpoint) => {
-                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
                             if (subsets.isEmpty) {
                               Seq.empty
                             } else {
                               subsets.flatMap { subset =>
                                 val endpointPort: Int = (subset \ "ports")
                                   .as[JsArray]
-                                  .value
+                                  .value.toSeq
                                   .find { port =>
                                     (port \ "name").as[String] == portName
                                   }
@@ -1074,7 +1074,7 @@ object KubernetesIngressToDescriptor {
                                   .getOrElse(80)
                                 val endpointProtocol  =
                                   if (endpointPort == 443 || portName == "https") "https" else "http"
-                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                                 addresses.map { address =>
                                   val serviceIp = (address \ "ip").as[String]
                                   Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
@@ -1162,7 +1162,7 @@ object KubernetesIngressToDescriptor {
     val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
     val serviceName                    = kubeService.name
     val serviceNamespace               = kubeService.namespace
-    val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+    val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
       port match {
         case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
         case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -1215,21 +1215,21 @@ object KubernetesIngressToDescriptor {
                   case _              => Seq.empty
                 }
               case Some(kubeEndpoint) => {
-                val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
                 if (subsets.isEmpty) {
                   Seq.empty
                 } else {
                   subsets.flatMap { subset =>
                     val endpointPort: Int = (subset \ "ports")
                       .as[JsArray]
-                      .value
+                      .value.toSeq
                       .find { port =>
                         (port \ "name").as[String] == portName
                       }
                       .map(v => (v \ "port").as[Int])
                       .getOrElse(80)
                     val endpointProtocol  = if (endpointPort == 443 || portName == "https") "https" else "http"
-                    val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                    val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                     addresses.map { address =>
                       val serviceIp = (address \ "ip").as[String]
                       templateTarget.copy(
@@ -1254,7 +1254,7 @@ object KubernetesIngressToDescriptor {
       template: JsObject,
       client: KubernetesClient,
       logger: Logger
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[Target]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Seq[Target]] = {
     client.fetchService(namespace, name).flatMap {
       case None              =>
         logger.info(s"Service $name not found on namespace $namespace")
@@ -1301,9 +1301,9 @@ object IngressSupport {
           NetworkingV1beta1Ingress(
             apiVersion = (json \ "apiVersion").as[String],
             kind = (json \ "kind").as[String],
-            metadata = (json \ "metadata").as(V1ObjectMeta.reader),
-            spec = (json \ "spec").as(NetworkingV1beta1IngressSpec.reader),
-            status = (json \ "status").as(NetworkingV1beta1IngressStatus.reader)
+            metadata = (json \ "metadata").as(using V1ObjectMeta.reader),
+            spec = (json \ "spec").as(using NetworkingV1beta1IngressSpec.reader),
+            status = (json \ "status").as(using NetworkingV1beta1IngressStatus.reader)
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1326,8 +1326,8 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressItem(
             // metadata = (json \ "metadata").as(V1ObjectMeta.reader),
-            spec = (json \ "spec").as(NetworkingV1beta1IngressSpec.reader),
-            status = (json \ "status").as(NetworkingV1beta1IngressStatus.reader)
+            spec = (json \ "spec").as(using NetworkingV1beta1IngressSpec.reader),
+            status = (json \ "status").as(using NetworkingV1beta1IngressStatus.reader)
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1357,7 +1357,7 @@ object IngressSupport {
             case None          =>
               NetworkingV1beta1IngressBackend(
                 serviceName = (json \ "serviceName").as[String],
-                servicePort = (json \ "servicePort").as(IntOrString.reader)
+                servicePort = (json \ "servicePort").as(using IntOrString.reader)
               )
           }
         ) match {
@@ -1374,7 +1374,7 @@ object IngressSupport {
         otoConfig: OtoAnnotationConfig,
         client: KubernetesClient,
         logger: Logger
-    )(implicit env: Env, ec: ExecutionContext): Future[Option[ServiceDescriptor]] = {
+    )(using env: Env, ec: ExecutionContext): Future[Option[ServiceDescriptor]] = {
       val ingress = IngressSupport.NetworkingV1beta1IngressItem(
         spec = NetworkingV1beta1IngressSpec(
           backend = None,
@@ -1396,7 +1396,7 @@ object IngressSupport {
         status = NetworkingV1beta1IngressStatus(V1LoadBalancerStatus(Seq.empty))
       )
       KubernetesIngressToDescriptor
-        .asDescriptors("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(
+        .asDescriptors("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(using 
           env,
           ec
         )
@@ -1408,7 +1408,7 @@ object IngressSupport {
         otoConfig: OtoAnnotationConfig,
         client: KubernetesClient,
         logger: Logger
-    )(implicit env: Env, ec: ExecutionContext): Future[Option[NgRoute]] = {
+    )(using env: Env, ec: ExecutionContext): Future[Option[NgRoute]] = {
       val ingress = IngressSupport.NetworkingV1beta1IngressItem(
         spec = NetworkingV1beta1IngressSpec(
           backend = None,
@@ -1430,7 +1430,7 @@ object IngressSupport {
         status = NetworkingV1beta1IngressStatus(V1LoadBalancerStatus(Seq.empty))
       )
       KubernetesIngressToDescriptor
-        .asRoutes("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(
+        .asRoutes("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(using 
           env,
           ec
         )
@@ -1444,7 +1444,7 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressRule(
             host = (json \ "host").asOpt[String],
-            http = (json \ "http").as(NetworkingV1beta1HTTPIngressRuleValue.reader)
+            http = (json \ "http").as(using NetworkingV1beta1HTTPIngressRuleValue.reader)
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1460,9 +1460,9 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressSpec] =
         Try(
           NetworkingV1beta1IngressSpec(
-            backend = (json \ "backend").asOpt(NetworkingV1beta1IngressBackend.reader),
-            rules = (json \ "rules").asOpt(Reads.seq(NetworkingV1beta1IngressRule.reader)).getOrElse(Seq.empty),
-            tls = (json \ "tls").asOpt(Reads.seq(NetworkingV1beta1IngressTLS.reader)).getOrElse(Seq.empty)
+            backend = (json \ "backend").asOpt(using NetworkingV1beta1IngressBackend.reader),
+            rules = (json \ "rules").asOpt(using Reads.seq(using NetworkingV1beta1IngressRule.reader)).getOrElse(Seq.empty).toSeq,
+            tls = (json \ "tls").asOpt(using Reads.seq(using NetworkingV1beta1IngressTLS.reader)).getOrElse(Seq.empty).toSeq
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1483,7 +1483,7 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressList(
             apiVersion = (json \ "apiVersion").as[String],
-            items = (json \ "items").as(Reads.seq(NetworkingV1beta1Ingress.reader)),
+            items = (json \ "items").as(using Reads.seq(using NetworkingV1beta1Ingress.reader)),
             kind = (json \ "kind").as[String]
           )
         ) match {
@@ -1500,7 +1500,7 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressStatus] =
         Try(
           NetworkingV1beta1IngressStatus(
-            loadBalancer = (json \ "loadBalancer").as(V1LoadBalancerStatus.reader)
+            loadBalancer = (json \ "loadBalancer").as(using V1LoadBalancerStatus.reader)
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1517,7 +1517,7 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressTLS(
             secretName = (json \ "secretName").as[String],
-            hosts = (json \ "hosts").as(Reads.seq[String])
+            hosts = (json \ "hosts").as(using Reads.seq[String])
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1533,7 +1533,7 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1HTTPIngressPath] =
         Try(
           NetworkingV1beta1HTTPIngressPath(
-            backend = (json \ "backend").as(NetworkingV1beta1IngressBackend.reader),
+            backend = (json \ "backend").as(using NetworkingV1beta1IngressBackend.reader),
             path = (json \ "path").asOpt[String]
           )
         ) match {
@@ -1550,7 +1550,7 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1HTTPIngressRuleValue] =
         Try(
           NetworkingV1beta1HTTPIngressRuleValue(
-            paths = (json \ "paths").as(Reads.seq(NetworkingV1beta1HTTPIngressPath.reader))
+            paths = (json \ "paths").as(using Reads.seq(using NetworkingV1beta1HTTPIngressPath.reader))
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1566,7 +1566,7 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[V1LoadBalancerStatus] =
         Try(
           V1LoadBalancerStatus(
-            ingress = (json \ "ingress").as(Reads.seq(V1LoadBalancerIngress.reader))
+            ingress = (json \ "ingress").as(using Reads.seq(using V1LoadBalancerIngress.reader))
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1593,7 +1593,7 @@ object IngressSupport {
             labels = (json \ "labels").as[Map[String, String]],
             name = (json \ "name").as[String],
             namespace = (json \ "namespace").as[String],
-            ownerReferences = (json \ "ownerReferences").as(Reads.seq(V1OwnerReference.reader)),
+            ownerReferences = (json \ "ownerReferences").as(using Reads.seq(using V1OwnerReference.reader)),
             resourceVersion = (json \ "resourceVersion").as[String],
             selfLink = (json \ "selfLink").as[String],
             uid = (json \ "uid").as[String]

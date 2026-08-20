@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import io.opentelemetry.api.baggage.Baggage
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
@@ -18,18 +18,18 @@ import io.opentelemetry.sdk.trace.`export`.{SimpleSpanProcessor, SpanExporter}
 import io.opentelemetry.sdk.trace.data.SpanData
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
 
 import java.util.concurrent.TimeUnit
 import java.{lang, util}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asJavaIterableConverter
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 object NoopSpanExporter {
@@ -216,7 +216,7 @@ class W3CTracing extends NgRequestTransformer {
 
   private val setter = new TextMapSetter[NgTransformerRequestContext] {
     override def set(carrier: NgTransformerRequestContext, key: String, value: String): Unit = {
-      val seq: Seq[(String, String)] = carrier.attrs.get(TraceKey).getOrElse(Seq.empty)
+      val seq: Seq[(String, String)] = carrier.attrs.get(TraceKey).getOrElse(Seq.empty).toSeq
       carrier.attrs.put(TraceKey -> (seq :+ (key, value)))
     }
   }
@@ -230,7 +230,7 @@ class W3CTracing extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config     = ctx.cachedConfig(internalName)(W3CTracingConfig.format).getOrElse(W3CTracingConfig())
     val telemetry  = getOpenTelemetry(ctx.route.id, config)
     val propagator = telemetry.getPropagators.getTextMapPropagator
@@ -295,7 +295,7 @@ class W3CTracing extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.attrs.get(SpanKey).foreach { span =>
       span.addEvent("process_response")
       span.setAttribute("http.response", ctx.otoroshiResponse.status)
@@ -308,7 +308,7 @@ class W3CTracing extends NgRequestTransformer {
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     ctx.attrs.get(SpanKey).foreach { span =>
       span.addEvent("process_error")
       span.setAttribute("http.response", ctx.otoroshiResponse.status)

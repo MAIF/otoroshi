@@ -1,9 +1,9 @@
 package otoroshi.openapi
 
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.collection.concurrent.TrieMap
 
@@ -28,10 +28,7 @@ class OpenapiToJson(spec: JsValue) {
   }
 
   def process(data: TrieMap[String, JsValue]) = {
-    var changed = true
-    do {
-      changed = replaceOneOf(data)
-    } while (changed)
+    while replaceOneOf(data) do ()
   }
 
   def reads(path: String): JsPath = {
@@ -43,10 +40,10 @@ class OpenapiToJson(spec: JsValue) {
       }
   }
 
-  def containsOnlyRef(values: IndexedSeq[JsValue]): Boolean =
+  def containsOnlyRef(values: scala.collection.IndexedSeq[JsValue]): Boolean =
     values.forall(p => (p \ "$ref").as[String] != nullType)
 
-  def containsNullAndRef(values: IndexedSeq[JsValue]): Boolean =
+  def containsNullAndRef(values: scala.collection.IndexedSeq[JsValue]): Boolean =
     values.exists(p => (p \ "$ref").as[String] == nullType) &&
     values.exists(p => (p \ "$ref").as[String] != nullType)
 

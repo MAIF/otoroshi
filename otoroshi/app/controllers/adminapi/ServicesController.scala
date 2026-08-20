@@ -1,9 +1,9 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
 import otoroshi.next.models.NgRoute
 import otoroshi.utils.controllers.{
@@ -19,25 +19,25 @@ import otoroshi.utils.controllers.{
   SeqEntityAndContext
 }
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, RequestHeader}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.Status
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[ServiceDescriptor, JsValue]
     with CrudControllerHelper[ServiceDescriptor, JsValue]
     with AdminApiHelper {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val sourceBodyParser = BodyParser("ServicesController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -60,7 +60,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   override def writeEntity(entity: ServiceDescriptor): JsValue = ServiceDescriptor._fmt.writes(entity)
 
-  override def findByIdOps(id: String, req: RequestHeader)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ServiceDescriptor]]] = {
@@ -77,7 +77,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  override def findAllOps(req: RequestHeader)(implicit
+  override def findAllOps(req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[ServiceDescriptor]]] = {
@@ -97,7 +97,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def createEntityOps(
       entity: ServiceDescriptor,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
     env.datastores.serviceDescriptorDataStore.set(entity).map {
       case true  => {
         Right(
@@ -124,7 +124,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def updateEntityOps(
       entity: ServiceDescriptor,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
     env.datastores.serviceDescriptorDataStore.set(entity).map {
       case true  => {
         Right(
@@ -148,7 +148,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  override def deleteEntityOps(id: String, req: RequestHeader)(implicit
+  override def deleteEntityOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[ServiceDescriptor]]] = {
@@ -236,11 +236,11 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
           val actualTargets = JsArray(desc.targets.map(t => JsString(s"${t.scheme}://${t.host}")))
           val newTargets    = patchJson(body, actualTargets)
             .as[JsArray]
-            .value
+            .value.toSeq
             .map(_.as[String])
             .map(s => s.split("://"))
             .map(arr => Target(scheme = arr(0), host = arr(1)))
-          val newDesc       = desc.copy(targets = newTargets)
+          val newDesc       = desc.copy(targets = newTargets.toSeq)
           Audit.send(event)
           Alerts.send(
             ServiceUpdatedAlert(
@@ -290,7 +290,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
                 desc.targets :+ tgt
             case None         => desc.targets
           }
-          val newDesc    = desc.copy(targets = newTargets)
+          val newDesc    = desc.copy(targets = newTargets.toSeq)
           Audit.send(event)
           Alerts.send(
             ServiceUpdatedAlert(
@@ -340,7 +340,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
                 desc.targets
             case None         => desc.targets
           }
-          val newDesc    = desc.copy(targets = newTargets)
+          val newDesc    = desc.copy(targets = newTargets.toSeq)
           Audit.send(event)
           Alerts.send(
             ServiceUpdatedAlert(

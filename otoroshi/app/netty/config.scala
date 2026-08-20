@@ -2,8 +2,8 @@ package otoroshi.netty
 
 import otoroshi.env.Env
 import otoroshi.next.extensions.HttpListenerNames
-import otoroshi.ssl._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.ssl.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.{Format, JsError, JsResult, JsSuccess, JsValue, Json}
 import reactor.netty.http.HttpDecoderSpec
@@ -183,7 +183,7 @@ object NativeSettings                                             {
     override def reads(json: JsValue): JsResult[NativeSettings] = Try {
       NativeSettings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
-        driver = json.select("driver").asOpt(NativeDriver.format).getOrElse(NativeDriver.Auto)
+        driver = json.select("driver").asOpt(using NativeDriver.format).getOrElse(NativeDriver.Auto)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -362,11 +362,11 @@ object ReactorNettyServerConfig {
             .getOrElse(java.time.Duration.ofMillis(60000)),
           clientAuth = json.select("client_auth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
           parser =
-            json.select("parser").asOpt(HttpRequestParserConfig.format).getOrElse(HttpRequestParserConfig.default),
-          http1 = json.select("http_1").asOpt(Http1Settings.format).getOrElse(Http1Settings.default),
-          http2 = json.select("http_2").asOpt(Http2Settings.format).getOrElse(Http2Settings.default),
-          http3 = json.select("http_3").asOpt(Http3Settings.format).getOrElse(Http3Settings.default),
-          native = json.select("native").asOpt(NativeSettings.format).getOrElse(NativeSettings.default)
+            json.select("parser").asOpt(using HttpRequestParserConfig.format).getOrElse(HttpRequestParserConfig.default),
+          http1 = json.select("http_1").asOpt(using Http1Settings.format).getOrElse(Http1Settings.default),
+          http2 = json.select("http_2").asOpt(using Http2Settings.format).getOrElse(Http2Settings.default),
+          http3 = json.select("http_3").asOpt(using Http3Settings.format).getOrElse(Http3Settings.default),
+          native = json.select("native").asOpt(using NativeSettings.format).getOrElse(NativeSettings.default)
         )
       } match {
         case Failure(exception) => JsError(exception.getMessage)

@@ -1,24 +1,24 @@
 package functional
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import play.api.{Configuration, Logger}
-import plugins._
+import plugins.*
 
 import scala.concurrent.duration.DurationInt
 
 class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
-  implicit lazy val mat = otoroshiComponents.materializer
-  implicit lazy val env = otoroshiComponents.env
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = otoroshiComponents.materializer
+  implicit lazy val env: otoroshi.env.Env = otoroshiComponents.env
 
   def configurationSpec: Configuration = Configuration.empty
 
   val logger          = Logger("otoroshi-tests-plugins")
-  implicit val system = ActorSystem("otoroshi-test")
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -342,7 +342,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Websocket size validator" in {
       new WebsocketSizeValidatorTests(this)
     }
-    "S3Backend" in {
+    "S3Backend" taggedAs Docker in {
       new S3BackendTests(this)
     }
     "Time Restricted Access Plugin" in {
@@ -372,25 +372,25 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "HTTP Client Cache - matches wildcard mime type '*'" in {
       new HTTPClientCacheTests(this).matchesWildcardMimeType()
     }
-    "Authentication - in memory" in {
+    "Authentication - in memory" taggedAs Browser in {
       new AuthenticationTests(this).inMemory()
     }
-    "Authentication - pass with apikey" in {
+    "Authentication - pass with apikey" taggedAs Browser in {
       new AuthenticationTests(this).passWithApikey()
     }
-    "Multi Authentication - one module" in {
+    "Multi Authentication - one module" taggedAs Browser in {
       new MultiAuthenticationTests(this).oneModule()
     }
-    "Multi Authentication - keycloak and in memory authentication" in {
+    "Multi Authentication - keycloak and in memory authentication" taggedAs Browser in {
       new MultiAuthenticationTests(this).keycloakAndInMemoryAuthentication()
     }
-    "Multi Authentication - pass with apikey" in {
+    "Multi Authentication - pass with apikey" taggedAs Browser in {
       new MultiAuthenticationTests(this).passWithApikey()
     }
-    "Multi Authentication - email flow" in {
+    "Multi Authentication - email flow" taggedAs Browser in {
       new MultiAuthenticationTests(this).emailFlow()
     }
-    "OAuth2 caller - password flow" in {
+    "OAuth2 caller - password flow" taggedAs Docker in {
       new OAuth2CallerTests(this)
     }
     "Simple Basic Auth" in {
@@ -411,7 +411,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Send otoroshi headers back" in {
       new SendOtoroshiHeadersBackTests(this)
     }
-    "User profile endpoint" in {
+    "User profile endpoint" taggedAs Browser in {
       new UserProfileEndpointTests(this)
     }
     "Apikey mandatory metadata" in {
@@ -420,7 +420,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Robots" in {
       new RobotsTests(this)
     }
-    "User logged in expected" in {
+    "User logged in expected" taggedAs Browser in {
       new NgAuthModuleExpectedUserTests(this)
     }
     "IP block list" in {
@@ -438,10 +438,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikey mandatory tags" in {
       new ApikeyMandatoryTagsTests(this)
     }
-    "User extraction from auth. module" in {
+    "User extraction from auth. module" taggedAs Browser in {
       new NgAuthModuleUserExtractorTests(this)
     }
-    "Expected consumer" in {
+    "Expected consumer" taggedAs Browser in {
       new NgExpectedConsumerTests(this)
     }
     "Generic allowed list" in {
@@ -450,7 +450,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Generic block list" in {
       new GenericBlockListTests(this)
     }
-    "Allowed users only" in {
+    "Allowed users only" taggedAs Browser in {
       new HasAllowedUsersValidatorTests(this)
     }
     "Regex Response Headers Rewriter" in {
@@ -737,7 +737,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Fail2ban - reset counter after detection window expires" in {
       new Fail2BanTests(this).resetCounterAfterDetectionWindowExpires()
     }
-    "OpenFGA Validator" in {
+    "OpenFGA Validator" taggedAs Docker in {
       new OpenFGAValidatorTests(this).run()
     }
     // "Kubernetes integration - leader should be healthy" in {
@@ -760,12 +760,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     //     .triggerScannerJob()
     //     .futureValue(Timeout(Span(30, Minutes)))
     // }
-    "gRPC Web plugin" in {
+    "gRPC Web plugin" taggedAs Docker in {
       new GrpcWebTests(this)
         .run()
         .futureValue(Timeout(Span(30, Minutes)))
     }
-    "gRPC Web plugin should apply authorization rules" in {
+    "gRPC Web plugin should apply authorization rules" taggedAs Docker in {
       new GrpcWebTests(this)
         .authorizationRules()
         .futureValue

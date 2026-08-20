@@ -1,7 +1,7 @@
 package otoroshi.models
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Flow
 import com.auth0.jwt.{JWT, RegisteredClaims}
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.InvalidClaimException
@@ -21,11 +21,11 @@ import otoroshi.utils
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.http.Implicits.logger
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 
@@ -57,9 +57,9 @@ case class JwtInjection(
   def asJson: JsValue =
     Json.obj(
       "token"             -> decodedToken.map(_.getToken.json).getOrElse(JsNull).asValue,
-      "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply)),
+      "additionalHeaders" -> JsObject(this.additionalHeaders.view.mapValues(JsString.apply).toMap),
       "removeHeaders"     -> JsArray(this.removeHeaders.map(JsString.apply)),
-      "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply)),
+      "additionalCookies" -> JsObject(this.additionalCookies.view.mapValues(JsString.apply).toMap),
       "removeCookies"     -> JsArray(this.removeCookies.map(JsString.apply))
     )
 }
@@ -165,13 +165,13 @@ trait AlgoSettings extends AsJson {
 
   def isAsync: Boolean
 
-  def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm]
+  def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm]
 
-  def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
-    FastFuture.successful(asAlgorithm(mode)(env))
+  def asAlgorithmF(mode: AlgoMode)(using env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+    FastFuture.successful(asAlgorithm(mode)(using env))
   }
 
-  def transformValue(secret: String)(implicit env: Env): String = {
+  def transformValue(secret: String)(using env: Env): String = {
     AlgoSettings.fromCacheOrNot(
       secret,
       GlobalExpressionLanguage.apply(
@@ -245,7 +245,7 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
 
   def isAsync: Boolean = false
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     size match {
       case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
       case 384 if base64 => Some(Algorithm.HMAC384(ApacheBase64.decodeBase64(transformValue(secret))))
@@ -311,7 +311,7 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     size match {
       case 256 =>
         Some(
@@ -392,7 +392,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     size match {
       case 256 =>
         Some(
@@ -480,7 +480,7 @@ case class JWKSAlgoSettings(
       case Some((stop, keys, false)) if stop > System.currentTimeMillis()  => false
       case Some((stop, keys, false)) if stop <= System.currentTimeMillis() => true
       case Some((_, keys, true))                                           => false
-      case None                                                            => true
+      case _                                                               => true
     }
   }
 
@@ -502,12 +502,12 @@ case class JWKSAlgoSettings(
     }
   }
 
-  def fetchJWKS(alg: String, kid: String, oldStop: Long, oldKeys: Map[String, com.nimbusds.jose.jwk.JWK])(implicit
+  def fetchJWKS(alg: String, kid: String, oldStop: Long, oldKeys: Map[String, com.nimbusds.jose.jwk.JWK])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[Algorithm]] = {
-    import otoroshi.utils.http.Implicits._
-    implicit val s = env.otoroshiScheduler
+    import otoroshi.utils.http.Implicits.*
+    implicit val s: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
     // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
     JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, true))
     Retry
@@ -515,7 +515,7 @@ case class JWKSAlgoSettings(
         env.MtlsWs
           .url(url, tlsConfig)
           .withRequestTimeout(timeout)
-          .withHttpHeaders(headers.toSeq: _*)
+          .withHttpHeaders(headers.toSeq*)
           .withMaybeProxyServer(
             proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.jwk))
           )
@@ -574,15 +574,15 @@ case class JWKSAlgoSettings(
       }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     if (isAsync) {
       logger.warn(s"loading JWKS content from '${url}' blocking style !")
     }
     // AWAIT: valid
-    Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), timeout)
+    Await.result(asAlgorithmF(mode)(using env, env.otoroshiExecutionContext), timeout)
   }
 
-  override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+  override def asAlgorithmF(mode: AlgoMode)(using env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
     mode match {
       case InputMode(alg, Some(kid)) => {
         JWKSAlgoSettings.cache.getIfPresent(url) match {
@@ -611,7 +611,7 @@ case class JWKSAlgoSettings(
                 FastFuture.successful(None)
             }
           }
-          case None                                                            => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
+          case _                                                               => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
         }
       }
       case _                         =>
@@ -651,13 +651,13 @@ object RSAKPAlgoSettings                                extends FromJson[RSAKPAl
 }
 case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings                {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def keyId: Option[String] = certId.some
 
   def isAsync: Boolean = false
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     DynamicSSLEngineProvider.certificates
       .get(certId)
       .orElse {
@@ -703,13 +703,13 @@ object ESKPAlgoSettings                                extends FromJson[ESKPAlgo
 }
 case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings               {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def keyId: Option[String] = certId.some
 
   def isAsync: Boolean = false
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     DynamicSSLEngineProvider.certificates
       .get(certId)
       .orElse {
@@ -755,13 +755,13 @@ object KidAlgoSettings extends FromJson[KidAlgoSettings] {
 
 case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def keyId: Option[String] = None
 
   def isAsync: Boolean = false
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     mode match {
       case InputMode(typ, Some(kid)) => {
         val certs = DynamicSSLEngineProvider.certificates
@@ -813,7 +813,7 @@ object MappingSettings                                                          
         MappingSettings(
           (json \ "map").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           (json \ "values").asOpt[JsObject].getOrElse(Json.obj()),
-          (json \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          (json \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       )
     } recover { case e =>
@@ -827,7 +827,7 @@ case class MappingSettings(
 )                                                                                          extends AsJson                      {
   override def asJson =
     Json.obj(
-      "map"    -> JsObject(map.mapValues(JsString.apply)),
+      "map"    -> JsObject(map.view.mapValues(JsString.apply).toMap),
       "values" -> values,
       "remove" -> JsArray(remove.map(JsString.apply))
     )
@@ -873,7 +873,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     arrayFields.foldLeft(jwt)((a, b) => {
       val values: Set[String]         = (token \ b._1)
         .as[JsArray]
-        .value
+        .value.toSeq
         .collect {
           case JsNumber(nbr) => nbr.toString()
           case JsBoolean(b)  => b.toString
@@ -889,9 +889,9 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
       jwt
     })
   }
-  def asVerification(algorithm: Algorithm, attrs: TypedMap)(implicit env: Env): Verification = {
+  def asVerification(algorithm: Algorithm, attrs: TypedMap)(using env: Env): Verification = {
     val verification = fields
-      .mapValues(_.evaluateEl(attrs))
+      .view.mapValues(_.evaluateEl(attrs)).toMap
       .foldLeft(
         JWT
           .require(algorithm)
@@ -1054,7 +1054,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     arrayFields.foldLeft(verification)((a, b) => {
       if (b._2.contains(",")) {
         val values = b._2.split(",").map(_.trim)
-        a.withArrayClaim(b._1, values: _*)
+        a.withArrayClaim(b._1, values*)
       } else {
         a.withArrayClaim(b._1, b._2)
       }
@@ -1063,8 +1063,8 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
 
   override def asJson =
     Json.obj(
-      "fields"      -> JsObject(this.fields.mapValues(JsString.apply)),
-      "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply))
+      "fields"      -> JsObject(this.fields.view.mapValues(JsString.apply).toMap),
+      "arrayFields" -> JsObject(this.arrayFields.view.mapValues(JsString.apply).toMap)
     )
 }
 
@@ -1197,7 +1197,7 @@ sealed trait JwtVerifier extends AsJson {
   def isRef: Boolean
   def enabled: Boolean
   def strict: Boolean
-  def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def shouldBeVerified(path: String)(using ec: ExecutionContext, env: Env): Future[Boolean]
   def source: JwtTokenLocation
   def algoSettings: AlgoSettings
   def strategy: VerifierStrategy
@@ -1231,10 +1231,10 @@ sealed trait JwtVerifier extends AsJson {
       elContext: Map[String, String],
       attrs: TypedMap
   )(
-      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
-      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
+      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, ?]](badResult)
       case Right(goodResult) => goodResult
     }
   }
@@ -1248,7 +1248,7 @@ sealed trait JwtVerifier extends AsJson {
       attrs: TypedMap
   )(
       f: JwtInjection => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
       case Right(goodResult) => goodResult
@@ -1264,7 +1264,7 @@ sealed trait JwtVerifier extends AsJson {
       attrs: TypedMap
   )(
       f: JwtInjection => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
@@ -1281,7 +1281,7 @@ sealed trait JwtVerifier extends AsJson {
       sendEvent: Boolean
   )(
       f: JwtInjection => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     if (isAsync) {
       internalVerifyAsync(request, descOpt, apikey, user, elContext, attrs, sendEvent)(f)
     } else {
@@ -1300,11 +1300,11 @@ sealed trait JwtVerifier extends AsJson {
       elContext: Map[String, String],
       attrs: TypedMap,
       sendEvent: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = env.metrics.withTimer(
+  )(using ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = env.metrics.withTimer(
     "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-sync"
   ) {
 
-    import Implicits._
+    import Implicits.*
 
     source.token(request) match {
       case None         =>
@@ -1327,10 +1327,10 @@ sealed trait JwtVerifier extends AsJson {
               case Some(outputAlgorithm) => {
                 val moreCtx           = Map(
                   "jti" -> IdGenerator.uuid,
-                  "iat" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
-                  "nbf" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
+                  "iat" -> s"${Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong}",
+                  "nbf" -> s"${Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong}",
                   "iss" -> "Otoroshi",
-                  "exp" -> s"${Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong}",
+                  "exp" -> s"${Math.floor(((System.currentTimeMillis() + 60000L) / 1000L).toDouble).toLong}",
                   "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
                   "aud" -> "backend"
                 )
@@ -1395,6 +1395,7 @@ sealed trait JwtVerifier extends AsJson {
               .left[JwtInjection]
           }
           case _ if !strict                    => JwtInjection().right[Result]
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       case Some(_token) =>
         val token       = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
@@ -1602,11 +1603,11 @@ sealed trait JwtVerifier extends AsJson {
       sendEvent: Boolean
   )(
       f: JwtInjection => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync(
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync(
     "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-async"
   ) {
 
-    import Implicits._
+    import Implicits.*
 
     source.token(request) match {
       case None         =>
@@ -1629,10 +1630,10 @@ sealed trait JwtVerifier extends AsJson {
               case Some(outputAlgorithm) => {
                 val moreCtx           = Map(
                   "jti" -> IdGenerator.uuid,
-                  "iat" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
-                  "nbf" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
+                  "iat" -> s"${Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong}",
+                  "nbf" -> s"${Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong}",
                   "iss" -> "Otoroshi",
-                  "exp" -> s"${Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong}",
+                  "exp" -> s"${Math.floor(((System.currentTimeMillis() + 60000L) / 1000L).toDouble).toLong}",
                   "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
                   "aud" -> "backend"
                 )
@@ -1697,6 +1698,7 @@ sealed trait JwtVerifier extends AsJson {
               .left[A]
           }
           case _ if !strict                    => f(JwtInjection()).right[Result]
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       // case None if strict =>
       //   Errors
@@ -1923,7 +1925,7 @@ case class LocalJwtVerifier(
 
   override def isRef = false
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def shouldBeVerified(path: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
 }
 
@@ -1951,10 +1953,10 @@ case class RefJwtVerifier(
 
   private def id: Option[String] = ids.headOption
 
-  def verifiersSync(implicit env: Env): Seq[GlobalJwtVerifier] = ids.flatMap(env.proxyState.jwtVerifier)
+  def verifiersSync(using env: Env): Seq[GlobalJwtVerifier] = ids.flatMap(env.proxyState.jwtVerifier)
 
   override def isAsync: Boolean = {
-    verifiersSync(OtoroshiEnvHolder.get()).forall(_.isAsync)
+    verifiersSync(using OtoroshiEnvHolder.get()).forall(_.isAsync)
   }
 
   override def verify(
@@ -1966,7 +1968,7 @@ case class RefJwtVerifier(
       attrs: TypedMap
   )(
       f: JwtInjection => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     verifyGen(request, desc, apikey, user, elContext, attrs)(c => f(c).map(Right.apply)).map {
       case Left(r)  => r
       case Right(r) => r
@@ -1981,8 +1983,8 @@ case class RefJwtVerifier(
       elContext: Map[String, String],
       attrs: TypedMap
   )(
-      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     verifyGen(request, desc, apikey, user, elContext, attrs)(f)
   }
 
@@ -1995,17 +1997,17 @@ case class RefJwtVerifier(
       attrs: TypedMap
   )(
       f: JwtInjection => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-    implicit val mat = env.otoroshiMaterializer
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ids match {
       case s if s.isEmpty => f(JwtInjection())
       case _              => {
 
-        val promise                                       = Promise[Either[Result, A]]
+        val promise                                       = Promise[Either[Result, A]]()
         val last                                          = new AtomicReference[Either[Result, A]](
           Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id")))
         )
-        val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
+        val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids*)
 
         def dequeueNext(): Unit = {
           queue.dequeueFirst(_ => true) match {
@@ -2072,11 +2074,11 @@ case class RefJwtVerifier(
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
       attrs: TypedMap
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, JwtInjection]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, JwtInjection]] = {
     ids match {
       case s if s.isEmpty => JwtInjection().right.future
       case _              => {
-        val promise = Promise[Either[Result, JwtInjection]]
+        val promise = Promise[Either[Result, JwtInjection]]()
         def dequeueNext(all: Seq[String], last: Either[Result, JwtInjection]): Unit = {
           all.headOption match {
             case None      => promise.trySuccess(last)
@@ -2173,7 +2175,7 @@ case class RefJwtVerifier(
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
       attrs: TypedMap
-  )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = {
+  )(using ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = {
     ids match {
       case s if s.isEmpty => JwtInjection().right
       case _              => {
@@ -2250,7 +2252,7 @@ case class RefJwtVerifier(
     }
   }
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  override def shouldBeVerified(path: String)(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     ids match {
       case s if s.isEmpty => FastFuture.successful(false)
       case _              => FastFuture.successful(!excludedPatterns.exists(p => RegexPool.regex(p).matches(path)))
@@ -2265,12 +2267,12 @@ object RefJwtVerifier extends FromJson[RefJwtVerifier] {
         .asOpt[JsArray]
         .map(_.value.map(_.as[String]))
         .orElse((json \ "id").asOpt[String].map(v => Seq(v)))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
       Right[Throwable, RefJwtVerifier](
         RefJwtVerifier(
           ids = refs,
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       )
     } recover { case e =>
@@ -2289,7 +2291,7 @@ object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
         LocalJwtVerifier(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           source = source,
           algoSettings = algoSettings,
           strategy = strategy
@@ -2338,10 +2340,10 @@ case class GlobalJwtVerifier(
 
   override def isRef = false
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalJwtVerifierDataStore.set(this)
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def shouldBeVerified(path: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     FastFuture.successful(true)
 
   override def enabled = true
@@ -2386,7 +2388,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           source = source,
           algoSettings = algoSettings,
           strategy = strategy
@@ -2513,21 +2515,21 @@ object JwtVerifier extends FromJson[JwtVerifier] {
 
 object Implicits {
   implicit class EnhancedFuture[A](val fu: Future[A]) extends AnyVal {
-    def left[B](implicit ec: ExecutionContext): Future[Either[A, B]]  = fu.map(a => Left[A, B](a))
-    def right[B](implicit ec: ExecutionContext): Future[Either[B, A]] = fu.map(a => Right[B, A](a))
+    def left[B](using ec: ExecutionContext): Future[Either[A, B]]  = fu.map(a => Left[A, B](a))
+    def right[B](using ec: ExecutionContext): Future[Either[B, A]] = fu.map(a => Right[B, A](a))
   }
 }
 
 trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): GlobalJwtVerifier = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): GlobalJwtVerifier = {
     val defaultJwt = GlobalJwtVerifier(
       id = IdGenerator.namedId("jwt_verifier", env),
       name = "New jwt verifier",
       desc = "New jwt verifier",
       metadata = Map.empty
-    ).copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+    ).copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .verifier
       .map { template =>

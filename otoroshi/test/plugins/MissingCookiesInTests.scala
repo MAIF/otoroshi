@@ -1,17 +1,18 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AdditionalCookieOutConfig, MissingCookieIn, OverrideHost}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 
 class MissingCookiesInTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val id    = IdGenerator.uuid
   val route = createRouteWithExternalTarget(
@@ -45,7 +46,7 @@ class MissingCookiesInTests(parent: PluginsTestSpec) {
 
     resp.status mustBe Status.OK
     val cookies = Json
-      .parse(resp.body)
+      .parse(resp.body[String])
       .as[JsValue]
       .select("cookies")
       .as[Map[String, String]]
@@ -71,7 +72,7 @@ class MissingCookiesInTests(parent: PluginsTestSpec) {
 
     resp.status mustBe Status.OK
     val cookies = Json
-      .parse(resp.body)
+      .parse(resp.body[String])
       .as[JsValue]
       .select("cookies")
       .as[Map[String, String]]

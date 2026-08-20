@@ -1,8 +1,8 @@
 package otoroshi.env
 
-import akka.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.Materializer
+import org.apache.pekko.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.apache.pekko.stream.Materializer
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -14,12 +14,12 @@ import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.auth.{AuthModuleConfig, PrivateAppsSessionManager, SessionCookieValues}
-import otoroshi.cluster._
-import otoroshi.events._
+import otoroshi.cluster.*
+import otoroshi.events.*
 import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
 import otoroshi.health.HealthCheckerActor
 import otoroshi.jobs.updates.Version
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.extensions.{AdminExtensionConfig, AdminExtensionId, AdminExtensions}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.RateLimiter
@@ -34,22 +34,22 @@ import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, OcspResponder}
 import otoroshi.statefulclients.StatefulClientsManager
 import otoroshi.storage.{DataStores, DataStoresBuilder}
-import otoroshi.storage.drivers.cassandra._
-import otoroshi.storage.drivers.inmemory._
-import otoroshi.storage.drivers.lettuce._
+import otoroshi.storage.drivers.cassandra.*
+import otoroshi.storage.drivers.inmemory.*
+import otoroshi.storage.drivers.lettuce.*
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
-import otoroshi.storage.drivers.rediscala._
+import otoroshi.storage.drivers.rediscala.*
 import otoroshi.tcp.TcpService
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
-import play.api._
+import play.api.*
 import play.api.http.{HttpConfiguration, HttpRequestHandler}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsObject, JsSuccess, JsValue, Json}
-import play.api.libs.ws._
-import play.api.libs.ws.ahc._
+import play.api.libs.ws.*
+import play.api.libs.ws.ahc.*
 import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClient
 import play.twirl.api.Html
 
@@ -64,7 +64,7 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
@@ -138,6 +138,8 @@ class Env(
 
   val logger = Logger("otoroshi-env")
 
+  lazy val defaultCookieHeaderEncoding = new play.api.mvc.DefaultCookieHeaderEncoding(httpConfiguration.cookies)
+
   val handlerRef = new AtomicReference[HttpRequestHandler]()
 
   val otoroshiActorSystem: ActorSystem           = ActorSystem(
@@ -175,7 +177,7 @@ class Env(
       wholeConfigJson.deepMerge(Json.obj("otoroshi" -> mergeConfig, "app" -> mergeConfig))
     val _finalConfigJson1Str          = _finalConfigJson1.stringify
     val _finalConfigJson1StrWithVault = Await.result(
-      vaults.fillSecretsAsync("otoroshi-config", _finalConfigJson1Str)(
+      vaults.fillSecretsAsync("otoroshi-config", _finalConfigJson1Str)(using 
         ExecutionContext.fromExecutor(Executors.newFixedThreadPool(3))
       ),
       30.seconds
@@ -231,6 +233,23 @@ class Env(
       configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowConfigAccess").getOrElse(true)
   )
 
+  // Controls strict validation of backend server certs on outgoing mTLS calls (NewFakeTrustManager +
+  // trustAll precedence) vs the historical permissive behaviour (FakeTrustManager). See app/ssl/ssl.scala.
+  // Static config mode: "strict" | "legacy" | "global" (default). "global" defers to the runtime global
+  // config's TlsSettings.strictBackendServerValidation (old installs default to false, fresh installs true).
+  private lazy val strictBackendServerValidationMode: String =
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.ssl.trust.strictBackendServerValidation")
+      .map(_.trim.toLowerCase)
+      .getOrElse("global")
+
+  def strictBackendServerValidation: Boolean = strictBackendServerValidationMode match {
+    case "strict" => true
+    case "legacy" => false
+    case _        => // "global" (default): read the current global config
+      datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.strictBackendServerValidation).getOrElse(false)
+  }
+
   lazy val devMimetypes: Map[String, String] = configuration
     .betterGetOptional[String]("play.http.fileMimeTypes")
     .map { types =>
@@ -285,15 +304,15 @@ class Env(
     if (analyticsPressureEnabled) Materializer(analyticsActorSystem) else otoroshiMaterializer
 
   def timeout(duration: FiniteDuration): Future[Unit] = {
-    val promise = Promise[Unit]
+    val promise = Promise[Unit]()
     otoroshiActorSystem.scheduler.scheduleOnce(duration) {
       promise.trySuccess(())
-    }(otoroshiExecutionContext)
+    }(using otoroshiExecutionContext)
     promise.future
   }
 
   // val healthCheckerActor  = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
-  val otoroshiEventsActor = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
+  val otoroshiEventsActor = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(using this))
   val analyticsQueue      = otoroshiActorSystem.actorOf(AnalyticsQueue.props(this))
 
   lazy val sidecarConfig: Option[SidecarConfig] = (
@@ -407,7 +426,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.transformersRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       transformersConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.transformersConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -424,7 +443,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.validatorRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       validatorConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.validatorConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -439,7 +458,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.preRouteRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       preRouteConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.preRouteConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -454,7 +473,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.sinkRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       sinkConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.sinkConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -469,7 +488,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.jobsRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       jobConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.jobsConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -630,7 +649,7 @@ class Env(
         .getOptionalWithFileSupport[String]("app.adminapi.exposedDomainsStr")
         .map(ds => ds.split(",").toSeq.map(_.trim))
     )
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val adminApiDomains        = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.adminapi.domains")
     .orElse(
@@ -638,7 +657,7 @@ class Env(
         .getOptionalWithFileSupport[String]("app.adminapi.domainsStr")
         .map(ds => ds.split(",").toSeq.map(_.trim))
     )
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val privateAppsDomains     = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.privateapps.domains")
     .orElse(
@@ -646,7 +665,7 @@ class Env(
         .getOptionalWithFileSupport[String]("app.privateapps.domainsStr")
         .map(ds => ds.split(",").toSeq.map(_.trim))
     )
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val backofficeDomains      = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.backoffice.domains")
     .orElse(
@@ -654,7 +673,7 @@ class Env(
         .getOptionalWithFileSupport[String]("app.backoffice.domainsStr")
         .map(ds => ds.split(",").toSeq.map(_.trim))
     )
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
@@ -664,14 +683,14 @@ class Env(
     .select("entity_validators")
     .asOpt[JsObject]
     .map { obj =>
-      obj.value.mapValues { arr =>
-        arr.asArray.value
+      obj.value.view.mapValues { arr =>
+        arr.asArray.value.toSeq
           .map { item =>
             JsonValidator.format.reads(item)
           }
           .collect { case JsSuccess(v, _) =>
             v
-          }
+          }.toSeq
       }.toMap
     }
     .getOrElse(Map.empty[String, Seq[JsonValidator]])
@@ -710,9 +729,9 @@ class Env(
       config.copy(
         wsClientConfig = wsClientConfig
       )
-    )(otoroshiMaterializer)
+    )(using otoroshiMaterializer)
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
     ahcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = ahcClient.underlying[DefaultAsyncHttpClient].getClientStats
@@ -728,11 +747,11 @@ class Env(
         case Success(_) => ()
         case Failure(e) => logger.error("error while publishing ahc stats", e)
       }
-    }(otoroshiExecutionContext))
+    }(using otoroshiExecutionContext))
 
     WsClientChooser(
       ahcClient,
-      new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
+      new AkkWsClient(wsClientConfig, this)(using otoroshiActorSystem, otoroshiMaterializer),
       reactorClientGateway,
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
@@ -762,7 +781,7 @@ class Env(
         .map(_.millis)
         .getOrElse((2 * 60 * 1000).millis)
     )
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
     internalAhcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = wsClient.underlying[DefaultAsyncHttpClient].getClientStats
@@ -778,10 +797,10 @@ class Env(
         case Success(_) => ()
         case Failure(e) => logger.error("error while publishing ahc stats", e)
       }
-    }(otoroshiExecutionContext))
+    }(using otoroshiExecutionContext))
     WsClientChooser(
       wsClient,
-      new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
+      new AkkWsClient(wsClientConfig, this)(using otoroshiActorSystem, otoroshiMaterializer),
       reactorClientInternal,
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
@@ -792,7 +811,7 @@ class Env(
   // lazy val ua = new UserAgentHelper(this)
 
   lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
-  lazy val metrics = new Metrics(this, lifecycle)
+  lazy val metrics: Metrics = new Metrics(this, lifecycle)
   lazy val pki     = new BouncyCastlePki(snowflakeGenerator, this)
 
   lazy val tunnelManager = new TunnelManager(this)
@@ -813,7 +832,7 @@ class Env(
   lazy val snowflakeSeed             = configuration.getOptionalWithFileSupport[Long]("app.snowflake.seed").get
   lazy val snowflakeGenerator        = IdGenerator(snowflakeSeed)
   lazy val redirections: Seq[String] =
-    configuration.getOptionalWithFileSupport[Seq[String]]("app.redirections").map(_.toSeq).getOrElse(Seq.empty[String])
+    configuration.getOptionalWithFileSupport[Seq[String]]("app.redirections").map(_.toSeq).getOrElse(Seq.empty[String]).toSeq
 
   lazy val crypto = ClaimCrypto(sharedKey)
 
@@ -872,18 +891,18 @@ class Env(
   }
 
   val confPackages: Seq[String] =
-    configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
+    configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty).toSeq ++
     configuration
       .getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr")
       .map(v => v.split(",").map(_.trim).toSeq)
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
 
   val blacklistedPlugins: Set[String] =
-    (configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.blacklisted").getOrElse(Seq.empty) ++
+    (configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.blacklisted").getOrElse(Seq.empty).toSeq ++
       configuration
         .getOptionalWithFileSupport[String]("otoroshi.plugins.blacklistedStr")
         .map(v => v.split(",").map(_.trim).toSeq)
-        .getOrElse(Seq.empty)).toSet
+        .getOrElse(Seq.empty).toSeq).toSet
 
   logger.info(s"Otoroshi version ${otoroshiVersion}")
   // logger.info(s"Scala version ${scala.util.Properties.versionNumberString} / ${scala.tools.nsc.Properties.versionNumberString}")
@@ -954,7 +973,7 @@ class Env(
       case _ if clusterConfig.mode == ClusterMode.Worker                   =>
         new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
       case v if v.startsWith("cp:")                                        =>
-        scriptManager.getAnyScript[DataStoresBuilder](v)(otoroshiExecutionContext) match {
+        scriptManager.getAnyScript[DataStoresBuilder](v)(using otoroshiExecutionContext) match {
           case Left(err)  => {
             logger.error(s"specified datastore with name '${v}' does not exists or failed to instanciate: ${err}")
             System.exit(-1)
@@ -1102,7 +1121,7 @@ class Env(
   // ua.start()
   adminExtensions.start()
   lifecycle.addStopHook(() => {
-    implicit val ec = otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = otoroshiExecutionContext
     // geoloc.stop()
     // ua.stop()
     // healthCheckerActor ! PoisonPill
@@ -1315,7 +1334,7 @@ class Env(
   )
 
   lazy val backofficeRoute =
-    NgRoute.fromServiceDescriptor(backOfficeServiceDescriptor, false)(otoroshiExecutionContext, this)
+    NgRoute.fromServiceDescriptor(backOfficeServiceDescriptor, false)(using otoroshiExecutionContext, this)
 
   lazy val backOfficeDescriptor = RoutingInfo(
     id = backofficeRoute.id,
@@ -1353,7 +1372,7 @@ class Env(
     // TODO: remove timeout
     timeout(300.millis).andThen { case _ =>
       tunnelAgent.start()
-    }(otoroshiExecutionContext)
+    }(using otoroshiExecutionContext)
     ().vfuture
   }
 
@@ -1366,7 +1385,7 @@ class Env(
           (key, value.unwrapped().asInstanceOf[String])
         }.toSeq
       }
-      .getOrElse(Seq.empty) ++ {
+      .getOrElse(Seq.empty).toSeq ++ {
       sys.env.toSeq
         .filter {
           case (key, _) if key.toLowerCase().startsWith("otoroshi_loggers_") => true
@@ -1397,16 +1416,16 @@ class Env(
   } yield OS(name, version, arch)).getOrElse(OS.default)
 
   val serverTrustedCAs: Seq[String] = {
-    val local    = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty)
+    val local    = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty).toSeq
     val localStr = configuration
       .getOptional[String]("otoroshi.ssl.trust.server_cas_str")
       .map(_.split(",").map(_.trim).toSeq)
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     (local ++ localStr).distinct
   }
 
   timeout(300.millis).andThen { case _ =>
-    implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = otoroshiExecutionContext // internalActorSystem.dispatcher
 
     setupLoggers()
 
@@ -1423,18 +1442,18 @@ class Env(
       clusterAgent.startF()
     }
     val modernTlsProtocols: Seq[String] =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty).toSeq
     val protocolsJDK11: Seq[String]     =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK11").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK11").getOrElse(Seq.empty).toSeq
     val protocolsJDK8: Seq[String]      =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK8").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK8").getOrElse(Seq.empty).toSeq
 
     val cipherSuitesJDK8: Seq[String]      =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK8").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK8").getOrElse(Seq.empty).toSeq
     val cipherSuitesJDK11: Seq[String]     =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11").getOrElse(Seq.empty).toSeq
     val cipherSuitesJDK11Plus: Seq[String] =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11Plus").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11Plus").getOrElse(Seq.empty).toSeq
 
     configuration
       .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
@@ -1454,9 +1473,9 @@ class Env(
         }
       }
 
-    io.swagger.v3.core.converter.ModelConverters
-      .getInstance()
-      .addConverter(new com.github.swagger.scala.converter.SwaggerScalaModelConverter())
+    // swagger-scala-module has no Scala 3 build (and pulls Akka), so the Scala model converter is no
+    // longer registered. The Java swagger-core ModelConverters are still used in api.scala, which
+    // falls back to a generic object schema when Scala case-class introspection is unavailable.
 
     // Writes the randomly generated initial admin password to a file with owner-only (0600) permissions,
     // then logs where it can be read (à la GitLab '/etc/gitlab/initial_root_password').
@@ -1502,7 +1521,7 @@ class Env(
       .andThen {
         case Success(true) if clusterConfig.mode == ClusterMode.Worker  => {
           logger.info(s"The main datastore seems to be empty, registering default config.")
-          defaultConfig.save()(ec, this)
+          defaultConfig.save()(using ec, this)
         }
         case Success(true) if clusterConfig.mode != ClusterMode.Worker  => {
           logger.info(s"The main datastore seems to be empty, registering some basic services")
@@ -1514,19 +1533,19 @@ class Env(
           val headers: Seq[(String, String)] = configuration
             .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
-            .getOrElse(Seq.empty[(String, String)])
+            .getOrElse(Seq.empty[(String, String)]).toSeq
           if (configuration.betterHas("app.importFrom")) {
             configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
               case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
                 logger.info(s"Importing from URL: $url")
-                _internalClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
+                _internalClient.url(url).withHttpHeaders(headers*).get().fast.map { resp =>
                   val json = resp.json.as[JsObject]
                   datastores.globalConfigDataStore
-                    .fullImport(json)(ec, this)
+                    .fullImport(json)(using ec, this)
                     .andThen {
                       case Success(_) => logger.info("Successful import !")
                       case Failure(e) => logger.error("Error while importing initial data !", e)
-                    }(ec)
+                    }(using ec)
                 }
               }
               case Some(path)                                                           => {
@@ -1534,12 +1553,13 @@ class Env(
                 val source = Source.fromFile(path).getLines().mkString("\n")
                 val json   = Json.parse(source).as[JsObject]
                 datastores.globalConfigDataStore
-                  .fullImport(json)(ec, this)
+                  .fullImport(json)(using ec, this)
                   .andThen {
                     case Success(_) => logger.info("Successful import !")
                     case Failure(e) => logger.error("Error while importing initial data !", e)
-                  }(ec)
+                  }(using ec)
               }
+              case _ => ()
             }
           } else {
             configuration.getOptionalWithFileSupport[play.api.Configuration]("app.initialData") match {
@@ -1553,11 +1573,11 @@ class Env(
                   .as[JsObject]
                 logger.info(s"Importing from config file")
                 datastores.globalConfigDataStore
-                  .fullImport(importJson)(ec, this)
+                  .fullImport(importJson)(using ec, this)
                   .andThen {
                     case Success(_) => logger.info("Successful import !")
                     case Failure(e) => logger.error("Error while importing initial data !", e)
-                  }(ec)
+                  }(using ec)
               }
               case _         => {
 
@@ -1622,7 +1642,7 @@ class Env(
                   )
                   .getOrElse(Json.obj())
 
-                val finalConfig = baseExport.customizeWith(initialCustomization)(this)
+                val finalConfig = baseExport.customizeWith(initialCustomization)(using this)
 
                 if (passwordGenerated) {
                   if (writeInitialAdminPasswordToFile) {
@@ -1635,14 +1655,14 @@ class Env(
                   }
                 }
 
-                datastores.globalConfigDataStore.fullImport(finalConfig.json)(ec, this)
+                datastores.globalConfigDataStore.fullImport(finalConfig.json)(using ec, this)
               }
             }
           }
         }
         case Success(false) if clusterConfig.mode != ClusterMode.Worker => {
           deleteInitialAdminPasswordFileIfNeeded()
-          datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).flatMap {
+          datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(using ec, this).flatMap {
             case Some(adminService) if !adminApiExposedDomains.forall(d => adminService.hosts.contains(d))    => {
               adminService
                 .copy(
@@ -1650,7 +1670,7 @@ class Env(
                     (adminService.hosts ++ adminApiAdditionalExposedDomain ++ adminApiExposedDomains :+ s"${adminApiExposedSubDomain}.${domain}").distinct,
                   additionalHeaders = Map("Host" -> backOfficeDescriptorHostHeader)
                 )
-                .save()(ec, this)
+                .save()(using ec, this)
             }
             case Some(adminService) if !adminService.hosts.contains(s"${adminApiExposedSubDomain}.${domain}") => {
               adminService
@@ -1659,7 +1679,7 @@ class Env(
                     (adminService.hosts ++ adminApiAdditionalExposedDomain ++ adminApiExposedDomains :+ s"${adminApiExposedSubDomain}.${domain}").distinct,
                   additionalHeaders = Map("Host" -> backOfficeDescriptorHostHeader)
                 )
-                .save()(ec, this)
+                .save()(using ec, this)
             }
             case Some(adminService)
                 if !adminService.additionalHeaders
@@ -1670,7 +1690,7 @@ class Env(
                     (adminService.hosts ++ adminApiAdditionalExposedDomain ++ adminApiExposedDomains :+ s"${adminApiExposedSubDomain}.${domain}").distinct,
                   additionalHeaders = Map("Host" -> backOfficeDescriptorHostHeader)
                 )
-                .save()(ec, this)
+                .save()(using ec, this)
             }
             case Some(adminService)                                                                           => {
               ().future
@@ -1680,19 +1700,19 @@ class Env(
         }
       }
       .map { _ =>
-        datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).map {
+        datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(using ec, this).map {
           case Some(s) if !s.publicPatterns.contains("/health")  =>
             logger.info("Updating BackOffice service to handle health check ...")
-            s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
+            s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(using ec, this)
           case Some(s) if !s.publicPatterns.contains("/metrics") =>
             logger.info("Updating BackOffice service to handle metrics ...")
-            s.copy(publicPatterns = s.publicPatterns :+ "/metrics").save()(ec, this)
+            s.copy(publicPatterns = s.publicPatterns :+ "/metrics").save()(using ec, this)
           case _                                                 =>
         }
       }
 
     {
-      datastores.tenantDataStore.findById("default")(ec, this).map {
+      datastores.tenantDataStore.findById("default")(using ec, this).map {
         case None    =>
           datastores.tenantDataStore.set(
             Tenant(
@@ -1701,10 +1721,10 @@ class Env(
               description = "Default organization created for any otoroshi instance",
               metadata = Map.empty
             )
-          )(ec, this)
+          )(using ec, this)
         case Some(_) =>
       }
-      datastores.teamDataStore.findById("default")(ec, this).map {
+      datastores.teamDataStore.findById("default")(using ec, this).map {
         case None    =>
           datastores.teamDataStore.set(
             Team(
@@ -1714,12 +1734,12 @@ class Env(
               description = "Default team created for any otoroshi instance",
               metadata = Map.empty
             )
-          )(ec, this)
+          )(using ec, this)
         case Some(_) =>
       }
     }
     ()
-  }(otoroshiExecutionContext)
+  }(using otoroshiExecutionContext)
 
   timeout(1000.millis).andThen { case _ =>
     jobManager.start()
@@ -1728,18 +1748,18 @@ class Env(
     // Initialize the analytics runtime once Env is available.
     otoroshi.next.analytics.queries.AnalyticsRuntime.init(
       otoroshi.next.analytics.queries.CoreQueries.all
-    )(this)
-  }(otoroshiExecutionContext)
+    )(using this)
+  }(using otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {
     case _ if clusterConfig.mode != ClusterMode.Worker => {
-      implicit val ec = otoroshiExecutionContext
+      implicit val ec: scala.concurrent.ExecutionContext = otoroshiExecutionContext
       implicit val ev = this
       for {
         _ <- datastores.globalConfigDataStore.migrate()
       } yield ()
     }
-  }(otoroshiExecutionContext)
+  }(using otoroshiExecutionContext)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -3,16 +3,16 @@ package otoroshi.ssl
 import java.net.Socket
 import java.security.{Principal, PrivateKey}
 import java.security.cert.X509Certificate
-import com.github.blemale.scaffeine._
+import com.github.blemale.scaffeine.*
 import otoroshi.env.Env
 
 import javax.net.ssl.{KeyManager, SSLEngine, SSLSession, X509ExtendedKeyManager, X509KeyManager}
 import otoroshi.models.{GlobalConfig, TlsSettings}
 import otoroshi.utils.http.DN
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Try
 
 object KeyManagerCompatibility {
@@ -29,11 +29,11 @@ object KeyManagerCompatibility {
 
 object DynamicKeyManager {
 
-  val cache    = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, Cert]
+  val cache    = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, Cert]()
   val sessions = Scaffeine()
     .maximumSize(1000)
     .expireAfterWrite(5.seconds)
-    .build[String, (SSLSession, PrivateKey, Array[X509Certificate])]
+    .build[String, (SSLSession, PrivateKey, Array[X509Certificate])]()
 
   def validCertificates(allCertificates: Seq[Cert]): Seq[Cert] = {
     allCertificates
@@ -80,6 +80,7 @@ object DynamicKeyManager {
                 case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false
                 case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*")  => true
                 case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
+                case _ => true
               }
               .seffectOnIf(logger.isDebugEnabled)(certs =>
                 logger.debug(s"possible certificates for '$domain': \n${certs
@@ -91,16 +92,19 @@ object DynamicKeyManager {
               .seffectOnIf(logger.isDebugEnabled)(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
           }
           .orElse {
-            //foundCertDef
-            tlsSettings.defaultDomain.flatMap { d =>
+            //foundCertDef: no match for the requested domain -> fall back to the configured defaultDomain.
+            // NB: match against `dd` (the defaultDomain), not `domain` (the requested SNI), and avoid the
+            // inner lambda param shadowing `dd` — otherwise this fallback is a no-op (same filter as above).
+            tlsSettings.defaultDomain.flatMap { dd =>
               validCerts
                 .flatMap(c => c.allDomains.map(d => (d, c)))
-                .filter(c => c._2.sanMatchesDomain(domain, c._1))
+                .filter(c => c._2.sanMatchesDomain(dd, c._1))
                 .sortWith {
                   case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*")   => d1.size > d2.size
                   case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false
                   case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*")  => true
                   case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
+                  case _ => true
                 }
                 .map(_._2)
                 .headOption
@@ -175,7 +179,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
         val dns   = domain.split("\\|").toSeq.map(DN.apply)
         val certs = validCerts
           .filter { c =>
-            val dnses = c.certificates.map(_.getSubjectDN.getName).map(DN.apply)
+            val dnses = c.certificates.map(_.getSubjectX500Principal.getName).map(DN.apply)
             dnses.exists(dn => dns.exists(v => v.isEqualsTo(dn)))
           }
           .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)

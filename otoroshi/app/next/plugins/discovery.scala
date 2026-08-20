@@ -1,19 +1,19 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.Target
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.discovery.{DiscoveryHelper, SelfRegistrationConfig}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class NgDiscoverySelfRegistrationConfig(
     raw: JsValue = Json.obj()
@@ -23,7 +23,7 @@ case class NgDiscoverySelfRegistrationConfig(
 
   def legacy: SelfRegistrationConfig = SelfRegistrationConfig(raw)
 
-  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val targetTemplate: JsObject        = raw
     .select("targetTemplate")
     .asOpt[JsObject]
@@ -52,7 +52,7 @@ object NgDiscoverySelfRegistrationConfig {
 
 class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim.*
 
   override def name: String                                = "Global self registration endpoints (service discovery)"
   override def description: Option[String]                 =
@@ -64,12 +64,12 @@ class NgDiscoverySelfRegistrationSink extends NgRequestSink {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.ServiceDiscovery)
   override def steps: Seq[NgStep]                          = Seq(NgStep.Sink)
 
-  override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val config = NgDiscoverySelfRegistrationConfig(ctx.config)
     config.hosts.contains(ctx.request.theDomain)
   }
 
-  override def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
     val config = NgDiscoverySelfRegistrationConfig(ctx.config)
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             => DiscoveryHelper.register(None, ctx.body, config.legacy)
@@ -84,7 +84,7 @@ class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
 class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim.*
 
   override def name: String                                = "Self registration endpoints (service discovery)"
   override def description: Option[String]                 =
@@ -98,7 +98,7 @@ class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx
       .cachedConfig(internalName)(NgDiscoverySelfRegistrationConfig.format)
       .getOrElse(NgDiscoverySelfRegistrationConfig())
@@ -128,7 +128,7 @@ class NgDiscoveryTargetsSelector extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config = ctx
       .cachedConfig(internalName)(NgDiscoverySelfRegistrationConfig.format)
       .getOrElse(NgDiscoverySelfRegistrationConfig())

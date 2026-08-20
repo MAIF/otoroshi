@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.models.{ApiKey, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -21,7 +22,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSAuthScheme
 
 class ApikeysTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def default() = {
     val route = createRouteWithExternalTarget(
@@ -68,7 +69,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
 
-    println(authorizedCall.body)
+    println(authorizedCall.body[String])
     authorizedCall.status mustBe Status.OK
 
     deleteOtoroshiApiKey(apikey)

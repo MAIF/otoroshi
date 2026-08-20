@@ -1,24 +1,25 @@
 package otoroshi.storage.drivers.inmemory
 
-import akka.NotUsed
-import akka.actor.Cancellable
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.alpakka.s3.headers.CannedAcl
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.{Framing, Keep, Sink, Source}
-import akka.stream.{Attributes, Materializer}
-import akka.util.ByteString
-import com.google.common.base.Charsets
+import org.apache.pekko.NotUsed
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3.*
+import org.apache.pekko.stream.scaladsl.{Framing, Keep, Sink, Source}
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.util.ByteString
+import java.nio.charset.StandardCharsets
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginConfig
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
-import otoroshi.utils.http.Implicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.Implicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.SourceBody
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
@@ -29,9 +30,9 @@ import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 import scala.util.hashing.MurmurHash3
 
 sealed trait PersistenceKind
@@ -73,7 +74,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   override def message: String = s"Now using FileDb DataStores (loading '$dbPath')"
 
   override def onStart(): Future[Unit] = {
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
     val file = new File(dbPath)
     if (!file.exists()) {
       logger.info(s"Creating FileDb file and directory ('$dbPath')")
@@ -83,15 +84,15 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     readStateFromDisk(Files.readAllLines(file.toPath).asScala.toSeq)
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(SchedulerHelper.runnable {
       // AWAIT: valid
-      Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
-    })(ds.actorSystem.dispatcher))
+      Await.result(writeStateToDisk()(using ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
+    })(using ds.actorSystem.dispatcher))
     FastFuture.successful(())
   }
 
   override def onStop(): Future[Unit] = {
     cancelRef.get().cancel()
     // AWAIT: valid
-    Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
+    Await.result(writeStateToDisk()(using ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
     FastFuture.successful(())
   }
 
@@ -117,19 +118,19 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -139,12 +140,12 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {
@@ -156,7 +157,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
   }
 
-  private def writeStateToDisk()(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  private def writeStateToDisk()(using ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val file = new File(dbPath)
     Source
       .futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
@@ -168,7 +169,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         val hash = MurmurHash3.stringHash(content)
         if (hash != lastHash.get()) {
           if (logger.isDebugEnabled) logger.debug("Writing state to disk ...")
-          Files.write(file.toPath, content.getBytes(Charsets.UTF_8))
+          Files.write(file.toPath, content.getBytes(StandardCharsets.UTF_8))
           lastHash.set(hash)
         }
       }
@@ -199,8 +200,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   override def message: String = s"Now using HttpDb DataStores (loading from '$stateUrl')"
 
   override def onStart(): Future[Unit] = {
-    implicit val ec  = ds.actorSystem.dispatcher
-    implicit val mat = ds.materializer
+    implicit val ec: scala.concurrent.ExecutionContext = ds.actorSystem.dispatcher
+    implicit val mat: org.apache.pekko.stream.Materializer = ds.materializer
     readStateFromHttp().map { _ =>
       cancelRef.set(
         Source
@@ -222,8 +223,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def readStateFromHttp(): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug("Reading state from http db ...")
-    implicit val ec  = ds.actorSystem.dispatcher
-    implicit val mat = ds.materializer
+    implicit val ec: scala.concurrent.ExecutionContext = ds.actorSystem.dispatcher
+    implicit val mat: org.apache.pekko.stream.Materializer = ds.materializer
     val store        = new UnboundedConcurrentHashMap[String, Any]()
     val expirations  = new UnboundedConcurrentHashMap[String, Long]()
     val headers      = stateHeaders.toSeq ++ Seq(
@@ -232,7 +233,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withMethod("GET")
       .stream()
       .flatMap {
@@ -262,19 +263,19 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -284,12 +285,12 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {
@@ -302,8 +303,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   }
 
   private def writeStateToHttp(): Future[Unit] = {
-    implicit val ec  = ds.actorSystem.dispatcher
-    implicit val mat = ds.materializer
+    implicit val ec: scala.concurrent.ExecutionContext = ds.actorSystem.dispatcher
+    implicit val mat: org.apache.pekko.stream.Materializer = ds.materializer
     val source       = Source.futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4)).map { item =>
       ByteString(Json.stringify(item) + "\n")
     }
@@ -314,7 +315,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withMethod("POST")
       .withBody(SourceBody(source))
       .stream()
@@ -407,8 +408,8 @@ object S3Configuration {
 
 class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
-  private implicit val ec  = ds.actorSystem.dispatcher
-  private implicit val mat = ds.materializer
+  private implicit val ec: scala.concurrent.ExecutionContext = ds.actorSystem.dispatcher
+  private implicit val mat: org.apache.pekko.stream.Materializer = ds.materializer
 
   private val logger    = Logger("otoroshi-s3-datastores")
   private val cancelRef = new AtomicReference[Cancellable]()
@@ -472,7 +473,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(5.second, conf.writeEvery)(SchedulerHelper.runnable {
       // AWAIT: valid
       Await.result(writeStateToS3(), 60.seconds)
-    })(ds.actorSystem.dispatcher))
+    })(using ds.actorSystem.dispatcher))
     FastFuture.successful(())
   }
 
@@ -483,56 +484,89 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     FastFuture.successful(())
   }
 
+  // private def readStateFromS3(): Future[Unit] = {
+  //   if (logger.isDebugEnabled) logger.debug(s"Reading state from $url")
+  //   val store                                                       = new UnboundedConcurrentHashMap[String, Any]()
+  //   val expirations                                                 = new UnboundedConcurrentHashMap[String, Long]()
+  //   val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
+  //   S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs()).runFold(none)((_, opt) => opt).map {
+  //     case None                 =>
+  //       logger.warn(s"asset at ${url} does not exists yet ...")
+  //       ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+  //     case Some((source, meta)) => {
+  //       source
+  //         .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+  //         .map(_.utf8String.trim)
+  //         .filterNot(_.isEmpty)
+  //         .map { raw =>
+  //           val item  = Json.parse(raw)
+  //           val key   = (item \ "k").as[String]
+  //           val value = (item \ "v").as[JsValue]
+  //           val what  = (item \ "w").as[String]
+  //           val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
+  //           fromJson(what, value, ds._modern)
+  //             .map(v => store.put(key, v))
+  //             .getOrElse(println(s"file read error for: ${item.prettify} "))
+  //           if (ttl > -1L) {
+  //             expirations.put(key, ttl)
+  //           }
+  //         }
+  //         .runWith(Sink.ignore)
+  //         .andThen { case _ =>
+  //           ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+  //         }
+  //     }
+  //   }
+  // }
+
   private def readStateFromS3(): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug(s"Reading state from $url")
-    val store                                                       = new UnboundedConcurrentHashMap[String, Any]()
-    val expirations                                                 = new UnboundedConcurrentHashMap[String, Long]()
-    val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
-    S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs).runFold(none)((_, opt) => opt).map {
-      case None                 =>
-        logger.warn(s"asset at ${url} does not exists yet ...")
-        ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
-      case Some((source, meta)) => {
-        source
-          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
-          .map(_.utf8String.trim)
-          .filterNot(_.isEmpty)
-          .map { raw =>
-            val item  = Json.parse(raw)
-            val key   = (item \ "k").as[String]
-            val value = (item \ "v").as[JsValue]
-            val what  = (item \ "w").as[String]
-            val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-            fromJson(what, value, ds._modern)
-              .map(v => store.put(key, v))
-              .getOrElse(println(s"file read error for: ${item.prettify} "))
-            if (ttl > -1L) {
-              expirations.put(key, ttl)
-            }
-          }
-          .runWith(Sink.ignore)
-          .andThen { case _ =>
-            ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
-          }
+    val store = new UnboundedConcurrentHashMap[String, Any]()
+    val expirations = new UnboundedConcurrentHashMap[String, Long]()
+
+    S3.getObject(conf.bucket, conf.key)
+      .withAttributes(s3ClientSettingsAttrs())
+      .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, allowTruncation = true))
+      .map(_.utf8String.trim)
+      .filterNot(_.isEmpty)
+      .map { raw =>
+        val item = Json.parse(raw)
+        val key = (item \ "k").as[String]
+        val value = (item \ "v").as[JsValue]
+        val what = (item \ "w").as[String]
+        val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
+        fromJson(what, value, ds._modern)
+          .map(v => store.put(key, v))
+          .getOrElse(println(s"file read error for: ${item.prettify} "))
+        if (ttl > -1L) {
+          expirations.put(key, ttl)
+        }
       }
-    }
+      .runWith(Sink.ignore)
+      .map { _ =>
+        ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+      }
+      .recover { case _: S3Exception =>
+        logger.warn(s"asset at $url does not exists yet ...")
+        ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+      }
   }
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -542,12 +576,12 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {
@@ -559,7 +593,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
   }
 
-  private def writeStateToS3()(implicit ec: ExecutionContext, mat: Materializer): Future[MultipartUploadResult] = {
+  private def writeStateToS3()(using ec: ExecutionContext, mat: Materializer): Future[MultipartUploadResult] = {
     Source
       .futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
       .map { item =>
@@ -578,7 +612,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
             cannedAcl = conf.acl,
             chunkingParallelism = 1
           )
-          .withAttributes(s3ClientSettingsAttrs)
+          .withAttributes(s3ClientSettingsAttrs())
         if (logger.isDebugEnabled) logger.debug(s"writing state to $url")
         Source
           .single(payload)

@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{EchoBackend, EchoBackendConfig, OverrideHost}
@@ -8,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class RequestEchoTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

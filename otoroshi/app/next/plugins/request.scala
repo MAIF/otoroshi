@@ -1,10 +1,10 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsNull, JsString, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result}
 
@@ -63,7 +63,7 @@ class NgDefaultRequestBody extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     if (hasNoRequestBody(ctx.request)) {
       val config                          = NgDefaultRequestBodyConfig.from(ctx)
       val addHeaders: Map[String, String] = Map(

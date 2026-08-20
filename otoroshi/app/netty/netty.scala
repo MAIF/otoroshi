@@ -1,13 +1,13 @@
 package otoroshi.netty
 
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.ByteString
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext, ChannelPipeline, EventLoopGroup}
-import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.websocketx._
+import io.netty.handler.codec.http.*
+import io.netty.handler.codec.http.websocketx.*
 import io.netty.handler.logging.LogLevel
-import io.netty.handler.ssl._
+import io.netty.handler.ssl.*
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
 import otoroshi.next.extensions.{HttpListener, HttpListenerNames}
@@ -15,13 +15,13 @@ import otoroshi.next.proxy.ProxyEngine
 import otoroshi.script.RequestHandler
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.http.websocket.Message
 import play.api.http.{HttpChunk, HttpEntity, HttpRequestHandler}
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
 import reactor.netty.{DisposableServer, NettyOutbound}
@@ -30,7 +30,7 @@ import reactor.netty.http.server.logging.{AccessLog, AccessLogArgProvider, Acces
 import java.net.{InetSocketAddress, SocketAddress}
 import java.security.{Provider, SecureRandom}
 import java.util.function.{BiFunction, Function}
-import javax.net.ssl._
+import javax.net.ssl.*
 import scala.concurrent.Await
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.util.{Failure, Success, Try}
@@ -55,17 +55,17 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
 
   import reactor.core.publisher.Flux
   import reactor.netty.http.HttpProtocol
-  import reactor.netty.http.server._
+  import reactor.netty.http.server.*
 
-  implicit private val ec  = env.otoroshiExecutionContext
-  implicit private val mat = env.otoroshiMaterializer
-  implicit private val ev  = env
+  implicit private val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit private val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  implicit private val ev: otoroshi.env.Env = env
 
   private val logger = Logger("otoroshi-experimental-netty-server")
 
   private val engine: ProxyEngine = env.scriptManager
     .getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}")
-    .right
+    .toOption
     .get
     .asInstanceOf[ProxyEngine]
 
@@ -80,7 +80,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
     val bresponse: HttpServerBodyResponse = result.body match {
       case HttpEntity.NoEntity                                   => HttpServerBodyResponse(Flux.empty[Array[Byte]](), None, None, false)
       case HttpEntity.Strict(data, contentType)                  =>
-        HttpServerBodyResponse(Flux.just(Seq(data.toArray[Byte]): _*), contentType, Some(data.size.toLong), false)
+        HttpServerBodyResponse(Flux.just(Seq(data.toArray[Byte])*), contentType, Some(data.size.toLong), false)
       case HttpEntity.Chunked(chunks, contentType)               => {
         val publisher = chunks
           .collect { case HttpChunk.Chunk(data) =>
@@ -170,7 +170,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       }
       .chunkedTransfer(bresponse.chunked)
       .trailerHeaders(theaders => {
-        import collection.JavaConverters._
+        import scala.jdk.CollectionConverters.*
         result.header.headers.get("otoroshi-netty-trailers").foreach { trailersId =>
           otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
             case Left(future)    =>
@@ -229,7 +229,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
   }
 
   private def messageToFrame(message: Message): WebSocketFrame = {
-    import io.netty.handler.codec.http.websocketx._
+    import io.netty.handler.codec.http.websocketx.*
     def byteStringToByteBuf(bytes: ByteString): ByteBuf = {
       if (bytes.isEmpty) {
         Unpooled.EMPTY_BUFFER
@@ -263,7 +263,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
         case Right(flow)  => {
           res.sendWebsocket { (wsInbound, wsOutbound) =>
             val processor: Processor[RawMessage, Message] =
-              WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
+              WebSocketFlowHandler.webSocketProtocol(65536, "ping", scala.concurrent.duration.Duration.Inf).join(flow).toProcessor.run()
             wsInbound
               .receiveFrames()
               .map[RawMessage](frameToRawMessage)
@@ -354,7 +354,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
             case Right(flow)  => {
               res.sendWebsocket { (wsInbound, wsOutbound) =>
                 val processor: Processor[RawMessage, Message] =
-                  WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
+                  WebSocketFlowHandler.webSocketProtocol(65536, "ping", scala.concurrent.duration.Duration.Inf).join(flow).toProcessor.run()
                 wsInbound
                   .receiveFrames()
                   .map[RawMessage](frameToRawMessage)
@@ -451,7 +451,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
 
       def handleFunction(
           secure: Boolean
-      ): BiFunction[_ >: HttpServerRequest, _ >: HttpServerResponse, _ <: Publisher[Void]] = {
+      ): BiFunction[? >: HttpServerRequest, ? >: HttpServerResponse, ? <: Publisher[Void]] = {
         if (config.newEngineOnly) { (req, res) =>
           {
             val channel = NettyHelper.getChannel(req)
@@ -475,9 +475,9 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
           val tlsVersion = args.requestHeader("Otoroshi-Tls-Version")
           AccessLog.create(
             defaultLogFormat,
-            applyAddress(args.remoteAddress()),
+            applyAddress(args.connectionInformation().connectionRemoteAddress()),
             args.user(),
-            args.zonedDateTime(),
+            args.accessDateTime(),
             args.method(),
             args.uri(),
             args.protocol(),
@@ -504,7 +504,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
               .accessLog(config.accessLog, logCustom)
               .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
               .port(config.httpsPort)
-              .protocol(protocols: _*)
+              .protocol(protocols*)
               //.applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
               //.applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
               .runOn(groupHttps)
@@ -515,7 +515,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
                   .initialBufferSize(config.parser.initialBufferSize)
                   .maxHeaderSize(config.parser.maxHeaderSize)
                   .maxInitialLineLength(config.parser.maxInitialLineLength)
-                  .maxChunkSize(config.parser.maxChunkSize)
+                  //.maxChunkSize(config.parser.maxChunkSize)
                   .validateHeaders(config.parser.validateHeaders)
               )
               .idleTimeout(config.idleTimeout)
@@ -549,7 +549,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
               .accessLog(config.accessLog, logCustom)
               .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
               .port(config.httpPort)
-              .protocol(protocols: _*)
+              .protocol(protocols*)
               //.applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
               //.applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
               .handle(handleFunction(false))
@@ -561,7 +561,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
                   .initialBufferSize(config.parser.initialBufferSize)
                   .maxHeaderSize(config.parser.maxHeaderSize)
                   .maxInitialLineLength(config.parser.maxInitialLineLength)
-                  .maxChunkSize(config.parser.maxChunkSize)
+                  //.maxChunkSize(config.parser.maxChunkSize)
                   .validateHeaders(config.parser.validateHeaders)
               )
               .idleTimeout(config.idleTimeout)

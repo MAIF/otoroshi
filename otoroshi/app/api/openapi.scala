@@ -2,7 +2,7 @@ package otoroshi.api
 
 import otoroshi.env.Env
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 
 import java.nio.charset.StandardCharsets
@@ -901,7 +901,7 @@ object OpenApi {
       "singleton", {
         val resources                      = env.allResources.resources.filter(_.version.served).filterNot(_.version.deprecated)
         val _schemas: Map[String, JsValue] = resources
-          .map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz)(env)))
+          .map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz)(using env)))
           .toMap
         val schemas: Map[String, JsValue]  = cleanupSchemas(_schemas)
         val paths: Map[String, JsValue]    = resources.flatMap(buildPaths).toMap
@@ -1013,7 +1013,7 @@ object OpenApi {
             val filteredPaths    = JsObject(paths.value.filter(_._1.startsWith(s"/apis/${group}")))
             val needTags         = filteredPaths.values.flatMap { path =>
               path.asObject.values.flatMap { endpoint =>
-                endpoint.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+                endpoint.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
               }
             }.toSet
             val filteredTags     = JsArray(

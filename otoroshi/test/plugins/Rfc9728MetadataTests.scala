@@ -10,7 +10,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class Rfc9728MetadataTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   private val WellKnownPath = "/.well-known/oauth-protected-resource"
 

@@ -1,6 +1,6 @@
 package tools
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import cats.implicits.catsSyntaxOptionId
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -15,7 +15,7 @@ import scala.concurrent.{Await, ExecutionContext}
 /*
 class Http3ClientSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+  implicit val ec: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
   val fu = for {
     resp0 <- NettyHttp3Client.getUrl(
@@ -36,19 +36,19 @@ class Http3ClientSpec extends AnyWordSpec with Matchers with OptionValues {
 
     println(s"resp4 status:  ${resp4.status}")
     println(s"resp4 headers: ${resp4.headers}")
-    println(s"resp4 body:    ${resp4.body}")
+    println(s"resp4 body:    ${resp4.body[String]}")
 
     println(s"resp0 status:  ${resp0.status}")
     println(s"resp0 headers: ${resp0.headers}")
-    println(s"resp0 body:    ${resp0.body}")
+    println(s"resp0 body:    ${resp0.body[String]}")
 
     println(s"resp1 status:  ${resp1.status}")
     println(s"resp1 headers: ${resp1.headers}")
-    println(s"resp1 body:    ${resp1.body}")
+    println(s"resp1 body:    ${resp1.body[String]}")
 
     println(s"resp2 status:  ${resp2.status}")
     println(s"resp2 headers: ${resp2.headers}")
-    println(s"resp2 body:    ${resp2.body}")
+    println(s"resp2 body:    ${resp2.body[String]}")
   }
 
   Await.result(fu, 10.seconds)

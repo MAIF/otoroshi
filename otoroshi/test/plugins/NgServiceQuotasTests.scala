@@ -15,7 +15,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class NgServiceQuotasTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

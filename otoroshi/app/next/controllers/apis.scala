@@ -1,7 +1,7 @@
 package otoroshi.next.controllers.adminapi
 
-import akka.NotUsed
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import next.models.{
   Api,
   ApiBackend,
@@ -29,20 +29,20 @@ import otoroshi.models.Draft
 import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsError, JsNull, JsObject, JsSuccess, JsValue, Json, Reads}
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.concurrent.TimeUnit
 import scala.+:
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
-class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
+class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apis-controller")
 
@@ -313,7 +313,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
   private def validateBody(ctx: ApiActionContext[JsValue]): Either[Result, ApiSubscription] =
     ctx.request.body
-      .asOpt(ApiSubscription.format)
+      .asOpt(using ApiSubscription.format)
       .toRight(BadRequest(Json.obj("error" -> "wrong subscription format")))
 
   def closePlan(apiId: String, planId: String) = {
@@ -398,17 +398,17 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
         val isDraft = ctx.request.getQueryString("version").contains("Draft")
 
-        def getPlanDraftSubscriptions(page: Int, plan: ApiDocumentationPlan)(implicit
+        def getPlanDraftSubscriptions(page: Int, plan: ApiDocumentationPlan)(using
             env: Env
         ): Future[Seq[JsValue]] = {
-          implicit val ec = env.otoroshiExecutionContext
+          implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
           env.datastores.draftsDataStore
             .streamedFindAndMat(
               _.content.selectAsOptString("plan_ref").getOrElse("") == plan.id,
               fetchSize = 50,
               page = page
-            )(ec, env.otoroshiMaterializer, env)
+            )(using ec, env.otoroshiMaterializer, env)
             .flatMap { subscriptions =>
               if (subscriptions.isEmpty || subscriptions.size < 50) {
                 subscriptions.map(_.content).vfuture
@@ -419,13 +419,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
             }
         }
 
-        def getPlanSubscriptions(page: Int, plan: ApiDocumentationPlan)(implicit
+        def getPlanSubscriptions(page: Int, plan: ApiDocumentationPlan)(using
             env: Env
         ): Future[Seq[ApiSubscription]] = {
-          implicit val ec = env.otoroshiExecutionContext
+          implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
           env.datastores.apiSubscriptionDataStore
-            .streamedFindAndMat(_.planRef == plan.id, fetchSize = 50, page = page)(ec, env.otoroshiMaterializer, env)
+            .streamedFindAndMat(_.planRef == plan.id, fetchSize = 50, page = page)(using ec, env.otoroshiMaterializer, env)
             .flatMap { subscriptions =>
               if (subscriptions.isEmpty) {
                 subscriptions.vfuture
@@ -441,7 +441,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
         ctx.request.body
           .asOpt[JsObject]
-          .map(ApiDocumentationPlan)
+          .map(ApiDocumentationPlan.apply)
           .toRight(BadRequest(Json.obj("error" -> "wrong plan format"))) match {
           case Left(err)              => err.vfuture
           case Right(plan) if isDraft =>

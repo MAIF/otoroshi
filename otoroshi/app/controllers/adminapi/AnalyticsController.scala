@@ -1,26 +1,26 @@
 package otoroshi.controllers.adminapi
 
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.joda.time.DateTime
-import otoroshi.actions._
+import otoroshi.actions.*
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.jobs.updates._
+import otoroshi.events.*
+import otoroshi.jobs.updates.*
 import otoroshi.models.{RightsChecker, ServiceDescriptor}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import play.api.mvc._
+import play.api.mvc.*
 import reactor.core.publisher.Sinks
 import utils.EntityFiltering
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
-  def call(req: RequestHeader)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[JsObject] = {
+  def call(req: RequestHeader)(using ec: ExecutionContext, mat: Materializer, env: Env): Future[JsObject] = {
     req.getQueryString("fields") match {
       case None                                                                                          =>
         f().map {
@@ -51,7 +51,7 @@ class AnalyticsTmpListenerActor(sink: Sinks.Many[String], ctx: ApiActionContext[
   override def receive: Receive = {
     case evt: OtoroshiEvent =>
       //println(s"forward event: ${evt.`@id`}")
-      val json = evt.toJson(env)
+      val json = evt.toJson(using env)
       filter match {
         case Some(value) => {
           json.select("@type").asOptString match {
@@ -65,12 +65,12 @@ class AnalyticsTmpListenerActor(sink: Sinks.Many[String], ctx: ApiActionContext[
   }
 }
 
-class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
+class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-analytics-api")
 
@@ -78,7 +78,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       val hotSource: Sinks.Many[String] = Sinks.many().unicast().onBackpressureBuffer[String]()
       val hotFlux                       = hotSource.asFlux()
-      val source: Source[String, _]     = Source.fromPublisher(hotFlux)
+      val source: Source[String, ?]     = Source.fromPublisher(hotFlux)
       val ref                           = env.analyticsActorSystem.actorOf(AnalyticsTmpListenerActor.props(hotSource, ctx, env))
       //println("subscribing to eventStream")
       env.analyticsActorSystem.eventStream.subscribe(ref, classOf[OtoroshiEvent])
@@ -669,15 +669,15 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         val toDate   = to.map(f => new DateTime(f.toLong))
 
         val eventualDescriptors: Future[Seq[ServiceDescriptor]] = ctx.request.body.asOpt[JsArray] match {
-          case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]))
+          case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]).toSeq)
           case None           => env.datastores.serviceDescriptorDataStore.findAll()
         }
 
         eventualDescriptors
           .map(_.filter(d => ctx.canUserRead(d)))
           .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil                         => None
+            case seq: Seq[ServiceDescriptor] if seq.nonEmpty => Some(seq)
+            case _                          => None
           }
           .flatMap {
             case Some(desc) =>
@@ -729,8 +729,8 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               .sortWith(_.name < _.name)
           )
           .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil                         => None
+            case seq: Seq[ServiceDescriptor] if seq.nonEmpty => Some(seq)
+            case _                         => None
           }
           .flatMap {
             case None       => NotFound(Json.obj("error" -> "No entity found")).future

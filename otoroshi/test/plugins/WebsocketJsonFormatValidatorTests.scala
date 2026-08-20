@@ -1,10 +1,10 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.{Done, NotUsed}
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
 import functional.{PluginsTestSpec, WebsocketBackend}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
@@ -17,7 +17,7 @@ import otoroshi.next.plugins.{
   WebsocketJsonFormatValidatorConfig
 }
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationInt
@@ -25,10 +25,10 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 class WebsocketJsonFormatValidatorTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def closeConnection() = {
-    implicit val http: HttpExt = Http()(system)
+    implicit val http: HttpExt = Http()(using system)
 
     val backend = new WebsocketBackend().await()
 
@@ -96,7 +96,7 @@ class WebsocketJsonFormatValidatorTests(parent: PluginsTestSpec) {
   }
 
   def drop() = {
-    implicit val http: HttpExt = Http()(system)
+    implicit val http: HttpExt = Http()(using system)
 
     val backend = new WebsocketBackend().await()
 

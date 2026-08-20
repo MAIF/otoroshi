@@ -1,41 +1,42 @@
 package otoroshi.next.proxy
 
-import akka.Done
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.gateway._
-import otoroshi.models._
+import otoroshi.events.*
+import otoroshi.gateway.*
+import otoroshi.models.*
 import otoroshi.netty.{NettyHttpClient, NettyRequestKeys}
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.extensions.HttpListenerNames
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.next.plugins.{HeaderTooLongAlert, Keys}
-import otoroshi.next.plugins.api._
-import otoroshi.next.proxy.NgProxyEngineError._
+import otoroshi.next.plugins.api.*
+import otoroshi.next.proxy.NgProxyEngineError.*
 import otoroshi.next.utils.{FEither, JsonHelpers}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
-import otoroshi.utils.http.Implicits._
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.ResponseImplicits._
+import otoroshi.utils.http.Implicits.*
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.http.ResponseImplicits.*
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap, UrlSanitizer}
 import play.api.{mvc, Logger}
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.http.websocket.{Message => PlayWSMessage}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSRequest
 import play.api.mvc.Results.Status
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.mvc.request.RequestAttrKey
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
@@ -95,7 +96,7 @@ object ProxyEngineConfig {
       if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*"))
       else Seq.empty[String]
     val denyDomains                =
-      if (enabled) config.select("deny_domains").asOpt[Seq[String]].getOrElse(Seq.empty) else Seq.empty[String]
+      if (enabled) config.select("deny_domains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq else Seq.empty[String]
     val reporting                  = config.select("reporting").asOpt[Boolean].getOrElse(true)
     val pluginMerge                = config
       .select("merge_sync_steps")
@@ -146,9 +147,9 @@ object ProxyEngine {
 
 class ProxyEngine() extends RequestHandler {
 
-  def badDefaultRoutingHttp(req: Request[Source[ByteString, _]]): Future[Result]                             =
+  def badDefaultRoutingHttp(req: Request[Source[ByteString, ?]]): Future[Result]                             =
     Results.InternalServerError("bad default routing").vfuture
-  def badDefaultRoutingWs(req: RequestHeader): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
+  def badDefaultRoutingWs(req: RequestHeader): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] =
     Results.InternalServerError("bad default routing").left.vfuture
 
   private val logger               = Logger("otoroshi-next-gen-proxy-engine")
@@ -239,7 +240,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def getConfig()(implicit ec: ExecutionContext, env: Env): ProxyEngineConfig = {
+  def getConfig()(using ec: ExecutionContext, env: Env): ProxyEngineConfig = {
     configCache.get(
       "config",
       _ => {
@@ -265,7 +266,7 @@ class ProxyEngine() extends RequestHandler {
       route: Option[NgRoute],
       attrs: TypedMap,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Result = {
+  )(using env: Env, ec: ExecutionContext): Result = {
     if (env.isDev) {
       logger.error(s"proxy engine error on route '${route.map(_.id).getOrElse("")}/${route
         .map(_.name)
@@ -281,31 +282,31 @@ class ProxyEngine() extends RequestHandler {
     )
   }
 
-  override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  override def handledDomains(using ec: ExecutionContext, env: Env): Seq[String] = {
     val config = getConfig()
     enabledDomains.get()
   }
 
   override def handle(
-      request: Request[Source[ByteString, _]],
-      defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+      request: Request[Source[ByteString, ?]],
+      defaultRouting: Request[Source[ByteString, ?]] => Future[Result]
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     handleWithListener(request, defaultRouting, false)
   }
 
   override def handleWs(
       request: RequestHeader,
-      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     handleWsWithListener(request, defaultRouting, false)
   }
 
   def handleWithListener(
-      request: Request[Source[ByteString, _]],
-      defaultRouting: Request[Source[ByteString, _]] => Future[Result],
+      request: Request[Source[ByteString, ?]],
+      defaultRouting: Request[Source[ByteString, ?]] => Future[Result],
       forCurrentListenerOnly: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
+    implicit val globalConfig: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
       if (config.denyDomains.isEmpty) false
@@ -319,10 +320,10 @@ class ProxyEngine() extends RequestHandler {
 
   def handleWsWithListener(
       request: RequestHeader,
-      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
+      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]],
       forCurrentListenerOnly: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
+    implicit val globalConfig: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
       if (config.denyDomains.isEmpty) false
@@ -336,10 +337,10 @@ class ProxyEngine() extends RequestHandler {
 
   @inline
   def handleRequest(
-      request: Request[Source[ByteString, _]],
+      request: Request[Source[ByteString, ?]],
       _config: ProxyEngineConfig,
       forCurrentListenerOnly: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -353,7 +354,7 @@ class ProxyEngine() extends RequestHandler {
     implicit val report                                                                                      = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
 
-    implicit val mat       = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val snowflake          = env.snowflakeGenerator.nextIdStr()
     val callDate           = DateTime.now()
     val requestTimestamp   = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
@@ -468,7 +469,7 @@ class ProxyEngine() extends RequestHandler {
           report.markDoneAndStart("rendering-intermediate-result").markSuccess()
           attrs.get(otoroshi.next.plugins.Keys.ResponseAddHeadersKey) match {
             case None             => error.asResult()
-            case Some(addHeaders) => error.asResult().map(r => r.withHeaders(addHeaders: _*))
+            case Some(addHeaders) => error.asResult().map(r => r.withHeaders(addHeaders*))
           }
         case Right(result) =>
           report.markSuccess()
@@ -537,7 +538,7 @@ class ProxyEngine() extends RequestHandler {
         // if (reporting && report.getStep("find-route").flatMap(_.ctx.select("found_route").select("debug_flow").asOpt[Boolean]).getOrElse(false)) {
         //   java.nio.file.Files.writeString(new java.io.File("./request-debug.json").toPath, report.json.prettify)
         // }
-        res.withHeaders(addHeaders: _*)
+        res.withHeaders(addHeaders*)
       })
       .map { result =>
         result.copy(body = result.body match {
@@ -561,11 +562,11 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(implicit
+  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(using
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
-  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     val start                                                                                 = System.currentTimeMillis()
     val tryItId                                                                               = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                                 = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
@@ -575,7 +576,7 @@ class ProxyEngine() extends RequestHandler {
     implicit val report                                                                       = NgExecutionReport(requestId, reporting)
 
     report.start("start-handling")
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val snowflake        = env.snowflakeGenerator.nextIdStr()
     val callDate         = DateTime.now()
@@ -711,7 +712,7 @@ class ProxyEngine() extends RequestHandler {
       }
   }
 
-  def handleRelayTraffic(route: NgRoute, req: RequestHeader, body: Source[ByteString, _])(implicit
+  def handleRelayTraffic(route: NgRoute, req: RequestHeader, body: Source[ByteString, ?])(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -745,7 +746,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def extractTrackingId(snowflake: String, req: RequestHeader, reqNumber: Int, route: NgRoute)(implicit
+  def extractTrackingId(snowflake: String, req: RequestHeader, reqNumber: Int, route: NgRoute)(using
       attrs: TypedMap
   ): Unit = {
     if (route.backend.loadBalancing.needTrackingCookie) {
@@ -757,7 +758,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def handleHighOverhead(req: RequestHeader, route: Option[NgRoute])(implicit
+  def handleHighOverhead(req: RequestHeader, route: Option[NgRoute])(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -782,7 +783,7 @@ class ProxyEngine() extends RequestHandler {
     FEither.right(Done)
   }
 
-  def applyIncomingRequestValidation(request: RequestHeader, snowflake: String)(implicit
+  def applyIncomingRequestValidation(request: RequestHeader, snowflake: String)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -955,7 +956,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def handleConcurrentRequest(request: RequestHeader)(implicit
+  def handleConcurrentRequest(request: RequestHeader)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1006,7 +1007,7 @@ class ProxyEngine() extends RequestHandler {
     env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
   }
 
-  def handleTenantCheck(route: NgRoute, request: RequestHeader)(implicit
+  def handleTenantCheck(route: NgRoute, request: RequestHeader)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1039,10 +1040,10 @@ class ProxyEngine() extends RequestHandler {
   def findRoute(
       useTree: Boolean,
       request: RequestHeader,
-      body: Source[ByteString, _],
+      body: Source[ByteString, ?],
       global_plugins: NgPlugins,
       tryIt: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1095,7 +1096,7 @@ class ProxyEngine() extends RequestHandler {
         }
         attrs.put(Keys.RouteKey -> route.route)
         attrs.put(Keys.MatchedRouteKey -> route)
-        val rts: Seq[String] = attrs.get(Keys.MatchedRoutesKey).getOrElse(Seq.empty[String])
+        val rts: Seq[String] = attrs.get(Keys.MatchedRoutesKey).getOrElse(Seq.empty[String]).toSeq
         report.setContext(
           Json.obj(
             "found_route"    -> route.route.json,
@@ -1110,7 +1111,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callRequestSinkPlugins(request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit
+  def callRequestSinkPlugins(request: RequestHeader, body: Source[ByteString, ?], global_plugins: NgPlugins)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1197,7 +1198,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def checkGlobalMaintenance(route: NgRoute, request: RequestHeader, config: ProxyEngineConfig)(implicit
+  def checkGlobalMaintenance(route: NgRoute, request: RequestHeader, config: ProxyEngineConfig)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1233,7 +1234,7 @@ class ProxyEngine() extends RequestHandler {
       request: RequestHeader,
       route: NgRoute,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1406,7 +1407,7 @@ class ProxyEngine() extends RequestHandler {
       request: RequestHeader,
       route: NgRoute,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1575,7 +1576,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def callPreRoutePlugins(snowflake: String, request: RequestHeader, route: NgRoute, plugins: NgContextualPlugins)(
-      implicit
+      using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1782,7 +1783,7 @@ class ProxyEngine() extends RequestHandler {
       request: RequestHeader,
       route: NgRoute,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1985,7 +1986,7 @@ class ProxyEngine() extends RequestHandler {
   //   // }
   // }
 
-  def handleLegacyChecks(request: RequestHeader, route: NgRoute, config: ProxyEngineConfig)(implicit
+  def handleLegacyChecks(request: RequestHeader, route: NgRoute, config: ProxyEngineConfig)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -2073,7 +2074,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def getBackend(target: Target, route: NgRoute, attrs: TypedMap)(implicit env: Env): NgTarget = {
+  def getBackend(target: Target, route: NgRoute, attrs: TypedMap)(using env: Env): NgTarget = {
     attrs
       .get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey)
       .getOrElse(route.backend.allTargets)
@@ -2081,9 +2082,9 @@ class ProxyEngine() extends RequestHandler {
       .get
   }
 
-  def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], _route: NgRoute)(
+  def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, ?]], _route: NgRoute)(
       f: NgSelectedBackendTarget => FEither[NgProxyEngineError, Result]
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -2252,7 +2253,7 @@ class ProxyEngine() extends RequestHandler {
         }
       }
 
-      implicit val scheduler = env.otoroshiScheduler
+      implicit val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
 
       FEither(
         env.circuitBeakersHolder
@@ -2321,15 +2322,15 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def callWsTarget(snowflake: String, reqNumber: Long, request: RequestHeader, _route: NgRoute)(
-      f: NgSelectedBackendTarget => FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]]
-  )(implicit
+      f: NgSelectedBackendTarget => FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, ?]]
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
       globalConfig: GlobalConfig,
       attrs: TypedMap,
       mat: Materializer
-  ): FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
+  ): FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, ?]] = {
     val cbStart               = System.currentTimeMillis()
     val route                 =
       attrs.get(otoroshi.next.plugins.Keys.PossibleBackendsKey).map(b => _route.copy(backend = b)).getOrElse(_route)
@@ -2350,7 +2351,7 @@ class ProxyEngine() extends RequestHandler {
           target: Target,
           attempts: Int,
           alreadyFailed: AtomicBoolean
-      ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
         val backend = getBackend(target, route, attrs)
         attrs.put(Keys.BackendKey -> backend)
         if (needsInflightRequests) {
@@ -2366,7 +2367,7 @@ class ProxyEngine() extends RequestHandler {
           })
       }
 
-      def handleError(t: Throwable): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      def handleError(t: Throwable): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
         t match {
           case BodyAlreadyConsumedException                       =>
             Errors
@@ -2494,14 +2495,14 @@ class ProxyEngine() extends RequestHandler {
         }
       }
 
-      implicit val scheduler = env.otoroshiScheduler
+      implicit val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
       FEither(
         env.circuitBeakersHolder
           .get(
             route.cacheableId + cachedPath,
             () => new ServiceDescriptorCircuitBreaker()
           )
-          .callGenNg[Flow[PlayWSMessage, PlayWSMessage, _]](
+          .callGenNg[Flow[PlayWSMessage, PlayWSMessage, ?]](
             route.cacheableId,
             route.name,
             route.backend.allTargets.map(_.toTarget),
@@ -2607,11 +2608,11 @@ class ProxyEngine() extends RequestHandler {
   def callRequestTransformer(
       snowflake: String,
       request: RequestHeader,
-      body: Source[ByteString, _],
+      body: Source[ByteString, ?],
       route: NgRoute,
       backend: NgTarget,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -2887,14 +2888,14 @@ class ProxyEngine() extends RequestHandler {
       route: NgRoute,
       backend: NgTarget,
       ctxPlugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
       globalConfig: GlobalConfig,
       attrs: TypedMap,
       mat: Materializer
-  ): FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
+  ): FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, ?]] = {
     val finalTarget: Target = request.backend.getOrElse(backend).toTarget
     attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
     val all_tunnel_handlers = ctxPlugins.tunnelHandlerPlugins
@@ -2952,7 +2953,7 @@ class ProxyEngine() extends RequestHandler {
       FEither(handler.plugin.callBackendOrError(ctx).flatMap {
         case Left(proxyError) => proxyError.leftf
         case Right(flow)      => {
-          val outFlow: Flow[PlayWSMessage, PlayWSMessage, _] = flow
+          val outFlow: Flow[PlayWSMessage, PlayWSMessage, ?] = flow
             .mapAsync(1) { mess =>
               WebsocketMessage.PlayMessage(mess).asAkka.flatMap { m =>
                 wsEngine.handleResponse(m)(_ => ())
@@ -3013,7 +3014,7 @@ class ProxyEngine() extends RequestHandler {
                 attrs,
                 env
               )
-            )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+            )(using env.otoroshiActorSystem, env.otoroshiMaterializer)
             .right
             .vfuture
         )
@@ -3024,13 +3025,13 @@ class ProxyEngine() extends RequestHandler {
   def callBackend(
       snowflake: String,
       noBackendCallerPlugin: Boolean,
-      rawRequest: Request[Source[ByteString, _]],
+      rawRequest: Request[Source[ByteString, ?]],
       request: NgPluginHttpRequest,
       route: NgRoute,
       backend: NgTarget,
       plugins: NgContextualPlugins,
       engineConfig: ProxyEngineConfig
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -3165,14 +3166,14 @@ class ProxyEngine() extends RequestHandler {
         .withRequestTimeout(extractedTimeout)
         .withFailureIndicator(fakeFailureIndicator)
         .withMethod(request.method)
-        .withHttpHeaders(requestHeaders: _*)
-        .withCookies(wsCookiesIn: _*)
+        .withHttpHeaders(requestHeaders*)
+        .withCookies(wsCookiesIn*)
         .withFollowRedirects(false)
         .withMaybeProxyServer(
           route.backend.client.proxy.orElse(globalConfig.proxies.services)
         )
       val requestStreamStart                             = System.currentTimeMillis()
-      val theBody                                        = request.body
+      val theBody                                        = (request.body: org.apache.pekko.stream.scaladsl.Source[org.apache.pekko.util.ByteString, Any])
         .applyOn { source =>
           source.alsoTo(Sink.onComplete { case _ =>
             val requestStreamDuration = System.currentTimeMillis() - requestStreamStart
@@ -3242,13 +3243,13 @@ class ProxyEngine() extends RequestHandler {
           BackendCallResponse(
             NgPluginHttpResponse(
               status = response.status,
-              headers = response.headers.mapValues(_.last).applyOnIf(shouldHaveTrailers) { hds =>
+              headers = response.headers.view.mapValues(_.last).toMap.applyOnIf(shouldHaveTrailers) { hds =>
                 idOpt match {
                   case Some(id) if shouldHaveTrailers => hds ++ Map("otoroshi-netty-trailers" -> id)
                   case _                              => hds
                 }
               },
-              cookies = response.safeCookies(env),
+              cookies = response.safeCookies(env).toSeq,
               body = fbody
             ),
             response.some
@@ -3263,12 +3264,12 @@ class ProxyEngine() extends RequestHandler {
 
   def callResponseTransformer(
       snowflake: String,
-      rawRequest: Request[Source[ByteString, _]],
+      rawRequest: Request[Source[ByteString, ?]],
       response: BackendCallResponse,
       route: NgRoute,
       backend: NgTarget,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -3279,13 +3280,13 @@ class ProxyEngine() extends RequestHandler {
 
     val rawResponse      = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
-      headers = response.headers.mapValues(_.last),
+      headers = response.headers.mapValues(_.last).toMap,
       cookies = response.cookies,
       body = response.bodyAsSource
     )*/
     val otoroshiResponse = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
-      headers = response.headers.mapValues(_.last),
+      headers = response.headers.mapValues(_.last).toMap,
       cookies = response.cookies,
       body = response.bodyAsSource
     )*/
@@ -3482,14 +3483,14 @@ class ProxyEngine() extends RequestHandler {
 
   def streamResponse(
       snowflake: String,
-      rawRequest: Request[Source[ByteString, _]],
+      rawRequest: Request[Source[ByteString, ?]],
       request: NgPluginHttpRequest,
       rawResponse: BackendCallResponse,
       response: NgPluginHttpResponse,
       route: NgRoute,
       backend: NgTarget,
       engineConfig: ProxyEngineConfig
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -3625,7 +3626,7 @@ class ProxyEngine() extends RequestHandler {
       }
       .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
 
-    val theBody = response.body
+    val theBody = (response.body: org.apache.pekko.stream.scaladsl.Source[org.apache.pekko.util.ByteString, Any])
       .applyOnIf(env.dynamicBodySizeCompute && contentLength.isEmpty) { body =>
         body.map { chunk =>
           counterOut.addAndGet(chunk.size)
@@ -3680,8 +3681,8 @@ class ProxyEngine() extends RequestHandler {
             val response: Result = Results
               .Status(status)
               .sendEntity(HttpEntity.Strict(body, contentType))
-              .withHeaders(headers: _*)
-              .withCookies(cookies: _*)
+              .withHeaders(headers*)
+              .withCookies(cookies*)
             //Status(status)(body)
             //.withHeaders(headers: _*)
             //.withCookies(cookies: _*)
@@ -3709,8 +3710,8 @@ class ProxyEngine() extends RequestHandler {
                 contentType
               )
             )
-            .withHeaders(headers: _*)
-            .withCookies(cookies: _*)
+            .withHeaders(headers*)
+            .withCookies(cookies*)
           contentType match {
             case None      => FEither.right(res)
             case Some(ctp) => FEither.right(res.as(ctp))
@@ -3726,8 +3727,8 @@ class ProxyEngine() extends RequestHandler {
                 contentType
               )
             )
-            .withHeaders(headers: _*)
-            .withCookies(cookies: _*)
+            .withHeaders(headers*)
+            .withCookies(cookies*)
           contentType match {
             case None      => FEither.right(res)
             case Some(ctp) => FEither.right(res.as(ctp))
@@ -3744,7 +3745,7 @@ class ProxyEngine() extends RequestHandler {
       route: NgRoute,
       backend: NgTarget,
       sb: NgSelectedBackendTarget
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -3878,20 +3879,20 @@ class ProxyEngine() extends RequestHandler {
         matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey)
       )
       evt.toAnalytics()
-    }(env.analyticsExecutionContext)
+    }(using env.analyticsExecutionContext)
     FEither.right(Done)
   }
 
   def triggerProxyDone(
       snowflake: String,
-      rawRequest: Request[Source[ByteString, _]],
+      rawRequest: Request[Source[ByteString, ?]],
       rawResponse: BackendCallResponse,
       request: NgPluginHttpRequest,
       response: NgPluginHttpResponse,
       route: NgRoute,
       backend: NgTarget,
       sb: NgSelectedBackendTarget
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -4013,7 +4014,7 @@ class ProxyEngine() extends RequestHandler {
           ),
           status = rawResponse.status,
           headers = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
-          headersOut = rawResponse.headers.mapValues(_.last).toSeq.map(Header.apply),
+          headersOut = rawResponse.headers.view.mapValues(_.last).toMap.toSeq.map(Header.apply),
           otoroshiHeadersIn = request.headers.toSeq.map(Header.apply),
           otoroshiHeadersOut = response.headers.toSeq.map(Header.apply),
           extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
@@ -4056,7 +4057,7 @@ class ProxyEngine() extends RequestHandler {
         )
 
         evt.toAnalytics()
-      }(env.analyticsExecutionContext))
+      }(using env.analyticsExecutionContext))
     FEither.right(Done)
   }
 }

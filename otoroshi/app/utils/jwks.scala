@@ -3,7 +3,7 @@ package otoroshi.utils.jwk
 import java.security.interfaces.{ECPublicKey, RSAPublicKey}
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc.RequestHeader
 
@@ -20,7 +20,7 @@ object JWKSHelper {
       includeAlg: Boolean,
       rsaAlgorithms: Seq[com.nimbusds.jose.Algorithm],
       esAlgorithms: Seq[com.nimbusds.jose.Algorithm]
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[JsValue]]] = {

@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.models.{ApiKey, ApiKeyRotation, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -14,10 +15,10 @@ import otoroshi.next.plugins.{
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -53,7 +54,7 @@ class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  val body = Json.parse(resp.body).as[JsValue]
+  val body = Json.parse(resp.body[String]).as[JsValue]
 
   resp.header(env.Headers.OtoroshiRequestId) mustBe defined
   resp.header(env.Headers.OtoroshiRequestTimestamp) mustBe defined

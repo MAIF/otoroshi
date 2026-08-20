@@ -1,24 +1,25 @@
 package otoroshi.jobs
 
 import org.joda.time.DateTime
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.cluster.{ClusterMode, StatsView}
 import otoroshi.env.Env
 import otoroshi.jobs.newengine.NewEngine
 import otoroshi.models.GlobalConfig
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.{Configuration, Logger}
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -59,8 +60,8 @@ object AnonymousReportingJobConfig {
         .getOrElse(default.timeout),
       tlsConfig = NgTlsConfig.fromLegacy(
         MtlsConfig(
-          certs = configuration.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty),
-          trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("tls.trustedCerts").getOrElse(Seq.empty),
+          certs = configuration.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty).toSeq,
+          trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("tls.trustedCerts").getOrElse(Seq.empty).toSeq,
           loose = configuration.getOptionalWithFileSupport[Boolean]("tls.loose").getOrElse(false),
           trustAll = configuration.getOptionalWithFileSupport[Boolean]("tls.trustAll").getOrElse(false),
           mtls = configuration.getOptionalWithFileSupport[Boolean]("tls.enabled").getOrElse(false)
@@ -121,7 +122,7 @@ object AnonymousReportingJob {
     }
   }
 
-  def buildReport(globalConfig: GlobalConfig, reportingConfig: AnonymousReportingJobConfig, attrs: TypedMap)(implicit
+  def buildReport(globalConfig: GlobalConfig, reportingConfig: AnonymousReportingJobConfig, attrs: TypedMap)(using
       env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
@@ -155,7 +156,7 @@ object AnonymousReportingJob {
         else Seq.empty
       val pluginsPlugins             = if (globalConfig.plugins.enabled) globalConfig.plugins.refs else Seq.empty
       val plugins                    = routePlugins ++ scriptPlugins ++ pluginsPlugins
-      val counting                   = plugins.groupBy(identity).mapValues(v => JsNumber(v.size))
+      val counting                   = plugins.groupBy(identity).view.mapValues(v => JsNumber(v.size)).toMap
       val genericEntities            = JsObject(env.allResources.resources.map { res =>
         (s"${res.group}/${res.pluralName}", res.access.all().size.json)
       }.toMap)
@@ -474,7 +475,7 @@ class AnonymousReportingJob extends Job {
     )
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val cfg_config   = AnonymousReportingJobConfig.fromEnv(env)
     val prog_config  = AnonymousReportingJob.programmaticConfig()

@@ -5,13 +5,13 @@ import otoroshi.netty.NettyRequestKeys
 import otoroshi.next.catalogs.RemoteCatalogJob
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.plugins.{OverrideHost, WasmJob}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.{NgExecutionReport, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.workflow.WorkflowJob
 import otoroshi.utils.TypedMap
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 
 import scala.concurrent.ExecutionContext
@@ -97,11 +97,11 @@ object NgPluginInstance {
       plugin = obj.select("plugin").asString,
       debug = obj.select("debug").asOpt[Boolean].getOrElse(false),
       enabled = obj.select("enabled").asOpt[Boolean].getOrElse(true),
-      include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty),
-      exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty),
-      boundListeners = obj.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty),
+      include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      boundListeners = obj.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
       config = NgPluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj())),
-      pluginIndex = obj.select("plugin_index").asOpt(PluginIndex.format)
+      pluginIndex = obj.select("plugin_index").asOpt(using PluginIndex.format)
     )
   }
 }
@@ -139,7 +139,7 @@ case class NgPluginInstance(
       true
     }
   }
-  def getPlugin[A](implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Option[A] = {
+  def getPlugin[A](using ec: ExecutionContext, env: Env, ct: ClassTag[A]): Option[A] = {
     env.scriptManager.getAnyScript[NgNamedPlugin](plugin) match {
       case Right(validator) if ct.runtimeClass.isAssignableFrom(validator.getClass) => validator.asInstanceOf[A].some
       case _                                                                        => None
@@ -157,16 +157,16 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def json: JsValue = JsArray(slots.map(_.json))
 
-  def hasPlugin[A](implicit ct: ClassTag[A]): Boolean = getPluginByClass[A](ct).isDefined
+  def hasPlugin[A](using ct: ClassTag[A]): Boolean = getPluginByClass[A](using ct).isDefined
 
-  def getPluginByClass[A](implicit ct: ClassTag[A]): Option[NgPluginInstance] = {
+  def getPluginByClass[A](using ct: ClassTag[A]): Option[NgPluginInstance] = {
     val name = s"cp:${ct.runtimeClass.getName}"
     slots.find(pi => pi.plugin == name).filter(_.enabled)
   }
 
   def routerPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouter]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouter]] = {
     val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -182,7 +182,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def requestSinkPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestSink]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestSink]] = {
     val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -198,7 +198,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def routeMatcherPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouteMatcher]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouteMatcher]] = {
     val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -214,7 +214,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def transformerPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
     val pls                                = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -244,13 +244,13 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def transformerPluginsThatTransformsError(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
     transformerPlugins(request).filter(_.plugin.transformsError)
   }
 
   def incomingRequestValidatorPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgIncomingRequestValidator]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgIncomingRequestValidator]] = {
     val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -329,7 +329,7 @@ object NgPlugins {
       case None      => NgPlugins(Seq.empty)
       case Some(arr) =>
         NgPlugins(
-          slots = arr.asOpt[Seq[JsValue]].map(_.map(NgPluginInstance.readFrom)).getOrElse(Seq.empty)
+          slots = arr.asOpt[Seq[JsValue]].map(_.map(NgPluginInstance.readFrom)).getOrElse(Seq.empty).toSeq
         )
     }
   }
@@ -510,7 +510,7 @@ case class NgContextualPlugins(
                     (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(Seq(wrap, plug)))
                   case NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins) =>
                     (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins :+ plug))
-                  case _                                                        => (true, coll :+ plug)
+                  // case _                                                        => (true, coll :+ plug)
                 }
               } else {
                 (false, coll :+ plug)
@@ -550,7 +550,7 @@ case class NgContextualPlugins(
                     (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(Seq(wrap, plug)))
                   case NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins) =>
                     (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins :+ plug))
-                  case _                                                             => (true, coll :+ plug)
+                  // case _                                                             => (true, coll :+ plug)
                 }
               } else {
                 (false, coll :+ plug)
@@ -640,7 +640,7 @@ case class NgContextualPlugins(
 }
 
 object NgContextualPlugins {
-  def empty(request: RequestHeader)(implicit env: Env, ec: ExecutionContext): NgContextualPlugins = {
+  def empty(request: RequestHeader)(using env: Env, ec: ExecutionContext): NgContextualPlugins = {
     NgContextualPlugins(
       plugins = NgPlugins.empty,
       global_plugins = NgPlugins.empty,

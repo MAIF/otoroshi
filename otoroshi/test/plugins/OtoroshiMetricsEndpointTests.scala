@@ -1,8 +1,9 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.NgPluginInstance
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
@@ -10,7 +11,7 @@ import play.api.libs.json.{JsArray, Json}
 
 class OtoroshiMetricsEndpointTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -26,7 +27,7 @@ class OtoroshiMetricsEndpointTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).isInstanceOf[JsArray] mustBe true
+  Json.parse(resp.body[String]).isInstanceOf[JsArray] mustBe true
 
   deleteOtoroshiRoute(route).futureValue
 

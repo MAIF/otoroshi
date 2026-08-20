@@ -34,14 +34,15 @@ jobs:
       # Playwright config
       PW_AUTH_TTL_MIN: '0'
       CI: 'true'
+      SBT_OPTS: -Xmx8G -Xss16M
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Install sbt
@@ -55,6 +56,23 @@ jobs:
           node-version: '18'
           cache: 'yarn'
           cache-dependency-path: otoroshi/javascript/yarn.lock
+      
+      - name: install playwright dependencies
+        run: |
+          sudo apt-get install libwoff1 \
+            libvpx9 \
+            libevent-2.1-7t64 \
+            libopus0 \
+            libgstreamer-plugins-base1.0-0 \
+            libgstreamer-gl1.0-0 \
+            libgstreamer-plugins-bad1.0-0 \
+            libharfbuzz-icu0 \
+            libsecret-1-0 \
+            libhyphen0 \
+            libmanette-0.2-0 \
+            libflite1 \
+            libgles2 \
+            gstreamer1.0-libav
 
       - name: Install JS dependencies
         working-directory: otoroshi/javascript
@@ -64,6 +82,12 @@ jobs:
         working-directory: otoroshi/javascript
         run: yarn build
 
+      # The Google mirror is a lagging snapshot of Maven Central: artifacts published
+      # in the last few days are often missing from it. So it is listed *before*
+      # maven-central rather than replacing it - coursier tries the mirror first and
+      # falls back to repo1.maven.org for whatever it has not synced yet. Do not add a
+      # coursier mirror.properties redirect here: it rewrites repo1.maven.org to the
+      # mirror as well, which kills that fallback and breaks fresh dependency bumps.
       - name: Configure sbt repositories (mirror Maven Central via Google)
         run: |
           mkdir -p ~/.sbt
@@ -77,14 +101,6 @@ jobs:
             typesafe-ivy-releases: https://repo.typesafe.com/typesafe/ivy-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext], bootOnly
             sbt-plugin-releases: https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
             sonatype-snapshots: https://oss.sonatype.org/content/repositories/snapshots
-          EOF
-
-      - name: Redirect repo1.maven.org to Google mirror (Coursier)
-        run: |
-          mkdir -p ~/.config/coursier
-          cat > ~/.config/coursier/mirror.properties <<'EOF'
-          central.from=https://repo1.maven.org/maven2
-          central.to=https://maven-central.storage-download.googleapis.com/maven2
           EOF
 
       - name: Build Otoroshi server (dist)

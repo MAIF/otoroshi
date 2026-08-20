@@ -16,9 +16,9 @@ import otoroshi.utils.controllers.{
   OptionalEntityAndContext,
   SeqEntityAndContext
 }
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, RequestHeader, Result, Results}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
@@ -27,12 +27,12 @@ import otoroshi.utils.json.JsonPatchHelpers.patchJson
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apikeys-fs-api")
 
@@ -99,6 +99,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             )
             apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
   }
@@ -156,6 +157,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             )
             env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 
@@ -286,12 +288,14 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                         )
                         newApiKey.save().map(_ => Ok(newApiKey.toJson))
                       }
+                      case other => throw new IllegalStateException(s"unreachable case: $other")
                     }
                   }
                 }
               }
             }
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 
@@ -344,10 +348,12 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                     )
                     newApiKey.save().map(_ => Ok(newApiKey.toJson))
                   }
+                  case other => throw new IllegalStateException(s"unreachable case: $other")
                 }
               }
             }
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 
@@ -390,6 +396,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             env.datastores.apiKeyDataStore.deleteFastLookupByService(id, apiKey)
             apiKey.delete().map(res => Ok(Json.obj("deleted" -> true)))
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 
@@ -482,6 +489,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             )
             Ok(apiKey.toJson)
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 

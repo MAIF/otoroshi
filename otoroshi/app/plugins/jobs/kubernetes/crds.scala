@@ -1,7 +1,7 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
 import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.openapi.ApiClient
@@ -12,28 +12,40 @@ import otoroshi.api.WriteAction
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.extensions.KubernetesHelper
 import otoroshi.next.models.{NgDomainAndPath, NgRoute, NgRouteComposition, NgTarget, StoredNgBackend}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob.SyncReport
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.http.DN
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+
+// https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
+// https://github.com/containous/traefik-helm-chart/tree/master/traefik/crds
+// https://github.com/containous/traefik/blob/v1.7.24/examples/k8s/traefik-deployment.yaml
+// https://docs.traefik.io/v1.7/configuration/backends/kubernetes/
+// https://github.com/helm/charts/blob/master/stable/traefik/values.yaml
+// https://docs.traefik.io/v1.7/user-guide/kubernetes/#deploy-traefik-using-helm-chart
+// https://kubernetes.io/fr/docs/concepts/services-networking/ingress/
+// https://kubernetes.io/fr/docs/concepts/services-networking/service/
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#servicespec-v1-core
+// https://kubernetes.io/fr/docs/concepts/services-networking/ingress/
+
 
 class KubernetesOtoroshiCRDsControllerJob extends Job {
 
@@ -83,7 +95,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         //  .asOpt[JsValue]
         //  .orElse(c.plugins.config.select("KubernetesConfig").asOpt[JsValue])
         //  .getOrElse(Json.obj())
-        (env, KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext))
+        (env, KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext))
       }
       .map { case (env, cfg) =>
         env.clusterConfig.mode match {
@@ -99,10 +111,10 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] =
-    KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
+    KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Failure(e) =>
         e.printStackTrace()
         Some(false)
@@ -110,7 +122,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     }
   }
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("start")
     stopCommand.set(false)
     lastWatchStopped.set(true)
@@ -151,7 +163,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     ().future
   }
 
-  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[String]] = {
@@ -164,13 +176,13 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     }
   }
 
-  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       watchCommand.set(true)
       lastWatchStopped.set(false)
       env.otoroshiScheduler.scheduleOnce(5.minutes) {
@@ -226,7 +238,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     }
   }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
     logger.info("stopping kubernetes controller job")
     stopCommand.set(true)
@@ -237,7 +249,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     ().future
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("run")
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.crds) {
@@ -286,7 +298,7 @@ class ClientSupportTest extends Job {
   override def instantiation: JobInstantiation      = JobInstantiation.OneInstancePerOtoroshiInstance
   override def initialDelay: Option[FiniteDuration] = Some(FiniteDuration(5000, TimeUnit.MILLISECONDS))
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     println("running ClientSupportTest")
     Try {
       val cliSupport = new ClientSupport(new KubernetesClient(KubernetesConfig.theConfig(Json.obj(
@@ -326,7 +338,7 @@ class ClientSupportTest extends Job {
   }
 }*/
 
-class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: ExecutionContext, env: Env) {
+class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: ExecutionContext, env: Env) {
 
   private[kubernetes] def customizeIdAndName(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
     spec
@@ -388,6 +400,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
           s"trying to reconcile 2 different entities of type $name with same id/path. entity with native id always win as fallback !"
         )
         existingById
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 
@@ -780,7 +793,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
               case None     => None
               case Some(dn) =>
                 DynamicSSLEngineProvider.certificates.find { case (_, cert) =>
-                  cert.id == dn || cert.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(DN(dn)))
+                  cert.id == dn || cert.certificate.exists(c => DN(c.getSubjectX500Principal.getName).isEqualsTo(DN(dn)))
                 }
             }
             val maybeCert = foundACertWithSameIdAndCsr(id, csrJson, caOpt.map(_._2), certs)
@@ -1348,7 +1361,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       .mapAsync(1) { f =>
         f()
       }
-      .runWith(Sink.seq)(env.otoroshiMaterializer)
+      .runWith(Sink.seq)(using env.otoroshiMaterializer)
       .map(_.toMap)
   }
 }
@@ -1414,16 +1427,16 @@ object KubernetesCRDsJob {
     val kube     = entities.map(_.typed).map(v => (id(v), v))
     kube.filter { case (key, value) =>
       existing.get(key) match {
-        case None                                          => true
         case Some(existingValue) if value == existingValue => false
         case Some(existingValue) if value != existingValue => true
+        case _                                             => true
       }
     } map { case (_, value) =>
       (value, () => save(value))
     }
   }
 
-  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[String]] = {
@@ -1442,7 +1455,7 @@ object KubernetesCRDsJob {
       clientSupport: ClientSupport,
       registerApkToExport: Function3[String, String, ApiKey, Unit],
       registerCertToExport: Function3[String, String, Cert, Unit]
-  )(implicit env: Env, ec: ExecutionContext): Future[CRDContext] = {
+  )(using env: Env, ec: ExecutionContext): Future[CRDContext] = {
     val useProxyState = conf.useProxyState
     for {
 
@@ -1481,7 +1494,7 @@ object KubernetesCRDsJob {
                      .resources()
                      .map(r => (r, r.access.allJson()))
                      .groupBy(_._1)
-                     .mapValues(_.map(_._2).flatten)
+                     .view.mapValues(_.map(_._2).flatten).toMap
                      .vfuture
 
       services           <- clientSupport.client.fetchServices()
@@ -1554,7 +1567,7 @@ object KubernetesCRDsJob {
 
   private val callsCounter = new java.util.concurrent.atomic.AtomicLong(0L)
 
-  def warnAboutServiceDescriptorUsage(ctx: CRDContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def warnAboutServiceDescriptorUsage(ctx: CRDContext)(using env: Env, ec: ExecutionContext): Unit = {
     if (ctx.kubernetes.serviceDescriptors.nonEmpty) {
       val calls = callsCounter.incrementAndGet()
       if (calls == 1 || calls % 10 == 0) {
@@ -1626,11 +1639,11 @@ object KubernetesCRDsJob {
       clientSupport: ClientSupport,
       ctx: CRDContext,
       verboseLogging: Boolean = false
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[SyncReport] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     if (ctx.kubernetes.globalConfigs.size > 1) {
       Future.failed(new RuntimeException("There can only be one GlobalConfig entity !"))
@@ -1781,13 +1794,13 @@ object KubernetesCRDsJob {
             successCount = successCount,
             failureCount = failureCount,
             durationMs = duration,
-            entityResults = results
+            entityResults = results.toSeq
           )
         }
     }
   }
 
-  def deleteOutDatedEntities(conf: KubernetesConfig, attrs: TypedMap, ctx: CRDContext)(implicit
+  def deleteOutDatedEntities(conf: KubernetesConfig, attrs: TypedMap, ctx: CRDContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -1950,7 +1963,7 @@ object KubernetesCRDsJob {
               .debug(seq => logger.info(s"Will delete ${seq.size} out of date extension resources entities"))
               .applyOn(ids => resource.access.deleteMany(resource.version.name, ids))
           }
-        }.toList).mapAsync(1)(f => f()).runWith(Sink.ignore)(env.otoroshiMaterializer)
+        }.toList).mapAsync(1)(f => f()).runWith(Sink.ignore)(using env.otoroshiMaterializer)
 
     } yield ()
   }
@@ -1962,9 +1975,9 @@ object KubernetesCRDsJob {
       ctx: CRDContext,
       apikeys: Seq[(String, String, ApiKey)],
       updatedSecrets: AtomicReference[Seq[(String, String)]]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info(s"will export ${apikeys.size} apikeys as secrets")
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(apikeys.toList)
       .mapAsync(1) { case (namespace, name, apikey) =>
         clientSupport.client.fetchSecret(namespace, name).flatMap {
@@ -2032,12 +2045,12 @@ object KubernetesCRDsJob {
       ctx: CRDContext,
       certs: Seq[(String, String, Cert)],
       updatedSecrets: AtomicReference[Seq[(String, String)]]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
 
-    import otoroshi.ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits.*
 
     logger.info(s"will export ${certs.size} certificates as secrets")
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(certs.toList)
       .mapAsync(1) { case (namespace, name, cert) =>
         clientSupport.client.fetchSecret(namespace, name).flatMap {
@@ -2093,9 +2106,9 @@ object KubernetesCRDsJob {
       clientSupport: ClientSupport,
       ctx: CRDContext,
       _updatedSecrets: Seq[(String, String)]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     if (conf.restartDependantDeployments) {
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       clientSupport.client.fetchDeployments().flatMap { deployments =>
         Source(deployments.toList)
           .mapAsync(1) { deployment =>
@@ -2106,20 +2119,20 @@ object KubernetesCRDsJob {
             val volumeSecrets       = (deployment.raw \ "spec" \ "template" \ "spec" \ "volumes")
               .asOpt[JsArray]
               .map(_.value)
-              .getOrElse(Seq.empty[JsValue])
+              .getOrElse(Seq.empty[JsValue]).toSeq
               .filter(item => (item \ "secret").isDefined)
               .map(item => (item \ "secret" \ "secretName").as[String])
 
             val envSecrets: Seq[String] = (deployment.raw \ "spec" \ "template" \ "spec" \ "containers")
               .asOpt[JsArray]
               .map(_.value)
-              .getOrElse(Seq.empty[JsValue])
+              .getOrElse(Seq.empty[JsValue]).toSeq
               .filter { item =>
-                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                 envs.exists(v => (v \ "valueFrom" \ "secretKeyRef").isDefined)
               }
               .flatMap { item =>
-                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                 envs.map(v => (v \ "valueFrom" \ "secretKeyRef" \ "name").as[String])
               }
               .distinct
@@ -2164,8 +2177,8 @@ object KubernetesCRDsJob {
       clientSupport: ClientSupport,
       ctx: CRDContext,
       updatedSecretsRef: AtomicReference[Seq[(String, String)]]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat = env.otoroshiMaterializer
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val lastSecrets  = updatedSecretsRef.get().map(t => t._1 + "/" + t._2)
     clientSupport.client.fetchSecrets().flatMap { allSecretsRaw =>
       val allSecrets = allSecretsRaw.filter(_.metaId.isDefined).map(_.path)
@@ -2189,7 +2202,7 @@ object KubernetesCRDsJob {
       jobRunning: => Boolean,
       namespaces: Option[Seq[String]] = None,
       verboseLogging: Boolean = false
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[SyncReport]] =
@@ -2267,7 +2280,7 @@ object KubernetesCRDsJob {
       }
     }
 
-  def patchCoreDnsConfig(_conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchCoreDnsConfig(_conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2516,7 +2529,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def patchKubeDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchKubeDnsConfig(conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2575,7 +2588,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def patchOpenshiftDnsOperatorConfig(conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchOpenshiftDnsOperatorConfig(conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2681,7 +2694,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def createWebhookCerts(config: KubernetesConfig, ctx: JobContext)(implicit
+  def createWebhookCerts(config: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2735,7 +2748,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def createMeshCerts(config: KubernetesConfig, ctx: JobContext)(implicit
+  def createMeshCerts(config: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2791,7 +2804,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def patchValidatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchValidatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2842,7 +2855,7 @@ object KubernetesCRDsJob {
       }
   }
 
-  def patchMutatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchMutatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {

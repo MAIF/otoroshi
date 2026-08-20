@@ -1,18 +1,18 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class NgMaxMindGeolocationInfoExtractorConfig(
     path: String = "global",
@@ -54,7 +54,7 @@ class NgMaxMindGeolocationInfoExtractor extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config = ctx
       .cachedConfig(internalName)(NgMaxMindGeolocationInfoExtractorConfig.format)
       .getOrElse(NgMaxMindGeolocationInfoExtractorConfig())
@@ -130,7 +130,7 @@ class NgIpStackGeolocationInfoExtractor extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config = ctx
       .cachedConfig(internalName)(NgIpStackGeolocationInfoExtractorConfig.format)
       .getOrElse(NgIpStackGeolocationInfoExtractorConfig())
@@ -186,7 +186,7 @@ class NgGeolocationInfoHeader extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
       ctx.cachedConfig(internalName)(NgGeolocationInfoHeaderConfig.format).getOrElse(NgGeolocationInfoHeaderConfig())
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
@@ -218,7 +218,7 @@ class NgGeolocationInfoEndpoint extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/geolocation") =>
         ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {

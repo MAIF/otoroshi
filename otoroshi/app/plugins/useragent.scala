@@ -2,17 +2,17 @@ package otoroshi.plugins.useragent
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.blueconic.browscap.{UserAgentParser, UserAgentService}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.cache.Caches
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.future.Implicits.*
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
@@ -21,7 +21,7 @@ import scala.util.{Failure, Success, Try}
 
 object UserAgentHelper {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   private val logger = Logger("otoroshi-plugins-user-agent-helper")
 
@@ -40,10 +40,10 @@ object UserAgentHelper {
           val parser = new UserAgentService().loadParser()
           logger.info("end initializing ...")
           parser
-        }(ec).andThen {
+        }(using ec).andThen {
           case Success(_) => logger.info(s"User-Agent parser initialized in ${System.currentTimeMillis() - start} ms")
           case Failure(e) => logger.error("User-Agent parser initialization failed", e)
-        }(ec)
+        }(using ec)
 
         if (parserFuture.compareAndSet(null, future)) {
           future
@@ -53,7 +53,7 @@ object UserAgentHelper {
     }
   }
 
-  def userAgentDetails(ua: String)(implicit env: Env): Future[Option[JsObject]] = {
+  def userAgentDetails(ua: String)(using env: Env): Future[Option[JsObject]] = {
     env.metrics.withTimer("otoroshi.plugins.useragent.details") {
       cache.getIfPresent(ua) match {
         case details @ Some(_) => details.flatten.future
@@ -68,8 +68,8 @@ object UserAgentHelper {
                 cache.put(ua, details)
             }
             cache.getIfPresent(ua).flatten
-          }(ec)
-        case _                 => None.future
+          }(using ec)
+        // case _                 => None.future
       }
     }
   }
@@ -110,18 +110,18 @@ class UserAgentExtractor extends PreRouting {
       |```
     """.stripMargin)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = ctx.configFor("UserAgentInfo")
     val log    = (config \ "log").asOpt[Boolean].getOrElse(false)
     ctx.request.headers.get("User-Agent") match {
-      case None     => funit
+      case None     => Future.unit
       case Some(ua) =>
         UserAgentHelper.userAgentDetails(ua).map {
-          case None       => funit
+          case None       => Future.unit
           case Some(info) => {
             if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
             ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
-            funit
+            Future.unit
           }
         }
     }
@@ -149,7 +149,7 @@ class UserAgentInfoEndpoint extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/user-agent") =>
         ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
@@ -197,7 +197,7 @@ class UserAgentInfoHeader extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config     = ctx.configFor("UserAgentInfoHeader")
     val headerName = (config \ "headerName").asOpt[String].getOrElse("X-User-Agent-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {

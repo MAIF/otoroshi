@@ -1,21 +1,21 @@
 package otoroshi.next.plugins
 
-import akka.Done
+import org.apache.pekko.Done
 import org.biscuitsec.biscuit.crypto.PublicKey
 import org.biscuitsec.biscuit.token.builder.Term.Str
 import org.biscuitsec.biscuit.token.{Authorizer, Biscuit}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.next.plugins.api._
-import otoroshi.plugins.biscuit._
+import otoroshi.next.plugins.api.*
+import otoroshi.plugins.biscuit.*
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class PreRoutingVerifierContext(ctx: NgPreRoutingContext, apk: ApiKey) extends VerificationContext {
   override def request: RequestHeader        = ctx.request
@@ -75,7 +75,7 @@ object NgBiscuitConfig {
 
 class NgBiscuitExtractor extends NgPreRouting {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   override def name: String                                = "Apikey from Biscuit token extractor"
   override def description: Option[String]                 =
@@ -123,7 +123,7 @@ class NgBiscuitExtractor extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
 
     val config = ctx.cachedConfig(internalName)(NgBiscuitConfig.format).getOrElse(NgBiscuitConfig())
 
@@ -219,7 +219,7 @@ class NgBiscuitValidator extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         "forbidden",
@@ -235,7 +235,7 @@ class NgBiscuitValidator extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgBiscuitConfig.format).getOrElse(NgBiscuitConfig())
     BiscuitHelper.extractToken(ctx.request, config.legacy) match {
       case Some(PubKeyBiscuitToken(token)) => {
@@ -257,6 +257,7 @@ class NgBiscuitValidator extends NgAccessValidator {
       }
       case _ if config.legacy.enforce      => forbidden(ctx)
       case _ if !config.legacy.enforce     => NgAccess.NgAllowed.vfuture
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }

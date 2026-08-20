@@ -4,8 +4,8 @@ import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import scala.util.{Failure, Success, Try}
 
@@ -108,7 +108,7 @@ object UserAlert {
         id = (json \ "id").asOpt[String].filterNot(_.isEmpty).getOrElse(IdGenerator.namedId("alert", IdGenerator.uuid)),
         name = (json \ "name").asOpt[String].getOrElse(""),
         description = (json \ "description").asOpt[String].getOrElse(""),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
         windowSeconds = (json \ "windowSeconds").asOpt[Long].getOrElse(DEFAULT_WINDOW_S),
@@ -119,7 +119,7 @@ object UserAlert {
         combine = (json \ "combine").asOpt[String].getOrElse("AND"),
         conditions = (json \ "conditions")
           .asOpt[Seq[JsValue]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
           .flatMap(j => AlertCondition.format.reads(j).asOpt)
       )
     } match {
@@ -143,7 +143,7 @@ object UserAlert {
     )
   }
 
-  def defaultUserAlertTemplate(implicit env: Env): UserAlert = UserAlert(
+  def defaultUserAlertTemplate(using env: Env): UserAlert = UserAlert(
     location = EntityLocation.default,
     id = IdGenerator.namedId("user-alert", env),
     name = "New user alert",
@@ -170,9 +170,9 @@ object UserAlert {
 
 trait UserAlertDataStore extends BasicStore[UserAlert] {
   def template(env: Env): UserAlert = {
-    implicit val e = env
+    implicit val e: otoroshi.env.Env = env
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .userAlertTemplate
       .map { template =>
@@ -186,7 +186,7 @@ trait UserAlertDataStore extends BasicStore[UserAlert] {
 
 class KvUserAlertDataStore(redisCli: RedisLike, _env: Env) extends UserAlertDataStore with RedisLikeStore[UserAlert] {
   override def fmt: Format[UserAlert]                  = UserAlert.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:user-alerts:$id"
   override def extractId(value: UserAlert): String     = value.id
 }

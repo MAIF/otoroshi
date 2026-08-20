@@ -11,11 +11,11 @@ import io.opentelemetry.sdk.logs.`export`.{BatchLogRecordProcessor, LogRecordExp
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.`export`.{MetricExporter, PeriodicMetricReader}
 import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
+import io.opentelemetry.api.common.AttributeKey
 import otoroshi.env.Env
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, DurationLong}
@@ -278,7 +278,7 @@ object OtlpSettings {
                 Resource
                   .getDefault()
                   .toBuilder()
-                  .put(ResourceAttributes.SERVICE_NAME, name)
+                  .put(AttributeKey.stringKey("service.name"), name)
                   .build()
               )
               .registerMetricReader(
@@ -296,7 +296,7 @@ object OtlpSettings {
                 Resource
                   .getDefault()
                   .toBuilder()
-                  .put(ResourceAttributes.SERVICE_NAME, name)
+                  .put(AttributeKey.stringKey("service.name"), name)
                   .build()
               )
               .addLogRecordProcessor(

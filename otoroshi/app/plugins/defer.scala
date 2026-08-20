@@ -1,15 +1,15 @@
 package otoroshi.plugins.defer
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{RequestTransformer, TransformerRequestContext, _}
+import otoroshi.script.{RequestTransformer, TransformerRequestContext, *}
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Result
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 // MIGRATED
@@ -49,7 +49,7 @@ class DeferPlugin extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config         = ctx.configFor("DeferPlugin")
     val defaultTimeout = (config \ "defaultDefer").asOpt[Long].getOrElse(0L)
     val headerTimeout  = ctx.request.headers.get("X-Defer").map(_.toLong)
@@ -62,7 +62,7 @@ class DeferPlugin extends RequestTransformer {
     if (timeout - elapsed <= 0L) {
       FastFuture.successful(Right(ctx.otoroshiRequest))
     } else {
-      val promise = Promise[Either[Result, HttpRequest]]
+      val promise = Promise[Either[Result, HttpRequest]]()
       env.otoroshiScheduler.scheduleOnce((timeout - elapsed).millis) {
         promise.trySuccess(Right(ctx.otoroshiRequest))
       }

@@ -1,18 +1,18 @@
 package otoroshi.actions
 
 import java.util.concurrent.TimeUnit
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2Module
-import otoroshi.cluster._
+import otoroshi.cluster.*
 import otoroshi.env.Env
 import otoroshi.models.PrivateAppsUser
-import play.api.mvc._
+import play.api.mvc.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.syntax.implicits.BetterSyntax
 
 case class PrivateAppsActionContext[A](
@@ -21,15 +21,15 @@ case class PrivateAppsActionContext[A](
     globalConfig: otoroshi.models.GlobalConfig
 ) {
   def connected: Boolean              = users.nonEmpty
-  def from(implicit env: Env): String = request.theIpAddress
+  def from(using env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
 }
 
-class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+class PrivateAppsAction(val parser: BodyParser[AnyContent])(using env: Env)
     extends ActionBuilder[PrivateAppsActionContext, AnyContent]
     with ActionFunction[Request, PrivateAppsActionContext] {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   override def invokeBlock[A](
       request: Request[A],
@@ -70,7 +70,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
             .collect { case Some(user) =>
               user
             }
-            .runWith(Sink.seq)(env.otoroshiMaterializer)
+            .runWith(Sink.seq)(using env.otoroshiMaterializer)
             .flatMap { users =>
               block(PrivateAppsActionContext(request, users, globalConfig))
             }
@@ -81,7 +81,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                 val discardingCookies: Seq[DiscardingCookie] = cookies.flatMap { cookie =>
                   env.removePrivateSessionCookiesWithSuffix(host, cookie.name.replace("oto-papps-", ""))
                 }
-                result.discardingCookies(discardingCookies: _*)
+                result.discardingCookies(discardingCookies*)
               }
           } else {
             block(PrivateAppsActionContext(request, Seq.empty, globalConfig))

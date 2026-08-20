@@ -1,7 +1,7 @@
 package otoroshi.utils.reactive
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.reactivestreams.Publisher
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -12,7 +12,7 @@ object ReactiveStreamImplicits {
     def toScala: Future[T] = ReactiveStreamUtils.MonoUtils.toFuture(mono)
   }
   implicit class FluxOps[T](val flux: reactor.core.publisher.Flux[T]) extends AnyVal {
-    def toScala(implicit mat: Materializer): Future[Seq[T]] = {
+    def toScala(using mat: Materializer): Future[Seq[T]] = {
       Source.fromPublisher(flux).runWith(Sink.seq)
     }
   }
@@ -21,7 +21,7 @@ object ReactiveStreamImplicits {
 object ReactiveStreamUtils {
   object MonoUtils {
     import reactor.core.publisher.Mono
-    def fromFuture[A](future: => Future[A])(implicit ec: ExecutionContext): Mono[A] = {
+    def fromFuture[A](future: => Future[A])(using ec: ExecutionContext): Mono[A] = {
       Mono.create[A] { sink =>
         future.andThen {
           case Success(value)     => sink.success(value)
@@ -44,8 +44,8 @@ object ReactiveStreamUtils {
 
   }
   object FluxUtils {
-    import reactor.core.publisher._
-    def fromFPublisher[A](future: => Future[Publisher[A]])(implicit ec: ExecutionContext): Flux[A] = {
+    import reactor.core.publisher.*
+    def fromFPublisher[A](future: => Future[Publisher[A]])(using ec: ExecutionContext): Flux[A] = {
       Mono
         .create[Publisher[A]] { sink =>
           future.andThen {

@@ -1,7 +1,8 @@
 package plugins
 
 import functional.PluginsTestSpec
-import otoroshi.models._
+import play.api.libs.ws.WSBodyReadables.given
+import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{JwtVerification, NgJwtVerificationConfig, OtoroshiHealthEndpoint, OverrideHost}
@@ -11,7 +12,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class OtoroshiHealthEndpointTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -30,7 +31,7 @@ class OtoroshiHealthEndpointTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body).selectAsString("method") mustEqual "GET"
+    Json.parse(resp.body[String]).selectAsString("method") mustEqual "GET"
   }
 
   {
@@ -43,10 +44,10 @@ class OtoroshiHealthEndpointTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body).selectAsString("otoroshi") mustEqual "healthy"
-    Json.parse(resp.body).selectAsString("datastore") mustEqual "healthy"
+    Json.parse(resp.body[String]).selectAsString("otoroshi") mustEqual "healthy"
+    Json.parse(resp.body[String]).selectAsString("datastore") mustEqual "healthy"
 
-    val keys = Json.parse(resp.body).as[JsObject].keys
+    val keys = Json.parse(resp.body[String]).as[JsObject].keys
 
     keys.contains("proxy")
     keys.contains("storage")

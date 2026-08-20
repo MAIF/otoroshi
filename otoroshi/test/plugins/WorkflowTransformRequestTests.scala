@@ -1,11 +1,12 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.models.EntityLocation
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.workflow._
+import otoroshi.next.workflow.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
@@ -13,7 +14,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class WorkflowTransformRequestTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val workflow = Workflow(
     location = EntityLocation.default,
@@ -62,7 +63,7 @@ class WorkflowTransformRequestTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsString("method") mustBe "POST"
+  Json.parse(resp.body[String]).selectAsString("method") mustBe "POST"
 
   deleteOtoroshiWorkflow(workflow).futureValue
   deleteOtoroshiRoute(route).futureValue

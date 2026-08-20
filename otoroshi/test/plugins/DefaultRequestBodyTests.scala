@@ -1,16 +1,18 @@
 package plugins
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgDefaultRequestBody, NgDefaultRequestBodyConfig, OverrideHost}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class DefaultRequestBodyTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val localRoute = createRouteWithExternalTarget(
     Seq(
@@ -39,7 +41,7 @@ class DefaultRequestBodyTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsObject("body") mustEqual Json.obj("foo" -> "bar")
+  Json.parse(resp.body[String]).selectAsObject("body") mustEqual Json.obj("foo" -> "bar")
 
   val resp2 = ws
     .url(s"http://127.0.0.1:$port/api")
@@ -50,7 +52,7 @@ class DefaultRequestBodyTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp2.status mustBe Status.OK
-  Json.parse(resp2.body).selectAsObject("body") mustEqual Json.obj("body_from_client" -> true)
+  Json.parse(resp2.body[String]).selectAsObject("body") mustEqual Json.obj("body_from_client" -> true)
 
   deleteOtoroshiRoute(localRoute).futureValue
 }

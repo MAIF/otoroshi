@@ -3,9 +3,9 @@ package otoroshi.ssl
 import java.io.ByteArrayInputStream
 import java.security.KeyStore
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.security.IdGenerator
-import otoroshi.ssl.SSLImplicits._
+import otoroshi.ssl.SSLImplicits.*
 
 object P12Helper {
 

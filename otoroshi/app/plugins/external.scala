@@ -1,18 +1,19 @@
 package otoroshi.plugins.external
 
 import java.security.MessageDigest
+import play.api.libs.ws.WSBodyWritables.given
 import java.security.cert.X509Certificate
 import java.util.Base64
 import java.util.concurrent.TimeUnit
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor, WSProxyServerJson}
 import org.apache.commons.codec.binary.Hex
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{AccessContext, AccessValidator}
 import otoroshi.utils.http.MtlsConfig
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
 import otoroshi.ssl.{ClientCertificateValidator, PemHeaders}
 
@@ -38,7 +39,7 @@ case class ExternalHttpValidatorConfig(config: JsValue) {
 // DEPRECATED
 class ExternalHttpValidator extends AccessValidator {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   override def deprecated: Boolean = true
 
@@ -136,18 +137,18 @@ class ExternalHttpValidator extends AccessValidator {
     chain.map(computeFingerPrint).mkString("-")
   }
 
-  private def getLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+  private def getLocalValidation(key: String)(using ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
     env.datastores.clientCertificateValidationDataStore.getValidation(key)
   }
 
-  private def setGoodLocalValidation(key: String, goodTtl: Long)(implicit
+  private def setGoodLocalValidation(key: String, goodTtl: Long)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
     env.datastores.clientCertificateValidationDataStore.setValidation(key, true, goodTtl).map(_ => ())
   }
 
-  private def setBadLocalValidation(key: String, badTtl: Long)(implicit
+  private def setBadLocalValidation(key: String, badTtl: Long)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -160,8 +161,8 @@ class ExternalHttpValidator extends AccessValidator {
       apikey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None,
       cfg: ExternalHttpValidatorConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
-    import otoroshi.ssl.SSLImplicits._
+  )(using ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+    import otoroshi.ssl.SSLImplicits.*
     val globalConfig                        = env.datastores.globalConfigDataStore.latest()
     val certPayload                         = chain
       .map { cert =>
@@ -189,7 +190,7 @@ class ExternalHttpValidator extends AccessValidator {
       cfg.headers.toSeq ++ Seq("Host" -> cfg.host, "Content-Type" -> "application/json", "Accept" -> "application/json")
     env.MtlsWs
       .url(cfg.url + cfg.path, cfg.mtlsConfig)
-      .withHttpHeaders(finalHeaders: _*)
+      .withHttpHeaders(finalHeaders*)
       .withMethod(cfg.method)
       .withBody(payload)
       .withRequestTimeout(Duration(cfg.timeout, TimeUnit.MILLISECONDS))
@@ -202,7 +203,7 @@ class ExternalHttpValidator extends AccessValidator {
               .asOpt[String]
               .map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
           case _   =>
-            resp.ignore()(env.otoroshiMaterializer)
+            resp.ignore()(using env.otoroshiMaterializer)
             None
         }
       }
@@ -216,7 +217,7 @@ class ExternalHttpValidator extends AccessValidator {
       chain: Seq[X509Certificate],
       context: AccessContext,
       valCfg: ExternalHttpValidatorConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  )(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val apikey = context.apikey
     val user   = context.user
     val desc   = context.descriptor
@@ -244,7 +245,7 @@ class ExternalHttpValidator extends AccessValidator {
     }
   }
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = (context.config \ "ExternalHttpValidator")
       .asOpt[JsValue]
       .orElse((context.config \ "ExternalHttpValidator").asOpt[JsValue])
@@ -259,6 +260,7 @@ class ExternalHttpValidator extends AccessValidator {
       case Some(chain)                       => {
         canAccessWithClientCertChain(chain, context, valCfg)
       }
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }

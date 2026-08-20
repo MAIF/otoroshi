@@ -3,18 +3,18 @@ package otoroshi.next.controllers
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import otoroshi.next.plugins.api._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 class NgPluginsController(
     ApiAction: ApiAction,
     cc: ControllerComponents
-)(implicit
+)(using
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   def categories() = ApiAction {
     val pluginsCategories = env.scriptManager.ngNames.distinct
@@ -31,7 +31,7 @@ class NgPluginsController(
     Ok(JsArray(NgStep.all.map(_.json)))
   }
 
-  def form() = ApiAction { ctx =>
+  def form() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     (for {
       name <- ctx.request.getQueryString("name")
       form <- env.openApiSchema.asForms.get(name)
@@ -42,8 +42,8 @@ class NgPluginsController(
     }
   }
 
-  def forms() = ApiAction { ctx =>
-    val forms = new JsObject(env.openApiSchema.asForms.mapValues(_.json))
+  def forms() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
+    val forms = new JsObject(env.openApiSchema.asForms.view.mapValues(_.json).toMap)
     Ok(forms)
   }
 

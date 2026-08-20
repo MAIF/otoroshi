@@ -1,51 +1,52 @@
 package otoroshi.controllers
 
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import com.nimbusds.jose.jwk.KeyType
-import io.otoroshi.wasm4s.scaladsl._
+import io.otoroshi.wasm4s.scaladsl.*
 import next.models.Api
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAuth, BackOfficeActionContextAuth}
-import otoroshi.auth._
+import otoroshi.auth.*
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticTemplates, ElasticUtils, ElasticVersion}
 import otoroshi.jobs.AnonymousReportingJobConfig
 import otoroshi.jobs.newengine.NewEngine
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{GraphQLFormats, NgRoute, NgRouteComposition, NgTarget}
 import otoroshi.next.plugins.EurekaServerSink
 import otoroshi.next.proxy.BackOfficeRequest
-import otoroshi.security._
-import otoroshi.ssl._
+import otoroshi.security.*
+import otoroshi.ssl.*
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
 import play.api.http.{HttpEntity, HttpRequestHandler}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.SourceBody
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -104,14 +105,14 @@ case class BackofficeFlags(
 
 object BackofficeFlags {
   private val ref                                                                         = new AtomicReference[(Long, BackofficeFlags)]()
-  def fromJson(json: JsValue)(implicit env: Env): BackofficeFlags = {
+  def fromJson(json: JsValue)(using env: Env): BackofficeFlags = {
     val useAkkaHttpClient = json.select("useAkkaHttpClient").asOpt[Boolean]
     val logUrl            = json.select("logUrl").asOpt[Boolean]
     val logStats          = json.select("logStats").asOpt[Boolean]
     val requestTimeout    = json.select("requestTimeout").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
     BackofficeFlags(env, useAkkaHttpClient, logUrl, logStats, requestTimeout)
   }
-  def fill()(implicit ec: ExecutionContext, env: Env): Unit = {
+  def fill()(using ec: ExecutionContext, env: Env): Unit = {
     env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:flags").map {
       case None          =>
         ref.set((System.currentTimeMillis(), BackofficeFlags(env)))
@@ -121,7 +122,7 @@ object BackofficeFlags {
       }
     }
   }
-  def latest(implicit ec: ExecutionContext, env: Env): BackofficeFlags = {
+  def latest(using ec: ExecutionContext, env: Env): BackofficeFlags = {
     Option(ref.get()) match {
       case None                                                               =>
         fill()
@@ -133,8 +134,8 @@ object BackofficeFlags {
         flags
     }
   }
-  def writeJson(flags: JsValue)(implicit ec: ExecutionContext, env: Env): BackofficeFlags = write(fromJson(flags))
-  def write(flags: BackofficeFlags)(implicit ec: ExecutionContext, env: Env): BackofficeFlags = {
+  def writeJson(flags: JsValue)(using ec: ExecutionContext, env: Env): BackofficeFlags = write(fromJson(flags))
+  def write(flags: BackofficeFlags)(using ec: ExecutionContext, env: Env): BackofficeFlags = {
     env.datastores.rawDataStore.set(s"${env.storageRoot}:backoffice:flags", flags.rawJson.stringify.byteString, None)
     flags
   }
@@ -145,12 +146,12 @@ class BackOfficeController(
     BackOfficeActionAuth: BackOfficeActionAuth,
     handlerRef: AtomicReference[HttpRequestHandler],
     cc: ControllerComponents
-)(implicit
+)(using
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val lat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val lat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val handler       = handlerRef.get()
   lazy val logger        = Logger("otoroshi-backoffice-api")
@@ -194,7 +195,7 @@ class BackOfficeController(
   }
 
   private def passWithPlay(
-      ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
+      ctx: BackOfficeActionContextAuth[Source[ByteString, ?]],
       apikey: ApiKey
   ): Future[Result] = {
     logger.debug(s"using play for ${ctx.request.method} ${ctx.request.theUrl}")
@@ -217,7 +218,7 @@ class BackOfficeController(
   //       Results.InternalServerError(Json.obj("error" -> "admin_api_error", "error_description" -> err)).vfuture
   //     case Right(raw_engine) => {
   //       val engine          = raw_engine.asInstanceOf[ProxyEngine]
-  //       implicit val global = env.datastores.globalConfigDataStore.latest()
+  //       implicit val global: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
   //       val raw_request     = ctx.request
   //       val host            = env.adminApiExposedHost
   //       val request         = new BackOfficeRequest(raw_request, host, apikey, ctx.user, env)
@@ -227,7 +228,7 @@ class BackOfficeController(
   // }
 
   private def passWithOldEngine(
-      ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
+      ctx: BackOfficeActionContextAuth[Source[ByteString, ?]],
       apikey: ApiKey,
       path: String
   ): Future[Result] = {
@@ -251,7 +252,7 @@ class BackOfficeController(
       env.Headers.OtoroshiClientId     -> apikey.clientId,
       env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
       env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-        Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
+        Json.stringify(ctx.user.profile).getBytes(StandardCharsets.UTF_8)
       ),
       "Otoroshi-Tenant"                -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
       "Otoroshi-BackOffice-User"       -> JWT
@@ -268,11 +269,11 @@ class BackOfficeController(
 
       val builder = env.Ws // MTLS needed here ???
         .akkaUrl(s"$url/$path")
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .withFollowRedirects(false)
         .withMethod(ctx.request.method)
         .withRequestTimeout(flags.requestTimeout)
-        .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
+        .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head))*)
 
       val builderWithBody = if (currentReqHasBody) {
         builder.withBody(SourceBody(ctx.request.body))
@@ -330,22 +331,22 @@ class BackOfficeController(
             )
             .withHeaders(
               res.headers
-                .mapValues(_.head)
+                .view.mapValues(_.head).toMap
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
-                .filter(_._1 != "Transfer-Encoding"): _*
+                .filter(_._1 != "Transfer-Encoding")*
             )
             .as(ctype)
         }
     } else {
       val builder = env.Ws // MTLS needed here ???
         .url(s"$url/$path")
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .withFollowRedirects(false)
         .withMethod(ctx.request.method)
         .withRequestTimeout(flags.requestTimeout)
-        .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
+        .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head))*)
 
       val builderWithBody = if (currentReqHasBody) {
         builder.withBody(SourceBody(ctx.request.body))
@@ -400,11 +401,11 @@ class BackOfficeController(
             )
             .withHeaders(
               res.headers
-                .mapValues(_.head)
+                .view.mapValues(_.head).toMap
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
-                .filter(_._1 != "Transfer-Encoding"): _*
+                .filter(_._1 != "Transfer-Encoding")*
             )
             .as(ctype)
         }
@@ -416,7 +417,7 @@ class BackOfficeController(
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def robotTxt =
-    Action { req =>
+    Action { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       if (logger.isDebugEnabled) logger.debug(s"Rendering robot.txt on ${req.theProtocol}://${req.theHost}/robot.txt")
       Ok("""User-agent: *
          |Disallow: /""".stripMargin)
@@ -523,6 +524,7 @@ class BackOfficeController(
           case None if thridPartyLoginEnabled  =>
             Ok(otoroshi.views.html.backoffice.index(thridPartyLoginEnabled, ctx.user, ctx.request, env))
           case None if !thridPartyLoginEnabled => Redirect(routes.U2FController.loginPage())
+          case _     => Redirect(routes.U2FController.loginPage())
         }
       }
     }
@@ -572,7 +574,7 @@ class BackOfficeController(
     }
 
   def error(message: Option[String]) =
-    BackOfficeAction { ctx =>
+    BackOfficeAction { (ctx: otoroshi.actions.BackOfficeActionContext[play.api.mvc.AnyContent]) =>
       Ok(otoroshi.views.html.oto.error(message.getOrElse("Error message"), env))
     }
 
@@ -587,7 +589,7 @@ class BackOfficeController(
 
   def documentationFrameDescriptor(lineId: String, serviceId: String) =
     BackOfficeActionAuth.async { ctx =>
-      import scala.concurrent.duration._
+      import scala.concurrent.duration.*
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case Some(descriptor) if !ctx.canUserRead(descriptor)            => ApiActionContext.fforbidden
         case Some(service) if service.api.openApiDescriptorUrl.isDefined => {
@@ -599,7 +601,7 @@ class BackOfficeController(
             exp = DateTime.now().plusSeconds(30).toDate.getTime,
             iat = DateTime.now().toDate.getTime,
             jti = IdGenerator.uuid
-          ).serialize(service.algoInfoFromOtoToBack)(env)
+          ).serialize(service.algoInfoFromOtoToBack)(using env)
           val url   = service.api.openApiDescriptorUrl.get match {
             case uri if uri.startsWith("/") => s"${service.target.scheme}://${service.target.host}${uri}"
             case url                        => url
@@ -651,7 +653,7 @@ class BackOfficeController(
                     val id                 = (app \ "id").as[String]
                     val name               = (app \ "name").as[String]
                     val hosts: Seq[String] =
-                      (app \ "vhosts").as[JsArray].value.map(vhost => (vhost \ "fqdn").as[String])
+                      (app \ "vhosts").as[JsArray].value.toSeq.map(vhost => (vhost \ "fqdn").as[String])
                     val preferedHost       =
                       hosts.filterNot(h => h.contains("cleverapps.io")).headOption.getOrElse(hosts.head)
                     val service            =
@@ -697,7 +699,7 @@ class BackOfficeController(
           env.Ws
             .url(s"$url/apps")
             .withMethod("GET")
-            .withHttpHeaders(Seq("Accept" -> "application/json"): _*)
+            .withHttpHeaders(Seq("Accept" -> "application/json")*)
             .execute()
             .map { res =>
               if (res.status == 200) {
@@ -886,7 +888,7 @@ class BackOfficeController(
   def getAllLoggers() =
     BackOfficeActionAuth.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
-        import collection.JavaConverters._
+        import scala.jdk.CollectionConverters.*
 
         val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
         val paginationPageSize: Int =
@@ -970,9 +972,9 @@ class BackOfficeController(
 
   def fetchOpenIdConfiguration() =
     BackOfficeActionAuth.async(parse.json) { ctx =>
-      import otoroshi.utils.http.Implicits._
+      import otoroshi.utils.http.Implicits.*
 
-      import scala.concurrent.duration._
+      import scala.concurrent.duration.*
       val id           = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
       val name         = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
       val desc         = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
@@ -981,11 +983,11 @@ class BackOfficeController(
 
       val trust_all     = ctx.request.body.select("trust_all").asOptBoolean.getOrElse(false)
       val loose         = ctx.request.body.select("loose").asOptBoolean.getOrElse(false)
-      val trusted_certs = ctx.request.body.select("trusted_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val trusted_certs = ctx.request.body.select("trusted_certs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+      val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
       val sessionCookieValues =
-        (ctx.request.body \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
+        (ctx.request.body \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues())
       (ctx.request.body \ "url").asOpt[String] match {
         case None      =>
           FastFuture.successful(
@@ -1001,7 +1003,7 @@ class BackOfficeController(
                 metadata = Map.empty,
                 sessionCookieValues = sessionCookieValues,
                 clientSideSessionEnabled = true,
-                location = EntityLocation.fromBackOffice(ctx)(env)
+                location = EntityLocation.fromBackOffice(ctx)(using env)
               ).asJson
             )
           )
@@ -1081,7 +1083,7 @@ class BackOfficeController(
                             MtlsConfig.default
                           )
                         ),
-                        location = EntityLocation.fromBackOffice(ctx)(env)
+                        location = EntityLocation.fromBackOffice(ctx)(using env)
                       )
                       .asJson
                   )
@@ -1099,7 +1101,7 @@ class BackOfficeController(
                       metadata = Map.empty,
                       sessionCookieValues = sessionCookieValues,
                       clientSideSessionEnabled = true,
-                      location = EntityLocation.fromBackOffice(ctx)(env)
+                      location = EntityLocation.fromBackOffice(ctx)(using env)
                     ).asJson
                   )
                 }
@@ -1117,7 +1119,7 @@ class BackOfficeController(
                     metadata = Map.empty,
                     sessionCookieValues = sessionCookieValues,
                     clientSideSessionEnabled = true,
-                    location = EntityLocation.fromBackOffice(ctx)(env)
+                    location = EntityLocation.fromBackOffice(ctx)(using env)
                   ).asJson
                 )
               }
@@ -1128,7 +1130,7 @@ class BackOfficeController(
 
   def fetchSAMLConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
     import scala.xml.Elem
-    import scala.xml.XML._
+    import scala.xml.XML.*
     Try {
       val xmlContent: Either[String, Elem] = (ctx.request.body \ "url").asOpt[String] match {
         case Some(url) => Right(load(url))
@@ -1183,7 +1185,7 @@ class BackOfficeController(
     }
 
   def resetCircuitBreakers(id: String) =
-    BackOfficeActionAuth { ctx =>
+    BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
       env.circuitBeakersHolder.resetCircuitBreakersFor(id)
       Ok(Json.obj("done" -> true))
     }
@@ -1374,7 +1376,7 @@ class BackOfficeController(
       }
     }
 
-  def selfSignedCert(): Action[Source[ByteString, _]] =
+  def selfSignedCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
@@ -1413,7 +1415,7 @@ class BackOfficeController(
       }
     }
 
-  def selfSignedClientCert(): Action[Source[ByteString, _]] =
+  def selfSignedClientCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
@@ -1452,7 +1454,7 @@ class BackOfficeController(
       }
     }
 
-  def importP12File(): Action[Source[ByteString, _]] =
+  def importP12File(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       val password = ctx.request.getQueryString("password").getOrElse("")
       val client   = ctx.request.getQueryString("client").contains("true")
@@ -1481,9 +1483,9 @@ class BackOfficeController(
       }
     }
 
-  import otoroshi.ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits.*
 
-  def caCert(): Action[Source[ByteString, _]] =
+  def caCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
         Try {
@@ -1517,7 +1519,7 @@ class BackOfficeController(
       }
     }
 
-  def caSignedCert(): Action[Source[ByteString, _]] =
+  def caSignedCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
@@ -1554,7 +1556,7 @@ class BackOfficeController(
       }
     }
 
-  def caSignedClientCert(): Action[Source[ByteString, _]] =
+  def caSignedClientCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
@@ -1694,7 +1696,7 @@ class BackOfficeController(
       }
     }
 
-  def certificateData(): Action[Source[ByteString, _]] =
+  def certificateData(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
         Try {
@@ -1719,7 +1721,7 @@ class BackOfficeController(
       }
     }
 
-  def certificateIsValid(): Action[Source[ByteString, _]] =
+  def certificateIsValid(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
         Try {
@@ -1975,10 +1977,10 @@ class BackOfficeController(
 
     val builder = env.Ws
       .url(url)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withFollowRedirects(false)
       .withMethod(ctx.request.method)
-      .withQueryStringParameters(ctx.request.queryString.toSeq.filterNot(_._1 == "url").map(t => (t._1, t._2.head)): _*)
+      .withQueryStringParameters(ctx.request.queryString.toSeq.filterNot(_._1 == "url").map(t => (t._1, t._2.head))*)
 
     val builderWithBody = if (otoroshi.utils.body.BodyUtils.hasBody(ctx.request)) {
       builder.withBody(SourceBody(ctx.request.body))
@@ -1992,7 +1994,7 @@ class BackOfficeController(
       .map { res =>
         Results
           .Status(res.status)(res.body)
-          .withHeaders(res.headers.mapValues(_.last).toSeq.filterNot(_._1 == "Content-Type"): _*)
+          .withHeaders(res.headers.view.mapValues(_.last).toMap.toSeq.filterNot(_._1 == "Content-Type")*)
           .as(res.contentType)
       }
   }
@@ -2039,8 +2041,8 @@ class BackOfficeController(
     val types = ctx.request.body
       .select("types")
       .as[JsArray]
-      .value
-      .map(GraphQLFormats.objectTypeDefinitionFmt.reads)
+      .value.toSeq
+      .map(e => GraphQLFormats.objectTypeDefinitionFmt.reads(e))
       .flatMap {
         case JsSuccess(v, _) => Some(v)
         case JsError(_)      => None
@@ -2058,7 +2060,7 @@ class BackOfficeController(
           val newDocument = document.copy(
             definitions = document.definitions.flatMap {
               case _: sangria.ast.TypeDefinition          => None
-              case _: sangria.ast.InterfaceTypeDefinition => None
+              // case _: sangria.ast.InterfaceTypeDefinition => None
               case v                                      => Some(v)
             } ++ types
           )
@@ -2078,7 +2080,7 @@ class BackOfficeController(
     } get
   }
 
-  def toYaml = BackOfficeActionAuth(parse.json) { ctx =>
+  def toYaml = BackOfficeActionAuth(parse.json) { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.libs.json.JsValue]) =>
     Ok(Yaml.write(ctx.request.body)).as("application/yaml")
   }
 
@@ -2176,14 +2178,14 @@ class BackOfficeController(
     }
   }
 
-  def testFilteringAndProjection() = BackOfficeActionAuth(parse.json) { ctx =>
+  def testFilteringAndProjection() = BackOfficeActionAuth(parse.json) { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.libs.json.JsValue]) =>
     val body                                   = ctx.request.body
     val input                                  = body.select("input").asOpt[JsValue].getOrElse(Json.obj())
     val matchExpressions: JsObject             = body.select("match").asOpt[JsObject].getOrElse(Json.obj())
     val matchIncludeExpressions: Seq[JsObject] =
-      matchExpressions.select("include").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
+      matchExpressions.select("include").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject]).toSeq
     val matchExcludeExpressions: Seq[JsObject] =
-      matchExpressions.select("exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
+      matchExpressions.select("exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject]).toSeq
     val projectionExpression: JsObject         = body.select("projection").asOpt[JsObject].getOrElse(Json.obj())
 
     val shouldInclude =
@@ -2200,7 +2202,7 @@ class BackOfficeController(
     Ok(Json.obj("matches" -> matches, "projection" -> projected))
   }
 
-  def testFilteringAndProjectionInputDoc() = BackOfficeActionAuth { ctx =>
+  def testFilteringAndProjectionInputDoc() = BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
     val rawRequest = ctx.request
     val route      = NgRoute.empty
     val target     = NgTarget.default

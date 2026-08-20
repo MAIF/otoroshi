@@ -1,7 +1,7 @@
 package otoroshi.storage.drivers.lettuce
 
-import akka.http.scaladsl.util.FastFuture
-import io.lettuce.core._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.codec.RedisCodec
 import otoroshi.env.Env
@@ -18,7 +18,7 @@ class DumbRedisConnectionPool[K, V](
     client: RedisClient,
     codec: RedisCodec[K, V],
     maxSize: Int
-)(implicit ec: ExecutionContext, env: Env) {
+)(using ec: ExecutionContext, env: Env) {
 
   private val counter                                                = new AtomicInteger(0)
   private val connections: Seq[(Int, StatefulRedisConnection[K, V])] = (1 to maxSize).map { idx =>

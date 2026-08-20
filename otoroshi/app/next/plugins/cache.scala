@@ -1,20 +1,20 @@
 package otoroshi.next.plugins
 
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.{DateTime, DateTimeZone}
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.script._
+import otoroshi.next.plugins.api.*
+import otoroshi.script.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.Codecs
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
 
@@ -22,7 +22,7 @@ import java.util.Locale
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class NgHttpClientCacheConfig(maxAgeSeconds: Long, methods: Seq[String], status: Seq[Int], mimeTypes: Seq[String])
     extends NgPluginConfig {
@@ -80,7 +80,7 @@ class NgHttpClientCache extends NgRequestTransformer {
   override def description: Option[String]                 = "This plugin add cache headers to responses".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHttpClientCacheConfig.default.some
 
-  private def methodMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(implicit
+  private def methodMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -88,7 +88,7 @@ class NgHttpClientCache extends NgRequestTransformer {
     config.methods.map(_.toLowerCase().trim).contains(ctx.request.method.toLowerCase())
   }
 
-  private def statusMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(implicit
+  private def statusMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -96,7 +96,7 @@ class NgHttpClientCache extends NgRequestTransformer {
     config.status.contains(ctx.otoroshiResponse.status)
   }
 
-  private def contentMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(implicit
+  private def contentMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -111,7 +111,7 @@ class NgHttpClientCache extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config =
       ctx.cachedConfig(internalName)(NgHttpClientCacheConfig.format).getOrElse(NgHttpClientCacheConfig.default)
     if (methodMatch(ctx, config) && statusMatch(ctx, config) && contentMatch(ctx, config)) {
@@ -156,16 +156,16 @@ object NgResponseCacheFilterConfig {
           .orElse((json \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
           .getOrElse(Seq(200)),
         methods = json.select("methods").asOpt[Seq[String]].getOrElse(Seq("GET")),
-        paths = json.select("paths").asOpt[Seq[String]].getOrElse(Seq.empty),
+        paths = json.select("paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         notStatuses = json
           .select("notStatuses")
           .asOpt[Seq[Int]]
           .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         notMethods = json
           .select("notMethods")
           .asOpt[Seq[String]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -199,7 +199,7 @@ object NgResponseCacheConfig {
         ttl = json.select("ttl").asOpt[Long].getOrElse(60.minutes.toMillis),
         maxSize = json.select("maxSize").asOpt[Long].getOrElse(50L * 1024L * 1024L),
         autoClean = json.select("autoClean").asOpt[Boolean].getOrElse(true),
-        filter = json.select("filter").asOpt[NgResponseCacheFilterConfig](NgResponseCacheFilterConfig.format.reads)
+        filter = json.select("filter").asOpt[NgResponseCacheFilterConfig](using NgResponseCacheFilterConfig.format)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -249,8 +249,8 @@ class NgResponseCache extends NgRequestTransformer {
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("cache-redis")
-    implicit val ec = actorSystem.dispatcher
-    env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
+    implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
+    env.datastores.globalConfigDataStore.singleton()(using ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {
         val redis: RedisClientMasterSlaves = {
           val master = RedisServer(
@@ -262,7 +262,7 @@ class NgResponseCache extends NgRequestTransformer {
           )
           val slaves = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "slaves")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map { config =>
               RedisServer(
                 host = (config \ "host").asOpt[String].getOrElse("localhost"),
@@ -270,7 +270,7 @@ class NgResponseCache extends NgRequestTransformer {
                 password = (config \ "password").asOpt[String]
               )
             }
-          RedisClientMasterSlaves(master, slaves)(actorSystem)
+          RedisClientMasterSlaves(master, slaves)(using actorSystem)
         }
         ref.set((redis, actorSystem))
       }
@@ -284,14 +284,14 @@ class NgResponseCache extends NgRequestTransformer {
     FastFuture.successful(())
   }
 
-  private def get(key: String)(implicit env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
+  private def get(key: String)(using env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
     ref.get() match {
       case null  => env.datastores.rawDataStore.get(key)
       case redis => redis._1.get(key)
     }
   }
 
-  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit
+  private def set(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -352,7 +352,7 @@ class NgResponseCache extends NgRequestTransformer {
   private def cachedResponse(
       ctx: NgTransformerRequestContext,
       config: NgResponseCacheConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[Unit, Option[JsValue]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[Unit, Option[JsValue]]] = {
     if (filter(ctx.request, config)) {
       get(
         s"${env.storageRoot}:noclustersync:cache:${ctx.route.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}"
@@ -367,7 +367,7 @@ class NgResponseCache extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgResponseCacheConfig.format).getOrElse(NgResponseCacheConfig())
 
     cachedResponse(ctx, config).map {
@@ -387,14 +387,14 @@ class NgResponseCache extends NgRequestTransformer {
           NgResponseCache.logger.debug(
             s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache"
           )
-        Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
+        Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq*))
       }
     }
   }
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(NgResponseCacheConfig.format).getOrElse(NgResponseCacheConfig())
 
     if (couldCacheResponse(ctx, config)) {
@@ -472,14 +472,14 @@ class NgResponseCacheCleanupJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     cleanCache(env)
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev  = env
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val functions    = env.proxyState.allRoutes().map { route =>
       (route, route.plugins.getPluginByClass[NgResponseCache])
     } collect { case (route, Some(plugin)) =>

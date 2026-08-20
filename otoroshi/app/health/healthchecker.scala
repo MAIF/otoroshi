@@ -1,26 +1,26 @@
 package otoroshi.health
 
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.HealthCheckEvent
 import otoroshi.gateway.Retry
 import otoroshi.models.{HealthCheck, SecComVersion, ServiceDescriptor, Target}
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.ws.WSResponse
 
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -30,7 +30,7 @@ case class CheckFirstService(startedAt: DateTime, services: Seq[ServiceDescripto
 
 object HealthCheckLogic {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   val badHealth = new UnboundedTrieMap[String, Unit]()
 
@@ -66,7 +66,7 @@ object HealthCheckLogic {
     ct.contains("x-www-form-urlencoded")
   }
 
-  def checkTarget(desc: ServiceDescriptor, target: Target, logger: Logger)(implicit
+  def checkTarget(desc: ServiceDescriptor, target: Target, logger: Logger)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -101,7 +101,7 @@ object HealthCheckLogic {
           Some(env.Headers.OtoroshiIssuer),
           Some("HealthChecker")
         )
-        .serialize(desc.algoInfoFromOtoToBack)(env)
+        .serialize(desc.algoInfoFromOtoToBack)(using env)
 
       env.MtlsWs
         .url(url, target.mtlsConfig)
@@ -228,18 +228,18 @@ object HealthCheckLogic {
         .recover { case e =>
           ()
         }
-    }(ec, env.otoroshiActorSystem.scheduler)
+    }(using ec, env.otoroshiActorSystem.scheduler)
   }
 }
 
 object HealthCheckerActor {
-  def props(implicit env: Env) = Props(new HealthCheckerActor())
+  def props(using env: Env) = Props(new HealthCheckerActor())
 }
 
-class HealthCheckerActor()(implicit env: Env) extends Actor {
+class HealthCheckerActor()(using env: Env) extends Actor {
 
-  implicit lazy val ec  = context.dispatcher
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = context.dispatcher
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-health-checker")
 
@@ -339,8 +339,8 @@ class HealthCheckJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat      = env.otoroshiMaterializer
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val parallelChecks    = env.healtCheckWorkers
     val services          = env.proxyState.allServices()
     val routes            = env.proxyState.allRawRoutes()
@@ -387,7 +387,7 @@ class HealthCheckLocalCacheJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.rawDataStore.keys(s"${env.storageRoot}:targets:bad-health:*").map { keys =>
       HealthCheckLogic.badHealth.clear()
       keys.foreach { key =>

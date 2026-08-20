@@ -1,17 +1,17 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import io.netty.channel.unix.DomainSocketAddress
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.script._
+import otoroshi.next.plugins.api.*
+import otoroshi.script.*
 import otoroshi.ssl.{Cert, PemHeaders}
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{OS, RegexPool}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import reactor.netty.http.client.{HttpClient, HttpClientResponse}
 import reactor.netty.resources.DefaultLoopResourcesHelper
@@ -78,7 +78,7 @@ object TailscaleLocalApiClient {
 
 class TailscaleLocalApiClient(env: Env) {
 
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private lazy val doesMacOSDomainSocketExists = new File(socketAddress()).exists()
 
@@ -148,7 +148,7 @@ class TailscaleLocalApiClient(env: Env) {
   }
 
   private def callGet(uri: String): Future[ReactorResponse] = {
-    val rec = client
+    val rec = (client
       .responseTimeout(java.time.Duration.ofMillis(2000))
       .headers(h =>
         h
@@ -157,7 +157,7 @@ class TailscaleLocalApiClient(env: Env) {
           .add("Authorization", s"Basic ${token()}")
       )
       .get()
-      .uri(uri)
+      .uri(uri)).asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
     (for {
       resp    <- ReactiveStreamUtils.MonoUtils.toFuture(rec.response())
       content <- ReactiveStreamUtils.MonoUtils.toFuture(rec.responseContent().aggregate().asString())
@@ -166,7 +166,7 @@ class TailscaleLocalApiClient(env: Env) {
     }).andThen {
       case Failure(_: FileNotFoundException) =>
         TailscaleLocalApiClient.logger.error(
-          s"Tailscale socket does not exist at '${socketAddress}'. Maybe tailscaled does not run on your machine ..."
+          s"Tailscale socket does not exist at '${socketAddress()}'. Maybe tailscaled does not run on your machine ..."
         )
       case Failure(exception)                =>
         TailscaleLocalApiClient.logger.error("Tailscale call failed", exception)
@@ -234,7 +234,7 @@ class TailscaleTargetsJob extends Job {
     }
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val cli = client(env)
     cli.status().map { status =>
       Future.sequence(status.onlinePeers.map { peer =>
@@ -300,7 +300,7 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val useIpAddress = ctx.config.select("use_ip_address").asOpt[Boolean].getOrElse(false)
     ctx.config.select("machine_name").asOpt[String] match {
       case None           =>
@@ -340,7 +340,7 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
                 url = ctx.otoroshiRequest.uri
                   .copy(
                     authority = ctx.otoroshiRequest.authority.copy(
-                      host = akka.http.scaladsl.model.Uri.Host.apply(peer.dnsname)
+                      host = org.apache.pekko.http.scaladsl.model.Uri.Host.apply(peer.dnsname)
                     )
                   )
                   .toString
@@ -399,7 +399,7 @@ class TailscaleCertificatesFetcherJob extends Job {
     }
   }
 
-  def certAlreadyExistsFor(domain: String)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  def certAlreadyExistsFor(domain: String)(using env: Env, ec: ExecutionContext): Boolean = {
     env.proxyState
       .allCertificates()
       .filter(_.notExpired)
@@ -407,11 +407,11 @@ class TailscaleCertificatesFetcherJob extends Job {
       .exists(_.allDomains.contains(domain))
   }
 
-  def syncTailscaleCerts(ctx: JobContext, magicDNSSuffix: String)(implicit
+  def syncTailscaleCerts(ctx: JobContext, magicDNSSuffix: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val domains      = env.proxyState
       .allRoutes()
       .filter(_.frontend.domains.exists(_.domainLowerCase.endsWith(s".${magicDNSSuffix.toLowerCase()}")))
@@ -442,7 +442,7 @@ class TailscaleCertificatesFetcherJob extends Job {
       .map(_ => ())
   }
 
-  def syncSelf(ctx: JobContext, self: TailscaleStatusPeer)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def syncSelf(ctx: JobContext, self: TailscaleStatusPeer)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     if (!certAlreadyExistsFor(self.dnsname)) {
       client(env)
         .fetchCert(self.dnsname)
@@ -465,7 +465,7 @@ class TailscaleCertificatesFetcherJob extends Job {
     }
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val cli = client(env)
     cli.status().flatMap { status =>
       status.magicDNSSuffix match {

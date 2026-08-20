@@ -1,6 +1,8 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, XmlToJsonRequest}
@@ -8,7 +10,7 @@ import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.libs.json.Json
 
 class RequestBodyXmlToJsonTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -31,7 +33,7 @@ class RequestBodyXmlToJsonTests(parent: PluginsTestSpec) {
         |""".stripMargin)
     .futureValue
 
-  val body = Json.parse(resp.body).selectAsObject("body")
+  val body = Json.parse(resp.body[String]).selectAsObject("body")
 
   body.selectAsOptObject("book").isDefined mustBe true
   body.selectAsObject("book").selectAsString("category") mustBe "web"

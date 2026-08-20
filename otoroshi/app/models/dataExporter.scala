@@ -1,26 +1,27 @@
 package otoroshi.models
 
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import play.api.libs.ws.WSBodyWritables.given
 import com.google.common.hash.Hashing
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.Exporters._
-import otoroshi.events._
+import otoroshi.events.Exporters.*
+import otoroshi.events.*
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.TypedMap
-import otoroshi.utils.mailer._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.mailer.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSCookie
 
 import java.nio.charset.StandardCharsets
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -148,7 +149,7 @@ object HttpCallSettings {
           .select("cookies")
           .asOpt[Seq[JsObject]]
           .map(_.map(o => JsonHelpers.cookieFromJson(o)))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         body = json.select("body").asOptString.getOrElse(""),
         timeout = json.select("timeout").asOptLong.map(_.millis).getOrElse(60.seconds),
         tlsConfig = json
@@ -187,7 +188,7 @@ case class HttpCallSettings(
     )
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -223,7 +224,7 @@ case class HttpCallSettings(
       .url(url, tlsConfig.legacy)
       .withRequestTimeout(timeout)
       .withMethod(method)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .withBody(finalBody)
       .execute()
       .map { resp =>
@@ -299,7 +300,7 @@ case class SplunkCallSettings(
       }
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -309,7 +310,7 @@ case class SplunkCallSettings(
       .withMethod("POST")
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("Authorization" -> s"Splunk ${token}")
-      }: _*)
+      }*)
       .withBody(
         events
           .map { evt =>
@@ -406,7 +407,7 @@ case class DatadogCallSettings(
       }
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -416,7 +417,7 @@ case class DatadogCallSettings(
       .withMethod("POST")
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("DD-API-KEY" -> token)
-      }: _*)
+      }*)
       .withBody(
         JsArray(
           events
@@ -482,7 +483,7 @@ case class NewRelicCallSettings(
       }
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -492,7 +493,7 @@ case class NewRelicCallSettings(
       .withMethod("POST")
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("Api-Key" -> token)
-      }: _*)
+      }*)
       .withBody(
         JsArray(
           events
@@ -573,7 +574,7 @@ case class WorkflowCallSettings(ref: String) extends Exporter {
     )
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -824,7 +825,7 @@ object PostgresExporterSettings {
 
 object DataExporterConfig {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   private val log = Logger("otoroshi-data-exporter-config")
 
@@ -874,7 +875,7 @@ object DataExporterConfig {
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "bufferSize").asOpt[Int].getOrElse(5000),
           jsonWorkers = (json \ "jsonWorkers").asOpt[Int].getOrElse(1),
           sendWorkers = (json \ "sendWorkers").asOpt[Int].getOrElse(5),
@@ -882,8 +883,8 @@ object DataExporterConfig {
           groupDuration = (json \ "groupDuration").asOpt[Int].map(_.millis).getOrElse(30.seconds),
           projection = (json \ "projection").asOpt[JsObject].getOrElse(Json.obj()),
           filtering = DataExporterConfigFiltering(
-            include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
-            exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+            include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq,
+            exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           ),
           customFilter = (json \ "customFilter")
             .asOpt[JsObject]
@@ -910,16 +911,16 @@ object DataExporterConfig {
                 maxFileSize = (json \ "config" \ "maxFileSize").as[Long]
               )
             case "s3"             =>
-              (json \ "config").as(S3ExporterSettings.format)
+              (json \ "config").as(using S3ExporterSettings.format)
             case "goreplays3"     =>
               GoReplayS3Settings(
-                (json \ "config" \ "s3").as(S3Configuration.format),
+                (json \ "config" \ "s3").as(using S3Configuration.format),
                 (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
                 (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
-                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
               )
             case "goreplayfile"   =>
               GoReplayFileSettings(
@@ -929,7 +930,7 @@ object DataExporterConfig {
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
-                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
               )
             case "mailer"         => MailerSettings.format.reads((json \ "config").as[JsObject]).get
             case "custom"         => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
@@ -1173,11 +1174,11 @@ case class DataExporterConfig(
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.dataExporterConfigDataStore.set(this)
   }
 
-  def exporter()(implicit ec: ExecutionContext, env: Env): DataExporter = {
+  def exporter()(using ec: ExecutionContext, env: Env): DataExporter = {
     config match {
       case c: KafkaConfig                                                    => new KafkaExporter(this)
       case c: PulsarConfig                                                   => new PulsarExporter(this)
@@ -1222,8 +1223,8 @@ case class DataExporterConfig(
 object DataExporterConfigMigrationJob {
 
   def cleanupGlobalConfig(env: Env): Future[Unit] = {
-    implicit val ev = env
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     env.datastores.globalConfigDataStore.findById("global").map {
       case Some(config) =>
         env.datastores.globalConfigDataStore.set(
@@ -1241,9 +1242,9 @@ object DataExporterConfigMigrationJob {
 
   def saveExporters(configs: Seq[DataExporterConfig], env: Env): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     Source(configs.toList)
       .mapAsync(1)(ex => {
@@ -1254,9 +1255,9 @@ object DataExporterConfigMigrationJob {
   }
   def extractExporters(env: Env): Future[Seq[DataExporterConfig]] = {
 
-    implicit val ev  = env
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val alertDataExporterConfigFiltering     = DataExporterConfigFiltering(
       include = Seq(Json.obj("@type" -> Json.obj("$regex" -> "Alert.*")))
@@ -1368,7 +1369,7 @@ class DataExporterConfigMigrationJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     DataExporterConfigMigrationJob
       .extractExporters(env)
       .flatMap(configs => DataExporterConfigMigrationJob.saveExporters(configs, env))

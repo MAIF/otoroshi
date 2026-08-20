@@ -1,7 +1,7 @@
 package otoroshi.controllers
 
 import otoroshi.actions.{ApiAction, BackOfficeActionAuth, UnAuthApiAction}
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.cluster.{ClusterMode, MemberView}
 import otoroshi.env.Env
 import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
@@ -9,7 +9,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result, Results}
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -37,7 +37,7 @@ object HealthController {
     }
   }
 
-  def fetchHealth()(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
+  def fetchHealth()(using env: Env, ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
     val membersF = if (env.clusterConfig.mode == ClusterMode.Leader) {
       env.datastores.clusterStateDataStore.getMembers()
     } else {
@@ -87,6 +87,7 @@ object HealthController {
       val otoroshiStatus   = JsString(_health match {
         case Healthy if overhead <= env.healthLimit => "healthy"
         case Healthy if overhead > env.healthLimit  => "unhealthy"
+        case Healthy                                => "unhealthy"
         case Unhealthy                              => "unhealthy"
         case Unreachable                            => "down"
       })
@@ -144,7 +145,7 @@ object HealthController {
       acceptsJson: Boolean,
       acceptsProm: Boolean,
       filter: Option[String]
-  )(implicit env: Env, ec: ExecutionContext): Result = {
+  )(using env: Env, ec: ExecutionContext): Result = {
     if (format.contains("old_json") || format.contains("old")) {
       Results.Ok(env.metrics.jsonExport(filter)).as("application/json")
     } else if (format.contains("json")) {
@@ -161,11 +162,11 @@ object HealthController {
   }
 }
 
-class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(implicit env: Env)
+class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(using env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-health-api")
 
@@ -205,7 +206,7 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     }
   }
 
-  def backofficeMetrics() = BackOfficeActionAuth { ctx =>
+  def backofficeMetrics() = BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
     HealthController.fetchMetrics("json".some, true, false, None)
   }
 

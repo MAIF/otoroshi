@@ -1,8 +1,8 @@
 package otoroshi.metrics
 
-import akka.actor.Cancellable
-import akka.http.scaladsl.util.FastFuture
-import com.codahale.metrics._
+import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import com.codahale.metrics.*
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
 import com.codahale.metrics.jvm.{
@@ -19,11 +19,11 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.cluster.{ClusterMode, StatsView}
 import otoroshi.env.Env
 import otoroshi.events.StatsDReporter
-import otoroshi.metrics.opentelemetry._
+import otoroshi.metrics.opentelemetry.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 import otoroshi.utils.prometheus.CustomCollector
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
@@ -33,16 +33,16 @@ import java.lang.management.ManagementFactory
 import java.util
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
-import java.util.{Timer => _, _}
+import java.util.{Timer => _, *}
 import javax.management.{Attribute, ObjectName}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.{mapAsJavaMapConverter, mapAsScalaMapConverter}
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 trait TimerMetrics {
   def withTimer[T](name: String, display: Boolean = false)(f: => T): T = f
-  def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(implicit
+  def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(using
       ec: ExecutionContext
   ): Future[T]                                                         = f
 }
@@ -59,8 +59,8 @@ object FakeHasMetrics extends HasMetrics {
 
 class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends TimerMetrics {
 
-  private implicit val ev = env
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ev: otoroshi.env.Env = env
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val logger = Logger("otoroshi-metrics")
 
@@ -264,7 +264,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   override def withTimerAsync[T](name: String, display: Boolean = false)(
       f: => Future[T]
-  )(implicit ec: ExecutionContext): Future[T] = {
+  )(using ec: ExecutionContext): Future[T] = {
     val jmxCtx = jmxRegistry.timer(name).time()
     val ctx    = metricRegistry.timer(MetricId.build(name)).time()
     f.andThen { case r =>

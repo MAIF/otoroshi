@@ -1,16 +1,17 @@
 package otoroshi.storage.drivers.reactivepg
 
-import akka.NotUsed
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.{JsonArray, JsonObject}
-import io.vertx.core.net.{PemKeyCertOptions, PemTrustOptions}
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import io.vertx.core.net.{ClientSSLOptions, NetClientOptions, PemKeyCertOptions, PemTrustOptions}
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.{PoolOptions, Row}
 import next.models.{
   ApiDataStore,
@@ -25,31 +26,31 @@ import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.analytics.models.{KvUserDashboardDataStore, UserDashboardDataStore}
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.script.{JobContext, JobId, KvScriptDataStore, OneTimeJob, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage._
-import otoroshi.storage.stores._
+import otoroshi.storage.*
+import otoroshi.storage.stores.*
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils.SchedulerHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent._
-import scala.concurrent.duration._
+import scala.concurrent.*
+import scala.concurrent.duration.*
 import scala.util.{Failure, Success, Try}
 
 object pgimplicits {
   implicit class VertxFutureEnhancer[A](val future: io.vertx.core.Future[A]) extends AnyVal {
     def scala: Future[A] = {
-      val promise = Promise.apply[A]
+      val promise = Promise.apply[A]()
       future.onSuccess(a => promise.trySuccess(a))
       future.onFailure(e => promise.tryFailure(e))
       promise.future
@@ -58,7 +59,7 @@ object pgimplicits {
 
   implicit class VertxQueryEnhancer[A](val query: io.vertx.sqlclient.Query[A]) extends AnyVal {
     def executeAsync(): Future[A] = {
-      val promise = Promise.apply[A]
+      val promise = Promise.apply[A]()
       val future  = query.execute()
       future.onSuccess(a => promise.trySuccess(a))
       future.onFailure(e => promise.tryFailure(e))
@@ -68,7 +69,7 @@ object pgimplicits {
 
   implicit class VertxPreparedQueryEnhancer[A](val query: io.vertx.sqlclient.PreparedQuery[A]) extends AnyVal {
     def executeAsync(): Future[A] = {
-      val promise = Promise.apply[A]
+      val promise = Promise.apply[A]()
       val future  = query.execute()
       future.onSuccess(a => promise.trySuccess(a))
       future.onFailure(e => promise.tryFailure(e))
@@ -77,7 +78,7 @@ object pgimplicits {
   }
 
   implicit class EnhancedRow(val row: Row) extends AnyVal {
-    def opt[A](name: String, typ: String, extractor: (Row, String) => A)(implicit logger: Logger): Option[A] = {
+    def opt[A](name: String, typ: String, extractor: (Row, String) => A)(using logger: Logger): Option[A] = {
       Try(extractor(row, name)) match {
         case Failure(ex)    => {
           logger.error(s"error while getting column '$name' of type $typ", ex)
@@ -86,16 +87,16 @@ object pgimplicits {
         case Success(value) => Some(value)
       }
     }
-    def optString(name: String)(implicit logger: Logger): Option[String]                 = opt(name, "String", (a, b) => a.getString(b))
-    def optLong(name: String)(implicit logger: Logger): Option[Long]                     =
+    def optString(name: String)(using logger: Logger): Option[String]                 = opt(name, "String", (a, b) => a.getString(b))
+    def optLong(name: String)(using logger: Logger): Option[Long]                     =
       opt(name, "Long", (a, b) => a.getLong(b).longValue())
-    def optOffsetDatetime(name: String)(implicit logger: Logger): Option[OffsetDateTime] =
+    def optOffsetDatetime(name: String)(using logger: Logger): Option[OffsetDateTime] =
       opt(name, "OffsetDateTime", (a, b) => a.getOffsetDateTime(b))
 
-    def optInterval(name: String)(implicit logger: Logger): Option[io.vertx.pgclient.data.Interval] =
+    def optInterval(name: String)(using logger: Logger): Option[io.vertx.pgclient.data.Interval] =
       opt(name, "Interval", (a, b) => a.get(classOf[io.vertx.pgclient.data.Interval], b))
 
-    def optJsObject(name: String)(implicit logger: Logger): Option[JsObject] =
+    def optJsObject(name: String)(using logger: Logger): Option[JsObject] =
       opt(
         name,
         "JsObject",
@@ -108,7 +109,7 @@ object pgimplicits {
           }
         }
       )
-    def optJsArray(name: String)(implicit logger: Logger): Option[JsArray]   =
+    def optJsArray(name: String)(using logger: Logger): Option[JsArray]   =
       opt(
         name,
         "JsArray",
@@ -131,7 +132,7 @@ class ReactivePgDataStores(
     env: Env
 ) extends DataStores {
 
-  import pgimplicits._
+  import pgimplicits.*
 
   private val logger = Logger("otoroshi-reactive-pg-datastores")
 
@@ -147,17 +148,86 @@ class ReactivePgDataStores(
         .getOrElse(ConfigFactory.empty)
     )
 
+  private lazy val sslConfig     = configuration.betterGetOptional[Configuration]("app.pg.ssl").getOrElse(Configuration.empty)
+  private lazy val sslEnabled    = sslConfig.betterGetOptional[Boolean]("enabled").getOrElse(false)
+
+  // since vertx 5, transport level settings are not part of PgConnectOptions anymore, they are
+  // passed to the client builder as NetClientOptions
+  private lazy val netClientOptions = new NetClientOptions()
+    .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
+    .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
+    .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
+
+  // since vertx 5, tls settings are not part of PgConnectOptions anymore, they live in a
+  // dedicated ClientSSLOptions instance set on the connect options
+  private lazy val clientSslOptions: Option[ClientSSLOptions] = if (sslEnabled) {
+    val ssl               = sslConfig
+    val pemTrustOptions   = new PemTrustOptions()
+    val pemKeyCertOptions = new PemKeyCertOptions()
+    val sslOptions        = new ClientSSLOptions()
+    ssl.betterGetOptional[Int]("ssl-handshake-timeout").foreach(v => sslOptions.setSslHandshakeTimeout(v.toLong))
+    ssl.betterGetOptional[Seq[String]]("trusted-certs-path").map { pathes =>
+      pathes.map(p => pemTrustOptions.addCertPath(p))
+      sslOptions.setTrustOptions(pemTrustOptions)
+    }
+    ssl.betterGetOptional[String]("trusted-cert-path").map { path =>
+      pemTrustOptions.addCertPath(path)
+      sslOptions.setTrustOptions(pemTrustOptions)
+    }
+    ssl.betterGetOptional[Seq[String]]("trusted-certs").map { certs =>
+      certs.map(p => pemTrustOptions.addCertValue(Buffer.buffer(p)))
+      sslOptions.setTrustOptions(pemTrustOptions)
+    }
+    ssl.betterGetOptional[String]("trusted-cert").map { path =>
+      pemTrustOptions.addCertValue(Buffer.buffer(path))
+      sslOptions.setTrustOptions(pemTrustOptions)
+    }
+    ssl.betterGetOptional[Seq[String]]("client-certs-path").map { pathes =>
+      pathes.map(p => pemKeyCertOptions.addCertPath(p))
+      sslOptions.setKeyCertOptions(pemKeyCertOptions)
+    }
+    ssl.betterGetOptional[Seq[String]]("client-certs").map { certs =>
+      certs.map(p => pemKeyCertOptions.addCertValue(Buffer.buffer(p)))
+      sslOptions.setKeyCertOptions(pemKeyCertOptions)
+    }
+    ssl.betterGetOptional[String]("client-cert-path").map { path =>
+      pemKeyCertOptions.addCertPath(path)
+      sslOptions.setKeyCertOptions(pemKeyCertOptions)
+    }
+    ssl.betterGetOptional[String]("client-cert").map { path =>
+      pemKeyCertOptions.addCertValue(Buffer.buffer(path))
+      sslOptions.setKeyCertOptions(pemKeyCertOptions)
+    }
+    ssl.betterGetOptional[Seq[String]]("client-keys-path").map { pathes =>
+      pathes.map(p => pemKeyCertOptions.addKeyPath(p))
+      sslOptions.setKeyCertOptions(pemKeyCertOptions)
+    }
+    ssl.betterGetOptional[Seq[String]]("client-keys").map { certs =>
+      certs.map(p => pemKeyCertOptions.addKeyValue(Buffer.buffer(p)))
+      sslOptions.setKeyCertOptions(pemKeyCertOptions)
+    }
+    ssl.betterGetOptional[String]("client-key-path").map { path =>
+      pemKeyCertOptions.addKeyPath(path)
+      sslOptions.setKeyCertOptions(pemKeyCertOptions)
+    }
+    ssl.betterGetOptional[String]("client-key").map { path =>
+      pemKeyCertOptions.addKeyValue(Buffer.buffer(path))
+      sslOptions.setKeyCertOptions(pemKeyCertOptions)
+    }
+    ssl.betterGetOptional[Boolean]("trust-all").map { v =>
+      sslOptions.setTrustAll(v)
+    }
+    sslOptions.some
+  } else {
+    None
+  }
+
   private lazy val connectOptions = if (configuration.betterHas("app.pg.uri")) {
     val opts = PgConnectOptions.fromUri(configuration.betterGet[String]("app.pg.uri"))
 
     opts
   } else {
-    val ssl        = configuration.betterGetOptional[Configuration]("app.pg.ssl").getOrElse(Configuration.empty)
-    val sslEnabled = ssl.betterGetOptional[Boolean]("enabled").getOrElse(false)
     new PgConnectOptions()
-      .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
-      .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
-      .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
       .applyOnWithOpt(configuration.betterGetOptional[Int]("pipelining-limit"))((p, v) => p.setPipeliningLimit(v))
       .setPort(configuration.getOptionalWithFileSupport[Int]("app.pg.port").getOrElse(5432))
       .setHost(configuration.getOptionalWithFileSupport[String]("app.pg.host").getOrElse("localhost"))
@@ -165,62 +235,8 @@ class ReactivePgDataStores(
       .setUser(configuration.getOptionalWithFileSupport[String]("app.pg.user").getOrElse("otoroshi"))
       .setPassword(configuration.getOptionalWithFileSupport[String]("app.pg.password").getOrElse("otoroshi"))
       .applyOnIf(sslEnabled) { pgopt =>
-        val mode              = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify-ca"))
-        val pemTrustOptions   = new PemTrustOptions()
-        val pemKeyCertOptions = new PemKeyCertOptions()
-        pgopt.setSslMode(mode)
-        pgopt.applyOnWithOpt(ssl.betterGetOptional[Int]("ssl-handshake-timeout"))((p, v) => p.setSslHandshakeTimeout(v))
-        ssl.betterGetOptional[Seq[String]]("trusted-certs-path").map { pathes =>
-          pathes.map(p => pemTrustOptions.addCertPath(p))
-          pgopt.setPemTrustOptions(pemTrustOptions)
-        }
-        ssl.betterGetOptional[String]("trusted-cert-path").map { path =>
-          pemTrustOptions.addCertPath(path)
-          pgopt.setPemTrustOptions(pemTrustOptions)
-        }
-        ssl.betterGetOptional[Seq[String]]("trusted-certs").map { certs =>
-          certs.map(p => pemTrustOptions.addCertValue(Buffer.buffer(p)))
-          pgopt.setPemTrustOptions(pemTrustOptions)
-        }
-        ssl.betterGetOptional[String]("trusted-cert").map { path =>
-          pemTrustOptions.addCertValue(Buffer.buffer(path))
-          pgopt.setPemTrustOptions(pemTrustOptions)
-        }
-        ssl.betterGetOptional[Seq[String]]("client-certs-path").map { pathes =>
-          pathes.map(p => pemKeyCertOptions.addCertPath(p))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
-        }
-        ssl.betterGetOptional[Seq[String]]("client-certs").map { certs =>
-          certs.map(p => pemKeyCertOptions.addCertValue(Buffer.buffer(p)))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
-        }
-        ssl.betterGetOptional[String]("client-cert-path").map { path =>
-          pemKeyCertOptions.addCertPath(path)
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
-        }
-        ssl.betterGetOptional[String]("client-cert").map { path =>
-          pemKeyCertOptions.addCertValue(Buffer.buffer(path))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
-        }
-        ssl.betterGetOptional[Seq[String]]("client-keys-path").map { pathes =>
-          pathes.map(p => pemKeyCertOptions.addKeyPath(p))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
-        }
-        ssl.betterGetOptional[Seq[String]]("client-keys").map { certs =>
-          certs.map(p => pemKeyCertOptions.addKeyValue(Buffer.buffer(p)))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
-        }
-        ssl.betterGetOptional[String]("client-key-path").map { path =>
-          pemKeyCertOptions.addKeyPath(path)
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
-        }
-        ssl.betterGetOptional[String]("client-key").map { path =>
-          pemKeyCertOptions.addKeyValue(Buffer.buffer(path))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
-        }
-        ssl.betterGetOptional[Boolean]("trust-all").map { v =>
-          pgopt.setTrustAll(v)
-        }
+        pgopt.setSslMode(SslMode.of(sslConfig.betterGetOptional[String]("mode").getOrElse("verify-ca")))
+        clientSslOptions.foreach(opts => pgopt.setSslOptions(opts))
         pgopt
       }
   }
@@ -236,9 +252,10 @@ class ReactivePgDataStores(
   private lazy val schema             = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
   private lazy val table              = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
   private lazy val schemaDotTable     = s"$schema.$table"
-  private lazy val client             = PgPool.pool(connectOptions, poolOptions)
+  private lazy val client             =
+    PgBuilder.pool().connectingTo(connectOptions).`with`(poolOptions).`with`(netClientOptions).build()
 
-  lazy val redis = new ReactivePgRedis(
+  lazy val redis: ReactivePgRedis = new ReactivePgRedis(
     client,
     reactivePgActorSystem,
     env,
@@ -254,7 +271,7 @@ class ReactivePgDataStores(
   }
 
   def runSchemaCreation(): Unit = {
-    implicit val ec = reactivePgActorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = reactivePgActorSystem.dispatcher
     logger.info("Running database migrations ...")
 
     // AWAIT: valid
@@ -303,7 +320,7 @@ class ReactivePgDataStores(
   }
 
   def setupCleanup(): Unit = {
-    implicit val ec = reactivePgActorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = reactivePgActorSystem.dispatcher
     cancel.set(
       reactivePgActorSystem.scheduler.scheduleAtFixedRate(ttlJobInitialDelay, ttlJobInterval)(SchedulerHelper.runnable {
         try {
@@ -334,8 +351,8 @@ class ReactivePgDataStores(
         targets = Seq(
           Target("mirror.otoroshi.io")
         )
-      ).save()(reactivePgActorSystem.dispatcher, env)
-    }(reactivePgActorSystem.dispatcher)
+      ).save()(using reactivePgActorSystem.dispatcher, env)
+    }(using reactivePgActorSystem.dispatcher)
   }
 
   override def before(
@@ -465,7 +482,7 @@ class ReactivePgDataStores(
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover { case _ =>
       Unreachable
     }
@@ -494,7 +511,7 @@ class ReactivePgDataStores(
   }
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -538,11 +555,11 @@ class ReactivePgDataStores(
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -569,14 +586,14 @@ class ReactivePgDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -595,8 +612,8 @@ class ReactivePgDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -613,7 +630,7 @@ class ReactivePgDataStores(
 }
 
 class ReactivePgRedis(
-    pool: PgPool,
+    pool: Pool,
     system: ActorSystem,
     env: Env,
     schemaDotTable: String,
@@ -622,13 +639,13 @@ class ReactivePgRedis(
 ) extends RedisLike
     with OptimizedRedisLike {
 
-  import pgimplicits._
+  import pgimplicits.*
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
-  private implicit val ec = system.dispatcher
+  private implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
 
-  private implicit val logger = Logger("otoroshi-reactive-pg-kv")
+  private implicit val logger: play.api.Logger = Logger("otoroshi-reactive-pg-kv")
 
   private val debugQueries = env.configuration.betterGetOptional[Boolean]("app.pg.logQueries").getOrElse(false)
 
@@ -690,12 +707,12 @@ class ReactivePgRedis(
     }.map { rows =>
       Source(rows.toList)
         .mapAsync(1) { case (key, value) =>
-          KindExtractorHelper.findKind(key)(env) match {
+          KindExtractorHelper.findKind(key)(using env) match {
             case Some(kind) => setEntityKind(key, kind, value)
             case None       => ().vfuture
           }
         }
-        .runWith(Sink.ignore)(env.otoroshiMaterializer)
+        .runWith(Sink.ignore)(using env.otoroshiMaterializer)
     }
   }
 
@@ -718,7 +735,7 @@ class ReactivePgRedis(
 
   override val optimized: Boolean = _optimized
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     info().map(_ => Healthy).recover { case _ => Unreachable }
   }
 
@@ -768,7 +785,7 @@ class ReactivePgRedis(
 
   override def serviceDescriptors_findByHost(
       query: ServiceDescriptorQuery
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.services-find-by-host") {
       val queryRegex = "^" + query.toHost.replace("*", ".*").replace(".", "\\.")
       querySeq(
@@ -782,7 +799,7 @@ class ReactivePgRedis(
 
   override def serviceDescriptors_findByEnv(
       ev: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.services-find-by-env") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'env' = '${ev}' and (ttl_starting_at + ttl) > NOW();"
@@ -795,7 +812,7 @@ class ReactivePgRedis(
 
   override def serviceDescriptors_findByGroup(
       id: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.find-by-group") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'groups' ? $$1 and (ttl_starting_at + ttl) > NOW();",
@@ -809,7 +826,7 @@ class ReactivePgRedis(
 
   override def apiKeys_findByService(
       service: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-service") {
 
       var params     = Seq[Any]()
@@ -831,7 +848,7 @@ class ReactivePgRedis(
       }
     }
 
-  override def apiKeys_findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+  override def apiKeys_findByGroup(groupId: String)(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-group") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'apikey' and jvalue -> 'authorizedEntities' ? $$1 and (ttl_starting_at + ttl) > NOW();",
@@ -890,7 +907,7 @@ class ReactivePgRedis(
     setBS(key, value.byteString, exSeconds, pxMilliseconds)
   }
 
-  override def del(keys: String*): Future[Long] = hardDelete(keys: _*)
+  override def del(keys: String*): Future[Long] = hardDelete(keys*)
 
   def hardDelete(keys: String*): Future[Long] = {
     if (keys.isEmpty) {
@@ -1100,7 +1117,7 @@ class ReactivePgRedis(
         s"select mvalue from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;",
         Seq(key)
       ) { row =>
-        row.optJsObject("mvalue").map(_.value.mapValues(v => v.asString.byteString).toMap)
+        row.optJsObject("mvalue").map(_.value.view.mapValues(v => v.asString.byteString).toMap)
       }.map(_.getOrElse(Map.empty[String, ByteString]))
     }
 
@@ -1121,9 +1138,9 @@ class ReactivePgRedis(
       }
     }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  override def lpush(key: String, values: String*): Future[Long]                      = lpushBS(key, values.map(_.byteString): _*)
+  override def lpush(key: String, values: String*): Future[Long]                      = lpushBS(key, values.map(_.byteString)*)
 
-  override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(_.toString.byteString): _*)
+  override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(_.toString.byteString)*)
 
   private def getArray(key: String): Future[Option[Seq[ByteString]]] =
     measure("pg.ops.lget") {
@@ -1131,7 +1148,7 @@ class ReactivePgRedis(
         s"select lvalue from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;",
         Seq(key)
       ) { row =>
-        row.optJsArray("lvalue").map(_.value.map(e => e.asString.byteString))
+        row.optJsArray("lvalue").map(_.value.map(e => e.asString.byteString).toSeq)
       }
     }
 
@@ -1166,7 +1183,7 @@ class ReactivePgRedis(
       val stop = if (_stop > (Int.MaxValue - 1)) Int.MaxValue - 1 else _stop
       if (avoidJsonPath) {
         getArray(key).map(
-          _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)
+          _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty).toSeq
         ) // awful but not supported in some cases like cockroachdb
       } else {
         queryOne(
@@ -1174,11 +1191,11 @@ class ReactivePgRedis(
           Seq(key)
         ) { row =>
           row.optJsArray("slice").map(_.value.map(v => v.asString.byteString))
-        }.map(_.getOrElse(Seq.empty)).recoverWith {
+        }.map(_.getOrElse(Seq.empty).toSeq).recoverWith {
           case ex: io.vertx.pgclient.PgException
               if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
             getArray(key).map(
-              _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)
+              _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty).toSeq
             ) // awful but not supported in some cases like cockroachdb
           }
         }
@@ -1229,7 +1246,7 @@ class ReactivePgRedis(
     }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(_.byteString): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(_.byteString)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] =
     measure("pg.ops.sadd") {
@@ -1266,10 +1283,10 @@ class ReactivePgRedis(
         Seq(key)
       ) { row =>
         row.optJsObject("svalue").map(_.keys.toSeq.map(ByteString.apply))
-      }.map(_.getOrElse(Seq.empty))
+      }.map(_.getOrElse(Seq.empty).toSeq)
     }
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] =
     measure("pg.ops.srem") {
@@ -1331,7 +1348,7 @@ class SetMissingEntityKind extends OneTimeJob {
 
   override def uniqueId: JobId = JobId("io.otoroshi.core.storage.pg.SetMissingEntityKind")
 
-  override def singleRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def singleRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores match {
       case ds: ReactivePgDataStores => ds.setMissingEntityKind()
       case _                        => funit

@@ -1,12 +1,12 @@
 package otoroshi.script
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, GwError}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.TypedMap
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,10 +37,10 @@ object AccessValidatorRef {
             refs = (json \ "refs")
               .asOpt[Seq[String]]
               .orElse((json \ "ref").asOpt[String].map(r => Seq(r)))
-              .getOrElse(Seq.empty),
+              .getOrElse(Seq.empty).toSeq,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             config = (json \ "config").asOpt[JsValue].getOrElse(Json.obj()),
-            excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>
@@ -55,8 +55,8 @@ case class Denied(result: Result) extends Access
 
 trait AccessValidator extends StartableAndStoppable with NamedPlugin with InternalEventListener {
   def pluginType: PluginType                                                                      = PluginType.AccessValidatorType
-  def access(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Access] = {
-    canAccess(context)(env, ec).flatMap {
+  def access(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Access] = {
+    canAccess(context)(using env, ec).flatMap {
       case true  => FastFuture.successful(Allowed)
       case false =>
         Errors
@@ -71,7 +71,7 @@ trait AccessValidator extends StartableAndStoppable with NamedPlugin with Intern
           .map(Denied.apply)
     }
   }
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] =
+  def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] =
     FastFuture.successful(true)
 }
 
@@ -93,7 +93,7 @@ object DefaultValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq.empty
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     FastFuture.successful(true)
   }
 }
@@ -104,7 +104,7 @@ object CompilingValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq.empty
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("not ready yet, plugin is loading ..."))
     FastFuture.successful(false)
   }

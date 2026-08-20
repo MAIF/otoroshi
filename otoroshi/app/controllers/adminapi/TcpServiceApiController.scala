@@ -19,13 +19,13 @@ import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[TcpService, JsValue]
     with CrudControllerHelper[TcpService, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   val logger = Logger("otoroshi-tcp-service-api")
 
@@ -44,7 +44,7 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
 
   override def writeEntity(entity: TcpService): JsValue = TcpService.fmt.writes(entity)
 
-  override def findByIdOps(id: String, req: RequestHeader)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[TcpService]]] = {
@@ -63,7 +63,7 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[TcpService]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -80,7 +80,7 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   override def createEntityOps(
       entity: TcpService,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[TcpService]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.set(entity).map {
       case true  => {
         Right(
@@ -107,7 +107,7 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   override def updateEntityOps(
       entity: TcpService,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[TcpService]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.set(entity).map {
       case true  => {
         Right(
@@ -134,7 +134,7 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[TcpService]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.delete(id).map {
       case true  => {
         Right(

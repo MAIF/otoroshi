@@ -1,15 +1,15 @@
 package otoroshi.next.models
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.OverflowStrategy
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.OverflowStrategy
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -85,9 +85,9 @@ case object DropTailNgOverflowStrategy     extends NgOverflowStrategy {
 case object DropBufferNgOverflowStrategy   extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.dropBuffer
 }
-case object DropNewNgOverflowStrategy      extends NgOverflowStrategy {
-  def toAkka: OverflowStrategy = OverflowStrategy.dropNew
-}
+// case object DropNewNgOverflowStrategy      extends NgOverflowStrategy {
+//   def toAkka: OverflowStrategy = OverflowStrategy.dropNew
+// }
 case object BackpressureNgOverflowStrategy extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.backpressure
 }
@@ -98,7 +98,7 @@ object NgOverflowStrategy {
   val dropHead: NgOverflowStrategy     = DropHeadNgOverflowStrategy
   val dropTail: NgOverflowStrategy     = DropTailNgOverflowStrategy
   val dropBuffer: NgOverflowStrategy   = DropBufferNgOverflowStrategy
-  val dropNew: NgOverflowStrategy      = DropNewNgOverflowStrategy
+  // val dropNew: NgOverflowStrategy      = DropNewNgOverflowStrategy
   val backpressure: NgOverflowStrategy = BackpressureNgOverflowStrategy
   val fail: NgOverflowStrategy         = FailNgOverflowStrategy
 }
@@ -106,7 +106,7 @@ object NgOverflowStrategy {
 case class NgCacheConnectionSettings(
     enabled: Boolean = false,
     queueSize: Int = 2048,
-    strategy: NgOverflowStrategy = NgOverflowStrategy.dropNew
+    strategy: NgOverflowStrategy = NgOverflowStrategy.dropTail
 ) {
   lazy val legacy: CacheConnectionSettings = CacheConnectionSettings(
     enabled = enabled,
@@ -185,12 +185,12 @@ object NgClientConfig {
           cacheConnectionSettings = NgCacheConnectionSettings(
             enabled = (json \ "cache_connection_settings" \ "enabled").asOpt[Boolean].getOrElse(false),
             queueSize = (json \ "cache_connection_settings" \ "queue_size").asOpt[Int].getOrElse(2048),
-            strategy = NgOverflowStrategy.dropNew
+            strategy = NgOverflowStrategy.dropTail
           ),
           customTimeouts = (json \ "custom_timeouts")
             .asOpt[JsArray]
             .map(_.value.map(e => NgCustomTimeouts.format.reads(e).get))
-            .getOrElse(Seq.empty[NgCustomTimeouts])
+            .getOrElse(Seq.empty[NgCustomTimeouts]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage())
@@ -261,11 +261,11 @@ object NgTlsConfig {
             .orElse((json \ "certId").asOpt[String].map(v => Seq(v)))
             .orElse((json \ "cert_id").asOpt[String].map(v => Seq(v)))
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           trustedCerts = (json \ "trusted_certs")
             .asOpt[Seq[String]]
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
           trustAll = (json \ "trust_all").asOpt[Boolean].getOrElse(false)
@@ -347,14 +347,14 @@ object NgBackend {
           targets = simpleTarget
             .map(st => Seq(st))
             .orElse(obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           root = root,
           rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
           loadBalancing = LoadBalancing.format
             .reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj()))
             .getOrElse(RoundRobin),
-          healthCheck = obj.select("health_check").asOpt(HealthCheck.format),
-          client = obj.select("client").asOpt(NgClientConfig.format).getOrElse(NgClientConfig())
+          healthCheck = obj.select("health_check").asOpt(using HealthCheck.format),
+          client = obj.select("client").asOpt(using NgClientConfig.format).getOrElse(NgClientConfig())
         )
     }
   }
@@ -398,7 +398,7 @@ object NgMinimalBackend {
       case None      => empty
       case Some(obj) =>
         NgMinimalBackend(
-          targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
+          targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty).toSeq,
           root = obj.select("root").asOpt[String].getOrElse("/"),
           rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
           loadBalancing = LoadBalancing.format
@@ -520,13 +520,13 @@ object NgTarget {
       port = port,
       tls = tls,
       weight = obj.select("weight").asOpt[Int].getOrElse(1),
-      tlsConfig = obj.select("tls_config").asOpt(NgTlsConfig.format).getOrElse(NgTlsConfig()),
+      tlsConfig = obj.select("tls_config").asOpt(using NgTlsConfig.format).getOrElse(NgTlsConfig()),
       protocol = (obj \ "protocol")
         .asOpt[String]
         .filterNot(_.trim.isEmpty)
         .map(s => HttpProtocols.parse(s))
         .getOrElse(HttpProtocols.HTTP_1_1),
-      predicate = (obj \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
+      predicate = (obj \ "predicate").asOpt(using TargetPredicate.format).getOrElse(AlwaysMatch),
       ipAddress = ipAddress,
       backup = obj.select("backup").asOpt[Boolean].getOrElse(false)
     )
@@ -551,7 +551,7 @@ object StoredNgBackend {
         id = json.select("id").as[String],
         name = json.select("name").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         backend = NgBackend.readFromJson(json.select("backend").as[JsValue])
       )
@@ -572,7 +572,7 @@ case class StoredNgBackend(
     metadata: Map[String, String],
     backend: NgBackend
 ) extends EntityLocationSupport {
-  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.backendsDataStore.set(this)
+  def save()(using env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.backendsDataStore.set(this)
   override def internalId: String                                      = id
   override def theName: String                                         = name
   override def theDescription: String                                  = description
@@ -589,9 +589,9 @@ case class StoredNgBackend(
 }
 
 trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): StoredNgBackend = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): StoredNgBackend = {
     val default = StoredNgBackend(
-      location = EntityLocation.ownEntityLocation(ctx)(env),
+      location = EntityLocation.ownEntityLocation(ctx)(using env),
       id = IdGenerator.namedId("backend", env),
       name = "New backend",
       description = "New backend",
@@ -599,9 +599,9 @@ trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
       tags = Seq.empty,
       backend = NgBackend.empty
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .backend
       .map { template =>
@@ -616,7 +616,7 @@ trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
 class KvStoredNgBackendDataStore(redisCli: RedisLike, _env: Env)
     extends StoredNgBackendDataStore
     with RedisLikeStore[StoredNgBackend] {
-  override def redisLike(implicit env: Env): RedisLike   = redisCli
+  override def redisLike(using env: Env): RedisLike   = redisCli
   override def fmt: Format[StoredNgBackend]              = StoredNgBackend.format
   override def key(id: String): String                   = s"${_env.storageRoot}:backends:${id}"
   override def extractId(value: StoredNgBackend): String = value.id

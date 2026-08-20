@@ -2,41 +2,40 @@ package otoroshi.gateway
 
 import java.net.URLEncoder
 import java.util.concurrent.atomic.AtomicInteger
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Flow, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{FileIO, Flow, Source}
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
-import com.google.common.base.Charsets
 import controllers.Assets
 import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
 import otoroshi.controllers.HealthController
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models._
+import otoroshi.events.*
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.ssl.OcspResponder
 import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.letsencrypt._
+import otoroshi.utils.letsencrypt.*
 import otoroshi.utils.jwk.JWKSHelper
 import play.api.ApplicationLoader.DevContext
 import play.api.Logger
-import play.api.http.{Status => _, _}
-import play.api.libs.json._
+import play.api.http.{Status => _, *}
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.Results.*
+import play.api.mvc.*
 import play.api.routing.Router
 import play.core.WebCommands
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -54,9 +53,9 @@ case class ProxyDone(
     otoroshiHeadersIn: Seq[Header]
 )
 
-class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
+class ErrorHandler()(using env: Env) extends HttpErrorHandler {
 
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-error-handler")
 
@@ -152,8 +151,8 @@ class AnalyticsQueue(env: Env) extends Actor {
   override def receive: Receive = {
     case AnalyticsQueueEvent(descriptor, duration, overhead, dataIn, dataOut, upstreamLatency, config) => {
       descriptor
-        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(context.dispatcher, env)
-      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher, env)
+        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(using context.dispatcher, env)
+      env.datastores.globalConfigDataStore.updateQuotas(config)(using context.dispatcher, env)
     }
   }
 }
@@ -162,7 +161,7 @@ object GatewayRequestHandler {
 
   lazy val logger = Logger("otoroshi-http-handler")
 
-  def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(implicit
+  def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -186,7 +185,7 @@ object GatewayRequestHandler {
       u.flatMap { optUser =>
         auth.authModule(globalConfig).paLogout(req, optUser, globalConfig, routeLegacy).map {
           case Left(body)   =>
-            body.discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
+            body.discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth)*)
             body
           case Right(value) =>
             value match {
@@ -206,7 +205,7 @@ object GatewayRequestHandler {
                     .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.routeCookieSuffix(route)}"
                 if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
                 Redirect(redirectTo)
-                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
+                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth)*)
               }
               case Some(logoutUrl) => {
                 val cookieOpt         =
@@ -224,7 +223,7 @@ object GatewayRequestHandler {
                   logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
                 if (logger.isTraceEnabled) logger.trace("should redirect to " + actualRedirectUrl)
                 Redirect(actualRedirectUrl)
-                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
+                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth)*)
               }
             }
         }
@@ -234,7 +233,7 @@ object GatewayRequestHandler {
 
   def withAuthConfig(route: NgRoute, req: RequestHeader, attrs: TypedMap)(
       f: AuthModuleConfig => Future[Result]
-  )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext): Future[Result] = {
 
     lazy val missingAuthRefError = Errors.craftResponseResult(
       "Auth. config. ref not found on the route",
@@ -304,11 +303,11 @@ class GatewayRequestHandler(
     backofficeActionBuilder: BackOfficeAction,
     privateActionBuilder: PrivateAppsAction,
     healthController: HealthController
-)(implicit env: Env, mat: Materializer)
-    extends DefaultHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters) {
+)(using env: Env, mat: Materializer)
+    extends DefaultHttpRequestHandler(webCommands, optDevContext, () => router, errorHandler, configuration, filters) {
 
-  implicit lazy val ec        = env.otoroshiExecutionContext
-  implicit lazy val scheduler = env.otoroshiScheduler
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
 
   lazy val logger = Logger("otoroshi-http-handler")
   // lazy val debugLogger = Logger("otoroshi-http-handler-debug")
@@ -354,7 +353,7 @@ class GatewayRequestHandler(
 
   // TODO : very dirty ... fix it using Play 2.6 request.hasBody
   // def hasBody(request: Request[_]): Boolean = request.hasBody
-  def hasBody(request: Request[_]): Boolean = {
+  def hasBody(request: Request[?]): Boolean = {
     request.theHasBody
     // (request.method, request.headers.get("Content-Length")) match {
     //   case ("GET", Some(_))    => true
@@ -419,7 +418,7 @@ class GatewayRequestHandler(
         case Some(key) => {
           KeyManagerCompatibility.session(key) match {
             case Some((_, _, chain))
-                if chain.headOption.exists(_.getSubjectDN.getName.contains(SSLSessionJavaHelper.NotAllowed)) =>
+                if chain.headOption.exists(_.getSubjectX500Principal.getName.contains(SSLSessionJavaHelper.NotAllowed)) =>
               Some(badCertReply(request))
             case a => internalRouteRequest(request, config)
           }
@@ -680,7 +679,7 @@ class GatewayRequestHandler(
     }
   }
 
-  private val devCache = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]
+  private val devCache = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]()
 
   def serveDevAssets() = actionBuilder.async { req =>
     val wholePath = req.relativeUri
@@ -738,6 +737,7 @@ class GatewayRequestHandler(
             case Left(_) if extensionsPublicKeys.nonEmpty   =>
               Results.Ok(Json.obj("keys" -> JsArray(extensionsPublicKeys.map(_.raw))))
             case Right(keys)                                => Results.Ok(Json.obj("keys" -> JsArray(keys ++ extensionsPublicKeys.map(_.raw))))
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -811,7 +811,7 @@ class GatewayRequestHandler(
                     ma.getOrElse(86400),
                     SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true)),
                     secOpt
-                  ): _*
+                  )*
                 )
               )
             case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure)                  =>
@@ -824,7 +824,7 @@ class GatewayRequestHandler(
                     ma.getOrElse(86400),
                     SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true)),
                     secOpt
-                  ): _*
+                  )*
                 )
               )
             case _                                                                                                =>
@@ -1026,17 +1026,17 @@ class GatewayRequestHandler(
     }
 
   def forbidden() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       Forbidden(Json.obj("error" -> "forbidden"))
     }
 
   def adminApiNotExposed() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       NotFound(Json.obj("error" -> "resource not found"))
     }
 
   def redirectToHttps() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       val domain   = req.theDomain
       val protocol = req.theProtocol
       if (logger.isTraceEnabled)
@@ -1047,7 +1047,7 @@ class GatewayRequestHandler(
     }
 
   def redirectToMainDomain() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
       val protocol       = req.theProtocol
       if (logger.isDebugEnabled)
@@ -1057,5 +1057,5 @@ class GatewayRequestHandler(
       Redirect(s"$protocol://$domain${req.relativeUri}")
     }
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 }

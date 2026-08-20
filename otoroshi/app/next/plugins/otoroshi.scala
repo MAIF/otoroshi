@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import org.joda.time.DateTime
 import otoroshi.controllers.HealthController
@@ -17,18 +17,18 @@ import otoroshi.models.{
   SecComInfoTokenVersion,
   SecComVersion
 }
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.*
 import otoroshi.utils.infotoken.{AddFieldsSettings, InfoTokenHelper}
 import otoroshi.utils.jwk.JWKSHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
-import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.Results.*
+import play.api.mvc.*
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -137,7 +137,7 @@ object NgOtoroshiInfoConfig {
       "version"     -> o.secComVersion.json,
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
-      "add_fields"  -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))).getOrElse(JsNull).as[JsValue],
+      "add_fields"  -> o.addFields.map(v => JsObject(v.fields.view.mapValues(JsString.apply).toMap)).getOrElse(JsNull).as[JsValue],
       "projection"  -> o.projection,
       "algo"        -> o.algo.asJson
     )
@@ -174,7 +174,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config             = ctx
       .cachedConfigFn(internalName)(json => NgOtoroshiChallengeConfig(json).some)
       .getOrElse(NgOtoroshiChallengeConfig(ctx.config))
@@ -207,7 +207,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config                                   = ctx.attrs.get(NgOtoroshiChallengeKeys.ConfigKey).get
     val stateValue                               = ctx.attrs.get(NgOtoroshiChallengeKeys.StateValueKey).get
     val stateRespHeaderName                      = config.responseHeaderName.getOrElse(env.Headers.OtoroshiStateResp)
@@ -247,7 +247,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
               env
             ).left
           case SecComVersion.V2                       => {
-            config.algoBackendToOto.asAlgorithm(otoroshi.models.OutputMode)(env) match {
+            config.algoBackendToOto.asAlgorithm(otoroshi.models.OutputMode)(using env) match {
               case None       =>
                 StateRespInvalid(
                   at,
@@ -336,6 +336,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
               }
             }
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -368,7 +369,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
           logger.error(
             stateRespInvalid.errorMessage(
               ctx.response.map(_.status).getOrElse(ctx.rawResponse.status),
-              ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)
+              ctx.response.map(_.headers.view.mapValues(_.last).toMap).getOrElse(ctx.rawResponse.headers)
             )
           )
           val extraInfos    = ctx.attrs
@@ -378,7 +379,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
             extraInfos ++ Json.obj(
               "stateRespInvalid" -> stateRespInvalid.exchangePayload(
                 ctx.response.map(_.status).getOrElse(ctx.rawResponse.status),
-                ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)
+                ctx.response.map(_.headers.view.mapValues(_.last).toMap).getOrElse(ctx.rawResponse.headers)
               )
             )
           ctx.attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
@@ -435,7 +436,7 @@ class OtoroshiInfos extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx
       .cachedConfigFn(internalName)(json => NgOtoroshiInfoConfig(json).some)
       .getOrElse(NgOtoroshiInfoConfig(ctx.config))
@@ -451,7 +452,7 @@ class OtoroshiInfos extends NgRequestTransformer {
       None,
       config.addFields.map(af =>
         AddFieldsSettings(
-          af.fields.mapValues(str =>
+          af.fields.view.mapValues(str =>
             GlobalExpressionLanguage.apply(
               value = str,
               req = ctx.request.some,
@@ -463,7 +464,7 @@ class OtoroshiInfos extends NgRequestTransformer {
               attrs = ctx.attrs,
               env = env
             )
-          )
+          ).toMap
         )
       )
     )
@@ -507,17 +508,17 @@ object PossibleCerts {
     )
     override def reads(json: JsValue): JsResult[PossibleCerts] = Try {
       PossibleCerts(
-        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
+        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         includeAlgorithms = json.select("include_algorithms").asOptBoolean.getOrElse(false),
         rsaAlgorithms = json
           .select("rsa_algorithms")
           .asOpt[Seq[String]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
           .map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)),
         esAlgorithms = json
           .select("es_algorithms")
           .asOpt[Seq[String]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
           .map(str => com.nimbusds.jose.JWSAlgorithm.parse(str))
       )
     } match {
@@ -577,7 +578,7 @@ class OtoroshiOCSPResponderEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -608,7 +609,7 @@ class OtoroshiAIAEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -658,7 +659,7 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -694,7 +695,7 @@ class OtoroshiHealthEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -757,7 +758,7 @@ class OtoroshiMetricsEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

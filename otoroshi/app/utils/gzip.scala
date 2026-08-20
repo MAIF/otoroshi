@@ -1,15 +1,15 @@
 package otoroshi.utils.gzip
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream._
-import akka.stream.scaladsl._
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.*
+import org.apache.pekko.stream.scaladsl.*
+import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import org.apache.pekko.util.ByteString
 import otoroshi.utils.RegexPool
 import play.api.Logger
-import play.api.http._
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.http.*
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -23,9 +23,9 @@ object GzipConfig {
       Try {
         GzipConfig(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          whiteList = (json \ "whiteList").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          blackList = (json \ "blackList").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          whiteList = (json \ "whiteList").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          blackList = (json \ "blackList").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "bufferSize").asOpt[Int].getOrElse(8192),
           chunkedThreshold = (json \ "chunkedThreshold").asOpt[Int].getOrElse(102400),
           compressionLevel = (json \ "compressionLevel").asOpt[Int].getOrElse(5)
@@ -73,16 +73,16 @@ case class GzipConfig(
 
   def asJson: JsValue = GzipConfig._fmt.writes(this)
 
-  import play.api.http.HeaderNames._
-  import otoroshi.utils.http.RequestImplicits._
+  import play.api.http.HeaderNames.*
+  import otoroshi.utils.http.RequestImplicits.*
 
-  private def createGzipFlow: Flow[ByteString, ByteString, _] = GzipFlow.gzip(bufferSize, compressionLevel)
+  private def createGzipFlow: Flow[ByteString, ByteString, ?] = GzipFlow.gzip(bufferSize, compressionLevel)
 
-  def handleResult(request: RequestHeader, result: Result)(implicit
+  def handleResult(request: RequestHeader, result: Result)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Result] = {
-    implicit val ec = mat.executionContext
+    implicit val ec: scala.concurrent.ExecutionContext = mat.executionContext
 
     if (enabled && (!excludedPatterns.exists(p => RegexPool.regex(p).matches(request.relativeUri)))) {
       if (mayCompress(request) && shouldCompress(result) && shouldGzip(request, result)) {
@@ -117,7 +117,7 @@ case class GzipConfig(
 
           case HttpEntity.Chunked(chunks, contentType) =>
             val gzipFlow = Flow.fromGraph(GraphDSL.create[FlowShape[HttpChunk, HttpChunk]]() { implicit builder =>
-              import GraphDSL.Implicits._
+              import GraphDSL.Implicits.*
 
               val extractChunks   = Flow[HttpChunk].collect { case HttpChunk.Chunk(data) => data }
               val createChunks    = Flow[ByteString].map[HttpChunk](HttpChunk.Chunk.apply)
@@ -152,7 +152,7 @@ case class GzipConfig(
     }
   }
 
-  private def compressStrictEntity(source: Source[ByteString, Any], contentType: Option[String])(implicit
+  private def compressStrictEntity(source: Source[ByteString, Any], contentType: Option[String])(using
       ec: ExecutionContext,
       mat: Materializer
   ) = {
@@ -198,7 +198,7 @@ case class GzipConfig(
   private def varyWith(rh: ResponseHeader, headerValues: String*): (String, String) = {
     val newValue = rh.headers.get(VARY) match {
       case Some(existing) if existing.nonEmpty =>
-        val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase)(collection.breakOut)
+        val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase).toSet
         val newValuesToAdd           = headerValues.filterNot(v => existingSet.contains(v.trim.toLowerCase))
         s"$existing${newValuesToAdd.map(v => s",$v").mkString}"
       case _                                   =>
@@ -259,12 +259,12 @@ case class GzipConfig(
 
 object GzipFlow {
 
-  def gzip(bufferSize: Int = 512, compressionLevel: Int = 5): Flow[ByteString, ByteString, _] = {
+  def gzip(bufferSize: Int = 512, compressionLevel: Int = 5): Flow[ByteString, ByteString, ?] = {
     Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gzip)
   }
 
-  def gunzip(bufferSize: Int = 512, max: Int = 64 * 1024): Flow[ByteString, ByteString, _] = {
-    Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gunzip(max))
+  def gunzip(bufferSize: Int = 512, max: Int = 64 * 1024): Flow[ByteString, ByteString, ?] = {
+    Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gzipDecompress(max))
   }
 
   // http://doc.akka.io/docs/akka/2.4.14/scala/stream/stream-cookbook.html#Chunking_up_a_stream_of_ByteStrings_into_limited_size_ByteStrings

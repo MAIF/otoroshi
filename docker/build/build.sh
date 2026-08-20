@@ -9,7 +9,7 @@ cleanup () {
 }
 
 copy_build () {
-  cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
+  cp ../../otoroshi/target/scala-3.8.4/otoroshi.jar ./otoroshi.jar
 }
 
 prepare_build () {
@@ -103,7 +103,6 @@ build_and_push_jar_template_version_multi_arch_correto_and_dev () {
 
 build_and_push_jar_templates () {
   OTO_VERSION="$1"
-  build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "11"
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "17"
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "21"
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "25"

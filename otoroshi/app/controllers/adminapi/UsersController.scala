@@ -1,27 +1,27 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.{BackOfficeUser, PrivateAppsUser}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models.{UserRights, _}
+import otoroshi.models.{UserRights, *}
 import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc._
+import play.api.mvc.*
 import otoroshi.security.IdGenerator
 
 import scala.concurrent.Future
 
-class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val fakeBackOfficeUser = BackOfficeUser(
     randomId = IdGenerator.token,
@@ -262,7 +262,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def checkNewUserRights(ctx: ApiActionContext[_], rights: UserRights)(f: => Future[Result]): Future[Result] = {
+  def checkNewUserRights(ctx: ApiActionContext[?], rights: UserRights)(f: => Future[Result]): Future[Result] = {
     if (!ctx.userIsSuperAdmin && rights.superAdmin) {
       FastFuture.successful(Forbidden(Json.obj("error" -> "you can't set superadmin rights to an admin")))
     } else {

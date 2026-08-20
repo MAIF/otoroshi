@@ -1,21 +1,21 @@
 package otoroshi.events
 
-import akka.Done
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.model.{ContentType, ContentTypes}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.model.{ContentType, ContentTypes}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3.*
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
 import com.spotify.metrics.core.MetricId
 import io.netty.channel.ChannelOption
 import io.netty.channel.unix.DomainSocketAddress
 import io.netty.handler.ssl.SslContextBuilder
 import io.opentelemetry.api.logs.Severity
-import io.otoroshi.wasm4s.scaladsl._
-import io.vertx.sqlclient.impl.ArrayTuple
+import io.otoroshi.wasm4s.scaladsl.*
+import io.vertx.sqlclient.internal.ArrayTuple
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 import jakarta.jms.ConnectionFactory
 import jakarta.jms.Destination
@@ -29,13 +29,13 @@ import otoroshi.env.Env
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import otoroshi.metrics.opentelemetry.{OpenTelemetryMeter, OtlpSettings}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.FakeWasmContext
 import otoroshi.next.plugins.api.{NgPlugin, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
 import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
 import otoroshi.storage.drivers.inmemory.S3Configuration
@@ -43,9 +43,9 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import reactor.core.publisher.Mono
 import reactor.netty.{Connection, ConnectionObserver}
 import reactor.netty.tcp.{SslProvider, TcpClient}
@@ -61,14 +61,14 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.function.Consumer
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 object OtoroshiEventsActorSupervizer {
-  def props(implicit env: Env) = Props(new OtoroshiEventsActorSupervizer(env))
+  def props(using env: Env) = Props(new OtoroshiEventsActorSupervizer(env))
 }
 
 case object StartExporters
@@ -79,8 +79,8 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
   lazy val logger = Logger("otoroshi-events-actor-supervizer")
 
-  implicit val e  = env
-  implicit val ec = env.analyticsExecutionContext
+  implicit val e: otoroshi.env.Env = env
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   val dataExporters: TrieMap[String, DataExporter] = new UnboundedTrieMap[String, DataExporter]()
   val lastUpdate                                   = new AtomicReference[Long](0L)
@@ -189,18 +189,18 @@ trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
 
   override def pluginType: PluginType = PluginType.DataExporterType
 
-  def accept(event: JsValue, ctx: CustomDataExporterContext)(implicit env: Env): Boolean
+  def accept(event: JsValue, ctx: CustomDataExporterContext)(using env: Env): Boolean
 
-  def project(event: JsValue, ctx: CustomDataExporterContext)(implicit env: Env): JsValue
+  def project(event: JsValue, ctx: CustomDataExporterContext)(using env: Env): JsValue
 
-  def send(events: Seq[JsValue], ctx: CustomDataExporterContext)(implicit
+  def send(events: Seq[JsValue], ctx: CustomDataExporterContext)(using
       ec: ExecutionContext,
       env: Env
   ): Future[ExportResult]
 
-  def startExporter(ctx: CustomDataExporterContext)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def startExporter(ctx: CustomDataExporterContext)(using ec: ExecutionContext, env: Env): Future[Unit]
 
-  def stopExporter(ctx: CustomDataExporterContext)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def stopExporter(ctx: CustomDataExporterContext)(using ec: ExecutionContext, env: Env): Future[Unit]
 }
 
 // Plugin trait used by DataExporter custom filter step
@@ -209,7 +209,7 @@ trait CustomDataExporterFilter extends NgPlugin {
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                = Seq(NgStep.DataExporterFilter)
-  def matchEvent(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def matchEvent(evt: JsValue)(using ec: ExecutionContext, env: Env): Future[Boolean]
 }
 
 trait CustomDataExporterTransformer extends NgPlugin {
@@ -217,7 +217,7 @@ trait CustomDataExporterTransformer extends NgPlugin {
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                = Seq(NgStep.DataExporterTransform)
-  def project(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[JsValue]
+  def project(evt: JsValue)(using ec: ExecutionContext, env: Env): Future[JsValue]
 }
 
 object DataExporter {
@@ -241,10 +241,10 @@ object DataExporter {
     override def `@id`: String                       = raw.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
     override def `@timestamp`: DateTime              =
       raw.select("@timestamp").asOpt[String].map(DateTime.parse).getOrElse(DateTime.now())
-    override def toJson(implicit _env: Env): JsValue = raw
+    override def toJson(using _env: Env): JsValue = raw
   }
 
-  abstract class DefaultDataExporter(originalConfig: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+  abstract class DefaultDataExporter(originalConfig: DataExporterConfig)(using ec: ExecutionContext, env: Env)
       extends DataExporter {
 
     lazy val ref = new AtomicReference[DataExporterConfig](originalConfig)
@@ -306,7 +306,7 @@ object DataExporter {
           }
         }
 
-      val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
+      val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(using env.analyticsMaterializer)
 
       (stream, queue, done)
     }
@@ -320,7 +320,7 @@ object DataExporter {
       val newQueue      = setupQueue()
       internalQueue.set(newQueue)
       val fuStart       = start()
-      val endOfOldQueue = Promise[Unit]
+      val endOfOldQueue = Promise[Unit]()
       Option(oldQueue) match {
         case None                => endOfOldQueue.trySuccess(())
         case Some((_, queue, _)) => {
@@ -593,8 +593,8 @@ object DataExporter {
 
 object Exporters {
 
-  class TCPExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class TCPExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     import io.netty.channel.ChannelOption
     import io.netty.handler.ssl.SslContextBuilder
@@ -636,19 +636,19 @@ object Exporters {
               val ctx                     = SslContextBuilder
                 .forClient()
                 .applyOn { ctx =>
-                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain*))
                   ctx
                 }
                 .applyOn { ctx =>
                   if (trustAll) {
                     ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
                   } else {
-                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head)*)
                   }
                 }
                 .build()
               client
-                .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                .secure((spec: SslProvider.SslContextSpec) => { spec.sslContext(ctx); () })
             } else {
               client.secure()
             }
@@ -748,8 +748,8 @@ object Exporters {
     }
   }
 
-  class UDPExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class UDPExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     import io.netty.channel.unix.DomainSocketAddress
     import reactor.core.publisher.Mono
@@ -875,8 +875,8 @@ object Exporters {
     }
   }
 
-  class SyslogExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class SyslogExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef  = new AtomicReference[Connection](null)
     val connecting = new AtomicBoolean(false)
@@ -918,19 +918,19 @@ object Exporters {
                 val ctx                     = SslContextBuilder
                   .forClient()
                   .applyOn { ctx =>
-                    certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                    certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain*))
                     ctx
                   }
                   .applyOn { ctx =>
                     if (trustAll) {
                       ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
                     } else {
-                      ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                      ctx.trustManager(trustedCerts.map(_.certificatesChain.head)*)
                     }
                   }
                   .build()
                 client
-                  .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                  .secure((spec: SslProvider.SslContextSpec) => { spec.sslContext(ctx); () })
               } else {
                 client.secure()
               }
@@ -1137,8 +1137,8 @@ object Exporters {
     }
   }
 
-  class JMSExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class JMSExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef  = new AtomicReference[JMSConnection](null)
     val connecting = new AtomicBoolean(false)
@@ -1207,8 +1207,8 @@ object Exporters {
     }
   }
 
-  class ElasticExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class ElasticExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef = new AtomicReference[ElasticWritesAnalytics]()
 
@@ -1234,8 +1234,8 @@ object Exporters {
     }
   }
 
-  class WebhookExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class WebhookExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[Webhook].map { eec =>
@@ -1247,8 +1247,8 @@ object Exporters {
     }
   }
 
-  class HttpCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class HttpCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[HttpCallSettings].map { eec =>
@@ -1260,8 +1260,8 @@ object Exporters {
     }
   }
 
-  class SplunkCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class SplunkCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[SplunkCallSettings].map { eec =>
@@ -1273,8 +1273,8 @@ object Exporters {
     }
   }
 
-  class DatadogCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class DatadogCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[DatadogCallSettings].map { eec =>
@@ -1286,8 +1286,8 @@ object Exporters {
     }
   }
 
-  class NewRelicCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class NewRelicCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[NewRelicCallSettings].map { eec =>
@@ -1299,8 +1299,8 @@ object Exporters {
     }
   }
 
-  class WorkflowCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class WorkflowCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[WorkflowCallSettings].map { eec =>
@@ -1312,8 +1312,8 @@ object Exporters {
     }
   }
 
-  class KafkaExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class KafkaExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef = new AtomicReference[KafkaWrapper]()
 
@@ -1334,7 +1334,7 @@ object Exporters {
         Option(clientRef.get()).flatMap(cli => exporter[KafkaConfig].map(conf => (cli, conf))).map { case (cli, conf) =>
           Source(events.toList)
             .mapAsync(10)(evt => cli.publish(evt)(env, conf.copy(sendEvents = true)))
-            .runWith(Sink.ignore)(env.analyticsMaterializer)
+            .runWith(Sink.ignore)(using env.analyticsMaterializer)
             .map(_ => ExportResult.ExportResultSuccess)
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
@@ -1343,8 +1343,8 @@ object Exporters {
     }
   }
 
-  class PulsarExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class PulsarExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef = new AtomicReference[Producer[JsValue]]()
 
@@ -1367,7 +1367,7 @@ object Exporters {
         }
         Source(events.toList)
           .mapAsync(10)(evt => cli.sendAsync(evt))
-          .runWith(Sink.ignore)(env.analyticsMaterializer)
+          .runWith(Sink.ignore)(using env.analyticsMaterializer)
           .map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
@@ -1375,16 +1375,16 @@ object Exporters {
     }
   }
 
-  class ConsoleExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class ConsoleExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       events.foreach(e => logger.info(Json.stringify(e)))
       FastFuture.successful(ExportResult.ExportResultSuccess)
     }
   }
 
-  class MetricsExporter(_config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(_config)(ec, env) {
+  class MetricsExporter(_config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(_config)(using ec, env) {
 
     private def incGlobalOtoroshiMetrics(
         duration: Long,
@@ -1529,8 +1529,8 @@ object Exporters {
       .getOrElse(ExportResult.ExportResultFailure("Bad config.").vfuture)
   }
 
-  class CustomExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class CustomExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     def withCurrentExporter[A](f: CustomDataExporter => A): Option[A] = {
       val ref = exporter[ExporterRef].get.ref
@@ -1561,8 +1561,8 @@ object Exporters {
         .getOrElse(().future)
   }
 
-  class GenericMailerExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class GenericMailerExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       def sendEmail(gms: MailerSettings, globalConfig: GlobalConfig): Future[Unit] = {
         val titles = events
@@ -1613,8 +1613,8 @@ object Exporters {
     val blockingEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
   }
 
-  class GoReplayFileAppenderExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class GoReplayFileAppenderExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = throw new RuntimeException(
       "send is not supported !!!"
@@ -1659,7 +1659,7 @@ object Exporters {
           .mkString("")
 
         Future
-          .apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc)
+          .apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(using FileWriting.blockingEc)
           .map { _ =>
             ExportResult.ExportResultSuccess
           }
@@ -1669,8 +1669,8 @@ object Exporters {
     }
   }
 
-  class FileAppenderExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class FileAppenderExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       exporter[FileSettings].map { exporterConfig =>
         val path = Paths.get(
@@ -1704,7 +1704,7 @@ object Exporters {
 
         Future
           .apply(Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND))(
-            FileWriting.blockingEc
+            using FileWriting.blockingEc
           )
           .map { _ =>
             if (exporterConfig.maxNumberOfFile.nonEmpty) {
@@ -1776,7 +1776,7 @@ object Exporters {
     }
 
     def writeToS3AndDelete(conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
-      implicit val ec = FileWriting.blockingEc
+      implicit val ec: scala.concurrent.ExecutionContext = FileWriting.blockingEc
       val (key, path) = computeKeyAndPath(conf)
       writeToS3WithKeyAndPath(key, path, maxNumberOfFile, conf).map { _ =>
         path.toFile.delete()
@@ -1791,8 +1791,8 @@ object Exporters {
         maxNumberOfFile: Option[Int],
         conf: S3Configuration
     ): Future[Unit] = {
-      implicit val ec  = env.otoroshiExecutionContext
-      implicit val mat = env.otoroshiMaterializer
+      implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val url          =
         s"${conf.endpoint}/${key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
       val wholeContent = Files.readString(path).byteString
@@ -1840,7 +1840,7 @@ object Exporters {
       (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
 
     def ensureFileCreationAndRolling(conf: S3Configuration, maxFileSize: Long, maxNumberOfFile: Option[Int]): File = {
-      implicit val ec = FileWriting.blockingEc
+      implicit val ec: scala.concurrent.ExecutionContext = FileWriting.blockingEc
       val (key, path) = computeKeyAndPath(conf)
       val file        = path.toFile
       if (!file.exists()) {
@@ -1869,7 +1869,7 @@ object Exporters {
     }
 
     def appendToCurrentFile(content: String, conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
-      implicit val ec = FileWriting.blockingEc
+      implicit val ec: scala.concurrent.ExecutionContext = FileWriting.blockingEc
       val (_, path)   = computeKeyAndPath(conf)
       debug(s"appending events to file '${path}'")
       if (shouldWriteToS3(conf)) {
@@ -1885,8 +1885,8 @@ object Exporters {
     }
   }
 
-  class S3Exporter(config: DataExporterConfig)(implicit ec: ExecutionContext, _env: Env)
-      extends DefaultDataExporter(config)(ec, _env)
+  class S3Exporter(config: DataExporterConfig)(using ec: ExecutionContext, _env: Env)
+      extends DefaultDataExporter(config)(using ec, _env)
       with S3Support {
 
     def env: Env            = _env
@@ -1916,8 +1916,8 @@ object Exporters {
     }
   }
 
-  class GoReplayS3Exporter(config: DataExporterConfig)(implicit ec: ExecutionContext, _env: Env)
-      extends DefaultDataExporter(config)(ec, _env)
+  class GoReplayS3Exporter(config: DataExporterConfig)(using ec: ExecutionContext, _env: Env)
+      extends DefaultDataExporter(config)(using ec, _env)
       with S3Support {
 
     def env: Env            = _env
@@ -2034,7 +2034,7 @@ object Exporters {
           metrics = (json \ "metrics")
             .asOpt[Seq[JsValue]]
             .map(metrics => metrics.map(metric => MetricSettings.format.reads(metric).get))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -2048,8 +2048,8 @@ object Exporters {
     }
   }
 
-  class CustomMetricsExporter(_config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(_config)(ec, env) {
+  class CustomMetricsExporter(_config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(_config)(using ec, env) {
 
     def withEventLongValue(event: JsValue, selector: Option[String])(f: Long => Unit): Unit = {
 
@@ -2103,6 +2103,7 @@ object Exporters {
                   withEventLongValue(event, metric.selector) { v =>
                     env.metrics.timerUpdate(id, v, TimeUnit.MILLISECONDS)
                   }
+                case _ =>
               }
             }
           }
@@ -2140,8 +2141,8 @@ object Exporters {
     }
   }
 
-  class WasmExporter(_config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(_config)(ec, env) {
+  class WasmExporter(_config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(_config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       exporter[WasmExporterSettings]
         .flatMap { exporterConfig =>
@@ -2204,13 +2205,13 @@ object Exporters {
       )
       override def reads(json: JsValue): JsResult[OtlpMetricsExporterSettings] = Try {
         OtlpMetricsExporterSettings(
-          otlp = json.select("otlp").asOpt[JsObject].map(OtlpSettings.format.reads).map(_.get).get,
+          otlp = json.select("otlp").asOpt[JsObject].map(o => OtlpSettings.format.reads(o)).map(_.get).get,
           tags = json.select("tags").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           metrics = json
             .select("metrics")
             .asOpt[Seq[JsValue]]
             .map(arr => arr.flatMap(v => MetricSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -2231,7 +2232,7 @@ object Exporters {
       )
       override def reads(json: JsValue): JsResult[OtlpLogsExporterSettings] = Try {
         OtlpLogsExporterSettings(
-          otlp = json.select("otlp").asOpt[JsObject].map(OtlpSettings.format.reads).map(_.get).get
+          otlp = json.select("otlp").asOpt[JsObject].map(o => OtlpSettings.format.reads(o)).map(_.get).get
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -2240,8 +2241,8 @@ object Exporters {
     }
   }
 
-  class OtlpLogExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class OtlpLogExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = exporter[OtlpLogsExporterSettings] match {
       case None                 => ExportResult.ExportResultFailure("Bad config type !").vfuture
@@ -2265,8 +2266,8 @@ object Exporters {
     }
   }
 
-  class OtlpMetricsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class OtlpMetricsExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = exporter[OtlpMetricsExporterSettings] match {
       case None                 => ExportResult.ExportResultFailure("Bad config type !").vfuture
@@ -2311,6 +2312,7 @@ object Exporters {
                     withEventLongValue(event, metric.selector) { v =>
                       meter.withTimer(id).record(Math.abs(FiniteDuration(v, TimeUnit.MILLISECONDS).toNanos), attributes)
                     }
+                  case _ => 
                 }
               }
             } catch {
@@ -2346,16 +2348,17 @@ object Exporters {
     }
   }
 
-  class PostgresExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class PostgresExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
-    import otoroshi.storage.drivers.reactivepg.pgimplicits._
-    import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+    import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+    import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+    import io.vertx.sqlclient.Pool
     import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
     import io.vertx.core.json.JsonObject
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
-    private val poolRef        = new AtomicReference[PgPool](null)
+    private val poolRef        = new AtomicReference[Pool](null)
     private val lastCleanupRef = new AtomicReference[Long](0L)
 
     private def buildConnectOptions(settings: PostgresExporterSettings): PgConnectOptions = {
@@ -2372,7 +2375,7 @@ object Exporters {
       }
     }
 
-    private def initTable(pool: PgPool, settings: PostgresExporterSettings): Future[Unit] = {
+    private def initTable(pool: Pool, settings: PostgresExporterSettings): Future[Unit] = {
       pool
         .query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};")
         .executeAsync()
@@ -2397,7 +2400,7 @@ object Exporters {
     override def start(): Future[Unit] = {
       exporter[PostgresExporterSettings]
         .map { settings =>
-          val pool = PgPool.pool(buildConnectOptions(settings), new PoolOptions().setMaxSize(settings.poolSize))
+          val pool = PgBuilder.pool().connectingTo(buildConnectOptions(settings)).`with`(new PoolOptions().setMaxSize(settings.poolSize)).build()
           poolRef.set(pool)
           initTable(pool, settings).recover { case e: Throwable =>
             logger.error(
@@ -2420,7 +2423,7 @@ object Exporters {
       tuple
     }
 
-    private def cleanupOldEvents(pool: PgPool, settings: PostgresExporterSettings): Future[Unit] = {
+    private def cleanupOldEvents(pool: Pool, settings: PostgresExporterSettings): Future[Unit] = {
       if (settings.retentionDays > 0) {
         val now           = System.currentTimeMillis()
         val last          = lastCleanupRef.get()
@@ -2526,7 +2529,7 @@ class DataExporterUpdateJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     FastFuture.successful(env.otoroshiEventsActor ! UpdateExporters)
   }
 }

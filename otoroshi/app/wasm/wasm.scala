@@ -1,16 +1,16 @@
 package otoroshi.wasm
 
-import akka.stream.Materializer
-import io.otoroshi.wasm4s.scaladsl._
+import org.apache.pekko.stream.Materializer
+import io.otoroshi.wasm4s.scaladsl.*
 import io.otoroshi.wasm4s.scaladsl.security.TlsConfig
 import org.extism.sdk.{HostFunction, HostUserData}
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.{NgPluginConfig, NgPluginVisibility, NgStep}
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSRequest}
 import play.api.mvc.Cookie
 
@@ -75,16 +75,16 @@ object WasmAuthorizations {
         httpAccess = (json \ "httpAccess").asOpt[Boolean].getOrElse(false),
         proxyHttpCallTimeout = (json \ "proxyHttpCallTimeout").asOpt[Int].getOrElse(5000),
         globalDataStoreAccess = (json \ "globalDataStoreAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](using WasmDataRights.fmt)
           .getOrElse(WasmDataRights()),
         pluginDataStoreAccess = (json \ "pluginDataStoreAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](using WasmDataRights.fmt)
           .getOrElse(WasmDataRights()),
         globalMapAccess = (json \ "globalMapAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](using WasmDataRights.fmt)
           .getOrElse(WasmDataRights()),
         pluginMapAccess = (json \ "pluginMapAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](using WasmDataRights.fmt)
           .getOrElse(WasmDataRights()),
         proxyStateAccess = (json \ "proxyStateAccess").asOpt[Boolean].getOrElse(false),
         configurationAccess = (json \ "configurationAccess").asOpt[Boolean].getOrElse(false)
@@ -168,7 +168,7 @@ object WasmConfig {
         memoryPages = (json \ "memoryPages").asOpt[Int].getOrElse(100),
         functionName = (json \ "functionName").asOpt[String].filter(_.nonEmpty),
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
-        allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         allowedPaths = (json \ "allowedPaths").asOpt[Map[String, String]].getOrElse(Map.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
         opa = (json \ "opa").asOpt[Boolean].getOrElse(false),
@@ -185,8 +185,8 @@ object WasmConfig {
         //   )
         //   .getOrElse(WasmVmLifetime.Forever),
         authorizations = (json \ "authorizations")
-          .asOpt[WasmAuthorizations](WasmAuthorizations.format.reads)
-          .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads))
+          .asOpt[WasmAuthorizations](using WasmAuthorizations.format)
+          .orElse((json \ "accesses").asOpt[WasmAuthorizations](using WasmAuthorizations.format))
           .getOrElse {
             WasmAuthorizations()
           },
@@ -208,9 +208,8 @@ object WasmConfig {
 
 class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
 
-  implicit val ec = env.otoroshiExecutionContext
-  implicit val ev = env
-
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val ev: otoroshi.env.Env = env
   val logger: Logger                                        = Logger("otoroshi-wasm-integration")
   val materializer: Materializer                            = env.otoroshiMaterializer
   val executionContext: ExecutionContext                    = env.otoroshiExecutionContext
@@ -267,7 +266,7 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
   override def hostFunctions(
       config: WasmConfiguration,
       pluginId: String
-  ): Array[HostFunction[_ <: HostUserData]] = {
+  ): Array[HostFunction[? <: HostUserData]] = {
     HostFunctions.getFunctions(config.asInstanceOf[WasmConfig], pluginId, None)
   }
 }
@@ -293,7 +292,7 @@ class WasmVmPoolCleaner extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = env.datastores.globalConfigDataStore
       .latest()
       .plugins

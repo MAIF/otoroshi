@@ -1,16 +1,17 @@
 package otoroshi.next.catalogs
 
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.Sink
-import akka.stream.{Attributes, Materializer}
-import akka.util.ByteString
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import play.api.libs.ws.WSBodyReadables.given
+import org.apache.pekko.stream.connectors.s3.*
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.util.ByteString
 import otoroshi.api.Resource
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -19,7 +20,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{FileSystems, Files, Path}
 import java.util.concurrent.TimeUnit
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
@@ -33,7 +34,7 @@ object SourceUtils {
   }
 
   private def isStringArray(value: JsValue): Option[JsArray] = value match {
-    case arr: JsArray if arr.value.nonEmpty && arr.value.forall(_.isInstanceOf[JsString]) => Some(arr)
+    case arr: JsArray if arr.value.nonEmpty && arr.value.toSeq.forall(_.isInstanceOf[JsString]) => Some(arr)
     case _                                                                                => None
   }
 
@@ -65,8 +66,8 @@ object SourceUtils {
       sourceName: String,
       allResources: Seq[Resource],
       resolveGlob: Option[String => Future[Either[JsValue, Seq[String]]]] = None
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val rawPaths = deployArray.value.flatMap(_.asOpt[String])
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+    val rawPaths = deployArray.value.flatMap(_.asOpt[String]).toSeq
     rawPaths
       .mapAsync { path =>
         if (isGlobPattern(path) && resolveGlob.isDefined) {
@@ -143,7 +144,7 @@ object SourceUtils {
         .filter(p => matcher.matches(p) && isEntityFile(p.getFileName.toString))
         .map(_.toString)
         .toSeq
-    }.getOrElse(Seq.empty)
+    }.getOrElse(Seq.empty).toSeq
   }
 
   def resolveRemoteGlob(allFiles: Seq[String], basePath: String, globPattern: String): Seq[String] = {
@@ -168,27 +169,27 @@ object SourceUtils {
 
 class CatalogSourceFile extends CatalogSource {
 
-  import scala.sys.process._
+  import scala.sys.process.*
 
   private val logger = Logger("otoroshi-remote-catalog-source-file")
 
   override def sourceKind: String       = "file"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "file source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
     Json.obj("error" -> "file source does not support webhooks").leftf
 
   private def runPreCommand(catalog: RemoteCatalog): Either[String, Unit] = {
-    val preCommand = catalog.sourceConfig.select("pre_command").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val preCommand = catalog.sourceConfig.select("pre_command").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     if (preCommand.nonEmpty) {
       Try {
         var stdout        = ""
@@ -209,7 +210,7 @@ class CatalogSourceFile extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -278,19 +279,19 @@ class CatalogSourceHttp extends CatalogSource {
   override def sourceKind: String       = "http"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "http source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
     Json.obj("error" -> "http source does not support webhooks").leftf
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -323,19 +324,19 @@ class CatalogSourceHttp extends CatalogSource {
     }
   }
 
-  private def fetchUrl(url: String, headers: Map[String, String], timeout: Long, env: Env)(implicit
+  private def fetchUrl(url: String, headers: Map[String, String], timeout: Long, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, String]] = {
     env.Ws
       .url(url)
       .withRequestTimeout(Duration(timeout, TimeUnit.MILLISECONDS))
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
-          Left(Json.obj("error" -> s"HTTP ${resp.status}: ${resp.body.take(500)}")): Either[JsValue, String]
+          Left(Json.obj("error" -> s"HTTP ${resp.status}: ${resp.body[String].take(500)}")): Either[JsValue, String]
         }
       }
       .recover { case e: Throwable =>
@@ -384,19 +385,19 @@ class CatalogSourceGithub extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit
+  )(using
       ec: ExecutionContext
   ): Future[Either[JsValue, String]] = {
     val apiUrl = s"$apiBase/repos/$owner/$repo/contents/$filePath"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(githubRawHeaders(token): _*)
+      .withHttpHeaders(githubRawHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -413,23 +414,23 @@ class CatalogSourceGithub extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$apiBase/repos/$owner/$repo/git/trees/$branch"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("recursive" -> "1")
-      .withHttpHeaders(githubHeaders(token): _*)
+      .withHttpHeaders(githubHeaders(token)*)
       .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           val files = tree.flatMap { item =>
             val itemType = item.select("type").asOpt[String].getOrElse("")
             val itemPath = item.select("path").asOpt[String].getOrElse("")
             if (itemType == "blob") Some(itemPath) else None
           }
-          Right(files): Either[JsValue, Seq[String]]
+          Right(files.toSeq): Either[JsValue, Seq[String]]
         } else {
           Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for recursive tree listing")): Either[
             JsValue,
@@ -450,14 +451,14 @@ class CatalogSourceGithub extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit
+  )(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$apiBase/repos/$owner/$repo/contents/$dirPath"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(githubHeaders(token): _*)
+      .withHttpHeaders(githubHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -470,7 +471,7 @@ class CatalogSourceGithub extends CatalogSource {
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "file" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
               }
-              Right(files): Either[JsValue, Seq[String]]
+              Right(files.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitHub API did not return an array for directory listing")): Either[
                 JsValue,
@@ -488,7 +489,7 @@ class CatalogSourceGithub extends CatalogSource {
       }
   }
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
@@ -507,7 +508,7 @@ class CatalogSourceGithub extends CatalogSource {
     matched.rightf
   }
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
@@ -521,32 +522,32 @@ class CatalogSourceGithub extends CatalogSource {
     if (parts.length == 1) Some(parts(0)) else None
   }
 
-  private def listOrgRepos(apiBase: String, org: String, token: String, env: Env)(implicit
+  private def listOrgRepos(apiBase: String, org: String, token: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val orgUrl = s"$apiBase/orgs/$org/repos"
     env.Ws
       .url(orgUrl)
       .withQueryStringParameters("per_page" -> "100", "type" -> "all")
-      .withHttpHeaders(githubHeaders(token): _*)
+      .withHttpHeaders(githubHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .flatMap { resp =>
         if (resp.status == 200) {
-          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
-          (Right(repos): Either[JsValue, Seq[String]]).vfuture
+          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
+          (Right(repos.toSeq): Either[JsValue, Seq[String]]).vfuture
         } else {
           val userUrl = s"$apiBase/users/$org/repos"
           env.Ws
             .url(userUrl)
             .withQueryStringParameters("per_page" -> "100", "type" -> "all")
-            .withHttpHeaders(githubHeaders(token): _*)
+            .withHttpHeaders(githubHeaders(token)*)
             .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
             .get()
             .map { resp2 =>
               if (resp2.status == 200) {
                 Right(
-                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
                 ): Either[JsValue, Seq[String]]
               } else {
                 Left(Json.obj("error" -> s"Cannot list repos for '$org'")): Either[JsValue, Seq[String]]
@@ -568,7 +569,7 @@ class CatalogSourceGithub extends CatalogSource {
       token: String,
       allRes: Seq[Resource],
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(apiBase, owner, repo, path, branch, token, env).flatMap {
         case Left(err)         => err.leftf
@@ -616,7 +617,7 @@ class CatalogSourceGithub extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -627,7 +628,7 @@ class CatalogSourceGithub extends CatalogSource {
     val apiBase      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.github.com").stripSuffix("/")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
@@ -688,17 +689,17 @@ class CatalogSourceGitlab extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, String]] = {
     val apiUrl = s"$baseUrl/api/v4/projects/$encodedProject/repository/files/$filePath/raw"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"GitLab API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -714,12 +715,12 @@ class CatalogSourceGitlab extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$baseUrl/api/v4/projects/$encodedProject/repository/tree"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch, "recursive" -> "true", "per_page" -> "100")
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -731,7 +732,7 @@ class CatalogSourceGitlab extends CatalogSource {
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "blob") Some(itemPath) else None
               }
-              Right(files): Either[JsValue, Seq[String]]
+              Right(files.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitLab API did not return an array for recursive tree listing")): Either[
                 JsValue,
@@ -757,12 +758,12 @@ class CatalogSourceGitlab extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$baseUrl/api/v4/projects/$encodedProject/repository/tree"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch, "path" -> dirPath, "per_page" -> "100")
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -775,7 +776,7 @@ class CatalogSourceGitlab extends CatalogSource {
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "blob" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
               }
-              Right(files): Either[JsValue, Seq[String]]
+              Right(files.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitLab API did not return an array for tree listing")): Either[JsValue, Seq[
                 String
@@ -792,7 +793,7 @@ class CatalogSourceGitlab extends CatalogSource {
       }
   }
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
@@ -809,7 +810,7 @@ class CatalogSourceGitlab extends CatalogSource {
     matched.rightf
   }
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
@@ -819,7 +820,7 @@ class CatalogSourceGitlab extends CatalogSource {
     !cleaned.contains("/")
   }
 
-  private def listGroupProjects(baseUrl: String, group: String, token: String, env: Env)(implicit
+  private def listGroupProjects(baseUrl: String, group: String, token: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val encodedGroup = java.net.URLEncoder.encode(group, "UTF-8")
@@ -827,7 +828,7 @@ class CatalogSourceGitlab extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("per_page" -> "100", "include_subgroups" -> "true")
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -835,7 +836,7 @@ class CatalogSourceGitlab extends CatalogSource {
           resp.json match {
             case arr: JsArray =>
               val projects = arr.value.flatMap(_.select("path_with_namespace").asOpt[String])
-              Right(projects): Either[JsValue, Seq[String]]
+              Right(projects.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitLab API did not return an array for group projects")): Either[
                 JsValue,
@@ -862,7 +863,7 @@ class CatalogSourceGitlab extends CatalogSource {
       token: String,
       allRes: Seq[Resource],
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     val encodedProject = java.net.URLEncoder.encode(projectPath, "UTF-8")
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(baseUrl, encodedProject, path, branch, token, env).flatMap {
@@ -911,7 +912,7 @@ class CatalogSourceGitlab extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -921,7 +922,7 @@ class CatalogSourceGitlab extends CatalogSource {
     val token        = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
     val baseUrl      = catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://gitlab.com")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     if (isGroup(repoUrl)) {
@@ -962,13 +963,13 @@ class CatalogSourceS3 extends CatalogSource {
   override def sourceKind: String       = "s3"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "s3 source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
@@ -992,7 +993,7 @@ class CatalogSourceS3 extends CatalogSource {
     S3Attributes.settings(settings)
   }
 
-  private def listAllKeys(bucket: String, prefix: String, config: JsObject, env: Env)(implicit
+  private def listAllKeys(bucket: String, prefix: String, config: JsObject, env: Env)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Either[JsValue, Seq[String]]] = {
@@ -1006,27 +1007,42 @@ class CatalogSourceS3 extends CatalogSource {
       }
   }
 
-  private def fetchS3Object(bucket: String, key: String, config: JsObject, env: Env)(implicit
-      ec: ExecutionContext,
-      mat: Materializer
+  // private def fetchS3Object(bucket: String, key: String, config: JsObject, env: Env)(using
+  //     ec: ExecutionContext,
+  //     mat: Materializer
+  // ): Future[Either[JsValue, String]] = {
+  //   S3.download(bucket, key)
+  //     .withAttributes(s3ClientSettingsAttrs(config))
+  //     .runWith(Sink.head)
+  //     .flatMap {
+  //       case None              =>
+  //         (Left(Json.obj("error" -> s"S3 object not found: $bucket/$key")): Either[JsValue, String]).vfuture
+  //       case Some((source, _)) =>
+  //         source.runFold(ByteString.empty)(_ ++ _).map { bs =>
+  //           Right(bs.utf8String): Either[JsValue, String]
+  //         }
+  //     }
+  //     .recover { case e: Throwable =>
+  //       Left(Json.obj("error" -> s"Error fetching S3 object $bucket/$key: ${e.getMessage}")): Either[JsValue, String]
+  //     }
+  // }
+
+  private def fetchS3Object(bucket: String, key: String, config: JsObject, env: Env)(using
+    ec: ExecutionContext,
+    mat: Materializer
   ): Future[Either[JsValue, String]] = {
-    S3.download(bucket, key)
+    S3.getObject(bucket, key)
       .withAttributes(s3ClientSettingsAttrs(config))
-      .runWith(Sink.head)
-      .flatMap {
-        case None              =>
-          (Left(Json.obj("error" -> s"S3 object not found: $bucket/$key")): Either[JsValue, String]).vfuture
-        case Some((source, _)) =>
-          source.runFold(ByteString.empty)(_ ++ _).map { bs =>
-            Right(bs.utf8String): Either[JsValue, String]
-          }
+      .runFold(ByteString.empty)(_ ++ _)
+      .map { bs =>
+        Right(bs.utf8String): Either[JsValue, String]
       }
       .recover { case e: Throwable =>
         Left(Json.obj("error" -> s"Error fetching S3 object $bucket/$key: ${e.getMessage}")): Either[JsValue, String]
       }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -1077,13 +1093,13 @@ class CatalogSourceConsulKv extends CatalogSource {
   override def sourceKind: String       = "consulkv"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "consulkv source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
@@ -1094,19 +1110,19 @@ class CatalogSourceConsulKv extends CatalogSource {
     (if (token.nonEmpty) Seq("X-Consul-Token" -> token) else Seq.empty)
   }
 
-  private def fetchRawKey(endpoint: String, key: String, token: String, dc: String, env: Env)(implicit
+  private def fetchRawKey(endpoint: String, key: String, token: String, dc: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, String]] = {
     val params = Seq("raw" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
     env.Ws
       .url(s"$endpoint/v1/kv/$key")
-      .withQueryStringParameters(params: _*)
-      .withHttpHeaders(consulHeaders(token): _*)
+      .withQueryStringParameters(params*)
+      .withHttpHeaders(consulHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"Consul KV returned ${resp.status} for key $key")): Either[JsValue, String]
         }
@@ -1116,22 +1132,22 @@ class CatalogSourceConsulKv extends CatalogSource {
       }
   }
 
-  private def listAllKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(implicit
+  private def listAllKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val cleanPrefix = prefix.stripSuffix("/") + "/"
     val params      = Seq("keys" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
     env.Ws
       .url(s"$endpoint/v1/kv/$cleanPrefix")
-      .withQueryStringParameters(params: _*)
-      .withHttpHeaders(consulHeaders(token): _*)
+      .withQueryStringParameters(params*)
+      .withHttpHeaders(consulHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
           resp.json match {
             case arr: JsArray =>
-              Right(arr.value.flatMap(_.asOpt[String])): Either[JsValue, Seq[String]]
+              Right(arr.value.flatMap(_.asOpt[String]).toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "Consul KV did not return an array for key listing")): Either[JsValue, Seq[
                 String
@@ -1150,15 +1166,15 @@ class CatalogSourceConsulKv extends CatalogSource {
       }
   }
 
-  private def listKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(implicit
+  private def listKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val cleanPrefix = prefix.stripSuffix("/") + "/"
     val params      = Seq("keys" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
     env.Ws
       .url(s"$endpoint/v1/kv/$cleanPrefix")
-      .withQueryStringParameters(params: _*)
-      .withHttpHeaders(consulHeaders(token): _*)
+      .withQueryStringParameters(params*)
+      .withHttpHeaders(consulHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1169,7 +1185,7 @@ class CatalogSourceConsulKv extends CatalogSource {
                 val name = key.split("/").lastOption.getOrElse("")
                 name.nonEmpty && SourceUtils.isEntityFile(name)
               }
-              Right(keys): Either[JsValue, Seq[String]]
+              Right(keys.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "Consul KV did not return an array for key listing")): Either[JsValue, Seq[
                 String
@@ -1188,7 +1204,7 @@ class CatalogSourceConsulKv extends CatalogSource {
       }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -1292,16 +1308,16 @@ class CatalogSourceBitbucket extends CatalogSource {
       token: String,
       username: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, String]] = {
     val apiUrl = s"$apiBase/2.0/repositories/$workspace/$repo/src/$branch/$filePath"
     env.Ws
       .url(apiUrl)
-      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withHttpHeaders(bitbucketHeaders(token, username)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -1320,25 +1336,25 @@ class CatalogSourceBitbucket extends CatalogSource {
       token: String,
       username: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val path   = if (dirPath.isEmpty || dirPath == "/") "" else dirPath.stripSuffix("/")
     val apiUrl = s"$apiBase/2.0/repositories/$workspace/$repo/src/$branch/$path"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("pagelen" -> "100")
-      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withHttpHeaders(bitbucketHeaders(token, username)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
           val json  = resp.json
-          val files = json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap { item =>
+          val files = json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap { item =>
             val itemType = item.select("type").asOpt[String].getOrElse("")
             val itemPath = item.select("path").asOpt[String].getOrElse("")
             val itemName = itemPath.split("/").lastOption.getOrElse("")
             if (itemType == "commit_file" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
           }
-          Right(files): Either[JsValue, Seq[String]]
+          Right(files.toSeq): Either[JsValue, Seq[String]]
         } else {
           Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for directory listing")): Either[
             JsValue,
@@ -1351,12 +1367,12 @@ class CatalogSourceBitbucket extends CatalogSource {
       }
   }
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
     val repoFullName = payload.select("repository").select("full_name").asOpt[String].getOrElse("")
-    val changes      = payload.select("push").select("changes").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+    val changes      = payload.select("push").select("changes").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
     val branches     = changes.flatMap(c => c.select("new").select("name").asOpt[String]).toSet
     val matched      = possibleCatalogs.filter { catalog =>
       catalog.sourceKind == "bitbucket" && {
@@ -1370,7 +1386,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     matched.rightf
   }
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
@@ -1384,14 +1400,14 @@ class CatalogSourceBitbucket extends CatalogSource {
     if (parts.length == 1) Some(parts(0)) else None
   }
 
-  private def listWorkspaceRepos(apiBase: String, workspace: String, token: String, username: String, env: Env)(implicit
+  private def listWorkspaceRepos(apiBase: String, workspace: String, token: String, username: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$apiBase/2.0/repositories/$workspace"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("pagelen" -> "100")
-      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withHttpHeaders(bitbucketHeaders(token, username)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1399,9 +1415,9 @@ class CatalogSourceBitbucket extends CatalogSource {
           val repos = resp.json
             .select("values")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .flatMap(_.select("slug").asOpt[String])
-          Right(repos): Either[JsValue, Seq[String]]
+          Right(repos.toSeq): Either[JsValue, Seq[String]]
         } else {
           Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for workspace repos")): Either[
             JsValue,
@@ -1427,7 +1443,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       username: String,
       allRes: Seq[Resource],
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(apiBase, workspace, repo, path, branch, token, username, env).flatMap {
         case Left(err)         => err.leftf
@@ -1473,7 +1489,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -1485,7 +1501,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     val apiBase      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.bitbucket.org").stripSuffix("/")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
@@ -1559,17 +1575,17 @@ class CatalogSourceGiteaCompat(
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, String]] = {
     val apiUrl = s"$baseUrl/api/v1/repos/$owner/$repo/raw/$filePath"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -1589,23 +1605,23 @@ class CatalogSourceGiteaCompat(
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$baseUrl/api/v1/repos/$owner/$repo/git/trees/$branch"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("recursive" -> "true")
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           val files = tree.flatMap { item =>
             val itemType = item.select("type").asOpt[String].getOrElse("")
             val itemPath = item.select("path").asOpt[String].getOrElse("")
             if (itemType == "blob") Some(itemPath) else None
           }
-          Right(files): Either[JsValue, Seq[String]]
+          Right(files.toSeq): Either[JsValue, Seq[String]]
         } else {
           Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for recursive tree listing")): Either[
             JsValue,
@@ -1626,13 +1642,13 @@ class CatalogSourceGiteaCompat(
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val path   = if (dirPath.isEmpty || dirPath == "/") "" else dirPath.stripSuffix("/")
     val apiUrl = s"$baseUrl/api/v1/repos/$owner/$repo/contents/$path"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1645,7 +1661,7 @@ class CatalogSourceGiteaCompat(
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "file" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
               }
-              Right(files): Either[JsValue, Seq[String]]
+              Right(files.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> s"$sourceKind API did not return an array for directory listing")): Either[
                 JsValue,
@@ -1664,7 +1680,7 @@ class CatalogSourceGiteaCompat(
       }
   }
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
@@ -1683,37 +1699,37 @@ class CatalogSourceGiteaCompat(
     matched.rightf
   }
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
 
-  private def listOrgRepos(baseUrl: String, org: String, token: String, env: Env)(implicit
+  private def listOrgRepos(baseUrl: String, org: String, token: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val orgUrl = s"$baseUrl/api/v1/orgs/$org/repos"
     env.Ws
       .url(orgUrl)
       .withQueryStringParameters("limit" -> "50")
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .flatMap { resp =>
         if (resp.status == 200) {
-          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
-          (Right(repos): Either[JsValue, Seq[String]]).vfuture
+          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
+          (Right(repos.toSeq): Either[JsValue, Seq[String]]).vfuture
         } else {
           val userUrl = s"$baseUrl/api/v1/users/$org/repos"
           env.Ws
             .url(userUrl)
             .withQueryStringParameters("limit" -> "50")
-            .withHttpHeaders(giteaHeaders(token): _*)
+            .withHttpHeaders(giteaHeaders(token)*)
             .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
             .get()
             .map { resp2 =>
               if (resp2.status == 200) {
                 Right(
-                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
                 ): Either[JsValue, Seq[String]]
               } else {
                 Left(Json.obj("error" -> s"Cannot list repos for '$org' on $sourceKind")): Either[JsValue, Seq[String]]
@@ -1738,7 +1754,7 @@ class CatalogSourceGiteaCompat(
       token: String,
       allRes: Seq[Resource],
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(baseUrl, owner, repo, path, branch, token, env).flatMap {
         case Left(err)         => err.leftf
@@ -1786,7 +1802,7 @@ class CatalogSourceGiteaCompat(
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -1797,7 +1813,7 @@ class CatalogSourceGiteaCompat(
     val baseUrl      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse(defaultBaseUrl).stripSuffix("/")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
@@ -1836,20 +1852,20 @@ class CatalogSourceCodeberg extends CatalogSourceGiteaCompat("codeberg", "https:
 
 class CatalogSourceGit extends CatalogSource {
 
-  import scala.sys.process._
+  import scala.sys.process.*
 
   private val logger = Logger("otoroshi-remote-catalog-source-git")
 
   override def sourceKind: String       = "git"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "git source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
@@ -1895,7 +1911,7 @@ class CatalogSourceGit extends CatalogSource {
         err => { stderr = stderr + err + "\n" }
       )
       val envVars       = sshEnv(config)
-      val cmd           = Process(Seq("git") ++ args, cwd, envVars: _*)
+      val cmd           = Process(Seq("git") ++ args, cwd, envVars*)
       val code          = cmd.!(processLogger)
       if (code != 0) {
         Left(s"git ${args.head} failed (exit $code): ${stderr.take(500)}")
@@ -1955,7 +1971,7 @@ class CatalogSourceGit extends CatalogSource {
                 Seq(relativePath)
               }
             }
-            val entities: Seq[RemoteEntity] = resolved.flatMap { relativePath =>
+            val entities: Seq[RemoteEntity] = resolved.toSeq.flatMap { relativePath =>
               Try {
                 val relFile    = new File(basePath, relativePath)
                 val relContent = new String(Files.readAllBytes(relFile.toPath), StandardCharsets.UTF_8)
@@ -1979,7 +1995,7 @@ class CatalogSourceGit extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {

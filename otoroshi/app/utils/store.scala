@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 package object experiments {
 
-  import Result._
+  import Result.*
 
   object Result {
 
@@ -26,6 +26,6 @@ package object experiments {
   }
 
   trait DataStore[+Command, +Event] {
-    def apply[E >: Event, C[_] >: Command](command: C[E])(implicit m: Manifest[E]): Future[Result[E]]
+    def apply[E >: Event, C[_] >: Command](command: C[E])(using m: Manifest[E]): Future[Result[E]]
   }
 }

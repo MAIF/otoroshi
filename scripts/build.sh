@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export SBT_OPTS="-XX:MaxPermSize=2048m -Xmx2048m -Xss8M"
+export SBT_OPTS="-Xmx8G -Xss16M"
 
 LOCATION=`pwd`
 
@@ -32,17 +32,27 @@ build_server () {
 
 compile_server () {
   cd $LOCATION/otoroshi
-  sbt ';clean;compile;assembly'
+  sbt ';clean;compile'
 }
 
 test_server () {
   cd $LOCATION/otoroshi
-  TEST_STORE=inmemory sbt ';testOnly OtoroshiTests;testOnly functional.PluginsTestSpec'
+  # Browser-tagged tests (playwright-java) are excluded here and run in the
+  # dedicated "Server Browser Tests" workflow (server_browser_tests.yaml).
+  TEST_STORE=inmemory sbt ';testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.Http3Spec;testOnly functional.PluginsTestSpec -- -l Browser'
+  # TEST_STORE=inmemory sbt ';testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.Http3Spec;testOnly OtoroshiTests;test
+  # Only functional.PluginsTestSpec -- -l Browser -l Docker'
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi
   # TEST_STORE=redis sbt test
   # rc=$?; if [ $rc != 0 ]; then exit $rc; fi
   # TEST_STORE=cassandra sbt test
   # rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+}
+
+test_server_with_browser () {
+  cd $LOCATION/otoroshi
+  TEST_STORE=inmemory sbt ';testOnly functional.PluginsTestSpec -- -n Browser'
+  rc=$?; if [ $rc != 0 ]; then exit $rc; fi
 }
 
 test_mtls () {
@@ -64,23 +74,17 @@ case "${1}" in
     test_mtls
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     ;;
-  test_all)
+  test_server_with_browser)
     clean
     build_ui
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-    # build_manual
     compile_server
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-    test_server
-    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-    test_mtls
+    test_server_with_browser
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     ;;
   test_server)
     clean
-    build_ui
-    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-    # build_manual
     compile_server
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     test_server

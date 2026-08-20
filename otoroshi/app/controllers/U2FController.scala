@@ -6,26 +6,26 @@ import java.util.Optional
 import java.util.concurrent.TimeUnit
 
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth}
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
-import com.yubico.webauthn._
-import com.yubico.webauthn.data._
+import com.yubico.webauthn.*
+import com.yubico.webauthn.data.*
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.BackOfficeUser
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models._
+import otoroshi.models.*
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.BCryptHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
@@ -34,10 +34,10 @@ class U2FController(
     BackOfficeAction: BackOfficeAction,
     BackOfficeActionAuth: BackOfficeActionAuth,
     cc: ControllerComponents
-)(implicit env: Env)
+)(using env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-u2f-controller")
 
@@ -46,11 +46,11 @@ class U2FController(
   private val random        = new SecureRandom()
   private val jsonMapper    = new ObjectMapper()
     .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-    .setSerializationInclusion(Include.NON_ABSENT)
+    .setDefaultPropertyInclusion(Include.NON_ABSENT)
     .registerModule(new Jdk8Module())
 
   def loginPage() =
-    BackOfficeAction { ctx =>
+    BackOfficeAction { (ctx: otoroshi.actions.BackOfficeActionContext[play.api.mvc.AnyContent]) =>
       Ok(otoroshi.views.html.backoffice.u2flogin(env))
     }
 
@@ -230,7 +230,7 @@ class U2FController(
   def webAuthnRegistrationStart() =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
-        import collection.JavaConverters._
+        import scala.jdk.CollectionConverters.*
 
         val username                = (ctx.request.body \ "username").as[String]
         val label                   = (ctx.request.body \ "label").as[String]
@@ -286,7 +286,7 @@ class U2FController(
   def webAuthnRegistrationFinish() =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       ctx.checkRights(SuperAdminOnly) {
-        import collection.JavaConverters._
+        import scala.jdk.CollectionConverters.*
 
         val json                    = ctx.request.body
         val responseJson            = Json.stringify((json \ "webauthn").as[JsValue])
@@ -391,7 +391,7 @@ class U2FController(
 
   def webAuthnLoginStart() =
     BackOfficeAction.async(parse.json) { ctx =>
-      import collection.JavaConverters._
+      import scala.jdk.CollectionConverters.*
 
       val usernameOpt             = (ctx.request.body \ "username").asOpt[String]
       val passwordOpt             = (ctx.request.body \ "password").asOpt[String]
@@ -445,7 +445,7 @@ class U2FController(
 
   def webAuthnLoginFinish() =
     BackOfficeAction.async(parse.json) { ctx =>
-      import collection.JavaConverters._
+      import scala.jdk.CollectionConverters.*
 
       implicit val req = ctx.request
 
@@ -494,10 +494,6 @@ class U2FController(
                             .build()
                         )
                       } match {
-                        case Failure(e)                           =>
-                          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-                        case Success(result) if !result.isSuccess =>
-                          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
                         case Success(result) if result.isSuccess  => {
                           if (logger.isDebugEnabled) logger.debug(s"Login successful for user '$username'")
                           BackOfficeUser(
@@ -542,6 +538,8 @@ class U2FController(
                             ).addingToSession("bousr" -> boUser.randomId)
                           }
                         }
+                        case _                          =>
+                          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
                       }
                     } else {
                       FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))
@@ -563,7 +561,7 @@ class LocalCredentialRepository(
     base64Decoder: java.util.Base64.Decoder
 ) extends CredentialRepository {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   // changes in webauthn-server-core 2.1.0 from 1.7.0 forces us to do some shenanigans
   def handleVersion210Upgrade(json: JsValue): JsValue = {

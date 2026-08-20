@@ -1,18 +1,18 @@
 package otoroshi.plugins.metrics
 
 import java.io.StringWriter
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import io.prometheus.client.{Collector, CollectorRegistry}
 import io.prometheus.client.exporter.common.TextFormat
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.RegexPool
-import otoroshi.utils.string.Implicits._
+import otoroshi.utils.string.Implicits.*
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.future.Implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -59,7 +59,7 @@ class ServiceMetrics extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET", "/.well-known/otoroshi/plugins/metrics") => {
 
@@ -116,7 +116,7 @@ class ServiceMetrics extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
 
@@ -150,7 +150,7 @@ class ServiceMetrics extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
     // env.metrics.counter(s"otoroshi.service.requests.count.total.${ctx.descriptor.name.slug}").inc()
@@ -240,7 +240,7 @@ class PrometheusEndpoint extends RequestSink {
       """.stripMargin
     )
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     ctx.request.headers.get("Host") match {
       case Some(v) if v == env.adminApiHost && ctx.request.uri.startsWith("/prometheus")                => true
       case Some(v) if env.adminApiDomains.contains(v) && ctx.request.uri.startsWith("/prometheus")      => true
@@ -249,7 +249,7 @@ class PrometheusEndpoint extends RequestSink {
     }
   }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
 
     val config         = ctx.configFor("PrometheusEndpoint")
     val queryName      = (config \ "accessKeyQuery").asOpt[String].getOrElse("access_key")
@@ -281,7 +281,7 @@ class PrometheusEndpoint extends RequestSink {
 // DEPRECATED
 class PrometheusServiceMetrics extends RequestTransformer {
 
-  import io.prometheus.client._
+  import io.prometheus.client.*
 
   private lazy val requestCounterGlobal = PrometheusSupport.register(
     Counter
@@ -376,14 +376,14 @@ class PrometheusServiceMetrics extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
     val config         = ctx.configFor("PrometheusServiceMetrics")
     val includeUri     = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
 
     requestCounterGlobal.inc()
-    reqDurationGlobal.observe(duration)
+    reqDurationGlobal.observe(duration.toDouble)
 
     if (includeUri) {
       reqDurationHistogramWithUri
@@ -394,7 +394,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
           ctx.descriptor.name.slug,
           ctx.request.relativeUri
         )
-        .observe(duration)
+        .observe(duration.toDouble)
       reqTotalHistogramWithUri
         .labels(
           ctx.otoroshiResponse.status.toString,
@@ -412,7 +412,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
           ctx.request.theProtocol,
           ctx.descriptor.name.slug
         )
-        .observe(duration)
+        .observe(duration.toDouble)
       reqTotalHistogram
         .labels(
           ctx.otoroshiResponse.status.toString,
@@ -427,14 +427,14 @@ class PrometheusServiceMetrics extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
     val config         = ctx.configFor("PrometheusServiceMetrics")
     val includeUri     = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
 
     requestCounterGlobal.inc()
-    reqDurationGlobal.observe(duration)
+    reqDurationGlobal.observe(duration.toDouble)
     if (includeUri) {
       reqDurationHistogramWithUri
         .labels(
@@ -444,7 +444,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
           ctx.descriptor.name.slug,
           ctx.request.relativeUri
         )
-        .observe(duration)
+        .observe(duration.toDouble)
       reqTotalHistogramWithUri
         .labels(
           ctx.otoroshiResponse.status.toString,
@@ -462,7 +462,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
           ctx.request.theProtocol,
           ctx.descriptor.name.slug
         )
-        .observe(duration)
+        .observe(duration.toDouble)
       reqTotalHistogram
         .labels(
           ctx.otoroshiResponse.status.toString,

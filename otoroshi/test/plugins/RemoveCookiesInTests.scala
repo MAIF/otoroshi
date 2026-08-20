@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, RemoveCookiesIn, RemoveCookiesInConfig}
@@ -10,7 +11,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.DefaultWSCookie
 
 class RemoveCookiesInTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -37,7 +38,7 @@ class RemoveCookiesInTests(parent: PluginsTestSpec) {
           value = "bar",
           domain = route.frontend.domains.head.domain.some
         )
-      ): _*
+      )*
     )
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
@@ -46,7 +47,7 @@ class RemoveCookiesInTests(parent: PluginsTestSpec) {
     .futureValue
 
   val cookies = Json
-    .parse(resp.body)
+    .parse(resp.body[String])
     .as[JsValue]
     .select("cookies")
     .as[Map[String, String]]

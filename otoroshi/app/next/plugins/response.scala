@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.el.GlobalExpressionLanguage.expressionReplacer
@@ -10,13 +10,13 @@ import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.next.models.{NgDomainAndPath, NgFrontend, NgTreeRouter, NgTreeRouter_Test}
 import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import java.util.UUID
@@ -70,7 +70,7 @@ class StaticResponse extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -97,7 +97,7 @@ class StaticResponse extends NgBackendCall {
     inMemoryBodyResponse(
       config.status,
       config.headers.applyOnIf(config.applyEl)(
-        _.mapValues(str =>
+        _.view.mapValues(str =>
           GlobalExpressionLanguage.apply(
             value = str.debugPrintln,
             req = ctx.rawRequest.some,
@@ -109,7 +109,7 @@ class StaticResponse extends NgBackendCall {
             attrs = ctx.attrs,
             env = env
           )
-        )
+        ).toMap
       ),
       body
     ).future
@@ -199,7 +199,7 @@ object MockResource {
           .select("schema")
           .asOpt[Seq[JsValue]]
           .map(arr => arr.flatMap(v => MockField.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         additionalData = json.select("additional_data").asOpt[JsObject]
       )
     } match {
@@ -251,12 +251,12 @@ object MockFormData {
           .select("resources")
           .asOpt[Seq[JsValue]]
           .map(arr => arr.flatMap(v => MockResource.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         endpoints = json
           .select("endpoints")
           .asOpt[Seq[JsValue]]
           .map(arr => arr.flatMap(v => MockEndpoint.format.reads(v).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -285,9 +285,9 @@ object MockResponsesConfig {
           .select("responses")
           .asOpt[Seq[JsValue]]
           .map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true),
-        formData = json.select("form_data").asOpt[MockFormData](MockFormData.format.reads)
+        formData = json.select("form_data").asOpt[MockFormData](using MockFormData.format)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -312,7 +312,7 @@ class MockResponses extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -342,17 +342,17 @@ class MockResponses extends NgBackendCall {
         else
           None
       }
-      .map(r => {
-        import kaleidoscope._
+      .map(mr => {
+        import otoroshi.utils.KaleidoscopeShim.*
 
-        val route    = r.routes.headOption.get
-        val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
+        val route    = mr.routes.headOption.get
+        val response = Json.parse(route.metadata("mock")).as[MockResponse](using MockResponse.format)
 
         def replaceOn(value: String) = {
           val newValue = Try {
             expressionReplacer.replaceOn(value) {
-              case r"req.pathparams.$field@(.*):$defaultValue@(.*)" => r.pathParams.getOrElse(field, defaultValue)
-              case r"req.pathparams.$field@(.*)"                    => r.pathParams.getOrElse(field, s"no-path-param-$field")
+              case r"req.pathparams.$field@(.*):$defaultValue@(.*)" => mr.pathParams.getOrElse(field, defaultValue)
+              case r"req.pathparams.$field@(.*)"                    => mr.pathParams.getOrElse(field, s"no-path-param-$field")
               case r                                                => r
             }
           } recover { case _ => value } get
@@ -401,7 +401,7 @@ case class NgErrorRewriterConfig(
     ranges: Seq[ResponseStatusRange],
     templates: Map[String, String],
     log: Boolean,
-    export: Boolean,
+    `export`: Boolean,
     maxBodySize: Long = 1048576L,
     useOtoroshiErrorTemplate: Boolean = true,
     preservedHeaders: Seq[String] = Seq.empty,
@@ -449,7 +449,7 @@ object NgErrorRewriterConfig {
         |</html>""".stripMargin
     ),
     log = true,
-    export = true,
+    `export` = true,
     maxBodySize = 1048576L,
     useOtoroshiErrorTemplate = true,
     preservedHeaders = Seq.empty,
@@ -460,16 +460,16 @@ object NgErrorRewriterConfig {
     override def reads(json: JsValue): JsResult[NgErrorRewriterConfig] = Try {
       NgErrorRewriterConfig(
         log = json.select("log").asOpt[Boolean].getOrElse(false),
-        export = json.select("export").asOpt[Boolean].getOrElse(false),
+        `export` = json.select("export").asOpt[Boolean].getOrElse(false),
         templates = json.select("templates").asOpt[Map[String, String]].getOrElse(Map.empty),
         ranges = json
           .select("ranges")
           .asOpt[JsArray]
           .map(arr => arr.value.map(item => ResponseStatusRange(item.select("from").asInt, item.select("to").asInt)))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         maxBodySize = json.select("max_body_size").asOpt[Long].getOrElse(1048576L),
         useOtoroshiErrorTemplate = json.select("use_otoroshi_error_template").asOpt[Boolean].getOrElse(true),
-        preservedHeaders = json.select("preserved_headers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        preservedHeaders = json.select("preserved_headers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         additionalHeaders = json.select("additional_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
         applyEl = json.select("apply_el").asOpt[Boolean].getOrElse(true)
       )
@@ -481,7 +481,7 @@ object NgErrorRewriterConfig {
       "ranges"                      -> JsArray(o.ranges.map(_.json)),
       "templates"                   -> o.templates,
       "log"                         -> o.log,
-      "export"                      -> o.export,
+      "export"                      -> o.`export`,
       "max_body_size"               -> o.maxBodySize,
       "use_otoroshi_error_template" -> o.useOtoroshiErrorTemplate,
       "preserved_headers"           -> o.preservedHeaders,
@@ -515,7 +515,7 @@ class NgErrorRewriter extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(NgErrorRewriterConfig.fmt).getOrElse(NgErrorRewriterConfig.default)
     if (config.matching(ctx.otoroshiResponse.status)) {
       val errorId    = UUID.randomUUID().toString
@@ -557,9 +557,9 @@ class NgErrorRewriter extends NgRequestTransformer {
             responseBody
           )
           if (config.log) {
-            logger.error(s"new error rewritten with id: ${errorId}, event: ${event.toJson(env).prettify}")
+            logger.error(s"new error rewritten with id: ${errorId}, event: ${event.toJson(using env).prettify}")
           }
-          if (config.export) {
+          if (config.`export`) {
             event.toAnalytics()
           }
           response.right
@@ -576,7 +576,7 @@ class NgErrorRewriter extends NgRequestTransformer {
       status: Int,
       statusText: String,
       errorId: String
-  )(implicit env: Env): String = {
+  )(using env: Env): String = {
     val withTokens = tmpl
       .replace("${error_id}", errorId)
       .replace("${snowflake}", ctx.snowflake)
@@ -591,7 +591,7 @@ class NgErrorRewriter extends NgRequestTransformer {
       status: Int,
       statusText: String,
       errorId: String
-  )(implicit env: Env): (String, String) = {
+  )(using env: Env): (String, String) = {
     val wantsHtml = ctx.request.accepts("text/html")
     env.proxyState
       .errorTemplate(ctx.route.id)
@@ -619,7 +619,7 @@ class NgErrorRewriter extends NgRequestTransformer {
       status: Int,
       statusText: String,
       errorId: String
-  )(implicit env: Env): (String, String) = {
+  )(using env: Env): (String, String) = {
     val parsedKeys: Seq[(String, (Option[Int], Option[String]))] =
       config.templates.keys.toSeq.map(k => (k, NgErrorRewriterConfig.parseTemplateKey(k)))
     def render(rawKey: String): String                           =
@@ -675,7 +675,7 @@ case class ErrorRewriteReport(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue = Json.obj(
+  override def toJson(using _env: Env): JsValue = Json.obj(
     "@id"               -> `@id`,
     "@timestamp"        -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"             -> `@type`,

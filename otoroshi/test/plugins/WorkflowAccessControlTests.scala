@@ -3,7 +3,7 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.models.EntityLocation
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.workflow.{Orphans, Workflow, WorkflowAccessValidator, WorkflowBackendConfig, WorkflowJobConfig}
 import otoroshi.security.IdGenerator
@@ -13,7 +13,7 @@ import play.api.libs.json.{JsArray, JsObject, Json}
 
 class WorkflowAccessControlTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val workflow = Workflow(
     location = EntityLocation.default,

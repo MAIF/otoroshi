@@ -1,8 +1,8 @@
 package plugins
 
-import akka.Done
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
-import akka.stream.scaladsl.Source
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
@@ -42,7 +42,7 @@ import scala.concurrent.{Future, Promise}
 
 class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   case class OtoroshiInstance(port: Int, configuration: String, customHttpsPort: Int) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()
@@ -103,7 +103,7 @@ class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
     }
   }
 
-  var instance: OtoroshiInstance = _
+  var instance: OtoroshiInstance = scala.compiletime.uninitialized
   var customHttpsPort            = 0
 
   def createRouteWithConfig(
@@ -391,14 +391,14 @@ class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
           .trustManager(caCert)
           .keyManager(new ByteArrayInputStream(clientCertInputStream), new ByteArrayInputStream(clientKeyInputStream))
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
       .resolver(resolverGroup)
 
     val promise = Promise[ResponseData]()
     pureNettyClient
       .get()
-      .uri("/")
+      .uri("/").asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
       .response()
       .doOnNext(response => {
         val headers = scala.collection.mutable.Map[String, String]()
@@ -440,7 +440,7 @@ class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
           .asInstanceOf[java.security.cert.X509Certificate]
 
         val serialNumber = cert.getSerialNumber.toString
-        val subjectDN    = DN(cert.getSubjectDN.getName).stringify
+        val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
         val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
         wsClient
           .url(s"http://localhost:${instance.port}/api/apikeys/$clientId")

@@ -13,11 +13,11 @@ import com.sksamuel.pulsar4s.{
   Topic
 }
 import otoroshi.models.Exporter
-import com.sksamuel.pulsar4s.playjson._
+import com.sksamuel.pulsar4s.playjson.*
 import org.apache.pulsar.client.impl.auth.{AuthenticationBasic, AuthenticationToken}
 import otoroshi.models.Exporter
 import otoroshi.utils.http.MtlsConfig
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.util.{Failure, Success, Try}
 
@@ -36,7 +36,7 @@ case class PulsarConfig(
 }
 
 object PulsarConfig {
-  implicit val format = new Format[PulsarConfig] {
+  implicit val format: play.api.libs.json.Format[PulsarConfig] = new Format[PulsarConfig] {
     override def writes(o: PulsarConfig): JsValue =
       Json.obj(
         "uri"                   -> o.uri,
@@ -71,9 +71,12 @@ object PulsarConfig {
 }
 
 object PulsarSetting {
+
+  implicit val mjsv: Manifest[JsValue] = Manifest.classType(classOf[JsValue])
+
   def client(_env: otoroshi.env.Env, config: PulsarConfig): PulsarClient = {
     if (config.mtlsConfig.mtls) {
-      val (_, jks, password) = config.mtlsConfig.toJKS(_env)
+      val (_, jks, password) = config.mtlsConfig.toJKS(using _env)
 
       val builder = org.apache.pulsar.client.api.PulsarClient
         .builder()

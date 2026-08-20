@@ -1,7 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.utils.controllers.{
   ApiError,
@@ -14,19 +14,19 @@ import otoroshi.utils.controllers.{
   SeqEntityAndContext
 }
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import otoroshi.ssl.Cert
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CertificatesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class CertificatesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[Cert, JsValue]
     with CrudControllerHelper[Cert, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-certificates-api")
 
@@ -56,7 +56,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Cert]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Cert]]] = {
     env.datastores.certificatesDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -72,7 +72,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Cert]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Cert]]] = {
     val keypair = req.queryString.get("keypair").map(_.last).getOrElse("false").toBoolean
     env.datastores.certificatesDataStore.findAll().map { seq =>
       Right(
@@ -90,7 +90,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def createEntityOps(
       entity: Cert,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Cert]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Cert]]] = {
     val noEnrich = req.getQueryString("enrich").contains("false")
     val enriched = if (noEnrich) entity else entity.enrich()
     env.datastores.certificatesDataStore.set(enriched).map {
@@ -119,7 +119,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def updateEntityOps(
       entity: Cert,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Cert]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Cert]]] = {
     val noEnrich = req.getQueryString("enrich").contains("false")
     val enriched = if (noEnrich) entity else entity.enrich()
     env.datastores.certificatesDataStore.set(enriched).map {
@@ -148,7 +148,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Cert]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Cert]]] = {
     env.datastores.certificatesDataStore.delete(id).map {
       case true  => {
         Right(

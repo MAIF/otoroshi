@@ -12,7 +12,7 @@ import otoroshi.next.plugins.api.{
   NgStep
 }
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -86,19 +86,19 @@ object NgRestrictions {
             .map(_.value.map(p => NgRestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
               rp
             })
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           forbidden = (json \ "forbidden")
             .asOpt[JsArray]
             .map(_.value.map(p => NgRestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
               rp
             })
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           notFound = (json \ "not_found")
             .asOpt[JsArray]
             .map(_.value.map(p => NgRestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
               rp
             })
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -125,7 +125,7 @@ class RoutingRestrictions extends NgAccessValidator {
 
   override def isAccessAsync: Boolean = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val restrictions                                   = ctx.cachedConfig(internalName)(configReads).getOrElse(NgRestrictions())
     val (restrictionsNotPassing, restrictionsResponse) = restrictions.legacy.handleRestrictions(
       ctx.route.id,

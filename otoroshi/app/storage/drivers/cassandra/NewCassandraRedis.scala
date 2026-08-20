@@ -1,29 +1,29 @@
 package otoroshi.storage.drivers.cassandra
 
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.{TimeUnit, _}
+import java.util.concurrent.{TimeUnit, *}
 import java.util.regex.Pattern
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
-import com.codahale.metrics._
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import com.codahale.metrics.*
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, Row}
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultDriverConfigLoader
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
 import play.api.{Configuration, Logger}
-import otoroshi.storage._
+import otoroshi.storage.*
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 trait RawGetRedis {
   def rawGet(key: String): Future[Option[(String, Long, Any)]]
@@ -37,10 +37,10 @@ object CassImplicits {
 
   implicit class EnhancedAsyncResultSet(val rsf: AsyncResultSet) extends AnyVal {
 
-    import collection.JavaConverters._
-    import scala.compat.java8.FutureConverters._
+    import scala.jdk.CollectionConverters.*
+    import scala.compat.java8.FutureConverters.*
 
-    def list()(implicit mat: Materializer): Future[Seq[Row]] = {
+    def list()(using mat: Materializer): Future[Seq[Row]] = {
       val ref  = new AtomicReference[AsyncResultSet](rsf)
       val base = Source(ref.get().currentPage().asScala.toList)
       if (ref.get().hasMorePages) {
@@ -74,17 +74,17 @@ object NewCassandraRedis {
   val logger = Logger("otoroshi-cassandra-datastores")
 }
 
-class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(implicit
+class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(using
     ec: ExecutionContext,
     mat: Materializer,
     env: Env
 ) extends RedisLike
     with RawGetRedis {
 
-  import CassImplicits._
+  import CassImplicits.*
 
-  import collection.JavaConverters._
-  import scala.compat.java8.FutureConverters._
+  import scala.jdk.CollectionConverters.*
+  import scala.compat.java8.FutureConverters.*
 
   private val metrics = new MetricRegistry()
 
@@ -275,7 +275,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
       Try(rs.one().getList("lvalue", classOf[String])).toOption
         .flatMap(o => Option(o))
         .map(_.asScala.map(ByteString.apply).toSeq)
-        .getOrElse(Seq.empty[ByteString])
+        .getOrElse(Seq.empty[ByteString]).toSeq
     }
 
   private def getSetAt(key: String): Future[Set[ByteString]] =
@@ -290,7 +290,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     executeAsync(s"SELECT mvalue from otoroshi.values where key = '$key';").map { rs =>
       Try(rs.one().getMap("mvalue", classOf[String], classOf[String])).toOption
         .flatMap(o => Option(o))
-        .map(_.asScala.toMap.mapValues(ByteString.apply))
+        .map(_.asScala.toMap.view.mapValues(ByteString.apply).toMap)
         .getOrElse(Map.empty[String, ByteString])
     }
 
@@ -317,7 +317,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     executeAsync(s"SELECT mvalue from otoroshi.values where key = '$key';").map { rs =>
       Try(rs.one().getMap("mvalue", classOf[String], classOf[String])).toOption
         .flatMap(o => Option(o))
-        .map(_.asScala.toMap.mapValues(ByteString.apply))
+        .map(_.asScala.toMap.view.mapValues(ByteString.apply).toMap)
     }
 
   override def flushall(): Future[Boolean] =
@@ -456,10 +456,10 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
   override def llen(key: String): Future[Long] =
     getListAt(key).map(_.size)
 
-  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply): _*)
+  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply)*)
 
   override def lpushLong(key: String, values: Long*): Future[Long] =
-    lpushBS(key, values.map(_.toString).map(ByteString.apply): _*)
+    lpushBS(key, values.map(_.toString).map(ByteString.apply)*)
 
   override def lpushBS(key: String, values: ByteString*): Future[Long] =
     executeAsync(s"INSERT INTO otoroshi.values (key, type, lvalue) values ('$key', 'list', [ ]) IF NOT EXISTS;")
@@ -524,7 +524,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     executeAsync(s"INSERT INTO otoroshi.values (key, type, svalue) values ('$key', 'set', {}) IF NOT EXISTS;")
@@ -542,7 +542,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   override def smembers(key: String): Future[Seq[ByteString]] = getSetAt(key).map(_.toSeq)
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     executeAsync(
@@ -555,7 +555,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     smembers(key).map(_.size.toLong) // TODO: find something for that OUTCH !!!
   }
 
-  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     executeAsync("SHOW VERSION").map(_ => Healthy).recover { case _ =>
       Unreachable
     }

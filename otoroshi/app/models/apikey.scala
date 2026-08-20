@@ -1,13 +1,13 @@
 package otoroshi.models
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
 import otoroshi.events.{
@@ -26,7 +26,7 @@ import otoroshi.actions.ApiActionContext
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.{AllowedQuota, ThrottlingStrategyConfig}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
@@ -43,7 +43,7 @@ import otoroshi.utils.syntax.implicits.{
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(
@@ -62,7 +62,7 @@ case class RemainingQuotas(
 
 object RemainingQuotas {
   val MaxValue: Long = 10000000L
-  implicit val fmt   = new Format[RemainingQuotas] {
+  implicit val fmt: play.api.libs.json.Format[RemainingQuotas] = new Format[RemainingQuotas] {
 
     override def reads(json: JsValue): JsResult[RemainingQuotas] = Try {
       RemainingQuotas(
@@ -230,9 +230,9 @@ case class ApiKey(
     json.asObject.deepMerge(base)
   }
 
-  def save()(implicit ec: ExecutionContext, env: Env)     = env.datastores.apiKeyDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.exists(this)
+  def save()(using ec: ExecutionContext, env: Env)     = env.datastores.apiKeyDataStore.set(this)
+  def delete()(using ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.delete(this)
+  def exists()(using ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.exists(this)
   def toJson                                              = ApiKey.toJson(this)
   def isActive(): Boolean                                 = enabled && validUntil.map(date => date.isBeforeNow).getOrElse(true)
   def isInactive(): Boolean                               = !isActive()
@@ -271,21 +271,21 @@ case class ApiKey(
   //     .map(_.flatten)
   // }
 
-  def updateQuotas()(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]                    =
+  def updateQuotas()(using ec: ExecutionContext, env: Env): Future[RemainingQuotas]                    =
     env.datastores.apiKeyDataStore.updateQuotas(this)
-  def updateQuotasAndCheck()(implicit ec: ExecutionContext, env: Env): Future[(RemainingQuotas, Boolean)] =
+  def updateQuotasAndCheck()(using ec: ExecutionContext, env: Env): Future[(RemainingQuotas, Boolean)] =
     env.datastores.apiKeyDataStore.updateQuotasAndCheck(this)
-  def remainingQuotas()(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]                 =
+  def remainingQuotas()(using ec: ExecutionContext, env: Env): Future[RemainingQuotas]                 =
     env.datastores.apiKeyDataStore.remainingQuotas(this)
-  def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                   =
+  def withinThrottlingQuota()(using ec: ExecutionContext, env: Env): Future[Boolean]                   =
     env.datastores.apiKeyDataStore.withinThrottlingQuota(this)
-  def withinDailyQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                        =
+  def withinDailyQuota()(using ec: ExecutionContext, env: Env): Future[Boolean]                        =
     env.datastores.apiKeyDataStore.withinDailyQuota(this)
-  def withinMonthlyQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                      =
+  def withinMonthlyQuota()(using ec: ExecutionContext, env: Env): Future[Boolean]                      =
     env.datastores.apiKeyDataStore.withinMonthlyQuota(this)
-  def withinQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                            =
+  def withinQuotas()(using ec: ExecutionContext, env: Env): Future[Boolean]                            =
     env.datastores.apiKeyDataStore.withingQuotas(this)
-  def withinQuotasAndRotation()(implicit
+  def withinQuotasAndRotation()(using
       ec: ExecutionContext,
       env: Env
   ): Future[(Boolean, Option[ApiKeyRotationInfo])] = {
@@ -294,7 +294,7 @@ case class ApiKey(
       rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
     } yield (within, rotation)
   }
-  def withinQuotasAndRotationQuotas()(implicit
+  def withinQuotasAndRotationQuotas()(using
       ec: ExecutionContext,
       env: Env
   ): Future[(Boolean, Option[ApiKeyRotationInfo], RemainingQuotas)] = {
@@ -308,7 +308,7 @@ case class ApiKey(
       (within, rotation, quotas)
     }
   }
-  def metadataJson: JsValue                                                                               = JsObject(metadata.mapValues(JsString.apply))
+  def metadataJson: JsValue                                                                               = JsObject(metadata.view.mapValues(JsString.apply).toMap)
   def lightJson: JsObject                                                                                 =
     Json.obj(
       "clientId"   -> clientId,
@@ -328,7 +328,7 @@ case class ApiKey(
 
   def matchRouting(routing: ApiKeyRouteMatcher): Boolean = {
 
-    import SeqImplicits._
+    import SeqImplicits.*
 
     val shouldNotSearchForAnApiKey = routing.hasNoRoutingConstraints
 
@@ -461,7 +461,7 @@ object ApiKey {
         "rotation"                -> apk.rotation.json,
         "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
         "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
-        "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+        "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).view.mapValues(JsString.apply).toMap)
       )
     }
     override def reads(json: JsValue): JsResult[ApiKey] =
@@ -497,7 +497,7 @@ object ApiKey {
                       id
                     }
                 }
-                .getOrElse(Seq.empty[EntityIdentifier])
+                .getOrElse(Seq.empty[EntityIdentifier]).toSeq
               val authorizedGroup: Seq[EntityIdentifier]    =
                 (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
               val authorizedEntities: Seq[EntityIdentifier] =
@@ -508,13 +508,13 @@ object ApiKey {
                       id
                     }
                   }
-                  .getOrElse(Seq.empty[EntityIdentifier])
+                  .getOrElse(Seq.empty[EntityIdentifier]).toSeq
               (authorizations ++ authorizedEntities ++ authorizedGroup).distinct
             },
             enabled = enabled,
             readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
             allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
-            throttlingStrategy = json.select("throttlingStrategy").asOpt(ThrottlingStrategyConfig.fmt),
+            throttlingStrategy = json.select("throttlingStrategy").asOpt(using ThrottlingStrategyConfig.fmt),
             throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
             dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
             monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
@@ -526,7 +526,7 @@ object ApiKey {
               .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
               .getOrElse(ApiKeyRotation()),
             validUntil = rawValidUntil,
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             metadata = (json \ "metadata")
               .asOpt[Map[String, String]]
               .map(m => m.filter(_._1.nonEmpty))
@@ -553,16 +553,16 @@ object ApiKey {
 }
 
 trait ApiKeyDataStore extends BasicStore[ApiKey] {
-  def initiateNewApiKey(groupId: String, env: Env, ctx: Option[ApiActionContext[_]] = None): ApiKey = {
+  def initiateNewApiKey(groupId: String, env: Env, ctx: Option[ApiActionContext[?]] = None): ApiKey = {
     val defaultApikey = ApiKey(
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq(ServiceGroupIdentifier(groupId))
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .apikey
       .map { template =>
@@ -573,16 +573,16 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       }
   }
 
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): ApiKey = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): ApiKey = {
     val defaultApikey = ApiKey(
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq.empty
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .apikey
       .map { template =>
@@ -593,40 +593,40 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       }
   }
 
-  def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]
-  def resetQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]
-  def updateQuotas(apiKey: ApiKey, increment: Long = 1L)(implicit
+  def remainingQuotas(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[RemainingQuotas]
+  def resetQuotas(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[RemainingQuotas]
+  def updateQuotas(apiKey: ApiKey, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
   ): Future[RemainingQuotas]
-  def updateQuotasAndCheck(apiKey: ApiKey, increment: Long = 1L)(implicit
+  def updateQuotasAndCheck(apiKey: ApiKey, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
   ): Future[(RemainingQuotas, Boolean)]
-  def withingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def withinThrottlingQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def withinDailyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def withinMonthlyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]]
-  def findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]]
-  def findAuthorizeKeyFor(clientId: String, serviceId: String)(implicit
+  def withingQuotas(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def withinThrottlingQuota(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def withinDailyQuota(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def withinMonthlyQuota(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def findByService(serviceId: String)(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]]
+  def findByGroup(groupId: String)(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]]
+  def findAuthorizeKeyFor(clientId: String, serviceId: String)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[ApiKey]]
-  def findAuthorizeKeyForBearer(bearer: String, serviceId: String)(implicit
+  def findAuthorizeKeyForBearer(bearer: String, serviceId: String)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[ApiKey]]
-  def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(implicit env: Env): Option[ApiKey]
-  def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit
+  def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(using env: Env): Option[ApiKey]
+  def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Long]
+  def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Long]
-  def addFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def addFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def addFastLookupByGroup(groupId: String, apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Long]
+  def addFastLookupByService(serviceId: String, apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Long]
+  def clearFastLookupByGroup(groupId: String)(using ec: ExecutionContext, env: Env): Future[Long]
+  def clearFastLookupByService(serviceId: String)(using ec: ExecutionContext, env: Env): Future[Long]
 
   // def willBeRotatedAt(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Option[(DateTime, Long)]] = {
   //   if (apiKey.rotation.enabled) {
@@ -644,7 +644,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   //   }
   // }
 
-  def keyRotation(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Option[ApiKeyRotationInfo]] = {
+  def keyRotation(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Option[ApiKeyRotationInfo]] = {
     if (apiKey.rotation.enabled) {
       val key = s"${env.storageRoot}:apikeys-rotation:${apiKey.clientId}"
       env.datastores.rawDataStore.get(key).flatMap {
@@ -801,12 +801,12 @@ object ApikeyTuple {
 
 object ApiKeyHelper {
 
-  import otoroshi.utils.http.RequestImplicits._
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.http.RequestImplicits.*
+  import otoroshi.utils.syntax.implicits.*
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
-  def extractApiKey(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(implicit
+  def extractApiKey(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[ApiKey]] = {
@@ -945,18 +945,18 @@ object ApiKeyHelper {
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None                                => FastFuture.successful(None)
           case Some(key) if !key.allowClientIdOnly => FastFuture.successful(None)
           case Some(key) if key.allowClientIdOnly  => FastFuture.successful(Some(key))
+          case _                                   => FastFuture.successful(None)
         }
     } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
       val (clientId, clientSecret) = authByCustomHeaders.get
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None                                     => FastFuture.successful(None)
           case Some(key) if key.isInvalid(clientSecret) => FastFuture.successful(None)
           case Some(key) if key.isValid(clientSecret)   => FastFuture.successful(Some(key))
+          case _                                        => FastFuture.successful(None)
         }
     } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
       val jwtTokenValue = authByJwtToken.get
@@ -1107,9 +1107,9 @@ object ApiKeyHelper {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
             .flatMap {
-              case None                                     => FastFuture.successful(None)
               case Some(key) if key.isInvalid(apiKeySecret) => FastFuture.successful(None)
               case Some(key) if key.isValid(apiKeySecret)   => FastFuture.successful(Some(key))
+              case _                                        => FastFuture.successful(None)
             }
         }
         case _                                          => FastFuture.successful(None)
@@ -1119,7 +1119,7 @@ object ApiKeyHelper {
     }
   }
 
-  def detectApiKey(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(implicit env: Env): Boolean = {
+  def detectApiKey(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(using env: Env): Boolean = {
 
     val authByOtoBearerToken       = OtoroshiBearerToken.extractTokenFromRequest(req, descriptor, attrs)
     val authByJwtToken             = req.headers
@@ -1267,7 +1267,7 @@ object ApiKeyHelper {
       ctx: PassWithApiKeyContext,
       callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
       errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
 
     val PassWithApiKeyContext(req, descriptor, attrs, config) = ctx
 
@@ -1471,7 +1471,6 @@ object ApiKeyHelper {
     val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
     if (preExtractedApiKey.isDefined) {
       preExtractedApiKey match {
-        case None                                         => errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
         case Some(key) if key.isInvalid(key.clientSecret) => {
           sendRevokedApiKeyAlert(key)
           errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
@@ -1502,14 +1501,13 @@ object ApiKeyHelper {
               sendQuotasExceededError(key, quotas)
               errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
           }
+        case _                                            => errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
       }
     } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
       val clientId = authBySimpleApiKeyClientId.get
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None                                       =>
-            errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
           case Some(key) if !key.allowClientIdOnly        =>
             errorResult(BadRequest, "Bad API key", "errors.bad.api.key")
           case Some(key) if !key.matchRouting(descriptor) =>
@@ -1548,14 +1546,14 @@ object ApiKeyHelper {
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
+          case _ =>
+            errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
         }
     } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
       val (clientId, clientSecret) = authByCustomHeaders.get
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None                                       =>
-            errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
           case Some(key) if key.isInvalid(clientSecret)   => {
             sendRevokedApiKeyAlert(key)
             errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
@@ -1585,6 +1583,8 @@ object ApiKeyHelper {
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
+          case _ =>
+            errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
         }
     } else if (authByOtoBearerToken.isDefined && descriptor.apiKeyConstraints.otoBearerAuth.enabled) {
       val bearer = authByOtoBearerToken.get
@@ -1802,8 +1802,6 @@ object ApiKeyHelper {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
             .flatMap {
-              case None                                       =>
-                errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
               case Some(key) if key.isInvalid(apiKeySecret)   => {
                 sendRevokedApiKeyAlert(key)
                 errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
@@ -1833,6 +1831,8 @@ object ApiKeyHelper {
                     sendQuotasExceededError(key, quotas)
                     errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                 }
+              case _ =>
+                errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
             }
         }
         case _                                          =>
@@ -1844,7 +1844,7 @@ object ApiKeyHelper {
     //}
   }
 
-  def detectApikeyTuple(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(implicit
+  def detectApikeyTuple(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(using
       env: Env
   ): Option[ApikeyTuple] = {
     attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey) match {
@@ -2115,7 +2115,7 @@ object ApiKeyHelper {
       constraints: ApiKeyConstraints,
       service: String,
       attrs: TypedMap
-  )(implicit env: Env): Either[(Option[ApiKey], Option[String]), ApiKey] = {
+  )(using env: Env): Either[(Option[ApiKey], Option[String]), ApiKey] = {
     attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyKey) match {
       case Some(either) => either
       case None         => {
@@ -2124,9 +2124,7 @@ object ApiKeyHelper {
           case Some(apikey) =>
             apikeyTuple match {
               case ApikeyTuple(_, None, None, _, None) if apikey.allowClientIdOnly && apikey.enabled                => apikey.right
-              case ApikeyTuple(_, None, None, _, Some(otoBearer))
-                  if apikey.allowClientIdOnly && apikey.enabled && apikey.checkBearer(otoBearer) =>
-                apikey.right
+              case ApikeyTuple(_, None, None, _, Some(otoBearer)) if apikey.allowClientIdOnly && apikey.enabled && apikey.checkBearer(otoBearer) => apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)                               => apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)                             =>
                 (
@@ -2287,7 +2285,7 @@ object ApiKeyHelper {
       route: Option[NgRoute],
       incrementQuotas: Boolean,
       routingEnabled: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, ApiKey]] = {
@@ -2306,7 +2304,6 @@ object ApiKeyHelper {
           val key = "apikey_rejection_reason"
           attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
             case Some(obj @ JsObject(_)) => obj ++ Json.obj(key -> message)
-            case Some(other)             => other
             case None                    => Json.obj(key -> message)
           }
         }
@@ -2492,7 +2489,7 @@ object ApiKeyHelper {
 }
 
 object OtoroshiBearerToken {
-  def extractClientId(bearer: String)(implicit env: Env): String = {
+  def extractClientId(bearer: String)(using env: Env): String = {
     bearer
       .replaceFirst(s"otoapk_${env.env}", "")
       .replaceFirst("otoapk_", "")
@@ -2500,12 +2497,12 @@ object OtoroshiBearerToken {
       .init
       .mkString("_")
   }
-  def extractTokenFromRequest(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(implicit
+  def extractTokenFromRequest(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(using
       env: Env
   ): Option[String] = {
     extractTokenFromRequest(req, descriptor.apiKeyConstraints, attrs)
   }
-  def extractTokenFromRequest(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(implicit
+  def extractTokenFromRequest(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(using
       env: Env
   ): Option[String] = {
     req.headers

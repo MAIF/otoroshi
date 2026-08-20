@@ -1,6 +1,6 @@
 package otoroshi.utils
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
@@ -26,8 +26,8 @@ package object future {
 
     implicit final class EnhancedFuture[A](future: Future[A]) {
 
-      def fold[U](pf: PartialFunction[Try[A], U])(implicit executor: ExecutionContext): Future[U] = {
-        val promise = Promise[U]
+      def fold[U](pf: PartialFunction[Try[A], U])(using executor: ExecutionContext): Future[U] = {
+        val promise = Promise[U]()
         future.andThen {
           case underlying: Try[A] => {
             try {
@@ -40,8 +40,8 @@ package object future {
         promise.future
       }
 
-      def foldM[U](pf: PartialFunction[Try[A], Future[U]])(implicit executor: ExecutionContext): Future[U] = {
-        val promise = Promise[U]
+      def foldM[U](pf: PartialFunction[Try[A], Future[U]])(using executor: ExecutionContext): Future[U] = {
+        val promise = Promise[U]()
         future.andThen {
           case underlying: Try[A] => {
             try {
@@ -57,10 +57,10 @@ package object future {
         promise.future
       }
 
-      def asLeft[R](implicit executor: ExecutionContext): Future[Either[A, R]] =
+      def asLeft[R](using executor: ExecutionContext): Future[Either[A, R]] =
         future.map(a => Left[A, R](a))
 
-      def asRight[R](implicit executor: ExecutionContext): Future[Either[R, A]] =
+      def asRight[R](using executor: ExecutionContext): Future[Either[R, A]] =
         future.map(a => Right[R, A](a))
     }
   }

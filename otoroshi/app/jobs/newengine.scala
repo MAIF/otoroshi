@@ -4,13 +4,13 @@ import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.next.proxy.{ProxyEngine, ProxyEngineConfig}
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
@@ -33,7 +33,7 @@ object NewEngine {
     enabledRawFromConfig(config, env)._1
   }
 
-  def enabled(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  def enabled(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       enabledFromConfig(config, env)
     }
@@ -70,7 +70,7 @@ class NewEngineJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     NewEngine.enabled.map { enabled =>
       if (!enabled) {
         logger.info(s"You are using the legacy Otoroshi proxy engine !")

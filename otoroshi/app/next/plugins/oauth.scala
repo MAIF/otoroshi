@@ -1,22 +1,22 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
-import com.google.common.base.Charsets
+import org.apache.pekko.stream.Materializer
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.auth.Oauth1AuthModule.encodeURI
 import otoroshi.env.Env
 import otoroshi.models.{GlobalConfig, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.authcallers.{ForceRetryException, OAuth2Kind}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterString, BetterSyntax}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result, Results}
@@ -58,8 +58,8 @@ case class OAuth1CallerConfig(
     algo: Option[String] = None
 ) extends NgPluginConfig {
   override def json: JsValue = OAuth1CallerConfig.format.writes(this)
-  def applyEl(attrs: TypedMap)(implicit env: Env): OAuth1CallerConfig = {
-    OAuth1CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(env).parseJson).get
+  def applyEl(attrs: TypedMap)(using env: Env): OAuth1CallerConfig = {
+    OAuth1CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(using env).parseJson).get
   }
 }
 
@@ -134,7 +134,7 @@ class OAuth1Caller extends NgRequestTransformer {
     encodeURI(signature)
   }
 
-  private def encode(param: String): String = UriEncoding.encodePathSegment(param, Charsets.UTF_8)
+  private def encode(param: String): String = UriEncoding.encodePathSegment(param, StandardCharsets.UTF_8)
 
   def prepareParameters(params: Seq[(String, String)]): String = params
     .map { case (k, v) => (encode(k), encode(v)) }
@@ -152,7 +152,7 @@ class OAuth1Caller extends NgRequestTransformer {
       OAuth1Caller.Keys.consumerKey     -> consumerKey,
       OAuth1Caller.Keys.signatureMethod -> signatureMethod,
       OAuth1Caller.Keys.signature       -> s"${encodeURI(consumerSecret + "&" + tokenSecret.getOrElse(""))}",
-      OAuth1Caller.Keys.timestamp       -> s"${Math.floor(System.currentTimeMillis() / 1000).toInt}",
+      OAuth1Caller.Keys.timestamp       -> s"${Math.floor((System.currentTimeMillis() / 1000).toDouble).toInt}",
       OAuth1Caller.Keys.nonce           -> s"${Random.nextInt(1000000000)}"
     )
 
@@ -208,7 +208,7 @@ class OAuth1Caller extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val oAuth1CallerConfig =
       ctx.cachedConfig(internalName)(OAuth1CallerConfig.format).getOrElse(OAuth1CallerConfig()).applyEl(ctx.attrs)
 
@@ -277,8 +277,8 @@ case class OAuth2CallerConfig(
     tlsConfig: MtlsConfig = MtlsConfig()
 ) extends NgPluginConfig {
   override def json: JsValue = OAuth2CallerConfig.format.writes(this)
-  def applyEl(attrs: TypedMap)(implicit env: Env): OAuth2CallerConfig = {
-    OAuth2CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(env).parseJson).get
+  def applyEl(attrs: TypedMap)(using env: Env): OAuth2CallerConfig = {
+    OAuth2CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(using env).parseJson).get
   }
 }
 
@@ -360,7 +360,7 @@ class OAuth2Caller extends NgRequestTransformer {
        |Do not forget to enable client retry to handle token generation on expire.
        |""".stripMargin.some
 
-  def getToken(key: String, config: OAuth2CallerConfig)(implicit
+  def getToken(key: String, config: OAuth2CallerConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -428,6 +428,7 @@ class OAuth2Caller extends NgRequestTransformer {
           .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}${config.resource
           .map(s => s"&resource=$s")
           .getOrElse("")}"
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
     val ctype        = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
     val authMod      = config.authModRef
@@ -458,7 +459,7 @@ class OAuth2Caller extends NgRequestTransformer {
                 (parts.head, parts.last)
               }
               .toMap
-            val jsonBody         = JsObject(body.mapValues(JsString.apply))
+            val jsonBody         = JsObject(body.view.mapValues(JsString.apply).toMap)
             val token            = body.getOrElse("access_token", "--")
             val expires_in: Long = body.getOrElse("expires_in", config.cacheTokenSeconds.toSeconds.toString).toLong
             val expiration_date  = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime
@@ -490,7 +491,7 @@ class OAuth2Caller extends NgRequestTransformer {
   def fetchRefreshTheToken(
       refreshToken: String,
       config: OAuth2CallerConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  )(using env: Env, ec: ExecutionContext): Future[JsValue] = {
     val ctype     = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
     val authMod   = config.authModRef
       .flatMap(env.proxyState.authModule)
@@ -514,7 +515,7 @@ class OAuth2Caller extends NgRequestTransformer {
             "client_secret" -> authMod.get.clientSecret,
             "scope"         -> authMod.get.scope
           )
-        )(writeableOf_urlEncodedSimpleForm)
+        )(using writeableOf_urlEncodedSimpleForm)
       }
       case _ if config.jsonPayload => {
         builder.post(
@@ -541,7 +542,7 @@ class OAuth2Caller extends NgRequestTransformer {
             .applyOnWithOpt(config.scope) { (json, scope) => json ++ Map("scope" -> scope) }
             .applyOnWithOpt(config.audience) { (json, audience) => json ++ Map("audience" -> audience) }
             .applyOnWithOpt(config.resource) { (json, resource) => json ++ Map("resource" -> resource) }
-        )(writeableOf_urlEncodedSimpleForm)
+        )(using writeableOf_urlEncodedSimpleForm)
       }
     }
     // TODO: check status code
@@ -552,7 +553,7 @@ class OAuth2Caller extends NgRequestTransformer {
     }
   }
 
-  def tryRenewToken(key: String, config: OAuth2CallerConfig)(implicit
+  def tryRenewToken(key: String, config: OAuth2CallerConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, String]] = {
@@ -601,7 +602,7 @@ class OAuth2Caller extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {
@@ -643,7 +644,7 @@ class OAuth2Caller extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {
@@ -685,8 +686,8 @@ case class OAuth2AuthModuleCallerConfig(
     cacheTokenSeconds: FiniteDuration = (10L * 60L).seconds
 ) extends NgPluginConfig {
   override def json: JsValue = OAuth2AuthModuleCallerConfig.format.writes(this)
-  def applyEl(attrs: TypedMap)(implicit env: Env): OAuth2AuthModuleCallerConfig = {
-    OAuth2AuthModuleCallerConfig.format.reads(json.stringify.evaluateEl(attrs)(env).parseJson).get
+  def applyEl(attrs: TypedMap)(using env: Env): OAuth2AuthModuleCallerConfig = {
+    OAuth2AuthModuleCallerConfig.format.reads(json.stringify.evaluateEl(attrs)(using env).parseJson).get
   }
 }
 
@@ -783,7 +784,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
 
   private def authModuleOf(
       config: OAuth2AuthModuleCallerConfig
-  )(implicit env: Env): Option[OAuth2ModuleConfig] = {
+  )(using env: Env): Option[OAuth2ModuleConfig] = {
     config.ref.flatMap(env.proxyState.authModule).collect { case m: OAuth2ModuleConfig => m }
   }
 
@@ -802,7 +803,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
     }
   }
 
-  def getToken(key: String, config: OAuth2AuthModuleCallerConfig, authMod: OAuth2ModuleConfig)(implicit
+  def getToken(key: String, config: OAuth2AuthModuleCallerConfig, authMod: OAuth2ModuleConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -826,7 +827,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
                 (parts.head, parts.last)
               }
               .toMap
-            val jsonBody         = JsObject(parsed.mapValues(JsString.apply))
+            val jsonBody         = JsObject(parsed.view.mapValues(JsString.apply).toMap)
             val token            = parsed.getOrElse("access_token", "--")
             val expires_in: Long = parsed.getOrElse("expires_in", config.cacheTokenSeconds.toSeconds.toString).toLong
             val expiration_date  = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime
@@ -855,7 +856,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
       refreshToken: String,
       config: OAuth2AuthModuleCallerConfig,
       authMod: OAuth2ModuleConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  )(using env: Env, ec: ExecutionContext): Future[JsValue] = {
     val ctype   = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
     val builder =
       env.MtlsWs
@@ -871,7 +872,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
           "client_secret" -> authMod.clientSecret,
           "scope"         -> authMod.scope
         )
-      )(writeableOf_urlEncodedSimpleForm)
+      )(using writeableOf_urlEncodedSimpleForm)
       .map(_.json)
       .map { json =>
         val rtok      = json.select("refresh_token").asOpt[String].getOrElse(refreshToken)
@@ -880,7 +881,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
       }
   }
 
-  def tryRenewToken(key: String, config: OAuth2AuthModuleCallerConfig, authMod: OAuth2ModuleConfig)(implicit
+  def tryRenewToken(key: String, config: OAuth2AuthModuleCallerConfig, authMod: OAuth2ModuleConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, String]] = {
@@ -924,7 +925,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2AuthModuleCallerConfig.format)
     rawConfig match {
       case None          => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
@@ -969,7 +970,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2AuthModuleCallerConfig.format)
     rawConfig match {
       case None          => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture

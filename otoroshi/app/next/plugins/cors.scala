@@ -1,14 +1,14 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.CorsSettings
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.util.concurrent.TimeUnit
@@ -52,10 +52,10 @@ object NgCorsSettings {
     override def reads(json: JsValue): JsResult[NgCorsSettings] = Try {
       NgCorsSettings(
         allowOrigin = (json \ "allow_origin").asOpt[String].getOrElse("*"),
-        exposeHeaders = (json \ "expose_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allowHeaders = (json \ "allow_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allowMethods = (json \ "allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        exposeHeaders = (json \ "expose_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allowHeaders = (json \ "allow_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allowMethods = (json \ "allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         maxAge = (json \ "max_age").asOpt[Long].map(a => FiniteDuration(a, TimeUnit.SECONDS)),
         allowCredentials = (json \ "allow_credentials").asOpt[Boolean].getOrElse(true)
       )
@@ -97,7 +97,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
   override def defaultConfigObject: Option[NgPluginConfig] = NgCorsSettings().some
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val req  = ctx.request
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
 
@@ -119,7 +119,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
       } else {
         NgPreRoutingErrorWithResult(
           Results.NoContent
-            .withHeaders(cors.legacy.asHeaders(req): _*)
+            .withHeaders(cors.legacy.asHeaders(req)*)
         ).left.vfuture
       }
     } else {
@@ -136,7 +136,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val req  = ctx.request
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
 
@@ -165,7 +165,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     val req  = ctx.request
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
 

@@ -1,12 +1,12 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
-import org.apache.commons.lang.StringEscapeUtils
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
+import org.apache.commons.text.StringEscapeUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -207,7 +207,7 @@ class SwaggerUIPlugin extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -274,12 +274,12 @@ class SwaggerUIPlugin extends NgBackendCall {
       case _       => "undefined"
     }
 
-    // Escape values to prevent XSS - use escapeHtml for values injected in HTML context
-    val safeTitle      = StringEscapeUtils.escapeHtml(config.title)
-    val safeSwaggerUrl = StringEscapeUtils.escapeHtml(config.swaggerUrl)
-    val safeVersion    = StringEscapeUtils.escapeHtml(config.swaggerUIVersion)
-    val safeLayout     = StringEscapeUtils.escapeHtml(config.layout)
-    val safeTheme      = StringEscapeUtils.escapeHtml(config.theme)
+    // Escape values to prevent XSS - use escapeHtml4 for values injected in HTML context
+    val safeTitle      = StringEscapeUtils.escapeHtml4(config.title)
+    val safeSwaggerUrl = StringEscapeUtils.escapeHtml4(config.swaggerUrl)
+    val safeVersion    = StringEscapeUtils.escapeHtml4(config.swaggerUIVersion)
+    val safeLayout     = StringEscapeUtils.escapeHtml4(config.layout)
+    val safeTheme      = StringEscapeUtils.escapeHtml4(config.theme)
 
     val themeLink = if (config.theme.nonEmpty && config.theme != "default") {
       s"""    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-themes/themes/3.x/theme-$safeTheme.css">"""

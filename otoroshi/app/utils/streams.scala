@@ -1,9 +1,9 @@
 package otoroshi.utils.streams
 
-import akka.stream._
-import akka.stream.stage._
+import org.apache.pekko.stream.*
+import org.apache.pekko.stream.stage.*
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 
 object MaxLengthLimiter {
   def apply(maxLength: Int, log: (String) => Unit = str => ()): MaxLengthLimiter = new MaxLengthLimiter(maxLength, log)

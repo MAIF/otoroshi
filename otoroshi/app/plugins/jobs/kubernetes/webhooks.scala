@@ -1,17 +1,17 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{RequestOrigin, RequestSink, RequestSinkContext, Script}
 import otoroshi.tcp.TcpService
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import otoroshi.ssl.Cert
 
@@ -34,7 +34,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
     (
       ctx.request.domain.contentEquals(
@@ -62,7 +62,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
       .future
   }
 
-  def error(uid: String, errors: Seq[(JsPath, Seq[JsonValidationError])]): Future[Result] = {
+  def error(uid: String, errors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])]): Future[Result] = {
     Results
       .Ok(
         Json.obj(
@@ -86,8 +86,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
   def regCert(arg1: String, arg2: String, arg3: Cert): Unit  = ()
   def regApk(arg1: String, arg2: String, arg3: ApiKey): Unit = ()
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)
@@ -286,7 +286,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
     (
       ctx.request.domain.contentEquals(
@@ -299,8 +299,8 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
     ctx.request.method == "POST"
   }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)

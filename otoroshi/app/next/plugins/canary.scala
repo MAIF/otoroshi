@@ -1,19 +1,19 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.http.scaladsl.model.HttpProtocols
-import akka.http.scaladsl.util.FastFuture.EnhancedFuture
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.HttpProtocols
+import org.apache.pekko.http.scaladsl.util.FastFuture.EnhancedFuture
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{AlwaysMatch, Canary}
 import otoroshi.next.models.{NgBackend, NgTarget}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.Result
 
@@ -49,7 +49,7 @@ object NgCanarySettings {
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => NgTarget.readFrom(e)))
-            .getOrElse(Seq.empty[NgTarget]),
+            .getOrElse(Seq.empty[NgTarget]).toSeq,
           root = (json \ "root").asOpt[String].getOrElse("/")
         )
       } match {
@@ -91,7 +91,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config     = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCanarySettings())
     val gconfig    = env.datastores.globalConfigDataStore.latest()
     val reqNumber  = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).get
@@ -139,7 +139,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey) match {
       case None           => ctx.otoroshiResponse.right
       case Some(canaryId) => {
@@ -178,7 +178,7 @@ object TimeControlledCanaryModeConfig {
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => NgTarget.readFrom(e)))
-            .getOrElse(Seq.empty[NgTarget]),
+            .getOrElse(Seq.empty[NgTarget]).toSeq,
           root = (json \ "root").asOpt[String].getOrElse("/")
         )
       } match {
@@ -239,7 +239,7 @@ class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(TimeControlledCanaryModeConfig())
     val now    = DateTime.now()
     if (now.isBefore(config.start)) {
@@ -304,7 +304,7 @@ class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey) match {
       case None           => ctx.otoroshiResponse.right
       case Some(canaryId) => {

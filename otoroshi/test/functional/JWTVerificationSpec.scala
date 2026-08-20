@@ -1,5 +1,7 @@
 package functional
 
+import scala.jdk.CollectionConverters.*
+import play.api.libs.ws.WSBodyReadables.given
 import java.security.KeyFactory
 import java.security.interfaces.{ECPrivateKey, ECPublicKey}
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
@@ -9,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import otoroshi.models.*
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
@@ -167,7 +169,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithJWT() = {
         val r = ws
@@ -182,7 +184,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT1() = {
         val r = ws
@@ -197,7 +199,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT2() = {
         val r = ws
@@ -212,7 +214,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
 
       val (status0, body0) = callServerWithoutJWT()
@@ -222,7 +224,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       status0 mustBe 400
       body0.contains("error.expected.token.not.found") mustBe true
 
-      println(status1, body1)
+      println((status1, body1))
 
       status1 mustBe 200
       body1.contains("hello world 1") mustBe true
@@ -239,7 +241,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
 
     "Re-sign JWT token" in {
 
-      import Implicit._
+      import Implicit.*
 
       import com.auth0.jwt.algorithms.Algorithm
       val key        = "very secret"
@@ -323,7 +325,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithJWT() = {
         val r = ws
@@ -334,7 +336,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT1() = {
         val r = ws
@@ -349,7 +351,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT2() = {
         val r = ws
@@ -364,7 +366,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
 
       val (status0, body0) = callServerWithoutJWT()
@@ -388,7 +390,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
 
     "Transform JWT token" in {
 
-      import Implicit._
+      import Implicit.*
 
       import com.auth0.jwt.algorithms.Algorithm
       val key        = "very secret"
@@ -415,7 +417,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
             .asOption
             .map(a => a.value())
             .foreach { a =>
-              import collection.JavaConverters._
+              import scala.jdk.CollectionConverters.*
               val v        = JWT
                 .require(algorithm2)
                 .withIssuer("foo")
@@ -426,7 +428,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
               val verified = Try {
                 val dec = v.verify(a)
                 //println(dec.getClaim("the-host").asString())
-                //println(dec.getClaims.asScala.mapValues(v => v.asString()))
+                //println(dec.getClaims.asScala.mapValues(v => v.asString()).toMap)
 
               }.map(_ => true).getOrElse(false)
               verified mustEqual true
@@ -501,7 +503,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithJWT() = {
         val r = ws
@@ -512,7 +514,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT1() = {
         val r = ws
@@ -527,7 +529,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT2() = {
         val r = ws
@@ -542,7 +544,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
 
       val (status0, body0) = callServerWithoutJWT()
@@ -673,7 +675,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithJWT() = {
         val r = ws
@@ -688,7 +690,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT1() = {
         val r = ws
@@ -703,7 +705,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT2() = {
         val r = ws
@@ -718,7 +720,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
 
       val (status0, body0) = callServerWithoutJWT()

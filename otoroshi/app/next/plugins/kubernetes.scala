@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{
   BackendCallResponse,
@@ -34,7 +34,7 @@ object KubernetesNamespaceScanConfig {
     override def reads(json: JsValue): JsResult[KubernetesNamespaceScanConfig] = {
       Try {
         KubernetesNamespaceScanConfig(
-          namespaces = json.select("namespaces").asOpt[Seq[String]].getOrElse(Seq.empty)
+          namespaces = json.select("namespaces").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -63,7 +63,7 @@ class KubernetesNamespaceScanBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -102,7 +102,7 @@ class KubernetesNamespaceScanBackend extends NgBackendCall {
     )
   }
 
-  private def initializeKubernetesResources(k8sConfig: KubernetesConfig, jobCtx: JobContext)(implicit
+  private def initializeKubernetesResources(k8sConfig: KubernetesConfig, jobCtx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Unit = {
@@ -119,7 +119,7 @@ class KubernetesNamespaceScanBackend extends NgBackendCall {
       k8sConfig: KubernetesConfig,
       jobCtx: JobContext,
       namespaces: Seq[String]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     KubernetesCRDsJob
       .syncCRDs(
         k8sConfig,

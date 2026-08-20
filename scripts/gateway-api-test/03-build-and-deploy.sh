@@ -28,7 +28,7 @@ done
 
 # ─── 1. Build Otoroshi jar (sbt assembly) ───────────────────────────────────
 
-JAR_PATH="${OTOROSHI_DIR}/target/scala-2.12/otoroshi.jar"
+JAR_PATH="${OTOROSHI_DIR}/target/scala-3.8.4/otoroshi.jar"
 
 if [ "${SKIP_BUILD}" = "true" ] && [ -f "${JAR_PATH}" ]; then
   echo "Skipping build (SKIP_BUILD=true, jar exists)"

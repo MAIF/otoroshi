@@ -1,14 +1,14 @@
 package functional
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.next.plugins.{ApikeyCalls, NgApikeyCallsConfig, NgApikeyMatcher}
 import otoroshi.security.IdGenerator
 import play.api.Configuration
@@ -22,8 +22,8 @@ import scala.concurrent.ExecutionContext
 
 class Version1413Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system   = ActorSystem("otoroshi-test")
-  implicit lazy val env = otoroshiComponents.env
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
+  implicit lazy val env: otoroshi.env.Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -618,13 +618,16 @@ object Attrs {
 }
 
 class Transformer1 extends NgRequestTransformer {
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
   override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
   override def isTransformRequestAsync                     = false
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     TransformersCounters.counter.incrementAndGet()
     ctx.attrs.put(Attrs.CurrentUserKey -> FakeUser("bobby"))
 
@@ -639,12 +642,15 @@ class Transformer1 extends NgRequestTransformer {
 }
 
 class Transformer2 extends NgRequestTransformer {
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
   override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
   override def isTransformRequestAsync                     = false
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     TransformersCounters.counter.incrementAndGet()
     ctx.attrs.get(Attrs.CurrentUserKey) match {
       case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
@@ -663,13 +669,16 @@ class Transformer2 extends NgRequestTransformer {
 }
 
 class Transformer3 extends NgRequestTransformer {
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
   override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
   override def isTransformRequestAsync                     = false
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     TransformersCounters.counter3.incrementAndGet()
     ctx.attrs.get(Attrs.CurrentUserKey) match {
       case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
@@ -680,9 +689,12 @@ class Transformer3 extends NgRequestTransformer {
 }
 
 class Validator1 extends NgAccessValidator {
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
   override def isAccessAsync = false
 
-  override def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess = {
+  override def accessSync(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): NgAccess = {
     TransformersCounters.counterValidator.incrementAndGet()
     NgAccess.NgAllowed
   }

@@ -1,9 +1,9 @@
 package otoroshi.api
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.{Appender, Context}
@@ -16,23 +16,23 @@ import otoroshi.controllers.adminapi.InfosApiController
 import controllers.{Assets, AssetsComponents}
 import org.slf4j.LoggerFactory
 import otoroshi.netty.ReactorNettyServer
-import otoroshi.actions._
+import otoroshi.actions.*
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.cluster.{ClusterConfig, ClusterMode}
-import otoroshi.controllers._
-import otoroshi.controllers.adminapi._
-import otoroshi.env._
-import otoroshi.gateway._
+import otoroshi.controllers.*
+import otoroshi.controllers.adminapi.*
+import otoroshi.env.*
+import otoroshi.gateway.*
 import otoroshi.metrics.Metrics
 import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
-import otoroshi.next.controllers.adminapi._
+import otoroshi.next.controllers.adminapi.*
 import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.next.tunnel.TunnelController
 import otoroshi.next.workflow.WorkflowsController
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.json.{JsObject, Json}
@@ -41,7 +41,7 @@ import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
-import play.core.server.{AkkaHttpServerComponents, ServerConfig}
+import play.core.server.{PekkoHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
 
@@ -81,11 +81,11 @@ object OtoroshiLoaderHelper {
 
   def waitForReadiness(components: EnvContainer): Unit = {
 
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
 
-    implicit val ec        = components.env.otoroshiExecutionContext
-    implicit val scheduler = components.env.otoroshiScheduler
-    implicit val mat       = components.env.otoroshiMaterializer
+    implicit val ec: scala.concurrent.ExecutionContext = components.env.otoroshiExecutionContext
+    implicit val scheduler: org.apache.pekko.actor.Scheduler = components.env.otoroshiScheduler
+    implicit val mat: org.apache.pekko.stream.Materializer = components.env.otoroshiMaterializer
 
     val failOnTimeout                        =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.failOnTimeout").getOrElse(false)
@@ -123,7 +123,7 @@ object OtoroshiLoaderHelper {
       components.env.configuration.betterGetOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
     def timeout(task: String, duration: FiniteDuration): Future[SubSystemInitializationState] = {
-      val promise = Promise[SubSystemInitializationState]
+      val promise = Promise[SubSystemInitializationState]()
       scheduler.scheduleOnce(duration) {
         promise.trySuccess(SubSystemInitializationState.Timeout(task, duration.toMillis))
       }
@@ -151,7 +151,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -181,7 +181,7 @@ object OtoroshiLoaderHelper {
                 }
                 .filter(identity)
                 .take(1)
-                .runWith(Sink.head)(mat)
+                .runWith(Sink.head)(using mat)
                 .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
                 .recover { case e: Throwable =>
                   SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -238,7 +238,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -266,7 +266,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -294,7 +294,7 @@ object OtoroshiLoaderHelper {
               .map(_.initialized)
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -321,7 +321,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -398,7 +398,7 @@ object OtoroshiEnvHolder {
 }
 
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
-    extends AkkaHttpServerComponents
+    extends PekkoHttpServerComponents
     with BuiltInComponents
     with AssetsComponents
     with AhcWSComponents
@@ -465,7 +465,9 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
-  lazy val filters = new DefaultHttpFilters(httpFilters: _*)
+  lazy val filters = new DefaultHttpFilters(httpFilters*)
+
+  lazy val headerEncoding = new play.api.mvc.DefaultCookieHeaderEncoding(httpConfiguration.cookies)
 
   lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
   lazy val httpHandler: HttpHandler               = wire[HttpHandler]

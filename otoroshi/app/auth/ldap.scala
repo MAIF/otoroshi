@@ -1,8 +1,7 @@
 package otoroshi.auth
 
 import java.util
-import akka.http.scaladsl.util.FastFuture
-import com.google.common.base.Charsets
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pulsar.client.api.PulsarClientException.AuthenticationException
 import otoroshi.auth.LdapAuthModuleConfig.fromJson
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
@@ -11,14 +10,14 @@ import otoroshi.env.Env
 
 import javax.naming.{CommunicationException, Context, ServiceUnavailableException}
 import javax.naming.directory.{Attribute, InitialDirContext, SearchControls}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, _}
-import play.api.mvc._
+import play.api.libs.json.{JsArray, JsObject, *}
+import play.api.mvc.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -48,7 +47,7 @@ object LdapAuthUser {
           "metadata"              -> o.metadata,
           "ldapProfile"           -> o.ldapProfile.getOrElse(JsNull).as[JsValue],
           "userRights"            -> o.userRights.map(UserRights.format.writes),
-          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
+          "adminEntityValidators" -> o.adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json))).toMap
         )
       override def reads(json: JsValue)    =
         Try {
@@ -58,19 +57,19 @@ object LdapAuthUser {
               email = (json \ "email").as[String],
               ldapProfile = (json \ "ldapProfile").asOpt[JsObject],
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
-              userRights = (json \ "userRights").asOpt[UserRights](UserRights.format),
+              userRights = (json \ "userRights").asOpt[UserRights](using UserRights.format),
               adminEntityValidators = json
                 .select("adminEntityValidators")
                 .asOpt[JsObject]
                 .map { obj =>
-                  obj.value.mapValues { arr =>
-                    arr.asArray.value
+                  obj.value.view.mapValues { arr =>
+                    arr.asArray.value.toSeq
                       .map { item =>
                         JsonValidator.format.reads(item)
                       }
                       .collect { case JsSuccess(v, _) =>
                         v
-                      }
+                      }.toSeq
                   }.toMap
                 }
                 .getOrElse(Map.empty[String, Seq[JsonValidator]])
@@ -122,7 +121,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           allowEmptyPassword = (json \ "allowEmptyPassword").asOpt[Boolean].getOrElse(false),
           serverUrls = (json \ "serverUrl").asOpt[String] match {
             case Some(url) => Seq(url)
-            case None      => (json \ "serverUrls").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            case None      => (json \ "serverUrls").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           },
           searchBase = (json \ "searchBase").as[String],
           userBase = (json \ "userBase").asOpt[String].filterNot(_.trim.isEmpty),
@@ -131,11 +130,11 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
               location.teams.map(t => GroupFilter(filter, TenantAccess(location.tenant.value), t.value))
             case None         =>
               (json \ "groupFilters")
-                .asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt))
-                .getOrElse(Seq.empty[GroupFilter])
+                .asOpt[Seq[GroupFilter]](using Reads.seq(using GroupFilter._fmt))
+                .getOrElse(Seq.empty[GroupFilter]).toSeq
           },
-          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           searchFilter = (json \ "searchFilter").as[String],
           adminUsername = (json \ "adminUsername").asOpt[String].filterNot(_.trim.isEmpty),
           adminPassword = (json \ "adminPassword").asOpt[String].filterNot(_.trim.isEmpty),
@@ -144,45 +143,45 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
           extractProfile = (json \ "extractProfile").asOpt[Boolean].getOrElse(false),
-          extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty),
-          extractProfileFilterNot = (json \ "extractProfileFilterNot").asOpt[Seq[String]].getOrElse(Seq.empty),
+          extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          extractProfileFilterNot = (json \ "extractProfileFilterNot").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
-            .map(_.mapValues(UserRights.readFromArray))
+            .map(_.view.mapValues(UserRights.readFromArray).toMap)
             .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           groupRights = (json \ "groupRights")
             .asOpt[Map[String, JsObject]]
-            .map(_.mapValues(GroupRights.reads).collect { case (key, Some(v)) =>
+            .map(_.view.mapValues(GroupRights.reads).toMap.collect { case (key, Some(v)) =>
               (key, v)
             })
             .getOrElse(Map.empty),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           remoteValidators = (json \ "remoteValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           adminEntityValidatorsOverride = json
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
             .map { o =>
-              o.value.mapValues { obj =>
-                obj.asObject.value.mapValues { arr =>
-                  arr.asArray.value
+              o.value.view.mapValues { obj =>
+                obj.asObject.value.view.mapValues { arr =>
+                  arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }
+                    }.toSeq
                 }.toMap
               }.toMap
             }
@@ -209,8 +208,8 @@ object GroupRights {
       Try {
         JsSuccess(
           GroupRights(
-            userRights = (json \ "rights").asOpt[UserRights](UserRights.format).getOrElse(UserRights(Seq.empty)),
-            users = (json \ "users").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            userRights = (json \ "rights").asOpt[UserRights](using UserRights.format).getOrElse(UserRights(Seq.empty)),
+            users = (json \ "users").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>
@@ -295,7 +294,7 @@ case class LdapAuthModuleConfig(
   override def form: Option[Form]                                       = None
   override def authModule(config: GlobalConfig): AuthModule             = LdapAuthModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
@@ -327,17 +326,17 @@ case class LdapAuthModuleConfig(
       "extractProfile"                -> extractProfile,
       "extractProfileFilter"          -> extractProfileFilter,
       "extractProfileFilterNot"       -> extractProfileFilterNot,
-      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
+      "rightsOverride"                -> JsObject(rightsOverride.view.mapValues(_.json).toMap),
       "dataOverride"                  -> JsObject(dataOverride),
       "allowedUsers"                  -> allowedUsers,
       "deniedUsers"                   -> deniedUsers,
-      "groupRights"                   -> JsObject(groupRights.mapValues(GroupRights._fmt.writes)),
-      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
-        JsObject(o.mapValues(v => JsArray(v.map(_.json))))
-      })
+      "groupRights"                   -> JsObject(groupRights.view.mapValues(GroupRights._fmt.writes).toMap),
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.view.mapValues{ o =>
+        JsObject(o.view.mapValues(v => JsArray(v.map(_.json))).toMap)
+      }.toMap)
     )
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
 
   override def cookieSuffix(desc: ServiceDescriptor) = s"ldap-auth-$id"
 
@@ -387,8 +386,8 @@ case class LdapAuthModuleConfig(
   }
 
   private def _bindUser(urls: Seq[String], username: String, password: String): Either[String, LdapAuthUser] = {
-    import javax.naming._
-    import collection.JavaConverters._
+    import javax.naming.*
+    import scala.jdk.CollectionConverters.*
 
     if (urls.isEmpty)
       Left(s"Missing LDAP server URLs or all down")
@@ -636,18 +635,20 @@ case class LdapAuthModuleConfig(
     adminPassword.foreach(p => env.put(Context.SECURITY_CREDENTIALS, p))
 
     try {
-      for (url <- serverUrls) {
+      // `exists` short-circuits on the first reachable url, like the non-local return it replaces
+      val connected = serverUrls.iterator.exists { url =>
         env.put(Context.PROVIDER_URL, url)
         scala.util.Try {
           val ctx2 = new InitialDirContext(env)
           ctx2.close()
         } match {
-          case Success(_)                                                          => return FastFuture.successful((true, "--"))
-          case Failure(_: ServiceUnavailableException | _: CommunicationException) =>
+          case Success(_)                                                          => true
+          case Failure(_: ServiceUnavailableException | _: CommunicationException) => false
           case Failure(e)                                                          => throw e
         }
       }
-      FastFuture.successful((false, "Missing LDAP server URLs or all down"))
+      if (connected) FastFuture.successful((true, "--"))
+      else FastFuture.successful((false, "Missing LDAP server URLs or all down"))
     } catch {
       case e: Exception => FastFuture.successful((false, e.getMessage))
     }
@@ -673,11 +674,11 @@ object LdapAuthModule {
 
 case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
 
-  import otoroshi.utils.future.Implicits._
+  import otoroshi.utils.future.Implicits.*
 
   def this() = this(LdapAuthModule.defaultConfig)
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")
@@ -688,7 +689,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .flatMap(a => a.headOption.map(head => (head, a.tail.mkString(":"))))
   }
 
-  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -722,7 +723,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .get(email)
       .flatMap(_.rights.find(p => p.tenant.value.equals(authConfig.location.tenant.value)))
 
-  def bindAdminUser(username: String, password: String)(implicit
+  def bindAdminUser(username: String, password: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
@@ -756,7 +757,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                         )
                       )
                   }
-                case None                                                  =>
+                case _                                                  =>
                   authConfig.rightsOverride.getOrElse(
                     user.email,
                     UserRights(
@@ -786,7 +787,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -859,12 +860,12 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ) = FastFuture.successful(Right(None))
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -906,7 +907,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -954,7 +955,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       }
     }
   }
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ) =
@@ -963,7 +964,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   override def boCallback(
       request: Request[AnyContent],
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
     implicit val req = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {

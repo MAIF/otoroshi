@@ -1,12 +1,12 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import io.netty.incubator.codec.http3.Http3
+import org.apache.pekko.stream.Materializer
+import io.netty.handler.codec.http3.Http3
 import otoroshi.env.Env
 import otoroshi.netty.ReactorNettyServerConfig
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import scala.concurrent.ExecutionContext
@@ -23,7 +23,7 @@ object Http3SwitchConfig   {
       Http3SwitchConfig(
         domain = json.select("domain").asOpt[String],
         ma = json.select("ma").asOpt[Int].getOrElse(3600),
-        protocols = json.select("protocols").asOpt[Seq[String]].getOrElse(Seq.empty)
+        protocols = json.select("protocols").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Success(s) => JsSuccess(s)
@@ -55,7 +55,7 @@ class Http3Switch extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config                       = ctx.cachedConfig(internalName)(configReads).getOrElse(Http3SwitchConfig())
     val protocols: Seq[String]       =
       if (config.protocols.isEmpty) Http3.supportedApplicationProtocols().toSeq else config.protocols

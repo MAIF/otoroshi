@@ -1,21 +1,21 @@
 package otoroshi.next.models
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.api.OtoroshiEnvHolder
-import otoroshi.env._
-import otoroshi.models._
+import otoroshi.env.*
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
-import otoroshi.storage._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.storage.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util._
+import scala.util.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.ApikeyCalls
-import akka.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri
 import otoroshi.actions.ApiActionContext
 
 case class NgMinimalRoute(
@@ -79,7 +79,7 @@ case class NgRouteComposition(
     plugins: NgPlugins
 ) extends EntityLocationSupport {
 
-  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] =
+  def save()(using env: Env, ec: ExecutionContext): Future[Boolean] =
     env.datastores.routeCompositionDataStore.set(this)
   override def internalId: String                                      = id
   override def theName: String                                         = name
@@ -149,7 +149,7 @@ object NgRouteComposition {
         id = json.select("id").as[String],
         name = json.select("name").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         capture = json.select("capture").asOpt[Boolean].getOrElse(false),
@@ -160,8 +160,8 @@ object NgRouteComposition {
           .select("routes")
           .asOpt[Seq[JsValue]]
           .map(seq => seq.flatMap(json => NgMinimalRoute.fmt.reads(json).asOpt))
-          .getOrElse(Seq.empty),
-        client = (json \ "client").asOpt(NgClientConfig.format).getOrElse(NgClientConfig.default),
+          .getOrElse(Seq.empty).toSeq,
+        client = (json \ "client").asOpt(using NgClientConfig.format).getOrElse(NgClientConfig.default),
         plugins = NgPlugins.readFrom(json.select("plugins"))
       )
     } match {
@@ -170,7 +170,7 @@ object NgRouteComposition {
     }
   }
 
-  def fromOpenApi(domain: String, openapi: String)(implicit
+  def fromOpenApi(domain: String, openapi: String)(using
       ec: ExecutionContext,
       env: Env
   ): Future[NgRouteComposition] = {
@@ -184,7 +184,7 @@ object NgRouteComposition {
       val name                        = json.select("info").select("title").as[String]
       val description                 = json.select("info").select("description").asOpt[String].getOrElse("")
       val version                     = json.select("info").select("version").asOpt[String].getOrElse("")
-      val targets                     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
+      val targets                     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map { server =>
         val serverUrl    = server.select("url").asString
         val serverUri    = Uri(serverUrl)
         val serverDomain = serverUri.authority.host.toString()
@@ -269,11 +269,11 @@ object NgRouteComposition {
 }
 
 trait NgRouteCompositionDataStore extends BasicStore[NgRouteComposition] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): NgRouteComposition = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): NgRouteComposition = {
     val default: NgRouteComposition = NgRouteComposition.empty
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .service
       .map { template =>
@@ -288,7 +288,7 @@ trait NgRouteCompositionDataStore extends BasicStore[NgRouteComposition] {
 class KvNgRouteCompositionDataStore(redisCli: RedisLike, _env: Env)
     extends NgRouteCompositionDataStore
     with RedisLikeStore[NgRouteComposition] {
-  override def redisLike(implicit env: Env): RedisLike      = redisCli
+  override def redisLike(using env: Env): RedisLike      = redisCli
   override def fmt: Format[NgRouteComposition]              = NgRouteComposition.fmt
   override def key(id: String): String                      = s"${_env.storageRoot}:ngroutecomps:${id}"
   override def extractId(value: NgRouteComposition): String = value.id

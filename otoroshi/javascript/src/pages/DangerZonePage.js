@@ -1310,6 +1310,14 @@ export class DangerZonePage extends Component {
         ],
       },
     },
+    'tlsSettings.strictBackendServerValidation': {
+      type: 'bool',
+      props: {
+        label: 'Strict backend server cert validation',
+        placeholder: '--',
+        help: 'Strictly validate backend server certificates on outgoing mTLS calls (reject untrusted or hostname-mismatched certs). Used when otoroshi.ssl.trust.strictBackendServerValidation is set to "global".',
+      },
+    },
     templates: {
       type: 'code',
       props: {
@@ -1424,6 +1432,7 @@ export class DangerZonePage extends Component {
     'tlsSettings.includeJdkCaClient',
     'tlsSettings.trustedCAsServer',
     'tlsSettings.clientAuth',
+    'tlsSettings.strictBackendServerValidation',
     'tlsSettings.bannedAlpnProtocols',
     '>>>Auto Generate Certificates',
     'autoCert.enabled',

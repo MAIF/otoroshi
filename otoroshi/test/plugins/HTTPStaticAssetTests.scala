@@ -1,15 +1,16 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, StaticAssetEndpoint, StaticAssetEndpointConfiguration}
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class HTTPStaticAssetTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -43,7 +44,7 @@ class HTTPStaticAssetTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body) mustEqual Json.obj("foo" -> "bar_from_child")
+  Json.parse(resp.body[String]) mustEqual Json.obj("foo" -> "bar_from_child")
 
   {
     val resp = ws
@@ -55,7 +56,7 @@ class HTTPStaticAssetTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body).selectAsOptString("path").isDefined mustBe true
+    Json.parse(resp.body[String]).selectAsOptString("path").isDefined mustBe true
   }
 
   deleteOtoroshiRoute(staticAssetRoute).futureValue

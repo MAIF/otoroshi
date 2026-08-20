@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgErrorRewriter, NgErrorRewriterConfig, OverrideHost, ResponseStatusRange}
@@ -8,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -25,7 +26,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
               "application/json" -> "custom json response"
             ),
             log = false,
-            export = false
+            `export` = false
           ).json.as[JsObject]
         )
       )
@@ -42,7 +43,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    resp.body mustEqual "custom response"
+    resp.body[String] mustEqual "custom response"
     resp.header("x-otoroshi-error-id").exists(_.nonEmpty) mustBe true
     resp.header("x-otoroshi-req-id").exists(_.nonEmpty) mustBe true
   }
@@ -58,7 +59,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    resp.body mustEqual "custom json response"
+    resp.body[String] mustEqual "custom json response"
   }
 
   // no configured template matches the client Accept -> fallback on the otoroshi error template (negotiated json)
@@ -75,7 +76,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
             ranges = Seq(ResponseStatusRange(200, 299)),
             templates = Map.empty,
             log = false,
-            export = false,
+            `export` = false,
             useOtoroshiErrorTemplate = true,
             additionalHeaders = Map("x-hardening" -> "on")
           ).json.as[JsObject]
@@ -120,7 +121,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
               "default"              -> "the-default"
             ),
             log = false,
-            export = false
+            `export` = false
           ).json.as[JsObject]
         )
       )
@@ -138,7 +139,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    resp.body mustEqual "json-200"
+    resp.body[String] mustEqual "json-200"
   }
 
   {
@@ -152,7 +153,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    resp.body mustEqual "html-generic"
+    resp.body[String] mustEqual "html-generic"
   }
 
   deleteOtoroshiRoute(routeKeys).futureValue

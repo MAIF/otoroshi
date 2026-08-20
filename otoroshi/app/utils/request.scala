@@ -1,6 +1,6 @@
 package otoroshi.utils.http
 
-import akka.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.ssl.PemHeaders
@@ -28,9 +28,9 @@ object RequestImplicits {
       )
     }
     @inline
-    def theDomain(implicit env: Env): String = theHost.split(':').head
+    def theDomain(using env: Env): String = theHost.split(':').head
     @inline
-    def theSecured(implicit env: Env): Boolean = {
+    def theSecured(using env: Env): Boolean = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers
           .get("X-Forwarded-Proto")
@@ -50,11 +50,11 @@ object RequestImplicits {
         .getOrElse(requestHeader.secure)
     }
     @inline
-    def theUrl(implicit env: Env): String = {
+    def theUrl(using env: Env): String = {
       s"${theProtocol}://${theHost}${relativeUri}"
     }
     @inline
-    def theProtocol(implicit env: Env): String = {
+    def theProtocol(using env: Env): String = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers
           .get("X-Forwarded-Proto")
@@ -71,7 +71,7 @@ object RequestImplicits {
       }
     }
     @inline
-    def theWsProtocol(implicit env: Env): String = {
+    def theWsProtocol(using env: Env): String = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers
           .get("X-Forwarded-Proto")
@@ -88,7 +88,7 @@ object RequestImplicits {
       }
     }
     @inline
-    def theHost(implicit env: Env): String = {
+    def theHost(using env: Env): String = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers.get("X-Forwarded-Host").getOrElse(requestHeader.host)
       } else {
@@ -96,7 +96,7 @@ object RequestImplicits {
       }
     }
     @inline
-    def theIpAddress(implicit env: Env): String = {
+    def theIpAddress(using env: Env): String = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers
           .get("X-Forwarded-For")
@@ -118,7 +118,7 @@ object RequestImplicits {
     }
     @inline
     def clientCertChainPem: Seq[String] = {
-      import otoroshi.ssl.SSLImplicits._
+      import otoroshi.ssl.SSLImplicits.*
       requestHeader.clientCertificateChain
         .map(chain =>
           chain.map { cert =>
@@ -126,7 +126,7 @@ object RequestImplicits {
           // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
           }
         )
-        .getOrElse(Seq.empty[String])
+        .getOrElse(Seq.empty[String]).toSeq
     }
     @inline
     def clientCertChainPemString: String     = clientCertChainPem.mkString("\n")

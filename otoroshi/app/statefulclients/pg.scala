@@ -2,7 +2,7 @@ package otoroshi.statefulclients
 
 import io.vertx.pgclient.PgConnectOptions
 import io.vertx.sqlclient.{Pool, PoolOptions}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.JsObject
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -33,7 +33,7 @@ case class PgStatefulClientConfig(uri: String, poolSize: Int = 10) extends State
 
   override def isOpen(client: Pool): Boolean = open.get()
 
-  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[?]): Boolean = other match {
     case p: PgStatefulClientConfig => p.uri == uri && p.poolSize == poolSize
     case _                         => false
   }

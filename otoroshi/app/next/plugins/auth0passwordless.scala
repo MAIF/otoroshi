@@ -1,24 +1,25 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.auth.{GenericOauth2Module, GenericOauth2ModuleConfig}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{PrivateAppsUser, PrivateAppsUserHelper}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 sealed trait Auth0PasswordlessConnectionKind {
   def name: String
@@ -143,7 +144,7 @@ class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
       params: JsObject,
       config: Auth0PasswordlessAuthConfig,
       oauthConfig: GenericOauth2ModuleConfig
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -209,7 +210,7 @@ class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -226,10 +227,10 @@ class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
             doStartFlow(ctx, Json.parse(bodyRaw.utf8String).asObject, config, oauthConfig)
           }
         } else {
-          doStartFlow(ctx, JsObject(ctx.request.queryParams.mapValues(_.json)), config, oauthConfig)
+          doStartFlow(ctx, JsObject(ctx.request.queryParams.view.mapValues(_.json).toMap), config, oauthConfig)
         }
       }
-      case None                                                                   =>
+      case _                                                                   =>
         BackendCallResponse(
           NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj("error" -> "unauthorized"))),
           None
@@ -260,7 +261,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
       params: JsObject,
       config: Auth0PasswordlessAuthConfig,
       oauthConfig: GenericOauth2ModuleConfig
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -356,7 +357,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
                               "session_id"             -> sessionId // can be passed as cookie value, or "Otoroshi-Token" header, or "pappsToken" query params
                             )
                           )
-                          .withCookies(cookies: _*)
+                          .withCookies(cookies*)
                       ),
                       None
                     ).right
@@ -376,7 +377,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -393,10 +394,10 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
             doEndFlow(ctx, Json.parse(bodyRaw.utf8String).asObject, config, oauthConfig)
           }
         } else {
-          doEndFlow(ctx, JsObject(ctx.request.queryParams.mapValues(_.json)), config, oauthConfig)
+          doEndFlow(ctx, JsObject(ctx.request.queryParams.view.mapValues(_.json).toMap), config, oauthConfig)
         }
       }
-      case None                                                                   =>
+      case _                                                                   =>
         BackendCallResponse(
           NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj("error" -> "unauthorized"))),
           None
@@ -423,7 +424,7 @@ class Auth0PasswordlessStartEndFlowEndpoints extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -474,7 +475,7 @@ class Auth0PasswordlessFlow extends NgBackendCall with NgAccessValidator {
   override def configFlow: Seq[String]                     = Auth0PasswordlessAuthConfig.configFlow
   override def configSchema: Option[JsObject]              = Auth0PasswordlessAuthConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.user match {
       case Some(_) => NgAccess.NgAllowed.vfuture
       case None    => {
@@ -513,7 +514,7 @@ class Auth0PasswordlessFlow extends NgBackendCall with NgAccessValidator {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

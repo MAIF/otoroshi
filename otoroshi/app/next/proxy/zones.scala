@@ -1,9 +1,10 @@
 package otoroshi.next.proxy
 
-import akka.Done
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.Done
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.cluster.{ClusterMode, MemberView, RelayRouting}
 import otoroshi.env.Env
@@ -12,12 +13,12 @@ import otoroshi.models.{Target, TargetPredicate}
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.HttpEntity
 import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationLong
@@ -48,13 +49,13 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 
 class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
-  override def asResult()(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  override def asResult()(using ec: ExecutionContext, env: Env): Future[Result] = {
     val cl                             = resp.headers.getIgnoreCase("Content-Length").map(_.last).map(_.toLong)
     val ct                             = resp.headers.getIgnoreCase("Content-Type").map(_.last)
     val setCookie                      = resp.headers
       .get("Otoroshi-Relay-Routing-Response-Header-Set-Cookie")
-      .map(vs => vs.flatMap(v => Cookies.decodeSetCookieHeader(v)))
-      .getOrElse(Seq.empty[Cookie])
+      .map(vs => vs.flatMap(v => env.defaultCookieHeaderEncoding.decodeSetCookieHeader(v)))
+      .getOrElse(Seq.empty[Cookie]).toSeq
     val headers: Seq[(String, String)] = resp.headers
       .filterNot(_._1 == "Otoroshi-Relay-Routing-Response-Header-Set-Cookie")
       .filter(_._1.startsWith("Otoroshi-Relay-Routing-Response-Header-"))
@@ -65,19 +66,19 @@ class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
     Results
       .Status(resp.status)
       .sendEntity(HttpEntity.Streamed(resp.bodyAsSource, cl, ct))
-      .withHeaders(headers: _*)
-      .applyOnIf(setCookie.nonEmpty)(_.withCookies(setCookie: _*))
+      .withHeaders(headers*)
+      .applyOnIf(setCookie.nonEmpty)(_.withCookies(setCookie*))
       .vfuture
   }
 }
 
 case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInteger) {
-  def call(req: RequestHeader, body: Source[ByteString, _])(implicit
+  def call(req: RequestHeader, body: Source[ByteString, ?])(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport
   ): Future[Either[NgProxyEngineError, Done]] = {
-    implicit val sched = env.otoroshiScheduler
+    implicit val sched: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
     Retry.retry(
       times = env.clusterConfig.worker.retries,
       delay = env.clusterConfig.retryDelay,
@@ -121,7 +122,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
       }.applyOnWithOpt(req.clientCertificateChain) { case (seq, certs) =>
         seq ++ certs.zipWithIndex.map { case (c, idx) => (s"Otoroshi-Relay-Routing-Certs-${idx}" -> c.encoded) }
       }.applyOnIf(req.cookies.nonEmpty) { seq =>
-        seq :+ ("Otoroshi-Relay-Routing-Cookies", Cookies.encodeCookieHeader(req.cookies.toSeq))
+        seq :+ ("Otoroshi-Relay-Routing-Cookies", env.defaultCookieHeaderEncoding.encodeCookieHeader(req.cookies.toSeq))
       }
       val uriStr                         = s"$url/api/cluster/relay"
       val uri                            = Uri(uriStr)
@@ -151,7 +152,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
         .withMethod("POST")
         .withRequestTimeout(route.backend.client.globalTimeout.milliseconds)
         .withBody(body)
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .execute()
         .map { resp =>
           Left(new RelayRoutingResult(resp))
@@ -161,7 +162,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
 }
 
 class PossibleLeaders(members: Seq[MemberView], route: NgRoute) {
-  def chooseNext(counter: AtomicInteger)(implicit env: Env): SelectedLeader = {
+  def chooseNext(counter: AtomicInteger)(using env: Env): SelectedLeader = {
     val useLeader = env.clusterConfig.mode.isWorker && env.clusterConfig.relay.leaderOnly
     if (useLeader) {
       SelectedLeader(

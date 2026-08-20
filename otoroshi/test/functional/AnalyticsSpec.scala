@@ -1,11 +1,12 @@
 package functional
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
+import play.api.libs.ws.WSBodyWritables.given
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.events.impl.ElasticWritesAnalytics
-import otoroshi.models._
+import otoroshi.models.*
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
@@ -15,11 +16,11 @@ import play.api.libs.ws.WSClient
 import otoroshi.security.IdGenerator
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system = ActorSystem("otoroshi-test")
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
 
   lazy val serviceHost = "api.oto.tools"
   lazy val elasticUrl  = "http://127.0.0.1:9200"
@@ -54,7 +55,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
         setUpEvent(
           (1 to 100).map { i =>
             event(now.minusMinutes(i), getStatus(i), 500L, 50L, 500, 1000)
-          }: _*
+          }*
         )
 
         awaitF(10.seconds).futureValue
@@ -194,7 +195,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
         setUpEvent(
           (1 to 100).map { i =>
             event(now.minusMinutes(i), getStatus(i), 500L, 50L, 500, 1000)
-          }: _*
+          }*
         )
         awaitF(10.seconds).futureValue
         ws.url(s"$elasticUrl/_refresh").post("").futureValue
@@ -253,7 +254,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
 
   }
 
-  private def testHistoValues[T](vals: Seq[JsValue], name: String, value: T)(implicit reads: Reads[T]): Unit = {
+  private def testHistoValues[T](vals: Seq[JsValue], name: String, value: T)(using reads: Reads[T]): Unit = {
     val v = vals
       .find(j => (j \ "name").as[String] == name)
       .getOrElse(throw new IllegalArgumentException(s"$name not found in $vals"))

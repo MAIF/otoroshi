@@ -1,23 +1,24 @@
 package plugins
 
-import com.microsoft.playwright._
+import com.microsoft.playwright.*
+import play.api.libs.ws.WSBodyReadables.given
 import com.microsoft.playwright.options.AriaRole
 import functional.PluginsTestSpec
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.*
 
 class UserProfileEndpointTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val moduleConfiguration = BasicAuthModuleConfig(
     id = "BasicAuthModuleConfig",
@@ -81,7 +82,7 @@ class UserProfileEndpointTests(parent: PluginsTestSpec) {
   page.fill("input[name='password']", "password")
   page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login")).nth(0).click()
 
-  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
     DefaultWSCookie(
       name = c.name,
       value = c.value,
@@ -95,14 +96,14 @@ class UserProfileEndpointTests(parent: PluginsTestSpec) {
   val callWithUser = ws
     .url(s"http://127.0.0.1:$port/")
     .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-    .withCookies(wsCookies: _*)
+    .withCookies(wsCookies*)
     .get()
     .futureValue
 
-  println(callWithUser.body)
+  println(callWithUser.body[String])
 
   callWithUser.status mustBe 200
-  Json.parse(callWithUser.body).selectAsString("email").contains("user@oto.tools") mustBe true
+  Json.parse(callWithUser.body[String]).selectAsString("email").contains("user@oto.tools") mustBe true
 
   browser.close()
   playwright.close()

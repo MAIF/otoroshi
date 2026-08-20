@@ -23,7 +23,7 @@ case class Key(key: String) {
       case _  => Key(s"$key:${path.key}")
     }
 
-  val segments: Seq[String] = key.split(":")
+  val segments: Seq[String] = key.split(":").toIndexedSeq
 
   val jsPath: JsPath = segments.foldLeft[JsPath](JsPath) { (p, s) =>
     p \ s
@@ -32,8 +32,8 @@ case class Key(key: String) {
 
 object Key {
 
-  import play.api.libs.json.Reads._
-  import play.api.libs.json._
+  import play.api.libs.json.Reads.*
+  import play.api.libs.json.*
 
   val Empty: Key = Key("")
 

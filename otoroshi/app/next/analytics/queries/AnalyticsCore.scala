@@ -1,15 +1,15 @@
 package otoroshi.next.analytics.queries
 
-import io.vertx.pgclient.PgPool
+import io.vertx.sqlclient.Pool
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.{UserAnalyticsExporterRegistry, UserAnalyticsExporterSettings}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.time.{Instant, ZoneOffset}
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -243,8 +243,8 @@ trait AnalyticsQuery {
       params: JsObject,
       bucket: Bucket,
       settings: UserAnalyticsExporterSettings,
-      pool: PgPool
-  )(implicit ec: ExecutionContext, env: Env): Future[QueryResult]
+      pool: Pool
+  )(using ec: ExecutionContext, env: Env): Future[QueryResult]
 
   def toCatalogJson: JsObject = Json.obj(
     "id"               -> id,
@@ -268,7 +268,7 @@ class QueryCache(maxEntries: Int = 1000, ttl: FiniteDuration = 30.seconds) {
   private val cache: java.util.Map[String, Entry] = java.util.Collections.synchronizedMap(
     new java.util.LinkedHashMap[String, Entry](maxEntries + 1, 0.75f, true) {
       override def removeEldestEntry(eldest: java.util.Map.Entry[String, Entry]): Boolean =
-        size() > maxEntries
+        this.size() > maxEntries
     }
   )
 
@@ -294,7 +294,7 @@ class QueryCache(maxEntries: Int = 1000, ttl: FiniteDuration = 30.seconds) {
 // Registry — aggregates core + extension queries
 // ============================================================================
 
-class AnalyticsQueryRegistry(coreQueries: Seq[AnalyticsQuery])(implicit env: Env) {
+class AnalyticsQueryRegistry(coreQueries: Seq[AnalyticsQuery])(using env: Env) {
 
   def all: Seq[AnalyticsQuery] = {
     val extensionQueries =
@@ -324,7 +324,7 @@ class QueryExecutor(registry: AnalyticsQueryRegistry, cache: QueryCache) {
       requestedBucket: Option[String],
       compare: Boolean,
       nocache: Boolean
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsObject]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsObject]] = {
     registry.find(queryId) match {
       case None        =>
         Future.successful(Left(s"unknown analytics query '$queryId'"))
@@ -406,7 +406,7 @@ object AnalyticsRuntime {
 
   private val ref = new AtomicReference[Option[(AnalyticsQueryRegistry, QueryExecutor, QueryCache)]](None)
 
-  def init(coreQueries: Seq[AnalyticsQuery])(implicit env: Env): Unit = {
+  def init(coreQueries: Seq[AnalyticsQuery])(using env: Env): Unit = {
     val cache    = new QueryCache()
     val registry = new AnalyticsQueryRegistry(coreQueries)
     val exec     = new QueryExecutor(registry, cache)

@@ -1,15 +1,16 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AdditionalCookieIn, AdditionalCookieInConfig, OverrideHost}
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class AdditionalCookiesInTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -38,7 +39,7 @@ class AdditionalCookiesInTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.OK
   val cookies = Json
-    .parse(resp.body)
+    .parse(resp.body[String])
     .as[JsValue]
     .select("cookies")
     .as[Map[String, String]]

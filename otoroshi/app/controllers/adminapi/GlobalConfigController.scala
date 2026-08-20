@@ -1,27 +1,27 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit, GlobalConfigModification}
 import otoroshi.models.GlobalConfig
 import otoroshi.models.RightsChecker
 import otoroshi.utils.json.JsonOperationsHelper
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
-class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-global-config-api")
 
   def globalConfig(fields: Option[String]) = {
-    val expectedFields = fields.map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val expectedFields = fields.map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
     val hasFields      = expectedFields.nonEmpty
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {

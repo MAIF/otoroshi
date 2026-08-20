@@ -1,26 +1,26 @@
 package otoroshi.controllers
 
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction, PrivateAppsActionContext}
-import otoroshi.auth._
+import otoroshi.auth.*
 import otoroshi.next.plugins.AuthModule
-import otoroshi.auth.implicits._
+import otoroshi.auth.implicits.*
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.gateway.Errors
 import otoroshi.models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.models.{NgPluginInstance, NgRoute}
 import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -30,7 +30,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 object AuthController {
@@ -42,10 +42,10 @@ class AuthController(
     PrivateAppsAction: PrivateAppsAction,
     BackOfficeAction: BackOfficeAction,
     cc: ControllerComponents
-)(implicit env: Env)
+)(using env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = AuthController.logger
 
@@ -138,7 +138,7 @@ class AuthController(
                       .find(p =>
                         p._2
                           .asOpt[Seq[String]]
-                          .getOrElse(Seq.empty)
+                          .getOrElse(Seq.empty).toSeq
                           .exists(em => RegexPool.theRegex(em).map(e => e.matches(email)).getOrElse(email == em))
                       ) match {
                       case Some(auth) =>
@@ -212,7 +212,7 @@ class AuthController(
           attrs = TypedMap.empty
         )
       } else {
-        FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(cors.asHeaders(ctx.request): _*))
+        FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(cors.asHeaders(ctx.request)*))
       }
     }
 
@@ -285,7 +285,7 @@ class AuthController(
 
   def confidentialAppLoginPage() =
     PrivateAppsAction.async { ctx =>
-      import otoroshi.utils.http.RequestImplicits._
+      import otoroshi.utils.http.RequestImplicits.*
       implicit val req: Request[AnyContent] = ctx.request
 
       (req.getQueryString("desc"), req.getQueryString("route")) match {
@@ -323,7 +323,7 @@ class AuthController(
                     withMultiAuthConfig(route, req) { auth => multiAuthCallback(auth, route, ctx) }
                   case _                                                                                             => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
                 }
-            case _                                          => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+            // case _                                          => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
           }
         }
       }
@@ -333,7 +333,7 @@ class AuthController(
       auth: AuthModuleConfig,
       descriptor: ServiceDescriptor,
       ctx: PrivateAppsActionContext[AnyContent]
-  )(implicit req: Request[AnyContent]) = {
+  )(using req: Request[AnyContent]) = {
     val expectedCookieName = s"oto-papps-${auth.cookieSuffix(descriptor)}"
     req.cookies.find(c => c.name == expectedCookieName) match {
       case Some(cookie) => {
@@ -380,7 +380,7 @@ class AuthController(
                             descriptor,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -430,7 +430,7 @@ class AuthController(
                             descriptor,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -445,7 +445,7 @@ class AuthController(
   }
 
   private def multiAuthCallback(auth: AuthModuleConfig, route: NgRoute, ctx: PrivateAppsActionContext[AnyContent])(
-      implicit req: Request[AnyContent]
+      using req: Request[AnyContent]
   ) = {
     val legacy             = route.legacy
     val expectedCookieName = s"oto-papps-${auth.routeCookieSuffix(route)}"
@@ -496,7 +496,7 @@ class AuthController(
                             legacy,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -547,7 +547,7 @@ class AuthController(
                             legacy,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -569,7 +569,7 @@ class AuthController(
       (redirectToOpt, hostOpt, cookiePrefOpt) match {
         case (Some(redirectTo), Some(host), Some(cp)) =>
           FastFuture.successful(
-            Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp): _*)
+            Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp)*)
           )
         case _                                        =>
           Errors.craftResponseResult(
@@ -585,12 +585,12 @@ class AuthController(
 
   def confidentialAppCallback() =
     PrivateAppsAction.async { ctx =>
-      import otoroshi.utils.http.RequestImplicits._
+      import otoroshi.utils.http.RequestImplicits.*
 
       implicit val req = ctx.request
 
       def saveUser(user: PrivateAppsUser, auth: AuthModuleConfig, descriptor: ServiceDescriptor, webauthn: Boolean)(
-          implicit req: RequestHeader
+          using req: RequestHeader
       ): Future[Result] = {
         user
           .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
@@ -607,12 +607,12 @@ class AuthController(
               case Some(body) if body.get("RelayState").exists(_.nonEmpty) =>
                 // val queryParams =
                 //   body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
-                // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+                // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head).toMap
                 val params: Map[String, String] = {
                   try {
                     val decoded =
                       JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
-                    decoded.getClaims.asScala.mapValues(_.asString()).filter(_._2 != null).toMap
+                    decoded.getClaims.asScala.view.mapValues(_.asString()).toMap.filter(_._2 != null).toMap
                   } catch {
                     case t: Throwable =>
                       logger.error("error while verifying relay_state", t)
@@ -630,7 +630,7 @@ class AuthController(
                 Redirect(redirectTo)
                   .removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                   .withCookies(
-                    env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                    env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some)*
                   )
 
               case _ =>
@@ -652,7 +652,7 @@ class AuthController(
                       s"$redirection&hash=$hash"
                     ).removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                       .withCookies(
-                        env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*
+                        env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some)*
                       )
                   case redirectTo                  =>
                     val encodedRedirectTo  =
@@ -689,7 +689,7 @@ class AuthController(
                           "desc"
                         )
                         .withCookies(
-                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some)*
                         )
                     } else {
                       Redirect(setCookiesRedirect)
@@ -698,7 +698,7 @@ class AuthController(
                           "desc"
                         )
                         .withCookies(
-                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some)*
                         )
                     }
                 }
@@ -722,11 +722,11 @@ class AuthController(
           if (body.get("RelayState").exists(_.nonEmpty)) {
             // val queryParams =
             //   body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
-            // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+            // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head).toMap
             val params: Map[String, String] = {
               try {
                 val decoded = JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
-                decoded.getClaims.asScala.mapValues(_.asString()).filter(_._2 != null).toMap
+                decoded.getClaims.asScala.view.mapValues(_.asString()).toMap.filter(_._2 != null).toMap
               } catch {
                 case t: Throwable =>
                   logger.error("error while verifying relay_state", t)
@@ -771,7 +771,7 @@ class AuthController(
                           )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
                         }
-                        case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
+                        case Right(user) => saveUser(user, auth, descriptor, true)(using ctx.request)
                       }
                     }
                     case _              =>
@@ -796,7 +796,7 @@ class AuthController(
                             )
                         ).vfuture
                       }
-                      case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
+                      case Right(user) => saveUser(user, auth, descriptor, false)(using ctx.request)
                     }
                 }
               }
@@ -833,7 +833,7 @@ class AuthController(
                           )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
                         }
-                        case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
+                        case Right(user) => saveUser(user, auth, route.legacy, true)(using ctx.request)
                       }
                     }
                     case _              =>
@@ -858,7 +858,7 @@ class AuthController(
                             )
                         ).vfuture
                       }
-                      case Right(user) => saveUser(user, auth, route.legacy, false)(ctx.request)
+                      case Right(user) => saveUser(user, auth, route.legacy, false)(using ctx.request)
                     }
                 }
               }
@@ -884,7 +884,7 @@ class AuthController(
                           )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
                         }
-                        case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
+                        case Right(user) => saveUser(user, auth, route.legacy, true)(using ctx.request)
                       }
                     }
                     case _              =>
@@ -909,7 +909,7 @@ class AuthController(
                             )
                         ).vfuture
                       }
-                      case Right(user) => saveUser(user, auth, route.legacy, false)(ctx.request)
+                      case Right(user) => saveUser(user, auth, route.legacy, false)(using ctx.request)
                     }
                 }
               }
@@ -973,7 +973,7 @@ class AuthController(
     }
 
   def auth0error(error: Option[String], error_description: Option[String]) =
-    BackOfficeAction { ctx =>
+    BackOfficeAction { (ctx: otoroshi.actions.BackOfficeActionContext[play.api.mvc.AnyContent]) =>
       val errorId = IdGenerator.token(16)
       logger.error(
         s"[AUTH0 ERROR] error_id: $errorId => ${error.getOrElse("--")} : ${error_description.getOrElse("--")}"
@@ -999,14 +999,14 @@ class AuthController(
             }
           }
         }
-        case config if config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty    =>
+        case config =>
           FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
       }
     }
 
   def backOfficeLogout() =
     BackOfficeActionAuth.async { ctx =>
-      import otoroshi.utils.http.RequestImplicits._
+      import otoroshi.utils.http.RequestImplicits.*
       implicit val request = ctx.request
       val redirect         = request.getQueryString("redirect")
       ctx.user.simpleLogin match {
@@ -1090,7 +1090,7 @@ class AuthController(
     BackOfficeAction.async { ctx =>
       implicit val request = ctx.request
 
-      def saveUser(user: BackOfficeUser, auth: AuthModuleConfig, webauthn: Boolean)(implicit req: RequestHeader) = {
+      def saveUser(user: BackOfficeUser, auth: AuthModuleConfig, webauthn: Boolean)(using req: RequestHeader) = {
         user
           .save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS))
           .map { boUser =>
@@ -1122,8 +1122,6 @@ class AuthController(
         case Some(e) => FastFuture.successful(BadRequest(otoroshi.views.html.backoffice.unauthorized(env)))
         case None    => {
           env.datastores.globalConfigDataStore.singleton().flatMap {
-            case config if config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty    =>
-              FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
             case config if !(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) => {
 
               config.backOfficeAuthRef match {
@@ -1156,7 +1154,7 @@ class AuthController(
                                   )
                                   BadRequest(Json.obj("error" -> error.display)).future
                                 }
-                                case Right(user) => saveUser(user, auth, true)(ctx.request)
+                                case Right(user) => saveUser(user, auth, true)(using ctx.request)
                               }
                             }
                             case _              =>
@@ -1181,7 +1179,7 @@ class AuthController(
                               )
                             case Right(user) =>
                               if (logger.isDebugEnabled) logger.debug(s"Login successful for user '${user.email}'")
-                              saveUser(user, auth, false)(ctx.request)
+                              saveUser(user, auth, false)(using ctx.request)
                           }
                         }
                       }
@@ -1189,6 +1187,8 @@ class AuthController(
                 }
               }
             }
+            case config =>
+              FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
           }
         }
       }

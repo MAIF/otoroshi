@@ -1,20 +1,20 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 import java.net.InetAddress
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class Fail2BanTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   def banClientAfterMaxFailedAttempts() = {
     val route = createLocalRoute(

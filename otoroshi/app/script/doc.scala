@@ -1,6 +1,6 @@
 package otoroshi.script
 
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.events.CustomDataExporter
 import play.api.Logger
 import play.api.libs.json.Json
@@ -8,9 +8,9 @@ import play.api.libs.json.Json
 import java.io.File
 import java.nio.file.Files
 import scala.util.Try
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import java.nio.charset.Charset
 
 class PluginDocumentationGenerator(docPath: String) {
@@ -30,13 +30,13 @@ class PluginDocumentationGenerator(docPath: String) {
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
-      import collection.JavaConverters._
+      import scala.jdk.CollectionConverters.*
       val start                  = System.currentTimeMillis()
       val allPackages            = Seq("otoroshi") //, "otoroshi_plugins")
       val scanResult: ScanResult = new ClassGraph()
         .addClassLoader(this.getClass.getClassLoader)
         .enableClassInfo()
-        .acceptPackages(allPackages: _*)
+        .acceptPackages(allPackages*)
         .scan
 
       if (logger.isDebugEnabled) logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
@@ -66,38 +66,38 @@ class PluginDocumentationGenerator(docPath: String) {
         val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
-          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName).toSeq
 
         val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
-          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName).toSeq
 
         val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
           scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
           scanResult.getClassesImplementing(classOf[Job].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
           scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val handlers: Seq[String] = (scanResult.getSubclasses(classOf[RequestHandler].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames, customExporters, handlers)
       } catch {
@@ -195,6 +195,7 @@ class PluginDocumentationGenerator(docPath: String) {
       case PluginType.DataExporterType    => ""
       case PluginType.RequestHandlerType  => ""
       case PluginType.CompositeType       => ""
+      case PluginType.TunnelHandlerType   => ""
     }
 
     s"""
@@ -284,7 +285,7 @@ class PluginDocumentationGenerator(docPath: String) {
       //   |
       //   |$documentation
       //   |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
 
     (plugin.name, file.getName)
@@ -296,7 +297,7 @@ class PluginDocumentationGenerator(docPath: String) {
       (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames).distinct
     val names: Seq[(String, String)] = plugins
       .map { pl =>
-        this.getClass.getClassLoader.loadClass(pl).newInstance()
+        this.getClass.getClassLoader.loadClass(pl).getDeclaredConstructor().newInstance()
       }
       .map(_.asInstanceOf[NamedPlugin])
       .filterNot(_.core)
@@ -325,7 +326,7 @@ class PluginDocumentationGenerator(docPath: String) {
         |@@@
         |
         |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
   }
 
@@ -338,7 +339,7 @@ class PluginDocumentationGenerator(docPath: String) {
         .filterNot(_ == "otoroshi.next.catalogs.RemoteCatalogJob")
     val contents: Seq[String] = plugins
       .map { pl =>
-        this.getClass.getClassLoader.loadClass(pl).newInstance()
+        this.getClass.getClassLoader.loadClass(pl).getDeclaredConstructor().newInstance()
       }
       .map(_.asInstanceOf[NamedPlugin])
       .filterNot(_.core)
@@ -362,7 +363,7 @@ class PluginDocumentationGenerator(docPath: String) {
         |
         |
         |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
   }
 }

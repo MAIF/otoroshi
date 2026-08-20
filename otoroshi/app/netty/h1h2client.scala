@@ -1,11 +1,11 @@
 package otoroshi.netty
 
-import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
-import akka.http.scaladsl.model.{ContentType, HttpHeader, Uri}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
-import com.google.common.base.Charsets
+import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
+import org.apache.pekko.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
+import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, Uri}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
+import java.nio.charset.StandardCharsets
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelOption
 import io.netty.handler.codec.http.HttpMethod
@@ -17,7 +17,7 @@ import otoroshi.models.{ClientConfig, Target}
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
 import otoroshi.utils.http.{AkkaWsClientRequest, MtlsConfig}
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{
@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
 
@@ -129,9 +129,11 @@ case class NettyWsClientRequest(
   override def withFollowRedirects(follow: Boolean): WSRequest                                           = copy(followRedirects = Some(follow))
   override def withRequestTimeout(timeout: Duration): WSRequest                                          = copy(requestTimeout = Some(timeout))
   override def withProxyServer(proxyServer: WSProxyServer): WSRequest                                    = copy(proxy = Some(proxyServer))
-  override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest                     =
+  override def withBody[T](body: T)(using evidence$1: BodyWritable[T]): WSRequest                     =
     copy(body = evidence$1.transform(body))
   override def withMethod(method: String): WSRequest                                                     = copy(method = method)
+  override def withDisableUrlEncoding(disableUrlEncoding: Boolean): Self = this
+  override def addCookies(cookies: play.api.libs.ws.WSCookie*): Self = this
   override def get(): Future[WSResponse]                                                                 = copy(method = "GET").execute()
   override def delete(): Future[WSResponse]                                                              = copy(method = "DELETE").execute()
   override def head(): Future[WSResponse]                                                                = copy(method = "HEAD").execute()
@@ -142,7 +144,7 @@ case class NettyWsClientRequest(
     scheme match {
       case WSAuthScheme.BASIC =>
         addHttpHeaders(
-          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(Charsets.UTF_8))}"
+          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(StandardCharsets.UTF_8))}"
         )
       case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }
@@ -163,21 +165,21 @@ case class NettyWsClientRequest(
       }
     } getOrElse Seq.empty
   }
-  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters: _*)
+  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters*)
   override def withQueryStringParameters(parameters: (String, String)*): WSRequest                       =
-    copy(_url = _uri.withQuery(Uri.Query.apply(parameters: _*)).toString())
+    copy(_url = _uri.withQuery(Uri.Query.apply(parameters*)).toString())
   override def addQueryStringParameters(parameters: (String, String)*): WSRequest = {
     val params: Seq[(String, String)] =
       _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
-    copy(_url = _uri.withQuery(Uri.Query.apply(params: _*)).toString())
+    copy(_url = _uri.withQuery(Uri.Query.apply(params*)).toString())
   }
-  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]  =
-    post[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    patch[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]   =
-    put[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse]                =
+  override def post(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse]  =
+    post[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
+  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse] =
+    patch[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
+  override def put(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse]   =
+    put[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
+  override def post[T](body: T)(using evidence$2: BodyWritable[T]): Future[WSResponse]                =
     withMethod("POST")
       .withBody(evidence$2.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$2.contentType)
@@ -187,7 +189,7 @@ case class NettyWsClientRequest(
       .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
-  override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse]               =
+  override def patch[T](body: T)(using evidence$3: BodyWritable[T]): Future[WSResponse]               =
     withMethod("PATCH")
       .withBody(evidence$3.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$3.contentType)
@@ -197,7 +199,7 @@ case class NettyWsClientRequest(
       .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
-  override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse]                 =
+  override def put[T](body: T)(using evidence$4: BodyWritable[T]): Future[WSResponse]                 =
     withMethod("PUT")
       .withBody(evidence$4.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$4.contentType)
@@ -209,7 +211,7 @@ case class NettyWsClientRequest(
       .execute()
   override def withCookies(cookies: WSCookie*): WSRequest = {
     if (cookies.nonEmpty) {
-      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String]).toSeq
       val newCookies = oldCookies :+ cookies.toList
         .map { c =>
           s"${c.name}=${c.value}"
@@ -220,7 +222,7 @@ case class NettyWsClientRequest(
       )
     } else this
   }
-  override def withHeaders(headers: (String, String)*): WSRequest                                        = withHttpHeaders(headers: _*)
+  override def withHeaders(headers: (String, String)*): WSRequest                                        = withHttpHeaders(headers*)
   override def withHttpHeaders(headers: (String, String)*): WSRequest = {
     copy(
       headers = headers.foldLeft(this.headers)((m, hdr) =>
@@ -301,7 +303,7 @@ case class NettyWsClientRequest(
         clientConfig = clientConfig
       ).execute()
     } else {
-      stream().map(_.asInstanceOf[NettyWsResponse].toStrict())(env.otoroshiExecutionContext)
+      stream().map(_.asInstanceOf[NettyWsResponse].toStrict())(using env.otoroshiExecutionContext)
     }
   }
 
@@ -370,19 +372,19 @@ case class NettyWsClientRequest(
                     NettyHttpClient.logger.debug(
                       s"Calling ${_uri.toString()} with mTLS context of ${certs.size} client certificates and ${trustedCerts.size} trusted certificates ($trustAll)"
                     )
-                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain*))
                   ctx
                 }
                 .applyOn { ctx =>
                   if (trustAll) {
                     ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
                   } else {
-                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head)*)
                   }
                 }
                 .build()
               client
-                .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                .secure((spec: SslProvider.SslContextSpec) => { spec.sslContext(ctx); () })
               // TODO: if targetOpt.ipAddress, spec.sslContext(ctx).serverNames(new SNIHostName(targetOpt.theHost)))
             } else {
               client.secure()
@@ -431,7 +433,6 @@ case class NettyWsClientRequest(
         }
         //.httpResponseDecoder(spec => spec) // TODO: check if needed
         .headers { heads =>
-          import collection.JavaConverters._
           headers.foreach { case (name, values) =>
             heads.add(name, values.asJava)
           }
@@ -457,7 +458,7 @@ case class NettyWsClientRequest(
                   Flux.from(
                     source
                       .map(chunk => Unpooled.copiedBuffer(chunk.toArray))
-                      .runWith(Sink.asPublisher(true))(env.otoroshiMaterializer)
+                      .runWith(Sink.asPublisher(true))(using env.otoroshiMaterializer)
                   )
                 )
                 .responseConnection((resp, conn) =>
@@ -474,7 +475,7 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
     extends WSResponse
     with TrailerSupport {
 
-  private lazy val _body: Source[ByteString, _] = {
+  private lazy val _body: Source[ByteString, ?] = {
     val flux: Flux[ByteString] = bodyflux.map { bb =>
       try {
         val builder = ByteString.newBuilder
@@ -490,7 +491,7 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
   }
   private lazy val _bodyAsBytes: ByteString = {
     Await.result(
-      bodyAsSource.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer),
+      bodyAsSource.runFold(ByteString.empty)(_ ++ _)(using env.otoroshiMaterializer),
       FiniteDuration(10, TimeUnit.MINUTES)
     ) // AWAIT: valid
   }
@@ -521,7 +522,7 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
     }
   }
 
-  override def bodyAsSource: Source[ByteString, _]    = _body
+  override def bodyAsSource: Source[ByteString, ?]    = _body
   override def headers: Map[String, Seq[String]]      = _allHeaders
   override def status: Int                            = resp.status().code()
   override def statusText: String                     = resp.status().codeAsText().toString
@@ -548,7 +549,7 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
             (name, headers.getAll(name).asScala.toSeq)
           }
           .toMap
-      }(env.otoroshiExecutionContext)
+      }(using env.otoroshiExecutionContext)
   }
 
   def registerTrailingHeaders(promise: Promise[Map[String, Seq[String]]]): Unit = {
@@ -562,11 +563,11 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
             (name, headers.getAll(name).asScala.toSeq)
           }
           .toMap
-      }(env.otoroshiExecutionContext)
+      }(using env.otoroshiExecutionContext)
       .andThen {
         case Failure(ex)      => promise.tryFailure(ex)
         case Success(headers) => promise.trySuccess(headers)
-      }(env.otoroshiExecutionContext)
+      }(using env.otoroshiExecutionContext)
   }
 }
 
@@ -587,7 +588,7 @@ case class NettyWsStrictResponse(resp: NettyWsResponse, bodyAsBytes: ByteString)
   override def allHeaders: Map[String, Seq[String]]   = resp.allHeaders
   override def uri: URI                               = resp.uri
 
-  override def bodyAsSource: Source[ByteString, _] = Source.single(bodyAsBytes)
+  override def bodyAsSource: Source[ByteString, ?] = Source.single(bodyAsBytes)
   override def body: String                        = _bodyAsString
   override def xml: Elem                           = _bodyAsXml
   override def json: JsValue                       = _bodyAsJson

@@ -1,32 +1,32 @@
 package otoroshi.plugins.apikeys
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.token.builder.parser.Parser
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.JsonPathUtils
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.DN
 import otoroshi.utils.jwk.JWKSHelper
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 
@@ -34,7 +34,7 @@ import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPu
 import java.security.{KeyPair, SecureRandom}
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
@@ -110,7 +110,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.apikey match {
       case Some(apiKey) => {
         val config           = (context.config \ "HasAllowedApiKeyValidator")
@@ -118,13 +118,13 @@ class HasAllowedApiKeyValidator extends AccessValidator {
           .orElse((context.config \ "HasAllowedApiKeyValidator").asOpt[JsValue])
           .getOrElse(context.config)
         val allowedClientIds =
-          (config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedTags      = (config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
+        val allowedTags      = (config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val allowedMetadatas = (config \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
         val apikeyMatch      =
-          (config \ "apikeyMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "apikeyMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val apikeyNotMatch   =
-          (config \ "apikeyNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "apikeyNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         lazy val apikeyJson  = apiKey.toJson
         if (
           allowedClientIds.contains(apiKey.clientId) ||
@@ -168,7 +168,7 @@ class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     ctx.apikey match {
       case Some(apiKey) => {
         val serviceIds = apiKey.tags.map(tag => tag.replace("allowed-on-", ""))
@@ -214,13 +214,13 @@ class CertificateAsApikey extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(context: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     context.request.clientCertificateChain.flatMap(_.headOption) match {
       case None       => FastFuture.successful(())
       case Some(cert) => {
         val conf         = context.configFor("CertificateAsApikey")
         val serialNumber = cert.getSerialNumber.toString
-        val subjectDN    = DN(cert.getSubjectDN.getName).stringify
+        val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
         val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
         // TODO: validate CA DN based on config array
         // TODO: validate CA serial based on config array
@@ -241,11 +241,11 @@ class CertificateAsApikey extends PreRouting {
                 dailyQuota = (conf \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
                 monthlyQuota = (conf \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
                 constrainedServicesOnly = (conf \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
-                tags = (conf \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+                tags = (conf \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
                 metadata = (conf \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
               )
               if (env.clusterConfig.mode.isWorker) {
-                ClusterAgent.clusterSaveApikey(env, apikey)(ec, env.otoroshiMaterializer)
+                ClusterAgent.clusterSaveApikey(env, apikey)(using ec, env.otoroshiMaterializer)
               }
               apikey.save().map(_ => apikey)
             }
@@ -281,7 +281,7 @@ class ClientCredentialFlowExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.request.headers.get("Authorization") match {
       case Some(auth) if auth.startsWith("Bearer ") => {
         val token = auth.replace("Bearer ", "")
@@ -315,8 +315,8 @@ class ClientCredentialFlowExtractor extends PreRouting {
 // DEPRECATED
 class ClientCredentialFlow extends RequestTransformer {
 
-  import otoroshi.utils.http.RequestImplicits._
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.http.RequestImplicits.*
+  import otoroshi.utils.syntax.implicits.*
 
   private val revokedCache: Cache[String, Boolean] = Scaffeine()
     .recordStats()
@@ -363,25 +363,25 @@ class ClientCredentialFlow extends RequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
   override def afterRequest(
       ctx: AfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.remove(ctx.snowflake)
     funit
   }
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val conf              = ctx.configFor("ClientCredentialFlow")
     val _signWithKeyPair  = (conf \ "signWithKeyPair").asOpt[Boolean].getOrElse(false)
     val useJwtToken       = (conf \ "jwtToken").asOpt[Boolean].getOrElse(true)
@@ -398,7 +398,7 @@ class ClientCredentialFlow extends RequestTransformer {
       awaitingRequests.get(ctx.snowflake).map { promise =>
         val consumed = new AtomicBoolean(false)
 
-        val bodySource: Source[ByteString, _] = Source
+        val bodySource: Source[ByteString, ?] = Source
           .future(promise.future)
           .flatMapConcat(s => s)
           .alsoTo(Sink.onComplete { case _ =>
@@ -411,7 +411,7 @@ class ClientCredentialFlow extends RequestTransformer {
 
               val charset                  = ctx.request.charset.getOrElse("UTF-8")
               val urlEncodedString         = bodyRaw.utf8String
-              val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+              val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head).toMap
               val map: Map[String, String] = body ++ ctx.request.headers
                 .get("Authorization")
                 .filter(_.startsWith("Basic "))
@@ -500,6 +500,7 @@ class ClientCredentialFlow extends RequestTransformer {
                   env.datastores.rawDataStore
                     .del(Seq(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$jti"))
                     .map(_ => Results.Ok("").left)
+                case other => throw new IllegalStateException(s"unreachable case: $other")
               }
             }
             case _                        =>
@@ -595,7 +596,7 @@ class ClientCredentialFlow extends RequestTransformer {
         awaitingRequests.get(ctx.snowflake).map { promise =>
           val consumed = new AtomicBoolean(false)
 
-          val bodySource: Source[ByteString, _] = Source
+          val bodySource: Source[ByteString, ?] = Source
             .future(promise.future)
             .flatMapConcat(s => s)
             .alsoTo(Sink.onComplete { case _ =>
@@ -751,7 +752,7 @@ class ClientCredentialFlow extends RequestTransformer {
 
                 val charset          = ctx.request.charset.getOrElse("UTF-8")
                 val urlEncodedString = bodyRaw.utf8String
-                val body             = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+                val body             = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head).toMap
                 (
                   body.get("grant_type"),
                   body.get("client_id"),
@@ -934,6 +935,7 @@ class ClientCredentialFlow extends RequestTransformer {
                   ctx.otoroshiRequest.rightf
               }
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -941,7 +943,7 @@ class ClientCredentialFlow extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
@@ -957,8 +959,8 @@ case class BiscuitConf(
 // TODO: MIGRATE !
 class ClientCredentialService extends RequestSink {
 
-  import otoroshi.utils.http.RequestImplicits._
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.http.RequestImplicits.*
+  import otoroshi.utils.syntax.implicits.*
 
   case class ClientCredentialServiceConfig(raw: JsValue) {
     lazy val expiration     = (raw \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
@@ -971,9 +973,9 @@ class ClientCredentialService extends RequestSink {
       .map { js =>
         BiscuitConf(
           privkey = (js \ "privkey").asOpt[String],
-          checks = (js \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty),
-          facts = (js \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
-          rules = (js \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty)
+          checks = (js \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          facts = (js \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          rules = (js \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       }
       .getOrElse(BiscuitConf())
@@ -1009,7 +1011,7 @@ class ClientCredentialService extends RequestSink {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.Sink)
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val conf          = ClientCredentialServiceConfig(ctx.configFor("ClientCredentialService"))
     val domainMatches = conf.domain match {
       case "*"   => true
@@ -1022,14 +1024,14 @@ class ClientCredentialService extends RequestSink {
 
   private def handleBody(
       ctx: RequestSinkContext
-  )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+  )(f: Map[String, String] => Future[Result])(using env: Env, ec: ExecutionContext): Future[Result] = {
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val charset      = ctx.request.charset.getOrElse("UTF-8")
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
           val urlEncodedString         = bodyRaw.utf8String
-          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head).toMap
           val map: Map[String, String] = body ++ ctx.request.headers
             .get("Authorization")
             .filter(_.startsWith("Basic "))
@@ -1067,7 +1069,7 @@ class ClientCredentialService extends RequestSink {
     }
   }
 
-  private def jwks(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit
+  private def jwks(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -1086,7 +1088,7 @@ class ClientCredentialService extends RequestSink {
       }
   }
 
-  private def introspect(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit
+  private def introspect(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -1134,7 +1136,7 @@ class ClientCredentialService extends RequestSink {
       ccfb: ClientCredentialFlowBody,
       conf: ClientCredentialServiceConfig,
       ctx: RequestSinkContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Result] =
+  )(using env: Env, ec: ExecutionContext): Future[Result] =
     ccfb match {
       case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, bearerKind) => {
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
@@ -1147,9 +1149,9 @@ class ClientCredentialService extends RequestSink {
             import org.biscuitsec.biscuit.crypto.KeyPair
             import org.biscuitsec.biscuit.token.Biscuit
             import org.biscuitsec.biscuit.token.builder.Block
-            import org.biscuitsec.biscuit.token.builder.Utils._
+            import org.biscuitsec.biscuit.token.builder.Utils.*
 
-            import collection.JavaConverters._
+            import scala.jdk.CollectionConverters.*
 
             val biscuitConf: BiscuitConf = conf.biscuit
 
@@ -1191,7 +1193,7 @@ class ClientCredentialService extends RequestSink {
               .foreach(r => authority_builder.add_rule(r))
 
             def fromApiKey(name: String): Seq[String] =
-              apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.map(_.asString)).getOrElse(Seq.empty)
+              apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.toSeq.map(_.asString)).getOrElse(Seq.empty).toSeq
 
             fromApiKey("biscuit_checks")
               .map(Parser.check)
@@ -1326,7 +1328,7 @@ class ClientCredentialService extends RequestSink {
           .future
     }
 
-  private def token(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit
+  private def token(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] =
@@ -1374,7 +1376,7 @@ class ClientCredentialService extends RequestSink {
       }
     }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
     val conf        = ClientCredentialServiceConfig(ctx.configFor("ClientCredentialService"))
     val secureMatch = if (conf.secure) ctx.request.theSecured else true
     if (secureMatch) {
@@ -1432,7 +1434,7 @@ class ApikeyAuthModule extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")
@@ -1469,7 +1471,7 @@ class ApikeyAuthModule extends PreRouting {
 
   def validApikey(apikey: ApiKey, password: String, groups: Seq[ServiceGroupIdentifier], config: JsValue): Boolean = {
 
-    import otoroshi.models.SeqImplicits._
+    import otoroshi.models.SeqImplicits.*
 
     val validSecret            =
       apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password))
@@ -1520,7 +1522,7 @@ class ApikeyAuthModule extends PreRouting {
     result
   }
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.request.headers.get("Authorization") match {
       case Some(auth) if auth.startsWith("Basic ") =>
         extractUsernamePassword(auth) match {

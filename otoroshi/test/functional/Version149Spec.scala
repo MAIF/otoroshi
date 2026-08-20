@@ -1,14 +1,15 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
+import play.api.libs.ws.WSBodyReadables.given
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.hash.Hashing
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import otoroshi.models.*
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
@@ -18,14 +19,14 @@ import otoroshi.security.IdGenerator
 
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 class Version149Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system   = ActorSystem("otoroshi-test")
-  implicit lazy val env = otoroshiComponents.env
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
+  implicit lazy val env: otoroshi.env.Env = otoroshiComponents.env
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -483,7 +484,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT1() = {
         val r = ws
@@ -498,7 +499,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
 
       val (status1, body1) = callServerWithJWT()
@@ -614,7 +615,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
       counter.get() mustBe 1
 
       val resp2 = ws
@@ -1039,7 +1040,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       // counter2.get() mustBe 1
       resp1.status mustBe 200
       resp2.status mustBe 200
-      resp1.body == "{" mustBe true
+      resp1.body[String] == "{" mustBe true
       deleteOtoroshiService(serviceweight1).futureValue
       deleteOtoroshiService(serviceweight2).futureValue
       stopServers()
@@ -1098,7 +1099,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       // counter2.get() mustBe 1
       resp1.status mustBe 200
       resp2.status mustBe 200
-      resp1.body == "{" mustBe true
+      resp1.body[String] == "{" mustBe true
       deleteOtoroshiService(serviceweight1).futureValue
       deleteOtoroshiService(serviceweight2).futureValue
       stopServers()
@@ -1138,7 +1139,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         call1(Map.empty)
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       (counter1.get() == 11 && counter2.get() == 11 && counter3.get() == 11) mustBe false
       deleteOtoroshiService(serviceweight).futureValue
       stopServers()
@@ -1182,7 +1183,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       val sessionId1Opt = resp1.cookie("otoroshi-tracking").map(_.value)
       val sessionId2Opt = resp2.cookie("otoroshi-tracking").map(_.value)
       val sessionId3Opt = resp3.cookie("otoroshi-tracking").map(_.value)
-      // println(sessionId1Opt, sessionId2Opt, sessionId3Opt)
+      // println((sessionId1Opt, sessionId2Opt, sessionId3Opt))
 
       sessionId1Opt.isDefined mustBe true
       sessionId2Opt.isDefined mustBe true
@@ -1221,7 +1222,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         call1(Map("Cookie" -> s"otoroshi-tracking=$sessionId1"))
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0
@@ -1229,7 +1230,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         call1(Map("Cookie" -> s"otoroshi-tracking=$sessionId2"))
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       counter1.get() mustBe 10
       counter2.get() mustBe 10
       counter3.get() mustBe 0
@@ -1237,7 +1238,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         call1(Map("Cookie" -> s"otoroshi-tracking=$sessionId3"))
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       counter1.get() mustBe 10
       counter2.get() mustBe 10
       counter3.get() mustBe 10
@@ -1280,7 +1281,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         call1(Map("X-Forwarded-For" -> "1.1.1.1"))
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0
@@ -1288,7 +1289,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         call1(Map("X-Forwarded-For" -> "2.2.2.2"))
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       counter1.get() mustBe 10
       counter2.get() mustBe 10
       counter3.get() mustBe 0
@@ -1296,7 +1297,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         call1(Map("X-Forwarded-For" -> "3.3.3.3"))
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       counter1.get() mustBe 10
       counter2.get() mustBe 10
       counter3.get() mustBe 10
@@ -1432,10 +1433,10 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter3.get() mustBe 0
       (0 to 9).foreach { _ =>
         val response = call1(Map.empty)
-        println("response", response.status, response.headers, response.body)
+        println(("response", response.status, response.headers, response.body[String]))
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0
@@ -1483,7 +1484,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         call1(Map.empty)
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0
@@ -1552,7 +1553,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         call1(Map.empty)
         await(100.millis)
       }
-      // println(counter1.get(), counter2.get(), counter3.get())
+      // println((counter1.get(), counter2.get(), counter3.get()))
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0

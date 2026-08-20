@@ -1,21 +1,21 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.{AuthModuleConfig, ErrorReason, GenericOauth2Module, GenericOauth2ModuleConfig, OAuth2ModuleConfig}
 import otoroshi.cluster.{Cluster, ClusterMode}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.util.concurrent.TimeUnit
@@ -125,7 +125,7 @@ class OIDCHeaders extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     ctx.user match {
       case Some(user) if user.token.asOpt[JsObject].exists(_.value.nonEmpty) =>
         val config = ctx.cachedConfig(internalName)(OIDCHeadersConfig.format).getOrElse(OIDCHeadersConfig())
@@ -146,7 +146,7 @@ class OIDCHeaders extends NgRequestTransformer {
             headers = ctx.otoroshiRequest.headers ++ profileMap ++ idTokenMap ++ accessTokenMap
           )
         )
-      case None                                                              => Right(ctx.otoroshiRequest)
+      case _                                                                 => Right(ctx.otoroshiRequest)
     }
   }
 }
@@ -196,7 +196,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val pluginConfiguration = ctx
       .cachedConfig(internalName)(OIDCAccessTokenConfig.format)
       .getOrElse(OIDCAccessTokenConfig())
@@ -205,20 +205,20 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
           case Some(r: JsObject)  => Seq(r)
-          case Some(arr: JsArray) => arr.value
+          case Some(arr: JsArray) => arr.value.toSeq
           case _                  => Seq.empty
         })
           .map(v => ThirdPartyApiKeyConfig.format.reads(v))
           .collect { case JsSuccess(c, _) =>
             c
-          }
+          }.toSeq
       }
 
       def checkOneConfig(config: ThirdPartyApiKeyConfig): Future[Boolean] = {
         config match {
           case a: OIDCThirdPartyApiKeyConfig =>
             val latestGlobalConfig = env.datastores.globalConfigDataStore.latest()
-            val promise            = Promise[Boolean]
+            val promise            = Promise[Boolean]()
             a.copy(enabled = true)
               .handleGen(ctx.request, ctx.route.serviceDescriptor, latestGlobalConfig, ctx.attrs) { _ =>
                 promise.trySuccess(true)
@@ -228,7 +228,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
                 case _ if !promise.isCompleted => promise.trySuccess(false)
               }
             promise.future
-          case _                             => FastFuture.successful(true)
+          // case _                             => FastFuture.successful(true)
         }
       }
 
@@ -236,7 +236,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
         .mapAsync(1) { config =>
           checkOneConfig(config)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { seq =>
           if (pluginConfiguration.atLeastOne) {
             seq.contains(true)
@@ -257,7 +257,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
                 None,
                 attrs = ctx.attrs
               )
-              .map(NgAccess.NgDenied)
+              .map(NgAccess.NgDenied.apply)
           }
         })
     } else {
@@ -288,7 +288,7 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val pluginConfiguration = ctx
       .cachedConfig(internalName)(OIDCAccessTokenConfig.format)
       .getOrElse(OIDCAccessTokenConfig())
@@ -297,13 +297,13 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
           case Some(r: JsObject)  => Seq(r)
-          case Some(arr: JsArray) => arr.value
+          case Some(arr: JsArray) => arr.value.toSeq
           case _                  => Seq.empty
         })
           .map(v => ThirdPartyApiKeyConfig.format.reads(v))
           .collect { case JsSuccess(c, _) =>
             c
-          }
+          }.toSeq
       }
 
       def checkOneConfig(config: ThirdPartyApiKeyConfig, ref: AtomicReference[ApiKey]): Future[Unit] = {
@@ -322,7 +322,7 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
                 Results.Ok("--").right.future
               }
               .map(_ => ())
-          case _                             => ().future
+          // case _                             => ().future
         }
       }
 
@@ -331,7 +331,7 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
         .mapAsync(1) { config =>
           checkOneConfig(config, ref)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { _ =>
           Option(ref.get()).foreach(apk => ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apk))
           Done.right
@@ -426,7 +426,7 @@ object OIDCAuthToken {
       oauth2Config: OAuth2ModuleConfig,
       config: OIDCAuthTokenConfig,
       maybeToken: Option[String] = None
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[Result, NgAccess]] = {
@@ -612,9 +612,9 @@ object OIDCAuthToken {
                 attrs = ctx.attrs
               )
               .map(v => Left(v))
-          val profile                                          = token.split("\\.")(1).decodeBase64.parseJson
+          val profile = token.split("\\.")(1).decodeBase64.parseJson
           // the `aud` claim (RFC 7519) may be either a single string or an array of strings - support both
-          val audiences: Seq[String]                           = profile
+          val audiences: Seq[String] = profile
             .select("aud")
             .asOpt[String]
             .map(a => Seq(a))
@@ -622,9 +622,9 @@ object OIDCAuthToken {
             .getOrElse(Seq.empty)
             .map(_.trim)
             .filter(_.nonEmpty)
-          val currentUrl                                       =
+          val currentUrl             =
             s"${ctx.request.theProtocol}://${ctx.request.theDomain}${ctx.request.thePath}"
-          val matches                                          = audiences.exists { aud =>
+          val matches                = audiences.exists { aud =>
             Try(Uri.apply(aud)) match {
               case Success(uri) => currentUrl.startsWith(uri.toString())
               case Failure(_)   => false
@@ -655,23 +655,11 @@ class OIDCAuthToken extends NgAccessValidator {
   override def configFlow: Seq[String]        = OIDCAuthTokenConfig.configFlow
   override def configSchema: Option[JsObject] = OIDCAuthTokenConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(OIDCAuthTokenConfig.format)
       .getOrElse(OIDCAuthTokenConfig.default)
     env.proxyState.authModule(config.ref) match {
-      case None                                     => {
-        Errors
-          .craftResponseResult(
-            "bad auth. module",
-            Results.InternalServerError,
-            ctx.request,
-            None,
-            None,
-            attrs = ctx.attrs
-          )
-          .map(NgAccess.NgDenied)
-      }
       case Some(authModuleConfig) if config.opaque  => {
         val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
         OIDCAuthToken.getSession(ctx, oauth2Config, config).flatMap {
@@ -692,7 +680,7 @@ class OIDCAuthToken extends NgAccessValidator {
                 None,
                 attrs = ctx.attrs
               )
-              .map(NgAccess.NgDenied)
+              .map(NgAccess.NgDenied.apply)
           case Some(algoSettings) => {
             val jwtVerifier = LocalJwtVerifier(
               enabled = true,
@@ -716,6 +704,18 @@ class OIDCAuthToken extends NgAccessValidator {
               }
           }
         }
+      }
+      case _                                        => {
+        Errors
+          .craftResponseResult(
+            "bad auth. module",
+            Results.InternalServerError,
+            ctx.request,
+            None,
+            None,
+            attrs = ctx.attrs
+          )
+          .map(NgAccess.NgDenied.apply)
       }
     }
   }

@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.models.ApiKey
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -8,10 +9,10 @@ import otoroshi.next.plugins.{ApikeyCalls, ConsumerEndpoint, OverrideHost}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class ConsumerEndpointWithApikeyTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -49,9 +50,9 @@ class ConsumerEndpointWithApikeyTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.OK
 
-  Json.parse(resp.body).selectAsString("access_type") mustEqual "apikey"
-  Json.parse(resp.body).selectAsString("clientId") mustEqual apikey.clientId
-  Json.parse(resp.body).selectAsString("clientName") mustEqual apikey.clientName
+  Json.parse(resp.body[String]).selectAsString("access_type") mustEqual "apikey"
+  Json.parse(resp.body[String]).selectAsString("clientId") mustEqual apikey.clientId
+  Json.parse(resp.body[String]).selectAsString("clientName") mustEqual apikey.clientName
 
   deleteOtoroshiApiKey(apikey).futureValue
   deleteOtoroshiRoute(route).futureValue

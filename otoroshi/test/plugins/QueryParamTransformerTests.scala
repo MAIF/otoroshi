@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, QueryTransformer, QueryTransformerConfig}
@@ -9,7 +10,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class QueryParamTransformerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(
@@ -41,7 +42,7 @@ class QueryParamTransformerTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsObject("query_params") mustEqual Json.obj(
+  Json.parse(resp.body[String]).selectAsObject("query_params") mustEqual Json.obj(
     "baz"       -> "foo",
     "new_query" -> "value"
   )

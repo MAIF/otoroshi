@@ -10,9 +10,9 @@ import java.security.cert.X509Certificate
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
-import otoroshi.ssl.SSLImplicits._
-import scala.concurrent.duration._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.ssl.SSLImplicits.*
+import scala.concurrent.duration.*
+import otoroshi.utils.syntax.implicits.*
 
 case class GenKeyPairQuery(algo: String = "rsa", size: Int = 2048) {
   def json: JsValue = GenKeyPairQuery.format.writes(this)
@@ -51,7 +51,7 @@ object GenCsrQuery {
     override def reads(json: JsValue): JsResult[GenCsrQuery] =
       Try {
         GenCsrQuery(
-          hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty),
+          hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           key = (json \ "key")
             .asOpt[JsValue]
             .flatMap(v => GenKeyPairQuery.fromJson(v).toOption)

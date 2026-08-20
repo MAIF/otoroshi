@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgSecurityTxt, NgSecurityTxtConfig, OverrideHost}
@@ -9,7 +10,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class SecurityTxtTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def test(config: NgSecurityTxtConfig, expected: Seq[String]) = {
     val route = createRouteWithExternalTarget(
@@ -34,7 +35,7 @@ class SecurityTxtTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    expected.foreach(str => resp.body.contains(str) mustBe true)
+    expected.foreach(str => resp.body[String].contains(str) mustBe true)
 
     deleteOtoroshiRoute(route).futureValue
   }

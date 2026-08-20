@@ -4,9 +4,9 @@ import otoroshi.env.Env
 import otoroshi.models.EntityLocation
 import otoroshi.next.analytics.models.{UserDashboard, Widget}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -172,7 +172,7 @@ object DefaultDashboards {
   // Build & seed
   // ---------------------------------------------------------------------------
 
-  private def buildDashboard(spec: Spec)(implicit env: Env): UserDashboard = UserDashboard(
+  private def buildDashboard(spec: Spec)(using env: Env): UserDashboard = UserDashboard(
     location = EntityLocation.default,
     id = IdGenerator.namedId("dashboard", env),
     name = spec.name,
@@ -193,7 +193,7 @@ object DefaultDashboards {
    * never overwritten.
    * Returns the list of `defaultId`s that were created.
    */
-  def seedIfMissing()(implicit env: Env, ec: ExecutionContext): Future[Seq[String]] = {
+  def seedIfMissing()(using env: Env, ec: ExecutionContext): Future[Seq[String]] = {
     env.datastores.userDashboardDataStore.findAll().flatMap { existing =>
       val present = existing.flatMap(_.metadata.get(DefaultIdMetaKey)).toSet
       val missing = specs.filterNot(s => present.contains(s.defaultId))
@@ -215,5 +215,5 @@ object DefaultDashboards {
    * Same as `seedIfMissing` — re-installs only the defaults that are no longer
    * present. Existing user dashboards are never touched.
    */
-  def restoreAll()(implicit env: Env, ec: ExecutionContext): Future[Seq[String]] = seedIfMissing()
+  def restoreAll()(using env: Env, ec: ExecutionContext): Future[Seq[String]] = seedIfMissing()
 }

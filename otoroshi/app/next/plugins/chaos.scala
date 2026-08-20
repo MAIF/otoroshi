@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.gateway.{SnowMonkey, SnowMonkeyContext}
@@ -14,9 +14,9 @@ import otoroshi.models.{
   LatencyInjectionFaultConfig,
   SnowMonkeyConfig
 }
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsObject, JsResult, JsSuccess, JsValue, Json, Reads}
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
@@ -126,8 +126,8 @@ object NgLatencyInjectionFaultConfig {
       Try {
         NgLatencyInjectionFaultConfig(
           ratio = (json \ "ratio").as[Double],
-          from = (json \ "from").as(SnowMonkeyConfig.durationFmt),
-          to = (json \ "to").as(SnowMonkeyConfig.durationFmt)
+          from = (json \ "from").as(using SnowMonkeyConfig.durationFmt),
+          to = (json \ "to").as(using SnowMonkeyConfig.durationFmt)
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -155,7 +155,7 @@ object NgBadResponsesFaultConfig {
       Try {
         NgBadResponsesFaultConfig(
           ratio = (json \ "ratio").as[Double],
-          responses = (json \ "responses").as(Reads.seq(NgBadResponse.format))
+          responses = (json \ "responses").as(using Reads.seq(using NgBadResponse.format))
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -199,13 +199,13 @@ object NgChaosConfig {
       Try {
         NgChaosConfig(
           largeRequestFaultConfig =
-            (json \ "large_request_fault").asOpt[NgLargeRequestFaultConfig](NgLargeRequestFaultConfig.format),
+            (json \ "large_request_fault").asOpt[NgLargeRequestFaultConfig](using NgLargeRequestFaultConfig.format),
           largeResponseFaultConfig =
-            (json \ "large_response_fault").asOpt[NgLargeResponseFaultConfig](NgLargeResponseFaultConfig.format),
+            (json \ "large_response_fault").asOpt[NgLargeResponseFaultConfig](using NgLargeResponseFaultConfig.format),
           latencyInjectionFaultConfig = (json \ "latency_injection_fault")
-            .asOpt[NgLatencyInjectionFaultConfig](NgLatencyInjectionFaultConfig.format),
+            .asOpt[NgLatencyInjectionFaultConfig](using NgLatencyInjectionFaultConfig.format),
           badResponsesFaultConfig =
-            (json \ "bad_responses_fault").asOpt[NgBadResponsesFaultConfig](NgBadResponsesFaultConfig.format)
+            (json \ "bad_responses_fault").asOpt[NgBadResponsesFaultConfig](using NgBadResponsesFaultConfig.format)
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -250,9 +250,9 @@ class SnowMonkeyChaos extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))
-    val snowMonkey   = snowMonkeyRef.get("singleton", _ => new SnowMonkey()(env))
+    val snowMonkey   = snowMonkeyRef.get("singleton", _ => new SnowMonkey(using env))
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val reqNumber    = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).get
     snowMonkey.introduceChaosGen[NgPluginHttpRequest](
@@ -277,7 +277,7 @@ class SnowMonkeyChaos extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))
     ctx.attrs.get(SnowMonkeyChaos.ContextKey) match {
       case None                => ctx.otoroshiResponse.right

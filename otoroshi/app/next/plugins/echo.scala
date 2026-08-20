@@ -1,13 +1,13 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.MediaTypes
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.MediaTypes
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -64,7 +64,7 @@ class EchoBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -100,7 +100,7 @@ class EchoBackend extends NgBackendCall {
             None
           ).right
         }
-        .recover { case _: akka.stream.StreamLimitReachedException =>
+        .recover { case _: org.apache.pekko.stream.StreamLimitReachedException =>
           BackendCallResponse(
             NgPluginHttpResponse.fromResult(
               Results.Status(413)(
@@ -141,7 +141,7 @@ class RequestBodyEchoBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -155,7 +155,7 @@ class RequestBodyEchoBackend extends NgBackendCall {
           val ctype = ctx.request.contentType.getOrElse("application/octet-stream")
           BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(bodyRaw).as(ctype)), None).right
         }
-        .recover { case _: akka.stream.StreamLimitReachedException =>
+        .recover { case _: org.apache.pekko.stream.StreamLimitReachedException =>
           BackendCallResponse(
             NgPluginHttpResponse.fromResult(
               Results.Status(413)(

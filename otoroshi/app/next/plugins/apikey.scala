@@ -1,18 +1,18 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.PreRoutingError
 import otoroshi.security.OtoroshiClaim
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration.DurationInt
@@ -35,8 +35,8 @@ object NgLegacyApikeyCallConfig {
     ) ++ o.config.json.asObject
     override def reads(json: JsValue): JsResult[NgLegacyApikeyCallConfig] = Try {
       NgLegacyApikeyCallConfig(
-        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         config = NgApikeyCallsConfig.format.reads(json).asOpt.getOrElse(NgApikeyCallsConfig())
       )
     } match {
@@ -73,26 +73,26 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
     "This plugin expects to find an apikey to allow the request to pass. This plugin behaves exactly like the service descriptor does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgLegacyApikeyCallConfig.default.some
 
-  override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
+  override def matches(ctx: NgRouteMatcherContext)(using env: Env): Boolean = {
     val plugin = env.scriptManager
-      .getAnyScript[NgRouteMatcher](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext)
-      .right
+      .getAnyScript[NgRouteMatcher](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
+      .toOption
       .get
-    plugin.matches(ctx)(env)
+    plugin.matches(ctx)(using env)
   }
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val plugin = env.scriptManager
-      .getAnyScript[NgRequestTransformer](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext)
-      .right
+      .getAnyScript[NgRequestTransformer](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
+      .toOption
       .get
-    plugin.transformRequestSync(ctx)(env, ec, mat)
+    plugin.transformRequestSync(ctx)(using env, ec, mat)
   }
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val plugin     = env.scriptManager
-      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext)
-      .right
+      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
+      .toOption
       .get
     val config     = configCache.get(
       ctx.route.cacheableId,
@@ -108,12 +108,12 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
         env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper
           .detectApiKey(req, descriptor, ctx.attrs)
       ) {
-        plugin.access(ctx)(env, ec)
+        plugin.access(ctx)(using env, ec)
       } else {
         NgAccess.NgAllowed.vfuture
       }
     } else {
-      plugin.access(ctx)(env, ec)
+      plugin.access(ctx)(using env, ec)
     }
   }
 }
@@ -144,7 +144,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   override def description: Option[String]                 = "This plugin expects to find an apikey to allow the request to pass".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgApikeyCallsConfig().some
 
-  override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
+  override def matches(ctx: NgRouteMatcherContext)(using env: Env): Boolean = {
     val config =
       configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     if (config.routing.enabled) {
@@ -170,7 +170,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
     }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config    =
       configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     val maybeUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
@@ -265,7 +265,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config =
       configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     if (config.wipeBackendRequest) {
@@ -570,7 +570,7 @@ case class NgApikeyMatcher(
     noneMetaKeysIn: Seq[String] = Seq.empty,
     oneMetaKeyIn: Seq[String] = Seq.empty,
     allMetaKeysIn: Seq[String] = Seq.empty
-) extends {
+) {
   lazy val legacy: ApiKeyRouteMatcher       = ApiKeyRouteMatcher(
     noneTagIn = noneTagIn,
     oneTagIn = oneTagIn,
@@ -613,15 +613,15 @@ object NgApikeyMatcher {
     override def reads(json: JsValue): JsResult[NgApikeyMatcher] = JsonHelpers.reader {
       NgApikeyMatcher(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-        noneTagIn = (json \ "none_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        oneTagIn = (json \ "one_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allTagsIn = (json \ "all_tags_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        noneTagIn = (json \ "none_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        oneTagIn = (json \ "one_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allTagsIn = (json \ "all_tags_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         noneMetaIn = (json \ "none_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
         oneMetaIn = (json \ "one_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
         allMetaIn = (json \ "all_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-        noneMetaKeysIn = (json \ "none_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        oneMetaKeyIn = (json \ "one_meta_key_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allMetaKeysIn = (json \ "all_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        noneMetaKeysIn = (json \ "none_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        oneMetaKeyIn = (json \ "one_meta_key_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allMetaKeysIn = (json \ "all_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     }
   }
@@ -660,14 +660,14 @@ object NgApikeyExtractors {
     override def writes(o: NgApikeyExtractors): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractors] = JsonHelpers.reader {
       NgApikeyExtractors(
-        basic = (json \ "basic").asOpt(NgApikeyExtractorBasic.format).getOrElse(NgApikeyExtractorBasic()),
+        basic = (json \ "basic").asOpt(using NgApikeyExtractorBasic.format).getOrElse(NgApikeyExtractorBasic()),
         customHeaders = (json \ "custom_headers")
-          .asOpt(NgApikeyExtractorCustomHeaders.format)
+          .asOpt(using NgApikeyExtractorCustomHeaders.format)
           .getOrElse(NgApikeyExtractorCustomHeaders()),
-        clientId = (json \ "client_id").asOpt(NgApikeyExtractorClientId.format).getOrElse(NgApikeyExtractorClientId()),
-        jwt = (json \ "jwt").asOpt(NgApikeyExtractorJwt.format).getOrElse(NgApikeyExtractorJwt()),
+        clientId = (json \ "client_id").asOpt(using NgApikeyExtractorClientId.format).getOrElse(NgApikeyExtractorClientId()),
+        jwt = (json \ "jwt").asOpt(using NgApikeyExtractorJwt.format).getOrElse(NgApikeyExtractorJwt()),
         otoBearer =
-          (json \ "oto_bearer").asOpt(NgApikeyExtractorOtoBearer.format).getOrElse(NgApikeyExtractorOtoBearer())
+          (json \ "oto_bearer").asOpt(using NgApikeyExtractorOtoBearer.format).getOrElse(NgApikeyExtractorOtoBearer())
       )
     }
   }
@@ -706,8 +706,8 @@ object NgApikeyCallsConfig {
     override def writes(o: NgApikeyCallsConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyCallsConfig] = Try {
       NgApikeyCallsConfig(
-        extractors = (json \ "extractors").asOpt(NgApikeyExtractors.format).getOrElse(NgApikeyExtractors()),
-        routing = (json \ "routing").asOpt(NgApikeyMatcher.format).getOrElse(NgApikeyMatcher()),
+        extractors = (json \ "extractors").asOpt(using NgApikeyExtractors.format).getOrElse(NgApikeyExtractors()),
+        routing = (json \ "routing").asOpt(using NgApikeyMatcher.format).getOrElse(NgApikeyMatcher()),
         validate = (json \ "validate").asOpt[Boolean].getOrElse(true),
         mandatory = (json \ "mandatory").asOpt[Boolean].getOrElse(true),
         passWithUser = (json \ "pass_with_user").asOpt[Boolean].getOrElse(false),
@@ -781,7 +781,7 @@ class ApikeyAuthModule extends NgPreRouting {
   override def description: Option[String]                 =
     "This plugin adds basic auth on service where credentials are valid apikeys on the current service.".some
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")
@@ -813,7 +813,7 @@ class ApikeyAuthModule extends NgPreRouting {
   }
 
   def validApikey(apikey: ApiKey, routing: ApiKeyRouteMatcher): Boolean = {
-    import otoroshi.models.SeqImplicits._
+    import otoroshi.models.SeqImplicits.*
 
     val matchOnRole: Boolean   = Option(routing.oneTagIn)
       .filter(_.nonEmpty)
@@ -862,7 +862,7 @@ class ApikeyAuthModule extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
 
     val config = ctx
       .cachedConfig(internalName)(ApikeyAuthModuleConfig.format)
@@ -900,7 +900,7 @@ object NgApikeyMandatoryTagsConfig {
     )
     override def reads(json: JsValue): JsResult[NgApikeyMandatoryTagsConfig] = Try {
       NgApikeyMandatoryTagsConfig(
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -920,7 +920,7 @@ class NgApikeyMandatoryTags extends NgAccessValidator {
   override def description: Option[String]                 =
     "This plugin checks that if an apikey is provided, there is one or more tags on it".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(NgApikeyMandatoryTagsConfig.format)
       .getOrElse(NgApikeyMandatoryTagsConfig())
@@ -980,7 +980,7 @@ class NgApikeyMandatoryMetadata extends NgAccessValidator {
   override def description: Option[String]                 =
     "This plugin checks that if an apikey is provided, there is one or more metadata on it".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(NgApikeyMandatoryMetadataConfig.format)
       .getOrElse(NgApikeyMandatoryMetadataConfig())

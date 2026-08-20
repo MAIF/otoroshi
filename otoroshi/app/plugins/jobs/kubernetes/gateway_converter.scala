@@ -2,10 +2,10 @@ package otoroshi.plugins.jobs.kubernetes
 
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, HttpProtocol, HttpProtocols, RoundRobin}
-import otoroshi.next.models._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.models.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.ExecutionContext
 import scala.util.Try
@@ -61,7 +61,7 @@ object GatewayApiConverter {
       plugins: Seq[KubernetesPlugin],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
+  )(using env: Env, ec: ExecutionContext): RouteConversionResult = {
 
     val matchingGateways = resolveParentRefs(httpRoute.parentRefs, httpRoute.namespace, gateways, namespaces, conf)
     if (matchingGateways.isEmpty) {
@@ -120,7 +120,7 @@ object GatewayApiConverter {
       plugins: Seq[KubernetesPlugin],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
+  )(using env: Env, ec: ExecutionContext): RouteConversionResult = {
 
     val matchingGateways = resolveParentRefs(grpcRoute.parentRefs, grpcRoute.namespace, gateways, namespaces, conf)
     if (matchingGateways.isEmpty) {
@@ -224,7 +224,7 @@ object GatewayApiConverter {
    */
   private def matchesLabelSelector(labels: Map[String, String], selector: JsObject): Boolean = {
     val matchLabels      = (selector \ "matchLabels").asOpt[Map[String, String]].getOrElse(Map.empty)
-    val matchExpressions = (selector \ "matchExpressions").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+    val matchExpressions = (selector \ "matchExpressions").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
 
     val labelsMatch = matchLabels.forall { case (key, value) =>
       labels.get(key).contains(value)
@@ -233,7 +233,7 @@ object GatewayApiConverter {
     val expressionsMatch = matchExpressions.forall { expr =>
       val key      = (expr \ "key").as[String]
       val operator = (expr \ "operator").as[String]
-      val values   = (expr \ "values").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val values   = (expr \ "values").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       operator match {
         case "In"           => labels.get(key).exists(values.contains)
         case "NotIn"        => labels.get(key).forall(v => !values.contains(v))
@@ -301,7 +301,7 @@ object GatewayApiConverter {
       resolvedCaCertIds: Map[String, String],
       k8sPlugins: Seq[KubernetesPlugin],
       conf: KubernetesConfig
-  )(implicit env: Env): Seq[NgRoute] = {
+  )(using env: Env): Seq[NgRoute] = {
 
     rule.matches.zipWithIndex.flatMap { case (mtch, mtchIdx) =>
       val routeId   = s"kubernetes-gateway-api-${httpRoute.namespace}-${httpRoute.name}-rule-$ruleIdx-match-${mtchIdx}"
@@ -433,7 +433,7 @@ object GatewayApiConverter {
       resolvedCaCertIds: Map[String, String],
       k8sPlugins: Seq[KubernetesPlugin],
       conf: KubernetesConfig
-  )(implicit env: Env): Seq[NgRoute] = {
+  )(using env: Env): Seq[NgRoute] = {
 
     rule.matches.zipWithIndex.flatMap { case (mtch, mtchIdx) =>
       val routeId   =
@@ -1147,15 +1147,15 @@ object GatewayApiConverter {
           filter.requestHeaderModifier.toSeq.flatMap { mod =>
             val setHeaders    = (mod \ "set")
               .asOpt[Seq[JsObject]]
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
               .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
               .toMap
             val addHeaders    = (mod \ "add")
               .asOpt[Seq[JsObject]]
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
               .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
               .toMap
-            val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty)
+            val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
             val allHeaders = setHeaders ++ addHeaders
             val addPlugin  = if (allHeaders.nonEmpty) {
@@ -1185,15 +1185,15 @@ object GatewayApiConverter {
           filter.responseHeaderModifier.toSeq.flatMap { mod =>
             val setHeaders    = (mod \ "set")
               .asOpt[Seq[JsObject]]
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
               .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
               .toMap
             val addHeaders    = (mod \ "add")
               .asOpt[Seq[JsObject]]
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
               .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
               .toMap
-            val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty)
+            val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
             val allHeaders = setHeaders ++ addHeaders
             val addPlugin  = if (allHeaders.nonEmpty) {

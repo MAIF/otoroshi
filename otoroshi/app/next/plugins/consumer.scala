@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import otoroshi.next.models._
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.models.*
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import scala.util.{Failure, Success, Try}
 
@@ -43,7 +43,7 @@ object MandatoryConsumerPresetConfig {
     override def reads(json: JsValue): JsResult[MandatoryConsumerPresetConfig] = Try {
       MandatoryConsumerPresetConfig(
         ref = json.select("ref").asOpt[String],
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

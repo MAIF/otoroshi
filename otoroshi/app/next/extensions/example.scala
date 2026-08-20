@@ -1,19 +1,19 @@
 package otoroshi.next.extensions
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.nimbusds.jose.jwk.Curve
 import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator
-import otoroshi.api._
+import otoroshi.api.*
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.storage._
+import otoroshi.models.*
+import otoroshi.storage.*
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 import play.api.{Configuration, Environment, Logger}
 import storage.drivers.generic.{GenericDataStores, GenericRedisLike, GenericRedisLikeBuilder}
@@ -54,7 +54,7 @@ object Foo {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -69,7 +69,7 @@ class KvFooDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: E
     extends FooDataStore
     with RedisLikeStore[Foo] {
   override def fmt: Format[Foo]                        = Foo.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:foos:$id"
   override def extractId(value: Foo): String           = value.id
 }
@@ -93,16 +93,16 @@ class FooAdminExtensionState(env: Env) {
 class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike {
 
   val redis       = new otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis(false, env, actorSystem)
-  implicit val ec = actorSystem.dispatcher
+  implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
 
   override def setCounter(key: String, value: Long): Future[Unit]               = redis.set(key, value.toString).map(_ => ())
   override def rawGet(key: String): Future[Option[Any]]                         = redis.rawGet(key)
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
   override def stop(): Unit                                                     = redis.stop()
   override def flushall(): Future[Boolean]                                      = redis.flushall()
 
   override def get(key: String): Future[Option[ByteString]]                                                            = redis.get(key)
-  override def mget(keys: String*): Future[Seq[Option[ByteString]]]                                                    = redis.mget(keys: _*)
+  override def mget(keys: String*): Future[Seq[Option[ByteString]]]                                                    = redis.mget(keys*)
   override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
     redis.set(key, value, exSeconds, pxMilliseconds)
   override def setBS(
@@ -111,21 +111,21 @@ class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike 
       exSeconds: Option[Long],
       pxMilliseconds: Option[Long]
   ): Future[Boolean]                                                                                                   = redis.setBS(key, value, exSeconds, pxMilliseconds)
-  override def del(keys: String*): Future[Long]                                                                        = redis.del(keys: _*)
+  override def del(keys: String*): Future[Long]                                                                        = redis.del(keys*)
   override def incr(key: String): Future[Long]                                                                         = redis.incr(key)
   override def incrby(key: String, increment: Long): Future[Long]                                                      = redis.incrby(key, increment)
   override def exists(key: String): Future[Boolean]                                                                    = redis.exists(key)
   override def keys(pattern: String): Future[Seq[String]]                                                              = redis.keys(pattern)
 
-  override def hdel(key: String, fields: String*): Future[Long]                       = redis.hdel(key, fields: _*)
+  override def hdel(key: String, fields: String*): Future[Long]                       = redis.hdel(key, fields*)
   override def hgetall(key: String): Future[Map[String, ByteString]]                  = redis.hgetall(key)
   override def hset(key: String, field: String, value: String): Future[Boolean]       = redis.hset(key, field, value)
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = redis.hsetBS(key, field, value)
 
   override def llen(key: String): Future[Long]                                       = redis.llen(key)
-  override def lpush(key: String, values: String*): Future[Long]                     = redis.lpush(key, values: _*)
-  override def lpushLong(key: String, values: Long*): Future[Long]                   = redis.lpushLong(key, values: _*)
-  override def lpushBS(key: String, values: ByteString*): Future[Long]               = redis.lpushBS(key, values: _*)
+  override def lpush(key: String, values: String*): Future[Long]                     = redis.lpush(key, values*)
+  override def lpushLong(key: String, values: Long*): Future[Long]                   = redis.lpushLong(key, values*)
+  override def lpushBS(key: String, values: ByteString*): Future[Long]               = redis.lpushBS(key, values*)
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = redis.lrange(key, start, stop)
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean]          = redis.ltrim(key, start, stop)
 
@@ -134,13 +134,13 @@ class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike 
   override def expire(key: String, seconds: Int): Future[Boolean]        = redis.expire(key, seconds)
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = redis.pexpire(key, milliseconds)
 
-  override def sadd(key: String, members: String*): Future[Long]             = redis.sadd(key, members: _*)
-  override def saddBS(key: String, members: ByteString*): Future[Long]       = redis.saddBS(key, members: _*)
+  override def sadd(key: String, members: String*): Future[Long]             = redis.sadd(key, members*)
+  override def saddBS(key: String, members: ByteString*): Future[Long]       = redis.saddBS(key, members*)
   override def sismember(key: String, member: String): Future[Boolean]       = redis.sismember(key, member)
   override def sismemberBS(key: String, member: ByteString): Future[Boolean] = redis.sismemberBS(key, member)
   override def smembers(key: String): Future[Seq[ByteString]]                = redis.smembers(key)
-  override def srem(key: String, members: String*): Future[Long]             = redis.srem(key, members: _*)
-  override def sremBS(key: String, members: ByteString*): Future[Long]       = redis.sremBS(key, members: _*)
+  override def srem(key: String, members: String*): Future[Long]             = redis.srem(key, members*)
+  override def sremBS(key: String, members: ByteString*): Future[Long]       = redis.sremBS(key, members*)
   override def scard(key: String): Future[Long]                              = redis.scard(key)
 
   override def typ(key: String): Future[String] = {
@@ -148,12 +148,12 @@ class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike 
       case Some(_: String)                                                     => "string"
       case Some(_: ByteString)                                                 => "string"
       case Some(_: Long)                                                       => "string"
-      case Some(_: java.util.concurrent.ConcurrentHashMap[String, ByteString]) => "hash"
-      case Some(_: TrieMap[String, ByteString])                                => "hash"
-      case Some(_: java.util.concurrent.CopyOnWriteArrayList[ByteString])      => "list"
-      case Some(_: scala.collection.mutable.MutableList[ByteString])           => "list"
-      case Some(_: java.util.concurrent.CopyOnWriteArraySet[ByteString])       => "set"
-      case Some(_: scala.collection.mutable.HashSet[ByteString])               => "set"
+      case Some(_: java.util.concurrent.ConcurrentHashMap[String, ByteString] @unchecked) => "hash"
+      case Some(_: TrieMap[String, ByteString] @unchecked)                                => "hash"
+      case Some(_: java.util.concurrent.CopyOnWriteArrayList[ByteString] @unchecked)      => "list"
+      case Some(_: scala.collection.mutable.ListBuffer[ByteString] @unchecked)           => "list"
+      case Some(_: java.util.concurrent.CopyOnWriteArraySet[ByteString] @unchecked)       => "set"
+      case Some(_: scala.collection.mutable.HashSet[ByteString] @unchecked)               => "set"
       case _                                                                   => "none"
     }
   }
@@ -224,8 +224,8 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
   )
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       foos <- datastores.fooDatastore.findAll()
     } yield {
@@ -359,7 +359,7 @@ class FooPlugin extends NgAccessValidator {
   override def defaultConfigObject: Option[NgPluginConfig] = Some(FooPluginConfig("--"))
   override def multiInstance: Boolean = true
 
-  override def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess = NgAccess.NgAllowed
+  override def accessSync(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): NgAccess = NgAccess.NgAllowed
 }
 
  */

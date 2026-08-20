@@ -1,11 +1,11 @@
 package otoroshi.plugins
 
-import akka.Done
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.util.ByteString
 import next.models.{Api, ApiDocumentationPlan}
 import org.joda.time.DateTime
 import otoroshi.gateway.GwError
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.NgTarget
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.typedmap.TypedKey
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
 
-case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[_ <: A], f: JsValue => _ <: A)
+case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[? <: A], f: JsValue => ? <: A)
 
 object Keys {
   val BackendDurationKey       = TypedKey[Long]("otoroshi.core.BackendDuration")

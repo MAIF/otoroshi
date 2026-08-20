@@ -1,9 +1,9 @@
 package otoroshi.openapi
 
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml.write
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -167,7 +167,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
             curr._1,
             contentToOpenAPIV3Schema((schemas \ entity \ "description").asOpt[String].getOrElse("???"), content)
           )
-        case None                    =>
+        case _                    =>
           println(s"Warning : crd entity not found in open api schema : ${curr._1} - $entity")
       }
     })

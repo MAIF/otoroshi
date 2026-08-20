@@ -1,8 +1,8 @@
 package otoroshi.actions
 
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri.Path
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.GenericOauth2Module
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}
@@ -11,17 +11,17 @@ import otoroshi.models.BackOfficeUser
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models.{EntityLocationSupport, RightsChecker, TenantId}
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.Json
 import play.api.mvc.Results.Status
-import play.api.mvc._
-import otoroshi.utils.http.RequestImplicits._
+import play.api.mvc.*
+import otoroshi.utils.http.RequestImplicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOfficeUser]) {
   def connected: Boolean              = user.isDefined
-  def from(implicit env: Env): String = request.theIpAddress
+  def from(using env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
 }
 
@@ -30,7 +30,7 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
   lazy val forbidden  = ApiActionContext.forbidden
   lazy val fforbidden = ApiActionContext.fforbidden
 
-  def from(implicit env: Env): String = request.theIpAddress
+  def from(using env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
 
   lazy val currentTenant: TenantId = {
@@ -38,7 +38,7 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
     TenantId(value)
   }
 
-  private def rootOrTenantAdmin(user: BackOfficeUser)(f: => Boolean)(implicit env: Env): Boolean = {
+  private def rootOrTenantAdmin(user: BackOfficeUser)(f: => Boolean)(using env: Env): Boolean = {
     if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant)) { // || TenantAdminOnly.canPerform(user, currentTenant)) {
       true
     } else {
@@ -46,20 +46,20 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
     }
   }
 
-  def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
+  def canUserRead[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     rootOrTenantAdmin(user) {
       (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
         .canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
     }
   }
-  def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
+  def canUserWrite[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     rootOrTenantAdmin(user) {
       (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
         .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
     }
   }
 
-  def checkRights(rc: RightsChecker)(f: Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def checkRights(rc: RightsChecker)(f: Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     if (env.bypassUserRightsCheck) {
       f
     } else {
@@ -72,11 +72,11 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
   }
 }
 
-class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+class BackOfficeAction(val parser: BodyParser[AnyContent])(using env: Env)
     extends ActionBuilder[BackOfficeActionContext, AnyContent]
     with ActionFunction[Request, BackOfficeActionContext] {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   override def invokeBlock[A](
       request: Request[A],
@@ -112,11 +112,11 @@ class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
   override protected def executionContext: ExecutionContext = ec
 }
 
-class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env)
+class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(using env: Env)
     extends ActionBuilder[BackOfficeActionContextAuth, AnyContent]
     with ActionFunction[Request, BackOfficeActionContextAuth] {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   // val checker = new AdminClearanceChecker()(env)
 
@@ -151,7 +151,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
                   FastFuture.successful(
                     Results
                       .NotFound(otoroshi.views.html.oto.error("Error", env))
-                      .removingFromSession("bousr")(request)
+                      .removingFromSession("bousr")(using request)
                   )
                 }
                 case false =>

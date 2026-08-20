@@ -4,20 +4,20 @@ import com.github.blemale.scaffeine.Scaffeine
 import next.models.{Api, ApiSubscription, RouteTemplate}
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.analytics.models.UserDashboard
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginHelper}
-import otoroshi.next.plugins._
-import otoroshi.script._
+import otoroshi.next.plugins.*
+import otoroshi.script.*
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 
 import java.util.concurrent.TimeUnit
@@ -106,7 +106,7 @@ class NgProxyState(env: Env) {
     domainPathTreeRef.get().find(domain, path, env.trailingSlashMeansExactSegments).map(_.routes)
 
   def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] =
-    domainPathTreeRef.get().findRoute(request, attrs)(env)
+    domainPathTreeRef.get().findRoute(request, attrs)(using env)
 
   def getDomainRoutes(domain: String, path: String): Option[Seq[NgRoute]] = routesByDomain.get(domain) match {
     case s @ Some(_) => s
@@ -192,7 +192,7 @@ class NgProxyState(env: Env) {
       .flatMap(r => r.frontend.domains.map(d => NgRouteDomainAndPathWrapper(r, d.domainLowerCase, d.path)))
       .filterNot(_.domain.contains("*"))
       .groupBy(_.domain)
-      .mapValues(_.sortWith((r1, r2) => r1.path.length.compareTo(r2.path.length) > 0).map(_.route))
+      .view.mapValues(_.sortWith((r1, r2) => r1.path.length.compareTo(r2.path.length) > 0).map(_.route)).toMap
     routesByDomain.addAll(routesByDomainRaw).remAll(routesByDomain.keySet.toSeq.diff(routesByDomainRaw.keySet.toSeq))
     val s                                            = System.currentTimeMillis()
     domainPathTreeRef.set(NgTreeRouter.build(values))
@@ -592,8 +592,8 @@ class NgProxyState(env: Env) {
     }
   }
 
-  def sync()(implicit ec: ExecutionContext): Future[Unit] = {
-    implicit val ev  = env
+  def sync()(using ec: ExecutionContext): Future[Unit] = {
+    implicit val ev: otoroshi.env.Env = env
     val start        = System.currentTimeMillis()
     val gc           = env.datastores.globalConfigDataStore.latest()
     val config       = gc.plugins.config
@@ -744,15 +744,15 @@ class NgProxyStateLoaderJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.proxyState.sync()
   }
 }
 
 class NgInternalStateMonitor extends Job {
 
-  import squants.information._
-  import squants.time._
+  import squants.information.*
+  import squants.time.*
 
   private val logger = Logger("otoroshi-internal-state-monitor")
 
@@ -793,7 +793,7 @@ class NgInternalStateMonitor extends Job {
     if (logger.isDebugEnabled) logger.debug(s"datastore: ${total.toMegabytes} mb, in ${duration}")
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val monitorState     = env.configuration.getOptional[Boolean]("otoroshi.next.monitor-proxy-state-size").getOrElse(false)
     val monitorDatastore =
       env.configuration.getOptional[Boolean]("otoroshi.next.monitor-datastore-size").getOrElse(false)

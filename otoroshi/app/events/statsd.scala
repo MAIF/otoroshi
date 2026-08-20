@@ -3,11 +3,11 @@ package otoroshi.events
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import akka.actor.{Actor, ActorSystem, Cancellable, Props}
+import org.apache.pekko.actor.{Actor, ActorSystem, Cancellable, Props}
 import com.codahale.metrics.{Counter, Gauge, Reporter}
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import otoroshi.env.Env
-import github.gphat.censorinus._
+import github.gphat.censorinus.*
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -104,7 +104,7 @@ class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
   //   if (optConfig.isEmpty) close()
   // }
 
-  def metric(name: String, value: Any)(implicit optConfig: Option[StatsdConfig]): Unit = {
+  def metric(name: String, value: Any)(using optConfig: Option[StatsdConfig]): Unit = {
     optConfig.foreach(config =>
       value match {
         case b: Boolean => statsdActor ! StatsdEvent("set", name, 0.0, b.toString, defaultSampleRate, false, config)
@@ -121,7 +121,7 @@ class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
 
 class StatsdActor(env: Env) extends Actor {
 
-  implicit val ec = env.analyticsExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   var config: Option[StatsdConfig]           = None
   var statsdclient: Option[StatsDClient]     = None
@@ -205,20 +205,20 @@ object StatsdActor {
 
 class StatsDReporter(registry: SemanticMetricRegistry, env: Env) extends Reporter with Closeable {
 
-  implicit val e  = env
-  implicit val ec = env.analyticsExecutionContext
+  implicit val e: otoroshi.env.Env = env
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   private val cancellable = new AtomicReference[Option[Cancellable]](None)
 
   def sendToStatsD(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registry.getGauges
-        .forEach((name: MetricId, gauge: Gauge[_]) =>
-          env.statsd.metric(name.getKey, gauge.getValue)(config.statsdConfig)
+        .forEach((name: MetricId, gauge: Gauge[?]) =>
+          env.statsd.metric(name.getKey, gauge.getValue)(using config.statsdConfig)
         )
       registry.getCounters
         .forEach((name: MetricId, gauge: Counter) =>
-          env.statsd.metric(name.getKey, gauge.getCount)(config.statsdConfig)
+          env.statsd.metric(name.getKey, gauge.getCount)(using config.statsdConfig)
         )
     }
   }

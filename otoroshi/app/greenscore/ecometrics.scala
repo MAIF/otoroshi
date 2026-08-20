@@ -5,7 +5,7 @@ import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
 import otoroshi.greenscore.EcoMetrics.{colorFromScore, letterFromScore, MAX_GREEN_SCORE_NOTE}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.{Timer => _}
 import scala.collection.concurrent.TrieMap
@@ -125,14 +125,14 @@ object ScalingRouteReservoirs {
 
   def from(reservoirs: RouteReservoirs) = {
     ScalingRouteReservoirs(
-      reservoirs.overhead.getSnapshot.getMean.toLong,
-      reservoirs.duration.getSnapshot.getMean.toLong,
-      reservoirs.backendDuration.getSnapshot.getMean.toLong,
-      reservoirs.calls.getSnapshot.getMean.toLong,
-      reservoirs.dataIn.getSnapshot.getMean.toLong,
-      reservoirs.dataOut.getSnapshot.getMean.toLong,
-      reservoirs.headersOut.getSnapshot.getMean.toLong,
-      reservoirs.headersIn.getSnapshot.getMean.toLong
+      reservoirs.overhead.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.duration.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.backendDuration.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.calls.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.dataIn.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.dataOut.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.headersOut.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.headersIn.getSnapshot.getMean.toLong.toFloat
     )
   }
 
@@ -339,7 +339,7 @@ case class RouteScoreByDateAndSection(
     "date"           -> date,
     "section"        -> section,
     "section_weight" -> sectionWeight,
-    "score"          -> score.json,
+    "score"          -> score.json(),
     "letter"         -> letter,
     "color"          -> color
   )
@@ -367,7 +367,7 @@ object RouteScoreAtDateItem {
   def from(json: JsValue) = RouteScoreAtDateItem(
     groupId = json.select("group_id").as[String],
     routeId = json.select("id").as[String],
-    scores = json.select("sections").as[JsArray].value.map(RouteScoreByDateAndSection.from)
+    scores = json.select("sections").as[JsArray].value.toSeq.map(RouteScoreByDateAndSection.from)
   )
 }
 
@@ -381,7 +381,7 @@ case class RouteScoreAtDate(date: Long, routes: Seq[RouteScoreAtDateItem]) {
 object RouteScoreAtDate {
   def from(o: JsValue) = RouteScoreAtDate(
     date = o.select("date").as[Long],
-    routes = o.select("routes").as[JsArray].value.map(RouteScoreAtDateItem.from)
+    routes = o.select("routes").as[JsArray].value.toSeq.map(RouteScoreAtDateItem.from)
   )
 }
 
@@ -391,7 +391,7 @@ class EcoMetrics {
 
   private def calculateRulesByDate(rules: RulesRouteConfiguration): Seq[RouteScoreByDateAndSection] = {
     val enrichedRules = rules.states
-      .sortBy(_.date)(Ordering.Long)
+      .sortBy(_.date)(using Ordering.Long)
       .zipWithIndex
       .foldLeft(Seq.empty[RuleStateRecord]) { case (acc, (item, i)) =>
         acc :+ item.copy(
@@ -440,7 +440,7 @@ class EcoMetrics {
   ): Option[Seq[RouteScoreByDateAndSection]] = {
     if (
       rules.states
-        .sortBy(_.date)(Ordering.Long)
+        .sortBy(_.date)(using Ordering.Long)
         .headOption
         .exists(createdAt => createdAt.date <= date)
     ) {
@@ -448,7 +448,7 @@ class EcoMetrics {
       val record: RuleStateRecord = RuleStateRecord(
         date = date,
         states = rules.states
-          .sortBy(_.date)(Ordering.Long)
+          .sortBy(_.date)(using Ordering.Long)
           .flatMap(r => r.states.map(state => (r.date, state)))
           .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) {
             case (acc, (recordState, state)) => {
@@ -494,7 +494,7 @@ class EcoMetrics {
   private def mergeRoutesScoreByDateAndSection(routes: Seq[(RouteRules, RouteScore)]) = {
     val dates = routes
       .flatMap(item => item._2.sectionsScoreByDate.map(_.date))
-      .sorted(Ordering.Long)
+      .sorted(using Ordering.Long)
       .toSet
 
     dates.foldLeft(Seq.empty[RouteScoreAtDate]) { case (acc, date) =>

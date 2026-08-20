@@ -1,12 +1,12 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.HeaderNames
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.util.Base64
@@ -32,9 +32,9 @@ object GrpcWebConfig {
     override def reads(json: JsValue): JsResult[GrpcWebConfig] =
       Try {
         GrpcWebConfig(
-          allowServices = json.select("allow_services").asOpt[Seq[String]].getOrElse(Seq.empty),
-          allowMethods = json.select("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty),
-          blockedMethods = json.select("blocked_methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+          allowServices = json.select("allow_services").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          allowMethods = json.select("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          blockedMethods = json.select("blocked_methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e)    => JsError(e.getMessage)
@@ -102,10 +102,10 @@ class GrpcWebProxyPlugin extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
 
     val config = ctx
-      .cachedConfig(internalName)(GrpcWebConfig.fmt.reads)
+      .cachedConfig(internalName)(GrpcWebConfig.fmt)
       .getOrElse(GrpcWebConfig())
 
     val contentType   = ctx.request.headers.get("Content-Type").getOrElse("")
@@ -162,7 +162,7 @@ class GrpcWebProxyPlugin extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
 
     val requestContentType = ctx.request.headers.get("Content-Type").getOrElse("")
     val isGrpcWebText      = requestContentType.contains("application/grpc-web-text")

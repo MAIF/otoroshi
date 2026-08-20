@@ -14,9 +14,9 @@ import otoroshi.utils.controllers.{
   OptionalEntityAndContext,
   SeqEntityAndContext
 }
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Results}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
@@ -25,12 +25,12 @@ import otoroshi.utils.json.JsonPatchHelpers.patchJson
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apikeys-fs-api")
 
@@ -56,6 +56,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
               )
               apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
             }
+            case _ => ctx.fforbidden
           }
       }
     }
@@ -82,6 +83,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
               )
               env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
             }
+            case _ => ctx.fforbidden
           }
       }
     }
@@ -182,8 +184,10 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                       }
                     }
                   }
+                  case other => throw new IllegalStateException(s"unreachable case: $other")
                 }
               }
+              case other => throw new IllegalStateException(s"unreachable case: $other")
             }
         }
     }
@@ -222,8 +226,10 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                   )
                   newApiKey.save().map(_ => Ok(newApiKey.toJson))
                 }
+                case other => throw new IllegalStateException(s"unreachable case: $other")
               }
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -255,6 +261,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
               env.datastores.apiKeyDataStore.deleteFastLookupByService(serviceId, apiKey)
               apiKey.delete().map(res => Ok(Json.obj("deleted" -> true)))
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -364,17 +371,18 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
               )
               Ok(apiKey.toJson)
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
 }
 
-class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apikeys-fg-api")
 
@@ -400,6 +408,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
               )
               apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -426,6 +435,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
               )
               env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -494,6 +504,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
               )
               Ok(apiKey.toJson)
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -514,10 +525,10 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
           val oldGroup   = (body \ "authorizedGroup").asOpt[String].map(g => "group_" + g).toSeq
           val entities   = (Seq("group_" + group.id) ++ oldGroup).distinct
           val apiKeyJson = ((body \ "authorizedEntities").asOpt[Seq[String]] match {
-            case None                                                     => body ++ Json.obj("authorizedEntities" -> Json.arr("group_" + group.id))
             case Some(groupId) if !groupId.contains(s"group_${group.id}") =>
               body ++ Json.obj("authorizedEntities" -> (entities ++ groupId).distinct)
             case Some(groupId) if groupId.contains(s"group_${group.id}")  => body
+            case _                                                     => body ++ Json.obj("authorizedEntities" -> Json.arr("group_" + group.id))
           }) - "authorizedGroup"
           ApiKey.fromJsonSafe(apiKeyJson) match {
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
@@ -591,8 +602,10 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                     }
                   }
                 }
+                case other => throw new IllegalStateException(s"unreachable case: $other")
               }
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -631,8 +644,10 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                   )
                   newApiKey.save().map(_ => Ok(newApiKey.toJson))
                 }
+                case other => throw new IllegalStateException(s"unreachable case: $other")
               }
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -664,19 +679,20 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
               env.datastores.apiKeyDataStore.deleteFastLookupByGroup(groupId, apiKey)
               apiKey.delete().map(res => Ok(Json.obj("deleted" -> true)))
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
 }
 
-class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[ApiKey, JsValue]
     with CrudControllerHelper[ApiKey, JsValue]
     with AdminApiHelper {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apikeys-api")
 
@@ -698,7 +714,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -714,7 +730,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -731,7 +747,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def createEntityOps(
       entity: ApiKey,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
         Right(
@@ -758,7 +774,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def updateEntityOps(
       entity: ApiKey,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
         Right(
@@ -785,7 +801,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.delete(id).map {
       case true  => {
         Right(
@@ -823,13 +839,13 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
           Ok(
             Json
               .obj(
-                "bearer" -> apiKey.toBearer
+                "bearer" -> apiKey.toBearer()
               )
               .applyOnWithOpt(apiKey.rotation.nextSecret) { case (json, next) =>
-                json ++ Json.obj("bearer_next" -> apiKey.toNextBearer)
+                json ++ Json.obj("bearer_next" -> apiKey.toNextBearer())
               }
               .applyOnWithOpt(ctx.request.getQueryString("newSecret")) { case (json, newSecret) =>
-                json ++ Json.obj("bearer_new" -> apiKey.copy(clientSecret = newSecret).toBearer)
+                json ++ Json.obj("bearer_new" -> apiKey.copy(clientSecret = newSecret).toBearer())
               }
           ).vfuture
         }

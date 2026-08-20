@@ -1,13 +1,13 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 
@@ -68,7 +68,7 @@ class HMACValidator extends NgAccessValidator {
 
     val algorithm            = params.getOrElse("algorithm", "HMAC-SHA256")
     val signature            = params("signature")
-    val headers: Seq[String] = params.get("headers").map(_.split(" ").toSeq).getOrElse(Seq.empty[String])
+    val headers: Seq[String] = params.get("headers").map(_.split(" ").toSeq).getOrElse(Seq.empty[String]).toSeq
     val signingValues        = context.request.headers.headers.filter(p => headers.contains(p._1)).map(_._2)
     val signingString        = signingValues.mkString(" ")
 
@@ -90,7 +90,7 @@ class HMACValidator extends NgAccessValidator {
       NgAccess.NgDenied(BadRequest)
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val HMACValidatorConfig(secret, authorizationHeader) =
       ctx.cachedConfig(internalName)(HMACValidatorConfig.format).getOrElse(HMACValidatorConfig())
 
@@ -106,7 +106,7 @@ class HMACValidator extends NgAccessValidator {
           authorizationHeader match {
             case Some(authorization) if ctx.request.headers.get(authorization).isDefined =>
               checkHMACSignature(ctx.request.headers.get(authorization).get, ctx, secret)
-            case None                                                                    =>
+            case _                                                                    =>
               (ctx.request.headers.get("Authorization"), ctx.request.headers.get("Proxy-Authorization")) match {
                 case (Some(authorization), None) => checkHMACSignature(authorization, ctx, secret)
                 case (None, Some(authorization)) => checkHMACSignature(authorization, ctx, secret)
@@ -175,7 +175,7 @@ class HMACCaller extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val HMACCallerConfig(secret, algo, authorizationHeader) =
       ctx.cachedConfig(internalName)(HMACCallerConfig.format).getOrElse(HMACCallerConfig())
 

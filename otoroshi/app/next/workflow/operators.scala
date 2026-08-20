@@ -5,10 +5,10 @@ import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
 object WorkflowOperatorsInitializer {
@@ -123,7 +123,7 @@ class ContainsIgnoreCaseOperator extends WorkflowOperator {
         case v @ JsNumber(_)  => Seq(v.toString())
         case v @ JsBoolean(_) => Seq(v.toString())
         case JsArray(values)  =>
-          values.collect {
+          values.toSeq.collect {
             case JsString(str)    => str
             case v @ JsNumber(_)  => v.toString()
             case v @ JsBoolean(_) => v.toString()
@@ -185,7 +185,7 @@ class FirstTruthyOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val values = opts.select("values").asOpt[Seq[JsValue]].getOrElse(Seq.empty)
+    val values = opts.select("values").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq
     values.find(v => IsTruthyOperator.isTruthy(v)).getOrElse(JsNull)
   }
 }
@@ -398,8 +398,9 @@ class MergeObjectsOperator extends WorkflowOperator {
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
           case None                          => Seq.empty
-          case Some(value) if path.isEmpty   => value.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-          case Some(value) if path.isDefined => value.at(path.get).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          case Some(value) if path.isEmpty   => value.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
+          case Some(value) if path.isDefined => value.at(path.get).asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -445,6 +446,7 @@ class MapRenameOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -453,9 +455,9 @@ class MapRenameOperator extends WorkflowOperator {
         val old_key = opts.select("old_key").asString
         val new_key = opts.select("new_key").asString
         obj.get(old_key) match {
-          case None            => JsObject(obj - old_key)
+          case None            => JsObject(obj.toMap - old_key)
           case Some(old_value) => {
-            val map = obj - old_key + (new_key -> old_value)
+            val map = obj.toMap - old_key + (new_key -> old_value)
             JsObject(map)
           }
         }
@@ -494,6 +496,7 @@ class MapLengthOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -533,6 +536,7 @@ class MapIsEmptyOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -572,6 +576,7 @@ class ArrayIsEmptyOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -611,6 +616,7 @@ class ArrayDistinctOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -650,6 +656,7 @@ class ArrayReverseOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -691,6 +698,7 @@ class ArrayTakeOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -732,6 +740,7 @@ class ArrayDropOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -773,6 +782,7 @@ class ArrayJoinOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -812,6 +822,7 @@ class ArrayLengthOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -851,6 +862,7 @@ class ArrayInitOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -890,6 +902,7 @@ class ArrayTailOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -929,6 +942,7 @@ class ArrayHeadOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -2428,7 +2442,7 @@ class ContainsOperator extends WorkflowOperator {
         case JsArray(values)  => values
         case _                => Seq.empty[JsValue]
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     val container: JsValue   = opts.select("container").asOpt[JsValue] match {
       case Some(v) => v
       case None    => {
@@ -2438,6 +2452,7 @@ class ContainsOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -2504,6 +2519,7 @@ class IsTruthyOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -2566,6 +2582,7 @@ class IsFalsyOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -2644,6 +2661,7 @@ class MemRefOperator extends WorkflowOperator {
               case None        => value
             }
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -2661,6 +2679,7 @@ class MemRefOperator extends WorkflowOperator {
     //   case None                          => JsNull
     //   case Some(value) if path.isEmpty   => value
     //   case Some(value) if path.isDefined => value.at(path.get).asValue
+    //   case other => throw new IllegalStateException(s"unreachable case: $other")
     // }
   }
 }
@@ -2707,6 +2726,7 @@ class JsonParseOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -2759,7 +2779,7 @@ class StrConcatOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val values    = opts.select("values").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val values    = opts.select("values").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val separator = opts.select("separator").asOptString.getOrElse(" ")
     values.mkString(separator).json
   }
@@ -2817,6 +2837,7 @@ class MapGetOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -2875,7 +2896,7 @@ class MapDelOperator extends WorkflowOperator {
       .map(s => Seq(s))
       .orElse(opts.select("key").asOpt[Seq[String]])
       .orElse(opts.select("keys").asOpt[Seq[String]])
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     val value: JsValue    = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
       case None    => {
@@ -2885,6 +2906,7 @@ class MapDelOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -2957,6 +2979,7 @@ class MapPutOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -3023,6 +3046,7 @@ class ArrayAppendOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -3087,6 +3111,7 @@ class ArrayPrependOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -3150,11 +3175,12 @@ class ArrayDelOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
     value match {
-      case arr @ JsArray(_) => JsArray(arr.value.zipWithIndex.filterNot(_._2 == idx).map(_._1))
+      case arr @ JsArray(_) => JsArray(arr.value.toSeq.zipWithIndex.filterNot(_._2 == idx).map(_._1))
       case _                => JsNull
     }
   }
@@ -3212,6 +3238,7 @@ class ArrayAtOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -3284,6 +3311,7 @@ class ArrayPageOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }
@@ -3350,6 +3378,7 @@ class ProjectionOperator extends WorkflowOperator {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }

@@ -1,12 +1,12 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -52,7 +52,7 @@ class ImageReplacer extends NgRequestTransformer {
   override def transformsRequest: Boolean                  = true
   override def transformsResponse: Boolean                 = true
 
-  private def reload(config: ImageReplacerConfig)(implicit env: Env, ec: ExecutionContext): Unit = {
+  private def reload(config: ImageReplacerConfig)(using env: Env, ec: ExecutionContext): Unit = {
     val promise = Promise[Image]()
     env.Ws.url(config.url).get().map { resp =>
       promise.trySuccess(
@@ -69,7 +69,7 @@ class ImageReplacer extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     if (ctx.otoroshiResponse.contentType.exists(_.startsWith("image/"))) {
       val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ImageReplacerConfig())
       refs.get(config.url) match {

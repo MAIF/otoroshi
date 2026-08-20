@@ -1,17 +1,17 @@
 package otoroshi.next.analytics.controllers
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.vertx.sqlclient.{Tuple => VertxTuple}
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.{AnalyticsSchema, UserAnalyticsExporterRegistry, UserAnalyticsExporterSettings}
-import otoroshi.storage.drivers.reactivepg.pgimplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -22,10 +22,10 @@ import scala.concurrent.{ExecutionContext, Future}
  *   POST   /api/analytics/alerts/:alertId/events/:eventId/seen
  *   POST   /api/analytics/alerts/:alertId/events/:eventId/unseen
  */
-class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val logger = Logger("otoroshi-user-analytics-alert-events-api")
 
@@ -46,7 +46,7 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
   }
 
   private def requireTenantAccess(
-      ctx: ApiActionContext[_]
+      ctx: ApiActionContext[?]
   )(f: String => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
     val tenant    = ctx.currentTenant
     val canAccess =
@@ -193,7 +193,7 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
       eventId: String,
       tenant: String,
       seen: Boolean,
-      ctx: ApiActionContext[_]
+      ctx: ApiActionContext[?]
   ): Future[play.api.mvc.Result] = {
     val by = ctx.backOfficeUser.toOption.flatten.map(_.email).getOrElse("?")
     UserAnalyticsExporterRegistry.activeRunning.flatMap {

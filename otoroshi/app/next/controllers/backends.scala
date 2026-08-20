@@ -2,24 +2,24 @@ package otoroshi.next.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.security.IdGenerator
-import otoroshi.utils.controllers._
+import otoroshi.utils.controllers.*
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[StoredNgBackend, JsValue]
     with CrudControllerHelper[StoredNgBackend, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-backends-api")
 
@@ -41,7 +41,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[StoredNgBackend]]] = {
@@ -60,7 +60,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[StoredNgBackend]]] = {
@@ -80,7 +80,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def createEntityOps(
       entity: StoredNgBackend,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  => {
         Right(
@@ -107,7 +107,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def updateEntityOps(
       entity: StoredNgBackend,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  => {
         Right(
@@ -134,7 +134,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgBackend]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.delete(id).map {
       case true  => {
         Right(
@@ -170,7 +170,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
     }
   }
 
-  def initiateStoredNgBackend() = ApiAction { ctx =>
+  def initiateStoredNgBackend() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     val defaultBackend = StoredNgBackend(
       location = EntityLocation.default,
       id = s"backend_${IdGenerator.uuid}",
@@ -180,7 +180,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
       metadata = Map.empty,
       backend = NgBackend.empty
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx.some)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx.some)(using env))
     env.datastores.globalConfigDataStore
       .latest()
       .templates

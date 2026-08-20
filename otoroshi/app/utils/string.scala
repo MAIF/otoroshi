@@ -2,7 +2,7 @@ package otoroshi.utils.string
 
 import java.text.Normalizer
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 
 object Utils {
   def replace(input: String, search: String, repl: String): String = {

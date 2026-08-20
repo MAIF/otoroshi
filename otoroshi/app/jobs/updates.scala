@@ -2,13 +2,13 @@ package otoroshi.jobs.updates
 
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsNull, JsNumber, JsObject, JsValue, Json}
 
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
@@ -46,7 +46,7 @@ class SoftwareUpdatesJobs extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val otoroshiVersion = env.otoroshiVersion
     if (env.checkForUpdates) {
       logger.info("checking otoroshi updates ...")
@@ -386,6 +386,7 @@ object Version {
         case head :: "rc" :: suffixValue :: Nil                                 =>
           (head, VersionSuffix.ReleaseCandidate.some, Try(suffixValue.replace(".", "").toInt).toOption)
         case head :: _                                                          => (head, None, None)
+        case Nil                                                                => ("0", None, None)
       }
     } else {
       splits.find(lower.contains(_)) match {
@@ -411,6 +412,7 @@ object Version {
             case head :: suffixValue :: Nil if split == "rc"     =>
               (head, VersionSuffix.ReleaseCandidate.some, Try(suffixValue.replace(".", "").toInt).toOption)
             case head :: _                                       => (head, None, None)
+            case Nil                                             => ("0", None, None)
           }
       }
     }

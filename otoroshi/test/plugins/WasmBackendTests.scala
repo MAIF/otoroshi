@@ -1,19 +1,20 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import io.otoroshi.wasm4s.scaladsl.{WasmSource, WasmSourceKind}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import otoroshi.wasm.WasmConfig
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class WasmBackendTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val id    = IdGenerator.uuid
   val route = createRouteWithExternalTarget(
@@ -50,7 +51,7 @@ class WasmBackendTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsString("foo") mustBe "bar"
+  Json.parse(resp.body[String]).selectAsString("foo") mustBe "bar"
 
   deleteOtoroshiRoute(route).futureValue
 }

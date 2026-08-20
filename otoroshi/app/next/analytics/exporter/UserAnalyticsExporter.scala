@@ -1,21 +1,22 @@
 package otoroshi.next.analytics.exporter
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.vertx.core.json.JsonObject
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
 import otoroshi.env.Env
 import otoroshi.events.ExportResult
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.models.{DataExporterConfig, Exporter}
 import otoroshi.security.IdGenerator
-import otoroshi.storage.drivers.reactivepg.pgimplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicReference
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -87,7 +88,7 @@ object UserAnalyticsExporterSettings {
    * Only one exporter at a time is expected to carry the flag (see UI promote
    * button). If multiple do, we keep the first one (stable order by id).
    */
-  def findActiveAnalyticsExporter(implicit env: Env, ec: ExecutionContext): Future[Option[DataExporterConfig]] = {
+  def findActiveAnalyticsExporter(using env: Env, ec: ExecutionContext): Future[Option[DataExporterConfig]] = {
     env.datastores.dataExporterConfigDataStore.findAll().map { all =>
       all
         .filter(_.enabled)
@@ -101,7 +102,7 @@ object UserAnalyticsExporterSettings {
 
 /**
  * Registry of currently running UserAnalyticsExporter instances, keyed by
- * exporter id. The query layer (Phase B) uses this to find the live PgPool
+ * exporter id. The query layer (Phase B) uses this to find the live Pool
  * of the active exporter.
  */
 object UserAnalyticsExporterRegistry {
@@ -119,10 +120,10 @@ object UserAnalyticsExporterRegistry {
   def get(id: String): Option[UserAnalyticsExporter] = Option(running.get(id))
 
   /**
-   * Returns the live PgPool of the currently active analytics exporter
+   * Returns the live Pool of the currently active analytics exporter
    * (the one carrying the `otoroshi:user-analytics:active=true` metadata).
    */
-  def activeRunningPool(implicit env: Env, ec: ExecutionContext): Future[Option[PgPool]] = {
+  def activeRunningPool(using env: Env, ec: ExecutionContext): Future[Option[Pool]] = {
     UserAnalyticsExporterSettings.findActiveAnalyticsExporter.map { configOpt =>
       configOpt.flatMap(c => Option(running.get(c.id))).flatMap(_.pool)
     }
@@ -132,10 +133,10 @@ object UserAnalyticsExporterRegistry {
    * Returns the active exporter settings AND its live pool, both required to
    * execute a query against the right table/schema.
    */
-  def activeRunning(implicit
+  def activeRunning(using
       env: Env,
       ec: ExecutionContext
-  ): Future[Option[(UserAnalyticsExporterSettings, PgPool)]] = {
+  ): Future[Option[(UserAnalyticsExporterSettings, Pool)]] = {
     UserAnalyticsExporterSettings.findActiveAnalyticsExporter.map { configOpt =>
       for {
         cfg      <- configOpt
@@ -242,7 +243,7 @@ object AnalyticsSchema {
     )
   }
 
-  def migrate(pool: PgPool, settings: UserAnalyticsExporterSettings)(implicit ec: ExecutionContext): Future[Unit] = {
+  def migrate(pool: Pool, settings: UserAnalyticsExporterSettings)(using ec: ExecutionContext): Future[Unit] = {
     val createSchema      = pool.query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};").executeAsync()
     val createTable       = createSchema.flatMap(_ => pool.query(createTableSql(settings)).executeAsync())
     val withEventsIndexes = indexStatements(settings).foldLeft(createTable.map(_ => ())) { (acc, ddl) =>
@@ -307,11 +308,11 @@ object EventDenormalizer {
 
     val envStr   = stripped.select("@env").asOptString.getOrElse("")
     val tenant   = stripped.select("route").select("_loc").select("tenant").asOptString.getOrElse("default")
-    val teams    = stripped.select("route").select("_loc").select("teams").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val teams    = stripped.select("route").select("_loc").select("teams").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val routeId  = stripped.select("route").select("id").asOptString
     val routeNm  = stripped.select("route").select("name").asOptString
     val apiId    = stripped.select("route").select("metadata").select("Otoroshi-Api-Ref").asOptString
-    val groupIds = stripped.select("route").select("groups").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val groupIds = stripped.select("route").select("groups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
     val identityType          = stripped.select("identity").select("identityType").asOptString
     val identityId            = stripped.select("identity").select("identity").asOptString
@@ -469,12 +470,12 @@ object FiredAlertDenormalizer {
   }
 }
 
-class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+class UserAnalyticsExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(using ec, env) {
 
-  private val poolRef = new AtomicReference[PgPool](null)
+  private val poolRef = new AtomicReference[Pool](null)
 
-  def pool: Option[PgPool] = Option(poolRef.get())
+  def pool: Option[Pool] = Option(poolRef.get())
 
   private def buildConnectOptions(s: UserAnalyticsExporterSettings): PgConnectOptions = {
     s.uri match {
@@ -502,7 +503,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
     exporter[UserAnalyticsExporterSettings] match {
       case None    => FastFuture.successful(())
       case Some(s) =>
-        val newPool = PgPool.pool(buildConnectOptions(s), new PoolOptions().setMaxSize(s.poolSize))
+        val newPool = PgBuilder.pool().connectingTo(buildConnectOptions(s)).`with`(new PoolOptions().setMaxSize(s.poolSize)).build()
         poolRef.set(newPool)
         UserAnalyticsExporterRegistry.register(config.id, this)
         if (env.clusterConfig.mode.isOff || env.clusterConfig.mode.isLeader) {
@@ -513,7 +514,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
                 config.metadata.get(UserAnalyticsExporterSettings.ActiveMetadataKey).contains("true")
               if (isActive) {
                 otoroshi.next.analytics.defaults.DefaultDashboards
-                  .seedIfMissing()(env, ec)
+                  .seedIfMissing()(using env, ec)
                   .map(_ => ())
                   .recover { case e: Throwable =>
                     logger.error(s"[user-analytics-exporter] error while seeding default dashboards", e)
@@ -566,7 +567,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
   }
 
   private def sendGatewayEvents(
-      pool: PgPool,
+      pool: Pool,
       s: UserAnalyticsExporterSettings,
       events: Seq[JsValue]
   ): Future[Unit] = {
@@ -587,7 +588,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
   }
 
   private def sendAlertEvents(
-      pool: PgPool,
+      pool: Pool,
       s: UserAnalyticsExporterSettings,
       events: Seq[JsValue]
   ): Future[Unit] = {

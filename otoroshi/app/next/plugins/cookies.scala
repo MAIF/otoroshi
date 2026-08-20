@@ -1,14 +1,14 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,7 +25,7 @@ case class AdditionalCookieOutConfig(
     sameSite: Option[play.api.mvc.Cookie.SameSite] = None
 ) extends NgPluginConfig {
   override def json: JsValue                                             = AdditionalCookieOutConfig.format.writes(this)
-  def toCookie(attrs: TypedMap)(implicit env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
+  def toCookie(attrs: TypedMap)(using env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
     name = GlobalExpressionLanguage.apply(name, attrs, env),
     value = GlobalExpressionLanguage.apply(value, attrs, env),
     domain = domain.map(v => GlobalExpressionLanguage.apply(v, attrs, env)),
@@ -108,7 +108,7 @@ case class AdditionalCookieInConfig(
     value: String
 ) extends NgPluginConfig {
   override def json: JsValue                                             = AdditionalCookieInConfig.format.writes(this)
-  def toCookie(attrs: TypedMap)(implicit env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
+  def toCookie(attrs: TypedMap)(using env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
     name = GlobalExpressionLanguage.apply(name, attrs, env),
     value = GlobalExpressionLanguage.apply(value, attrs, env)
   )
@@ -166,9 +166,9 @@ class AdditionalCookieIn extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
-      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads).getOrElse(AdditionalCookieInConfig.default)
+      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format).getOrElse(AdditionalCookieInConfig.default)
     Right(
       ctx.otoroshiRequest.copy(
         cookies = ctx.otoroshiRequest.cookies :+ config.toCookie(ctx.attrs)
@@ -198,9 +198,9 @@ class AdditionalCookieOut extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
-      .cachedConfig(internalName)(AdditionalCookieOutConfig.format.reads)
+      .cachedConfig(internalName)(AdditionalCookieOutConfig.format)
       .getOrElse(AdditionalCookieOutConfig.default)
     Right(
       ctx.otoroshiResponse.copy(
@@ -219,7 +219,7 @@ object RemoveCookiesInConfig {
   val format                         = new Format[RemoveCookiesInConfig] {
     override def reads(json: JsValue): JsResult[RemoveCookiesInConfig] = Try {
       RemoveCookiesInConfig(
-        names = json.select("names").asOpt[Seq[String]].getOrElse(Seq.empty)
+        names = json.select("names").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -260,9 +260,9 @@ class RemoveCookiesIn extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config: RemoveCookiesInConfig =
-      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format.reads).getOrElse(RemoveCookiesInConfig.default)
+      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format).getOrElse(RemoveCookiesInConfig.default)
     Right(
       ctx.otoroshiRequest.copy(
         cookies = ctx.otoroshiRequest.cookies.filterNot(v => config.names.contains(v.name))
@@ -292,9 +292,9 @@ class RemoveCookiesOut extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config: RemoveCookiesInConfig =
-      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format.reads).getOrElse(RemoveCookiesInConfig.default)
+      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format).getOrElse(RemoveCookiesInConfig.default)
     Right(
       ctx.otoroshiResponse.copy(
         cookies = ctx.otoroshiResponse.cookies.filterNot(v => config.names.contains(v.name))
@@ -324,9 +324,9 @@ class MissingCookieIn extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
-      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads).getOrElse(AdditionalCookieInConfig.default)
+      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format).getOrElse(AdditionalCookieInConfig.default)
     if (!ctx.otoroshiRequest.cookies.exists(_.name == config.name)) {
       Right(
         ctx.otoroshiRequest.copy(
@@ -360,9 +360,9 @@ class MissingCookieOut extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
-      .cachedConfig(internalName)(AdditionalCookieOutConfig.format.reads)
+      .cachedConfig(internalName)(AdditionalCookieOutConfig.format)
       .getOrElse(AdditionalCookieOutConfig.default)
     if (!ctx.otoroshiResponse.cookies.exists(_.name == config.name)) {
       Right(
@@ -419,9 +419,9 @@ class CookiesValidation extends NgAccessValidator {
   override def configFlow: Seq[String]                     = CookiesValidationConfig.configFlow
   override def configSchema: Option[JsObject]              = CookiesValidationConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config            =
-      ctx.cachedConfig(internalName)(CookiesValidationConfig.format.reads).getOrElse(CookiesValidationConfig())
+      ctx.cachedConfig(internalName)(CookiesValidationConfig.format).getOrElse(CookiesValidationConfig())
     val validationCookies = config.cookies
     val cookies           = ctx.request.cookies.map { cookie =>
       (cookie.name, cookie.value)

@@ -1,6 +1,8 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
@@ -16,14 +18,14 @@ import otoroshi.next.plugins.{
 import otoroshi.plugins.mirror.MirroringPluginConfig
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Promise
 
 class RegexRequestBodyRewriterTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -56,7 +58,7 @@ class RegexRequestBodyRewriterTests(parent: PluginsTestSpec) {
     .post(Json.obj("foo" -> "bar"))
     .futureValue
 
-  Json.parse(resp.body).selectAsObject("body") mustBe Json.obj("bar" -> "bar")
+  Json.parse(resp.body[String]).selectAsObject("body") mustBe Json.obj("bar" -> "bar")
 
   resp.status mustBe Status.OK
   deleteOtoroshiRoute(route).futureValue

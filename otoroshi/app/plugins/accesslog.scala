@@ -1,10 +1,10 @@
 package otoroshi.plugins.accesslog
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import org.joda.time.DateTime
 import otoroshi.events.KafkaWrapper
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -12,10 +12,10 @@ import otoroshi.script.{HttpResponse, RequestTransformer, TransformerErrorContex
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.future.Implicits.*
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -139,7 +139,7 @@ class AccessLog extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
 
     val snowflake = ctx.snowflake
     val status    = ctx.rawResponse.status
@@ -151,14 +151,14 @@ class AccessLog extends RequestTransformer {
     val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
       val config                       = ctx.configFor("AccessLog")
       val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val validStatuses: Seq[Int]      = (config \ "statuses")
         .asOpt[Seq[Int]]
         .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-        .getOrElse(Seq.empty)
-      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
+      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val validIdentities: Seq[String] =
-        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
       val matchPath     = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch   =
@@ -200,7 +200,7 @@ class AccessLog extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     val snowflake = ctx.snowflake
     val status    = ctx.otoroshiResponse.status
@@ -212,14 +212,14 @@ class AccessLog extends RequestTransformer {
     val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
       val config                       = ctx.configFor("AccessLog")
       val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val validStatuses: Seq[Int]      = (config \ "statuses")
         .asOpt[Seq[Int]]
         .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-        .getOrElse(Seq.empty)
-      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
+      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val validIdentities: Seq[String] =
-        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
       val matchPath     = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch   =
@@ -303,7 +303,7 @@ class AccessLogJson extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
 
     val snowflake = ctx.snowflake
     val status    = ctx.rawResponse.status
@@ -315,14 +315,14 @@ class AccessLogJson extends RequestTransformer {
     val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
       val config                       = ctx.configFor("AccessLog")
       val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val validStatuses: Seq[Int]      = (config \ "statuses")
         .asOpt[Seq[Int]]
         .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-        .getOrElse(Seq.empty)
-      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
+      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val validIdentities: Seq[String] =
-        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
       val matchPath     = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch   =
@@ -390,7 +390,7 @@ class AccessLogJson extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     val snowflake = ctx.snowflake
     val status    = ctx.otoroshiResponse.status
@@ -402,14 +402,14 @@ class AccessLogJson extends RequestTransformer {
     val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
       val config                       = ctx.configFor("AccessLog")
       val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val validStatuses: Seq[Int]      = (config \ "statuses")
         .asOpt[Seq[Int]]
         .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-        .getOrElse(Seq.empty)
-      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
+      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val validIdentities: Seq[String] =
-        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
       val matchPath     = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch   =
@@ -528,7 +528,7 @@ class KafkaAccessLog extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
 
     env.datastores.globalConfigDataStore.latestSafe match {
       case None               => Right(ctx.otoroshiResponse).future
@@ -551,16 +551,16 @@ class KafkaAccessLog extends RequestTransformer {
                 val topic: String                =
                   (config \ "topic").asOpt[String].getOrElse("otoroshi-access-log")
                 val validPaths: Seq[String]      =
-                  (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
                 val validStatuses: Seq[Int]      =
                   (config \ "statuses")
                     .asOpt[Seq[Int]]
                     .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-                    .getOrElse(Seq.empty)
+                    .getOrElse(Seq.empty).toSeq
                 val validMethods: Seq[String]    =
-                  (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
                 val validIdentities: Seq[String] =
-                  (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
                 val matchPath     =
                   if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
@@ -655,7 +655,7 @@ class KafkaAccessLog extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     env.datastores.globalConfigDataStore.latestSafe match {
       case None               => ctx.otoroshiResult.future
@@ -678,16 +678,16 @@ class KafkaAccessLog extends RequestTransformer {
                 val topic: String                =
                   (config \ "topic").asOpt[String].getOrElse("otoroshi-access-log")
                 val validPaths: Seq[String]      =
-                  (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
                 val validStatuses: Seq[Int]      =
                   (config \ "statuses")
                     .asOpt[Seq[Int]]
                     .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-                    .getOrElse(Seq.empty)
+                    .getOrElse(Seq.empty).toSeq
                 val validMethods: Seq[String]    =
-                  (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
                 val validIdentities: Seq[String] =
-                  (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
                 val matchPath     =
                   if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))

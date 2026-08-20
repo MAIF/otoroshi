@@ -4,22 +4,22 @@ import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.MatchResult
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.settings.ServerSettings
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.TLSProtocol.NegotiateNewSession
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
-import akka.stream.{IgnoreComplete, Materializer}
-import akka.util.ByteString
-import akka.{AwesomeIncomingConnection, Done, TcpUtils}
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.settings.ServerSettings
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.TLSProtocol.NegotiateNewSession
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
+import org.apache.pekko.stream.{IgnoreComplete, Materializer}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{AwesomeIncomingConnection, Done, TcpUtils}
 import otoroshi.env.Env
 import otoroshi.events.{DataInOut, Location, TcpEvent}
 
-import javax.net.ssl._
+import javax.net.ssl.*
 import otoroshi.models.{EntityLocation, IpFiltering, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
 import redis.RedisClientMasterSlaves
 import otoroshi.security.IdGenerator
@@ -31,7 +31,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 /**
  * - [x] TCP service can be disabled
@@ -85,7 +85,7 @@ case class TcpService(
 ) extends otoroshi.models.EntityLocationSupport {
   def internalId: String                              = id
   def json: JsValue                                   = TcpService.fmt.writes(this)
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
   def theDescription: String                          = description
   def theMetadata: Map[String, String]                = metadata
   def theName: String                                 = name
@@ -114,7 +114,7 @@ object SniSettings {
               enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
               forwardIfNoMatch = (json \ "forwardIfNoMatch").asOpt[Boolean].getOrElse(false),
               forwardsTo =
-                (json \ "forwardsTo").asOpt(TcpTarget.fmt).getOrElse(TcpTarget("127.0.0.1", None, 8080, false))
+                (json \ "forwardsTo").asOpt(using TcpTarget.fmt).getOrElse(TcpTarget("127.0.0.1", None, 8080, false))
             )
           )
         } recover { case e =>
@@ -167,7 +167,7 @@ object TcpRule {
           JsSuccess(
             TcpRule(
               domain = (json \ "domain").asOpt[String].getOrElse("*"),
-              targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty)
+              targets = (json \ "targets").asOpt(using Reads.seq(using TcpTarget.fmt)).getOrElse(Seq.empty).toSeq
             )
           )
         } recover { case e =>
@@ -223,7 +223,7 @@ object TcpService {
       }
     }
 
-  def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], TcpService] =
+  def fromJsonSafe(value: JsValue): Either[scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])], TcpService] =
     fmt.reads(value).asEither
 
   val fmt: Format[TcpService] = new Format[TcpService] {
@@ -239,11 +239,11 @@ object TcpService {
             interface = (json \ "interface").asOpt[String].getOrElse("0.0.0.0"),
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             tls = (json \ "tls").asOpt[String].flatMap(TlsMode.apply).getOrElse(TlsMode.Disabled),
-            sni = (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(false, false)),
+            sni = (json \ "sni").asOpt(using SniSettings.fmt).getOrElse(SniSettings(false, false)),
             clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
-            rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty),
+            rules = (json \ "rules").asOpt(using Reads.seq(using TcpRule.fmt)).getOrElse(Seq.empty).toSeq,
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>
@@ -271,16 +271,16 @@ object TcpService {
     new RunningServers(env).start()
   }
 
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[TcpService]] =
+  def findAll()(using ec: ExecutionContext, env: Env): Future[Seq[TcpService]] =
     env.datastores.tcpServiceDataStore.findAll()
 
-  def findByPort(port: Int)(implicit ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
+  def findByPort(port: Int)(using ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
     findAll().map(_.find(_.port == port))
 
-  def findAllFromState()(implicit ec: ExecutionContext, env: Env): Future[Seq[TcpService]] =
+  def findAllFromState()(using ec: ExecutionContext, env: Env): Future[Seq[TcpService]] =
     env.proxyState.allTcpServices().vfuture
 
-  def findByPortFromState(port: Int)(implicit ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
+  def findByPortFromState(port: Int)(using ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
     findAllFromState().map(_.find(_.port == port))
 
   def domainMatch(matchRule: String, domain: String): Boolean = {
@@ -294,7 +294,7 @@ object TcpService {
       tls: Boolean,
       start: Long,
       debugger: String => Sink[ByteString, Future[Done]]
-  )(cb: (Long, Long) => Unit)(implicit
+  )(cb: (Long, Long) => Unit)(using
       ec: ExecutionContext,
       actorSystem: ActorSystem,
       materializer: Materializer,
@@ -452,7 +452,7 @@ object TcpService {
       tls: Boolean,
       start: Long,
       debugger: String => Sink[ByteString, Future[Done]]
-  )(cb: (Long, Long) => Unit)(implicit
+  )(cb: (Long, Long) => Unit)(using
       ec: ExecutionContext,
       actorSystem: ActorSystem,
       materializer: Materializer,
@@ -465,7 +465,7 @@ object TcpService {
     TcpService.findByPortFromState(incoming.localAddress.getPort).flatMap {
       case Some(service) if service.enabled && service.sni.enabled => {
         try {
-          val fullLayer: Flow[ByteString, ByteString, Future[_]] = Flow.lazyFutureFlow { () =>
+          val fullLayer: Flow[ByteString, ByteString, Future[?]] = Flow.lazyFutureFlow { () =>
             incoming.domain.map { sniDomain =>
               ref.set(sniDomain + ":" + port)
               log.info(s"domain: $sniDomain, local: ${incoming.localAddress}, remote: ${incoming.remoteAddress}")
@@ -685,13 +685,13 @@ class TcpEngineProvider {
 }
 
 object TcpProxy {
-  def apply(tcp: TcpService)(implicit system: ActorSystem, mat: Materializer): TcpProxy =
-    new TcpProxy(tcp.interface, tcp.port, tcp.tls, tcp.sni.enabled, tcp.clientAuth, false)(system, mat)
+  def apply(tcp: TcpService)(using system: ActorSystem, mat: Materializer): TcpProxy =
+    new TcpProxy(tcp.interface, tcp.port, tcp.tls, tcp.sni.enabled, tcp.clientAuth, false)(using system, mat)
   def apply(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientAuth: ClientAuth, debug: Boolean = false)(
-      implicit
+      using
       system: ActorSystem,
       mat: Materializer
-  ): TcpProxy                                                                           = new TcpProxy(interface, port, tls, sni, clientAuth, debug)(system, mat)
+  ): TcpProxy                                                                           = new TcpProxy(interface, port, tls, sni, clientAuth, debug)(using system, mat)
 }
 
 class TcpProxy(
@@ -701,13 +701,13 @@ class TcpProxy(
     sni: Boolean,
     clientAuth: ClientAuth,
     debug: Boolean = false
-)(implicit
+)(using
     system: ActorSystem,
     mat: Materializer
 ) {
 
   private val log         = Logger("otoroshi-tcp-proxy")
-  private implicit val ec = system.dispatcher
+  private implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
   private val provider    = new TcpEngineProvider()
 
   private def debugger(title: String): Sink[ByteString, Future[Done]] =
@@ -741,8 +741,8 @@ class TcpProxy(
             ref
               .get()
               .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-              .toAnalytics()(env)
-          }(ec, system, mat, env)
+              .toAnalytics()(using env)
+          }(using ec, system, mat, env)
           .andThen { case Success(evt) =>
             ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
@@ -776,8 +776,8 @@ class TcpProxy(
             ref
               .get()
               .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-              .toAnalytics()(env)
-          }(ec, system, mat, env)
+              .toAnalytics()(using env)
+          }(using ec, system, mat, env)
           .andThen { case Success(evt) =>
             ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
@@ -805,8 +805,8 @@ class TcpProxy(
             ref
               .get()
               .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-              .toAnalytics()(env)
-          }(ec, system, mat, env)
+              .toAnalytics()(using env)
+          }(using ec, system, mat, env)
           .andThen { case Success(evt) =>
             ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
@@ -826,14 +826,14 @@ class TcpProxy(
         idleTimeout = Duration.Inf
       )
       .map { incomingConnection =>
-        val promise    = Promise[String]
+        val promise    = Promise[String]()
         val firstChunk = new AtomicBoolean(false)
         AwesomeIncomingConnection(
           incomingConnection.copy(
             flow = incomingConnection.flow.alsoTo(Sink.foreach { bs =>
               if (firstChunk.compareAndSet(false, true)) {
                 val packetString = bs.utf8String
-                val matcher      = akka.TcpUtils.domainNamePattern.matcher(packetString)
+                val matcher      = org.apache.pekko.TcpUtils.domainNamePattern.matcher(packetString)
                 while (matcher.find()) {
                   val matchResult: MatchResult = matcher.toMatchResult
                   val expression: String       = matchResult.group()
@@ -856,8 +856,8 @@ class TcpProxy(
           .routeWithSNI(incoming, port, id, false, start, debugger) { case (in, out) =>
             val e = ref.get().copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
             // println(Json.prettyPrint(e.toJson(env)))
-            e.toAnalytics()(env)
-          }(ec, system, mat, env)
+            e.toAnalytics()(using env)
+          }(using ec, system, mat, env)
           .andThen { case Success(evt) =>
             ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
@@ -875,6 +875,7 @@ class TcpProxy(
       case TlsMode.PassThrough if !sni => tcpBindNoTls(settings, env)
       case TlsMode.Enabled if !sni     => tcpBindTls(settings, env)
       case TlsMode.Enabled if sni      => tcpBindTlsAndSNI(settings, env)
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }).andThen {
       case Success(_) if tls == TlsMode.Enabled => log.info(s"Tcp/Tls proxy listening on $interface:$port")
       case Success(_)                           => log.info(s"Tcp     proxy listening on $interface:$port")
@@ -889,12 +890,12 @@ case class RunningServer(port: Int, oldService: TcpService, binding: Future[Tcp.
 
 class RunningServers(env: Env) {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
-  private implicit val system = env.otoroshiActorSystem
-  private implicit val ec     = env.otoroshiExecutionContext
-  private implicit val mat    = env.otoroshiMaterializer
-  private implicit val ev     = env
+  private implicit val system: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  private implicit val ev: otoroshi.env.Env = env
   private val ref             = new AtomicReference[Cancellable]()
   private val running         = new AtomicBoolean(false)
   private val syncing         = new AtomicBoolean(false)
@@ -984,7 +985,7 @@ class RunningServers(env: Env) {
 }
 
 sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): TcpService = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): TcpService = {
     val defaultService = TcpService(
       id = IdGenerator.namedId("tcp_service", env),
       enabled = true,
@@ -1008,9 +1009,9 @@ sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
         )
       )
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .tcpService
       .map { template =>
@@ -1027,7 +1028,7 @@ class KvTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)
     with RedisLikeStore[TcpService] {
 
   override def fmt: Format[TcpService]                 = TcpService.fmt
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${env.storageRoot}:tcp:services:$id"
   override def extractId(value: TcpService): String    = value.id
 }

@@ -1,16 +1,16 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Source, StreamConverters}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Source, StreamConverters}
+import org.apache.pekko.util.ByteString
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.JsonPathValidator
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import java.io.File
@@ -20,8 +20,8 @@ import java.util.zip.ZipFile
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters.enumerationAsScalaIteratorConverter
-import scala.util._
+import scala.jdk.CollectionConverters.*
+import scala.util.*
 
 case class ZipFileBackendConfig(
     url: String,
@@ -82,7 +82,7 @@ class ZipFileBackend extends NgBackendCall {
 
   private def getZipFile(
       config: ZipFileBackendConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, ZipFile]] = fileCache.synchronized {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, ZipFile]] = fileCache.synchronized {
     val url = config.url
     if (url.startsWith("file://")) {
       Right(new ZipFile(url.replace("file://", ""))).vfuture
@@ -124,9 +124,9 @@ class ZipFileBackend extends NgBackendCall {
     }
   }
 
-  private def atPath(_path: String, zip: ZipFile, config: ZipFileBackendConfig)(implicit
+  private def atPath(_path: String, zip: ZipFile, config: ZipFileBackendConfig)(using
       env: Env
-  ): Option[(String, Source[ByteString, _])] = {
+  ): Option[(String, Source[ByteString, ?])] = {
     var path =
       if (_path == "/") "index.html"
       else {
@@ -169,7 +169,7 @@ class ZipFileBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -305,7 +305,7 @@ object ZipBombBackendConfig {
         predicates = (json \ "predicates")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -341,7 +341,7 @@ class ZipBombBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

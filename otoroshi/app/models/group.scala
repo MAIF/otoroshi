@@ -3,7 +3,7 @@ package otoroshi.models
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
 import otoroshi.utils.syntax.implicits.BetterJsReadable
@@ -19,11 +19,11 @@ case class ServiceGroup(
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
-  def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  def services(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     env.datastores.serviceDescriptorDataStore.findByGroup(id)
-  def save()(implicit ec: ExecutionContext, env: Env)                                   = env.datastores.serviceGroupDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.serviceGroupDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.serviceGroupDataStore.exists(this)
+  def save()(using ec: ExecutionContext, env: Env)                                   = env.datastores.serviceGroupDataStore.set(this)
+  def delete()(using ec: ExecutionContext, env: Env)                                 = env.datastores.serviceGroupDataStore.delete(this)
+  def exists()(using ec: ExecutionContext, env: Env)                                 = env.datastores.serviceGroupDataStore.exists(this)
   def toJson                                                                            = ServiceGroup.toJson(this)
 
   def json: JsValue                    = toJson
@@ -47,7 +47,7 @@ object ServiceGroup {
           name = (json \ "name").as[String],
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -76,8 +76,8 @@ object ServiceGroup {
 }
 
 trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceGroup = initiateNewGroup(env, ctx)
-  def initiateNewGroup(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceGroup = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): ServiceGroup = initiateNewGroup(env, ctx)
+  def initiateNewGroup(env: Env, ctx: Option[ApiActionContext[?]] = None): ServiceGroup = {
     val defaultGroup = ServiceGroup(
       id = IdGenerator.namedId("group", env),
       name = "product-group",
@@ -85,9 +85,9 @@ trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
       metadata = Map.empty,
       tags = Seq.empty
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .group
       .map { template =>

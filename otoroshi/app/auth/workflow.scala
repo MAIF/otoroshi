@@ -1,17 +1,17 @@
 package otoroshi.auth
 
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.BodyHelper
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{JsonPathValidator, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -56,19 +56,19 @@ object WorkflowAuthModuleConfig {
         clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(true),
         sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-        deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         sessionCookieValues =
-          (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
         userValidators = (json \ "userValidators")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         remoteValidators = (json \ "remoteValidators")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         workflowRef = json.select("workflowRef").asOpt[String].filter(_.trim.nonEmpty)
       )
     } match {
@@ -99,11 +99,11 @@ case class WorkflowAuthModuleConfig(
 
   override def form: Option[Form]                                               = None
   override def cookieSuffix(desc: ServiceDescriptor): String                    = s"workflow-auth-$id"
-  override def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def save()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.authConfigsDataStore.set(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig         = copy(location = location)
   override def asJson: JsValue                                                  = WorkflowAuthModuleConfig.format.writes(this)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]              = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]              = AuthModuleConfig._fmt(env)
   override def `type`: String                                                   = "workflow"
   override def humanName: String                                                = "Workflow auth. module provider"
   override def desc: String                                                     = description
@@ -121,7 +121,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
 
   def this() = this(WorkflowAuthModuleConfig.defaultConfig)
 
-  private def runWorkflowPhase(phase: String, input: JsObject)(implicit
+  private def runWorkflowPhase(phase: String, input: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[String, JsValue]] = {
@@ -164,7 +164,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
     Results
       .Status(response.select("status").asOpt[Int].getOrElse(200))
       .apply(body)
-      .withHeaders(headers.toSeq: _*)
+      .withHeaders(headers.toSeq*)
       .as(contentType)
   }
 
@@ -173,7 +173,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     val route = NgRoute.fromServiceDescriptor(descriptor, false)
     val input = Json.obj(
       "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
@@ -194,7 +194,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
     val route = NgRoute.fromServiceDescriptor(descriptor, false)
     val input = Json.obj(
       "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
@@ -214,7 +214,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
     }
   }
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -240,7 +240,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -255,7 +255,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
     }
   }
 
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = {
@@ -275,7 +275,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
     }
   }
 
-  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, BackOfficeUser]] = {

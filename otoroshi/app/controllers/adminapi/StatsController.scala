@@ -3,8 +3,8 @@ package otoroshi.controllers.adminapi
 import java.lang.management.ManagementFactory
 import java.util.concurrent.TimeUnit
 import otoroshi.actions.ApiAction
-import akka.NotUsed
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import otoroshi.cluster.CpuInfo.tmbs
 import otoroshi.cluster.StatsView
 import otoroshi.env.Env
@@ -16,16 +16,16 @@ import otoroshi.next.controllers.Stats
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
-class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-stats-api")
 

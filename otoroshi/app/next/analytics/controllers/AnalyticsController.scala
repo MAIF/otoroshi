@@ -1,32 +1,33 @@
 package otoroshi.next.analytics.controllers
 
-import akka.http.scaladsl.util.FastFuture
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.PoolOptions
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.{AnalyticsSchema, UserAnalyticsExporterRegistry, UserAnalyticsExporterSettings}
 import otoroshi.next.analytics.queries.{AnalyticsRuntime, Filters}
-import otoroshi.storage.drivers.reactivepg.pgimplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   private val logger = Logger("otoroshi-user-analytics-api")
 
   // ----- helpers -------------------------------------------------------------
 
   private def requireSuperAdmin(
-      ctx: ApiActionContext[_]
+      ctx: ApiActionContext[?]
   )(f: => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
     if (ctx.userIsSuperAdmin) f
     else Forbidden(Json.obj("error" -> "super admin only")).future
@@ -39,7 +40,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
    *  query filters.
    */
   private def requireTenantAccess(
-      ctx: ApiActionContext[_]
+      ctx: ApiActionContext[?]
   )(f: String => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
     val tenant    = ctx.currentTenant
     val canAccess =
@@ -135,7 +136,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                 .setPassword(s.password)
                 .applyOnIf(s.ssl)(_.setSslMode(SslMode.REQUIRE))
           }
-          val pool = PgPool.pool(opts, new PoolOptions().setMaxSize(1))
+          val pool = PgBuilder.pool().connectingTo(opts).`with`(new PoolOptions().setMaxSize(1)).build()
           pool
             .query("SELECT 1")
             .executeAsync()

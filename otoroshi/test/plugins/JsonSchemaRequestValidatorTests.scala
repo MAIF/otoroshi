@@ -1,15 +1,17 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class JsonSchemaRequestValidatorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   private val schema =
     """{
@@ -53,7 +55,7 @@ class JsonSchemaRequestValidatorTests(parent: PluginsTestSpec) {
       .post(Json.stringify(Json.obj("name" -> "Alice"))) // missing required "age"
       .futureValue
     call.status mustBe Status.UNPROCESSABLE_ENTITY
-    val body  = Json.parse(call.body)
+    val body  = Json.parse(call.body[String])
     (body \ "error").asOpt[String] mustBe Some("request body does not match the json schema")
     (body \ "validation_errors").asOpt[Seq[String]].exists(_.nonEmpty) mustBe true
     deleteOtoroshiRoute(route).futureValue

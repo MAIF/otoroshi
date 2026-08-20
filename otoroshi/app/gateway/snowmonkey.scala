@@ -1,28 +1,28 @@
 package otoroshi.gateway
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models._
+import otoroshi.events.*
+import otoroshi.models.*
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{Result, Results}
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
 case class SnowMonkeyContext(
-    trailingRequestBodyStream: Source[ByteString, _],
-    trailingResponseBodyStream: Source[ByteString, _],
+    trailingRequestBodyStream: Source[ByteString, ?],
+    trailingResponseBodyStream: Source[ByteString, ?],
     trailingRequestBodySize: Int = 0,
     trailingResponseBodySize: Int = 0
 )
 
-class SnowMonkey(implicit env: Env) {
+class SnowMonkey(using env: Env) {
 
   private val logger = Logger("otoroshi-snowmonkey")
   private val random = new scala.util.Random
@@ -45,20 +45,20 @@ class SnowMonkey(implicit env: Env) {
 
     val sb = new scala.collection.mutable.StringBuilder()
 
-    if (megaannums > 0) sb.append(megaannums + " megaannums ")
-    if (millenniums > 0) sb.append(millenniums + " millenniums ")
-    if (centuries > 0) sb.append(centuries + " centuries ")
-    if (decades > 0) sb.append(decades + " decades ")
-    if (years > 0) sb.append(years + " years ")
-    if (months > 0) sb.append(months + " months ")
-    if (weeks > 0) sb.append(weeks + " weeks ")
-    if (days > 0) sb.append(days + " days ")
-    if (hours > 0) sb.append(hours + " hours ")
-    if (minutes > 0) sb.append(minutes + " minutes ")
-    if (seconds > 0) sb.append(seconds + " seconds ")
+    if (megaannums > 0) sb.append(megaannums.toString + " megaannums ")
+    if (millenniums > 0) sb.append(millenniums.toString + " millenniums ")
+    if (centuries > 0) sb.append(centuries.toString + " centuries ")
+    if (decades > 0) sb.append(decades.toString + " decades ")
+    if (years > 0) sb.append(years.toString + " years ")
+    if (months > 0) sb.append(months.toString + " months ")
+    if (weeks > 0) sb.append(weeks.toString + " weeks ")
+    if (days > 0) sb.append(days.toString + " days ")
+    if (hours > 0) sb.append(hours.toString + " hours ")
+    if (minutes > 0) sb.append(minutes.toString + " minutes ")
+    if (seconds > 0) sb.append(seconds.toString + " seconds ")
     if (minutes < 1 && hours < 1 && days < 1) {
       if (sb.nonEmpty) sb.append(" ")
-      sb.append(milliseconds + " milliseconds")
+      sb.append(milliseconds.toString + " milliseconds")
     }
     sb.toString().trim
   }
@@ -71,7 +71,7 @@ class SnowMonkey(implicit env: Env) {
 
   private def applyChaosConfig[A](reqNumber: Long, config: ChaosConfig, hasBody: Boolean)(
       f: SnowMonkeyContext => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext): Future[Either[Result, A]] = {
     config.latencyInjectionFaultConfig
       .filter(c => inRatio(c.ratio, reqNumber))
       .map { conf =>
@@ -118,7 +118,7 @@ class SnowMonkey(implicit env: Env) {
                   .apply(response.body)
                   .withHeaders(
                     (response.headers.toSeq :+ ("SnowMonkey-Latency" -> latency.toString))
-                      .filterNot(_._1.toLowerCase() == "content-type"): _*
+                      .filterNot(_._1.toLowerCase() == "content-type")*
                   )
                   .as(response.headers.getOrElse("Content-Type", "text/plain"))
               )
@@ -140,14 +140,14 @@ class SnowMonkey(implicit env: Env) {
       }
   }
 
-  private def isCurrentOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit
+  private def isCurrentOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     env.datastores.chaosDataStore.serviceAlreadyOutage(descriptor.id)
   }
 
   private def needMoreOutageForToday(isCurrentOutage: Boolean, descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(
-      implicit ec: ExecutionContext
+      using ec: ExecutionContext
   ): Future[Boolean] = {
     if (isCurrentOutage) {
       FastFuture.successful(true)
@@ -238,7 +238,7 @@ class SnowMonkey(implicit env: Env) {
     }
   }
 
-  private def isOutage(descriptor: ServiceDescriptor, config: SnowMonkeyConfig)(implicit
+  private def isOutage(descriptor: ServiceDescriptor, config: SnowMonkeyConfig)(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     for {
@@ -254,7 +254,7 @@ class SnowMonkey(implicit env: Env) {
 
   private def introduceServiceDefinedChaos[A](reqNumber: Long, desc: ServiceDescriptor, hasBody: Boolean)(
       f: SnowMonkeyContext => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext): Future[Either[Result, A]] = {
     applyChaosConfig(reqNumber, desc.chaosConfig, hasBody)(f)
   }
 
@@ -268,7 +268,7 @@ class SnowMonkey(implicit env: Env) {
       hasBody: Boolean
   )(
       f: SnowMonkeyContext => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext): Future[Either[Result, A]] = {
     isOutage(desc, config).flatMap {
       case true if !config.dryRun && config.includeUserFacingDescriptors                         =>
         applyChaosConfig(reqNumber, config.chaosConfig, hasBody)(f)
@@ -286,7 +286,7 @@ class SnowMonkey(implicit env: Env) {
 
   def introduceChaos(reqNumber: Long, config: GlobalConfig, desc: ServiceDescriptor, hasBody: Boolean)(
       f: SnowMonkeyContext => Future[Result]
-  )(implicit ec: ExecutionContext): Future[Result] = {
+  )(using ec: ExecutionContext): Future[Result] = {
     introduceChaosGen(reqNumber, config, desc, hasBody)(m => f(m).map(Right.apply)).map {
       case Left(r)  => r
       case Right(r) => r
@@ -295,7 +295,7 @@ class SnowMonkey(implicit env: Env) {
 
   def introduceChaosGen[A](reqNumber: Long, config: GlobalConfig, desc: ServiceDescriptor, hasBody: Boolean)(
       f: SnowMonkeyContext => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext): Future[Either[Result, A]] = {
     if (desc.id == env.backOfficeServiceId) {
       f(
         SnowMonkeyContext(

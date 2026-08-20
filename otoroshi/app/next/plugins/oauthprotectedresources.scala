@@ -1,15 +1,15 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import scala.concurrent.{ExecutionContext, Future}
@@ -173,7 +173,7 @@ object OAuthProtectedResourceMetadataConfig {
         "type"  -> "select",
         "label" -> "Signing algorithm",
         "props" -> Json.obj(
-          "options" -> JsArray(Seq("RS256", "RS384", "RS512", "ES256", "ES384", "ES512").map(JsString))
+          "options" -> JsArray(Seq("RS256", "RS384", "RS512", "ES256", "ES384", "ES512").map(JsString.apply))
         )
       ),
       "signed_metadata_kid"                        -> Json.obj(
@@ -190,12 +190,12 @@ object OAuthProtectedResourceMetadataConfig {
         ref = json.select("ref").asOpt[String].filter(_.nonEmpty),
         resource = json.select("resource").asOpt[String].filter(_.nonEmpty),
         authorizationServersOverride =
-          json.select("authorization_servers_override").asOpt[Seq[String]].getOrElse(Seq.empty),
+          json.select("authorization_servers_override").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         jwksUri = json.select("jwks_uri").asOpt[String].filter(_.nonEmpty),
-        scopesSupported = json.select("scopes_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
+        scopesSupported = json.select("scopes_supported").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         bearerMethodsSupported = json.select("bearer_methods_supported").asOpt[Seq[String]].getOrElse(Seq("header")),
         resourceSigningAlgValuesSupported =
-          json.select("resource_signing_alg_values_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
+          json.select("resource_signing_alg_values_supported").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         resourceName = json.select("resource_name").asOpt[String].filter(_.nonEmpty),
         resourceDocumentation = json.select("resource_documentation").asOpt[String].filter(_.nonEmpty),
         resourcePolicyUri = json.select("resource_policy_uri").asOpt[String].filter(_.nonEmpty),
@@ -203,11 +203,11 @@ object OAuthProtectedResourceMetadataConfig {
         tlsClientCertificateBoundAccessTokens =
           json.select("tls_client_certificate_bound_access_tokens").asOpt[Boolean].getOrElse(false),
         dpopSigningAlgValuesSupported =
-          json.select("dpop_signing_alg_values_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
+          json.select("dpop_signing_alg_values_supported").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         dpopBoundAccessTokensRequired =
           json.select("dpop_bound_access_tokens_required").asOpt[Boolean].getOrElse(false),
         authorizationDetailsTypesSupported =
-          json.select("authorization_details_types_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
+          json.select("authorization_details_types_supported").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         extraMetadata = json.select("extra_metadata").asOpt[JsObject].getOrElse(Json.obj()),
         signedMetadata = json.select("signed_metadata").asOpt[Boolean].getOrElse(false),
         signingCertRef = json.select("signing_cert_ref").asOpt[String].filter(_.nonEmpty),
@@ -273,7 +273,7 @@ object OAuthProtectedResourceMetadata {
 
 class OAuthProtectedResourceMetadata extends NgBackendCall {
 
-  import OAuthProtectedResourceMetadata._
+  import OAuthProtectedResourceMetadata.*
 
   override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
@@ -338,7 +338,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
   // configured cert/algorithm combination is not signable.
   private def resolveSigningAlgo(
       config: OAuthProtectedResourceMetadataConfig
-  )(implicit env: Env): Either[String, (Algorithm, String)] = {
+  )(using env: Env): Either[String, (Algorithm, String)] = {
     config.signingCertRef match {
       case None        => Left("signed_metadata is enabled but no signing keypair was configured")
       case Some(refId) =>
@@ -367,7 +367,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
       config: OAuthProtectedResourceMetadataConfig,
       claims: JsObject,
       resourceId: String
-  )(implicit env: Env): Either[String, String] = {
+  )(using env: Env): Either[String, String] = {
     resolveSigningAlgo(config).map { case (algo, kid) =>
       val now     = System.currentTimeMillis() / 1000L
       // The JWT carries the metadata claims plus `iss` (the resource itself, per §3.1), `iat`, and `sub`=resource.
@@ -384,7 +384,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
         case (k, JsNumber(v))                     => builder.withClaim(k, java.lang.Long.valueOf(v.toLong)); ()
         case (k, arr: JsArray)                    =>
           // auth0-jwt only takes typed arrays; serialize anything else as a stringified JSON payload to keep fidelity.
-          val items = arr.value
+          val items = arr.value.toSeq
           if (items.forall(_.isInstanceOf[JsString])) {
             builder.withArrayClaim(k, items.map(_.as[String]).toArray)
           } else {
@@ -403,7 +403,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

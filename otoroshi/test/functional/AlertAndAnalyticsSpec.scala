@@ -1,7 +1,7 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ApiKey, GlobalConfig, ServiceGroupIdentifier, Webhook}
 import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType}
@@ -10,12 +10,12 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.Json
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "analytics.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(

@@ -1,18 +1,18 @@
 package otoroshi.plugins.clientcert
 
 import java.security.cert.X509Certificate
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.{DN, MtlsConfig}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.future.Implicits.*
 import otoroshi.utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
@@ -29,7 +29,7 @@ class HasClientCertValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(_) => FastFuture.successful(true)
       case _       => FastFuture.successful(false)
@@ -53,7 +53,7 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(_) =>
         context.apikey match {
@@ -65,7 +65,7 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
                     chain.headOption match {
                       case Some(cert) =>
                         FastFuture.successful(
-                          RegexPool(dn).matches(DN(cert.getIssuerDN.getName).stringify)
+                          RegexPool(dn).matches(DN(cert.getIssuerX500Principal.getName).stringify)
                         )
                       case None       => FastFuture.successful(false)
                     }
@@ -122,11 +122,11 @@ class HasClientCertMatchingValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain
       .map(
         _.map(cert =>
-          SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectDN.getName), DN(cert.getIssuerDN.getName))
+          SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectX500Principal.getName), DN(cert.getIssuerX500Principal.getName))
         )
       ) //match {
       .orElse(Some(Seq(SubIss("1234567890", DN("SN=foo"), DN("SN=ca, CN=CA_MAIF_ROOTCA"))))) match {
@@ -136,15 +136,15 @@ class HasClientCertMatchingValidator extends AccessValidator {
           .orElse((context.globalConfig \ "HasClientCertMatchingValidator").asOpt[JsValue])
           .getOrElse(context.config)
         val allowedSerialNumbers   =
-          (config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val allowedSubjectDNs      =
-          (config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val allowedIssuerDNs       =
-          (config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val regexAllowedSubjectDNs =
-          (config \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val regexAllowedIssuerDNs  =
-          (config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         if (
           certs.exists(cert => allowedSerialNumbers.contains(cert.sn)) ||
           certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
@@ -252,26 +252,26 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
 
   private def validate(certs: Seq[X509Certificate], values: JsValue): Boolean = {
     val allowedSerialNumbers   =
-      (values \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val allowedSubjectDNs      =
-      (values \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val allowedIssuerDNs       =
-      (values \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val regexAllowedSubjectDNs =
-      (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val regexAllowedIssuerDNs  =
-      (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     if (
       certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
       certs
-        .exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectDN.getName).stringify))) ||
+        .exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectX500Principal.getName).stringify))) ||
       certs
-        .exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerDN.getName).stringify))) ||
+        .exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerX500Principal.getName).stringify))) ||
       certs.exists(cert =>
-        regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectDN.getName).stringify))
+        regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectX500Principal.getName).stringify))
       ) ||
       certs.exists(cert =>
-        regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerDN.getName).stringify))
+        regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerX500Principal.getName).stringify))
       )
     ) {
       true
@@ -280,13 +280,13 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
     }
   }
 
-  private def fetch(url: String, headers: Map[String, String], ttl: Long, mtlsConfig: MtlsConfig)(implicit
+  private def fetch(url: String, headers: Map[String, String], ttl: Long, mtlsConfig: MtlsConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
     env.MtlsWs
       .url(url, mtlsConfig)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .get()
       .map {
         case r if r.status == 200 =>
@@ -303,7 +303,7 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
       }
   }
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) => {
         val config: JsValue = (context.config \ "HasClientCertMatchingHttpValidator")
@@ -316,13 +316,13 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
         val ttl             = (config \ "ttl").asOpt[Long].getOrElse(10 * 60000L)
         val start           = System.currentTimeMillis()
         cache.get(url) match {
-          case None                                        =>
-            fetch(url, headers, ttl, mtlsConfig).map(b => validate(certs, b))
           case Some((time, values)) if start - time <= ttl =>
             FastFuture.successful(validate(certs, values))
           case Some((time, values)) if start - time > ttl  =>
             fetch(url, headers, ttl, mtlsConfig)
             FastFuture.successful(validate(certs, values))
+          case _                                        =>
+            fetch(url, headers, ttl, mtlsConfig).map(b => validate(certs, b))
         }
       }
       case _           => FastFuture.successful(false)
@@ -406,20 +406,20 @@ class ClientCertChainHeader extends RequestTransformer {
     JsArray(
       chain.map(c =>
         Json.obj(
-          "subjectDN"    -> DN(c.getSubjectDN.getName).stringify,
-          "issuerDN"     -> DN(c.getIssuerDN.getName).stringify,
+          "subjectDN"    -> DN(c.getSubjectX500Principal.getName).stringify,
+          "issuerDN"     -> DN(c.getIssuerX500Principal.getName).stringify,
           "notAfter"     -> c.getNotAfter.getTime,
           "notBefore"    -> c.getNotBefore.getTime,
           "serialNumber" -> c.getSerialNumber.toString(16),
-          "subjectCN"    -> Option(DN(c.getSubjectDN.getName).stringify)
+          "subjectCN"    -> Option(DN(c.getSubjectX500Principal.getName).stringify)
             .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
             .map(_.replace("CN=", "").replace("cn=", ""))
-            .getOrElse(DN(c.getSubjectDN.getName).stringify)
+            .getOrElse(DN(c.getSubjectX500Principal.getName).stringify)
             .asInstanceOf[String],
-          "issuerCN"     -> Option(DN(c.getIssuerDN.getName).stringify)
+          "issuerCN"     -> Option(DN(c.getIssuerX500Principal.getName).stringify)
             .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
             .map(_.replace("CN=", "").replace("cn=", ""))
-            .getOrElse(DN(c.getIssuerDN.getName).stringify)
+            .getOrElse(DN(c.getIssuerX500Principal.getName).stringify)
             .asInstanceOf[String]
         )
       )
@@ -432,7 +432,7 @@ class ClientCertChainHeader extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     ctx.request.clientCertificateChain match {
       case None        => Right(ctx.otoroshiRequest).future
       case Some(chain) => {
@@ -457,7 +457,7 @@ class ClientCertChainHeader extends RequestTransformer {
         val dnsMap   =
           if (sendDns)
             Map(
-              dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(DN(c.getSubjectDN.getName).stringify))))
+              dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(DN(c.getSubjectX500Principal.getName).stringify))))
             )
           else Map.empty
         val chainMap = if (sendChain) Map(chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty

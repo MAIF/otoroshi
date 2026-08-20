@@ -1,22 +1,23 @@
 package otoroshi.plugins.oidc
 
 import java.util.concurrent.TimeUnit
+import play.api.libs.ws.WSBodyWritables.given
 import java.util.concurrent.atomic.AtomicReference
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2ModuleConfig
 import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.Results.TooManyRequests
@@ -125,7 +126,7 @@ class OIDCHeaders extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     ctx.user match {
       case Some(user) if user.token.asOpt[JsObject].exists(_.value.nonEmpty) => {
 
@@ -158,7 +159,7 @@ class OIDCHeaders extends RequestTransformer {
           )
         ).future
       }
-      case None => Right(ctx.otoroshiRequest).future
+      case _ => Right(ctx.otoroshiRequest).future
     }
   }
 }
@@ -208,7 +209,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val conf       = ctx.configFor("OIDCAccessTokenValidators")
     val enabled    = (conf \ "enabled").asOpt[Boolean].getOrElse(false)
     // val useDescriptorConfig = (conf \ "useDescriptorConfig").asOpt[Boolean].getOrElse(false)
@@ -230,7 +231,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
                   c
                 }
               )
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           }
         }
       }
@@ -239,7 +240,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
         config match {
           case a: OIDCThirdPartyApiKeyConfig =>
             val latestGlobalConfig = env.datastores.globalConfigDataStore.latest()
-            val promise            = Promise[Boolean]
+            val promise            = Promise[Boolean]()
             a.copy(enabled = true)
               .handleGen(ctx.request, ctx.descriptor, latestGlobalConfig, ctx.attrs) { _ =>
                 promise.trySuccess(true)
@@ -249,7 +250,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
                 case _ if !promise.isCompleted => promise.trySuccess(false)
               }
             promise.future
-          case _                             => FastFuture.successful(true)
+          //case _                             => FastFuture.successful(true)
         }
       }
 
@@ -257,7 +258,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
         .mapAsync(1) { config =>
           checkOneConfig(config)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { seq =>
           if (atLeastOne) {
             seq.contains(true)
@@ -315,7 +316,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf       = ctx.configFor("OIDCAccessTokenAsApikey")
     val enabled    = (conf \ "enabled").asOpt[Boolean].getOrElse(false)
     val atLeastOne = (conf \ "atLeastOne").asOpt[Boolean].getOrElse(false)
@@ -334,7 +335,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
                   c
                 }
               )
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           }
         }
       }
@@ -355,7 +356,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
                 Results.Ok("--").right.future
               }
               .map(_ => ())
-          case _                             => ().future
+          // case _                             => ().future
         }
       }
 
@@ -364,7 +365,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
         .mapAsync(1) { config =>
           checkOneConfig(config, ref)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { seq =>
           Option(ref.get()).foreach(apk => ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apk))
           ()
@@ -391,7 +392,7 @@ sealed trait ThirdPartyApiKeyConfig {
   def toJson: JsValue
   def handleGen[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]]
 }
 
 sealed trait OIDCThirdPartyApiKeyConfigMode {
@@ -439,7 +440,7 @@ case class OIDCThirdPartyApiKeyConfig(
     rolesPath: Seq[String] = Seq.empty
 ) extends ThirdPartyApiKeyConfig {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 
@@ -466,7 +467,7 @@ case class OIDCThirdPartyApiKeyConfig(
 
   def handleGen[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     handleInternal(req, descriptor, config, attrs)(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
       case Right(goodResult) => goodResult
@@ -483,7 +484,7 @@ case class OIDCThirdPartyApiKeyConfig(
       attrs: TypedMap
   )(
       f: Option[ApiKey] => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     shouldBeVerified(req.path) match {
       case false => f(None).fright[Result]
       case true  => {
@@ -593,7 +594,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                 val possibleMoreTags: Seq[String]           = (tokenBody \ oidcAuth.apiKeyTagsField)
                                   .asOpt[JsArray]
                                   .getOrElse(JsArray())
-                                  .value
+                                  .value.toSeq
                                   .collect {
                                     case JsString(str)     => str
                                     case JsNumber(nbr)     => nbr.toString()
@@ -633,7 +634,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                   .asOpt[String]
                                   .filterNot(_.trim.isEmpty)
                                   .map(_.split(" ").toSeq)
-                                  .getOrElse(Seq.empty[String])
+                                  .getOrElse(Seq.empty[String]).toSeq
                                 val tokenRoles: Seq[String]                 = rolesPath
                                   .flatMap(p => findAt(tokenBody, p))
                                   .collect {
@@ -654,18 +655,20 @@ case class OIDCThirdPartyApiKeyConfig(
                                         case Some(apk) => FastFuture.successful(apk)
                                         case None      =>
                                           if (env.clusterConfig.mode.isWorker) {
-                                            ClusterAgent.clusterSaveApikey(env, _apiKey)(ec, env.otoroshiMaterializer)
+                                            ClusterAgent.clusterSaveApikey(env, _apiKey)(using ec, env.otoroshiMaterializer)
                                           }
                                           _apiKey.save().map { _ =>
                                             _apiKey
                                           }
                                       }
                                   }) flatMap { apiKey =>
-                                    (quotasEnabled match {
-                                      case true  => apiKey.withinQuotasAndRotation()
-                                      case false => FastFuture.successful(true)
-                                    }).flatMap {
-                                      case true  => {
+                                    val fb: Future[(Boolean, Option[ApiKeyRotationInfo])] = if (quotasEnabled) {
+                                      apiKey.withinQuotasAndRotation()
+                                    } else {
+                                      FastFuture.successful((true, None))
+                                    }
+                                    fb.flatMap {
+                                      case (true, _)  => {
                                         if (localVerificationOnly) {
                                           f(Some(apiKey)).fright[Result]
                                         } else {
@@ -705,7 +708,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                                     "token"     -> header,
                                                     "client_id" -> oidcAuth.clientId
                                                   ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
-                                                )(writeableOf_urlEncodedSimpleForm)
+                                                )(using writeableOf_urlEncodedSimpleForm)
                                               }
                                               future1
                                                 .flatMap { resp =>
@@ -731,7 +734,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                           }
                                         }
                                       }
-                                      case false =>
+                                      case (false, _) =>
                                         Errors
                                           .craftResponseResult(
                                             "You performed too much requests",
@@ -777,7 +780,7 @@ object OIDCThirdPartyApiKeyConfig {
 
   val cache: TrieMap[String, (Long, Boolean)] = new UnboundedTrieMap[String, (Long, Boolean)]()
 
-  implicit val format = new Format[OIDCThirdPartyApiKeyConfig] {
+  implicit val format: play.api.libs.json.Format[OIDCThirdPartyApiKeyConfig] = new Format[OIDCThirdPartyApiKeyConfig] {
 
     override def reads(json: JsValue): JsResult[OIDCThirdPartyApiKeyConfig] =
       Try {
@@ -796,10 +799,10 @@ object OIDCThirdPartyApiKeyConfig {
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(100L),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          scopes = (json \ "scopes").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          rolesPath = (json \ "rolesPath").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          scopes = (json \ "scopes").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          rolesPath = (json \ "rolesPath").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } map { case sd =>
         JsSuccess(sd)
@@ -832,7 +835,7 @@ object OIDCThirdPartyApiKeyConfig {
 
 object ThirdPartyApiKeyConfig {
 
-  implicit val format = new Format[ThirdPartyApiKeyConfig] {
+  implicit val format: play.api.libs.json.Format[ThirdPartyApiKeyConfig] = new Format[ThirdPartyApiKeyConfig] {
 
     override def reads(json: JsValue): JsResult[ThirdPartyApiKeyConfig] =
       Try {

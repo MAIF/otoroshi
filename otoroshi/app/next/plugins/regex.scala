@@ -1,13 +1,13 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -112,7 +112,7 @@ object RegexBodyRewriterConfig {
           .select("rules")
           .asOpt[Seq[JsObject]]
           .map(seq => seq.flatMap(r => RegexReplacementRule.format.reads(r).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         autoHrefPrefix = json.select("auto_href_prefix").asOpt[String],
         maxBodySize = json.select("max_body_size").asOpt[Long],
         charsetFallback = json.select("charset_fallback").asOpt[String].orElse(Some("UTF-8"))
@@ -262,7 +262,7 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val conf = ctx
       .cachedConfig(internalName)(RegexBodyRewriterConfig.format)
       .getOrElse(RegexBodyRewriterConfig())
@@ -414,7 +414,7 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val conf = ctx
       .cachedConfig(internalName)(RegexBodyRewriterConfig.format)
       .getOrElse(RegexBodyRewriterConfig())
@@ -523,7 +523,7 @@ object RegexHeadersRewriterConfig {
           .select("rules")
           .asOpt[Seq[JsObject]]
           .map(seq => seq.flatMap(r => RegexHeaderReplacementRule.format.reads(r).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -570,7 +570,7 @@ class RegexRequestHeadersRewriter extends NgRequestTransformer {
       originalHeaders: Map[String, String],
       rules: Seq[RegexHeaderReplacementRule],
       attrs: TypedMap
-  )(implicit env: Env): Map[String, String] = {
+  )(using env: Env): Map[String, String] = {
     var headers = Map.empty[String, String] ++ originalHeaders
     rules.foreach { _rule =>
       val rule = RegexHeaderReplacementRule.format.reads(_rule.json.stringify.evaluateEl(attrs).parseJson).get
@@ -586,7 +586,7 @@ class RegexRequestHeadersRewriter extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val conf       = ctx
       .cachedConfig(internalName)(RegexHeadersRewriterConfig.format)
       .getOrElse(RegexHeadersRewriterConfig())
@@ -638,7 +638,7 @@ class RegexResponseHeadersRewriter extends NgRequestTransformer {
       originalHeaders: Map[String, String],
       rules: Seq[RegexHeaderReplacementRule],
       attrs: TypedMap
-  )(implicit env: Env): Map[String, String] = {
+  )(using env: Env): Map[String, String] = {
     var headers = Map.empty[String, String] ++ originalHeaders
     rules.foreach { _rule =>
       val rule = RegexHeaderReplacementRule.format.reads(_rule.json.stringify.evaluateEl(attrs).parseJson).get
@@ -654,7 +654,7 @@ class RegexResponseHeadersRewriter extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val conf       = ctx
       .cachedConfig(internalName)(RegexHeadersRewriterConfig.format)
       .getOrElse(RegexHeadersRewriterConfig())

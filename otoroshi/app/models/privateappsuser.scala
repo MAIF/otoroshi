@@ -1,19 +1,19 @@
 package otoroshi.models
 
 import java.util.concurrent.TimeUnit
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2Module, ValidableUser}
 import otoroshi.env.Env
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.storage.BasicStore
-import otoroshi.utils.json.JsonImplicits._
-import otoroshi.cluster._
+import otoroshi.utils.json.JsonImplicits.*
+import otoroshi.cluster.*
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.utils.TypedMap
@@ -21,7 +21,7 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
@@ -54,12 +54,12 @@ case class PrivateAppsUser(
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
   def userId: Option[String]              = (profile \ "user_id").asOpt[String].orElse((profile \ "sub").asOpt[String])
 
-  def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[PrivateAppsUser] =
+  def save(duration: Duration)(using ec: ExecutionContext, env: Env): Future[PrivateAppsUser] =
     env.datastores.privateAppsUserDataStore
       .set(this.copy(expiredAt = DateTime.now().plus(duration.toMillis)), Some(duration))
       .map(_ => this.copy(expiredAt = DateTime.now().plus(duration.toMillis)))
 
-  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def delete()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.privateAppsUserDataStore.delete(randomId)
 
   def toJson: JsValue        = PrivateAppsUser.fmt.writes(this)
@@ -73,14 +73,14 @@ case class PrivateAppsUser(
       "tags"     -> tags
     )
 
-  def withAuthModuleConfig[A](f: AuthModuleConfig => A)(implicit ec: ExecutionContext, env: Env): Unit = {
+  def withAuthModuleConfig[A](f: AuthModuleConfig => A)(using ec: ExecutionContext, env: Env): Unit = {
     // env.datastores.authConfigsDataStore.findById(authConfigId).map {
     env.proxyState.authModuleAsync(authConfigId).map {
       case None       => ()
       case Some(auth) => f(auth)
     }
   }
-  override def updateToken(tok: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  override def updateToken(tok: JsValue)(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.privateAppsUserDataStore.set(
       copy(
         token = tok,
@@ -96,7 +96,7 @@ case class PrivateAppsUser(
 
 object PrivateAppsUser {
 
-  def fromCookie(sessionId: String, reqOpt: Option[RequestHeader])(implicit env: Env): Option[PrivateAppsUser] = {
+  def fromCookie(sessionId: String, reqOpt: Option[RequestHeader])(using env: Env): Option[PrivateAppsUser] = {
     reqOpt
       .map { req =>
         val verifier =
@@ -152,7 +152,7 @@ object PrivateAppsUser {
             expiredAt = new DateTime((json \ "expiredAt").as[Long]),
             lastRefresh = new DateTime((json \ "lastRefresh").as[Long]),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             location = otoroshi.models.EntityLocation.readFromKey(json)
           )
         )
@@ -183,7 +183,7 @@ trait PrivateAppsUserDataStore extends BasicStore[PrivateAppsUser]
 
 object PrivateAppsUserHelper {
 
-  import otoroshi.utils.http.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits.*
 
   case class PassWithAuthContext(
       req: RequestHeader,
@@ -194,7 +194,7 @@ object PrivateAppsUserHelper {
       logger: Logger
   )
 
-  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(implicit
+  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(using
       executionContext: ExecutionContext,
       env: Env
   ): Future[Option[PrivateAppsUser]] = {
@@ -214,7 +214,7 @@ object PrivateAppsUserHelper {
     }
   }
 
-  def isPrivateAppsSessionValidWithAuth(req: RequestHeader, desc: ServiceDescriptor, auth: AuthModuleConfig)(implicit
+  def isPrivateAppsSessionValidWithAuth(req: RequestHeader, desc: ServiceDescriptor, auth: AuthModuleConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[PrivateAppsUser]] = {
@@ -255,7 +255,7 @@ object PrivateAppsUserHelper {
     }
   }
 
-  def isPrivateAppsSessionValidWithMultiAuth(req: RequestHeader, route: NgRoute)(implicit
+  def isPrivateAppsSessionValidWithMultiAuth(req: RequestHeader, route: NgRoute)(using
       ec: ExecutionContext,
       env: Env
   ) = {
@@ -291,7 +291,7 @@ object PrivateAppsUserHelper {
       ctx: PassWithAuthContext,
       callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
       errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
 
     val PassWithAuthContext(req, query, descriptor, attrs, config, logger) = ctx
 
@@ -341,7 +341,7 @@ object PrivateAppsUserHelper {
                             query.toHost,
                             descriptor,
                             auth
-                          ): _*
+                          )*
                         )
                     )
                   )

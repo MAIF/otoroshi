@@ -13,8 +13,8 @@ import otoroshi.next.plugins.api.{
 }
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.{JsonPathValidator, RegexPool}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,7 +34,7 @@ object ContextValidationConfig {
         validators = (json \ "validators")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -164,7 +164,7 @@ class ContextValidation extends NgAccessValidator {
       |""".stripMargin.some
   override def defaultConfigObject: Option[NgPluginConfig] = ContextValidationConfig().some
 
-  private def validate(ctx: NgAccessContext)(implicit env: Env): Boolean = {
+  private def validate(ctx: NgAccessContext)(using env: Env): Boolean = {
     val config         = ctx.cachedConfig(internalName)(ContextValidationConfig.format).getOrElse(ContextValidationConfig())
     val token: JsValue = ctx.attrs
       .get(otoroshi.next.plugins.Keys.JwtInjectionKey)
@@ -192,7 +192,7 @@ class ContextValidation extends NgAccessValidator {
       .forall(validator => validator.validate(json))
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     if (validate(ctx)) {
       NgAccess.NgAllowed.vfuture
     } else {

@@ -6,7 +6,7 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -62,7 +62,7 @@ class ClassGraphScanner {
       new CrdsGenerator(openApiSchema).run()
     }
     if (hasWritten || !formFile.exists()) {
-      val forms = new JsObject(asForms.mapValues(_.json))
+      val forms = new JsObject(asForms.view.mapValues(_.json).toMap)
       Files.writeString(formFile.toPath, forms.prettify)
       new CrdsGenerator(openApiSchema).run()
     }
@@ -74,7 +74,7 @@ class ClassGraphScanner {
         val jsonRaw = Files.readString(formFile.toPath)
         val obj     = Json.parse(jsonRaw).as[JsObject]
         val map     = new LegitTrieMap[String, Form]()
-        map.++=(obj.value.mapValues(Form.fromJson)).toMap
+        map.++=(obj.value.mapValues(Form.fromJson).toMap).toMap
       }*/
     )
   }
@@ -99,7 +99,7 @@ class ClassGraphScanner {
         val jsonRaw = new String(openapiformres.readAllBytes(), StandardCharsets.UTF_8)
         val obj     = Json.parse(jsonRaw).as[JsObject]
         val map     = new UnboundedTrieMap[String, Form]()
-        map.++=(obj.value.mapValues(Form.fromJson)).toMap
+        map.++=(obj.value.view.mapValues(Form.fromJson).toMap).toMap
       }
       OpenApiSchema(
         scanResult = scanResult,
@@ -128,7 +128,7 @@ class ClassGraphScanner {
     val scanResult = new ClassGraph()
       .addClassLoader(this.getClass.getClassLoader)
       .enableAllInfo()
-      .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws") ++ configurationPackages: _*)
+      .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws") ++ configurationPackages*)
       .scan()
     //val dev        = env.isDev
     //if (dev) {

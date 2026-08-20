@@ -2,12 +2,12 @@ package otoroshi.utils.udp
 
 import java.net.InetSocketAddress
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.io.{IO, Udp}
-import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
-import akka.stream.scaladsl.Flow
-import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorRef, ActorSystem}
+import org.apache.pekko.io.{IO, Udp}
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
+import org.apache.pekko.util.ByteString
 
 import scala.concurrent.{Future, Promise}
 
@@ -31,20 +31,20 @@ object Datagram {
 object UdpClient {
   def flow(
       localAddress: InetSocketAddress
-  )(implicit system: ActorSystem): Flow[Datagram, Datagram, Future[InetSocketAddress]] = {
+  )(using system: ActorSystem): Flow[Datagram, Datagram, Future[InetSocketAddress]] = {
     Flow.fromGraph(new UdpBindFlow(localAddress))
   }
 }
 
 private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPromise: Promise[InetSocketAddress])(
     val shape: FlowShape[Datagram, Datagram]
-)(implicit val system: ActorSystem)
+)(using val system: ActorSystem)
     extends GraphStageLogic(shape) {
 
   private def in  = shape.in
   private def out = shape.out
 
-  private var listener: ActorRef = _
+  private var listener: ActorRef = scala.compiletime.uninitialized
 
   override def preStart(): Unit = {
     implicit val sender = getStageActor(processIncoming).ref
@@ -98,13 +98,13 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPr
   )
 }
 
-private[utils] final class UdpBindFlow(localAddress: InetSocketAddress)(implicit val system: ActorSystem)
+private[utils] final class UdpBindFlow(localAddress: InetSocketAddress)(using val system: ActorSystem)
     extends GraphStageWithMaterializedValue[FlowShape[Datagram, Datagram], Future[InetSocketAddress]] {
   val in: Inlet[Datagram]                  = Inlet("UdpBindFlow.in")
   val out: Outlet[Datagram]                = Outlet("UdpBindFlow.in")
   val shape: FlowShape[Datagram, Datagram] = FlowShape.of(in, out)
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes) = {
-    val boundPromise = Promise[InetSocketAddress]
+    val boundPromise = Promise[InetSocketAddress]()
     (new UdpBindLogic(localAddress, boundPromise)(shape), boundPromise.future)
   }
 }

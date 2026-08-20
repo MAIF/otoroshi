@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import akka.actor.Cancellable
+import org.apache.pekko.actor.Cancellable
 import otoroshi.env.Env
 import otoroshi.ssl.{Cert, CertificateDataStore, DynamicSSLEngineProvider}
 import otoroshi.storage.{RedisLike, RedisLikeStore}
@@ -11,14 +11,14 @@ import play.api.Logger
 import play.api.libs.json.Format
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends CertificateDataStore with RedisLikeStore[Cert] {
 
   val logger = Logger("otoroshi-certificate-datastore")
 
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def fmt: Format[Cert]                       = Cert._fmt
   override def key(id: String): String                 = s"${_env.storageRoot}:certs:${id}"
   override def extractId(value: Cert): String          = value.id
@@ -34,9 +34,9 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
   val cancelCreateRef       = new AtomicReference[Cancellable](null)
 
   def startSync(): Unit = {
-    implicit val ec  = _env.otoroshiExecutionContext
-    implicit val mat = _env.otoroshiMaterializer
-    implicit val env = _env
+    implicit val ec: scala.concurrent.ExecutionContext = _env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = _env.otoroshiMaterializer
+    implicit val env: otoroshi.env.Env = _env
     importInitialCerts(logger)
     cancelRenewRef.set(
       _env.otoroshiActorSystem.scheduler
@@ -62,7 +62,7 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
           lastTrustedCA =
             env.datastores.globalConfigDataStore.latestSafe
               .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
         } yield {
           if (
             last != lastUpdatedRef.get()
@@ -87,22 +87,22 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
     Option(cancelRef.get()).foreach(_.cancel())
   }
 
-  override def delete(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def delete(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     super.delete(id).andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def delete(value: Cert)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def delete(value: Cert)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     super.delete(value).andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def deleteAll()(using ec: ExecutionContext, env: Env): Future[Long] =
     super.deleteAll().andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def set(value: Cert, pxMilliseconds: Option[Duration] = None)(implicit
+  override def set(value: Cert, pxMilliseconds: Option[Duration] = None)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] =
@@ -110,12 +110,12 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def exists(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def exists(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     super.exists(id).andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def exists(value: Cert)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def exists(value: Cert)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     super.exists(value).andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }

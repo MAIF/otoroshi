@@ -1,27 +1,27 @@
 package otoroshi.controllers.adminapi
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker
 import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.ssl.{Cert, CertificateData, P12Helper, PemCertificate}
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.future.Implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
+import play.api.mvc.*
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.{Failure, Success, Try}
 
-class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
+class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   private val sourceBodyParser = BodyParser("PkiController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -246,7 +246,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
     }
   }
 
-  def certificateData(): Action[Source[ByteString, _]] =
+  def certificateData(): Action[Source[ByteString, ?]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
@@ -273,7 +273,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def certificateIsValid(): Action[Source[ByteString, _]] =
+  def certificateIsValid(): Action[Source[ByteString, ?]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>

@@ -11,9 +11,9 @@ import otoroshi.next.plugins.api.{
   NgPluginVisibility,
   NgStep
 }
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,8 +31,8 @@ object NgPublicPrivatePathsConfig {
   val format = new Format[NgPublicPrivatePathsConfig] {
     override def reads(json: JsValue): JsResult[NgPublicPrivatePathsConfig] = Try {
       NgPublicPrivatePathsConfig(
-        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         strict = json.select("strict").asOpt[Boolean].getOrElse(false)
       )
     } match {
@@ -67,7 +67,7 @@ class PublicPrivatePaths extends NgAccessValidator {
   override def defaultConfigObject: Option[NgPluginConfig] = NgPublicPrivatePathsConfig().some
   override def isAccessAsync: Boolean                      = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val uri                                                                 = ctx.request.thePath
     val NgPublicPrivatePathsConfig(strict, publicPatterns, privatePatterns) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgPublicPrivatePathsConfig())

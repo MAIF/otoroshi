@@ -3,7 +3,7 @@ package otoroshi.next.workflow
 import io.azam.ulidj.ULID
 import otoroshi.env.Env
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.Json
 
 import java.io.File
@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 object WorkflowTest {
 
   def test1(): Unit = {
-    implicit val executorContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+    implicit val executorContext: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
     val env: Env                 = ???
     val engine                   = new WorkflowEngine(env)
     val workflow                 = Json
@@ -132,7 +132,7 @@ object WorkflowTest {
   }
 
   def main(args: Array[String]): Unit = {
-    implicit val executorContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+    implicit val executorContext: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
     val env: Env                 = ???
     val engine                   = new WorkflowEngine(env)
     val workflow                 = Json.obj(

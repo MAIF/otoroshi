@@ -1,17 +1,17 @@
 package otoroshi.next.workflow
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.BodyHelper
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.{WasmConfig, WasmUtils}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -66,7 +66,7 @@ class WorkflowBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -129,7 +129,7 @@ class WorkflowBackend extends NgBackendCall {
                     Right(
                       BackendCallResponse(
                         NgPluginHttpResponse.fromResult(
-                          Results.Status(status.get)(body.get).withHeaders(heads.toSeq: _*).as(ctype)
+                          Results.Status(status.get)(body.get).withHeaders(heads.toSeq*).as(ctype)
                         ),
                         None
                       )
@@ -173,7 +173,7 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx
       .cachedConfig(internalName)(WorkflowBackendConfig.format)
       .getOrElse(WorkflowBackendConfig())
@@ -248,7 +248,7 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
       .cachedConfig(internalName)(WorkflowBackendConfig.format)
       .getOrElse(WorkflowBackendConfig())
@@ -313,7 +313,7 @@ class WorkflowAccessValidator extends NgAccessValidator {
   override def configFlow: Seq[String]                     = WorkflowBackendConfig.configFlowNoAsync
   override def configSchema: Option[JsObject]              = WorkflowBackendConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
     val config = ctx
       .cachedConfig(internalName)(WorkflowBackendConfig.format)
@@ -390,7 +390,7 @@ class WorkflowResumeBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

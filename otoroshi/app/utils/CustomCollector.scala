@@ -1,6 +1,6 @@
 package otoroshi.utils.prometheus
 
-import com.codahale.metrics._
+import com.codahale.metrics.*
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import io.prometheus.client.Collector.{MetricFamilySamples, Type}
 import io.prometheus.client.CollectorRegistry
@@ -8,7 +8,7 @@ import io.prometheus.client.dropwizard.samplebuilder.{DefaultSampleBuilder, Samp
 
 import java.util
 import java.util.concurrent.TimeUnit
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters.*
 
 class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegistry)
     extends io.prometheus.client.Collector
@@ -31,7 +31,7 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
     )
   }
 
-  def fromGauge(key: MetricId, entryValue: Gauge[_]): MetricFamilySamples = {
+  def fromGauge(key: MetricId, entryValue: Gauge[?]): MetricFamilySamples = {
     val obj   = entryValue.getValue
     var value = .0
 
@@ -46,8 +46,9 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
   }
 
   private def combineValueAndList(value: String, l: util.Collection[String]) = {
-    val half = new util.ArrayList[String]() { { value } }
-    half.addAll(new util.ArrayList[String](l))
+    val half = new util.ArrayList[String]()
+    half.add(value)
+    half.addAll(l)
     half
   }
 
@@ -58,8 +59,9 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
       factor: Double,
       tags: util.Map[String, String]
   ): MetricFamilySamples = {
-    val quantile = new util.ArrayList[String]() { { "quantile" } }
-    quantile.addAll(new util.ArrayList[String](tags.keySet))
+    val quantile = new util.ArrayList[String]()
+    quantile.add("quantile")
+    quantile.addAll(tags.keySet)
 
     val samples = util.Arrays.asList(
       sampleBuilder.createSample(
@@ -109,7 +111,7 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
         "_count",
         new util.ArrayList[String](tags.keySet),
         new util.ArrayList[String](tags.values),
-        count
+        count.toDouble
       )
     )
     new MetricFamilySamples(samples.get(0).name, Type.SUMMARY, "", samples)
@@ -134,11 +136,11 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
     )
 
   def fromMeter(key: MetricId, entryValue: Meter): MetricFamilySamples = {
-    val sample = getSample(key, entryValue.getCount, "_count")
+    val sample = getSample(key, entryValue.getCount.toDouble, "_count")
     new MetricFamilySamples(sample.name, Type.COUNTER, "", util.Arrays.asList(sample))
   }
 
-  override def collect: util.List[MetricFamilySamples] = {
+  override def collect(): util.List[MetricFamilySamples] = {
     val mfSamplesMap = new util.HashMap[String, MetricFamilySamples]
 
     registry.getGauges.entrySet.forEach(entry => addToMap(mfSamplesMap, fromGauge(entry.getKey, entry.getValue)))

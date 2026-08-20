@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.blemale.scaffeine.Scaffeine
@@ -23,7 +23,7 @@ import otoroshi.models.{
   ServiceDescriptor
 }
 import otoroshi.next.plugins.Keys.JwtInjectionKey
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{
   BetterJsReadable,
@@ -32,7 +32,7 @@ import otoroshi.utils.syntax.implicits.{
   BetterString,
   BetterSyntax
 }
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.{RequestHeader, Result, Results}
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
@@ -50,9 +50,8 @@ import java.security.KeyPair
 import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
 import java.util.{Date, UUID}
 import javax.crypto.{Cipher, KeyGenerator}
-import scala.collection.parallel.immutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 case class NgJwtVerificationConfig(
@@ -67,7 +66,7 @@ case class NgJwtVerificationConfig(
     if (customResponse) {
       val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }
@@ -78,7 +77,7 @@ object NgJwtVerificationConfig {
   val format = new Format[NgJwtVerificationConfig] {
     override def reads(json: JsValue): JsResult[NgJwtVerificationConfig] = Try {
       NgJwtVerificationConfig(
-        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
         customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
         customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
@@ -120,7 +119,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
     "This plugin verifies the current request with one or more jwt verifier".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtVerificationConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgJwtVerificationConfig.format).getOrElse(NgJwtVerificationConfig())
 
     config.verifiers match {
@@ -131,7 +130,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     ctx.attrs.get(JwtInjectionKey) match {
       case None            => ctx.otoroshiRequest.right
       case Some(injection) => {
@@ -165,7 +164,7 @@ object JwtVerifierUtils {
       .vfuture
   }
 
-  def verify(ctx: NgAccessContext, verifierIds: Seq[String], customResult: Option[Result])(implicit
+  def verify(ctx: NgAccessContext, verifierIds: Seq[String], customResult: Option[Result])(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -217,7 +216,7 @@ case class NgJwtVerificationOnlyConfig(
     if (customResponse) {
       val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }
@@ -273,7 +272,7 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
   override def description: Option[String]       =
     "This plugin verifies the current request with one jwt verifier".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config =
       ctx.cachedConfig(internalName)(NgJwtVerificationOnlyConfig.format).getOrElse(NgJwtVerificationOnlyConfig())
 
@@ -341,7 +340,7 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
   override def name: String                      = "Jwt signer"
   override def description: Option[String]       = "This plugin can only generate token".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
 
     if (config.failIfPresent) {
@@ -364,7 +363,7 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
 
     config.verifier match {
@@ -397,10 +396,10 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                       .fromJson(
                         Json.obj(
                           "jti" -> IdGenerator.uuid,
-                          "iat" -> Math.floor(System.currentTimeMillis() / 1000L).toLong,
-                          "nbf" -> Math.floor(System.currentTimeMillis() / 1000L).toLong,
+                          "iat" -> Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong,
+                          "nbf" -> Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong,
                           "iss" -> "Otoroshi",
-                          "exp" -> Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong,
+                          "exp" -> Math.floor(((System.currentTimeMillis() + 60000L) / 1000L).toDouble).toLong,
                           "sub" -> JsString(optSub.getOrElse("anonymous")),
                           "aud" -> "backend"
                         ) ++ globalVerifier.strategy.asInstanceOf[DefaultToken].token.as[JsObject],
@@ -418,11 +417,11 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                       .map { case (key, value) =>
                         value match {
                           case JsString(v) if v == "{iat}" =>
-                            (key, JsNumber(Math.floor(System.currentTimeMillis() / 1000L).toLong))
+                            (key, JsNumber(Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong))
                           case JsString(v) if v == "{nbf}" =>
-                            (key, JsNumber(Math.floor(System.currentTimeMillis() / 1000L).toLong))
+                            (key, JsNumber(Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong))
                           case JsString(v) if v == "{exp}" =>
-                            (key, JsNumber(Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong))
+                            (key, JsNumber(Math.floor(((System.currentTimeMillis() + 60000L) / 1000L).toDouble).toLong))
                           case _                           => (key, value.as[JsValue])
                         }
                       }
@@ -596,7 +595,7 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgJweSignerConfig.format).getOrElse(NgJweSignerConfig())
 
     config.certId match {
@@ -620,31 +619,7 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
             val enc = config.contentEncryptionAlgorithm
             val kid = jsonKeypair.select("kid").asOpt[String].orNull
 
-            val header = new JWEHeader(
-              alg,
-              enc,
-              null,
-              "JWT",
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              kid,
-              null,
-              null,
-              null,
-              null,
-              null,
-              0,
-              null,
-              null,
-              null,
-              null,
-              null
-            )
+            val header = new JWEHeader.Builder(alg, enc).keyID(kid).contentType("JWT").pbes2Count(0).build()
 
             val claimsSet = new JWTClaimsSet.Builder()
             claimsSet.issuer(env.Headers.OtoroshiIssuer)
@@ -751,7 +726,7 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgJweSignerConfig.format).getOrElse(NgJweSignerConfig())
 
     config.certId match {
@@ -829,7 +804,7 @@ case class OIDCJwtVerifierConfig(
     if (customResponse) {
       val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }
@@ -938,7 +913,7 @@ class OIDCJwtVerifier extends NgAccessValidator {
   override def configFlow: Seq[String]        = OIDCJwtVerifierConfig.configFlow
   override def configSchema: Option[JsObject] = OIDCJwtVerifierConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(OIDCJwtVerifierConfig.format).getOrElse(OIDCJwtVerifierConfig())
     config.ref match {
       case None               => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "no auth. module setup"))).vfuture
@@ -997,7 +972,9 @@ class OIDCJwtVerifier extends NgAccessValidator {
                         case Left(result) if !config.mandatory => NgAccess.NgAllowed
                         case Left(result) if config.mandatory  => NgAccess.NgDenied(customResult.getOrElse(result))
                         case Right(r)                          => r
+                        case other => throw new IllegalStateException(s"unreachable case: $other")
                       }
+                  case other => throw new IllegalStateException(s"unreachable case: $other")
                 }
               }
               case _                                                                  =>
@@ -1040,13 +1017,13 @@ case class OAuth2TokenExchangeConfig(
     if (customResponse) {
       val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }
   }
 
-  def withExpressionLanguage(attrs: TypedMap)(implicit env: Env): OAuth2TokenExchangeConfig = {
+  def withExpressionLanguage(attrs: TypedMap)(using env: Env): OAuth2TokenExchangeConfig = {
     OAuth2TokenExchangeConfig.format.reads(json.stringify.evaluateEl(attrs).parseJson) match {
       case JsError(errs)     =>
         OAuth2TokenExchange.logger.error(s"error while applying EL on OAuth2TokenExchangeConfig: ${errs}")
@@ -1297,7 +1274,7 @@ object OAuth2TokenExchange {
 
 class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
   import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 
   override def defaultConfigObject: Option[NgPluginConfig] = OAuth2TokenExchangeConfig().some
@@ -1323,7 +1300,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
 
   private val ExchangedTokenKey = TypedKey[String]("otoroshi.next.plugins.OAuth2TokenExchange.ExchangedToken")
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(OAuth2TokenExchangeConfig.format)
       .getOrElse(OAuth2TokenExchangeConfig())
@@ -1416,7 +1393,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
       config: OAuth2TokenExchangeConfig,
       oidcModule: OAuth2ModuleConfig,
       attrs: TypedMap
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[Result, Unit]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[Result, Unit]] = {
     val cacheKey  =
       s"${subjectToken.sha256}-${config.exchange.audience.getOrElse("")}-${config.exchange.scope.getOrElse("")}"
     val cacheTtl  = config.cacheTtlMs
@@ -1460,7 +1437,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
           .withRequestTimeout(timeout)
 
         builder
-          .post(params)(writeableOf_urlEncodedSimpleForm)
+          .post(params)(using writeableOf_urlEncodedSimpleForm)
           .map { response =>
             if (response.status == 200) {
               val json           = response.json
@@ -1502,7 +1479,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     ctx.attrs.get(ExchangedTokenKey) match {
       case Some(exchangedToken) =>
         Right(

@@ -1,6 +1,8 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{
@@ -16,7 +18,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class React2SShellDetectorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -93,11 +95,11 @@ class React2SShellDetectorTests(parent: PluginsTestSpec) {
     .futureValue
 
   passingResp1.status mustBe Status.OK
-  println(s"passingResp1.body: ${passingResp2.status} - ${passingResp1.body}")
+  println(s"passingResp1.body[String]: ${passingResp2.status} - ${passingResp1.body[String]}")
   passingResp2.status mustBe Status.OK
-  println(s"passingResp2.body: ${passingResp2.status} - ${passingResp2.body}")
+  println(s"passingResp2.body[String]: ${passingResp2.status} - ${passingResp2.body[String]}")
   blockedResp.status mustBe Status.UNAUTHORIZED
-  println(s"blockedResp.body: ${blockedResp.status} - ${blockedResp.body}")
+  println(s"blockedResp.body[String]: ${blockedResp.status} - ${blockedResp.body[String]}")
 
   deleteOtoroshiRoute(route).futureValue
 }

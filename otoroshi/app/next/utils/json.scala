@@ -1,13 +1,13 @@
 package otoroshi.next.utils
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.next.plugins.api.{NgPluginHttpRequest, NgPluginHttpResponse}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.{Cookie, RequestHeader}
 
@@ -19,7 +19,7 @@ object JsonHelpers {
 
   def requestBody(
       request: NgPluginHttpRequest
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[(JsValue, Option[ByteString])] = {
+  )(using ec: ExecutionContext, mat: Materializer): Future[(JsValue, Option[ByteString])] = {
     if (request.hasBody) {
       request.body.runFold(ByteString.empty)(_ ++ _).map { b =>
         val arr = b.toArray[Byte]
@@ -32,7 +32,7 @@ object JsonHelpers {
 
   def responseBody(
       response: NgPluginHttpResponse
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[(JsValue, Option[ByteString])] = {
+  )(using ec: ExecutionContext, mat: Materializer): Future[(JsValue, Option[ByteString])] = {
     response.body.runFold(ByteString.empty)(_ ++ _).map { b =>
       val arr = b.toArray[Byte]
       if (arr.isEmpty) {
@@ -56,20 +56,20 @@ object JsonHelpers {
       JsArray(
         seq.map(c =>
           Json.obj(
-            "subjectDN"    -> DN(c.getSubjectDN.getName).stringify,
-            "issuerDN"     -> DN(c.getIssuerDN.getName).stringify,
+            "subjectDN"    -> DN(c.getSubjectX500Principal.getName).stringify,
+            "issuerDN"     -> DN(c.getIssuerX500Principal.getName).stringify,
             "notAfter"     -> c.getNotAfter.getTime,
             "notBefore"    -> c.getNotBefore.getTime,
             "serialNumber" -> c.getSerialNumber.toString(16),
-            "subjectCN"    -> Option(DN(c.getSubjectDN.getName).stringify)
+            "subjectCN"    -> Option(DN(c.getSubjectX500Principal.getName).stringify)
               .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
               .map(_.replace("CN=", "").replace("cn=", ""))
-              .getOrElse(DN(c.getSubjectDN.getName).stringify)
+              .getOrElse(DN(c.getSubjectX500Principal.getName).stringify)
               .asInstanceOf[String],
-            "issuerCN"     -> Option(DN(c.getIssuerDN.getName).stringify)
+            "issuerCN"     -> Option(DN(c.getIssuerX500Principal.getName).stringify)
               .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
               .map(_.replace("CN=", "").replace("cn=", ""))
-              .getOrElse(DN(c.getIssuerDN.getName).stringify)
+              .getOrElse(DN(c.getIssuerX500Principal.getName).stringify)
               .asInstanceOf[String]
           )
         )
@@ -80,7 +80,7 @@ object JsonHelpers {
     val pathparams: JsObject = JsObject(
       attrs
         .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
-        .map(_.pathParams.toMap.mapValues(_.json))
+        .map(_.pathParams.toMap.view.mapValues(_.json).toMap)
         .getOrElse(Map.empty[String, JsValue])
     )
     Json.obj(

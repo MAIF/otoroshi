@@ -2,7 +2,7 @@ package otoroshi.gateway
 
 import java.util.concurrent.atomic.AtomicLong
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 
 import scala.concurrent.Future
 

@@ -4,12 +4,15 @@ name := """otoroshi"""
 organization := "fr.maif"
 version := "17.18.0-dev"
 scalaVersion := scalaLangVersion
+maintainer := "mathieu.ancelin@serli.com"
+
+ThisBuild / evictionErrorLevel := Level.Warn
 
 inThisBuild(
   List(
     description := "Lightweight api management on top of a modern http reverse proxy",
     startYear := Some(2017),
-    organization := "fr.maif",
+    // organization := "fr.maif",
     homepage := Some(url("https://github.com/MAIF/otoroshi")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     sonatypeProfileName := "fr.maif",
@@ -19,7 +22,7 @@ inThisBuild(
         "scm:git@github.com:MAIF/otoroshi.git"
       )
     ),
-    publishMavenStyle := true,
+    // publishMavenStyle := true,
     developers := List(
       Developer(
         "mathieuancelin",
@@ -50,25 +53,33 @@ inThisBuild(
 )
 
 lazy val root = (project in file("."))
-  .enablePlugins(PlayScala, PlayAkkaHttp2Support)
+  .enablePlugins(PlayScala)
   .disablePlugins(PlayFilters)
 
-// lazy val scalaLangVersion    = "2.13.10"
-lazy val scalaLangVersion        = "2.12.16"
-lazy val metricsVersion          = "4.2.12"
-lazy val acme4jVersion           = "3.2.1" // "2.14"
+lazy val scalaLangVersion        = "3.8.4"
+lazy val metricsVersion          = "4.2.39"
+lazy val acme4jVersion           = "5.1.0"
 lazy val prometheusVersion       = "0.16.0"
-lazy val playJsonVersion         = "2.9.3"
-lazy val webAuthnVersion         = "2.1.0" //"1.7.0" //"2.1.0"
-lazy val kubernetesVersion       = "16.0.1"
-lazy val bouncyCastleVersion     = "1.77"
-lazy val pulsarVersion           = "2.8.1"
-lazy val openTelemetryVersion    = "1.28.0"
-lazy val jacksonVersion          = "2.13.4"
-lazy val akkaHttpVersion         = "10.2.10"
-lazy val akkaHttp2Version        = "10.2.10"
-lazy val reactorNettyVersion     = "1.1.18"
-lazy val nettyVersion            = "4.1.119.Final"
+lazy val playJsonVersion         = "3.0.6"
+lazy val webAuthnVersion         = "2.1.0" // using this version for backward compatibility reasons //"1.7.0" //"2.1.0"
+lazy val kubernetesVersion       = "27.0.0"
+lazy val bouncyCastleVersion     = "1.85"
+lazy val bouncyCastleExtVersion  = "1.78.1"
+lazy val pulsarVersion           = "2.12.0.1"
+lazy val openTelemetryVersion    = "1.65.0"
+lazy val openTelemetryZipkinVersion = "1.64.0"// zipkin exporter not in 1.65 because the project ended in favor of otlp exporter
+lazy val jacksonVersion             = "2.22.2"
+lazy val jacksonAnnotationVersion   = "2.22" // jackson-annotations is versioned at the minor level only
+
+lazy val pekkoVersion               = "1.6.0"
+lazy val pekkoHttpVersion           = "1.4.0"
+lazy val pekkoConnectorsS3Version   = "1.3.0"
+lazy val pekkoConnectorsKafkaVersion = "1.1.0"
+lazy val reactorNettyVersion         = "1.3.6"
+lazy val nettyVersion                     = "4.2.17.Final"
+lazy val nettyIncubatorTransportVersion   = "0.0.26.Final"
+lazy val scramVersion                     = "3.4"
+
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -80,84 +91,129 @@ lazy val excludeScalaJava8Compat = Seq(
 lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
   ExclusionRule(organization = "org.slf4j")
 )
+lazy val excludeSlf4jAndJacksonAndPlayJson  = excludeSlf4jAndJackson ++ Seq(
+  ExclusionRule(organization = "org.playframework", name = "play-json"),
+)
 
-// BEWARE: akka-stream is a patched version bundled from the lib directory because of . see https://github.com/MAIF/akka/tree/fix-tls-1-3-hanshake-session-update
+scalacOptions ++= Seq(
+  // accept Scala 2.13 syntax (e.g. un-parenthesized typed lambda params) as warnings during the
+  // migration, to keep the diff minimal instead of rewriting hundreds of call-sites
+  //"-source:3.0-migration",
+  //"-rewrite",
+  //"-source:3.8-migration",
+  "-explain",
+  "-feature",
+  "-explain-cyclic",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-language:existentials",
+  "-language:postfixOps",
+  // scala3-library_3 declares `scala.caps` as both a package and an object
+  "-Wconf:msg=package scala contains object and package with same name:s",
+)
+
+// Pekko 1.6 upstream is used directly (no more patched akka-stream from the lib directory):
+// the TLS 1.3 handshake session fix has been part of Pekko since 1.1.0.
+
+// Pin every Pekko artifact to the same version to avoid mixed-version conflicts.
+dependencyOverrides ++= Seq(
+  "org.apache.pekko" %% "pekko-actor"                 % pekkoVersion,
+  "org.apache.pekko" %% "pekko-stream"                % pekkoVersion,
+  "org.apache.pekko" %% "pekko-slf4j"                 % pekkoVersion,
+  "org.apache.pekko" %% "pekko-actor-typed"           % pekkoVersion,
+  "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-protobuf-v3"           % pekkoVersion,
+  "org.apache.pekko" %% "pekko-http"                  % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-http-core"             % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-http-xml"              % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-parsing"               % pekkoHttpVersion,
+  "org.scala-lang.modules" %% "scala-xml"             % "2.3.0",
+  // netty 4.2 split netty-codec: io.netty.handler.codec.{DefaultHeaders,ByteToMessageDecoder,...}
+  // now live in netty-codec-base. Some deps (artemis-core-client, awssdk netty-nio-client) still
+  // ask for netty-codec 4.1.x, which ships those same class names with the 4.1 signatures and
+  // shadows netty-codec-base on the classpath -> NoSuchMethodError DefaultHeaders.containsAny at
+  // runtime. Keep netty-codec on nettyVersion so only the 4.2 copies are loaded.
+  "io.netty"               % "netty-codec"             % nettyVersion
+)
 
 libraryDependencies ++= Seq(
   ws,
   filters,
-  "com.softwaremill.macwire"        %% "macros"                               % "2.5.8"  % "provided",
-  "com.typesafe.play"               %% "play-json"                            % playJsonVersion,
-  "com.typesafe.play"               %% "play-json-joda"                       % playJsonVersion,
-  "com.github.etaty"                %% "rediscala"                            % "1.9.0",
-  "com.github.gphat"                %% "censorinus"                           % "2.1.16",
-  "com.typesafe.akka"               %% "akka-stream-kafka"                    % "2.0.7",
-  "com.lightbend.akka"              %% "akka-stream-alpakka-s3"               % "2.0.2",
-  "com.typesafe.akka"               %% "akka-http2-support"                   % akkaHttp2Version,
-  "com.typesafe.akka"               %% "akka-http-xml"                        % akkaHttp2Version,
-  "com.spotify.metrics"              % "semantic-metrics-core"                % "1.1.11",
+  "com.softwaremill.macwire"        %% "macros"                               % "2.6.7"  % "provided",
+  "org.playframework"               %% "play-json"                            % playJsonVersion,
+  "org.playframework"               %% "play-json-joda"                       % playJsonVersion,
+  "io.github.rediscala"             %% "rediscala"                            % "2.1.0",
+  ("com.github.gphat"               %% "censorinus"                           % "2.1.16").cross(CrossVersion.for3Use2_13),
+  "org.apache.pekko"                %% "pekko-actor"                          % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-stream"                         % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-slf4j"                          % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-actor-typed"                    % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-serialization-jackson"          % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-http"                           % pekkoHttpVersion,
+  "org.apache.pekko"                %% "pekko-http-xml"                       % pekkoHttpVersion,
+  "org.apache.pekko"                %% "pekko-connectors-kafka"               % pekkoConnectorsKafkaVersion,
+  "org.apache.pekko"                %% "pekko-connectors-s3"                  % pekkoConnectorsS3Version,
+  "com.spotify.metrics"              % "semantic-metrics-core"                % "1.2.0",
   "io.dropwizard.metrics"            % "metrics-jmx"                          % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.dropwizard.metrics"            % "metrics-json"                         % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.prometheus"                    % "simpleclient_common"                  % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.prometheus"                    % "simpleclient_dropwizard"              % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
-  "com.auth0"                        % "java-jwt"                             % "4.2.0" excludeAll (excludesJackson: _*),
-  "com.auth0"                        % "jwks-rsa"                             % "0.21.2" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
-  "com.nimbusds"                     % "nimbus-jose-jwt"                      % "9.39.1",
+  "com.auth0"                        % "java-jwt"                             % "4.6.0" excludeAll (excludesJackson: _*),
+  "com.auth0"                        % "jwks-rsa"                             % "0.24.1" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
+  "com.nimbusds"                     % "nimbus-jose-jwt"                      % "10.9.1",
   "de.svenkubiak"                    % "jBCrypt"                              % "0.4.3",
-  "com.propensive"                  %% "kaleidoscope-core"                    % "0.5.0",
-  "io.github.classgraph"             % "classgraph"                           % "4.8.149" excludeAll (excludesJackson: _*),
-  "com.comcast"                     %% "ip4s-core"                            % "3.2.0",
+  "io.github.classgraph"             % "classgraph"                           % "4.8.192" excludeAll (excludesJackson: _*),
+  "com.comcast"                     %% "ip4s-core"                            % "3.8.0",
   "com.yubico"                       % "webauthn-server-core"                 % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.yubico"                       % "webauthn-server-attestation"          % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.yubico"                       % "yubico-util"                          % webAuthnVersion excludeAll (excludesJackson: _*),
-  "com.maxmind.geoip2"               % "geoip2"                               % "3.0.1",
-  "com.blueconic"                    % "browscap-java"                        % "1.4.3",
+  "com.maxmind.geoip2"               % "geoip2"                               % "5.2.0",
+  "com.blueconic"                    % "browscap-java"                        % "1.5.1",
   "javax.xml.bind"                   % "jaxb-api"                             % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
-  "com.sun.xml.bind"                 % "jaxb-core"                            % "2.3.0.1",
-  if (scalaLangVersion.startsWith("2.12")) {
-    "com.github.blemale" %% "scaffeine" % "4.0.2"
-  } else {
-    "com.github.blemale" %% "scaffeine" % "5.2.1"
-  },
+  "com.sun.xml.bind"                 % "jaxb-core"                            % "4.0.9",
+  "com.github.blemale"              %% "scaffeine"                            % "5.3.0",
   "org.shredzone.acme4j"             % "acme4j-client"                        % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
-  "io.lettuce"                       % "lettuce-core"                         % "6.8.1.RELEASE" excludeAll (excludesJackson: _*),
-  "io.vertx"                         % "vertx-pg-client"                      % "4.5.22",
-  "com.ongres.scram"                 % "common"                               % "2.1",
-  "com.ongres.scram"                 % "client"                               % "2.1",
-  "com.jayway.jsonpath"              % "json-path"                            % "2.7.0",
-  "com.cronutils"                    % "cron-utils"                           % "9.2.0",
-  "commons-lang"                     % "commons-lang"                         % "2.6",
-  "com.datastax.oss"                 % "java-driver-core"                     % "4.15.0" excludeAll (excludesJackson: _*),
-  "org.gnieh"                       %% "diffson-play-json"                    % "4.3.0" excludeAll ExclusionRule(organization = "com.typesafe.akka"),
-  "org.scala-lang"                   % "scala-compiler"                       % scalaLangVersion,
-  "org.scala-lang"                   % "scala-library"                        % scalaLangVersion,
-  "org.scala-lang"                   % "scala-reflect"                        % scalaLangVersion,
+  // lettuce 7.x and vertx 5.x both require netty 4.2 (they use
+  // io.netty.channel.MultiThreadIoEventLoopGroup, absent from 4.1): keep them in sync with
+  // nettyVersion. Both are covered by functional.LettuceDatastoreSpec / functional.PgDatastoreSpec,
+  // which boot otoroshi on a real redis / postgresql started with testcontainers.
+  "io.lettuce"                       % "lettuce-core"                         % "7.7.0.RELEASE" excludeAll (excludesJackson: _*),
+  "io.vertx"                         % "vertx-pg-client"                      % "5.1.6",
+  // vertx-pg-client declares scram-client as an optional dependency, so it has to be added
+  // explicitly, otherwise SCRAM-SHA-256 auth (the default on modern postgresql) fails with
+  // "Scram authentication not supported, missing com.ongres.scram:scram-client"
+  "com.ongres.scram"                 % "scram-common"                         % scramVersion,
+  "com.ongres.scram"                 % "scram-client"                         % scramVersion,
+  "com.jayway.jsonpath"              % "json-path"                            % "3.0.0",
+  "com.cronutils"                    % "cron-utils"                           % "9.2.1",
+  "org.apache.commons"               % "commons-lang3"                        % "3.20.0",
+  "org.apache.commons"               % "commons-text"                         % "1.15.0",
+  "com.datastax.oss"                 % "java-driver-core"                     % "4.17.0" excludeAll (excludesJackson: _*),
+  "org.gnieh"                       %% "diffson-play-json"                    % "4.7.0" excludeAll ExclusionRule(organization = "org.apache.pekko"),
   "io.kubernetes"                    % "client-java"                          % kubernetesVersion excludeAll (excludesJackson: _*),
   "io.kubernetes"                    % "client-java-extended"                 % kubernetesVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcpkix-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcprov-ext-jdk18on"                   % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcprov-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson: _*),
+  "org.bouncycastle"                 % "bcpkix-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson *),
+  "org.bouncycastle"                 % "bcprov-ext-jdk18on"                   % bouncyCastleExtVersion excludeAll (excludesJackson *),
+  "org.bouncycastle"                 % "bcprov-jdk18on"                       % s"$bouncyCastleVersion.2" excludeAll (excludesJackson *),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                   % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                        % pulsarVersion excludeAll (excludesJackson: _*),
-  "com.clever-cloud.pulsar4s"       %% "pulsar4s-akka-streams"                % pulsarVersion excludeAll (excludesJackson: _*),
-  "org.jsoup"                        % "jsoup"                                % "1.15.3",
-  "org.biscuitsec"                   % "biscuit"                              % "4.0.0",
+  "com.clever-cloud.pulsar4s"       %% "pulsar4s-pekko-streams"               % pulsarVersion excludeAll (excludesJackson: _*),
+  "org.jsoup"                        % "jsoup"                                % "1.23.1",
+  "org.biscuitsec"                   % "biscuit"                              % "4.0.1",
   "org.opensaml"                     % "opensaml-core"                        % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-api"                    % "4.0.1",
-  //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-impl"                   % "4.0.1",
-  "org.openjdk.jol"                  % "jol-core"                             % "0.16",
+  "org.openjdk.jol"                  % "jol-core"                             % "0.17",
   "org.typelevel"                   %% "squants"                              % "1.8.3" excludeAll (excludesJackson: _*),
   // fix multiple CVEs
   "com.fasterxml.jackson.core"       % "jackson-core"                         % jacksonVersion,
-  "com.fasterxml.jackson.core"       % "jackson-annotations"                  % jacksonVersion,
-  "com.fasterxml.jackson.core"       % "jackson-databind"                     % s"${jacksonVersion}.2",
+  "com.fasterxml.jackson.core"       % "jackson-annotations"                  % jacksonAnnotationVersion,
+  "com.fasterxml.jackson.core"       % "jackson-databind"                     % jacksonVersion,
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml"              % jacksonVersion,
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"              % jacksonVersion,
   "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"                % jacksonVersion,
   "com.fasterxml.jackson.module"    %% "jackson-module-scala"                 % jacksonVersion,
-  "org.yaml"                         % "snakeyaml"                            % "1.33" excludeAll (excludesJackson: _*),
-  // "com.arakelian"                    % "java-jq"                                   % "1.3.0" excludeAll (excludesJackson: _*),
+  "org.yaml"                         % "snakeyaml"                            % "2.6" excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-api"                    % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-bom"                    % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-context"                % openTelemetryVersion excludeAll (excludesJackson: _*),
@@ -168,105 +224,72 @@ libraryDependencies ++= Seq(
   "io.opentelemetry"                 % "opentelemetry-sdk-trace"              % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-logging"       % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-otlp"          % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"        % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"        % openTelemetryZipkinVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp" % openTelemetryVersion excludeAll (excludesJackson: _*),
-  // "io.opentelemetry"                 % "opentelemetry-exporter-prometheus"         % "1.28.0-alpha" excludeAll (excludesJackson: _*),
-  "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"   % "1.28.0-alpha" excludeAll (excludesJackson: _*),
-  "com.amazonaws"                    % "aws-java-sdk-secretsmanager"          % "1.12.326" excludeAll (excludesJackson: _*),
-  "org.apache.logging.log4j"         % "log4j-api"                            % "2.19.0",
-  "org.sangria-graphql"             %% "sangria"                              % "3.4.0",
+  "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"   % "2.30.0-alpha" excludeAll (excludesJackson: _*),
+  "com.amazonaws"                    % "aws-java-sdk-secretsmanager"          % "1.12.797" excludeAll (excludesJackson: _*),
+  "org.apache.logging.log4j"         % "log4j-api"                            % "2.26.1",
+  "org.sangria-graphql"             %% "sangria"                              % "4.2.19",
   "org.bigtesting"                   % "routd"                                % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                            % "0.2.0",
-  "io.azam.ulidj"                    % "ulidj"                                % "1.0.4",
-  "fr.maif"                         %% "wasm4s"                               % "4.1.2" classifier "bundle",
-  "com.google.crypto.tink"           % "tink"                                 % "1.16.0",
-  "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.40.0",
-  // included in libs as jitpack is not stable at all
-  // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
-  //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
-  //   ExclusionRule("ch.qos.logback"),
-  //   ExclusionRule("org.slf4j"),
-  // ),
-  // "org.reflections"                  % "reflections"                          % "0.10.2",
-  // "org.json4s"                       % "json4s-jackson_2.12"                  % "4.0.7",
-  // "org.json4s"                       % "json4s-ast_2.12"                      % "4.0.7",
-  // "org.json4s"                       % "json4s-ext_2.12"                      % "4.0.7",
-  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.49" excludeAll (
-    ExclusionRule("org.slf4j"),
-    ExclusionRule(organization = "com.fasterxml.jackson.core"),
-    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
-    ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
-    ExclusionRule(organization = "com.typesafe.play", name = "play-json"),
-  ),
-  "com.github.swagger-akka-http"    %% "swagger-scala-module"                 % "2.15.0" excludeAll (
-    ExclusionRule("org.slf4j"),
-    ExclusionRule(organization = "com.fasterxml.jackson.core"),
-    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
-    ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
-    ExclusionRule(organization = "com.typesafe.play", name = "play-json"),
-  ),
-  // using a custom one right now as current build is broken
-  //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
-  if (scalaLangVersion.startsWith("2.12")) {
-    "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
-  } else {
-    "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
-  },
-  /*"org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
-    organization = "com.typesafe.play"
-  )*/ // TODO - check if needed
+  "io.azam.ulidj"                    % "ulidj"                                % "2.0.0",
+  "fr.maif"                         %% "wasm4s"                               % "5.0.3" classifier "bundle",
+  "com.google.crypto.tink"           % "tink"                                 % "1.23.0",
+  "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.50.0",
+  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.54" excludeAll (excludeSlf4jAndJacksonAndPlayJson *),
+  // swagger-scala-module dropped: no Scala 3 build and pulls Akka. We keep the Java swagger-core
+  // above; api.scala already has a fallback when the Scala converter is not registered.
+  "org.scala-lang.modules"          %% "scala-java8-compat"                   % "1.0.2",
   // new http stack ;)
-  "io.projectreactor.netty"          % "reactor-netty-core"                   % reactorNettyVersion,
-  "io.projectreactor.netty"          % "reactor-netty-http"                   % reactorNettyVersion,
-  "io.netty"                         % "netty-transport-native-kqueue"        % nettyVersion,
-  "io.netty"                         % "netty-transport-native-kqueue"        % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
-  "io.netty"                         % "netty-transport-native-epoll"         % nettyVersion,
-  "io.netty"                         % "netty-transport-native-epoll"         % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
-  //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final",
-  //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.62.Final",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.62.Final" classifier "linux-x86_64" classifier "osx-x86_64",
-  "io.netty.incubator"               % "netty-incubator-codec-http3"          % "0.0.28.Final",
+  "io.projectreactor.netty"          % "reactor-netty-core"                        % reactorNettyVersion,
+  "io.projectreactor.netty"          % "reactor-netty-http"                        % reactorNettyVersion,
+  "io.netty"                         % "netty-transport-native-kqueue"             % nettyVersion,
+  "io.netty"                         % "netty-transport-native-kqueue"             % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
+  "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion,
+  "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
+  // "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % nettyIncubatorTransportVersion,
+  // "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % nettyIncubatorTransportVersion classifier "linux-x86_64" classifier "linux-aarch_64",
+  // quic/http3 graduated out of io.netty.incubator into netty proper with 4.2: same classes, new
+  // packages (io.netty.incubator.codec.{quic,http3} -> io.netty.handler.codec.{quic,http3}) and
+  // versioned with netty itself, so they can no longer drift from the core.
+  "io.netty"                         % "netty-codec-native-quic"                   % nettyVersion,
+  "io.netty"                         % "netty-codec-native-quic"                   % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64" classifier "osx-x86_64" classifier "osx-aarch_64",
+  "io.netty"                         % "netty-codec-http3"                         % nettyVersion,
+  "io.netty"                         % "netty-pkitesting"                          % nettyVersion,
   // tests
-  "org.scalatestplus.play"          %% "scalatestplus-play"                   % "5.1.0"  % Test,
-  "com.networknt"                    % "json-schema-validator"                % "1.3.0" excludeAll (
-    ExclusionRule("org.slf4j"),
-    ExclusionRule(organization = "com.fasterxml.jackson.core"),
-    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
-    ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
-  ),
+  "org.scalatestplus.play"          %% "scalatestplus-play"                   % "7.0.2"  % Test,
+  "com.networknt"                    % "json-schema-validator"                % "3.0.6" excludeAll (excludeSlf4jAndJackson *),
   "jakarta.jms"                      % "jakarta.jms-api"                      % "3.1.0",
-  "org.apache.activemq"              % "artemis-jakarta-client"               % "2.41.0" excludeAll (
-    ExclusionRule("org.slf4j"),
-    ExclusionRule(organization = "com.fasterxml.jackson.core"),
-    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
-    ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
-  ),
-  "com.dimafeng"                    %% "testcontainers-scala-scalatest"       % "0.43.6" % Test,
-  "com.microsoft.playwright"         % "playwright"                           % "1.47.0" % Test
-  // https://github.com/mvel/mvel
-  // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
+  "org.apache.activemq"              % "artemis-jakarta-client"               % "2.55.0" excludeAll (excludeSlf4jAndJackson *),
+  "com.dimafeng"                    %% "testcontainers-scala-scalatest"       % "0.44.1" % Test,
+  // pinned to 1.44.0: 1.47.0+ crashes at browser/context teardown with
+  // "Cannot find module './../../package.json'" (getPlaywrightVersion in
+  // HarTracer.stop), which hangs the JVM test forever. See microsoft/playwright#35727.
+  "com.microsoft.playwright"         % "playwright"                           % "1.62.0" % Test
 )
-
-scalacOptions ++= Seq(
-  "-feature",
-  "-language:higherKinds",
-  "-language:implicitConversions",
-  "-language:existentials",
-  "-language:postfixOps"
-)
-
-// resolvers += "jitpack" at "https://jitpack.io"
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
+
+// Twirl 2.x still hardcodes `import scala.language.adhocExtensions` in generated template wrappers,
+// but the marker val was removed from scala.runtime.stdLibPatches.language in Scala 3.8. Stripping
+// the now-defunct import from the generated sources produces identical bytecode.
+Compile / TwirlKeys.compileTemplates := {
+  val generated = (Compile / TwirlKeys.compileTemplates).value
+  generated.foreach { f =>
+    val orig    = IO.read(f)
+    val patched = orig.replace("import scala.language.adhocExtensions", "")
+    if (patched != orig) IO.write(f, patched)
+  }
+  generated
+}
 
 // sources in (Compile, doc) := Seq.empty
 // publishArtifact in (Compile, packageDoc) := false
 // scalafmtVersion in ThisBuild := "1.2.0"
 
 Test / parallelExecution := false
-IntegrationTest / testForkedParallel := false
-IntegrationTest / fork := true
+//IntegrationTest / testForkedParallel := false
+//IntegrationTest / fork := true
 
 Test / javaOptions ++= Seq(
   "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED",
@@ -274,6 +297,35 @@ Test / javaOptions ++= Seq(
   "--add-exports=java.base/sun.security.x509=ALL-UNNAMED",
   "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
 )
+
+// Every spec that boots an otoroshi instance leaves process-global state behind
+// (DynamicSSLEngineProvider, OtoroshiEnvHolder, ...), which is not reset when the instance stops.
+// Two such specs in the same JVM make the second one fail on stale state - FrontendTlsSpec for
+// instance times out waiting for its certificates. Give each suite its own forked JVM so a run
+// covering several of them is meaningful. Forking is also what makes the --add-opens above apply.
+Test / fork := true
+Test / testGrouping := {
+  // hoisted out of the map below: task `.value` calls are not allowed inside an
+  // anonymous function (they are evaluated eagerly anyway, so this is equivalent).
+  val forkOptions = ForkOptions().withRunJVMOptions((Test / javaOptions).value.toVector)
+  (Test / definedTests).value.map { test =>
+    Tests.Group(
+      name = test.name,
+      tests = Seq(test),
+      runPolicy = Tests.SubProcess(forkOptions)
+    )
+  }
+}
+// With forked tests, ScalaTest ships its events back to the sbt JVM through a socket, as plain java
+// serialization. sbt's default layering puts the scala library in its own layer, so the sbt side
+// resolves scala.util.Left from scala-library 3.8.4 while the fork - a flat classpath where the
+// wasm4s "bundle" jar comes first and vendors the whole scala 2.13.16 library - writes the 2.13 one.
+// The serialVersionUIDs differ (-525309787470473293 vs 5957413767938667481), so the very first
+// TestFailed event (the only kind carrying a Left, via TestFailedException.posOrStackDepthFun) dies
+// on InvalidClassException. ScalaTest then closes the socket and waits forever in server.accept()
+// (Framework.scala:906) for a client that never reconnects: sbt hangs until CI kills the job, and
+// the failing test is never reported. Flat layering makes both sides read the same scala library.
+Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
 
 usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
@@ -285,16 +337,36 @@ licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 // githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN")
 
 // assembly
-mainClass in assembly := Some("play.core.server.ProdServerStart")
-test in assembly := {}
-assemblyJarName in assembly := "otoroshi.jar"
-fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
+assembly / mainClass := Some("play.core.server.ProdServerStart")
+assembly / test := {}
+assembly / assemblyJarName := "otoroshi.jar"
+assembly / fullClasspath += Attributed.blank(PlayKeys.playPackageAssets.value)
 assembly / assemblyMergeStrategy := { e =>
   e match {
     case path if path.contains("com/upokecenter/util")                  => MergeStrategy.first
     case path if path.contains("org/slf4j/impl")                        => MergeStrategy.first
     case path if path.contains("edu/umd/cs/findbugs/annotations")       => MergeStrategy.first
-    case PathList("scala", xs @ _*)                                     => MergeStrategy.first
+    // The wasm4s "bundle" jar vendors an entire scala library (2.13.16 base + its own scala 3
+    // runtime): 3430 of its classes collide with scala-library 3.8.4 and every one of them differs
+    // byte-wise. That jar sorts before scala-library on the classpath, so MergeStrategy.first was
+    // packing wasm4s's stdlib into otoroshi.jar instead of ours - scala/runtime/LazyVals$ and
+    // scala/collection/immutable/List included. The bundle is still required for org.extism.sdk
+    // (the plain wasm4s jar does not ship it), so keep the jar but never take scala/** from it.
+    // MergeStrategy.last would not do: scala-reflect 2.13.0 also ships scala/** and would win.
+    // "library.properties" is scala-library's own version stamp, at the root of the jar rather
+    // than under scala/, hence the second case.
+    case PathList("scala", _*) | "library.properties"                   =>
+      CustomMergeStrategy("preferRealScalaLibrary") { deps =>
+        val fromScalaLib = deps.find(
+          _.module.exists { m =>
+            // scala-reflect 2.13.0 is deliberately not in here: it also ships scala/**
+            m.organization == "org.scala-lang" &&
+            (m.name == "scala-library" || m.name.startsWith("scala3-library"))
+          }
+        )
+        val chosen = fromScalaLib.getOrElse(deps.head)
+        Right(Vector(JarEntry(chosen.target, chosen.stream)))
+      }
     case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
     case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
     case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
@@ -347,8 +419,16 @@ assembly / assemblyMergeStrategy := { e =>
     case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("okio.kotlin_module")         => MergeStrategy.first
-    case path if path.contains("akka/stream")                           => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("reflect-config.json")        => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("okhttp.kotlin_module")       => MergeStrategy.first
+    case PathList("META-INF", "MANIFEST.MF")                            => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.contains("MANIFEST.MF")                => MergeStrategy.first
+    case path if path.contains("pekko/stream")                          => MergeStrategy.first
     case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
+    case path if path.contains("net/jpountz")                           => MergeStrategy.first
+    case path if path.contains("play/api/libs/functional")              => MergeStrategy.first
+    case path if path.contains("play/api/libs/json")                    => MergeStrategy.first
+    case path if path.startsWith("okhttp3")                             => MergeStrategy.first
     case PathList("javax", xs @ _*)                                     => MergeStrategy.first
     case x                                                              =>
       val oldStrategy = (assembly / assemblyMergeStrategy).value
@@ -358,15 +438,15 @@ assembly / assemblyMergeStrategy := { e =>
 
 lazy val packageAll = taskKey[Unit]("PackageAll")
 packageAll := {
-  (dist in Compile).value
-  (assembly in Compile).value
+  (Compile / dist).value
+  (Compile / assembly).value
 }
 
 import play.sbt.PlayImport.PlayKeys._
 
-packagedArtifacts in publish := {
-  val artifacts: Map[sbt.Artifact, java.io.File] = (packagedArtifacts in publishLocal).value
-  val assets: java.io.File                       = (playPackageAssets in Compile).value
+publish / packagedArtifacts := {
+  val artifacts: Map[sbt.Artifact, java.io.File] = (publishLocal / packagedArtifacts).value
+  val assets: java.io.File                       = (Compile / playPackageAssets).value
   artifacts + (Artifact(moduleName.value, "jar", "jar", "assets") -> assets)
 }
 
@@ -376,12 +456,27 @@ bashScriptExtraDefines += """
 addJava "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED"
 addJava "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
 addJava "--add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED"
-addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED" 
-addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED" 
+addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED"
+addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
 addJava "-Dlog4j2.formatMsgNoLookups=true"
 """
 
 Revolver.enableDebugging(port = Integer.parseInt(sys.props.getOrElse("otoroshi.sbt.port", "5005")), suspend = false)
+
+// CVE check settings
+// import net.nmoncho.sbt.dependencycheck.settings._
+// dependencyCheckNvdApi := NvdApiSettings(apiKey = sys.env.getOrElse("NVD_API_KEY", "NVD_API_KEY"))
+
+// SBOM settings
+bomFileName := "otoroshi-server.cdx.json"
+bomFormat := "json"
+projectType := "application"
+includeBomSerialNumber := true
+includeBomTimestamp := true
+includeBomToolVersion := true
+includeBomHashes := true
+includeBomExternalReferences := true
+includeBomDependencyTree := true
 
 // run with: ~reStart
 reStart / mainClass := Some("play.core.server.ProdServerStart")

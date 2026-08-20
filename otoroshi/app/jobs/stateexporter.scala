@@ -4,9 +4,9 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.JsonPathValidator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsArray, JsObject, JsSuccess, JsValue, Json}
 
 import java.util.UUID
@@ -51,7 +51,7 @@ class StateExporter extends Job {
     .some
 
   override def description: Option[String] =
-    s"""This job send an event containing the full otoroshi export every n seconds""".stripMargin.some
+    s"""This job send an event containing the full otoroshi `export` every n seconds""".stripMargin.some
 
   override def jobVisibility: JobVisibility = JobVisibility.UserLand
 
@@ -82,25 +82,25 @@ class StateExporter extends Job {
     }
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = currentConfig("StateExporter", ctx, env)
     val format = config.flatMap(_.select("format").asOpt[String]).getOrElse("json")
     format match {
       case "raw" =>
         env.datastores.fullNdJsonExport(100, 1, 4).flatMap { source =>
-          source.runFold(Seq.empty[JsValue])(_ :+ _)(env.otoroshiMaterializer).map { raw =>
+          source.runFold(Seq.empty[JsValue])(_ :+ _)(using env.otoroshiMaterializer).map { raw =>
             FullStateExport(UUID.randomUUID().toString, DateTime.now(), "raw", JsArray(raw)).toAnalytics()
           }
         }
       case _     =>
-        env.datastores.globalConfigDataStore.fullExport().map { export =>
-          FullStateExport(UUID.randomUUID().toString, DateTime.now(), "json", export).toAnalytics()
+        env.datastores.globalConfigDataStore.fullExport().map { `export` =>
+          FullStateExport(UUID.randomUUID().toString, DateTime.now(), "json", `export`).toAnalytics()
         }
     }
   }
 }
 
-case class FullStateExport(id: String, timestamp: DateTime, format: String, export: JsValue) extends AnalyticEvent {
+case class FullStateExport(id: String, timestamp: DateTime, format: String, `export`: JsValue) extends AnalyticEvent {
 
   override def `@type`: String               = "FullStateExport"
   override def `@id`: String                 = id
@@ -110,7 +110,7 @@ case class FullStateExport(id: String, timestamp: DateTime, format: String, expo
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue = Json.obj(
+  override def toJson(using _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
@@ -119,6 +119,6 @@ case class FullStateExport(id: String, timestamp: DateTime, format: String, expo
     "@service"   -> `@service`,
     "@env"       -> "prod",
     "format"     -> format,
-    "export"     -> export
+    "export"     -> `export`
   )
 }

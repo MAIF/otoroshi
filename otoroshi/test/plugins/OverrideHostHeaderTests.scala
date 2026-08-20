@@ -8,7 +8,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class OverrideHostHeaderTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

@@ -1,19 +1,20 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import io.otoroshi.wasm4s.scaladsl.{WasmSource, WasmSourceKind}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.wasm.WasmConfig
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class WasmResponseTransformerTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val id    = IdGenerator.uuid
   val route = createRouteWithExternalTarget(
@@ -46,7 +47,7 @@ class WasmResponseTransformerTests(parent: PluginsTestSpec) {
     .futureValue
 
   getOutHeader(resp, "otoroshi_wasm_plugin_id").contains("OTOROSHI_WASM_RESPONSE_TRANSFORMER") mustBe true
-  Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
+  Json.parse(resp.body[String]) mustBe Json.obj("foo" -> "bar")
   resp.status mustBe Status.OK
 
   deleteOtoroshiRoute(route).futureValue

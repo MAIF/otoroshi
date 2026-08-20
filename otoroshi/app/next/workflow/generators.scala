@@ -1,6 +1,6 @@
 package otoroshi.next.workflow
 
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 
 object WorkflowGenerators {
@@ -78,7 +78,7 @@ object WorkflowGenerators {
          |${(0 to leftPad).map(_ => " ").mkString("")}- required fields are: ${schema
         .select("required")
         .asOpt[Seq[String]]
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
         .map(v => s"**$v**")
         .mkString(", ")}""".stripMargin
     }

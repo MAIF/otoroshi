@@ -1,10 +1,10 @@
 package otoroshi.next.plugins
 
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,7 +22,7 @@ class NgIncomingRequestValidatorAllowedDomainNames extends NgIncomingRequestVali
 
   override def access(
       ctx: NgIncomingRequestValidatorContext
-  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  )(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.config.select("domains").asOpt[Seq[String]] match {
       case None          => NgAccess.NgAllowed.vfuture
       case Some(domains) => {
@@ -51,7 +51,7 @@ class NgIncomingRequestValidatorDeniedDomainNames extends NgIncomingRequestValid
 
   override def access(
       ctx: NgIncomingRequestValidatorContext
-  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  )(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.config.select("domains").asOpt[Seq[String]] match {
       case None          => NgAccess.NgAllowed.vfuture
       case Some(domains) => {

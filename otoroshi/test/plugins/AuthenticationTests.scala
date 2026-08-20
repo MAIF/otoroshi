@@ -1,23 +1,24 @@
 package plugins
 
 import com.microsoft.playwright.options.AriaRole
+import play.api.libs.ws.WSBodyReadables.given
 import functional.PluginsTestSpec
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models.{ApiKey, RouteIdentifier, TeamAccess, TenantAccess, UserRight, UserRights}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
-import com.microsoft.playwright._
+import com.microsoft.playwright.*
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.*
 
 class AuthenticationTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   def passWithApikey() = {
     val moduleConfiguration = BasicAuthModuleConfig(
@@ -103,7 +104,7 @@ class AuthenticationTests(parent: PluginsTestSpec) {
 
     page.content().contains("GET") mustBe true
 
-    val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+    val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
       DefaultWSCookie(
         name = c.name,
         value = c.value,
@@ -117,13 +118,13 @@ class AuthenticationTests(parent: PluginsTestSpec) {
     val callWithUser = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(wsCookies: _*)
+      .withCookies(wsCookies*)
       .get()
       .futureValue
 
     callWithUser.status mustBe 200
-    Json.parse(callWithUser.body).selectAsString("email") mustBe "user@oto.tools"
-    Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
+    Json.parse(callWithUser.body[String]).selectAsString("email") mustBe "user@oto.tools"
+    Json.parse(callWithUser.body[String]).selectAsString("name") mustBe "foo"
 
     val apikey = ApiKey(
       clientId = s"client-${IdGenerator.uuid}",
@@ -229,7 +230,7 @@ class AuthenticationTests(parent: PluginsTestSpec) {
 
     page.content().contains("GET") mustBe true
 
-    val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+    val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
       DefaultWSCookie(
         name = c.name,
         value = c.value,
@@ -243,13 +244,13 @@ class AuthenticationTests(parent: PluginsTestSpec) {
     val callWithUser = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(wsCookies: _*)
+      .withCookies(wsCookies*)
       .get()
       .futureValue
 
     callWithUser.status mustBe 200
-    Json.parse(callWithUser.body).selectAsString("email") mustBe "user@oto.tools"
-    Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
+    Json.parse(callWithUser.body[String]).selectAsString("email") mustBe "user@oto.tools"
+    Json.parse(callWithUser.body[String]).selectAsString("name") mustBe "foo"
 
     val callWithoutCookies = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")

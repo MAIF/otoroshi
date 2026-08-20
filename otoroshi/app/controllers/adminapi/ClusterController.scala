@@ -1,36 +1,36 @@
 package otoroshi.controllers.adminapi
 
-import akka.NotUsed
-import akka.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Framing, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
-import otoroshi.cluster._
+import otoroshi.cluster.*
 import otoroshi.env.{Env, JavaVersion, OS}
 import otoroshi.models.{PrivateAppsUser, RightsChecker}
 import otoroshi.next.proxy.{ProxyEngine, RelayRoutingRequest}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.HttpEntity
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.{Accumulator, ActorFlow}
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic._
-import scala.concurrent.duration._
+import java.util.concurrent.atomic.*
+import scala.concurrent.duration.*
 
-class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
+class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHeaderEncoding: play.api.mvc.CookieHeaderEncoding)(using
     env: Env
 ) extends AbstractController(cc) {
 
   import otoroshi.cluster.ClusterMode.{Leader, Off, Worker}
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   val sourceBodyParser = BodyParser("ClusterController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -471,11 +471,12 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       env.clusterConfig.mode match {
         case Off => NotFound(Json.obj("error" -> "Cluster API not available")).future
         case _   => {
-          val engine     = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get
+          val engine     = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").toOption.get
           val cookies    = ctx.request.headers
             .get("Otoroshi-Relay-Routing-Cookies")
-            .map(c => Cookies.decodeCookieHeader(c))
-            .getOrElse(Seq.empty[Cookie])
+            //.map(c => Cookies.decodeCookieHeader(c))
+            .map(c => cookieHeaderEncoding.decodeCookieHeader(c))
+            .getOrElse(Seq.empty[Cookie]).toSeq
           val certs      = ctx.request.headers.headers
             .filter(_._1.startsWith("Otoroshi-Relay-Routing-Certs-"))
             .map { case (key, value) => (key.replace("Otoroshi-Relay-Routing-Certs-", "").toInt, value) }
@@ -510,11 +511,11 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
   }
 
   def stateWs() = WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { req =>
-    val action = ApiAction(ctx => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
+    val action = ApiAction((ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
     action.apply(req).run().flatMap { result =>
       if (result.header.status == 204) {
         ActorFlow
-          .actorRef(out => ClusterStateActor.props(out, env))(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          .actorRef(out => ClusterStateActor.props(out, env))(using env.otoroshiActorSystem, env.otoroshiMaterializer)
           .rightf
       } else {
         result.leftf
@@ -531,8 +532,8 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
 
   private val ref = new AtomicReference[Cancellable]()
 
-  implicit val ec  = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   def debug(msg: String): Unit = {
     if (env.isDev) {
@@ -575,11 +576,11 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
         case JsSuccess(msgfw, _) =>
           ClusterLeaderUpdateMessage.read(msgfw.payload) match {
             case Some(msg: ClusterLeaderUpdateMessage.ApikeyCallIncr)     =>
-              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+              msg.update(msgfw.member)(using env, env.otoroshiExecutionContext)
             case Some(msg: ClusterLeaderUpdateMessage.RouteCallIncr)      =>
-              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+              msg.update(msgfw.member)(using env, env.otoroshiExecutionContext)
             case Some(msg: ClusterLeaderUpdateMessage.GlobalStatusUpdate) =>
-              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+              msg.update(msgfw.member)(using env, env.otoroshiExecutionContext)
             case _                                                        =>
           }
         case JsError(err)        => Cluster.logger.error(s"ws error while reading ClusterMessageFromWorker: $err")

@@ -1,8 +1,9 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
@@ -10,7 +11,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class JQTransformResponseTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(
@@ -34,7 +35,7 @@ class JQTransformResponseTests(parent: PluginsTestSpec) {
     .futureValue
 
   call.status mustBe Status.OK
-  Json.parse(call.body) mustBe Json.obj("username" -> "Julien")
+  Json.parse(call.body[String]) mustBe Json.obj("username" -> "Julien")
 
   deleteOtoroshiRoute(route).futureValue
 }

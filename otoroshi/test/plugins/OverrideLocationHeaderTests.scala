@@ -1,6 +1,7 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import play.api.libs.ws.WSBodyReadables.given
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -10,7 +11,7 @@ import play.api.http.Status
 import play.api.libs.json.Json
 
 class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def redirectToRelativePath() = {
     val route = createLocalRoute(
@@ -93,7 +94,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    resp.body mustBe Json.stringify(Json.obj("message" -> "reached the target route"))
+    resp.body[String] mustBe Json.stringify(Json.obj("message" -> "reached the target route"))
     getOutHeader(resp2, "Location") mustBe Some(s"http://foo.oto.tools:$port/foo")
 
     deleteOtoroshiRoute(route).futureValue
@@ -154,7 +155,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    resp.body mustBe Json.stringify(Json.obj("message" -> "reached the target route"))
+    resp.body[String] mustBe Json.stringify(Json.obj("message" -> "reached the target route"))
     getOutHeader(resp2, "Location") mustBe Some(s"http://foo.oto.tools:$port/foo")
 
     deleteOtoroshiRoute(route).futureValue

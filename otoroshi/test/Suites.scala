@@ -1,9 +1,9 @@
 import com.typesafe.config.ConfigFactory
-import functional._
+import functional.*
 import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
 import otoroshi.greenscore.GreenScoreTestSpec
 import play.api.Configuration
-import tools._
+import tools.*
 
 import scala.util.Try
 
@@ -112,7 +112,7 @@ object OtoroshiTests {
   }
 }
 
-class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAndAfterAll {}
+class OtoroshiTests extends Suites(OtoroshiTests.getSuites()*) with BeforeAndAfterAll {}
 
 class DevOtoroshiTests
     extends Suites(
@@ -122,6 +122,21 @@ class DevOtoroshiTests
 class MapFilterTest
     extends Suites(
       new MapFilterSpec()
+    )
+
+class ExpressionLanguageTests
+    extends Suites(
+      new ExpressionLanguageSpec(Configurations.InMemoryConfiguration)
+    )
+
+class BackendMtlsTests
+    extends Suites(
+      new BackendMtlsSpec(Configurations.InMemoryConfiguration)
+    )
+
+class FrontendTlsTests
+    extends Suites(
+      new FrontendTlsSpec(Configurations.InMemoryConfiguration)
     )
 
 class Log4ShellTests
@@ -188,3 +203,13 @@ class GreenScoreTests
 //    extends Suites(
 //      new ApiKeysSpec("ApiKeysSpec", Configurations.InMemoryConfiguration)
 //    )
+
+class PgDatastoreTests
+    extends Suites(
+      new PgDatastoreSpec()
+    )
+
+class LettuceDatastoreTests
+    extends Suites(
+      new LettuceDatastoreSpec()
+    )

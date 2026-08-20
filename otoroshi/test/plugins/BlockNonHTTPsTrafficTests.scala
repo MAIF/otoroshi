@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.models.ApiKey
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -8,12 +9,12 @@ import otoroshi.next.plugins.{ApikeyCalls, BlockHttpTraffic, BlockHttpTrafficCon
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.duration.DurationInt
 
 class BlockNonHTTPsTrafficTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -57,7 +58,7 @@ class BlockNonHTTPsTrafficTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.UPGRADE_REQUIRED
-  Json.parse(resp.body) mustBe Json.obj("message" -> "you shall not pass")
+  Json.parse(resp.body[String]) mustBe Json.obj("message" -> "you shall not pass")
 
   awaitF(10.seconds).futureValue
   env.proxyState

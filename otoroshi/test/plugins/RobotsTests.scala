@@ -1,17 +1,18 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.models.ApiKey
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.security.IdGenerator
 import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class RobotsTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -44,8 +45,8 @@ class RobotsTests(parent: PluginsTestSpec) {
     .futureValue
 
   authorizedCall.status mustBe Status.OK
-  authorizedCall.body must include("User-agent: *")
-  authorizedCall.body must include("Disallow: /admin")
+  authorizedCall.body[String] must include("User-agent: *")
+  authorizedCall.body[String] must include("Disallow: /admin")
 
   val htmlResp = ws
     .url(s"http://127.0.0.1:$port/api")

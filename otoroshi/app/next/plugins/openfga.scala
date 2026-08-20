@@ -1,16 +1,17 @@
 package otoroshi.next.plugins
 
 import com.github.blemale.scaffeine.Scaffeine
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Results
 
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.util._
+import scala.concurrent.*
+import scala.concurrent.duration.*
+import scala.util.*
 
 case class OpenFGAValidatorConfig(
     url: String = "http://localhost:8088",
@@ -107,7 +108,7 @@ object OpenFGAValidator {
       update = (k, v, d) => v._2,
       read = (k, v, d) => v._2
     )
-    .build[String, (Boolean, FiniteDuration)]
+    .build[String, (Boolean, FiniteDuration)]()
 }
 
 class OpenFGAValidator extends NgAccessValidator {
@@ -128,7 +129,7 @@ class OpenFGAValidator extends NgAccessValidator {
       "Enforces fine-grained authorizations using OpenFGA"
     )
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val conf = ctx
       .cachedConfig(internalName)(OpenFGAValidatorConfig.format)
       .getOrElse(OpenFGAValidatorConfig.default)

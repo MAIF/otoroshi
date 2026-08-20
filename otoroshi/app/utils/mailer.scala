@@ -1,14 +1,15 @@
 package otoroshi.utils.mailer
 
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
 import otoroshi.models.Exporter
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSAuthScheme
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -164,7 +165,7 @@ object MailgunSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -191,7 +192,7 @@ object MailjetSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -216,7 +217,7 @@ object SendgridSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -241,7 +242,7 @@ object MailPaceSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -270,7 +271,7 @@ object ScalewayTEMSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -297,7 +298,7 @@ object GenericMailerSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -367,7 +368,7 @@ object EmailLocation {
 }
 
 trait Mailer {
-  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(using
       ec: ExecutionContext
   ): Future[Unit]
 }
@@ -377,7 +378,7 @@ object LogMailer {
 }
 
 class NoneMailer() extends Mailer {
-  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(using
       ec: ExecutionContext
   ): Future[Unit] = {
     FastFuture.successful(())
@@ -388,7 +389,7 @@ class LogMailer() extends Mailer {
 
   lazy val logger = Logger("otoroshi-console-mailer")
 
-  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(using
       ec: ExecutionContext
   ): Future[Unit] = {
     val email = Json.prettyPrint(
@@ -409,7 +410,7 @@ class MailgunMailer(env: Env, config: GlobalConfig, settings: MailgunSettings) e
 
   lazy val logger = Logger("otoroshi-mailgun-mailer")
 
-  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(using
       ec: ExecutionContext
   ): Future[Unit] = {
     val fu = env.Ws // no need for mtls here
@@ -427,7 +428,7 @@ class MailgunMailer(env: Env, config: GlobalConfig, settings: MailgunSettings) e
           "html"    -> Seq(html)
         )
       )
-      .map(_.ignore()(env.otoroshiMaterializer))
+      .map(_.ignore()(using env.otoroshiMaterializer))
     fu.andThen {
       case Success(res) => if (logger.isDebugEnabled) logger.debug("Alert email sent")
       case Failure(e)   => logger.error("Error while sending alert email", e)
@@ -440,7 +441,7 @@ class MailjetMailer(env: Env, config: GlobalConfig, settings: MailjetSettings) e
 
   lazy val logger = Logger("otoroshi-mailjet-mailer")
 
-  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(using
       ec: ExecutionContext
   ): Future[Unit] = {
     val fu = env.Ws // no need for mtls here
@@ -470,7 +471,7 @@ class MailjetMailer(env: Env, config: GlobalConfig, settings: MailjetSettings) e
           )
         )
       )
-      .map(_.ignore()(env.otoroshiMaterializer))
+      .map(_.ignore()(using env.otoroshiMaterializer))
     fu.andThen {
       case Success(res) => logger.info("Alert email sent")
       case Failure(e)   => logger.error("Error while sending alert email", e)
@@ -483,7 +484,7 @@ class SendgridMailer(env: Env, config: GlobalConfig, settings: SendgridSettings)
 
   lazy val logger = Logger("otoroshi-sendgrid-mailer")
 
-  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(using
       ec: ExecutionContext
   ): Future[Unit] = {
     val fu = env.Ws // no need for mtls here
@@ -517,7 +518,7 @@ class SendgridMailer(env: Env, config: GlobalConfig, settings: SendgridSettings)
           )
         )
       )
-      .map(_.ignore()(env.otoroshiMaterializer))
+      .map(_.ignore()(using env.otoroshiMaterializer))
     fu.andThen {
       case Success(res) => logger.info("Alert email sent")
       case Failure(e)   => logger.error("Error while sending alert email", e)
@@ -530,7 +531,7 @@ class MailPaceMailer(env: Env, config: GlobalConfig, settings: MailPaceSettings)
 
   lazy val logger = Logger("otoroshi-mailpace-mailer")
 
-  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(using
       ec: ExecutionContext
   ): Future[Unit] = {
     val fu = env.Ws // no need for mtls here
@@ -549,7 +550,7 @@ class MailPaceMailer(env: Env, config: GlobalConfig, settings: MailPaceSettings)
           "htmlbody" -> html
         )
       )
-      .map(_.ignore()(env.otoroshiMaterializer))
+      .map(_.ignore()(using env.otoroshiMaterializer))
     fu.andThen {
       case Success(res) => logger.info("Alert email sent")
       case Failure(e)   => logger.error("Error while sending alert email", e)
@@ -562,7 +563,7 @@ class ScalewayTEMMailer(env: Env, config: GlobalConfig, settings: ScalewayTEMSet
 
   lazy val logger = Logger("otoroshi-scaleway-tem-mailer")
 
-  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(using
       ec: ExecutionContext
   ): Future[Unit] = {
     val region = Option(settings.region).map(_.trim).filter(_.nonEmpty).getOrElse("fr-par")
@@ -592,7 +593,7 @@ class ScalewayTEMMailer(env: Env, config: GlobalConfig, settings: ScalewayTEMSet
           "project_id" -> settings.projectId
         )
       )
-      .map(_.ignore()(env.otoroshiMaterializer))
+      .map(_.ignore()(using env.otoroshiMaterializer))
     fu.andThen {
       case Success(res) => logger.info("Alert email sent")
       case Failure(e)   => logger.error("Error while sending alert email", e)
@@ -605,13 +606,13 @@ class GenericMailer(env: Env, config: GlobalConfig, settings: GenericMailerSetti
 
   lazy val logger = Logger("otoroshi-generic-mailer")
 
-  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(using
       ec: ExecutionContext
   ): Future[Unit] = {
     val fu = env.Ws // no need for mtls here
       .url(settings.url)
       .withHttpHeaders("Content-Type" -> "application/json")
-      .addHttpHeaders(settings.headers.toSeq: _*)
+      .addHttpHeaders(settings.headers.toSeq*)
       .post(
         Json.obj(
           "from"    -> Json.obj(
@@ -630,7 +631,7 @@ class GenericMailer(env: Env, config: GlobalConfig, settings: GenericMailerSetti
           "html"    -> html
         )
       )
-      .map(_.ignore()(env.otoroshiMaterializer))
+      .map(_.ignore()(using env.otoroshiMaterializer))
     fu.andThen {
       case Success(res) => logger.info("Alert email sent")
       case Failure(e)   => logger.error("Error while sending alert email", e)

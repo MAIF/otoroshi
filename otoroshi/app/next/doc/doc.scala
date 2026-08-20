@@ -1,6 +1,6 @@
 package otoroshi.next.doc
 
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.events.CustomDataExporter
 import otoroshi.next.plugins.api.{NgNamedPlugin, NgPluginVisibility}
 import play.api.Logger
@@ -9,9 +9,9 @@ import play.api.libs.json.Json
 import java.io.File
 import java.nio.file.Files
 import scala.util.Try
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import java.nio.charset.Charset
 
 class NgPluginDocumentationGenerator(docPath: String) {
@@ -22,13 +22,13 @@ class NgPluginDocumentationGenerator(docPath: String) {
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
-      import collection.JavaConverters._
+      import scala.jdk.CollectionConverters.*
       val start                  = System.currentTimeMillis()
       val allPackages            = Seq("otoroshi") //, "otoroshi_plugins")
       val scanResult: ScanResult = new ClassGraph()
         .addClassLoader(this.getClass.getClassLoader)
         .enableClassInfo()
-        .acceptPackages(allPackages: _*)
+        .acceptPackages(allPackages*)
         .scan
       if (logger.isDebugEnabled) logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
 
@@ -40,7 +40,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
         val plugins: Seq[String] = (scanResult.getSubclasses(classOf[NgNamedPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgNamedPlugin].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         plugins
       } catch {
@@ -194,7 +194,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
       //   |
       //   |$documentation
       //   |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
 
     (plugin.name, file.getName)
@@ -205,7 +205,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
     val plugins               = allPluginNames.distinct
     val contents: Seq[String] = plugins
       .map { pl =>
-        this.getClass.getClassLoader.loadClass(pl).newInstance()
+        this.getClass.getClassLoader.loadClass(pl).getDeclaredConstructor().newInstance()
       }
       .map(_.asInstanceOf[NgNamedPlugin])
       .filterNot(_.deprecated)
@@ -228,7 +228,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
              |${contents.mkString("\n")}
              |
              |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
   }
 }

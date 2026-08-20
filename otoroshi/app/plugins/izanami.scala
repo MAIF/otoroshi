@@ -1,10 +1,11 @@
 package otoroshi.plugins.izanami
 
 import java.util.concurrent.atomic.AtomicBoolean
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -21,11 +22,11 @@ import otoroshi.script.{
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSCookie}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.http.{MtlsConfig, WSCookieWithSameSite}
 import otoroshi.utils.http.WSCookieWithSameSite
 
@@ -135,23 +136,23 @@ class IzanamiProxy extends RequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
   override def afterRequest(
       ctx: AfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.remove(ctx.snowflake)
     funit
   }
 
-  def getFeatures(ctx: TransformerRequestContext, config: IzanamiProxyConfig)(implicit
+  def getFeatures(ctx: TransformerRequestContext, config: IzanamiProxyConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -180,9 +181,9 @@ class IzanamiProxy extends RequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .view.mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-                .toSeq: _*
+                .toSeq*
             )
             .as(resp.header("Content-Type").getOrElse("application/json"))
             .left
@@ -202,9 +203,9 @@ class IzanamiProxy extends RequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .view.mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-                .toSeq: _*
+                .toSeq*
             )
             .as(resp.header("Content-Type").getOrElse("application/json"))
             .left
@@ -212,7 +213,7 @@ class IzanamiProxy extends RequestTransformer {
     }
   }
 
-  def getFeaturesWithBody(ctx: TransformerRequestContext, config: IzanamiProxyConfig)(implicit
+  def getFeaturesWithBody(ctx: TransformerRequestContext, config: IzanamiProxyConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -220,7 +221,7 @@ class IzanamiProxy extends RequestTransformer {
     awaitingRequests
       .get(ctx.snowflake)
       .map { promise =>
-        val bodySource: Source[ByteString, _] = Source
+        val bodySource: Source[ByteString, ?] = Source
           .future(promise.future)
           .flatMapConcat(s => s)
 
@@ -240,9 +241,9 @@ class IzanamiProxy extends RequestTransformer {
                 .Status(resp.status)(resp.json)
                 .withHeaders(
                   resp.headers
-                    .mapValues(_.last)
+                    .view.mapValues(_.last).toMap
                     .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-                    .toSeq: _*
+                    .toSeq*
                 )
                 .as(resp.header("Content-Type").getOrElse("application/json"))
                 .left
@@ -254,7 +255,7 @@ class IzanamiProxy extends RequestTransformer {
       }
   }
 
-  def getConfig(ctx: TransformerRequestContext, config: IzanamiProxyConfig)(implicit
+  def getConfig(ctx: TransformerRequestContext, config: IzanamiProxyConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -273,9 +274,9 @@ class IzanamiProxy extends RequestTransformer {
           .Status(resp.status)(resp.json)
           .withHeaders(
             resp.headers
-              .mapValues(_.last)
+              .view.mapValues(_.last).toMap
               .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-              .toSeq: _*
+              .toSeq*
           )
           .as(resp.header("Content-Type").getOrElse("application/json"))
           .left
@@ -284,7 +285,7 @@ class IzanamiProxy extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = readConfig(ctx)
     (ctx.request.method.toLowerCase, ctx.request.path) match {
       case ("get", path) if path == config.path + "/features" && config.featuresEnabled             => getFeatures(ctx, config)
@@ -297,7 +298,7 @@ class IzanamiProxy extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
@@ -318,7 +319,7 @@ case class IzanamiCanaryRoutingConfig(
 object IzanamiCanaryRoutingConfig {
   def fromJson(json: JsValue): IzanamiCanaryRoutingConfig = {
     IzanamiCanaryRoutingConfig(
-      routes = json.select("routes").asArray.value.map { item =>
+      routes = json.select("routes").asArray.value.toSeq.map { item =>
         IzanamiCanaryRoutingConfigRoute(
           route = item.select("route").asString,
           default = item.select("default").asString,
@@ -410,7 +411,7 @@ class IzanamiCanary extends RequestTransformer {
     )
   }
 
-  def canaryId(ctx: TransformerRequestContext)(implicit env: Env): String = {
+  def canaryId(ctx: TransformerRequestContext)(using env: Env): String = {
     val attrs: TypedMap               = ctx.attrs
     val reqNumber: Option[Int]        = attrs.get(otoroshi.plugins.Keys.RequestNumberKey)
     val maybeCanaryId: Option[String] = attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey)
@@ -418,7 +419,7 @@ class IzanamiCanary extends RequestTransformer {
     canaryId
   }
 
-  def canaryCookie(cid: String, ctx: TransformerRequestContext)(implicit env: Env): WSCookie = {
+  def canaryCookie(cid: String, ctx: TransformerRequestContext)(using env: Env): WSCookie = {
     ctx.request.cookies.get("otoroshi-canary").map { cookie =>
       WSCookieWithSameSite(
         name = cookie.name,
@@ -444,7 +445,7 @@ class IzanamiCanary extends RequestTransformer {
     }
   }
 
-  def withCache(key: String)(f: String => Future[JsValue])(implicit ec: ExecutionContext): Future[JsValue] = {
+  def withCache(key: String)(f: String => Future[JsValue])(using ec: ExecutionContext): Future[JsValue] = {
     cache.getIfPresent(key).map(_.future).getOrElse {
       f(key).andThen { case Success(v) =>
         cache.put(key, v)
@@ -452,7 +453,7 @@ class IzanamiCanary extends RequestTransformer {
     }
   }
 
-  def fetchIzanamiVariant(cid: String, config: IzanamiCanaryConfig, ctx: TransformerRequestContext)(implicit
+  def fetchIzanamiVariant(cid: String, config: IzanamiCanaryConfig, ctx: TransformerRequestContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[String] = {
@@ -471,7 +472,7 @@ class IzanamiCanary extends RequestTransformer {
     }.map(r => r.asObject.select("variant").select("id").asOpt[String].getOrElse(IdGenerator.uuid))
   }
 
-  def fetchIzanamiRoutingConfig(config: IzanamiCanaryConfig, ctx: TransformerRequestContext)(implicit
+  def fetchIzanamiRoutingConfig(config: IzanamiCanaryConfig, ctx: TransformerRequestContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[IzanamiCanaryRoutingConfig] = {
@@ -499,7 +500,7 @@ class IzanamiCanary extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = readConfig(ctx)
     val cid    = canaryId(ctx)
     val cookie = canaryCookie(cid, ctx)
@@ -538,7 +539,7 @@ class IzanamiCanary extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     cookieJar.get(ctx.snowflake).map { cookie =>
       val allCookies = ctx.otoroshiResponse.cookies :+ cookie
       val cookies    = allCookies.distinct

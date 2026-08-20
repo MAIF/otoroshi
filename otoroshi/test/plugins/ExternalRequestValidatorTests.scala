@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgExternalValidator, NgExternalValidatorConfig, OverrideHost}
@@ -13,7 +14,7 @@ import scala.concurrent.duration.DurationInt
 
 class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   def rejectRequest() = {
     val invalidRoute = createLocalRoute(
@@ -58,7 +59,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.UNAUTHORIZED
-    resp.body.contains("you shall not pass") mustBe true
+    resp.body[String].contains("you shall not pass") mustBe true
 
     deleteOtoroshiRoute(invalidRoute).futureValue
     deleteOtoroshiRoute(route).futureValue

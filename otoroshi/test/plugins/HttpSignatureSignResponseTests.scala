@@ -1,17 +1,18 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.nio.charset.StandardCharsets
 
 class HttpSignatureSignResponseTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   private val hmacSecret = "this-is-a-32-byte-test-secret!!"
   private val keyid      = "test-shared-secret"
@@ -85,10 +86,10 @@ class HttpSignatureSignResponseTests(parent: PluginsTestSpec) {
     val digestRaw   = getOutHeader(resp, "Content-Digest").get
 
     // Content-Digest must cover the actual response body.
-    HttpSigContentDigest.verify(digestRaw, resp.body.getBytes(StandardCharsets.UTF_8)).isRight mustBe true
+    HttpSigContentDigest.verify(digestRaw, resp.body[String].getBytes(StandardCharsets.UTF_8)).isRight mustBe true
 
-    val inputs         = HttpSigStructuredFields.parseSignatureInputDict(sigInputRaw).right.get
-    val sigs           = HttpSigStructuredFields.parseSignatureDict(sigRaw).right.get.toMap
+    val inputs         = HttpSigStructuredFields.parseSignatureInputDict(sigInputRaw).toOption.get
+    val sigs           = HttpSigStructuredFields.parseSignatureDict(sigRaw).toOption.get.toMap
     val (label, input) = inputs.head
     input.keyid mustBe Some(keyid)
     input.alg mustBe Some("hmac-sha256")
@@ -101,7 +102,7 @@ class HttpSignatureSignResponseTests(parent: PluginsTestSpec) {
       headers = respHeaders,
       status = Some(resp.status)
     )
-    val base        = HttpSigBase.build(responseMsg, input, None).right.get
+    val base        = HttpSigBase.build(responseMsg, input, None).toOption.get
     val verified    = HttpSigAlgorithms.verify(
       "hmac-sha256",
       base.getBytes(StandardCharsets.UTF_8),

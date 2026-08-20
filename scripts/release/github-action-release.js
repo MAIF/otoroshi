@@ -180,7 +180,7 @@ async function buildOpenApi(version, where, releaseDir) {
 /*
 async function buildPluginDoc(version, where, releaseDir) {
   // build plugins doc
-  // needs JDK11 !!!!
+  // needs JDK17 !!!!
   await runScript(`
     cd ${where}/otoroshi
     sbt ";clean;compile;testOnly PluginDocTests"
@@ -203,11 +203,12 @@ async function buildDistribution(version, where, releaseDir, releaseFile) {
   cd ${where}
   sh ./scripts/update-extism.sh
   cd ${where}/otoroshi
-  sbt ";dist;assembly"
+  sbt ";dist;assembly;Provided / makeBom"
   `, where);
   // await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'server'], where);
-  await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-2.12/otoroshi.jar'), path.resolve(where, releaseDir)], where);
+  await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-3.8.4/otoroshi.jar'), path.resolve(where, releaseDir)], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, `./otoroshi/target/universal/otoroshi-${version}.zip`),  path.resolve(where, releaseDir)], where);
+  await runSystemCommand('cp', ['-v', path.resolve(where, `./otoroshi/target/otoroshi-server.cdx.json`),  path.resolve(where, releaseDir)], where);
 }
 
 async function buildVersion(version, where, releaseDir, releaseFile) {
@@ -222,7 +223,7 @@ async function buildVersion(version, where, releaseDir, releaseFile) {
 
 async function publishDockerOtoroshi(location, version) {
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/universal/otoroshi-${version}.zip`), path.resolve(location, `./docker/build/otoroshi-dist.zip`)], location);
-  await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-2.12/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
+  await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-3.8.4/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
   await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'build-all', version], path.resolve(location, `./docker/build`));
   await runSystemCommand('sh', [path.resolve(location, `./tools/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./tools/sidecar`));
   //await runSystemCommand('sh', [path.resolve(location, `./tools/otoroshi-wasm-manager/build.sh`), 'push-all', version], path.resolve(location, `./tools/otoroshi-wasm-manager`));
@@ -336,6 +337,7 @@ async function uploadAllFiles(release, location, to) {
   await uploadFilesToRelease(release, { name: 'otoroshi.jar', path: path.resolve(location, `otoroshi.jar`) });
   await uploadFilesToRelease(release, { name: `otoroshi-${to}.zip`, path: path.resolve(location, `otoroshi-${to}.zip`) });
   await uploadFilesToRelease(release, { name: `otoroshi-manual-${to}.zip`, path: path.resolve(location, `otoroshi-manual-${to}.zip`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-server.cdx.json`, path: path.resolve(location, `otoroshi-server.cdx.json`) });
   //await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-linux`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-linux`) });
   //await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-macos`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-macos`) });
   //await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-win.exe`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-win.exe`) });

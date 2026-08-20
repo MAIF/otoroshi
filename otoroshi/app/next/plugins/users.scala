@@ -1,20 +1,20 @@
 package otoroshi.next.plugins
 
-import akka.Done
+import org.apache.pekko.Done
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.PrivateAppsUser
-import otoroshi.next.plugins.api.{NgPreRoutingError, _}
+import otoroshi.next.plugins.api.{NgPreRoutingError, *}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.JsonPathUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class NgHasAllowedUsersValidatorConfig(
     usernames: Seq[String] = Seq.empty,
@@ -45,13 +45,13 @@ object NgHasAllowedUsersValidatorConfig {
     override def writes(o: NgHasAllowedUsersValidatorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgHasAllowedUsersValidatorConfig] = Try {
       NgHasAllowedUsersValidatorConfig(
-        usernames = json.select("usernames").asOpt[Seq[String]].getOrElse(Seq.empty),
-        emails = json.select("emails").asOpt[Seq[String]].getOrElse(Seq.empty),
-        emailDomains = json.select("email_domains").asOpt[Seq[String]].getOrElse(Seq.empty),
-        metadataMatch = json.select("metadata_match").asOpt[Seq[String]].getOrElse(Seq.empty),
-        metadataNotMatch = json.select("metadata_not_match").asOpt[Seq[String]].getOrElse(Seq.empty),
-        profileMatch = json.select("profile_match").asOpt[Seq[String]].getOrElse(Seq.empty),
-        profileNotMatch = json.select("profile_not_match").asOpt[Seq[String]].getOrElse(Seq.empty)
+        usernames = json.select("usernames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        emails = json.select("emails").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        emailDomains = json.select("email_domains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        metadataMatch = json.select("metadata_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        metadataNotMatch = json.select("metadata_not_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        profileMatch = json.select("profile_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        profileNotMatch = json.select("profile_not_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -72,7 +72,7 @@ class NgHasAllowedUsersValidator extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         "forbidden",
@@ -88,7 +88,7 @@ class NgHasAllowedUsersValidator extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.user match {
       case Some(user) => {
         val config = ctx
@@ -202,7 +202,7 @@ class NgJwtUserExtractor extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config =
       ctx.cachedConfig(internalName)(NgJwtUserExtractorConfig.format).getOrElse(NgJwtUserExtractorConfig("none"))
     env.datastores.globalJwtVerifierDataStore.findById(config.verifier).flatMap {
@@ -263,6 +263,7 @@ class NgJwtUserExtractor extends NgPreRouting {
                 ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
                 Results.Ok(Json.obj()).future
               }
+              case other => throw new IllegalStateException(s"unreachable case: $other")
             }
           }
           .recover { case _: Throwable =>
@@ -285,6 +286,7 @@ class NgJwtUserExtractor extends NgPreRouting {
             }
           }
       }
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }

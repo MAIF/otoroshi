@@ -2,7 +2,7 @@ package plugins
 
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class CanaryModeTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(
@@ -44,10 +44,10 @@ class CanaryModeTests(parent: PluginsTestSpec) {
     .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
     .get()
 
-  val user       = call.futureValue
+  val user       = call().futureValue
   val userCookie = user.cookie("otoroshi-canary")
 
-  val user1       = call.futureValue
+  val user1       = call().futureValue
   val user1Cookie = user1.cookie("otoroshi-canary")
 
   user.status mustBe Status.OK

@@ -2,26 +2,26 @@ package otoroshi.next.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
-import otoroshi.utils.controllers._
+import otoroshi.utils.controllers.*
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[NgRouteComposition, JsValue]
     with CrudControllerHelper[NgRouteComposition, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-ng-service-api")
 
@@ -43,7 +43,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRouteComposition]]] = {
@@ -62,7 +62,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgRouteComposition]]] = {
@@ -82,7 +82,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   override def createEntityOps(
       entity: NgRouteComposition,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
@@ -112,7 +112,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   override def updateEntityOps(
       entity: NgRouteComposition,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
@@ -142,7 +142,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRouteComposition]]] = {

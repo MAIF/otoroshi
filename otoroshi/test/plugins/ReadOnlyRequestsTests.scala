@@ -1,13 +1,14 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, ReadOnlyCalls}
 import play.api.http.Status
 
 class ReadOnlyRequestsTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

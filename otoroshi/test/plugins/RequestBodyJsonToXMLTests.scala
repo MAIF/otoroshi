@@ -1,6 +1,8 @@
 package plugins
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -8,12 +10,12 @@ import otoroshi.next.plugins.{AdditionalCookieInConfig, JsonToXmlRequest, JsonTr
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader}
 import otoroshi.utils.xml.Xml
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.xml.Elem
 
 class RequestBodyJsonToXMLTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -48,7 +50,7 @@ class RequestBodyJsonToXMLTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.OK
 
-  val rawXml   = ByteString(Json.parse(resp.body).selectAsString("body"))
+  val rawXml   = ByteString(Json.parse(resp.body[String]).selectAsString("body"))
   val cleanXml = rawXml.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
   val xml      = scala.xml.XML.loadString(cleanXml)
 

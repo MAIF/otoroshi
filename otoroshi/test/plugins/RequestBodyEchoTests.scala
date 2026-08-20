@@ -1,6 +1,8 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{EchoBackendConfig, OverrideHost, RequestBodyEchoBackend}
@@ -9,7 +11,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class RequestBodyEchoTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -37,7 +39,7 @@ class RequestBodyEchoTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body).selectAsString("f") mustEqual "b"
+    Json.parse(resp.body[String]).selectAsString("f") mustEqual "b"
   }
 
   {

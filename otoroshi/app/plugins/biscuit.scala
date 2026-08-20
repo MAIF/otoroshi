@@ -1,7 +1,7 @@
 package otoroshi.plugins.biscuit
 
-import akka.http.scaladsl.util.FastFuture
-import org.biscuitsec.biscuit.crypto._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.biscuitsec.biscuit.crypto.*
 import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.error.Error
 import org.biscuitsec.biscuit.token.builder.Term.Str
@@ -11,10 +11,10 @@ import org.biscuitsec.biscuit.token.{Authorizer, Biscuit}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Results}
 
@@ -91,16 +91,16 @@ case class SealedBiscuitToken(token: String) extends BiscuitToken
 
 object BiscuitHelper {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   def readConfigFromJson(rawConfig: JsValue): BiscuitConfig = {
     BiscuitConfig(
       publicKey = (rawConfig \ "publicKey").asOpt[String].orElse((rawConfig \ "public_key").asOpt[String]),
-      checks = (rawConfig \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty),
-      facts = (rawConfig \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
-      resources = (rawConfig \ "resources").asOpt[Seq[String]].getOrElse(Seq.empty),
-      rules = (rawConfig \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty),
-      revocation_ids = (rawConfig \ "revocation_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
+      checks = (rawConfig \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      facts = (rawConfig \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      resources = (rawConfig \ "resources").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      rules = (rawConfig \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      revocation_ids = (rawConfig \ "revocation_ids").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
       extractor = (rawConfig \ "extractor" \ "type").asOpt[String].getOrElse("header"),
       extractorName = (rawConfig \ "extractor" \ "name").asOpt[String].getOrElse("Authorization"),
       enforce = (rawConfig \ "enforce").asOpt[Boolean].getOrElse(false)
@@ -141,7 +141,7 @@ object BiscuitHelper {
     }
   }
 
-  def verify(verifier: Authorizer, config: BiscuitConfig, ctx: VerificationContext)(implicit
+  def verify(verifier: Authorizer, config: BiscuitConfig, ctx: VerificationContext)(using
       env: Env
   ): Either[org.biscuitsec.biscuit.error.Error, Unit] = {
     verifier.set_time()
@@ -200,7 +200,7 @@ object BiscuitHelper {
 // MIGRATED
 class BiscuitExtractor extends PreRouting {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   override def name: String = "Apikey from Biscuit token extractor"
 
@@ -255,7 +255,7 @@ class BiscuitExtractor extends PreRouting {
   def testing(): Unit = {
 
     import org.biscuitsec.biscuit.token.builder.Block
-    import org.biscuitsec.biscuit.token.builder.Utils._
+    import org.biscuitsec.biscuit.token.builder.Utils.*
 
     val client_id         = "tdrw4ixcssyvljrq"
     val client_secret     = "pdpzme7xpg58y1za0yqyihycschnq74iu7437qqfjor0h3jeo505n6w4ofg1pa17"
@@ -275,7 +275,7 @@ class BiscuitExtractor extends PreRouting {
     FastFuture.failed(PreRoutingErrorWithResult(Results.Unauthorized(error)))
   }
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = BiscuitHelper.readConfig("BiscuitExtractor", ctx)
 
     def verification(verifier: Authorizer): Future[Unit] = {
@@ -380,7 +380,7 @@ class BiscuitValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = BiscuitHelper.readConfig("BiscuitValidator", ctx)
     BiscuitHelper.extractToken(ctx.request, config) match {
       case Some(PubKeyBiscuitToken(token)) => {
@@ -401,6 +401,7 @@ class BiscuitValidator extends AccessValidator {
       }
       case _ if config.enforce             => false.future
       case _ if !config.enforce            => true.future
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }

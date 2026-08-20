@@ -1,16 +1,16 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.ContentType
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.ContentType
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.nimbusds.jose.jwk.{ECKey, JWK, OctetKeyPair, RSAKey}
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.net.URI
@@ -20,9 +20,10 @@ import java.security.{KeyFactory, MessageDigest, PrivateKey, PublicKey, Signatur
 import java.util.Base64
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import scala.util.boundary
 
 // =====================================================================================================================
 //
@@ -326,7 +327,7 @@ object HttpSigMessage {
   // Build a signing-base message from the inbound RequestHeader. Used both by the verify-request plugin (the inbound
   // request itself) and by the sign-response plugin (when a covered component carries `;req` and needs to reference
   // the originating request).
-  def fromRequest(req: play.api.mvc.RequestHeader)(implicit env: Env): SimpleSigMessage = SimpleSigMessage(
+  def fromRequest(req: play.api.mvc.RequestHeader)(using env: Env): SimpleSigMessage = SimpleSigMessage(
     method = req.method,
     fullUri = req.theProtocol + "://" + req.theHost + req.relativeUri,
     headers = req.headers.toMap.toSeq.flatMap { case (k, vs) => vs.map(v => (k, v)) },
@@ -340,7 +341,7 @@ object HttpSigMessage {
 
 object HttpSigBase {
 
-  import HttpSigStructuredFields._
+  import HttpSigStructuredFields.*
 
   // Build the canonical signature base. `relatedRequest` is consulted when a component carries the ;req parameter,
   // which is used for response signatures that cover request components.
@@ -612,18 +613,22 @@ object HttpSigContentDigest {
   // Returns the list of algorithms successfully checked (so callers can require at least one strong digest).
   def verify(headerValue: String, body: Array[Byte]): Either[String, Seq[String]] = {
     HttpSigStructuredFields.parseSignatureDict(headerValue).flatMap { entries =>
-      val checked = collection.mutable.ListBuffer.empty[String]
-      val it      = entries.iterator
-      while (it.hasNext) {
-        val (alg, bs)  = it.next()
-        val normalized = alg.toLowerCase
-        if (!SupportedAlgs.contains(normalized)) return Left(s"unsupported content-digest algorithm: $alg")
-        val md         = MessageDigest.getInstance(if (normalized == "sha-256") "SHA-256" else "SHA-512")
-        val computed   = md.digest(body)
-        if (!MessageDigest.isEqual(computed, bs)) return Left(s"content-digest mismatch for $alg")
-        checked += normalized
+      boundary {
+        val checked = collection.mutable.ListBuffer.empty[String]
+        val it      = entries.iterator
+        while (it.hasNext) {
+          val (alg, bs)  = it.next()
+          val normalized = alg.toLowerCase
+          if (!SupportedAlgs.contains(normalized))
+            boundary.break(Left(s"unsupported content-digest algorithm: $alg"))
+          val md         = MessageDigest.getInstance(if (normalized == "sha-256") "SHA-256" else "SHA-512")
+          val computed   = md.digest(body)
+          if (!MessageDigest.isEqual(computed, bs))
+            boundary.break(Left(s"content-digest mismatch for $alg"))
+          checked += normalized
+        }
+        Right(checked.toList)
       }
-      Right(checked.toList)
     }
   }
 }
@@ -678,7 +683,7 @@ object HttpSigKeyResolver {
   private val jwksTtl: FiniteDuration = 10.minutes
 
   // Public key lookup for verification.
-  def publicKey(source: HttpSigKeySource, alg: String, kid: Option[String])(implicit
+  def publicKey(source: HttpSigKeySource, alg: String, kid: Option[String])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, Either[Array[Byte], PublicKey]]] = {
@@ -727,7 +732,7 @@ object HttpSigKeyResolver {
   }
 
   // Private key lookup for signing.
-  def privateKey(source: HttpSigKeySource, alg: String)(implicit
+  def privateKey(source: HttpSigKeySource, alg: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, Either[Array[Byte], PrivateKey]]] = {
@@ -812,7 +817,7 @@ object HttpSigKeyResolver {
 
   private def fetchJwks(
       url: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, Map[String, JWK]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, Map[String, JWK]]] = {
     val now = System.currentTimeMillis()
     Option(jwksCache.get(url)) match {
       case Some((stop, keys)) if stop > now => Future.successful(Right(keys))
@@ -826,7 +831,7 @@ object HttpSigKeyResolver {
             else
               Try {
                 val obj  = Json.parse(resp.body).as[JsObject]
-                val arr  = (obj \ "keys").as[JsArray].value.toList
+                val arr  = (obj \ "keys").as[JsArray].value.toSeq.toList
                 val keys = arr.flatMap { k =>
                   val jwk = JWK.parse(Json.stringify(k))
                   Option(jwk.getKeyID).map(kid => kid -> jwk)
@@ -918,7 +923,7 @@ object HttpSignatureVerifyRequestConfig {
         "array" -> true,
         "label" -> "Allowed algorithms",
         "help"  -> "Reject signatures whose algorithm is not in this list.",
-        "props" -> Json.obj("options" -> JsArray(HttpSigAlgorithms.all.map(JsString)))
+        "props" -> Json.obj("options" -> JsArray(HttpSigAlgorithms.all.map(JsString.apply)))
       ),
       "required_components" -> Json.obj(
         "type"  -> "array",
@@ -1012,7 +1017,7 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
   private def joinHeader(values: Seq[String]): Option[String] =
     if (values.isEmpty) None else Some(values.mkString(", "))
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config =
       ctx
         .cachedConfig(internalName)(HttpSignatureVerifyRequestConfig.format)
@@ -1068,7 +1073,7 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
       sigMap: Map[String, Array[Byte]],
       config: HttpSignatureVerifyRequestConfig,
       ctx: NgAccessContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, Boolean]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, Boolean]] = {
     def loop(
         remaining: List[(String, HttpSigStructuredFields.SignatureInputValue)],
         lastErr: String
@@ -1092,7 +1097,7 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
       input: HttpSigStructuredFields.SignatureInputValue,
       sigMap: Map[String, Array[Byte]],
       config: HttpSignatureVerifyRequestConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, Boolean]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, Boolean]] = {
     val now = System.currentTimeMillis() / 1000L
 
     // 1. Required components present?
@@ -1120,15 +1125,19 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
           return Future.successful(Left(s"signature '$label' created in the future"))
         // maxAgeSeconds < 0 would otherwise be a foot-gun (negative numbers compare with `now - c > maxAge + skew`
         // in a way that lets very old signatures through). Coerce to 0 so a config typo can't widen the window.
-        config.maxAgeSeconds.foreach { raw =>
-          val maxAge = math.max(0L, raw)
-          if (now - c > maxAge + config.clockSkewSeconds)
-            return Future.successful(Left(s"signature '$label' is older than $maxAge seconds"))
+        config.maxAgeSeconds match {
+          case Some(raw) =>
+            val maxAge = math.max(0L, raw)
+            if (now - c > maxAge + config.clockSkewSeconds)
+              return Future.successful(Left(s"signature '$label' is older than $maxAge seconds"))
+          case None      => ()
         }
       case None    => ()
     }
-    input.expires.foreach { e =>
-      if (now > e + config.clockSkewSeconds) return Future.successful(Left(s"signature '$label' has expired"))
+    input.expires match {
+      case Some(e) if now > e + config.clockSkewSeconds =>
+        return Future.successful(Left(s"signature '$label' has expired"))
+      case _                                            => ()
     }
 
     // 4. keyid
@@ -1203,7 +1212,7 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
   // operator switch to disable this: if a signer asserted body integrity via content-digest, we MUST check it.
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val pending = ctx.attrs.get(HttpSigAttrs.PendingDigestKey)
     if (pending.isEmpty) {
       Future.successful(Right(ctx.otoroshiRequest))
@@ -1270,7 +1279,7 @@ object HttpSignatureSignResponseConfig {
         "type"  -> "select",
         "label" -> "Algorithm",
         "help"  -> "Signature algorithm. Must match the key type.",
-        "props" -> Json.obj("options" -> JsArray(HttpSigAlgorithms.all.map(JsString)))
+        "props" -> Json.obj("options" -> JsArray(HttpSigAlgorithms.all.map(JsString.apply)))
       ),
       "keyid"                    -> Json.obj(
         "type"  -> "string",
@@ -1296,7 +1305,7 @@ object HttpSignatureSignResponseConfig {
         "type"  -> "select",
         "label" -> "Content-Digest algorithm",
         "help"  -> "Hash function used to build the Content-Digest header.",
-        "props" -> Json.obj("options" -> JsArray(Seq("sha-256", "sha-512").map(JsString)))
+        "props" -> Json.obj("options" -> JsArray(Seq("sha-256", "sha-512").map(JsString.apply)))
       ),
       "include_created"          -> Json.obj(
         "type"  -> "bool",
@@ -1382,7 +1391,7 @@ class HttpSignatureSignResponse extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config =
       ctx
         .cachedConfig(internalName)(HttpSignatureSignResponseConfig.format)

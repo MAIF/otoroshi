@@ -2,15 +2,15 @@ package functional
 
 package functional
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.{`Set-Cookie`, Host, HttpCookie, RawHeader}
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.{Materializer, ThrottleMode}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.{`Set-Cookie`, Host, HttpCookie, RawHeader}
+import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.{Materializer, ThrottleMode}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
 import ch.qos.logback.core.AppenderBase
@@ -21,10 +21,10 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import org.slf4j.LoggerFactory
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.Signatures
@@ -42,12 +42,12 @@ import scala.util.{Failure, Success}
 
 class ThrottlingTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
-  implicit lazy val mat = otoroshiComponents.materializer
-  implicit lazy val env = otoroshiComponents.env
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = otoroshiComponents.materializer
+  implicit lazy val env: otoroshi.env.Env = otoroshiComponents.env
 
   def configurationSpec: Configuration = Configuration.empty
 
-  implicit val system = ActorSystem("otoroshi-test")
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -214,7 +214,7 @@ class ThrottlingTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       println(f"Rate : ${totalRequests.get() / elapsed}%.2f req/s")
 
       val windowSize    = 10000L
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.*
       val allTimestamps = timestamps200.asScala.toArray.sorted
 
       var maxIn10s        = 0

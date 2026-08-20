@@ -29,7 +29,7 @@ case class RouteTemplate(
 }
 
 object RouteTemplate {
-  def defaultRouteTemplate()(implicit env: Env) = RouteTemplate(
+  def defaultRouteTemplate()(using env: Env) = RouteTemplate(
     location = EntityLocation.default,
     id = IdGenerator.namedId("route-template", env),
     name = "New route template",
@@ -41,13 +41,13 @@ object RouteTemplate {
   val format                                    = new Format[RouteTemplate] {
     override def reads(json: JsValue): JsResult[RouteTemplate] = Try {
       RouteTemplate(
-        location = json.select("location").as(EntityLocation.format),
+        location = json.select("location").as(using EntityLocation.format),
         id = json.selectAsString("id"),
         name = json.selectAsString("name"),
         description = json.selectAsString("description"),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        route = json.select("route").asOpt(NgRoute.fmt).getOrElse(NgRoute.empty)
+        route = json.select("route").asOpt(using NgRoute.fmt).getOrElse(NgRoute.empty)
       )
     } match {
       case Failure(ex)    =>
@@ -70,17 +70,16 @@ object RouteTemplate {
 
 trait RouteTemplateDataStore extends BasicStore[RouteTemplate] {
   def template(env: Env): RouteTemplate = {
-    implicit val e = env
-
+    implicit val e: otoroshi.env.Env = env
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .routeTemplate
       .map { template =>
-        RouteTemplate.format.reads(RouteTemplate.defaultRouteTemplate.json.asObject.deepMerge(template)).get
+        RouteTemplate.format.reads(RouteTemplate.defaultRouteTemplate().json.asObject.deepMerge(template)).get
       }
       .getOrElse {
-        RouteTemplate.defaultRouteTemplate
+        RouteTemplate.defaultRouteTemplate()
       }
   }
 }
@@ -89,7 +88,7 @@ class KvRouteTemplateDataStore(redisCli: RedisLike, _env: Env)
     extends RouteTemplateDataStore
     with RedisLikeStore[RouteTemplate] {
   override def fmt: Format[RouteTemplate]              = RouteTemplate.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:route-templates:$id"
   override def extractId(value: RouteTemplate): String = value.id
 }

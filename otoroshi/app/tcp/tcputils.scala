@@ -1,15 +1,15 @@
-package akka
+package org.apache.pekko
 
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.{MatchResult, Pattern}
 
-import akka.actor.ActorSystem
-import akka.io.Inet.SocketOption
-import akka.stream.scaladsl.Tcp.{IncomingConnection, ServerBinding}
-import akka.stream.scaladsl.{BidiFlow, Flow, Sink, Source, TLS, Tcp}
-import akka.stream.{IgnoreComplete, TLSClosing, TLSProtocol}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.io.Inet.SocketOption
+import org.apache.pekko.stream.scaladsl.Tcp.{IncomingConnection, ServerBinding}
+import org.apache.pekko.stream.scaladsl.{BidiFlow, Flow, Sink, Source, TLS, Tcp}
+import org.apache.pekko.stream.{IgnoreComplete, TLSClosing, TLSProtocol}
+import org.apache.pekko.util.ByteString
 import javax.net.ssl.{SSLEngine, SSLSession}
 
 import scala.collection.immutable
@@ -28,7 +28,7 @@ object TcpUtils {
   val domainNamePattern                                                                                                = Pattern.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]")
   private val tlsWrapping: BidiFlow[ByteString, TLSProtocol.SendBytes, TLSProtocol.SslTlsInbound, ByteString, NotUsed] =
     BidiFlow.fromFlows(
-      Flow[ByteString].map(TLSProtocol.SendBytes),
+      Flow[ByteString].map(TLSProtocol.SendBytes.apply),
       Flow[TLSProtocol.SslTlsInbound].collect { case sb: TLSProtocol.SessionBytes =>
         sb.bytes
       // ignore other kinds of inbounds (currently only Truncated)
@@ -43,7 +43,7 @@ object TcpUtils {
       idleTimeout: Duration = Duration.Inf,
       verifySession: SSLSession => Try[Unit],
       closing: TLSClosing = IgnoreComplete
-  )(implicit system: ActorSystem): Source[IncomingConnection, Future[ServerBinding]] = {
+  )(using system: ActorSystem): Source[IncomingConnection, Future[ServerBinding]] = {
     Tcp().bindWithTls(
       interface = interface,
       port = port,
@@ -61,15 +61,15 @@ object TcpUtils {
       port: Int,
       createSSLEngine: () => SSLEngine,
       backlog: Int = 100,
-      options: immutable.Traversable[SocketOption] = Nil,
+      options: immutable.Iterable[SocketOption] = Nil,
       idleTimeout: Duration = Duration.Inf,
       verifySession: SSLSession => Try[Unit],
       closing: TLSClosing = IgnoreComplete
-  )(implicit system: ActorSystem): Source[AwesomeIncomingConnection, Future[ServerBinding]] = {
+  )(using system: ActorSystem): Source[AwesomeIncomingConnection, Future[ServerBinding]] = {
     val tls = tlsWrapping.atop(TLS(createSSLEngine, verifySession, closing)).reversed
     val tcp = Tcp()
     tcp.bind(interface, port, backlog, options, true, idleTimeout).map { incomingConnection =>
-      val promise    = Promise[String]
+      val promise    = Promise[String]()
       val firstChunk = new AtomicBoolean(false)
       AwesomeIncomingConnection(
         incomingConnection.copy(

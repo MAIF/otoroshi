@@ -1,7 +1,7 @@
 package plugins
 
-import org.scalatest.{MustMatchers, WordSpec}
-import otoroshi.next.plugins._
+
+import otoroshi.next.plugins.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -11,7 +11,7 @@ import java.util.Base64
 // The reference vector below is RFC 9421 §B.2.5 — "Signing a Request using hmac-sha256" — which is the only
 // vector with a fully-deterministic outcome (HMAC is symmetric, so we can re-compute and compare bytes).
 // Asymmetric vectors involve a random k value and cannot be re-derived; for those we round-trip sign-then-verify.
-class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
+class HttpSignatureRfc9421Spec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers {
 
   // -- B.2.5 fixture --------------------------------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
 
     "round-trip a Signature-Input dictionary" in {
       val raw            = """sig1=("@method" "@target-uri" "host" "content-digest");created=1618884473;keyid="test-key-ed25519""""
-      val parsed         = HttpSigStructuredFields.parseSignatureInputDict(raw).right.get
+      val parsed         = HttpSigStructuredFields.parseSignatureInputDict(raw).toOption.get
       parsed.size mustBe 1
       val (label, value) = parsed.head
       label mustBe "sig1"
@@ -47,13 +47,13 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
       value.keyid mustBe Some("test-key-ed25519")
       val reserialized   = HttpSigStructuredFields.serializeSignatureInputDict(parsed)
       // Re-parsing the reserialized form must produce the same structure.
-      val again          = HttpSigStructuredFields.parseSignatureInputDict(reserialized).right.get
+      val again          = HttpSigStructuredFields.parseSignatureInputDict(reserialized).toOption.get
       again.head._2.components.map(_.name) mustBe value.components.map(_.name)
     }
 
     "parse a Signature byte-sequence dictionary" in {
       val raw    = "sig1=:cHJvb2Y=:"
-      val parsed = HttpSigStructuredFields.parseSignatureDict(raw).right.get
+      val parsed = HttpSigStructuredFields.parseSignatureDict(raw).toOption.get
       parsed.size mustBe 1
       new String(parsed.head._2, StandardCharsets.UTF_8) mustBe "proof"
     }
@@ -65,7 +65,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
 
     "preserve case in `name` parameter of @query-param" in {
       val raw    = "sig1=(\"@query-param\";name=\"Pet\");created=1"
-      val parsed = HttpSigStructuredFields.parseSignatureInputDict(raw).right.get
+      val parsed = HttpSigStructuredFields.parseSignatureInputDict(raw).toOption.get
       val comp   = parsed.head._2.components.head
       comp.name mustBe "@query-param"
       comp.paramString("name") mustBe Some("Pet")
@@ -87,7 +87,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         ),
         params = params
       )
-      val base     = HttpSigBase.build(msg, sigInput, None).right.get
+      val base     = HttpSigBase.build(msg, sigInput, None).toOption.get
       // The expected canonical signature base (verbatim from the RFC).
       val expected =
         """"date": Tue, 20 Apr 2021 02:07:55 GMT""" + "\n" +
@@ -122,7 +122,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         components = List(HttpSigStructuredFields.ComponentId("@authority", Nil)),
         params = Nil
       )
-      val base = HttpSigBase.build(m, sig, None).right.get
+      val base = HttpSigBase.build(m, sig, None).toOption.get
       base must include("\"@authority\": example.com\n")
     }
 
@@ -132,7 +132,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         components = List(HttpSigStructuredFields.ComponentId("@authority", Nil)),
         params = Nil
       )
-      val base = HttpSigBase.build(m, sig, None).right.get
+      val base = HttpSigBase.build(m, sig, None).toOption.get
       base must include("\"@authority\": example.com:8443\n")
     }
 
@@ -146,7 +146,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         ),
         params = Nil
       )
-      val base = HttpSigBase.build(msg, sig, None).right.get
+      val base = HttpSigBase.build(msg, sig, None).toOption.get
       base must include("\"@query-param\";name=\"Pet\": dog\n")
     }
 
@@ -157,7 +157,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         components = List(HttpSigStructuredFields.ComponentId("@query", Nil)),
         params = Nil
       )
-      val base = HttpSigBase.build(m, sig, None).right.get
+      val base = HttpSigBase.build(m, sig, None).toOption.get
       base must include("\"@query\": ?\n")
     }
 
@@ -168,7 +168,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         components = List(HttpSigStructuredFields.ComponentId("@path", Nil)),
         params = Nil
       )
-      val base = HttpSigBase.build(m, sig, None).right.get
+      val base = HttpSigBase.build(m, sig, None).toOption.get
       base must include("\"@path\": /\n")
     }
 
@@ -184,7 +184,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         components = List(HttpSigStructuredFields.ComponentId("x-custom", Nil)),
         params = Nil
       )
-      val base = HttpSigBase.build(m, sig, None).right.get
+      val base = HttpSigBase.build(m, sig, None).toOption.get
       base must include("\"x-custom\": first, second\n")
     }
 
@@ -195,7 +195,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         components = List(HttpSigStructuredFields.ComponentId("date", Nil)),
         params = Nil
       )
-      val base = HttpSigBase.build(m, sig, None).right.get
+      val base = HttpSigBase.build(m, sig, None).toOption.get
       base must include("\"date\": Tue, 20 Apr 2021 02:07:55 GMT\n")
     }
 
@@ -205,7 +205,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         components = List(HttpSigStructuredFields.ComponentId("date", Nil)),
         params = List("created" -> HttpSigStructuredFields.ParamInt(1L))
       )
-      val base     = HttpSigBase.build(msg, sigInput, None).right.get
+      val base     = HttpSigBase.build(msg, sigInput, None).toOption.get
       base.endsWith("\n") mustBe false
       base.endsWith("\"@signature-params\": (\"date\");created=1") mustBe true
     }
@@ -226,14 +226,14 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         ),
         params = params
       )
-      val base     = HttpSigBase.build(msg, sigInput, None).right.get
+      val base     = HttpSigBase.build(msg, sigInput, None).toOption.get
       val sig      = HttpSigAlgorithms
         .sign(
           HttpSigAlgorithms.Hmac256,
           base.getBytes(StandardCharsets.UTF_8),
           Left(sharedSecret)
         )
-        .right
+        .toOption
         .get
       // Verification with the same secret succeeds.
       HttpSigAlgorithms
@@ -265,14 +265,14 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         components = List(HttpSigStructuredFields.ComponentId("date", Nil)),
         params = List("alg" -> HttpSigStructuredFields.ParamString("ed25519"))
       )
-      val base     = HttpSigBase.build(msg, sigInput, None).right.get
+      val base     = HttpSigBase.build(msg, sigInput, None).toOption.get
       val sig      = HttpSigAlgorithms
         .sign(
           HttpSigAlgorithms.Ed25519Alg,
           base.getBytes(StandardCharsets.UTF_8),
           Right(kp.getPrivate)
         )
-        .right
+        .toOption
         .get
       HttpSigAlgorithms
         .verify(
@@ -294,14 +294,14 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         components = List(HttpSigStructuredFields.ComponentId("date", Nil)),
         params = List("alg" -> HttpSigStructuredFields.ParamString("ecdsa-p256-sha256"))
       )
-      val base     = HttpSigBase.build(msg, sigInput, None).right.get
+      val base     = HttpSigBase.build(msg, sigInput, None).toOption.get
       val sig      = HttpSigAlgorithms
         .sign(
           HttpSigAlgorithms.EcdsaP256,
           base.getBytes(StandardCharsets.UTF_8),
           Right(kp.getPrivate)
         )
-        .right
+        .toOption
         .get
       // RFC 9421 mandates 64-byte fixed-length output for P-256 (32 bytes r || 32 bytes s).
       sig.length mustBe 64
@@ -319,7 +319,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
   "Content-Digest" should {
     "compute and verify sha-256" in {
       val body   = """{"hello": "world"}""".getBytes(StandardCharsets.UTF_8)
-      val header = HttpSigContentDigest.compute("sha-256", body).right.get
+      val header = HttpSigContentDigest.compute("sha-256", body).toOption.get
       // The vector from RFC 9421 §B.1.1.
       header mustBe "sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:"
       HttpSigContentDigest.verify(header, body).isRight mustBe true
@@ -328,7 +328,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
 
     "compute and verify sha-512" in {
       val body   = "hello".getBytes(StandardCharsets.UTF_8)
-      val header = HttpSigContentDigest.compute("sha-512", body).right.get
+      val header = HttpSigContentDigest.compute("sha-512", body).toOption.get
       header must startWith("sha-512=:")
       HttpSigContentDigest.verify(header, body).isRight mustBe true
     }
@@ -336,10 +336,10 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
     "verify all entries when multiple algorithms are present in one header" in {
       // Operators sometimes ship both digests for compatibility. Both MUST match the body.
       val body     = "payload".getBytes(StandardCharsets.UTF_8)
-      val sha256   = HttpSigContentDigest.compute("sha-256", body).right.get.stripPrefix("sha-256=")
-      val sha512   = HttpSigContentDigest.compute("sha-512", body).right.get.stripPrefix("sha-512=")
+      val sha256   = HttpSigContentDigest.compute("sha-256", body).toOption.get.stripPrefix("sha-256=")
+      val sha512   = HttpSigContentDigest.compute("sha-512", body).toOption.get.stripPrefix("sha-512=")
       val combined = s"sha-256=$sha256, sha-512=$sha512"
-      val checked  = HttpSigContentDigest.verify(combined, body).right.get
+      val checked  = HttpSigContentDigest.verify(combined, body).toOption.get
       checked.toSet mustBe Set("sha-256", "sha-512")
       // If any one entry is wrong, the whole header is rejected.
       val bad      = s"sha-256=$sha256, sha-512=:AAAA:"
@@ -363,7 +363,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
       kpg.initialize(2048)
       val kp   = kpg.generateKeyPair()
       val data = "hello".getBytes(StandardCharsets.UTF_8)
-      val sig  = HttpSigAlgorithms.sign(HttpSigAlgorithms.RsaPssSha512, data, Right(kp.getPrivate)).right.get
+      val sig  = HttpSigAlgorithms.sign(HttpSigAlgorithms.RsaPssSha512, data, Right(kp.getPrivate)).toOption.get
       HttpSigAlgorithms.verify(HttpSigAlgorithms.RsaPssSha512, data, sig, Right(kp.getPublic)).isRight mustBe true
       // Wrong public key MUST fail verification.
       val kp2  = kpg.generateKeyPair()
@@ -377,7 +377,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
       kpg.initialize(2048)
       val kp   = kpg.generateKeyPair()
       val data = "rsa-v15".getBytes(StandardCharsets.UTF_8)
-      val sig  = HttpSigAlgorithms.sign(HttpSigAlgorithms.RsaV1_5Sha256, data, Right(kp.getPrivate)).right.get
+      val sig  = HttpSigAlgorithms.sign(HttpSigAlgorithms.RsaV1_5Sha256, data, Right(kp.getPrivate)).toOption.get
       HttpSigAlgorithms.verify(HttpSigAlgorithms.RsaV1_5Sha256, data, sig, Right(kp.getPublic)).isRight mustBe true
     }
   }
@@ -388,7 +388,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
       kpg.initialize(new java.security.spec.ECGenParameterSpec("secp384r1"))
       val kp   = kpg.generateKeyPair()
       val data = "p384".getBytes(StandardCharsets.UTF_8)
-      val sig  = HttpSigAlgorithms.sign(HttpSigAlgorithms.EcdsaP384, data, Right(kp.getPrivate)).right.get
+      val sig  = HttpSigAlgorithms.sign(HttpSigAlgorithms.EcdsaP384, data, Right(kp.getPrivate)).toOption.get
       // RFC 9421 §3.3.5: P-384 raw r||s is 96 bytes (48 + 48).
       sig.length mustBe 96
       HttpSigAlgorithms.verify(HttpSigAlgorithms.EcdsaP384, data, sig, Right(kp.getPublic)).isRight mustBe true
@@ -421,7 +421,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         ),
         params = Nil
       )
-      val base     = HttpSigBase.build(response, sigInput, None).right.get
+      val base     = HttpSigBase.build(response, sigInput, None).toOption.get
       base must include("\"@status\": 200\n")
       base must include("\"content-type\": application/json\n")
     }
@@ -440,7 +440,7 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
         ),
         params = Nil
       )
-      val base     = HttpSigBase.build(response, sigInput, Some(request)).right.get
+      val base     = HttpSigBase.build(response, sigInput, Some(request)).toOption.get
       base must include("\"@status\": 201\n")
       base must include("\"x-trace\";req: abc-123\n")
     }

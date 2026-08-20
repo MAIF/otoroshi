@@ -1,21 +1,22 @@
 package otoroshi.plugins.authcallers
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.env.Env
 import otoroshi.models.{GlobalConfig, ServiceDescriptor}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.mvc.{Result, Results}
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 
@@ -124,7 +125,7 @@ class OAuth2Caller extends RequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  def getToken(key: String, config: OAuth2CallerConfig)(implicit
+  def getToken(key: String, config: OAuth2CallerConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -166,6 +167,7 @@ class OAuth2Caller extends RequestTransformer {
           .getOrElse("--")}&password=${config.password.getOrElse("--")}${config.scope
           .map(s => s"&scope=$s")
           .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
     val ctype        = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
     val authMod      = env.proxyState.authModule(config.authModRef.get).map(_.asInstanceOf[OAuth2ModuleConfig])
@@ -189,7 +191,7 @@ class OAuth2Caller extends RequestTransformer {
                 (parts.head, parts.last)
               }
               .toMap
-            val jsonBody         = JsObject(body.mapValues(JsString.apply))
+            val jsonBody         = JsObject(body.view.mapValues(JsString.apply).toMap)
             val token            = body.getOrElse("access_token", "--")
             val expires_in: Long = body.getOrElse("expires_in", config.cacheTokenSeconds.toSeconds.toString).toLong
             val expiration_date  = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime
@@ -221,7 +223,7 @@ class OAuth2Caller extends RequestTransformer {
   def fetchRefreshTheToken(
       refreshToken: String,
       config: OAuth2CallerConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  )(using env: Env, ec: ExecutionContext): Future[JsValue] = {
     val ctype   = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
     val builder =
       env.MtlsWs
@@ -250,7 +252,7 @@ class OAuth2Caller extends RequestTransformer {
         )
           .applyOnWithOpt(config.scope) { (json, scope) => json ++ Map("scope" -> scope) }
           .applyOnWithOpt(config.audience) { (json, audience) => json ++ Map("audience" -> audience) }
-      )(writeableOf_urlEncodedSimpleForm)
+      )(using writeableOf_urlEncodedSimpleForm)
     }
     // TODO: check status code
     future1.map(_.json).map { json =>
@@ -260,7 +262,7 @@ class OAuth2Caller extends RequestTransformer {
     }
   }
 
-  def tryRenewToken(key: String, config: OAuth2CallerConfig)(implicit
+  def tryRenewToken(key: String, config: OAuth2CallerConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, String]] = {
@@ -309,7 +311,7 @@ class OAuth2Caller extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = OAuth2CallerConfig.parse(ctx.configFor(configRoot.get))
     val key    = computeKey(env, config, ctx.descriptor)
     env.datastores.rawDataStore.get(key).flatMap {
@@ -343,7 +345,7 @@ class OAuth2Caller extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val config = OAuth2CallerConfig.parse(ctx.configFor(configRoot.get))
     val key    = computeKey(env, config, ctx.descriptor)
     if (ctx.otoroshiResponse.status == 401) {
@@ -410,7 +412,7 @@ class BasicAuthCaller extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config        = BasicAuthCallerConfig.parse(ctx.configFor(configRoot.get))
     val token: String = ByteString(s"${config.username}:${config.password}").encodeBase64.utf8String
     Right(

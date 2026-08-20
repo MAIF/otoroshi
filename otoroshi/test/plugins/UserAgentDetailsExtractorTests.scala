@@ -7,7 +7,7 @@ import otoroshi.next.plugins.{NgUserAgentExtractor, OverrideHost}
 import play.api.http.Status
 
 class UserAgentDetailsExtractorTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

@@ -69,7 +69,7 @@ class ReplaceAllWith(regex: String) {
   def replaceOnAsync(
       value: String,
       beginIndex: Int = 2
-  )(callback: String => Future[String])(implicit ec: ExecutionContext): Future[String] = {
+  )(callback: String => Future[String])(using ec: ExecutionContext): Future[String] = {
     var str: String      = value
     val matcher: Matcher = pattern.matcher(str)
     def next(): Future[String] = {

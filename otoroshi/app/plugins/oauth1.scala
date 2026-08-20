@@ -1,12 +1,12 @@
 package otoroshi.plugins.oauth1
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import com.google.common.base.Charsets
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import java.nio.charset.StandardCharsets
 import otoroshi.auth.Oauth1AuthModule.encodeURI
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
@@ -149,7 +149,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
     encodeURI(signature)
   }
 
-  private def encode(param: String): String = UriEncoding.encodePathSegment(param, Charsets.UTF_8)
+  private def encode(param: String): String = UriEncoding.encodePathSegment(param, StandardCharsets.UTF_8)
 
   def prepareParameters(params: Seq[(String, String)]): String = params
     .map { case (k, v) => (encode(k), encode(v)) }
@@ -167,7 +167,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
       Keys.consumerKey     -> consumerKey,
       Keys.signatureMethod -> signatureMethod,
       Keys.signature       -> s"${encodeURI(consumerSecret + "&" + tokenSecret.getOrElse(""))}",
-      Keys.timestamp       -> s"${Math.floor(System.currentTimeMillis() / 1000).toInt}",
+      Keys.timestamp       -> s"${Math.floor((System.currentTimeMillis() / 1000).toDouble).toInt}",
       Keys.nonce           -> s"${Random.nextInt(1000000000)}"
     )
 
@@ -216,7 +216,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = ctx.configFor("OAuth1Caller")
 
     val metadata         = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.metadata).getOrElse(Map.empty)
@@ -261,7 +261,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     ctx.otoroshiResponse.right.future
   }
 }

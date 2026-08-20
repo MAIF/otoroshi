@@ -1,25 +1,25 @@
 package otoroshi.loader
 
-import com.softwaremill.macwire._
+import com.softwaremill.macwire.*
 import otoroshi.controllers.adminapi.InfosApiController
 import controllers.{Assets, AssetsComponents}
 import otoroshi.netty.ReactorNettyServer
-import otoroshi.actions._
+import otoroshi.actions.*
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.api.{DocAction, GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
-import otoroshi.controllers._
-import otoroshi.controllers.adminapi._
+import otoroshi.controllers.*
+import otoroshi.controllers.adminapi.*
 import otoroshi.env.Env
-import otoroshi.gateway._
-import otoroshi.loader.modules._
+import otoroshi.gateway.*
+import otoroshi.loader.modules.*
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
-import otoroshi.next.controllers.adminapi._
+import otoroshi.next.controllers.adminapi.*
 import otoroshi.next.tunnel.TunnelController
 import otoroshi.next.workflow.WorkflowsController
 import play.api.ApplicationLoader.Context
-import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
+import play.api.http.{CookiesConfiguration, DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.EssentialFilter
+import play.api.mvc.{DefaultCookieHeaderEncoding, EssentialFilter}
 import play.api.routing.Router
 import play.api.{Application, ApplicationLoader, BuiltInComponentsFromContext, LoggerConfigurator}
 import play.filters.HttpFiltersComponents
@@ -67,6 +67,8 @@ package object modules {
 
     // lazy val gzipFilterConfig                           = GzipFilterConfig.fromConfiguration(configuration)
     // lazy val gzipFilter                                 = wire[GzipFilter]
+    lazy val headerEncoding = new play.api.mvc.DefaultCookieHeaderEncoding(httpConfiguration.cookies)
+
     override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
     lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
@@ -88,7 +90,7 @@ package object modules {
     lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
     lazy val httpHandler: HttpHandler               = wire[HttpHandler]
     lazy val webSocketHandler: WebSocketHandler     = wire[WebSocketHandler]
-    lazy val filters                                = new DefaultHttpFilters(httpFilters: _*)
+    lazy val filters                                = new DefaultHttpFilters(httpFilters*)
 
     override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]
     override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]

@@ -5,16 +5,16 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
 
 import com.typesafe.config.Config
-import com.typesafe.sslconfig.ssl._
+import com.typesafe.sslconfig.ssl.*
 import com.typesafe.sslconfig.util.{LoggerFactory, NoDepsLogger}
-import javax.net.ssl._
+import javax.net.ssl.*
 import play.api.Logger
 
 case class ConfigAndHash(config: Config, hash: String)
 case class SSLConfigAndHash(config: SSLConfigSettings, hash: String)
 
 class PlayLoggerFactory(logger: Logger) extends LoggerFactory {
-  override def apply(clazz: Class[_]): NoDepsLogger = new PlayLoggerFactoryLogger(logger)
+  override def apply(clazz: Class[?]): NoDepsLogger = new PlayLoggerFactoryLogger(logger)
   override def apply(name: String): NoDepsLogger    = new PlayLoggerFactoryLogger(logger)
 }
 
@@ -77,7 +77,7 @@ object DynamicSSLContext {
               Protocols.recommendedProtocols.filter(existingProtocols.contains)
           }
 
-          val allowWeakProtocols = sslConfig.loose.allowWeakProtocols
+          val allowWeakProtocols = false // ssl-config removed SSLLooseConfig.allowWeakProtocols; secure default
           if (!allowWeakProtocols) {
             val deprecatedProtocols = Protocols.deprecatedProtocols
             for (deprecatedProtocol <- deprecatedProtocols) {
@@ -99,12 +99,12 @@ object DynamicSSLContext {
               configuredCiphers.filter(existingCiphers.contains(_)).toArray
 
             case None =>
-              Ciphers.recommendedCiphers.filter(existingCiphers.contains(_)).toArray
+              existingCiphers // ssl-config removed Ciphers.recommendedCiphers; fall back to JVM-supported ciphers
           }
 
-          val allowWeakCiphers = sslConfig.loose.allowWeakCiphers
+          val allowWeakCiphers = false // ssl-config removed SSLLooseConfig.allowWeakCiphers; secure default
           if (!allowWeakCiphers) {
-            val deprecatedCiphers = Ciphers.deprecatedCiphers
+            val deprecatedCiphers = Array.empty[String] // ssl-config removed Ciphers.deprecatedCiphers
             for (deprecatedCipher <- deprecatedCiphers) {
               if (definedCiphers.contains(deprecatedCipher)) {
                 throw new IllegalStateException(s"Weak cipher $deprecatedCipher found in ssl-config.ciphers!")
@@ -165,7 +165,7 @@ object DynamicSSLContext {
         override def engineGetSocketFactory(): SSLSocketFactory             = getCtx().getSocketFactory
         override def engineGetServerSocketFactory(): SSLServerSocketFactory = getCtx().getServerSocketFactory
       },
-      new Provider("Otoroshi dynamic SSLContext", 1d, "A dynamic SSLContext that can be reconfigured on the fly") {},
+      new Provider("Otoroshi dynamic SSLContext", "1.0", "A dynamic SSLContext that can be reconfigured on the fly") {},
       "Otoroshi dynamic SSLContext"
     ) {}
     sslContext

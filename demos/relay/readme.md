@@ -30,7 +30,7 @@ yarn install
 yarn build
 cd ..
 sbt ';clean;compile;assembly'
-cp ./target/scala-2.12/otoroshi.jar ../demos/relay/otoroshi/otoroshi.jar
+cp ./target/scala-3.8.4/otoroshi.jar ../demos/relay/otoroshi/otoroshi.jar
 ```
 
 ## Start everything

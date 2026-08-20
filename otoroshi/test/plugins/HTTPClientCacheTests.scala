@@ -2,14 +2,14 @@ package plugins
 
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class HTTPClientCacheTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   def matchesWildcardMimeType() = {
     val route = createRouteWithExternalTarget(
@@ -115,7 +115,7 @@ class HTTPClientCacheTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def addCacheHeadersWhenMethodStatusAndContentTypeMatch() {
+  def addCacheHeadersWhenMethodStatusAndContentTypeMatch(): Unit = {
     val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(

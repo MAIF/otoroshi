@@ -1,16 +1,16 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.models.NgTarget
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class StaticAssetEndpointConfiguration(url: Option[String] = None) extends NgPluginConfig {
   def json: JsValue = StaticAssetEndpointConfiguration.format.writes(this)
@@ -64,7 +64,7 @@ class StaticAssetEndpoint extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx
       .cachedConfig(internalName)(StaticAssetEndpointConfiguration.format)
       .getOrElse(StaticAssetEndpointConfiguration.default)

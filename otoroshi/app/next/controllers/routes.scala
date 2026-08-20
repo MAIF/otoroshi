@@ -2,27 +2,27 @@ package otoroshi.next.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, RawCertificate}
-import otoroshi.utils.controllers._
+import otoroshi.utils.controllers.*
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
-import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.*
+import play.api.mvc.*
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[NgRoute, JsValue]
     with CrudControllerHelper[NgRoute, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-routes-api")
 
@@ -44,7 +44,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRoute]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -60,7 +60,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgRoute]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -77,7 +77,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def createEntityOps(
       entity: NgRoute,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  => {
         Right(
@@ -104,7 +104,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def updateEntityOps(
       entity: NgRoute,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  => {
         Right(
@@ -131,7 +131,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRoute]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.delete(id).map {
       case true  => {
         Right(
@@ -224,8 +224,8 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
   }
 
-  def domainsAndCertificates() = ApiAction { ctx =>
-    import otoroshi.ssl.SSLImplicits._
+  def domainsAndCertificates() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
+    import otoroshi.ssl.SSLImplicits.*
 
     val routes           = env.proxyState.allRoutes()
     val domains          = routes.flatMap(_.frontend.domains).map(_.domainLowerCase).distinct

@@ -1,18 +1,19 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, StaticBackend, StaticBackendConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.nio.file.{Files, Path}
 
 class StaticBackendTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val tempRoot: Path = Files.createTempDirectory("testRoot")
 
@@ -50,7 +51,7 @@ class StaticBackendTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp2.status mustBe 200
-  resp2.body contains "Hello from file system" mustBe true
+  resp2.body[String] `contains` "Hello from file system" mustBe true
 
   Files
     .walk(tempRoot)

@@ -1,14 +1,14 @@
 package otoroshi.script
 
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.GwError
 import otoroshi.models.ServiceDescriptor
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.CompilingPreRouting.funit
 import otoroshi.utils.TypedMap
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.twirl.api.Html
 
@@ -24,7 +24,7 @@ case class PreRoutingError(
 ) extends RuntimeException("PreRoutingError")
     with NoStackTrace {
   def asResult: Result = {
-    Results.Status(code).apply(body).as(contentType).withHeaders(headers.toSeq: _*)
+    Results.Status(code).apply(body).as(contentType).withHeaders(headers.toSeq*)
   }
 }
 case class PreRoutingErrorWithResult(result: Result)
@@ -65,10 +65,10 @@ object PreRoutingRef {
             refs = (json \ "refs")
               .asOpt[Seq[String]]
               .orElse((json \ "ref").asOpt[String].map(r => Seq(r)))
-              .getOrElse(Seq.empty),
+              .getOrElse(Seq.empty).toSeq,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             config = (json \ "config").asOpt[JsValue].getOrElse(Json.obj()),
-            excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>
@@ -79,7 +79,7 @@ object PreRoutingRef {
 
 trait PreRouting extends StartableAndStoppable with NamedPlugin with InternalEventListener {
   def pluginType: PluginType                                                                      = PluginType.PreRoutingType
-  def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
+  def preRoute(context: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = funit
 }
 
 case class PreRoutingContext(
@@ -98,7 +98,7 @@ case class PreRoutingContext(
       case _              => None
     }
   }
-  private def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
+  private def confAt[A](key: String, prefix: String = "config-")(using fjs: Reads[A]): Option[A] = {
     val conf = config match {
       case json: JsArray  => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
       case json: JsObject => (json \ s"$prefix$index").as[JsValue]
@@ -109,14 +109,14 @@ case class PreRoutingContext(
 }
 
 object DefaultPreRouting extends PreRouting {
-  override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
+  override def preRoute(context: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = funit
   override def visibility: NgPluginVisibility                                                              = NgPluginVisibility.NgInternal
   override def categories: Seq[NgPluginCategory]                                                           = Seq.empty
   override def steps: Seq[NgStep]                                                                          = Seq.empty
 }
 
 object CompilingPreRouting extends PreRouting {
-  override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
+  override def preRoute(context: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = funit
   override def visibility: NgPluginVisibility                                                              = NgPluginVisibility.NgInternal
   override def categories: Seq[NgPluginCategory]                                                           = Seq.empty
   override def steps: Seq[NgStep]                                                                          = Seq.empty
@@ -126,7 +126,7 @@ class FailingPreRoute extends PreRouting {
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq.empty
-  override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(context: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     context.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("epic fail!"))
     Future.failed(PreRoutingError.fromString("epic fail!"))
   }

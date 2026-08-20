@@ -1,12 +1,12 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import otoroshi.models.*
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsSuccess, Json, Reads}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.io.File
 import java.nio.file.Files
@@ -138,13 +138,13 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
       {
         val (res1, status1) = otoroshiApiCall("GET", "/api/groups").futureValue
         status1 mustBe 200
-        Reads.seq[ServiceGroup](ServiceGroup._fmt).reads(res1).get.contains(testGroup) mustBe true
+        Reads.seq[ServiceGroup](using ServiceGroup._fmt).reads(res1).get.contains(testGroup) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", "/api/services").futureValue
         status1 mustBe 200
         Reads
-          .seq[ServiceDescriptor](ServiceDescriptor._fmt)
+          .seq[ServiceDescriptor](using ServiceDescriptor._fmt)
           .reads(res1)
           .get
           .exists(_.id == testServiceDescriptor.id) mustBe true
@@ -153,18 +153,18 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
         val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}/apikeys").futureValue
         status1 mustBe 200
         //Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/apikeys").futureValue
         status1 mustBe 200
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/apikeys").futureValue
         status1 mustBe 200
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue
@@ -208,7 +208,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/services").futureValue
         status1 mustBe 200
         Reads
-          .seq[ServiceDescriptor](ServiceDescriptor._fmt)
+          .seq[ServiceDescriptor](using ServiceDescriptor._fmt)
           .reads(res1)
           .get
           .exists(_.id == testServiceDescriptor.id) mustBe true

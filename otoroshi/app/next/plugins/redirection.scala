@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.Done
+import org.apache.pekko.Done
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.models.RedirectionSettings
@@ -15,7 +15,7 @@ import otoroshi.next.plugins.api.{
   NgStep
 }
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.ExecutionContext
@@ -77,7 +77,7 @@ class Redirection extends NgPreRouting {
 
   override def preRouteSync(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
+  )(using env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgRedirectionSettings())
     if (config.hasValidCode) {
       val to = RedirectionExpressionLanguage(

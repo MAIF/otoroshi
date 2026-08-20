@@ -2,10 +2,10 @@ package otoroshi.next.plugins
 
 import otoroshi.models.{AlgoSettings, HSAlgoSettings, SecComInfoTokenVersion}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, PluginIndex}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.infotoken.AddFieldsSettings
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterJsValueReader, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
@@ -34,7 +34,7 @@ object ExposeDaikokuPresetConfig {
     override def reads(json: JsValue): JsResult[ExposeDaikokuPresetConfig] = Try {
       ExposeDaikokuPresetConfig(
         authenticationRef = json.selectAsOptString("authentication_ref"),
-        exclude = (json \ "exclude").asOpt[Seq[String]].getOrElse(Seq.empty),
+        exclude = (json \ "exclude").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         headerName = json.selectAsOptString("header_name").orElse("Otoroshi-claim".some),
         addFields = json.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m)),
         algo = AlgoSettings
@@ -49,7 +49,7 @@ object ExposeDaikokuPresetConfig {
       "authentication_ref" -> o.authenticationRef,
       "exclude"            -> o.exclude,
       "header_name"        -> o.headerName,
-      "add_fields"         -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))),
+      "add_fields"         -> o.addFields.map(v => JsObject(v.fields.view.mapValues(JsString.apply).toMap)),
       "algo"               -> o.algo.asJson
     )
   }

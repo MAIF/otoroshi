@@ -2,24 +2,24 @@ package otoroshi.models
 
 import otoroshi.actions.{ApiActionContext, BackOfficeActionContext, BackOfficeActionContextAuth}
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.utils.RegexPool
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class UserRights(rights: Seq[UserRight]) {
   def json: JsValue                                                                   = UserRights.format.writes(this)
-  private def rootOrTenantAdmin(tenant: TenantId)(f: => Boolean)(implicit env: Env): Boolean = {
+  private def rootOrTenantAdmin(tenant: TenantId)(f: => Boolean)(using env: Env): Boolean = {
     if (env.bypassUserRightsCheck || superAdmin || tenantAdmin(tenant)) {
       true
     } else {
       f
     }
   }
-  def superAdmin(implicit env: Env): Boolean = {
+  def superAdmin(using env: Env): Boolean = {
     if (env.bypassUserRightsCheck) {
       true
     } else {
@@ -30,8 +30,8 @@ case class UserRights(rights: Seq[UserRight]) {
       )
     }
   }
-  def tenantAdminStr(tenant: String)(implicit env: Env): Boolean                      = tenantAdmin(TenantId(tenant))
-  def tenantAdmin(tenant: TenantId)(implicit env: Env): Boolean = {
+  def tenantAdminStr(tenant: String)(using env: Env): Boolean                      = tenantAdmin(TenantId(tenant))
+  def tenantAdmin(tenant: TenantId)(using env: Env): Boolean = {
     if (env.bypassUserRightsCheck || superAdmin) {
       true
     } else {
@@ -42,19 +42,19 @@ case class UserRights(rights: Seq[UserRight]) {
       )
     }
   }
-  def canReadTenant(tenant: TenantId)(implicit env: Env): Boolean                     =
+  def canReadTenant(tenant: TenantId)(using env: Env): Boolean                     =
     rootOrTenantAdmin(tenant) {
       rights.exists(ur => ur.tenant.matches(tenant) && ur.tenant.canRead)
     }
-  def canWriteTenant(tenant: TenantId)(implicit env: Env): Boolean                    =
+  def canWriteTenant(tenant: TenantId)(using env: Env): Boolean                    =
     rootOrTenantAdmin(tenant) {
       rights.exists(ur => ur.tenant.matches(tenant) && ur.tenant.canReadWrite)
     }
-  def canReadTeams(tenant: TenantId, teams: Seq[TeamId])(implicit env: Env): Boolean  =
+  def canReadTeams(tenant: TenantId, teams: Seq[TeamId])(using env: Env): Boolean  =
     rootOrTenantAdmin(tenant) {
       canReadTenant(tenant) && teams.exists(ut => rights.exists(ur => ur.teams.exists(t => t.matches(ut) && t.canRead)))
     }
-  def canWriteTeams(tenant: TenantId, teams: Seq[TeamId])(implicit env: Env): Boolean =
+  def canWriteTeams(tenant: TenantId, teams: Seq[TeamId])(using env: Env): Boolean =
     rootOrTenantAdmin(tenant) {
       canReadTenant(tenant) && teams.exists(ut =>
         rights.exists(ur => ur.teams.exists(t => t.matches(ut) && t.canReadWrite))
@@ -85,8 +85,7 @@ object UserRights {
 
   def readFromArray(arr: JsArray): UserRights = {
     UserRights(
-      arr.value
-        .map { ur =>
+      arr.value.toSeq        .map { ur =>
           UserRight.format.reads(ur).asOpt
         }
         .collect { case Some(ur) =>
@@ -121,11 +120,11 @@ object UserRight {
           tenant = TenantAccess((json \ "tenant").as[String]),
           teams = (json \ "teams")
             .as[JsArray]
-            .value
+            .value.toSeq
             .map { t =>
               TeamAccess(t.as[String])
             }
-            .distinct
+            .distinct.toSeq
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -141,13 +140,13 @@ case class EntityLocation(tenant: TenantId = TenantId.default, teams: Seq[TeamId
 
 object EntityLocation {
   val default = EntityLocation()
-  def ownEntityLocation(rawCtx: Option[ApiActionContext[_]])(implicit env: Env): EntityLocation = {
+  def ownEntityLocation(rawCtx: Option[ApiActionContext[?]])(using env: Env): EntityLocation = {
     rawCtx
       .map(ctx => getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead))
       .getOrElse(EntityLocation.default)
   }
   private def getOwnEntityLocation[T <: EntityLocationSupport](currentTenant: TenantId, canUserRead: T => Boolean)(
-      implicit env: Env
+      using env: Env
   ) = {
     EntityLocation(
       tenant = currentTenant,
@@ -159,7 +158,7 @@ object EntityLocation {
         .slice(0, 1)
     )
   }
-  def fromBackOffice(ctx: BackOfficeActionContextAuth[JsValue])(implicit env: Env): EntityLocation = {
+  def fromBackOffice(ctx: BackOfficeActionContextAuth[JsValue])(using env: Env): EntityLocation = {
     getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead)
   }
   val keyName = "_loc"
@@ -184,7 +183,7 @@ object EntityLocation {
               .map(e => Team.format.reads(e))
               .collect { case JsSuccess(team, _) => team.id }
           }
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
 
         val teams = teamsAsStringList
           .map(teams => teams ++ teamsAsJsonArray)
@@ -206,7 +205,7 @@ object EntityLocation {
       }
   }
   def readFromKey(json: JsValue): EntityLocation = {
-    (json \ keyName).asOpt(format).getOrElse(EntityLocation())
+    (json \ keyName).asOpt(using format).getOrElse(EntityLocation())
   }
 }
 
@@ -302,18 +301,18 @@ case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
 }
 
 sealed trait RightsChecker {
-  def canPerform(user: BackOfficeUser, currentTenant: TenantId)(implicit env: Env): Boolean
+  def canPerform(user: BackOfficeUser, currentTenant: TenantId)(using env: Env): Boolean
 }
 
 object RightsChecker {
   case object Anyone          extends RightsChecker {
-    def canPerform(user: BackOfficeUser, currentTenant: TenantId)(implicit env: Env): Boolean = true
+    def canPerform(user: BackOfficeUser, currentTenant: TenantId)(using env: Env): Boolean = true
   }
   case object SuperAdminOnly  extends RightsChecker {
-    def canPerform(user: BackOfficeUser, currentTenant: TenantId)(implicit env: Env): Boolean = user.rights.superAdmin
+    def canPerform(user: BackOfficeUser, currentTenant: TenantId)(using env: Env): Boolean = user.rights.superAdmin
   }
   case object TenantAdminOnly extends RightsChecker {
-    def canPerform(user: BackOfficeUser, currentTenant: TenantId)(implicit env: Env): Boolean =
+    def canPerform(user: BackOfficeUser, currentTenant: TenantId)(using env: Env): Boolean =
       user.rights.tenantAdmin(currentTenant)
   }
 }
@@ -335,7 +334,7 @@ object Tenant {
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -359,7 +358,7 @@ case class Tenant(
   override def internalId: String                                      = id.value
   override def json: JsValue                                           = Tenant.format.writes(this)
   override def location: EntityLocation                                = EntityLocation(id, Seq.empty)
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.tenantDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.tenantDataStore.set(this)
   def theDescription: String                                           = description
   def theMetadata: Map[String, String]                                 = metadata
   def theName: String                                                  = name
@@ -384,7 +383,7 @@ object Team   {
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -409,7 +408,7 @@ case class Team(
   override def internalId: String                                      = id.value
   override def json: JsValue                                           = Team.format.writes(this)
   override def location: EntityLocation                                = EntityLocation(tenant, Seq(id))
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.teamDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.teamDataStore.set(this)
 
   def theDescription: String           = description
   def theMetadata: Map[String, String] = metadata

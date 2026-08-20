@@ -1,10 +1,10 @@
 package otoroshi.plugins.hmac
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
@@ -102,7 +102,7 @@ class HMACCallerPlugin extends RequestTransformer {
 
   override def transformRequestWithCtx(
       context: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = context.configFor("HMACCallerPlugin")
     (config \ "secret").asOpt[String] match {
       case None         =>
@@ -198,7 +198,7 @@ class HMACValidator extends AccessValidator {
 
     val algorithm            = params.getOrElse("algorithm", "HMAC-SHA256")
     val signature            = params("signature")
-    val headers: Seq[String] = params.get("headers").map(_.split(" ").toSeq).getOrElse(Seq.empty[String])
+    val headers: Seq[String] = params.get("headers").map(_.split(" ").toSeq).getOrElse(Seq.empty[String]).toSeq
     val signingValues        = context.request.headers.headers.filter(p => headers.contains(p._1)).map(_._2)
     val signingString        = signingValues.mkString(" ")
 
@@ -220,7 +220,7 @@ class HMACValidator extends AccessValidator {
       FastFuture.successful(false)
   }
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] =
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] =
     ((context.configFor("HMACAccessValidator") \ "secret").asOpt[String] match {
       case Some(value) if value.nonEmpty => Some(value)
       case _                             => context.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.clientSecret)

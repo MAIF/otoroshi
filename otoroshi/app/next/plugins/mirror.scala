@@ -1,29 +1,30 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import play.api.libs.ws.WSBodyWritables.given
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.AuditEvent
 import otoroshi.models.Target
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.mirror.MirroringPluginConfig
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.*
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.http.ResponseImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.ResponseImplicits.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
 import play.api.mvc.{RequestHeader, Result}
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util._
+import scala.util.*
 
 case class NgTrafficMirroringConfig(
     legacy: MirroringPluginConfig = MirroringPluginConfig(
@@ -75,7 +76,7 @@ case class NgMirroringEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -114,7 +115,7 @@ case class NgMirroringEvent(
         "mirroredBody"            -> ctx.mirroredBody.get().utf8String,
         "mirroredResponse"        -> Json.obj(
           "status"  -> ctx.mirroredResp.get().status,
-          "headers" -> ctx.mirroredResp.get().headers.mapValues(_.last),
+          "headers" -> ctx.mirroredResp.get().headers.view.mapValues(_.last).toMap,
           "cookies" -> JsArray(
             ctx.mirroredResp
               .get()
@@ -158,15 +159,15 @@ case class NgRequestContext(
   def generateEvent(env: Env): Unit = {
     if (config.legacy.generateEvents) {
       val e = NgMirroringEvent(env.snowflakeGenerator.nextIdStr(), env.env, this)
-      e.toAnalytics()(env)
+      e.toAnalytics()(using env)
     }
   }
 
   def runMirrorRequest(env: Env): Unit = {
     started.compareAndSet(false, true)
-    implicit val ec       = env.otoroshiExecutionContext
-    implicit val ev       = env
-    implicit val mat      = env.otoroshiMaterializer
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val req               = request
     val currentReqHasBody = req.theHasBody
     val httpRequest       = otoRequest.get()
@@ -190,7 +191,7 @@ case class NgRequestContext(
     mirroredRequest.set(mReq)
     val finalTarget: Target =
       Target(host = url.authority.host.toString(), scheme = url.scheme, port = url.effectivePort.some)
-    val globalConfig        = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+    val globalConfig        = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
     val clientReq           = route.useAkkaHttpClient match {
       case _ if finalTarget.mtlsConfig.mtls =>
         env.gatewayClient.akkaUrlWithTarget(
@@ -222,9 +223,9 @@ case class NgRequestContext(
       .withMethod(httpRequest.method)
       .withHttpHeaders(
         (httpRequest.headers.toSeq
-          .filterNot(_._1 == "Host") ++ Seq("Host" -> host) ++ configHeaders): _*
+          .filterNot(_._1 == "Host") ++ Seq("Host" -> host) ++ configHeaders)*
       )
-      .withCookies(httpRequest.cookies: _*)
+      .withCookies(httpRequest.cookies*)
       .withFollowRedirects(false)
       .withMaybeProxyServer(
         route.backend.client.legacy.proxy.orElse(globalConfig.proxies.services)
@@ -251,7 +252,7 @@ case class NgRequestContext(
         }
       }
       .recover { case e =>
-        println("[ERROR]", e.getMessage)
+        println(("[ERROR]", e.getMessage))
       }
   }
 }
@@ -271,12 +272,12 @@ class NgTrafficMirroring extends NgRequestTransformer {
 
   override def beforeRequest(
       ctx: NgBeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val cfg = ctx.cachedConfig(internalName)(NgTrafficMirroringConfig.format).getOrElse(NgTrafficMirroringConfig())
 
     if (cfg.legacy.shouldBeMirrored(ctx.route.id, ctx.request)) {
-      val done       = Promise[Unit]
-      val mirrorDone = Promise[Unit]
+      val done       = Promise[Unit]()
+      val mirrorDone = Promise[Unit]()
       val context    = NgRequestContext(
         id = ctx.snowflake,
         request = ctx.request,
@@ -309,14 +310,14 @@ class NgTrafficMirroring extends NgRequestTransformer {
 
   override def afterRequest(
       ctx: NgAfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     inFlightRequests.remove(ctx.snowflake)
     ().vfuture
   }
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     inFlightRequests.get(ctx.snowflake) match {
       case None          =>
       case Some(context) =>
@@ -332,7 +333,7 @@ class NgTrafficMirroring extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     inFlightRequests.get(ctx.snowflake) match {
       case None          => ctx.otoroshiResponse.right.future
       case Some(context) =>
@@ -361,7 +362,7 @@ class NgTrafficMirroring extends NgRequestTransformer {
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     inFlightRequests.get(ctx.snowflake) match {
       case None          =>
       case Some(context) =>

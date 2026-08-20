@@ -7,9 +7,9 @@ import otoroshi.env.Env
 import otoroshi.models.ApiKeyHelper.decodeBase64
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{PreRouting, PreRoutingContext}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -28,7 +28,7 @@ class JwtApikeyExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
       case None    => {
@@ -219,7 +219,7 @@ class BasicAuthApikeyExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
       case None    => {
@@ -254,11 +254,11 @@ class BasicAuthApikeyExtractor extends PreRouting {
               env.datastores.apiKeyDataStore
                 .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
                 .flatMap {
-                  case None                                     => ().future
                   case Some(key) if key.isInvalid(apiKeySecret) => ().future
                   case Some(key) if key.isValid(apiKeySecret)   =>
                     ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> key)
                     ().future
+                  case _                                     => ().future
                 }
             }
             case _                                          => ().future
@@ -285,7 +285,7 @@ class CustomHeadersApikeyExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
       case None    => {
@@ -309,11 +309,11 @@ class CustomHeadersApikeyExtractor extends PreRouting {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(clientId, descriptor.id)
             .flatMap {
-              case None                                     => ().future
               case Some(key) if key.isInvalid(clientSecret) => ().future
               case Some(key) if key.isValid(clientSecret)   =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> key)
                 ().future
+              case _                                     => ().future
             }
         } else {
           ().future
@@ -337,7 +337,7 @@ class ClientIdApikeyExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
       case None    => {
@@ -361,11 +361,11 @@ class ClientIdApikeyExtractor extends PreRouting {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(clientId, descriptor.id)
             .flatMap {
-              case None                                => ().future
               case Some(key) if !key.allowClientIdOnly => ().future
               case Some(key) if key.allowClientIdOnly  =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> key)
                 ().future
+              case _                                => ().future
             }
         } else {
           ().future

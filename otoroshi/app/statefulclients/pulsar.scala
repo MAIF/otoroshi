@@ -2,7 +2,7 @@ package otoroshi.statefulclients
 
 import com.sksamuel.pulsar4s.PulsarClient
 import otoroshi.events.{PulsarConfig, PulsarSetting}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.JsObject
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -28,7 +28,7 @@ case class PulsarStatefulClientConfig(config: PulsarConfig) extends StatefulClie
 
   override def isOpen(client: PulsarClient): Boolean = open.get()
 
-  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[?]): Boolean = other match {
     case p: PulsarStatefulClientConfig => p.config == config
     case _                             => false
   }

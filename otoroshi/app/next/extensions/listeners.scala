@@ -1,17 +1,17 @@
 package otoroshi.next.extensions
 
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
-import otoroshi.netty._
+import otoroshi.netty.*
 import otoroshi.ssl.ClientAuth
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.actions.ApiActionContext
 
@@ -152,8 +152,8 @@ case class HttpListener(
 
 object HttpListener {
   val logger                                                              = Logger("otoroshi-http-listeners")
-  def default(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env) = HttpListener(
-    location = EntityLocation.ownEntityLocation(ctx)(env),
+  def default(ctx: Option[ApiActionContext[?]] = None)(using env: Env) = HttpListener(
+    location = EntityLocation.ownEntityLocation(ctx)(using env),
     id = "http-listener_" + UUID.randomUUID().toString,
     name = "http listener",
     description = "A new http listener",
@@ -176,9 +176,9 @@ object HttpListener {
         id = (json \ "id").as[String],
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
-        config = (json \ "config").as(HttpListenerConfig.format),
+        config = (json \ "config").as(using HttpListenerConfig.format),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -193,7 +193,7 @@ class KvHttpListenerDataStore(extensionId: AdminExtensionId, redisCli: RedisLike
     extends HttpListenerDataStore
     with RedisLikeStore[HttpListener] {
   override def fmt: Format[HttpListener]               = HttpListener.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:httplisteners:$id"
   override def extractId(value: HttpListener): String  = value.id
 }
@@ -241,8 +241,8 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
       .select("listeners_json")
       .asOpt[String]
       .flatMap(str => Json.parse(str).asOpt[Seq[JsObject]])
-      .getOrElse(Seq.empty)
-    val listenerConfigsJson2 = root.select("listeners").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
+    val listenerConfigsJson2 = root.select("listeners").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
     val listenerConfigs      = (listenerConfigsJson1 ++ listenerConfigsJson2).flatMap(obj =>
       HttpListenerConfig.format.reads(obj).asOpt.map(r => (obj, r))
     )
@@ -272,7 +272,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
       ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
       req: RequestHeader,
       user: Option[BackOfficeUser],
-      body: Option[Source[ByteString, _]]
+      body: Option[Source[ByteString, ?]]
   ): Future[Result] = {
     val all: Seq[(String, String)] =
       staticListeners.keySet.toSeq.map(v => (v, v)) ++ dynamicListeners.values.toSeq.map(l => (l._1.id, l._1.name))
@@ -319,12 +319,12 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
           }
         }
       }
-    }(env.analyticsExecutionContext)
+    }(using env.analyticsExecutionContext)
   }
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       listeners <- datastores.httpListenerDatastore.findAll()
     } yield {
@@ -350,7 +350,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
             c => datastores.httpListenerDatastore.extractId(c),
             json => json.select("id").asString,
             () => "id",
-            tmpl = (a, b, ctx) => HttpListener.default(ctx)(env).json,
+            tmpl = (a, b, ctx) => HttpListener.default(ctx)(using env).json,
             stateAll = () => states.allHttpListeners(),
             stateOne = id => states.httpListener(id),
             stateUpdate = values => states.updateHttpListeners(values)

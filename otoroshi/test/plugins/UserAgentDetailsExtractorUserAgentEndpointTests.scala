@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgUserAgentExtractor, NgUserAgentInfoEndpoint, OverrideHost}
@@ -10,7 +11,7 @@ import play.api.http.Status
 import play.api.libs.json.Json
 
 class UserAgentDetailsExtractorUserAgentEndpointTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -37,7 +38,7 @@ class UserAgentDetailsExtractorUserAgentEndpointTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsString("browser") mustBe "Firefox"
+  Json.parse(resp.body[String]).selectAsString("browser") mustBe "Firefox"
 
   deleteOtoroshiRoute(route).futureValue
 }

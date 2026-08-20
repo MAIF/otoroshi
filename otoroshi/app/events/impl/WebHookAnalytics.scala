@@ -1,20 +1,21 @@
 package otoroshi.events.impl
 
 import otoroshi.env.Env
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.events.{AnalyticEvent, AnalyticsWritesService}
 import otoroshi.models.{GlobalConfig, HSAlgoSettings, Webhook}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends AnalyticsWritesService {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   lazy val logger = Logger("otoroshi-analytics-webhook")
 
@@ -41,7 +42,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       )
     ).flatten
 
-  override def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def publish(event: Seq[JsValue])(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val state = IdGenerator.extendedToken(128)
     val claim = OtoroshiClaim(
       iss = env.Headers.OtoroshiIssuer,
@@ -50,7 +51,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       exp = DateTime.now().plusSeconds(30).toDate.getTime,
       iat = DateTime.now().toDate.getTime,
       jti = IdGenerator.uuid
-    ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}", false))(
+    ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}", false))(using
       env
     ) // TODO : maybe we need some config here ?
     val headers: Seq[(String, String)] = webhook.headers.toSeq ++ Seq(
@@ -77,7 +78,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       .getOrElse(webhook.url)
     val postResponse = env.MtlsWs
       .url(url, webhook.mtlsConfig)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withMaybeProxyServer(config.proxies.eventsWebhooks)
       .post(JsArray(event))
     postResponse.andThen {

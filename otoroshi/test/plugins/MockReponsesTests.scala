@@ -1,15 +1,17 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{MockResponse, MockResponses, MockResponsesConfig, OverrideHost}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class MockReponsesTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(
@@ -51,7 +53,7 @@ class MockReponsesTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
+    Json.parse(resp.body[String]) mustBe Json.obj("foo" -> "bar")
   }
 
   {
@@ -64,7 +66,7 @@ class MockReponsesTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.CREATED
-    Json.parse(resp.body) mustBe Json.obj("message" -> "done")
+    Json.parse(resp.body[String]) mustBe Json.obj("message" -> "done")
   }
 
   deleteOtoroshiRoute(route).futureValue
