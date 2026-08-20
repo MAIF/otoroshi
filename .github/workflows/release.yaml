@@ -13,8 +13,8 @@ on:
         description: "Last release version (ie: 16.10.3)"
       milestone:
         description: "Milestone of the release"
-      skip_doc_publish:
-        description: "Do not update the published documentation website (docs/manual, docs/manual-root)"
+      preview:
+        description: "Preview release: do not update the published documentation website (docs/manual, docs/manual-root) and do not close the milestone"
         type: boolean
         default: false
 
@@ -75,9 +75,14 @@ jobs:
           node changelog.js --version=${{ inputs.version_to }} --last=${{ inputs.version_last }} --milestone=${{ inputs.milestone }} --dir=${LOC}
           git commit -am '[release ${{ inputs.version_to }}] Update changelog'
           docker buildx create --name multiarchbuilder --driver docker-container --bootstrap --use
-          node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --location=${LOC} ${{ inputs.skip_doc_publish && '--skip-doc-publish' || '' }}
+          node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --location=${LOC} ${{ inputs.preview && '--preview' || '' }}
           git commit -am 'Update helm chart' || true
           git push origin master
+      - name: close-milestone
+        if: ${{ !inputs.preview }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           curl -L -X PATCH -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN}" "https://api.github.com/repos/MAIF/otoroshi/milestones/${{ inputs.milestone }}" -d '{"state":"closed"}'
       - name: Generate SHA-256
         run: |
