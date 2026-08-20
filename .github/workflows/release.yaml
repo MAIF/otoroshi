@@ -67,6 +67,7 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           DISPLAY: :1
+          SBT_OPTS: -Xmx8G -Xss16M
         run: |
           LOC=$(pwd)
           cd ./scripts/release
