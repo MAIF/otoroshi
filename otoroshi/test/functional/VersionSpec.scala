@@ -30,5 +30,22 @@ class VersionSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.
       Version("v1alpha1").isEquals(Version("1.0.0-alpha.1")) mustBe true
       Version("v1alpha1").isEquals(Version("1.0.0-a.1")) mustBe true
     }
+    "support preview versions" in {
+      Version("18.0.0-preview1").isAfter(Version("18.0.0")) mustBe false
+      Version("18.0.0").isAfter(Version("18.0.0-preview1")) mustBe true
+      Version("18.0.0-preview1").isAfter(Version("17.14.0")) mustBe true
+      Version("18.0.0-preview2").isAfter(Version("18.0.0-preview1")) mustBe true
+      Version("18.0.0-preview1").isAfter(Version("18.0.0-beta3")) mustBe true
+      Version("18.0.0-preview1").isAfter(Version("18.0.0-alpha3")) mustBe true
+      Version("18.0.0-rc1").isAfter(Version("18.0.0-preview3")) mustBe true
+      Version("18.0.0-preview1").isAfter(Version("18.0.0-rc1")) mustBe false
+      Version("18.0.0-preview1-dev").isAfter(Version("18.0.0-preview1")) mustBe false
+      Version("18.0.0-preview1").isEquals(Version("18.0.0-preview01")) mustBe true
+      Version("18.0.0-preview1").isEquals(Version("18.0.0-preview-1")) mustBe true
+      Version("18.0.0-preview1").isEquals(Version("18.0.0-preview.1")) mustBe true
+      Version("v18preview1").isEquals(Version("18.0.0-preview1")) mustBe true
+      Version("18.0.0-preview1").stringify() mustBe "18.0.0-preview.1"
+      Version("18.0.0-preview1").json.toString().nonEmpty mustBe true
+    }
   }
 }
