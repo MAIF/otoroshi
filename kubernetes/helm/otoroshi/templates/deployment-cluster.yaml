@@ -487,12 +487,20 @@ metadata:
   labels:
     {{- include "otoroshi.labels" . | nindent 4 }}
     app.kubernetes.io/component: leader
-  {{- with .Values.loadbalancer.annotations }}
+  {{- if or .Values.loadbalancer.annotations .Values.loadbalancer.leaderIPId }}
   annotations:
+    {{- with .Values.loadbalancer.annotations }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.loadbalancer.leaderIPId }}
+    service.beta.kubernetes.io/scw-loadbalancer-ip-ids: {{ .Values.loadbalancer.leaderIPId | quote }}
+    {{- end }}
   {{- end }}
 spec:
   type: {{ $lbType }}
+  {{- if and (eq $lbType "LoadBalancer") .Values.loadbalancer.leaderIP }}
+  loadBalancerIP: {{ .Values.loadbalancer.leaderIP | quote }}
+  {{- end }}
   {{- if eq $lbType "LoadBalancer" }}
   {{- if .Values.loadbalancer.loadBalancerClass }}
   loadBalancerClass: {{ .Values.loadbalancer.loadBalancerClass | quote }}
@@ -527,12 +535,20 @@ metadata:
   labels:
     {{- include "otoroshi.labels" . | nindent 4 }}
     app.kubernetes.io/component: worker
-  {{- with .Values.loadbalancer.annotations }}
+  {{- if or .Values.loadbalancer.annotations .Values.loadbalancer.workerIPId }}
   annotations:
+    {{- with .Values.loadbalancer.annotations }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.loadbalancer.workerIPId }}
+    service.beta.kubernetes.io/scw-loadbalancer-ip-ids: {{ .Values.loadbalancer.workerIPId | quote }}
+    {{- end }}
   {{- end }}
 spec:
   type: {{ $lbType }}
+  {{- if and (eq $lbType "LoadBalancer") .Values.loadbalancer.workerIP }}
+  loadBalancerIP: {{ .Values.loadbalancer.workerIP | quote }}
+  {{- end }}
   {{- if eq $lbType "LoadBalancer" }}
   {{- if .Values.loadbalancer.loadBalancerClass }}
   loadBalancerClass: {{ .Values.loadbalancer.loadBalancerClass | quote }}

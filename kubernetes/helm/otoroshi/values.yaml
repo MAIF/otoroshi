@@ -66,6 +66,12 @@ loadbalancer:
     https: 31443
   # Annotations applied to the external Service (cloud-provider hints — AWS NLB, GCP Internal LB, etc.).
   annotations: {}
+  # Fixed IPs for Leader and Worker
+  # Allowed values: null or (leaderIP or scaleway leaderIPId)
+  leaderIPId: null
+  workerIPId: null
+  leaderIP: null
+  workerIP: null
   # LoadBalancer-only: restrict which client CIDRs can reach the LoadBalancer. Empty means open to the world.
   sourceRanges: []
   # LoadBalancer-only: force a specific load balancer class (e.g., service.k8s.aws/nlb).
