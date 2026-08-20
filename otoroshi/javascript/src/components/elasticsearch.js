@@ -40,7 +40,12 @@ export class CheckElasticsearchConnection extends Component {
       .then((r) => r.json())
       .then((r) => {
         if (!r.none) {
-          this.props.rawOnChange({ ...this.props.rawValue, version: r.version });
+          // config_version keeps the distribution when the cluster is an opensearch one, as its
+          // version numbering cannot be told apart from an old elasticsearch one
+          this.props.rawOnChange({
+            ...this.props.rawValue,
+            version: r.config_version || r.version,
+          });
         } else {
           window.newAlert(
             'Unable to get informations from the Elasticsearch cluster'
@@ -145,45 +150,65 @@ export class CheckElasticsearchConnection extends Component {
 class ElasticsearchConnectionDiagnostic extends Component {
   render() {
     const works = !this.props.resp.search.error && !this.props.resp.version.error;
+    const isOpenSearch = `${this.props.resp.distribution || ''}`
+      .toLowerCase()
+      .includes('opensearch');
+    const product = isOpenSearch ? 'OpenSearch' : 'Elasticsearch';
+    const configuredVersion = `${this.props.spec.version || ''}`.toLowerCase();
+    // an opensearch cluster must either be auto detected or configured with its distribution,
+    // otherwise its version number is handled like an old elasticsearch one
+    const versionMisconfigured =
+      isOpenSearch && configuredVersion !== '' && !configuredVersion.startsWith('opensearch');
     return (
       <>
         <div className="modal-body">
           {this.props.resp.version.error && (
             <>
-              Elasticsearch version: <span className="badge bg-danger">data not available</span>
+              {product} version: <span className="badge bg-danger">data not available</span>
             </>
           )}
           {!this.props.resp.version.error && (
             <>
-              Elasticsearch version:{' '}
-              <span className="badge bg-success">{this.props.resp.version}</span>
+              {product} version: <span className="badge bg-success">{this.props.resp.version}</span>
             </>
           )}
           <br />
           {this.props.resp.search.error && (
             <>
-              Elasticsearch search API: <span className="badge bg-danger">data not available</span>
+              {product} search API: <span className="badge bg-danger">data not available</span>
             </>
           )}
           {!this.props.resp.search.error && (
             <>
-              Elasticsearch search API:{' '}
+              {product} search API:{' '}
               <span className="badge bg-success">{this.props.resp.search} docs</span>
             </>
           )}
-          {works && (
-            <p style={{ marginTop: 20 }}>Connection to the Elasticsearch cluster works fine !</p>
+          {works && !versionMisconfigured && (
+            <p style={{ marginTop: 20 }}>Connection to the {product} cluster works fine !</p>
           )}
 
+          {versionMisconfigured && (
+            <p style={{ marginTop: 20 }}>
+              This cluster is an OpenSearch cluster but the version of this exporter is set to{' '}
+              <span className="badge bg-default">{this.props.spec.version}</span>, which otoroshi
+              handles like an Elasticsearch one. Leave the version empty to let otoroshi detect it,
+              or set it to{' '}
+              <span className="badge bg-default">
+                {this.props.resp.config_version || `opensearch-${this.props.resp.version}`}
+              </span>
+              .
+            </p>
+          )}
           {this.props.spec.applyTemplate && this.props.resp.version.error && (
             <p style={{ marginTop: 20 }}>
-              Unable to access Elasticsearch version. Maybe you don't have the rights to access it.
-              It's needed to automatically apply otoroshi index template
+              Unable to access {product} version. Maybe you don't have the rights to access it. It's
+              needed to automatically apply otoroshi index template
             </p>
           )}
           {this.props.resp.search.error && (
             <p style={{ marginTop: 20 }}>
-              Unable to access Elasticsearch search api on your index{' '}
+              Unable to access {product} search api on your index{' '}
               <span className="badge bg-default">{this.props.spec.index}</span>. Maybe you don't
               have the rights to access it.
             </p>

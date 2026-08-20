@@ -1858,18 +1858,19 @@ class BackOfficeController(
           version <- read.checkVersion()
           search  <- read.checkSearch()
         } yield {
+          // version, distribution and config_version, the two last ones telling apart an
+          // elasticsearch cluster from an opensearch one
           val versionJson = version match {
-            case Left(err) => Json.obj("error" -> err)
-            case Right(v)  => JsString(v)
+            case Left(err)   => Json.obj("version" -> Json.obj("error" -> err))
+            case Right(info) => info.json
           }
           val searchJson  = search match {
             case Left(err) => Json.obj("error" -> err)
             case Right(v)  => JsNumber(v)
           }
           Ok(
-            Json.obj(
-              "version" -> versionJson,
-              "search"  -> searchJson
+            versionJson ++ Json.obj(
+              "search" -> searchJson
             )
           )
         }
@@ -1911,6 +1912,7 @@ class BackOfficeController(
             case ElasticVersion.AboveEight(_)        => ElasticTemplates.indexTemplate_v7_8
             case ElasticVersion.AboveEightNine(_)    => ElasticTemplates.indexTemplate_v8_9
             case ElasticVersion.AboveEightFifteen(_) => ElasticTemplates.indexTemplate_v8_15
+            case ElasticVersion.OpenSearch(_)        => ElasticTemplates.indexTemplate_v7_8
           }
           val template: String = if (config.indexSettings.clientSide) {
             strTpl
@@ -1942,8 +1944,8 @@ class BackOfficeController(
           version <- ElasticUtils.checkVersion(config, logger, env)
         } yield {
           version match {
-            case Left(err) => InternalServerError(Json.obj("error" -> err))
-            case Right(v)  => Ok(Json.obj("version" -> v))
+            case Left(err)   => InternalServerError(Json.obj("error" -> err))
+            case Right(info) => Ok(info.json)
           }
         }
       }
