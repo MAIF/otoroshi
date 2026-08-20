@@ -17,14 +17,14 @@ import otoroshi.next.models.NgRoute
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.*
-import play.api.libs.ws.{WSClient, WSRequest}
+import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import play.api.{Environment, Logger}
 import otoroshi.utils.syntax.implicits.*
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object QueryResponse {
   val empty: QueryResponse = QueryResponse(Json.obj())
@@ -499,6 +499,35 @@ object ElasticWritesAnalytics {
     }
   }
 
+  // returns the error of a bulk call, if any. the cluster can reject the whole call or only some of
+  // its items, in both cases the events are lost and the exporter must not report a success
+  def bulkResponseError(status: Int, body: String): Option[String] = {
+    if (status >= 400) {
+      s"bad status code: ${status} - ${body}".some
+    } else {
+      Try(Json.parse(body)) match {
+        case Failure(_)          => s"unparseable bulk response: ${body}".some
+        case Success(esResponse) => {
+          val esError = (esResponse \ "errors").asOpt[Boolean].getOrElse(false)
+          if (esError) {
+            // a bulk response holds one item per event, only the distinct reasons are worth reporting
+            val reasons = esResponse
+              .select("items")
+              .asOpt[Seq[JsObject]]
+              .getOrElse(Seq.empty)
+              .flatMap(_.values.headOption)
+              .flatMap(item => item.select("error").select("reason").asOpt[String])
+              .distinct
+            val details = if (reasons.isEmpty) body else reasons.take(3).mkString(", ")
+            s"error in bulk response: ${details}".some
+          } else {
+            None
+          }
+        }
+      }
+    }
+  }
+
   def isInitialized(config: ElasticAnalyticsConfig): (Boolean, ElasticVersion) = {
     clusterInitializedCache.getOrElse(
       toKey(config), {
@@ -914,6 +943,11 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   }
 
   override def publish(event: Seq[JsValue])(using env: Env, ec: ExecutionContext): Future[Unit] = {
+    publishWithResult(event).map(_ => ())
+  }
+
+  // same as publish, but tells the caller if the cluster actually accepted the events
+  def publishWithResult(event: Seq[JsValue])(using env: Env, ec: ExecutionContext): Future[ExportResult] = {
     val builder = env.MtlsWs
       .url(urlFromPath("/_bulk"), config.mtlsConfig)
       .withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
@@ -939,26 +973,37 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
         if (logger.isDebugEnabled) logger.debug(s"preparing bulk of ${bulk.size} items of size ${body.size} bytes")
         val req  = clientInstance.withMethod("POST").withBody(body)
         val post = req.execute()
-        post.onComplete {
-          case Success(resp) =>
-            if (resp.status >= 400) {
-              logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body}") // --- event: $event")
-            } else {
-              val esResponse = Json.parse(resp.body)
-              val esError    = (esResponse \ "errors").asOpt[Boolean].getOrElse(false)
-              if (esError) {
-                logger.error(s"An error occured in ES bulk: ${resp.status}, ${Json.prettyPrint(esResponse)}")
-              }
-              resp.ignore()
-            }
-          case Failure(e)    =>
-            logger.error(s"Error publishing event to elastic ${e.getMessage}")
-            logger.debug("Error publishing event to elastic", e)
-        }
-        post
+        post.andThen { case Failure(e) =>
+          // no error value here, the failed future is propagated so that the caller can retry the events
+          logger.error(s"Error publishing event to elastic ${e.getMessage}")
+          logger.debug("Error publishing event to elastic", e)
+        }.map(bulkError)
       }
-      .runWith(Sink.ignore)
-      .map(_ => ())
+      .runWith(Sink.seq)
+      .map { results =>
+        val errors = results.flatten.distinct
+        if (errors.isEmpty) {
+          ExportResult.ExportResultSuccess
+        } else {
+          ExportResult.ExportResultFailure(errors.mkString(", "))
+        }
+      }
+  }
+
+  private def bulkError(resp: WSResponse): Option[String] = {
+    val error = ElasticWritesAnalytics.bulkResponseError(resp.status, resp.body)
+    error.foreach { _ =>
+      if (resp.status >= 400) {
+        logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body}") // --- event: $event")
+      } else {
+        val pretty = Try(Json.prettyPrint(Json.parse(resp.body))).getOrElse(resp.body)
+        logger.error(s"An error occured in ES bulk: ${resp.status}, ${pretty}")
+      }
+    }
+    if (resp.status < 400) {
+      resp.ignore()
+    }
+    error
   }
 }
 

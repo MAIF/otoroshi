@@ -248,4 +248,67 @@ class ElasticWritesAnalyticsSpec extends AnyWordSpec with Matchers {
       info.elasticVersion mustBe ElasticVersion.AboveSevenEight("7.10.2")
     }
   }
+
+  "ElasticWritesAnalytics.bulkResponseError" should {
+
+    "report no error when the whole bulk has been indexed" in {
+      val body = """{
+        |  "took": 5,
+        |  "errors": false,
+        |  "items": [
+        |    { "index": { "_index": "otoroshi-events-2026.08.17", "_id": "1", "status": 201 } }
+        |  ]
+        |}""".stripMargin
+      ElasticWritesAnalytics.bulkResponseError(200, body) mustBe None
+    }
+
+    "report an error when the cluster rejects the whole bulk call" in {
+      val body = """{"error":{"root_cause":[{"type":"illegal_argument_exception","reason":""" +
+        """"Action/metadata line [1] contains an unknown parameter [_type]"}]},"status":400}"""
+      val error = ElasticWritesAnalytics.bulkResponseError(400, body)
+      error.isDefined mustBe true
+      error.get.startsWith("bad status code: 400 - ") mustBe true
+      error.get.contains("unknown parameter [_type]") mustBe true
+    }
+
+    "report an error when the cluster rejects some items of the bulk call" in {
+      val body = """{
+        |  "took": 5,
+        |  "errors": true,
+        |  "items": [
+        |    { "index": { "_index": "otoroshi-events-2026.08.17", "_id": "1", "status": 201 } },
+        |    { "index": { "_index": "otoroshi-events-2026.08.17", "_id": "2", "status": 400,
+        |      "error": { "type": "mapper_parsing_exception", "reason": "failed to parse field [duration]" } } }
+        |  ]
+        |}""".stripMargin
+      ElasticWritesAnalytics.bulkResponseError(200, body) mustBe
+      Some("error in bulk response: failed to parse field [duration]")
+    }
+
+    "report each distinct reason only once" in {
+      val body = """{
+        |  "took": 5,
+        |  "errors": true,
+        |  "items": [
+        |    { "index": { "status": 400, "error": { "reason": "failed to parse field [duration]" } } },
+        |    { "index": { "status": 400, "error": { "reason": "failed to parse field [duration]" } } },
+        |    { "index": { "status": 400, "error": { "reason": "failed to parse field [status]" } } }
+        |  ]
+        |}""".stripMargin
+      ElasticWritesAnalytics.bulkResponseError(200, body) mustBe
+      Some("error in bulk response: failed to parse field [duration], failed to parse field [status]")
+    }
+
+    "fall back on the raw response when the failing items hold no reason" in {
+      val body = """{"took":5,"errors":true,"items":[]}"""
+      ElasticWritesAnalytics.bulkResponseError(200, body) mustBe
+      Some(s"error in bulk response: ${body}")
+    }
+
+    "report an error instead of throwing when the response is not json" in {
+      val body = "<html><body>502 Bad Gateway</body></html>"
+      ElasticWritesAnalytics.bulkResponseError(200, body) mustBe
+      Some(s"unparseable bulk response: ${body}")
+    }
+  }
 }

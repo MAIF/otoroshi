@@ -305,6 +305,15 @@ object DataExporter {
             case Success(f) => f
           }
         }
+        // a failure result used to be silently dropped here, it is at least reported now. events are
+        // not requeued, unlike the exception case above: the destination has been reached and has
+        // rejected them, so sending them again would just loop on the same error
+        .map {
+          case ExportResult.ExportResultSuccess                => ExportResult.ExportResultSuccess
+          case failure @ ExportResult.ExportResultFailure(err) =>
+            logger.error(s"error while sending events on ${id} of kind ${this.getClass.getName}: ${err}")
+            failure
+        }
 
       val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(using env.analyticsMaterializer)
 
@@ -1227,7 +1236,7 @@ object Exporters {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       if (logger.isDebugEnabled) logger.debug(s"sending ${events.size} events to elastic !!!")
       Option(clientRef.get()).map { client =>
-        client.publish(events).map(_ => ExportResult.ExportResultSuccess)
+        client.publishWithResult(events)
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
