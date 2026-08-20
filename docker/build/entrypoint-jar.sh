@@ -13,10 +13,24 @@ BASE_JAVA_OPTS="$JAVA_OPTS \
  -Dlog4j2.formatMsgNoLookups=true \
  -Dhttp.port=8080 -Dhttps.port=8443"
 
+# Arguments given to the container (docker run maif/otoroshi -Dconfig.file=...) are forwarded
+# to the JVM below. Drop the empty ones first: the images declare CMD [""] to neutralize the
+# CMD inherited from the base image, so a plain `docker run maif/otoroshi` would otherwise hand
+# an empty argument to java and fail to boot.
+argc=$#
+while [ "$argc" -gt 0 ]; do
+  arg="$1"
+  shift
+  if [ -n "$arg" ]; then
+    set -- "$@" "$arg"
+  fi
+  argc=$((argc - 1))
+done
+
 if [ -z "${OTOROSHI_PLUGINS_DIR_PATH:-}" ]; then
   echo "Bootstrapping otoroshi without additional plugins"
-  exec java ${BASE_JAVA_OPTS} -jar otoroshi.jar
+  exec java ${BASE_JAVA_OPTS} "$@" -jar otoroshi.jar
 else
   echo "Bootstrapping otoroshi with additional plugins from ${OTOROSHI_PLUGINS_DIR_PATH}"
-  exec java ${BASE_JAVA_OPTS} -cp "./otoroshi.jar:${OTOROSHI_PLUGINS_DIR_PATH}/*" play.core.server.ProdServerStart
+  exec java ${BASE_JAVA_OPTS} "$@" -cp "./otoroshi.jar:${OTOROSHI_PLUGINS_DIR_PATH}/*" play.core.server.ProdServerStart
 fi

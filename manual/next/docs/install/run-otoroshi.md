@@ -7,6 +7,10 @@ sidebar_position: 4
 
 Now you are ready to run Otoroshi. You can run the following command with some tweaks depending on the way you want to configure Otoroshi. If you want to pass a custom configuration file, use the `-Dconfig.file=/path/to/file.conf` flag in the following commands.
 
+:::warning
+`-Dconfig.file` expects an **absolute** path. With a relative one (`-Dconfig.file=otoroshi.conf`), Otoroshi fails to boot with a misleading `No application loader is configured` error.
+:::
+
 ## From .zip file
 
 ```sh
@@ -46,6 +50,8 @@ You can also pass useful args like :
 ```sh
 docker run -p "8080:8080" maif/otoroshi -Dconfig.file=/usr/app/otoroshi/conf/otoroshi.conf -Dlogger.file=/usr/app/otoroshi/conf/otoroshi.xml
 ```
+
+Everything you pass after the image name is forwarded as-is to the JVM, so these paths are the ones **inside** the container. Mount your file first (see the volume examples below), then point `-Dconfig.file` at its absolute path in the container.
 
 If you want to provide your own config file, you can read [the documentation about config files](./setup-otoroshi.mdx).
 
