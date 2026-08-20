@@ -257,7 +257,7 @@ object LetsEncryptHelper {
               defaultChain
           }
       }
-    }(blockingEc)
+    }(using blockingEc)
   }
 
   def getChallengeForToken(domain: String, token: String)(using
