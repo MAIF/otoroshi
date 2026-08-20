@@ -1,3 +1,9 @@
+# NOTE: `clientConfig.service.name` below must be the service declared as
+# `KubernetesConfig.otoroshiServiceName` in the Otoroshi configuration — the sink
+# answering these calls only matches a Host of
+# `<otoroshiServiceName>.<namespace>.svc[.cluster.local]`, and the certificate
+# Otoroshi generates for the endpoint carries only those SANs. In a Leader/Worker
+# setup that is `otoroshi-worker-service`, not `otoroshi-service`.
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:

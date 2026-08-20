@@ -92,6 +92,46 @@ spec:
                     "defaultDomain": "www.{{ .Values.env.domain }}",
                     "randomIfNotFound": false
                   },
+                  "plugins": {
+                    "enabled": true,
+                    "config": {
+                      "ng": [
+                        {
+                          "enabled": true,
+                          "debug": false,
+                          "include": [],
+                          "exclude": [],
+                          "plugin": "cp:otoroshi.next.plugins.NgClientCredentials",
+                          "config": {
+                            "expiration": 3600000,
+                            "default_key_pair": "otoroshi-jwt-signing",
+                            "domain": "*",
+                            "secure": true
+                          }
+                        },
+                        {
+                          "enabled": true,
+                          "debug": false,
+                          "include": [],
+                          "exclude": [],
+                          "plugin": "cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper",
+                          "config": {
+                            "plugin": "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator"
+                          }
+                        },
+                        {
+                          "enabled": true,
+                          "debug": false,
+                          "include": [],
+                          "exclude": [],
+                          "plugin": "cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper",
+                          "config": {
+                            "plugin": "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector"
+                          }
+                        }
+                      ]
+                    }
+                  },
                   "scripts":{
                     "enabled":true,
                     "sinkRefs":[
