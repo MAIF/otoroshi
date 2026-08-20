@@ -1,16 +1,32 @@
 package otoroshi.controllers
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.util.ByteString
 import otoroshi.actions.{ApiAction, BackOfficeActionAuth, UnAuthApiAction}
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import otoroshi.cluster.{ClusterMode, MemberView}
 import otoroshi.env.Env
+import otoroshi.models.{ApiKey, BackOfficeUser, HSAlgoSettings, SecComInfoTokenVersion}
 import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result, Results}
+import play.api.mvc.{AbstractController, ControllerComponents, EssentialAction, Headers, Request, RequestHeader, Result, Results}
 import otoroshi.ssl.DynamicSSLEngineProvider
+import otoroshi.utils.infotoken.InfoTokenHelper
 import otoroshi.utils.syntax.implicits.*
+import play.api.http.HttpRequestHandler
+import play.api.libs.typedmap.TypedMap
+import play.api.mvc.request.{RemoteConnection, RequestTarget}
 
+import java.net.{InetAddress, URI, URLEncoder}
+import java.nio.charset.StandardCharsets
+import java.security.cert.X509Certificate
+import java.util.Base64
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 
 object HealthController {
@@ -37,7 +53,8 @@ object HealthController {
     }
   }
 
-  def fetchHealth()(using env: Env, ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
+  def fetchHealth()(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[JsValue, JsValue]] = {
+    val handler: HttpRequestHandler = env.handlerRef.get()
     val membersF = if (env.clusterConfig.mode == ClusterMode.Leader) {
       env.datastores.clusterStateDataStore.getMembers()
     } else {
@@ -48,6 +65,22 @@ object HealthController {
       scripts  <- env.scriptManager.state()
       overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
       members  <- membersF
+      engineRes <- {
+        val request = new HealthRequest(env)
+        val (nreq, reqHandler) = handler.handlerForRequest(request)
+        reqHandler match {
+          case a: EssentialAction => try {
+            a.apply(nreq).run(ByteString.empty).map { _ =>
+              Results.Ok("engine works")
+            }.recover {
+              case e: Throwable => Results.InternalServerError("engine is dead - 1")
+            }
+          } catch {
+            case e: Throwable => Results.InternalServerError("engine is dead - 2").vfuture
+          }
+          case _ => Results.Ok("no websocket").vfuture
+        }
+      }
     } yield {
       val workerReady      =
         if (env.clusterConfig.mode == ClusterMode.Worker) !env.clusterAgent.cannotServeRequests() else true
@@ -105,12 +138,16 @@ object HealthController {
       } else {
         JsString("unknown")
       }
+      val proxyStatus: String = engineRes.header.status match {
+        case 200 => "healthy"
+        case _ => "down"
+      }
       val payload          = Json.obj(
         "otoroshi"     -> otoroshiStatus,
         "datastore"    -> dataStoreStatus,
         "proxy"        -> Json.obj(
           "initialized" -> true,
-          "status"      -> otoroshiStatus
+          "status"      -> proxyStatus
         ),
         "storage"      -> Json.obj(
           "initialized" -> true,
@@ -129,6 +166,7 @@ object HealthController {
       val err              = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
         (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||
         (payload \ "cluster").asOpt[String].orElse(Some("healthy")).exists(v => v != "healthy") ||
+        engineRes.header.status != 200 ||
         !scripts.initialized ||
         !workerReady ||
         !DynamicSSLEngineProvider.isFirstSetupDone
@@ -238,3 +276,38 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
       })
     }
 }
+
+class HealthRequest(
+  env: Env
+) extends Request[Source[ByteString, ?]] {
+
+  private val newUri = s"http://127.0.0.1:${env.port}/otoroshi-engine-self-health-check"
+
+  override def connection: RemoteConnection = new HealthRemoteConnection()
+  override def target: RequestTarget        = new BackOfficeRequestTarget(newUri)
+  override def headers: Headers             = Headers.apply(
+    "Host" -> s"otoroshi-engine.self-health-check.local",
+    "User-Agent" -> "Otoroshi-Engine-Self-Health-Check",
+    "Accept" -> "*/*"
+  )
+
+  override def version: String             = "HTTP/1.1"
+  override def attrs: TypedMap             = TypedMap.empty
+  override def method: String              = "GET"
+  override def body: Source[ByteString, ?] = Source.empty
+}
+
+class BackOfficeRequestTarget(newUri: String) extends RequestTarget {
+  private val _uri                                = Uri(newUri)
+  override def uri: URI                           = URI.create(newUri)
+  override def uriString: String                  = _uri.toString()
+  override def path: String                       = _uri.path.toString()
+  override def queryMap: Map[String, Seq[String]] = _uri.query().toMultiMap
+}
+
+class HealthRemoteConnection() extends RemoteConnection {
+  override def remoteAddress: InetAddress                           = InetAddress.getLocalHost
+  override def clientCertificateChain: Option[Seq[X509Certificate]] = None
+  override def secure: Boolean                                      = false
+}
+
