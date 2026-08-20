@@ -10,7 +10,7 @@ spec:
   description: "certificate for {{ .Values.service.name }}"
   autoRenew: true
   csr:
-    issuer: CN=Otoroshi Root
+    issuer: {{ .Values.certificate.issuer | quote }}
     hosts:
     {{- if .Values.cluster.enabled }}
     - {{ .Values.cluster.leaderApiServiceName }}
@@ -22,9 +22,18 @@ spec:
     - {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
     - {{ .Values.service.apiName }}.{{ .Release.Namespace }}.svc.cluster.local
     {{- end }}
+    {{- if .Values.certificate.publicHosts.adminUi }}
     - otoroshi.{{ .Values.env.domain }}
+    {{- end }}
+    {{- if .Values.certificate.publicHosts.adminApi }}
     - otoroshi-api.{{ .Values.env.domain }}
+    {{- end }}
+    {{- if .Values.certificate.publicHosts.privateApps }}
     - privateapps.{{ .Values.env.domain }}
+    {{- end }}
+    {{- range .Values.certificate.extraHosts }}
+    - {{ . }}
+    {{- end }}
     key:
       algo: rsa
       size: 2048

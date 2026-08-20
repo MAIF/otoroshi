@@ -91,7 +91,16 @@ helm install my-otoroshi otoroshi/otoroshi --set gatewayApi.enabled=true
 helm install my-otoroshi otoroshi/otoroshi \
   --set 'loadbalancer.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type=nlb' \
   --set 'loadbalancer.sourceRanges[0]=10.0.0.0/8'
+
+# Keep the public domains out of the certificate the chart generates
+# (another certificate already covers them)
+helm install my-otoroshi otoroshi/otoroshi \
+  --set certificate.publicHosts.adminUi=false \
+  --set certificate.publicHosts.adminApi=false \
+  --set certificate.publicHosts.privateApps=false
 ```
+
+The chart also creates a `proxy.otoroshi.io/v1` Certificate for the Otoroshi services, signed by the Otoroshi intermediate CA (`certificate.issuer`). It always covers the in-cluster service names, as cluster mode mTLS between the workers and the leader API relies on them, plus `otoroshi.<env.domain>`, `otoroshi-api.<env.domain>` and `privateapps.<env.domain>`. Turn those public ones off with `certificate.publicHosts.*` when you already have a certificate for these domains: when two certificates match the same host, the one Otoroshi presents at handshake time is not deterministic.
 
 :::warning
 Helm v3 only installs CRDs (under the chart's `crds/` directory) on the **first** `helm install`. When upgrading Otoroshi to a newer version, **re-apply the CRDs manually**:
