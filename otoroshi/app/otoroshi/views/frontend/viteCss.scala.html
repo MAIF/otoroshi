@@ -1,0 +1,17 @@
+@*
+ * Stylesheet of one of the frontend bundles built by vite (see javascript/vite.config.mjs).
+ *
+ * Nothing is emitted when liveJs is on: the dev server has no extracted css file, the styles
+ * are injected (and hot reloaded) by the module itself.
+ *@
+@(entry: String, _env: otoroshi.env.Env, assetsBase: Option[String] = None)
+
+@href = @{
+    assetsBase match {
+        case Some(base) => s"${base}/javascripts/bundle/${entry}.css?v=${_env.hash}"
+        case None       => routes.Assets.versioned(s"javascripts/bundle/${entry}.css?v=${_env.hash}").url
+    }
+}
+@if(!_env.liveJs) {
+    <link rel="stylesheet" href="@href">
+}

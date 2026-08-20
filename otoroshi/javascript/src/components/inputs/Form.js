@@ -12,7 +12,11 @@ import {
 } from '.';
 // import { NgBoxBooleanRenderer } from '../nginputs/inputs';
 import { Location } from '../Location';
-const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
+const CodeInput = React.lazy(() => import('./CodeInput'));
+// loaded lazily to break the cycle between this module and ../nginputs/inputs
+const NgBoxBooleanRenderer = React.lazy(() =>
+  import('../nginputs/inputs').then((m) => ({ default: m.NgBoxBooleanRenderer }))
+);
 import { JsonObjectAsCodeInput, JsonObjectAsCodeInputUpdatable } from './CodeInput'; // TODO: fix
 
 import isFunction from 'lodash/isFunction';
@@ -210,15 +214,16 @@ export class Form extends Component {
             />
           );
         } else if (type === 'box-bool') {
-          const { NgBoxBooleanRenderer } = require('../nginputs/inputs');
           component = (
-            <NgBoxBooleanRenderer
-              disabled={disabled}
-              key={name}
-              value={this.getValue(name, false)}
-              {...props}
-              onChange={(v) => this.changeValue(name, v)}
-            />
+            <Suspense fallback={<div>loading ...</div>}>
+              <NgBoxBooleanRenderer
+                disabled={disabled}
+                key={name}
+                value={this.getValue(name, false)}
+                {...props}
+                onChange={(v) => this.changeValue(name, v)}
+              />
+            </Suspense>
           );
         } else if (type === 'select') {
           component = (

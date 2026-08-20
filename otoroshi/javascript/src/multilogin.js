@@ -15,6 +15,7 @@ import browserUpdate from 'browser-update';
 import { MultiLoginPage } from './pages/MultiLoginPage';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
+import { expose } from './expose';
 
 if (!window.Symbol) {
   window.Symbol = Symbol;
@@ -50,3 +51,6 @@ export function multiLogin(opts, node) {
 
   ReactDOM.render(<MultiLoginPage {...opts} />, node);
 }
+
+
+expose({ multiLogin });

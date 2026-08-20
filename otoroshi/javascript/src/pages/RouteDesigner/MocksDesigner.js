@@ -12,7 +12,7 @@ import {
 } from '../../components/nginputs/inputs';
 import { PillButton } from '../../components/PillButton';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('../../components/inputs/CodeInput'));
 
 export const HTTP_COLORS = {
   GET: 'var(--http_color-get)',

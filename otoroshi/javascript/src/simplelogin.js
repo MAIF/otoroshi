@@ -16,6 +16,7 @@ import { SimpleLoginPage } from './pages/SimpleLoginPage';
 import { PasswordLessLoginPage } from './pages/PassworldlessLoginPage';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
+import { expose } from './expose';
 
 if (!window.Symbol) {
   window.Symbol = Symbol;
@@ -58,3 +59,6 @@ export function auth0PasswordlessLogin(opts, node) {
 
   ReactDOM.render(<PasswordLessLoginPage {...opts} />, node);
 }
+
+
+expose({ simpleLogin, auth0PasswordlessLogin });

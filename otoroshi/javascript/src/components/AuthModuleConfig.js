@@ -12,7 +12,7 @@ import {
   Help,
 } from './inputs';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('./inputs/CodeInput'));
 
 import { Proxy } from './Proxy';
 import { Separator } from './Separator';

@@ -16,6 +16,7 @@ import { GenericLoginPage, GenericLoginPageWithWebAuthn } from './pages/GenericL
 import { SelfUpdatePage } from './pages/SelfUpdatePage';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
+import { expose } from './expose';
 
 if (!window.Symbol) {
   window.Symbol = Symbol;
@@ -60,3 +61,6 @@ export function selfUpdate(opts, node) {
   setupWindowUtils();
   ReactDOM.render(<SelfUpdatePage {...opts} />, node);
 }
+
+
+expose({ genericLogin, selfUpdate });

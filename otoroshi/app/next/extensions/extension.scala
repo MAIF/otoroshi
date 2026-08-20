@@ -647,7 +647,9 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     Html(
       frontendExtensions
         .map(_.path)
-        .map(p => s"""<script type=\"text/javascript\" src=\"${p}\"></script>""")
+        // deferred so it runs after the frontend bundle, which is a module script (and so
+        // deferred too) when otoroshi runs against the vite dev server
+        .map(p => s"""<script type=\"text/javascript\" src=\"${p}\" defer></script>""")
         .mkString("\n")
     )
   }

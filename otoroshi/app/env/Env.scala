@@ -591,6 +591,10 @@ class Env(
     .map(_ => true)
     .orElse(configuration.getOptionalWithFileSupport[Boolean]("app.liveJs"))
     .getOrElse(false)
+  lazy val liveJsUrl: String                        = configuration
+    .getOptionalWithFileSupport[String]("app.liveJsUrl")
+    .map(_.stripSuffix("/"))
+    .getOrElse("http://localhost:3040")
   lazy val revolver: Boolean                        = configuration.getOptionalWithFileSupport[Boolean]("app.revolver").getOrElse(false)
 
   lazy val exposeAdminApi: Boolean                         =

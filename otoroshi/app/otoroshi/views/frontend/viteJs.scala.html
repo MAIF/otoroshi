@@ -1,0 +1,42 @@
+@*
+ * Loads one of the frontend bundles built by vite (see javascript/vite.config.mjs).
+ *
+ * In prod the umd bundle is served by play from public/javascripts/bundle. When liveJs is on,
+ * the page still comes from otoroshi but the modules are pulled straight from the vite dev
+ * server, so hot reload works without proxying the otoroshi apis through it.
+ *
+ * @param entry      one of backoffice, genericlogin, multilogin, simplelogin
+ * @param assetsBase asset prefix to use instead of the reverse router (ex: /__otoroshi_assets)
+ *@
+@(entry: String, _env: otoroshi.env.Env, assetsBase: Option[String] = None)
+
+@src = @{
+    assetsBase match {
+        case Some(base) => s"${base}/javascripts/bundle/${entry}.js?v=${_env.hash}"
+        case None       => routes.Assets.versioned(s"javascripts/bundle/${entry}.js?v=${_env.hash}").url
+    }
+}
+<script type="text/javascript">
+    // module scripts are deferred, so everything using the `Otoroshi` global has to wait for the
+    // document to be parsed when the bundle comes from the vite dev server
+    window.__otoroshiReady = window.__otoroshiReady || function (fn) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fn);
+        } else {
+            fn();
+        }
+    };
+</script>
+@if(_env.liveJs) {
+    <script type="module" src="@(_env.liveJsUrl)/@@vite/client"></script>
+    <script type="module">
+        import RefreshRuntime from '@(_env.liveJsUrl)/@@react-refresh';
+        RefreshRuntime.injectIntoGlobalHook(window);
+        window.$RefreshReg$ = () => {};
+        window.$RefreshSig$ = () => (type) => type;
+        window.__vite_plugin_react_preamble_installed__ = true;
+    </script>
+    <script type="module" src="@(_env.liveJsUrl)/src/@(entry).js"></script>
+} else {
+    <script type="text/javascript" src="@src"></script>
+}

@@ -30,7 +30,9 @@
                 window.localStorage.setItem("Otoroshi-Tenant", tenant);
             }
         }
-        Otoroshi.init(document.getElementById("app"));
+        window.__otoroshiReady(function () {
+            Otoroshi.init(document.getElementById("app"));
+        });
     </script>
 }
 

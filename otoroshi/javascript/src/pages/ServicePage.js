@@ -27,7 +27,7 @@ import {
 
 import { LetsEncryptCreation, NewCertificateForm } from './CertificatesPage';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('../components/inputs/CodeInput'));
 
 import faker from 'faker';
 import deepSet from 'set-value';

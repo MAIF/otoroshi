@@ -3,29 +3,22 @@
 @(action: String, method: String, token: String, webauthn: Boolean, _env: Env)
 
 @authScript = {
-@if(_env.liveJs) {
-    <script src="http://localhost:3040/assets/javascripts/bundle/genericlogin.js" type="text/javascript"></script>
-} else {
-    <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/genericlogin.js?v=${_env.hash}")"></script>
-}
+@otoroshi.views.html.frontend.viteJs("genericlogin", _env)
     <script>
-        Otoroshi.genericLogin({
-            method: '@method',
-            action: '@Html(action)',
-            token: '@token',
-            webauthn: @webauthn,
-            otoroshiLogo: '@(_env.otoroshiLogo)'
-        }, document.getElementById("app"));
+        window.__otoroshiReady(function () {
+            Otoroshi.genericLogin({
+                method: '@method',
+                action: '@Html(action)',
+                token: '@token',
+                webauthn: @webauthn,
+                otoroshiLogo: '@(_env.otoroshiLogo)'
+            }, document.getElementById("app"));
+        });
     </script>
 }
 
 @authStyle = {
-@if(_env.liveJs) {
-    <link rel="stylesheet" href="http://localhost:3040/assets/javascripts/bundle/genericlogin.css">
-
-} else {
-    <link rel="stylesheet" href="@routes.Assets.versioned(s"javascripts/bundle/genericlogin.css?v=${_env.hash}")">
-}
+@otoroshi.views.html.frontend.viteCss("genericlogin", _env)
 }
 
 @main("Login", _env, moreScripts = authScript, moreStyles = authStyle) {

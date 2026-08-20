@@ -31,6 +31,7 @@ import { setupCorazaExtension } from './extensions/coraza';
 import { setupHttpListenersExtension } from './extensions/httplisteners';
 import { setupWorkflowsExtension } from './extensions/workflows';
 import { setupRemoteCatalogsExtension } from './extensions/catalogs';
+import { expose } from './expose';
 
 import * as Forms from './forms/ng_plugins/index';
 
@@ -262,3 +263,16 @@ function setupLocalExtensions() {
   setupWorkflowsExtension(registerExtension);
   setupRemoteCatalogsExtension(registerExtension);
 }
+
+
+expose({
+  init,
+  login,
+  genericLogin,
+  selfUpdate,
+  registerExtension,
+  registerPlugins,
+  extensions,
+  getExtensions,
+  getExtension,
+});

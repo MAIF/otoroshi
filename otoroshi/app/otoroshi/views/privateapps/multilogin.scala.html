@@ -11,6 +11,7 @@
         <link href="@routes.Assets.versioned("fonts/font-awesome/css/fontawesome.min.css")" rel="stylesheet">
         <link href="@routes.Assets.versioned("fonts/raleway/raleway.css")" rel="stylesheet">
             @_env.providerCssUrlHtml
+        @otoroshi.views.html.frontend.viteCss("multilogin", _env)
 
         <style>
             #app {
@@ -21,12 +22,9 @@
     </head>
     <body style="overflow: hidden">
         <div id="app"></div>
-        @if(_env.liveJs) {
-            <script src="http://localhost:3040/assets/javascripts/bundle/multilogin.js" type="text/javascript"></script>
-        } else {
-            <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/multilogin.js?v=${_env.hash}")"></script>
-        }
+        @otoroshi.views.html.frontend.viteJs("multilogin", _env)
         <script>
+            window.__otoroshiReady(function () {
                 Otoroshi.multiLogin({
                     auths: '@Html(auths)',
                     redirect: '@redirect',
@@ -34,6 +32,7 @@
                     route: '@route',
                     otoroshiLogo: '@(_env.otoroshiLogo)'
                 }, document.getElementById("app"));
+            });
         </script>
         @_env.providerJsUrlHtml
     </body>
