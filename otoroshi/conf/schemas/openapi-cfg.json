@@ -3464,6 +3464,7 @@
     "otoroshi.utils.letsencrypt.LetsEncryptSettings.contacts": "Let's encrypt (ACME) contacts",
     "otoroshi.utils.letsencrypt.LetsEncryptSettings.emails": "Let's encrypt (ACME) contact emails",
     "otoroshi.utils.letsencrypt.LetsEncryptSettings.enabled": "Let's encrypt (ACME) enabled",
+    "otoroshi.utils.letsencrypt.LetsEncryptSettings.preferredChain": "Let's encrypt (ACME) preferred trust anchor (root CN) for the delivered certificate chain",
     "otoroshi.utils.letsencrypt.LetsEncryptSettings.privateKey": "Let's encrypt (ACME) private key",
     "otoroshi.utils.letsencrypt.LetsEncryptSettings.publicKey": "Let's encrypt (ACME) public key",
     "otoroshi.utils.letsencrypt.LetsEncryptSettings.server": "Let's encrypt (ACME) server",
