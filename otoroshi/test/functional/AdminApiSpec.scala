@@ -106,55 +106,55 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
 
     "provide templates for the main entities" in {
       val (apikeyTemplate, status1)  = otoroshiApiCall("GET", "/api/new/apikey").futureValue
-      val (serviceTemplate, status2) = otoroshiApiCall("GET", "/api/new/service").futureValue
+      //[REMOVE SERVICEDESC] val (serviceTemplate, status2) = otoroshiApiCall("GET", "/api/new/service").futureValue
       val (groupTemplate, status3)   = otoroshiApiCall("GET", "/api/new/group").futureValue
 
       status1 mustBe 200
-      status2 mustBe 200
+      //[REMOVE SERVICEDESC] status2 mustBe 200
       status3 mustBe 200
 
       ApiKey.fromJsonSafe(apikeyTemplate).isSuccess mustBe true
-      ServiceDescriptor.fromJsonSafe(serviceTemplate).isSuccess mustBe true
+      //[REMOVE SERVICEDESC] ServiceDescriptor.fromJsonSafe(serviceTemplate).isSuccess mustBe true
       ServiceGroup.fromJsonSafe(groupTemplate).isSuccess mustBe true
     }
 
     "provide a way to crud main entities" in {
       {
         val (_, status1) = otoroshiApiCall("POST", "/api/groups", Some(testGroup.toJson)).futureValue
-        val (_, status2) = otoroshiApiCall("POST", "/api/services", Some(testServiceDescriptor.toJson)).futureValue
+        //[REMOVE SERVICEDESC] val (_, status2) = otoroshiApiCall("POST", "/api/services", Some(testServiceDescriptor.toJson)).futureValue
         val (_, status3) =
           otoroshiApiCall("POST", s"/api/groups/${testGroup.id}/apikeys", Some(testApiKey.toJson)).futureValue
-        val (_, status4) = otoroshiApiCall(
-          "POST",
-          s"/api/services/${testServiceDescriptor.id}/apikeys",
-          Some(testApiKey2.toJson)
-        ).futureValue
+        //[REMOVE SERVICEDESC] val (_, status4) = otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "POST",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys",
+          //[REMOVE SERVICEDESC] Some(testApiKey2.toJson)
+        //[REMOVE SERVICEDESC] ).futureValue
 
         status1 mustBe 201
-        status2 mustBe 201
+        //[REMOVE SERVICEDESC] status2 mustBe 201
         status3 mustBe 201
-        status4 mustBe 201
+        //[REMOVE SERVICEDESC] status4 mustBe 201
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", "/api/groups").futureValue
         status1 mustBe 200
         Reads.seq[ServiceGroup](using ServiceGroup._fmt).reads(res1).get.contains(testGroup) mustBe true
       }
-      {
-        val (res1, status1) = otoroshiApiCall("GET", "/api/services").futureValue
-        status1 mustBe 200
-        Reads
-          .seq[ServiceDescriptor](using ServiceDescriptor._fmt)
-          .reads(res1)
-          .get
-          .exists(_.id == testServiceDescriptor.id) mustBe true
-      }
-      {
-        val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}/apikeys").futureValue
-        status1 mustBe 200
-        //Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
-      }
+      //[REMOVE SERVICEDESC] {
+        //[REMOVE SERVICEDESC] val (res1, status1) = otoroshiApiCall("GET", "/api/services").futureValue
+        //[REMOVE SERVICEDESC] status1 mustBe 200
+        //[REMOVE SERVICEDESC] Reads
+          //[REMOVE SERVICEDESC] .seq[ServiceDescriptor](using ServiceDescriptor._fmt)
+          //[REMOVE SERVICEDESC] .reads(res1)
+          //[REMOVE SERVICEDESC] .get
+          //[REMOVE SERVICEDESC] .exists(_.id == testServiceDescriptor.id) mustBe true
+      //[REMOVE SERVICEDESC] }
+      //[REMOVE SERVICEDESC] {
+        //[REMOVE SERVICEDESC] val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}/apikeys").futureValue
+        //[REMOVE SERVICEDESC] status1 mustBe 200
+        //[REMOVE SERVICEDESC] //Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
+        //[REMOVE SERVICEDESC] Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+      //[REMOVE SERVICEDESC] }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/apikeys").futureValue
         status1 mustBe 200
@@ -164,34 +164,34 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
         val (res1, status1) = otoroshiApiCall("GET", s"/api/apikeys").futureValue
         status1 mustBe 200
         Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+        //[REMOVE SERVICEDESC] Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue
         status1 mustBe 200
         ServiceGroup.fromJsons(res1) mustBe testGroup
       }
-      {
-        val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
-        status1 mustBe 200
-        ServiceDescriptor.fromJsons(res1) mustBe testServiceDescriptor
-      }
-      {
-        val (res1, status1) = otoroshiApiCall(
-          "GET",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
-        ).futureValue
-        status1 mustBe 200
-        ApiKey.fromJsons(res1) mustBe testApiKey
-      }
-      {
-        val (res1, status1) = otoroshiApiCall(
-          "GET",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey2.clientId}"
-        ).futureValue
-        status1 mustBe 200
-        ApiKey.fromJsons(res1) mustBe testApiKey2
-      }
+      //[REMOVE SERVICEDESC] {
+        //[REMOVE SERVICEDESC] val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
+        //[REMOVE SERVICEDESC] status1 mustBe 200
+        //[REMOVE SERVICEDESC] ServiceDescriptor.fromJsons(res1) mustBe testServiceDescriptor
+      //[REMOVE SERVICEDESC] }
+      //[REMOVE SERVICEDESC] {
+        //[REMOVE SERVICEDESC] val (res1, status1) = otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "GET",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] status1 mustBe 200
+        //[REMOVE SERVICEDESC] ApiKey.fromJsons(res1) mustBe testApiKey
+      //[REMOVE SERVICEDESC] }
+      //[REMOVE SERVICEDESC] {
+        //[REMOVE SERVICEDESC] val (res1, status1) = otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "GET",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey2.clientId}"
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] status1 mustBe 200
+        //[REMOVE SERVICEDESC] ApiKey.fromJsons(res1) mustBe testApiKey2
+      //[REMOVE SERVICEDESC] }
       {
         val (res1, status1) =
           otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/apikeys/${testApiKey.clientId}").futureValue
@@ -204,15 +204,15 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
       //   status1 mustBe 200
       //   ApiKey.fromJsons(res1) mustBe testApiKey2
       // }
-      {
-        val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/services").futureValue
-        status1 mustBe 200
-        Reads
-          .seq[ServiceDescriptor](using ServiceDescriptor._fmt)
-          .reads(res1)
-          .get
-          .exists(_.id == testServiceDescriptor.id) mustBe true
-      }
+      //[REMOVE SERVICEDESC] {
+        //[REMOVE SERVICEDESC] val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/services").futureValue
+        //[REMOVE SERVICEDESC] status1 mustBe 200
+        //[REMOVE SERVICEDESC] Reads
+          //[REMOVE SERVICEDESC] .seq[ServiceDescriptor](using ServiceDescriptor._fmt)
+          //[REMOVE SERVICEDESC] .reads(res1)
+          //[REMOVE SERVICEDESC] .get
+          //[REMOVE SERVICEDESC] .exists(_.id == testServiceDescriptor.id) mustBe true
+      //[REMOVE SERVICEDESC] }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue
         status1 mustBe 200
@@ -234,58 +234,58 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
         status3 mustBe 200
         ServiceGroup.fromJsons(res3).description mustBe "bar"
       }
-      {
-        val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
-        status1 mustBe 200
-        ServiceDescriptor.fromJsons(res1).name mustBe testServiceDescriptor.name
-        otoroshiApiCall(
-          "PUT",
-          s"/api/services/${testServiceDescriptor.id}",
-          Some(testServiceDescriptor.copy(name = "foo").toJson)
-        ).futureValue
-        val (res2, status2) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
-        status2 mustBe 200
-        ServiceDescriptor.fromJsons(res2).name mustBe "foo"
-        otoroshiApiCall(
-          "PATCH",
-          s"/api/services/${testServiceDescriptor.id}",
-          Some(Json.arr(Json.obj("op" -> "replace", "path" -> "/name", "value" -> "bar")))
-        ).futureValue
-        val (res3, status3) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
-        status3 mustBe 200
-        ServiceDescriptor.fromJsons(res3).name mustBe "bar"
-      }
+      //[REMOVE SERVICEDESC] {
+        //[REMOVE SERVICEDESC] val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
+        //[REMOVE SERVICEDESC] status1 mustBe 200
+        //[REMOVE SERVICEDESC] ServiceDescriptor.fromJsons(res1).name mustBe testServiceDescriptor.name
+        //[REMOVE SERVICEDESC] otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "PUT",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}",
+          //[REMOVE SERVICEDESC] Some(testServiceDescriptor.copy(name = "foo").toJson)
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] val (res2, status2) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
+        //[REMOVE SERVICEDESC] status2 mustBe 200
+        //[REMOVE SERVICEDESC] ServiceDescriptor.fromJsons(res2).name mustBe "foo"
+        //[REMOVE SERVICEDESC] otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "PATCH",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}",
+          //[REMOVE SERVICEDESC] Some(Json.arr(Json.obj("op" -> "replace", "path" -> "/name", "value" -> "bar")))
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] val (res3, status3) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
+        //[REMOVE SERVICEDESC] status3 mustBe 200
+        //[REMOVE SERVICEDESC] ServiceDescriptor.fromJsons(res3).name mustBe "bar"
+      //[REMOVE SERVICEDESC] }
 
-      {
-        val (res1, status1) = otoroshiApiCall(
-          "GET",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
-        ).futureValue
-        status1 mustBe 200
-        ApiKey.fromJsons(res1).clientName mustBe testApiKey.clientName
-        otoroshiApiCall(
-          "PUT",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}",
-          Some(testApiKey.copy(clientName = "foo").toJson)
-        ).futureValue
-        val (res2, status2) = otoroshiApiCall(
-          "GET",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
-        ).futureValue
-        status2 mustBe 200
-        ApiKey.fromJsons(res2).clientName mustBe "foo"
-        otoroshiApiCall(
-          "PATCH",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}",
-          Some(Json.arr(Json.obj("op" -> "replace", "path" -> "/clientName", "value" -> "bar")))
-        ).futureValue
-        val (res3, status3) = otoroshiApiCall(
-          "GET",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
-        ).futureValue
-        status3 mustBe 200
-        ApiKey.fromJsons(res3).clientName mustBe "bar"
-      }
+      //[REMOVE SERVICEDESC] {
+        //[REMOVE SERVICEDESC] val (res1, status1) = otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "GET",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] status1 mustBe 200
+        //[REMOVE SERVICEDESC] ApiKey.fromJsons(res1).clientName mustBe testApiKey.clientName
+        //[REMOVE SERVICEDESC] otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "PUT",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}",
+          //[REMOVE SERVICEDESC] Some(testApiKey.copy(clientName = "foo").toJson)
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] val (res2, status2) = otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "GET",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] status2 mustBe 200
+        //[REMOVE SERVICEDESC] ApiKey.fromJsons(res2).clientName mustBe "foo"
+        //[REMOVE SERVICEDESC] otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "PATCH",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}",
+          //[REMOVE SERVICEDESC] Some(Json.arr(Json.obj("op" -> "replace", "path" -> "/clientName", "value" -> "bar")))
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] val (res3, status3) = otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "GET",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] status3 mustBe 200
+        //[REMOVE SERVICEDESC] ApiKey.fromJsons(res3).clientName mustBe "bar"
+      //[REMOVE SERVICEDESC] }
 
       // {
       //   val (res1, status1) =
@@ -311,31 +311,31 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
       // }
 
       {
-        otoroshiApiCall(
-          "DELETE",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
-        ).futureValue
-        otoroshiApiCall(
-          "DELETE",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey2.clientId}"
-        ).futureValue
-        otoroshiApiCall("DELETE", s"/api/services/${testServiceDescriptor.id}").futureValue
+        //[REMOVE SERVICEDESC] otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "DELETE",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "DELETE",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey2.clientId}"
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] otoroshiApiCall("DELETE", s"/api/services/${testServiceDescriptor.id}").futureValue
         otoroshiApiCall("DELETE", s"/api/groups/${testGroup.id}").futureValue
 
-        val (_, status1) = otoroshiApiCall(
-          "GET",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
-        ).futureValue
-        val (_, status2) = otoroshiApiCall(
-          "GET",
-          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey2.clientId}"
-        ).futureValue
-        val (_, status3) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
+        //[REMOVE SERVICEDESC] val (_, status1) = otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "GET",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] val (_, status2) = otoroshiApiCall(
+          //[REMOVE SERVICEDESC] "GET",
+          //[REMOVE SERVICEDESC] s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey2.clientId}"
+        //[REMOVE SERVICEDESC] ).futureValue
+        //[REMOVE SERVICEDESC] val (_, status3) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
         val (_, status4) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue
 
-        status1 mustBe 404
-        status2 mustBe 404
-        status3 mustBe 404
+        //[REMOVE SERVICEDESC] status1 mustBe 404
+        //[REMOVE SERVICEDESC] status2 mustBe 404
+        //[REMOVE SERVICEDESC] status3 mustBe 404
         status4 mustBe 404
       }
     }
