@@ -6,6 +6,33 @@ import { PillButton } from '../components/PillButton';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { SimpleBooleanInput } from '../components/inputs';
 
+//[REMOVE SERVICEDESC] const EXAMPLE = `// a JSON object
+//[REMOVE SERVICEDESC] {
+//[REMOVE SERVICEDESC]     "kind": "events.otoroshi.io/DataExporter",
+//[REMOVE SERVICEDESC]     ...
+//[REMOVE SERVICEDESC] }
+//[REMOVE SERVICEDESC]
+//[REMOVE SERVICEDESC] // a JsArray
+//[REMOVE SERVICEDESC] [
+//[REMOVE SERVICEDESC]     {
+//[REMOVE SERVICEDESC]         "kind": "events.otoroshi.io/DataExporter",
+//[REMOVE SERVICEDESC]         ...
+//[REMOVE SERVICEDESC]     },
+//[REMOVE SERVICEDESC]     {
+//[REMOVE SERVICEDESC]         "kind": "proxy.otoroshi.io/ServiceDescriptor",
+//[REMOVE SERVICEDESC]         ...
+//[REMOVE SERVICEDESC]     }
+//[REMOVE SERVICEDESC] ]
+//[REMOVE SERVICEDESC]
+//[REMOVE SERVICEDESC] // YAML resources
+//[REMOVE SERVICEDESC] kind: events.otoroshi.io/DataExporter
+//[REMOVE SERVICEDESC] ...
+//[REMOVE SERVICEDESC]
+//[REMOVE SERVICEDESC] ---
+//[REMOVE SERVICEDESC] kind: proxy.otoroshi.io/ServiceDescriptor
+//[REMOVE SERVICEDESC] ...
+//[REMOVE SERVICEDESC] `;
+
 const EXAMPLE = `// a JSON object
 {
     "kind": "events.otoroshi.io/DataExporter",
@@ -19,7 +46,7 @@ const EXAMPLE = `// a JSON object
         ...
     },
     {
-        "kind": "proxy.otoroshi.io/ServiceDescriptor",
+        "kind": "proxy.otoroshi.io/Route",
         ...
     }
 ]
@@ -29,13 +56,13 @@ kind: events.otoroshi.io/DataExporter
 ...
 
 ---
-kind: proxy.otoroshi.io/ServiceDescriptor
+kind: proxy.otoroshi.io/Route
 ...
 `;
 
 const UPDATE_ENTITIES = {
   ApiKey: (content) => BackOfficeServices.createRawApiKey(content),
-  ServiceDescriptor: (content) => BackOfficeServices.saveService(content),
+  //[REMOVE SERVICEDESC] ServiceDescriptor: (content) => BackOfficeServices.saveService(content),
   DataExporter: (content) => BackOfficeServices.createDataExporterConfig(content),
   ServiceGroup: (content) => BackOfficeServices.createGroup(content),
   Certificate: (content) => BackOfficeServices.createCertificate(content),
@@ -47,7 +74,8 @@ const UPDATE_ENTITIES = {
   JwtVerifier: (content) => BackOfficeServices.createJwtVerifier(content),
   ClientValidator: (content) => BackOfficeServices.createClientValidator(content),
   Script: (content) => BackOfficeServices.createScript(content),
-  ErrorTemplate: (content) => BackOfficeServices.createTemplate(content),
+  //[REMOVE SERVICEDESC] ErrorTemplate: (content) => BackOfficeServices.createTemplate(content),
+  ErrorTemplate: (content) => BackOfficeServices.createErrorTemplate(content),
   Route: (content) =>
     BackOfficeServices.nextClient.create(BackOfficeServices.nextClient.ENTITIES.ROUTES, content),
   Backend: (content) =>

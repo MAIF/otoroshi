@@ -2,7 +2,7 @@ import React, { Component, useState } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { nextClient } from '../services/BackOfficeServices';
 import { Table, SimpleBooleanInput } from '../components/inputs';
-import { ServiceSidebar } from '../components/ServiceSidebar';
+//[REMOVE SERVICEDESC] import { ServiceSidebar } from '../components/ServiceSidebar';
 import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 
@@ -1338,13 +1338,14 @@ export class ServiceApiKeysPage extends Component {
     } else if (this.onApis) {
       return null;
     }
-    return (
-      <ServiceSidebar
-        env={this.state.service.env}
-        serviceId={this.props.params.serviceId}
-        name={name}
-      />
-    );
+    return null;
+    //[REMOVE SERVICEDESC] return (
+    //[REMOVE SERVICEDESC]   <ServiceSidebar
+    //[REMOVE SERVICEDESC]     env={this.state.service.env}
+    //[REMOVE SERVICEDESC]     serviceId={this.props.params.serviceId}
+    //[REMOVE SERVICEDESC]     name={name}
+    //[REMOVE SERVICEDESC]   />
+    //[REMOVE SERVICEDESC] );
   }
 
   componentWillUnmount() {
@@ -1356,9 +1357,10 @@ export class ServiceApiKeysPage extends Component {
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
       : this.onApis
         ? nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(this.props.params.apiId)
-        : nextClient
-            .forEntityNext(nextClient.ENTITIES.SERVICES)
-            .findById(this.props.params.serviceId);
+        //[REMOVE SERVICEDESC] : nextClient
+        //[REMOVE SERVICEDESC]     .forEntityNext(nextClient.ENTITIES.SERVICES)
+        //[REMOVE SERVICEDESC]     .findById(this.props.params.serviceId);
+        : Promise.resolve({});
 
     fu.then((service) => {
       if (this.onRoutes) this.props.setTitle(this.props.title || `HTTP Routes Apikeys`);

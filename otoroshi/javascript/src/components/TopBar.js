@@ -638,9 +638,10 @@ export class TopBar extends Component {
           value: v.serviceId,
           env: v.env,
           action: () => {
-            if (v.type === 'http') {
-              this.gotoService({ env: v.env, value: v.serviceId });
-            } else if (v.type === 'route') {
+            //[REMOVE SERVICEDESC] if (v.type === 'http') {
+            //[REMOVE SERVICEDESC]   this.gotoService({ env: v.env, value: v.serviceId });
+            //[REMOVE SERVICEDESC] } else if (v.type === 'route') {
+            if (v.type === 'route') {
               this.gotoRoute(v.serviceId);
             } else if (v.type === 'tcp') {
               this.gotoTcpService({ env: v.env, value: v.serviceId });
@@ -765,15 +766,15 @@ export class TopBar extends Component {
     }
   };
 
-  gotoService = (e) => {
-    if (e) {
-      if (this.props.history) {
-        this.props.history.push(`/lines/${e.env}/services/${e.value}`);
-      } else {
-        window.location.href = `/bo/dashboard/lines/${e.env}/services/${e.value}`;
-      }
-    }
-  };
+  //[REMOVE SERVICEDESC] gotoService = (e) => {
+    //[REMOVE SERVICEDESC] if (e) {
+      //[REMOVE SERVICEDESC] if (this.props.history) {
+        //[REMOVE SERVICEDESC] this.props.history.push(`/lines/${e.env}/services/${e.value}`);
+      //[REMOVE SERVICEDESC] } else {
+        //[REMOVE SERVICEDESC] window.location.href = `/bo/dashboard/lines/${e.env}/services/${e.value}`;
+      //[REMOVE SERVICEDESC] }
+    //[REMOVE SERVICEDESC] }
+  //[REMOVE SERVICEDESC] };
 
   gotoRoute = (routeId) => {
     if (this.props.history) {
@@ -927,11 +928,13 @@ export class TopBar extends Component {
             <span className="fas fa-folder-open" /> Service groups
           </Link>
 
+          {/*[REMOVE SERVICEDESC]
           {window.__otoroshi__env__latest.userAdmin && (
             <Link to="/clever" className="dropdown-item">
               <span className="fas fa-list-alt" /> Clever apps
             </Link>
           )}
+          */}
 
           {window.__otoroshi__env__latest.userAdmin && (
             <Link to="/eureka-servers" className="dropdown-item">
@@ -947,9 +950,11 @@ export class TopBar extends Component {
         </li>
         <li className="dropdown-divider" />
         <li>
+          {/*[REMOVE SERVICEDESC]
           <Link to="/services" className="dropdown-item">
             <span className="fas fa-cubes" /> Service descriptors
           </Link>
+          */}
           <Link to="/routes" className="dropdown-item">
             <span className="fas fa-road" /> HTTP Routes
           </Link>
@@ -1685,11 +1690,13 @@ export class TopBar extends Component {
                           gap: 5,
                         }}
                       >
+                        {/*[REMOVE SERVICEDESC]
                         {this.props && !this.props.env.initWithNewEngine && (
                           <li className="d-flex">
                             <Link to="/services">Service</Link>
                           </li>
                         )}
+                        */}
                         <li className="d-flex">
                           <Link to="/apis">API</Link>
                         </li>
@@ -1714,11 +1721,13 @@ export class TopBar extends Component {
                         <li className="d-flex">
                           <Link to="/tcp/services/add">TCP service</Link>
                         </li>
+                        {/*[REMOVE SERVICEDESC]
                         {this.props.env && this.props.env.clevercloud && (
                           <li className="d-flex">
                             <Link to="/clever">Service from a CleverApp</Link>
                           </li>
                         )}
+                        */}
                         {Otoroshi.extensions()
                           .flatMap((ext) => ext.creationItems || [])
                           .map((item) => (

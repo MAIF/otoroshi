@@ -36,21 +36,21 @@ function tryOrFalse(f) {
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
 
-function CircuitBreakerWarn(props) {
-  if (props.rawValue.useCircuitBreakers) {
-    return null;
-  }
-  return (
-    <div className="alert alert-danger" role="danger" style={{ marginTop: 20 }}>
-      You are not using circuit breaker. This behavior is linked to ServiceDescriptors and is
-      deprecated There is a new way to configure otoroshi through{' '}
-      <Link style={{ color: 'var(--color-red)' }} to="/routes">
-        routes
-      </Link>{' '}
-      that always use circuit breakers. Service descriptors will be removed in Otoroshi v18.0.0.
-    </div>
-  );
-}
+//[REMOVE SERVICEDESC] function CircuitBreakerWarn(props) {
+  //[REMOVE SERVICEDESC] if (props.rawValue.useCircuitBreakers) {
+    //[REMOVE SERVICEDESC] return null;
+  //[REMOVE SERVICEDESC] }
+  //[REMOVE SERVICEDESC] return (
+    //[REMOVE SERVICEDESC] <div className="alert alert-danger" role="danger" style={{ marginTop: 20 }}>
+      //[REMOVE SERVICEDESC] You are not using circuit breaker. This behavior is linked to ServiceDescriptors and is
+      //[REMOVE SERVICEDESC] deprecated There is a new way to configure otoroshi through{' '}
+      //[REMOVE SERVICEDESC] <Link style={{ color: 'var(--color-red)' }} to="/routes">
+        //[REMOVE SERVICEDESC] routes
+      //[REMOVE SERVICEDESC] </Link>{' '}
+      //[REMOVE SERVICEDESC] that always use circuit breakers. Service descriptors will be removed in Otoroshi v18.0.0.
+    //[REMOVE SERVICEDESC] </div>
+  //[REMOVE SERVICEDESC] );
+//[REMOVE SERVICEDESC] }
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -797,12 +797,12 @@ export class DangerZonePage extends Component {
         help: 'Freeze the Otoroshi datastore in read only mode. Only people with access to the actual underlying datastore will be able to disable this.',
       },
     },
-    useCircuitBreakerWarn: {
-      type: CircuitBreakerWarn,
-      props: {
-        label: '',
-      },
-    },
+    //[REMOVE SERVICEDESC] useCircuitBreakerWarn: {
+      //[REMOVE SERVICEDESC] type: CircuitBreakerWarn,
+      //[REMOVE SERVICEDESC] props: {
+        //[REMOVE SERVICEDESC] label: '',
+      //[REMOVE SERVICEDESC] },
+    //[REMOVE SERVICEDESC] },
     useCircuitBreakers: {
       type: 'bool',
       props: {
@@ -875,14 +875,14 @@ export class DangerZonePage extends Component {
         help: 'If enabled, otoroshi will send anonymous usage metrics to the Otoroshi team. Enabling this is the best way to contribute to Otoroshi improvement !',
       },
     },
-    initWithNewEngine: {
-      type: 'bool',
-      props: {
-        label: 'Routes only',
-        placeholder: '-',
-        help: 'If enabled, otoroshi will not display service descriptor related stuff anymore',
-      },
-    },
+    //[REMOVE SERVICEDESC] initWithNewEngine: {
+      //[REMOVE SERVICEDESC] type: 'bool',
+      //[REMOVE SERVICEDESC] props: {
+        //[REMOVE SERVICEDESC] label: 'Routes only',
+        //[REMOVE SERVICEDESC] placeholder: '-',
+        //[REMOVE SERVICEDESC] help: 'If enabled, otoroshi will not display service descriptor related stuff anymore',
+      //[REMOVE SERVICEDESC] },
+    //[REMOVE SERVICEDESC] },
     maxConcurrentRequests: {
       type: 'number',
       props: {
@@ -1361,7 +1361,7 @@ export class DangerZonePage extends Component {
     'apiReadOnly',
     // 'streamEntityOnly',
     'autoLinkToDefaultGroup',
-    'useCircuitBreakerWarn',
+    //[REMOVE SERVICEDESC] 'useCircuitBreakerWarn',
     'useCircuitBreakers',
     value.logAnalyticsOnServer ? 'logAnalyticsOnServer' : null,
     'useAkkaHttpClient',
@@ -1370,7 +1370,7 @@ export class DangerZonePage extends Component {
     'limitConcurrentRequests',
     'trustXForwarded',
     'anonymousReporting',
-    'initWithNewEngine',
+    //[REMOVE SERVICEDESC] 'initWithNewEngine',
     'maxConcurrentRequests',
     'maxHttp10ResponseSize',
     'maxLogsSize',

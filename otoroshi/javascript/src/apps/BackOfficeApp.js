@@ -2,28 +2,29 @@ import React, { Component } from 'react';
 import { BrowserRouter as Router, Route, Link, Switch, withRouter } from 'react-router-dom';
 import queryString from 'query-string';
 
-import { ServicePage } from '../pages/ServicePage';
-import { ServiceAnalyticsPage } from '../pages/ServiceAnalyticsPage';
+//[REMOVE SERVICEDESC] import { ServicePage } from '../pages/ServicePage';
+//[REMOVE SERVICEDESC] import { ServiceAnalyticsPage } from '../pages/ServiceAnalyticsPage';
 import { UserDashboardsPage } from '../pages/analytics/UserDashboardsPage';
 import { UserDashboardViewPage } from '../pages/analytics/UserDashboardViewPage';
 import { UserAlertsPage } from '../pages/analytics/UserAlertsPage';
 import { UserAlertEventsPage } from '../pages/analytics/UserAlertEventsPage';
-import { DocumentationPage } from '../pages/DocumentationPage';
-import { ServiceApiKeysPage, ApiKeysPage } from '../pages/ServiceApiKeysPage';
+//[REMOVE SERVICEDESC] import { DocumentationPage } from '../pages/DocumentationPage';
+//[REMOVE SERVICEDESC] import { ServiceApiKeysPage, ApiKeysPage } from '../pages/ServiceApiKeysPage';
+import { ApiKeysPage } from '../pages/ServiceApiKeysPage';
 import { GlobalNodeEventStreamPage } from '../pages/GlobalNodeEventStreamPage';
-import { ServiceHealthPage } from '../pages/ServiceHealthPage';
-import { ServiceEventsPage } from '../pages/ServiceEventsPage';
-import { ServiceLiveStatsPage } from '../pages/ServiceLiveStatsPage';
+//[REMOVE SERVICEDESC] import { ServiceHealthPage } from '../pages/ServiceHealthPage';
+//[REMOVE SERVICEDESC] import { ServiceEventsPage } from '../pages/ServiceEventsPage';
+//[REMOVE SERVICEDESC] import { ServiceLiveStatsPage } from '../pages/ServiceLiveStatsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { DangerZonePage } from '../pages/DangerZonePage';
 import { DataExportersPage } from '../pages/DataExportersPage';
 import { GroupsPage } from '../pages/GroupsPage';
 import { HomePage } from '../pages/HomePage';
-import { ServicesPage } from '../pages/ServicesPage';
+//[REMOVE SERVICEDESC] import { ServicesPage } from '../pages/ServicesPage';
 import { SessionsPage } from '../pages/SessionsPage';
 import { DraftsPage } from '../pages/DraftsPage';
 import { U2FRegisterPage } from '../pages/U2FRegisterPage';
-import { CleverPage } from '../pages/CleverPage';
+//[REMOVE SERVICEDESC] import { CleverPage } from '../pages/CleverPage';
 import { EurekaServersPage } from '../pages/EurekaServersPage';
 import { EurekaServerPage } from '../pages/EurekaServerPage';
 import { AuditPage } from '../pages/AuditPage';
@@ -77,49 +78,49 @@ import Loader from '../components/Loader';
 import { globalConfig } from 'antd/lib/config-provider';
 import { RouteTemplatesPage } from '../pages/RouteTemplatesPage';
 
-class ServiceDescriptorsMigrationPopup extends Component {
-  render() {
-    return (
-      <>
-        <div className="modal-body">
-          <p style={{ textAlign: 'justify' }}>
-            It seems that you are still using Service Descriptors to route traffic, as you may know,
-            Service Descriptors have been deprecated for{' '}
-            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 4 years</span>,
-            since the rewrite of the proxy engine.
-          </p>
-          <p style={{ textAlign: 'justify' }}>
-            The next major version of Otoroshi (
-            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will{' '}
-            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span>{' '}
-            for Service Descriptors (probably in 2026). Once this version will be deployed, all your
-            remaning Service Descriptors will be automatically migrated and deleted without further
-            notice.
-          </p>
-          <p style={{ textAlign: 'justify' }}>
-            We count{' '}
-            <a href="/bo/dashboard/services" target="_blank">
-              <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>
-                {this.props.count}
-              </span>{' '}
-              Service Descriptor
-            </a>{' '}
-            remaining in your database. For more information about that, please read{' '}
-            <a href="https://www.otoroshi.io/docs/topics/deprecating-sd" target="_blank">
-              the documentation
-            </a>
-          </p>
-          <p style={{ textAlign: 'justify' }}>Thanks for your understanding.</p>
-        </div>
-        <div className="modal-footer">
-          <button type="button" className="btn btn-danger" onClick={(e) => this.props.ok()}>
-            Close
-          </button>
-        </div>
-      </>
-    );
-  }
-}
+//[REMOVE SERVICEDESC] class ServiceDescriptorsMigrationPopup extends Component {
+  //[REMOVE SERVICEDESC] render() {
+    //[REMOVE SERVICEDESC] return (
+      //[REMOVE SERVICEDESC] <>
+        //[REMOVE SERVICEDESC] <div className="modal-body">
+          //[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>
+            //[REMOVE SERVICEDESC] It seems that you are still using Service Descriptors to route traffic, as you may know,
+            //[REMOVE SERVICEDESC] Service Descriptors have been deprecated for{' '}
+            //[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 4 years</span>,
+            //[REMOVE SERVICEDESC] since the rewrite of the proxy engine.
+          //[REMOVE SERVICEDESC] </p>
+          //[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>
+            //[REMOVE SERVICEDESC] The next major version of Otoroshi (
+            //[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will{' '}
+            //[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span>{' '}
+            //[REMOVE SERVICEDESC] for Service Descriptors (probably in 2026). Once this version will be deployed, all your
+            //[REMOVE SERVICEDESC] remaning Service Descriptors will be automatically migrated and deleted without further
+            //[REMOVE SERVICEDESC] notice.
+          //[REMOVE SERVICEDESC] </p>
+          //[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>
+            //[REMOVE SERVICEDESC] We count{' '}
+            //[REMOVE SERVICEDESC] <a href="/bo/dashboard/services" target="_blank">
+              //[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>
+                //[REMOVE SERVICEDESC] {this.props.count}
+              //[REMOVE SERVICEDESC] </span>{' '}
+              //[REMOVE SERVICEDESC] Service Descriptor
+            //[REMOVE SERVICEDESC] </a>{' '}
+            //[REMOVE SERVICEDESC] remaining in your database. For more information about that, please read{' '}
+            //[REMOVE SERVICEDESC] <a href="https://www.otoroshi.io/docs/topics/deprecating-sd" target="_blank">
+              //[REMOVE SERVICEDESC] the documentation
+            //[REMOVE SERVICEDESC] </a>
+          //[REMOVE SERVICEDESC] </p>
+          //[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>Thanks for your understanding.</p>
+        //[REMOVE SERVICEDESC] </div>
+        //[REMOVE SERVICEDESC] <div className="modal-footer">
+          //[REMOVE SERVICEDESC] <button type="button" className="btn btn-danger" onClick={(e) => this.props.ok()}>
+            //[REMOVE SERVICEDESC] Close
+          //[REMOVE SERVICEDESC] </button>
+        //[REMOVE SERVICEDESC] </div>
+      //[REMOVE SERVICEDESC] </>
+    //[REMOVE SERVICEDESC] );
+  //[REMOVE SERVICEDESC] }
+//[REMOVE SERVICEDESC] }
 
 class AnonymousReportingEnabled extends Component {
   render() {
@@ -225,15 +226,15 @@ class BackOfficeAppContainer extends Component {
     this.setState({ sidebarMode, sidebarHovered: false });
   };
 
-  addService = (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    BackOfficeServices.createNewService().then((r) => {
-      ServicePage.__willCreateService = r;
-      this.props.history.push({
-        pathname: `/lines/${r.env}/services/${r.id}`,
-      });
-    });
-  };
+  //[REMOVE SERVICEDESC] addService = (e) => {
+    //[REMOVE SERVICEDESC] if (e && e.preventDefault) e.preventDefault();
+    //[REMOVE SERVICEDESC] BackOfficeServices.createNewService().then((r) => {
+      //[REMOVE SERVICEDESC] ServicePage.__willCreateService = r;
+      //[REMOVE SERVICEDESC] this.props.history.push({
+        //[REMOVE SERVICEDESC] pathname: `/lines/${r.env}/services/${r.id}`,
+      //[REMOVE SERVICEDESC] });
+    //[REMOVE SERVICEDESC] });
+  //[REMOVE SERVICEDESC] };
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.children !== this.props.children) {
@@ -263,30 +264,30 @@ class BackOfficeAppContainer extends Component {
     }
   };
 
-  triggerServiceDescriptorsMigrationPopup = (env) => {
-    if (env.serviceDescriptorsCount > 0) {
-      const key = 'otoroshi-migrate-service-descs-popup';
-      const last = JSON.parse(localStorage.getItem(key) || '{"last_seen":0}').last_seen || 0;
-      const ttl = last + 8 * 24 * 60 * 60 * 1000;
-      if (ttl < Date.now()) {
-        window
-          .popup(
-            'Service Descriptors Sunsetting',
-            (ok, cancel) => (
-              <ServiceDescriptorsMigrationPopup
-                count={env.serviceDescriptorsCount}
-                ok={ok}
-                cancel={cancel}
-              />
-            ),
-            { style: { width: '100%' } }
-          )
-          .then(() => {
-            localStorage.setItem(key, JSON.stringify({ last_seen: Date.now() }));
-          });
-      }
-    }
-  };
+  //[REMOVE SERVICEDESC] triggerServiceDescriptorsMigrationPopup = (env) => {
+    //[REMOVE SERVICEDESC] if (env.serviceDescriptorsCount > 0) {
+      //[REMOVE SERVICEDESC] const key = 'otoroshi-migrate-service-descs-popup';
+      //[REMOVE SERVICEDESC] const last = JSON.parse(localStorage.getItem(key) || '{"last_seen":0}').last_seen || 0;
+      //[REMOVE SERVICEDESC] const ttl = last + 8 * 24 * 60 * 60 * 1000;
+      //[REMOVE SERVICEDESC] if (ttl < Date.now()) {
+        //[REMOVE SERVICEDESC] window
+          //[REMOVE SERVICEDESC] .popup(
+            //[REMOVE SERVICEDESC] 'Service Descriptors Sunsetting',
+            //[REMOVE SERVICEDESC] (ok, cancel) => (
+              //[REMOVE SERVICEDESC] <ServiceDescriptorsMigrationPopup
+                //[REMOVE SERVICEDESC] count={env.serviceDescriptorsCount}
+                //[REMOVE SERVICEDESC] ok={ok}
+                //[REMOVE SERVICEDESC] cancel={cancel}
+              //[REMOVE SERVICEDESC] />
+            //[REMOVE SERVICEDESC] ),
+            //[REMOVE SERVICEDESC] { style: { width: '100%' } }
+          //[REMOVE SERVICEDESC] )
+          //[REMOVE SERVICEDESC] .then(() => {
+            //[REMOVE SERVICEDESC] localStorage.setItem(key, JSON.stringify({ last_seen: Date.now() }));
+          //[REMOVE SERVICEDESC] });
+      //[REMOVE SERVICEDESC] }
+    //[REMOVE SERVICEDESC] }
+  //[REMOVE SERVICEDESC] };
 
   componentDidMount() {
     Promise.all([
@@ -302,7 +303,7 @@ class BackOfficeAppContainer extends Component {
         usedNewEngine: env.newEngineEnabled,
       });
       this.triggerAnonymousReportingPopup(env);
-      this.triggerServiceDescriptorsMigrationPopup(env);
+      //[REMOVE SERVICEDESC] this.triggerServiceDescriptorsMigrationPopup(env);
     });
     this.readShortMenu();
   }
@@ -483,6 +484,7 @@ class BackOfficeAppContainer extends Component {
                             />
                           );
                         })}
+                      {/*[REMOVE SERVICEDESC]
                       <Route
                         path="/lines/:lineId/services/:serviceId/stats"
                         component={(props) => this.decorate(ServiceLiveStatsPage, props)}
@@ -539,6 +541,7 @@ class BackOfficeAppContainer extends Component {
                           })
                         }
                       />
+                      */}
                       <Route
                         path={['/routes/:routeId', '/routes']}
                         component={(props) => (
@@ -751,6 +754,7 @@ class BackOfficeAppContainer extends Component {
                           })
                         }
                       />
+                      {/*[REMOVE SERVICEDESC]
                       <Route
                         path="/lines/:lineId/services/:serviceId"
                         component={(props) =>
@@ -772,6 +776,7 @@ class BackOfficeAppContainer extends Component {
                         path="/services"
                         component={(props) => this.decorate(ServicesPage, props)}
                       />
+                      */}
                       <Route
                         path="/tcp/services/:taction/:titem"
                         component={(props) => this.decorate(TcpServicesPage, props)}
@@ -862,10 +867,12 @@ class BackOfficeAppContainer extends Component {
                         path="/sessions/private"
                         component={(props) => this.decorate(PrivateAppsSessionsPage, props)}
                       />
+                      {/*[REMOVE SERVICEDESC]
                       <Route
                         path="/clever"
                         component={(props) => this.decorate(CleverPage, props)}
                       />
+                      */}
                       <Route
                         path="/eureka-servers/edit/:eurekaServerId"
                         component={(props) => this.decorate(EurekaServerPage, props)}
