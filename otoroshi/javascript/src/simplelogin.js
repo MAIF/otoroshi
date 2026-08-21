@@ -1,7 +1,7 @@
 import 'es6-shim';
 import 'whatwg-fetch';
-import 'core-js/es6/map';
-import 'core-js/es6/set';
+import 'core-js/es/map';
+import 'core-js/es/set';
 import './raf';
 
 import 'react-table/react-table.css';

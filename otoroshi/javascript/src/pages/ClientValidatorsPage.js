@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
-import faker from 'faker';
+import { randomAlphaNumeric } from '../util';
 import { Proxy } from '../components/Proxy';
 
 export class ClientValidatorsPage extends Component {
@@ -129,7 +129,7 @@ export class ClientValidatorsPage extends Component {
           selfUrl="validation-authorities"
           defaultTitle="Validation authorities"
           defaultValue={() => ({
-            id: faker.random.alphaNumeric(64),
+            id: randomAlphaNumeric(64),
             name: 'Validation authority',
             description: 'A new validation authority',
             url: 'http://127.0.0.1:3000',

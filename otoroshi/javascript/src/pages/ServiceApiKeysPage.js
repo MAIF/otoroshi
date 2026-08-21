@@ -3,12 +3,17 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { nextClient } from '../services/BackOfficeServices';
 import { Table, SimpleBooleanInput } from '../components/inputs';
 import { ServiceSidebar } from '../components/ServiceSidebar';
-import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
-import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
+import {
+  firstLetterUppercase,
+  randomAlphaNumeric,
+  randomFirstName,
+  randomLastName,
+  unsecuredCopyToClipboard,
+} from '../util';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { NgForm } from '../components/nginputs';
@@ -319,7 +324,7 @@ const ResetSecret = ({ changeValue }) => (
       <button
         type="button"
         className="btn btn-danger btn-sm"
-        onClick={(e) => changeValue('clientSecret', 'apks_' + faker.random.alphaNumeric(64))}
+        onClick={(e) => changeValue('clientSecret', 'apks_' + randomAlphaNumeric(64))}
       >
         <i className="fas fa-sync" /> Reset secret
       </button>
@@ -1034,7 +1039,7 @@ const ApiKeysConstants = {
       props: {
         label: 'ApiKey Name',
         help: 'A name for the API key, used for debug purposes',
-        placeholder: `The name of the client (ie. ${faker.name.firstName()} ${faker.name.lastName()}'s ApiKey)`,
+        placeholder: `The name of the client (ie. ${randomFirstName()} ${randomLastName()}'s ApiKey)`,
       },
     },
     description: {
@@ -1438,7 +1443,7 @@ export class ServiceApiKeysPage extends Component {
               .template()
               .then((apk) => ({
                 ...apk,
-                clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+                clientName: `${randomFirstName()} ${randomLastName()}'s api-key`,
                 authorizedEntities: this.onRoutes
                   ? [
                       `route_${this.props.params.routeId}`, // just authorize the route
@@ -1451,9 +1456,9 @@ export class ServiceApiKeysPage extends Component {
               }))
           }
           _defaultValue={() => ({
-            clientId: faker.random.alphaNumeric(16),
-            clientSecret: faker.random.alphaNumeric(64),
-            clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+            clientId: randomAlphaNumeric(16),
+            clientSecret: randomAlphaNumeric(64),
+            clientName: `${randomFirstName()} ${randomLastName()}'s api-key`,
             description: '',
             enabled: true,
             throttlingQuota: 100,
@@ -1675,14 +1680,14 @@ export class ApiKeysPage extends Component {
               .template()
               .then((apk) => ({
                 ...apk,
-                clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+                clientName: `${randomFirstName()} ${randomLastName()}'s api-key`,
                 authorizedEntities: [],
               }))
           }
           _defaultValue={() => ({
-            clientId: faker.random.alphaNumeric(16),
-            clientSecret: faker.random.alphaNumeric(64),
-            clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+            clientId: randomAlphaNumeric(16),
+            clientSecret: randomAlphaNumeric(64),
+            clientName: `${randomFirstName()} ${randomLastName()}'s api-key`,
             description: '',
             enabled: true,
             throttlingQuota: 100,

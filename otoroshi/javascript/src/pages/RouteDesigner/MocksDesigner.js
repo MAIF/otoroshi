@@ -1,5 +1,4 @@
 import React, { Suspense, useState } from 'react';
-import faker from 'faker';
 import { FeedbackButton } from './FeedbackButton';
 import { createTooltip } from '../../tooltips';
 
@@ -12,7 +11,7 @@ import {
 } from '../../components/nginputs/inputs';
 import { PillButton } from '../../components/PillButton';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('../../components/inputs/CodeInput'));
 
 export const HTTP_COLORS = {
   GET: 'var(--http_color-get)',
@@ -201,6 +200,21 @@ const FakerOptions = [
   { value: 'vehicle.bicycle', label: 'Bicycle' },
 ];
 
+let fakerBundle = null;
+
+const loadFaker = () => {
+  if (!fakerBundle) {
+    fakerBundle = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = '/assets/javascripts/bundle/faker.js';
+      script.onload = () => resolve(window.OtoroshiFaker.faker);
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+  return fakerBundle;
+};
+
 const castValue = (value, type) => {
   if (type === 'String') return value;
   else {
@@ -240,6 +254,7 @@ const generateFakerValues = (resources, endpoint) => {
 
   function fakeValue(item) {
     try {
+      const faker = window.OtoroshiFaker.faker;
       return castValue(item.value.split('.').reduce((a, c) => a[c], faker)(), item.field_type);
     } catch (err) {
       return castValue(item.value, item.field_type);
@@ -766,16 +781,20 @@ export default class MocksDesigner extends React.Component {
   };
 
   generateData = () => {
-    return this.setAndSave({
-      endpoints: this.getState().endpoints.map((endpoint) => ({
-        ...endpoint,
-        body: endpoint.body || generateFakerValues(this.getState().resources, endpoint),
-      })),
-    }).then(() =>
-      this.setState({
-        onDesigner: false,
-      })
-    );
+    return loadFaker()
+      .then(() =>
+        this.setAndSave({
+          endpoints: this.getState().endpoints.map((endpoint) => ({
+            ...endpoint,
+            body: endpoint.body || generateFakerValues(this.getState().resources, endpoint),
+          })),
+        })
+      )
+      .then(() =>
+        this.setState({
+          onDesigner: false,
+        })
+      );
   };
 
   resetData = () => {

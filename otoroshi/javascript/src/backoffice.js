@@ -1,7 +1,7 @@
 import 'es6-shim';
 import 'whatwg-fetch';
-import 'core-js/es6/map';
-import 'core-js/es6/set';
+import 'core-js/es/map';
+import 'core-js/es/set';
 import './raf';
 import 'react-table/react-table.css';
 import './style/main.scss';
@@ -44,7 +44,7 @@ Number.prototype.prettify = function () {
   return this.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
 };
 
-window._fetch = window.fetch;
+window._fetch = window._fetch || window.fetch;
 window.fetch = function (...params) {
   const url = params[0];
   const options = params[1];

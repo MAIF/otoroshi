@@ -12,7 +12,7 @@ import {
   BiColumnBooleanInput,
 } from '../components/inputs';
 import moment from 'moment';
-import faker from 'faker';
+import { randomAlphaNumeric } from '../util';
 import InfoCollapse from '../components/InfoCollapse';
 
 const RevocationReason = {
@@ -898,7 +898,7 @@ export class CertificatesPage extends Component {
           parentProps={this.props}
           selfUrl="certificates"
           defaultTitle="All SSL/TLS certificates"
-          _defaultValue={() => ({ id: faker.random.alphaNumeric(64) })}
+          _defaultValue={() => ({ id: randomAlphaNumeric(64) })}
           defaultValue={BackOfficeServices.createNewCertificate}
           itemName="Certificate"
           formSchema={this.formSchema}

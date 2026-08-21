@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { RoundChart, Histogram } from '../components/recharts';
-import { converterBase2 } from 'byte-converter';
+import { converterBase2 } from '../util';
 // import _ from 'lodash';
 import moment from 'moment';
 

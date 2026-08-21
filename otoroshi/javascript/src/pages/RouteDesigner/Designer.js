@@ -25,7 +25,7 @@ import {
   unsecuredCopyToClipboard,
 } from '../../util';
 import { NgAnyRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
-const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('../../components/inputs/CodeInput'));
 
 import snakeCase from 'lodash/snakeCase';
 import camelCase from 'lodash/camelCase';

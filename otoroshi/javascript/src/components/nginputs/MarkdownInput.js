@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import showdown from 'showdown';
-import classNames from 'classnames';
+import { classNames } from '../../util';
 
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'highlight.js/styles/monokai.css';
 import hljs from 'highlight.js';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('../inputs/CodeInput'));
 
 const converter = new showdown.Converter({
   omitExtraWLInCodeBlocks: true,

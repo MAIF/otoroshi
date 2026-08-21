@@ -14,8 +14,8 @@ clean () {
 
 build_ui () {
   cd $LOCATION/otoroshi/javascript
-  yarn install
-  yarn build
+  npm install
+  npm run build
 }
 
 build_manual () {

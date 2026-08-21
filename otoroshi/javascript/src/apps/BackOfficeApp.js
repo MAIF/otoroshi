@@ -74,7 +74,6 @@ import { Toasts } from '../components/Toasts';
 import { NgFormPlayground } from '../components/nginputs';
 import { NgSelectRenderer } from '../components/nginputs';
 import Loader from '../components/Loader';
-import { globalConfig } from 'antd/lib/config-provider';
 import { RouteTemplatesPage } from '../pages/RouteTemplatesPage';
 
 class ServiceDescriptorsMigrationPopup extends Component {

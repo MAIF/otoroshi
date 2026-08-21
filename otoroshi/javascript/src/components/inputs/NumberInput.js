@@ -18,7 +18,7 @@ export class NumberInput extends Component {
       } else {
         oldValue = parseInt(value, 10);
       }
-      if (oldValue !== NaN) {
+      if (!Number.isNaN(oldValue)) {
         this.props.onChange(oldValue);
       }
     } catch (e) {

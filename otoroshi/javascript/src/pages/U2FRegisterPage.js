@@ -3,7 +3,6 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, Form, TextInput, ArrayInput, SelectInput } from '../components/inputs';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
-import faker from 'faker';
 import bcrypt from 'bcryptjs';
 import { Separator } from '../components/Separator';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';

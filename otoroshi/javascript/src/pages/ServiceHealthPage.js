@@ -7,9 +7,9 @@ import { Uptime, formatPercentage } from '../components/Status';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import DesignerSidebar from './RouteDesigner/Sidebar';
 
-import 'antd/dist/antd.css';
 import { Link } from 'react-router-dom';
 import Loader from '../components/Loader';
+import { EventsSetupHint } from '../components/EventsSetupHint';
 
 export class ServiceHealthPage extends Component {
   state = {
@@ -23,13 +23,6 @@ export class ServiceHealthPage extends Component {
 
   onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
 
-  colors = {
-    RED: '#d50200',
-    YELLOW: '#ff8900',
-    GREEN: '#95cf3d',
-    BLACK: '#000000',
-  };
-
   componentWillUnmount() {
     if (this.props.setSidebarContent) this.props.setSidebarContent(null);
   }
@@ -38,6 +31,8 @@ export class ServiceHealthPage extends Component {
     const fu = this.onRoutes
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
       : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+
+    this.props.setTitle(this.onRoutes ? 'Route health' : 'Service health')
     fu.then((service) => {
       this.setState({ service }, () => {
         if (
@@ -47,28 +42,12 @@ export class ServiceHealthPage extends Component {
           this.setState({ health: true });
 
           Promise.all([
-            BackOfficeServices.fetchHealthCheckEvents(service.id),
             BackOfficeServices.fetchServiceStatus(service.id),
             BackOfficeServices.fetchServiceResponseTime(service.id),
-          ]).then(([evts, status, responsesTime]) => {
-            this.setState({ status, responsesTime, loading: false }, () => {
-              const color =
-                evts.length > 0 && evts[0].health ? this.colors[evts[0].health] : 'grey';
-              this.title = this.onRoutes ? (
-                <span>
-                  Route health is <i className="fas fa-heart" style={{ color }} />
-                </span>
-              ) : (
-                <span>
-                  Service health is <i className="fas fa-heart" style={{ color }} />
-                </span>
-              );
-              this.props.setTitle(this.title);
-            });
+          ]).then(([status, responsesTime]) => {
+            this.setState({ status, responsesTime, loading: false });
           });
         } else {
-          this.title = this.props.title || 'No HealthCheck available yet';
-          this.props.setTitle(this.title);
           this.setState({ loading: false });
         }
         this.props.setSidebarContent(this.sidebarContent(service.name));
@@ -94,25 +73,34 @@ export class ServiceHealthPage extends Component {
     );
   }
 
-  onUpdate = (evts) => {
-    this.updateEvts(evts);
-  };
-
   render() {
     return (
       <Loader loading={this.state.loading}>
         {!this.state.service || !this.state.status.length ? (
-          <>
-            <p>
-              You don't have any service health data available. Maybe you don't have an
-              ElasticSearch instance connected to your Otoroshi
-            </p>
-            <p>
-              To do that, add a <Link to="/exporters">data exporter</Link> sending events to an
-              ElasticSearch and settings to read events from your ElasticSeach in the{' '}
-              <Link to="/dangerzone">Danger Zone</Link>
-            </p>
-          </>
+          !this.state.health ? (
+            <>
+              <p>
+                The health check is disabled on this {this.onRoutes ? 'route' : 'service'}. Otoroshi
+                only collects availability data for targets it actively probes, so there is nothing
+                to display yet.
+              </p>
+              <p>
+                Enable it in the <strong>Health check</strong> section of{' '}
+                {this.onRoutes ? (
+                  <Link to={`/routes/${this.props.params.routeId}?tab=flow`}>the route configuration</Link>
+                ) : (
+                  <Link
+                    to={`/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}`}
+                  >
+                    the service configuration
+                  </Link>
+                )}
+                , then come back here.
+              </p>
+            </>
+          ) : (
+            <EventsSetupHint intro="The health check is enabled, but no data has been collected yet. Displaying it requires three things:" />
+          )
         ) : (
           <div className="content-health" style={{ maxWidth: '100%' }}>
             <div>
@@ -160,7 +148,7 @@ class OverallUptime extends Component {
             value.status
               .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
               .reduce((acc, curr) => acc + curr.percentage, 0) /
-              length
+            length
           );
         }, 0);
 

@@ -27,9 +27,9 @@ import {
 
 import { LetsEncryptCreation, NewCertificateForm } from './CertificatesPage';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('../components/inputs/CodeInput'));
 
-import faker from 'faker';
+import { randomAlphaNumeric } from '../util';
 import deepSet from 'set-value';
 import { Collapse } from '../components/inputs/Collapse';
 import { createTooltip } from '../tooltips';
@@ -943,7 +943,7 @@ export class ServicePage extends Component {
     window.newPrompt('New group name').then((groupName) => {
       if (groupName) {
         BackOfficeServices.createGroup({
-          id: faker.random.alphaNumeric(64),
+          id: randomAlphaNumeric(64),
           name: groupName,
           description: 'Group named ' + groupName,
           _loc: { ...this.state.service._loc },
@@ -960,7 +960,7 @@ export class ServicePage extends Component {
     if (e && e.preventDefault) e.preventDefault();
     const groupName = this.state.service.name + '-group';
     BackOfficeServices.createGroup({
-      id: faker.random.alphaNumeric(64),
+      id: randomAlphaNumeric(64),
       name: groupName,
       description: 'Group named ' + groupName,
       _loc: { ...this.state.service._loc },

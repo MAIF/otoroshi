@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
-import faker from 'faker';
+import { randomAlphaNumeric } from '../util';
 import { AuthModuleConfig, Oauth2ModuleConfig } from '../components/AuthModuleConfig';
 import { Button } from '../components/Button';
 import { ClassifiedForms } from '../forms';
@@ -136,7 +136,7 @@ export class AuthModuleConfigsPage extends Component {
           _defaultValue={() => {
             const defv = {
               ...Oauth2ModuleConfig.defaultConfig,
-              id: faker.random.alphaNumeric(64),
+              id: randomAlphaNumeric(64),
               name: 'New auth. module',
               desc: 'A auth. module',
               type: 'oauth2',

@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import { EventsSetupHint } from '../components/EventsSetupHint';
 // import _ from 'lodash';
 import { BooleanInput } from '../components/inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
@@ -57,17 +58,7 @@ export class GlobalStatusPage extends Component {
     }
     if (this.state.error) {
       return (
-        <>
-          <p>
-            You don't have any service health data available. Maybe you don't have an ElasticSearch
-            instance connected to your Otoroshi
-          </p>
-          <p>
-            To do that, add a <Link to="/exporters">data exporter</Link> sending events to an
-            ElasticSearch and settings to read events from your ElasticSeach in the{' '}
-            <Link to="/dangerzone">Danger Zone</Link>
-          </p>
-        </>
+        <EventsSetupHint intro="No service health data is available yet. Displaying it requires three things:" />
       );
     }
 

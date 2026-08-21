@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 // import _ from 'lodash';
-import classNames from 'classnames';
+import { classNames } from '../util';
 import { Popover } from 'antd';
 
 export const formatPercentage = (value, decimal = 2) => {

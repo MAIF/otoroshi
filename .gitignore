@@ -24,7 +24,7 @@ oto-events*
 *.gor
 /project
 /local-scripts
-otoroshi/javascript/stats.json
+otoroshi/javascript/bundle-stats-*.html
 .bloop
 /otoroshi/hs_err_*.log
 .scala-build
