@@ -406,7 +406,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: Exec
 
   private[kubernetes] def getDefaultTemplate(templateName: String, source: JsValue): JsObject = {
     templateName match {
-      case "service-descriptor" => env.datastores.serviceDescriptorDataStore.template(env).json.asObject
+      //[REMOVE SERVICEDESC] case "service-descriptor" => env.datastores.serviceDescriptorDataStore.template(env).json.asObject
       case "service-group"      => env.datastores.serviceGroupDataStore.template(env).json.asObject
       case "apikey"             => env.datastores.apiKeyDataStore.template(env).json.asObject
       case "certificate"        => env.datastores.certificatesDataStore.syncTemplate(env).json.asObject
@@ -464,138 +464,138 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: Exec
     }
   }
 
-  private[kubernetes] def customizeServiceDescriptor(
-      _spec: JsValue,
-      res: KubernetesOtoroshiResource,
-      services: Seq[KubernetesService],
-      endpoints: Seq[KubernetesEndpoint],
-      otoServices: Seq[ServiceDescriptor],
-      conf: KubernetesConfig
-  ): JsValue = {
-    val spec             = findAndMerge[ServiceDescriptor](
-      _spec,
-      res,
-      "service-descriptor",
-      None,
-      otoServices,
-      _.metadata,
-      _.id,
-      _.toJson,
-      Some(_.enabled)
-    )
-    val globalName       = res.annotations.getOrElse("global-name/otoroshi.io", res.name)
-    val coreDnsDomainEnv = conf.coreDnsEnv.map(e => s"$e.").getOrElse("")
-    val additionalHosts  = Json.arr(
-      s"${globalName}.global.${coreDnsDomainEnv}${conf.meshDomain}",
-      s"${res.name}.${res.namespace}.${coreDnsDomainEnv}${conf.meshDomain}",
-      s"${res.name}.${res.namespace}.svc.${coreDnsDomainEnv}${conf.meshDomain}",
-      s"${res.name}.${res.namespace}.svc.${conf.clusterDomain}"
-    )
-
-    def handleTargetFrom(obj: JsObject, serviceDesc: JsValue): JsValue = {
-      val serviceName           = (obj \ "serviceName").asOpt[String]
-      val servicePort           = (obj \ "servicePort").asOpt[JsValue]
-      val finalTargets: JsArray = (serviceName, servicePort) match {
-        case (Some(sn), Some(sp)) => {
-          val path     = if (sn.contains("/")) sn else s"${res.namespace}/$sn"
-          val service  = services.find(s => s.path == path)
-          val endpoint = endpoints.find(s => s.path == path)
-          (service, endpoint) match {
-            case (Some(s), p) => {
-              val port    = IntOrString(sp.asOpt[Int], sp.asOpt[String])
-              val targets = KubernetesIngressToDescriptor.serviceToTargetsSync(s, p, port, obj, client, logger)
-              JsArray(targets.map(_.toJson))
-            }
-            case _            => Json.arr()
-          }
-        }
-        case _                    => Json.arr()
-      }
-      serviceDesc.as[JsObject] ++ Json.obj("targets" -> finalTargets)
-    }
-
-    customizeIdAndName(spec, res)
-      .applyOn { s =>
-        (s \ "env").asOpt[String] match {
-          case Some(_) => s
-          case None    => s.as[JsObject] ++ Json.obj("env" -> "prod")
-        }
-      }
-      .applyOn { s =>
-        (s \ "domain").asOpt[String] match {
-          case Some(_) => s
-          case None    => s.as[JsObject] ++ Json.obj("domain" -> env.domain)
-        }
-      }
-      .applyOn { s =>
-        (s \ "subdomain").asOpt[String] match {
-          case Some(_) => s
-          case None    => s.as[JsObject] ++ Json.obj("subdomain" -> (s \ "id").as[String])
-        }
-      }
-      .applyOn(s =>
-        s.select("secComTtl").asOpt[JsValue] match {
-          case Some(JsString(duration)) =>
-            Try(Duration.apply(duration).toMillis).map(d => s.asObject ++ Json.obj("secComTtl" -> d)).getOrElse(s)
-          case Some(JsNumber(_))        => s
-          case _                        => s
-        }
-      )
-      .applyOn { serviceDesc =>
-        (serviceDesc \ "targets").asOpt[JsValue] match {
-          case Some(JsArray(targets))  => {
-            serviceDesc.as[JsObject] ++ Json.obj(
-              "targets" -> JsArray(
-                targets.map(item =>
-                  item.applyOn(target =>
-                    ((target \ "url").asOpt[String] match {
-                      case None     => target
-                      case Some(tv) =>
-                        val uri = Uri(tv)
-                        target.as[JsObject] ++ Json.obj(
-                          "host"   -> (uri.authority.host.toString() + ":" + uri.effectivePort),
-                          "scheme" -> uri.scheme
-                        )
-                    })
-                  )
-                )
-              )
-            )
-          }
-          case Some(obj @ JsObject(_)) => handleTargetFrom(obj, serviceDesc)
-          case _                       => serviceDesc.as[JsObject] ++ Json.obj("targets" -> Json.arr())
-        }
-      }
-      .applyOn(serviceDesc =>
-        (serviceDesc \ "targetsFrom").asOpt[JsObject] match {
-          case None      => serviceDesc
-          case Some(obj) => handleTargetFrom(obj, serviceDesc)
-        }
-      )
-      // .applyOn(s =>
-      //   (s \ "group").asOpt[String] match {
-      //     case None    => s
-      //     case Some(v) => s.as[JsObject] - "group" ++ Json.obj("groups" -> Json.arr(v))
-      //   }
-      // )
-      // .applyOn(s =>
-      //   (s \ "groups").asOpt[String] match {
-      //     case None    => s.as[JsObject] ++ Json.obj("groups" -> Json.arr("default"))
-      //     case Some(_) => s
-      //   }
-      // )
-      .applyOn { s =>
-        val enabledAdditionalHosts = (s \ "enabledAdditionalHosts").asOpt[Boolean].getOrElse(true)
-        (s \ "hosts").asOpt[JsArray] match {
-          case None if enabledAdditionalHosts      =>
-            s.as[JsObject] ++ Json.obj("hosts" -> JsArray(additionalHosts.value.distinct))
-          case Some(arr) if enabledAdditionalHosts =>
-            s.as[JsObject] ++ Json.obj("hosts" -> JsArray((arr ++ additionalHosts).value.distinct))
-          case _                                   => s.as[JsObject]
-        }
-      }
-    // .applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
-  }
+  //[REMOVE SERVICEDESC] private[kubernetes] def customizeServiceDescriptor(
+  //[REMOVE SERVICEDESC]     _spec: JsValue,
+  //[REMOVE SERVICEDESC]     res: KubernetesOtoroshiResource,
+  //[REMOVE SERVICEDESC]     services: Seq[KubernetesService],
+  //[REMOVE SERVICEDESC]     endpoints: Seq[KubernetesEndpoint],
+  //[REMOVE SERVICEDESC]     otoServices: Seq[ServiceDescriptor],
+  //[REMOVE SERVICEDESC]     conf: KubernetesConfig
+  //[REMOVE SERVICEDESC] ): JsValue = {
+  //[REMOVE SERVICEDESC]   val spec             = findAndMerge[ServiceDescriptor](
+  //[REMOVE SERVICEDESC]     _spec,
+  //[REMOVE SERVICEDESC]     res,
+  //[REMOVE SERVICEDESC]     "service-descriptor",
+  //[REMOVE SERVICEDESC]     None,
+  //[REMOVE SERVICEDESC]     otoServices,
+  //[REMOVE SERVICEDESC]     _.metadata,
+  //[REMOVE SERVICEDESC]     _.id,
+  //[REMOVE SERVICEDESC]     _.toJson,
+  //[REMOVE SERVICEDESC]     Some(_.enabled)
+  //[REMOVE SERVICEDESC]   )
+  //[REMOVE SERVICEDESC]   val globalName       = res.annotations.getOrElse("global-name/otoroshi.io", res.name)
+  //[REMOVE SERVICEDESC]   val coreDnsDomainEnv = conf.coreDnsEnv.map(e => s"$e.").getOrElse("")
+  //[REMOVE SERVICEDESC]   val additionalHosts  = Json.arr(
+  //[REMOVE SERVICEDESC]     s"${globalName}.global.${coreDnsDomainEnv}${conf.meshDomain}",
+  //[REMOVE SERVICEDESC]     s"${res.name}.${res.namespace}.${coreDnsDomainEnv}${conf.meshDomain}",
+  //[REMOVE SERVICEDESC]     s"${res.name}.${res.namespace}.svc.${coreDnsDomainEnv}${conf.meshDomain}",
+  //[REMOVE SERVICEDESC]     s"${res.name}.${res.namespace}.svc.${conf.clusterDomain}"
+  //[REMOVE SERVICEDESC]   )
+//[REMOVE SERVICEDESC]
+  //[REMOVE SERVICEDESC]   def handleTargetFrom(obj: JsObject, serviceDesc: JsValue): JsValue = {
+  //[REMOVE SERVICEDESC]     val serviceName           = (obj \ "serviceName").asOpt[String]
+  //[REMOVE SERVICEDESC]     val servicePort           = (obj \ "servicePort").asOpt[JsValue]
+  //[REMOVE SERVICEDESC]     val finalTargets: JsArray = (serviceName, servicePort) match {
+  //[REMOVE SERVICEDESC]       case (Some(sn), Some(sp)) => {
+  //[REMOVE SERVICEDESC]         val path     = if (sn.contains("/")) sn else s"${res.namespace}/$sn"
+  //[REMOVE SERVICEDESC]         val service  = services.find(s => s.path == path)
+  //[REMOVE SERVICEDESC]         val endpoint = endpoints.find(s => s.path == path)
+  //[REMOVE SERVICEDESC]         (service, endpoint) match {
+  //[REMOVE SERVICEDESC]           case (Some(s), p) => {
+  //[REMOVE SERVICEDESC]             val port    = IntOrString(sp.asOpt[Int], sp.asOpt[String])
+  //[REMOVE SERVICEDESC]             val targets = KubernetesIngressToDescriptor.serviceToTargetsSync(s, p, port, obj, client, logger)
+  //[REMOVE SERVICEDESC]             JsArray(targets.map(_.toJson))
+  //[REMOVE SERVICEDESC]           }
+  //[REMOVE SERVICEDESC]           case _            => Json.arr()
+  //[REMOVE SERVICEDESC]         }
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]       case _                    => Json.arr()
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]     serviceDesc.as[JsObject] ++ Json.obj("targets" -> finalTargets)
+  //[REMOVE SERVICEDESC]   }
+//[REMOVE SERVICEDESC]
+  //[REMOVE SERVICEDESC]   customizeIdAndName(spec, res)
+  //[REMOVE SERVICEDESC]     .applyOn { s =>
+  //[REMOVE SERVICEDESC]       (s \ "env").asOpt[String] match {
+  //[REMOVE SERVICEDESC]         case Some(_) => s
+  //[REMOVE SERVICEDESC]         case None    => s.as[JsObject] ++ Json.obj("env" -> "prod")
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]     .applyOn { s =>
+  //[REMOVE SERVICEDESC]       (s \ "domain").asOpt[String] match {
+  //[REMOVE SERVICEDESC]         case Some(_) => s
+  //[REMOVE SERVICEDESC]         case None    => s.as[JsObject] ++ Json.obj("domain" -> env.domain)
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]     .applyOn { s =>
+  //[REMOVE SERVICEDESC]       (s \ "subdomain").asOpt[String] match {
+  //[REMOVE SERVICEDESC]         case Some(_) => s
+  //[REMOVE SERVICEDESC]         case None    => s.as[JsObject] ++ Json.obj("subdomain" -> (s \ "id").as[String])
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]     .applyOn(s =>
+  //[REMOVE SERVICEDESC]       s.select("secComTtl").asOpt[JsValue] match {
+  //[REMOVE SERVICEDESC]         case Some(JsString(duration)) =>
+  //[REMOVE SERVICEDESC]           Try(Duration.apply(duration).toMillis).map(d => s.asObject ++ Json.obj("secComTtl" -> d)).getOrElse(s)
+  //[REMOVE SERVICEDESC]         case Some(JsNumber(_))        => s
+  //[REMOVE SERVICEDESC]         case _                        => s
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     )
+  //[REMOVE SERVICEDESC]     .applyOn { serviceDesc =>
+  //[REMOVE SERVICEDESC]       (serviceDesc \ "targets").asOpt[JsValue] match {
+  //[REMOVE SERVICEDESC]         case Some(JsArray(targets))  => {
+  //[REMOVE SERVICEDESC]           serviceDesc.as[JsObject] ++ Json.obj(
+  //[REMOVE SERVICEDESC]             "targets" -> JsArray(
+  //[REMOVE SERVICEDESC]               targets.map(item =>
+  //[REMOVE SERVICEDESC]                 item.applyOn(target =>
+  //[REMOVE SERVICEDESC]                   ((target \ "url").asOpt[String] match {
+  //[REMOVE SERVICEDESC]                     case None     => target
+  //[REMOVE SERVICEDESC]                     case Some(tv) =>
+  //[REMOVE SERVICEDESC]                       val uri = Uri(tv)
+  //[REMOVE SERVICEDESC]                       target.as[JsObject] ++ Json.obj(
+  //[REMOVE SERVICEDESC]                         "host"   -> (uri.authority.host.toString() + ":" + uri.effectivePort),
+  //[REMOVE SERVICEDESC]                         "scheme" -> uri.scheme
+  //[REMOVE SERVICEDESC]                       )
+  //[REMOVE SERVICEDESC]                   })
+  //[REMOVE SERVICEDESC]                 )
+  //[REMOVE SERVICEDESC]               )
+  //[REMOVE SERVICEDESC]             )
+  //[REMOVE SERVICEDESC]           )
+  //[REMOVE SERVICEDESC]         }
+  //[REMOVE SERVICEDESC]         case Some(obj @ JsObject(_)) => handleTargetFrom(obj, serviceDesc)
+  //[REMOVE SERVICEDESC]         case _                       => serviceDesc.as[JsObject] ++ Json.obj("targets" -> Json.arr())
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]     .applyOn(serviceDesc =>
+  //[REMOVE SERVICEDESC]       (serviceDesc \ "targetsFrom").asOpt[JsObject] match {
+  //[REMOVE SERVICEDESC]         case None      => serviceDesc
+  //[REMOVE SERVICEDESC]         case Some(obj) => handleTargetFrom(obj, serviceDesc)
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     )
+  //[REMOVE SERVICEDESC]     // .applyOn(s =>
+  //[REMOVE SERVICEDESC]     //   (s \ "group").asOpt[String] match {
+  //[REMOVE SERVICEDESC]     //     case None    => s
+  //[REMOVE SERVICEDESC]     //     case Some(v) => s.as[JsObject] - "group" ++ Json.obj("groups" -> Json.arr(v))
+  //[REMOVE SERVICEDESC]     //   }
+  //[REMOVE SERVICEDESC]     // )
+  //[REMOVE SERVICEDESC]     // .applyOn(s =>
+  //[REMOVE SERVICEDESC]     //   (s \ "groups").asOpt[String] match {
+  //[REMOVE SERVICEDESC]     //     case None    => s.as[JsObject] ++ Json.obj("groups" -> Json.arr("default"))
+  //[REMOVE SERVICEDESC]     //     case Some(_) => s
+  //[REMOVE SERVICEDESC]     //   }
+  //[REMOVE SERVICEDESC]     // )
+  //[REMOVE SERVICEDESC]     .applyOn { s =>
+  //[REMOVE SERVICEDESC]       val enabledAdditionalHosts = (s \ "enabledAdditionalHosts").asOpt[Boolean].getOrElse(true)
+  //[REMOVE SERVICEDESC]       (s \ "hosts").asOpt[JsArray] match {
+  //[REMOVE SERVICEDESC]         case None if enabledAdditionalHosts      =>
+  //[REMOVE SERVICEDESC]           s.as[JsObject] ++ Json.obj("hosts" -> JsArray(additionalHosts.value.distinct))
+  //[REMOVE SERVICEDESC]         case Some(arr) if enabledAdditionalHosts =>
+  //[REMOVE SERVICEDESC]           s.as[JsObject] ++ Json.obj("hosts" -> JsArray((arr ++ additionalHosts).value.distinct))
+  //[REMOVE SERVICEDESC]         case _                                   => s.as[JsObject]
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]   // .applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
+  //[REMOVE SERVICEDESC] }
 
   def customizeApiKey(
       _spec: JsValue,
@@ -1242,18 +1242,18 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: Exec
       ServiceGroup._fmt,
       (a, b) => customizeServiceGroup(a, b, groups)
     )
-  def crdsFetchServiceDescriptors(
-      services: Seq[KubernetesService],
-      endpoints: Seq[KubernetesEndpoint],
-      otoServices: Seq[ServiceDescriptor],
-      conf: KubernetesConfig
-  ): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
-    client.fetchOtoroshiResources[ServiceDescriptor](
-      "service-descriptors",
-      ServiceDescriptor._fmt,
-      (a, b) => customizeServiceDescriptor(a, b, services, endpoints, otoServices, conf)
-    )
-  }
+  //[REMOVE SERVICEDESC] def crdsFetchServiceDescriptors(
+  //[REMOVE SERVICEDESC]     services: Seq[KubernetesService],
+  //[REMOVE SERVICEDESC]     endpoints: Seq[KubernetesEndpoint],
+  //[REMOVE SERVICEDESC]     otoServices: Seq[ServiceDescriptor],
+  //[REMOVE SERVICEDESC]     conf: KubernetesConfig
+  //[REMOVE SERVICEDESC] ): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
+  //[REMOVE SERVICEDESC]   client.fetchOtoroshiResources[ServiceDescriptor](
+  //[REMOVE SERVICEDESC]     "service-descriptors",
+  //[REMOVE SERVICEDESC]     ServiceDescriptor._fmt,
+  //[REMOVE SERVICEDESC]     (a, b) => customizeServiceDescriptor(a, b, services, endpoints, otoServices, conf)
+  //[REMOVE SERVICEDESC]   )
+  //[REMOVE SERVICEDESC] }
   def crdsFetchApiKeys(
       secrets: Seq[KubernetesSecret],
       apikeys: Seq[ApiKey],
@@ -1368,7 +1368,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: Exec
 
 case class KubernetesResourcesContext(
     serviceGroups: Seq[OtoResHolder[ServiceGroup]],
-    serviceDescriptors: Seq[OtoResHolder[ServiceDescriptor]],
+    //[REMOVE SERVICEDESC] serviceDescriptors: Seq[OtoResHolder[ServiceDescriptor]],
     apiKeys: Seq[OtoResHolder[ApiKey]],
     certificates: Seq[OtoResHolder[Cert]],
     globalConfigs: Seq[OtoResHolder[GlobalConfig]],
@@ -1389,7 +1389,7 @@ case class KubernetesResourcesContext(
 
 case class OtoroshiResourcesContext(
     serviceGroups: Seq[ServiceGroup],
-    serviceDescriptors: Seq[ServiceDescriptor],
+    //[REMOVE SERVICEDESC] serviceDescriptors: Seq[ServiceDescriptor],
     apiKeys: Seq[ApiKey],
     certificates: Seq[Cert],
     globalConfigs: Seq[GlobalConfig],
@@ -1461,8 +1461,8 @@ object KubernetesCRDsJob {
 
       otoserviceGroups      <-
         if (useProxyState) env.proxyState.allServiceGroups().vfuture else env.datastores.serviceGroupDataStore.findAll()
-      otoserviceDescriptors <-
-        if (useProxyState) env.proxyState.allServices().vfuture else env.datastores.serviceDescriptorDataStore.findAll()
+      //[REMOVE SERVICEDESC] otoserviceDescriptors <-
+      //[REMOVE SERVICEDESC]   if (useProxyState) env.proxyState.allServices().vfuture else env.datastores.serviceDescriptorDataStore.findAll()
       otoapiKeys            <- if (useProxyState) env.proxyState.allApikeys().vfuture else env.datastores.apiKeyDataStore.findAll()
       otocertificates       <-
         if (useProxyState) env.proxyState.allCertificates().vfuture else env.datastores.certificatesDataStore.findAll()
@@ -1501,7 +1501,7 @@ object KubernetesCRDsJob {
       endpoints          <- clientSupport.client.fetchEndpoints()
       secrets            <- clientSupport.client.fetchSecrets()
       serviceGroups      <- clientSupport.crdsFetchServiceGroups(otoserviceGroups)
-      serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors(services, endpoints, otoserviceDescriptors, conf)
+      //[REMOVE SERVICEDESC] serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors(services, endpoints, otoserviceDescriptors, conf)
       apiKeys            <- clientSupport.crdsFetchApiKeys(secrets, otoapiKeys, registerApkToExport, conf)
       certificates       <- clientSupport.crdsFetchCertificates(otocertificates, registerCertToExport)
       globalConfigs      <- clientSupport.crdsFetchGlobalConfig(otoglobalConfigs.head)
@@ -1523,7 +1523,7 @@ object KubernetesCRDsJob {
       CRDContext(
         kubernetes = KubernetesResourcesContext(
           serviceGroups = serviceGroups,
-          serviceDescriptors = serviceDescriptors,
+          //[REMOVE SERVICEDESC] serviceDescriptors = serviceDescriptors,
           apiKeys = apiKeys,
           certificates = certificates,
           globalConfigs = globalConfigs,
@@ -1543,7 +1543,7 @@ object KubernetesCRDsJob {
         ),
         otoroshi = OtoroshiResourcesContext(
           serviceGroups = otoserviceGroups,
-          serviceDescriptors = otoserviceDescriptors,
+          //[REMOVE SERVICEDESC] serviceDescriptors = otoserviceDescriptors,
           apiKeys = otoapiKeys,
           certificates = otocertificates,
           globalConfigs = otoglobalConfigs,
@@ -1567,27 +1567,27 @@ object KubernetesCRDsJob {
 
   private val callsCounter = new java.util.concurrent.atomic.AtomicLong(0L)
 
-  def warnAboutServiceDescriptorUsage(ctx: CRDContext)(using env: Env, ec: ExecutionContext): Unit = {
-    if (ctx.kubernetes.serviceDescriptors.nonEmpty) {
-      val calls = callsCounter.incrementAndGet()
-      if (calls == 1 || calls % 10 == 0) {
-        val count = ctx.kubernetes.serviceDescriptors
-        env.logger.warn("")
-        env.logger.warn(s"-------------------------------------------------------------------------")
-        env.logger.warn(s"##                                                                     ##")
-        env.logger.warn(s"##   It seems that you are still using Service Descriptors             ##")
-        env.logger.warn(s"##   through the Kubernetes CRDs integration job.                      ##")
-        env.logger.warn(s"##   we count ${count} entities remaining. the next major                ")
-        env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
-        env.logger.warn(s"##                                                                     ##")
-        env.logger.warn(s"##   for more information about that, please read                      ##")
-        env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
-        env.logger.warn(s"##                                                                     ##")
-        env.logger.warn(s"-------------------------------------------------------------------------")
-        env.logger.warn("")
-      }
-    }
-  }
+  //[REMOVE SERVICEDESC] def warnAboutServiceDescriptorUsage(ctx: CRDContext)(using env: Env, ec: ExecutionContext): Unit = {
+  //[REMOVE SERVICEDESC]   if (ctx.kubernetes.serviceDescriptors.nonEmpty) {
+  //[REMOVE SERVICEDESC]     val calls = callsCounter.incrementAndGet()
+  //[REMOVE SERVICEDESC]     if (calls == 1 || calls % 10 == 0) {
+  //[REMOVE SERVICEDESC]       val count = ctx.kubernetes.serviceDescriptors
+  //[REMOVE SERVICEDESC]       env.logger.warn("")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"-------------------------------------------------------------------------")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##                                                                     ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   It seems that you are still using Service Descriptors             ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   through the Kubernetes CRDs integration job.                      ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   we count ${count} entities remaining. the next major                ")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##                                                                     ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   for more information about that, please read                      ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##                                                                     ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"-------------------------------------------------------------------------")
+  //[REMOVE SERVICEDESC]       env.logger.warn("")
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]   }
+  //[REMOVE SERVICEDESC] }
 
   case class SyncReport(
       totalEntities: Int,
@@ -1701,10 +1701,10 @@ object KubernetesCRDsJob {
         EntityBatch("Script", compareAndSave(ctx.kubernetes.scripts)(ctx.otoroshi.scripts, _.id, _.save())),
         EntityBatch("WasmPlugin", compareAndSave(ctx.kubernetes.wasmPlugins)(ctx.otoroshi.wasmPlugins, _.id, _.save())),
         EntityBatch("TcpService", compareAndSave(ctx.kubernetes.tcpServices)(ctx.otoroshi.tcpServices, _.id, _.save())),
-        EntityBatch(
-          "ServiceDescriptor",
-          compareAndSave(ctx.kubernetes.serviceDescriptors)(ctx.otoroshi.serviceDescriptors, _.id, _.save())
-        ),
+        //[REMOVE SERVICEDESC] EntityBatch(
+        //[REMOVE SERVICEDESC]   "ServiceDescriptor",
+        //[REMOVE SERVICEDESC]   compareAndSave(ctx.kubernetes.serviceDescriptors)(ctx.otoroshi.serviceDescriptors, _.id, _.save())
+        //[REMOVE SERVICEDESC] ),
         EntityBatch("ApiKey", compareAndSave(ctx.kubernetes.apiKeys)(ctx.otoroshi.apiKeys, _.clientId, _.save())),
         EntityBatch("Route", compareAndSave(ctx.kubernetes.routes)(ctx.otoroshi.routes, _.id, _.save())),
         EntityBatch(
@@ -1829,14 +1829,14 @@ object KubernetesCRDsJob {
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date service-group entities"))
              .applyOn(env.datastores.serviceGroupDataStore.deleteByIds)
 
-      _ <- ctx.otoroshi.serviceDescriptors
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg =>
-               ctx.kubernetes.serviceDescriptors.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
-             )
-             .map(_.id)
-             .debug(seq => logger.info(s"Will delete ${seq.size} out of date service-descriptor entities"))
-             .applyOn(env.datastores.serviceDescriptorDataStore.deleteByIds)
+      //[REMOVE SERVICEDESC] _ <- ctx.otoroshi.serviceDescriptors
+      //[REMOVE SERVICEDESC]        .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+      //[REMOVE SERVICEDESC]        .filterNot(sg =>
+      //[REMOVE SERVICEDESC]          ctx.kubernetes.serviceDescriptors.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+      //[REMOVE SERVICEDESC]        )
+      //[REMOVE SERVICEDESC]        .map(_.id)
+      //[REMOVE SERVICEDESC]        .debug(seq => logger.info(s"Will delete ${seq.size} out of date service-descriptor entities"))
+      //[REMOVE SERVICEDESC]        .applyOn(env.datastores.serviceDescriptorDataStore.deleteByIds)
 
       _ <-
         ctx.otoroshi.apiKeys
@@ -2237,7 +2237,7 @@ object KubernetesCRDsJob {
                                 (ns, n, apk) => apiKeysToExport.getAndUpdate(s => s :+ (ns, n, apk)),
                                 (ns, n, cert) => certsToExport.getAndUpdate(c => c :+ (ns, n, cert))
                               )
-                _           = warnAboutServiceDescriptorUsage(ctx)
+                //[REMOVE SERVICEDESC] _           = warnAboutServiceDescriptorUsage(ctx)
                 _           = logger.info("importing CRDs entities")
                 syncReport <- importCRDEntities(conf, attrs, clientSupport, ctx, verboseLogging)
                 _           = logger.info("deleting outdated entities")

@@ -353,31 +353,31 @@ object AnonymousReportingJob {
               obj ++ Json.obj(key -> (obj.select(key).asOpt[Int].getOrElse(0) + 1))
             }
           ),
-          "service_descriptors"   -> Json.obj(
-            "count"   -> env.proxyState.allServices().size,
-            "plugins" -> Json.obj(
-              "old" -> env.proxyState
-                .allServices()
-                .filter { v =>
-                  v.preRouting.enabled || v.accessValidator.enabled || v.transformerRefs.nonEmpty
-                }
-                .count(v =>
-                  v.preRouting.refs.nonEmpty || v.accessValidator.refs.nonEmpty || v.transformerRefs.nonEmpty
-                ),
-              "new" -> env.proxyState.allServices().filter(_.plugins.enabled).count(_.plugins.refs.size > 0)
-            ),
-            "by_kind" -> Json.obj(
-              "disabled"        -> env.proxyState.allServices().count(!_.enabled),
-              "fault_injection" -> env.proxyState.allServices().count(_.chaosConfig.enabled),
-              "health_check"    -> env.proxyState.allServices().count(_.healthCheck.enabled),
-              "gzip"            -> env.proxyState.allServices().count(_.gzip.enabled),
-              "jwt"             -> env.proxyState.allServices().count(_.jwtVerifier.enabled),
-              "cors"            -> env.proxyState.allServices().count(_.cors.enabled),
-              "auth"            -> env.proxyState.allServices().count(_.privateApp),
-              "protocol"        -> env.proxyState.allServices().count(_.enforceSecureCommunication),
-              "restrictions"    -> env.proxyState.allServices().count(_.restrictions.enabled)
-            )
-          ),
+          //[REMOVE SERVICEDESC] "service_descriptors"   -> Json.obj(
+          //[REMOVE SERVICEDESC]   "count"   -> env.proxyState.allServices().size,
+          //[REMOVE SERVICEDESC]   "plugins" -> Json.obj(
+          //[REMOVE SERVICEDESC]     "old" -> env.proxyState
+          //[REMOVE SERVICEDESC]       .allServices()
+          //[REMOVE SERVICEDESC]       .filter { v =>
+          //[REMOVE SERVICEDESC]         v.preRouting.enabled || v.accessValidator.enabled || v.transformerRefs.nonEmpty
+          //[REMOVE SERVICEDESC]       }
+          //[REMOVE SERVICEDESC]       .count(v =>
+          //[REMOVE SERVICEDESC]         v.preRouting.refs.nonEmpty || v.accessValidator.refs.nonEmpty || v.transformerRefs.nonEmpty
+          //[REMOVE SERVICEDESC]       ),
+          //[REMOVE SERVICEDESC]     "new" -> env.proxyState.allServices().filter(_.plugins.enabled).count(_.plugins.refs.size > 0)
+          //[REMOVE SERVICEDESC]   ),
+          //[REMOVE SERVICEDESC]   "by_kind" -> Json.obj(
+          //[REMOVE SERVICEDESC]     "disabled"        -> env.proxyState.allServices().count(!_.enabled),
+          //[REMOVE SERVICEDESC]     "fault_injection" -> env.proxyState.allServices().count(_.chaosConfig.enabled),
+          //[REMOVE SERVICEDESC]     "health_check"    -> env.proxyState.allServices().count(_.healthCheck.enabled),
+          //[REMOVE SERVICEDESC]     "gzip"            -> env.proxyState.allServices().count(_.gzip.enabled),
+          //[REMOVE SERVICEDESC]     "jwt"             -> env.proxyState.allServices().count(_.jwtVerifier.enabled),
+          //[REMOVE SERVICEDESC]     "cors"            -> env.proxyState.allServices().count(_.cors.enabled),
+          //[REMOVE SERVICEDESC]     "auth"            -> env.proxyState.allServices().count(_.privateApp),
+          //[REMOVE SERVICEDESC]     "protocol"        -> env.proxyState.allServices().count(_.enforceSecureCommunication),
+          //[REMOVE SERVICEDESC]     "restrictions"    -> env.proxyState.allServices().count(_.restrictions.enabled)
+          //[REMOVE SERVICEDESC]   )
+          //[REMOVE SERVICEDESC] ),
           "teams"                 -> Json.obj("count" -> env.proxyState.allTeams().size),
           "tenants"               -> Json.obj("count" -> env.proxyState.allTenants().size),
           "service_groups"        -> Json.obj("count" -> env.proxyState.allServiceGroups().size),

@@ -132,27 +132,27 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
               }
             }
           }
-          case "ServiceDescriptor" => {
-            env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-              client.client.fetchServices().flatMap { kubeServices =>
-                client.client.fetchEndpoints().flatMap { kubeEndpoints =>
-                  val res  = KubernetesOtoroshiResource(obj)
-                  val json = client.customizeServiceDescriptor(
-                    res.spec,
-                    res,
-                    kubeServices,
-                    kubeEndpoints,
-                    services,
-                    client.client.config
-                  )
-                  ServiceDescriptor._fmt.reads(json) match {
-                    case JsSuccess(_, _) => success(uid)
-                    case JsError(errors) => error(uid, errors)
-                  }
-                }
-              }
-            }
-          }
+          //[REMOVE SERVICEDESC] case "ServiceDescriptor" => {
+          //[REMOVE SERVICEDESC]   env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+          //[REMOVE SERVICEDESC]     client.client.fetchServices().flatMap { kubeServices =>
+          //[REMOVE SERVICEDESC]       client.client.fetchEndpoints().flatMap { kubeEndpoints =>
+          //[REMOVE SERVICEDESC]         val res  = KubernetesOtoroshiResource(obj)
+          //[REMOVE SERVICEDESC]         val json = client.customizeServiceDescriptor(
+          //[REMOVE SERVICEDESC]           res.spec,
+          //[REMOVE SERVICEDESC]           res,
+          //[REMOVE SERVICEDESC]           kubeServices,
+          //[REMOVE SERVICEDESC]           kubeEndpoints,
+          //[REMOVE SERVICEDESC]           services,
+          //[REMOVE SERVICEDESC]           client.client.config
+          //[REMOVE SERVICEDESC]         )
+          //[REMOVE SERVICEDESC]         ServiceDescriptor._fmt.reads(json) match {
+          //[REMOVE SERVICEDESC]           case JsSuccess(_, _) => success(uid)
+          //[REMOVE SERVICEDESC]           case JsError(errors) => error(uid, errors)
+          //[REMOVE SERVICEDESC]         }
+          //[REMOVE SERVICEDESC]       }
+          //[REMOVE SERVICEDESC]     }
+          //[REMOVE SERVICEDESC]   }
+          //[REMOVE SERVICEDESC] }
           case "ApiKey"            => {
             env.datastores.apiKeyDataStore.findAll().flatMap { entities =>
               client.client.fetchSecrets().flatMap { secrets =>

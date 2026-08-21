@@ -1621,7 +1621,7 @@ class Env(
 
                 val baseExport = OtoroshiExport(
                   config = defaultConfig,
-                  descs = if (defaultConfig.initWithNewEngine) Seq.empty else Seq(backOfficeServiceDescriptor),
+                  //[REMOVE SERVICEDESC] descs = if (defaultConfig.initWithNewEngine) Seq.empty else Seq(backOfficeServiceDescriptor),
                   routes = if (defaultConfig.initWithNewEngine) Seq(backofficeRoute) else Seq.empty,
                   apikeys = Seq(backOfficeApiKey, defaultGroupApiKey),
                   groups = Seq(backOfficeGroup, defaultGroup),
