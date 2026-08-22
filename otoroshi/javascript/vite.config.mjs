@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { defineConfig } from 'vite';
+import { defineConfig, transformWithEsbuild } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 
@@ -10,6 +10,20 @@ const DEV_PORT = Number(process.env.DEV_SERVER_PORT || 3040);
 
 const GLOBALS = { faker: 'OtoroshiFaker', elk: 'OtoroshiElk' };
 const globalName = (name) => GLOBALS[name] || 'Otoroshi';
+
+function jsxInJs() {
+  const srcDir = resolve(import.meta.dirname, 'src');
+  return {
+    name: 'otoroshi:jsx-in-js',
+    enforce: 'pre',
+    apply: 'serve',
+    async transform(code, id) {
+      const [filepath] = id.split('?');
+      if (!filepath.startsWith(srcDir) || !filepath.endsWith('.js')) return;
+      return transformWithEsbuild(code, id, { loader: 'jsx', jsx: 'automatic' });
+    },
+  };
+}
 
 function gzipSiblings() {
   return {
@@ -76,6 +90,7 @@ function devBundleUrls() {
 
 export default defineConfig(({ command }) => ({
   plugins: [
+    jsxInJs(),
     react(),
     devBundleUrls(),
     gzipSiblings(),

@@ -2,10 +2,10 @@
   "cookies": [
     {
       "name": "otoroshi-session",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJkYXRhIjp7ImJvdXNyIjoiMm4zRUo4eFI4aENPTENTUzhtNHVjM0t3cWppaWM0VTFvSzE0QkdqV3hvOW5BY0l0eVN0VHlFcGlXdFZ0a2VMdSJ9LCJleHAiOjE3ODc1NjU5OTMsIm5iZiI6MTc4NzMwNjc5MywiaWF0IjoxNzg3MzA2NzkzfQ.W-gV4ZmksytG251VNaV2gLVYTpkHGfzNvT2tjkzi2zI",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJkYXRhIjp7ImJvdXNyIjoiUzBHeEs0a085YXYwVG0yb3Zkc21tUGtLRXFBTXd0R2VNdXhWVEpoMWI3dm15aGp4RzNTMFhQdXB2MkhoSDZBbCJ9LCJleHAiOjE3ODc1NzE1NTEsIm5iZiI6MTc4NzMxMjM1MSwiaWF0IjoxNzg3MzEyMzUxfQ.KWFiqs5XO_KvvmI03CL2jWqohCBDu9B2vMVZMTKC6oQ",
       "domain": ".oto.tools",
       "path": "/",
-      "expires": 1787565993.331285,
+      "expires": 1787571551.297264,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
@@ -15,6 +15,10 @@
     {
       "origin": "http://otoroshi.oto.tools:9999",
       "localStorage": [
+        {
+          "name": "otoroshi-dark-light-mode",
+          "value": "dark"
+        },
         {
           "name": "Otoroshi-Tenant",
           "value": "tester"

@@ -5,10 +5,8 @@ import 'core-js/es/set';
 import './raf';
 
 import 'react-table/react-table.css';
-import './style/main.scss';
 
 import Symbol from 'es-symbol';
-import $ from 'jquery';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import browserUpdate from 'browser-update';
@@ -16,11 +14,11 @@ import { MultiLoginPage } from './pages/MultiLoginPage';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
+import './style/main.scss';
+
 if (!window.Symbol) {
   window.Symbol = Symbol;
 }
-window.$ = $;
-window.jQuery = $;
 
 function setupOutdatedBrowser() {
   browserUpdate({
