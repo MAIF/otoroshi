@@ -861,7 +861,7 @@ object GlobalConfig {
         "limitConcurrentRequests" -> o.limitConcurrentRequests,
         "maxConcurrentRequests"   -> o.maxConcurrentRequests,
         "maxHttp10ResponseSize"   -> o.maxHttp10ResponseSize,
-        "useCircuitBreakers"      -> o.useCircuitBreakers,
+        "useCircuitBreakers"      -> true, // [REMOVE SERVICEDESC] o.useCircuitBreakers,
         "apiReadOnly"             -> o.apiReadOnly,
         "u2fLoginOnly"            -> o.u2fLoginOnly,
         "trustXForwarded"         -> o.trustXForwarded,
@@ -916,7 +916,7 @@ object GlobalConfig {
             .getOrElse(false), // TODO : true by default after prod monitoring
           maxConcurrentRequests = (json \ "maxConcurrentRequests").asOpt[Long].getOrElse(1000),
           maxHttp10ResponseSize = (json \ "maxHttp10ResponseSize").asOpt[Long].getOrElse(4 * (1024 * 1024)),
-          useCircuitBreakers = (json \ "useCircuitBreakers").asOpt[Boolean].getOrElse(true),
+          useCircuitBreakers = true, // [REMOVE SERVICEDESC] (json \ "useCircuitBreakers").asOpt[Boolean].getOrElse(true),
           otoroshiId = (json \ "otoroshiId").asOpt[String].getOrElse(s"otoroshi_${IdGenerator.uuid}"),
           apiReadOnly = (json \ "apiReadOnly").asOpt[Boolean].getOrElse(false),
           u2fLoginOnly = (json \ "u2fLoginOnly").asOpt[Boolean].getOrElse(false),

@@ -803,14 +803,14 @@ export class DangerZonePage extends Component {
         //[REMOVE SERVICEDESC] label: '',
       //[REMOVE SERVICEDESC] },
     //[REMOVE SERVICEDESC] },
-    useCircuitBreakers: {
-      type: 'bool',
-      props: {
-        label: 'Use circuit breakers',
-        placeholder: '--',
-        help: 'Use circuit breaker on all services',
-      },
-    },
+    //[REMOVE SERVICEDESC] useCircuitBreakers: {
+    //[REMOVE SERVICEDESC]   type: 'bool',
+    //[REMOVE SERVICEDESC]   props: {
+    //[REMOVE SERVICEDESC]     label: 'Use circuit breakers',
+    //[REMOVE SERVICEDESC]     placeholder: '--',
+    //[REMOVE SERVICEDESC]     help: 'Use circuit breaker on all services',
+    //[REMOVE SERVICEDESC]   },
+    //[REMOVE SERVICEDESC] },
     streamEntityOnly: {
       type: 'bool',
       props: {
@@ -1362,7 +1362,7 @@ export class DangerZonePage extends Component {
     // 'streamEntityOnly',
     'autoLinkToDefaultGroup',
     //[REMOVE SERVICEDESC] 'useCircuitBreakerWarn',
-    'useCircuitBreakers',
+    //[REMOVE SERVICEDESC] 'useCircuitBreakers',
     value.logAnalyticsOnServer ? 'logAnalyticsOnServer' : null,
     'useAkkaHttpClient',
     'enableEmbeddedMetrics',
