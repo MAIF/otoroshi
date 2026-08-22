@@ -1150,7 +1150,8 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
 
   def getOtoroshiServices(customPort: Option[Int] = None, ws: WSClient = wsClient): Future[Seq[ServiceDescriptor]] = {
     def fetch() =
-      ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
+      //[REMOVE SERVICEDESC] ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
+      ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/routes")
         .withHttpHeaders(
           "Host"   -> "otoroshi-api.oto.tools",
           "Accept" -> "application/json"
@@ -1166,7 +1167,8 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       //   println(response.body[String])
       // }
       try {
-        response.json.as[JsArray].value.toSeq.map(e => ServiceDescriptor.fromJsons(e))
+        //[REMOVE SERVICEDESC] response.json.as[JsArray].value.toSeq.map(e => ServiceDescriptor.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => NgRoute.fromJsons(e).legacy)
       } catch {
         case e: Throwable => Seq.empty
       }
@@ -1378,13 +1380,18 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       customPort: Option[Int] = None,
       ws: WSClient = wsClient
   ): Future[(JsValue, Int)] = {
-    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
+    //[REMOVE SERVICEDESC] no more service descriptor api: the fixture is converted to a route,
+    //[REMOVE SERVICEDESC] exactly like the engine used to do at runtime. ids are preserved.
+    val route = NgRoute.fromServiceDescriptor(service, debug = false)(using ec, otoroshiComponents.env)
+    //[REMOVE SERVICEDESC] ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/routes")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
-      .post(Json.stringify(service.toJson))
+      //[REMOVE SERVICEDESC] .post(Json.stringify(service.toJson))
+      .post(Json.stringify(route.json))
       .map { resp =>
         (resp.json, resp.status)
       }
@@ -1554,18 +1561,22 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
   }
 
   def updateOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+    val route = NgRoute.fromServiceDescriptor(service, debug = false)(using ec, otoroshiComponents.env)
     wsClient
-      .url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
+      //[REMOVE SERVICEDESC] .url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${service.id}")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
-      .put(Json.stringify(service.toJson))
+      //[REMOVE SERVICEDESC] .put(Json.stringify(service.toJson))
+      .put(Json.stringify(route.json))
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      //[REMOVE SERVICEDESC] .andWait(1000.millis)
+      .andWait(2000.millis)
   }
 
   def updateOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
@@ -1630,7 +1641,8 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
 
   def deleteOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     wsClient
-      .url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
+      //[REMOVE SERVICEDESC] .url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${service.id}")
       .withHttpHeaders(
         "Host" -> "otoroshi-api.oto.tools"
         // "Content-Type" -> "application/json"

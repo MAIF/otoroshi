@@ -861,7 +861,7 @@ object GlobalConfig {
         "limitConcurrentRequests" -> o.limitConcurrentRequests,
         "maxConcurrentRequests"   -> o.maxConcurrentRequests,
         "maxHttp10ResponseSize"   -> o.maxHttp10ResponseSize,
-        "useCircuitBreakers"      -> o.useCircuitBreakers,
+        "useCircuitBreakers"      -> true, // [REMOVE SERVICEDESC] o.useCircuitBreakers,
         "apiReadOnly"             -> o.apiReadOnly,
         "u2fLoginOnly"            -> o.u2fLoginOnly,
         "trustXForwarded"         -> o.trustXForwarded,
@@ -916,7 +916,7 @@ object GlobalConfig {
             .getOrElse(false), // TODO : true by default after prod monitoring
           maxConcurrentRequests = (json \ "maxConcurrentRequests").asOpt[Long].getOrElse(1000),
           maxHttp10ResponseSize = (json \ "maxHttp10ResponseSize").asOpt[Long].getOrElse(4 * (1024 * 1024)),
-          useCircuitBreakers = (json \ "useCircuitBreakers").asOpt[Boolean].getOrElse(true),
+          useCircuitBreakers = true, // [REMOVE SERVICEDESC] (json \ "useCircuitBreakers").asOpt[Boolean].getOrElse(true),
           otoroshiId = (json \ "otoroshiId").asOpt[String].getOrElse(s"otoroshi_${IdGenerator.uuid}"),
           apiReadOnly = (json \ "apiReadOnly").asOpt[Boolean].getOrElse(false),
           u2fLoginOnly = (json \ "u2fLoginOnly").asOpt[Boolean].getOrElse(false),
@@ -1081,7 +1081,7 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
 
 case class OtoroshiExport(
     config: GlobalConfig,
-    descs: Seq[ServiceDescriptor] = Seq.empty,
+    //[REMOVE SERVICEDESC] descs: Seq[ServiceDescriptor] = Seq.empty,
     apikeys: Seq[ApiKey] = Seq.empty,
     groups: Seq[ServiceGroup] = Seq.empty,
     tmplts: Seq[ErrorTemplate] = Seq.empty,
@@ -1146,13 +1146,13 @@ case class OtoroshiExport(
     val finalConfig = GlobalConfig.fromJsons(config.toJson.asObject.deepMerge(cconfig))
     copy(
       config = finalConfig,
-      descs = customizeAndMergeArray[ServiceDescriptor](
-        descs,
-        customization.select("descs").asOpt[JsArray].getOrElse(Json.arr()),
-        ServiceDescriptor._fmt,
-        _.select("id").asString,
-        _.id
-      ),
+     //[REMOVE SERVICEDESC] descs = customizeAndMergeArray[ServiceDescriptor](
+     //[REMOVE SERVICEDESC]   descs,
+     //[REMOVE SERVICEDESC]   customization.select("descs").asOpt[JsArray].getOrElse(Json.arr()),
+     //[REMOVE SERVICEDESC]   ServiceDescriptor._fmt,
+     //[REMOVE SERVICEDESC]   _.select("id").asString,
+     //[REMOVE SERVICEDESC]   _.id
+     //[REMOVE SERVICEDESC] ),
       apikeys = customizeAndMergeArray[ApiKey](
         apikeys,
         customization.select("apikeys").asOpt[JsArray].getOrElse(Json.arr()),
@@ -1297,7 +1297,7 @@ case class OtoroshiExport(
       "simpleAdmins"       -> JsArray(simpleAdmins.map(_.json)),
       "serviceGroups"      -> JsArray(groups.map(_.toJson)),
       "apiKeys"            -> JsArray(apikeys.map(_.toJson)),
-      "serviceDescriptors" -> JsArray(descs.map(_.toJson)),
+      //[REMOVE SERVICEDESC] "serviceDescriptors" -> JsArray(descs.map(_.toJson)),
       "errorTemplates"     -> JsArray(tmplts.map(_.toJson)),
       "jwtVerifiers"       -> JsArray(jwtVerifiers.map(_.asJson)),
       "authConfigs"        -> JsArray(authConfigs.map(_.asJson)),

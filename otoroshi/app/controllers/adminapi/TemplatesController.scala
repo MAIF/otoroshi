@@ -7,7 +7,6 @@ import otoroshi.actions.ApiAction
 import otoroshi.auth.*
 import otoroshi.env.Env
 import otoroshi.events.*
-import otoroshi.models.ServiceDescriptor.toJson
 import otoroshi.models.*
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.models.{NgRoute, StoredNgBackend}
@@ -87,17 +86,17 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
       }
     }
 
-  def initiateService() =
-    ApiAction.async { ctx =>
-      ctx.checkRights(RightsChecker.Anyone) {
-        val desc = env.datastores.serviceDescriptorDataStore
-          .initiateNewDescriptor()
-          .copy(location = EntityLocation.ownEntityLocation(ctx.some)(using env))
-//        val finaldesc =
-//          desc.copy(location = desc.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        Ok(process(desc.toJson, ctx.request)).future
-      }
-    }
+//[REMOVE SERVICEDESC]   def initiateService() =
+//[REMOVE SERVICEDESC]     ApiAction.async { ctx =>
+//[REMOVE SERVICEDESC]       ctx.checkRights(RightsChecker.Anyone) {
+//[REMOVE SERVICEDESC]         val desc = env.datastores.serviceDescriptorDataStore
+//[REMOVE SERVICEDESC]           .initiateNewDescriptor()
+//[REMOVE SERVICEDESC]           .copy(location = EntityLocation.ownEntityLocation(ctx.some)(using env))
+//[REMOVE SERVICEDESC] //        val finaldesc =
+//[REMOVE SERVICEDESC] //          desc.copy(location = desc.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+//[REMOVE SERVICEDESC]         Ok(process(desc.toJson, ctx.request)).future
+//[REMOVE SERVICEDESC]       }
+//[REMOVE SERVICEDESC]     }
 
   def initiateTcpService() =
     ApiAction.async { ctx =>
@@ -276,22 +275,22 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
       ctx.checkRights(RightsChecker.Anyone) {
         val patch = ctx.request.body
         entity.toLowerCase() match {
-          case "services"     =>
-            patchTemplate[ServiceDescriptor](
-              env.datastores.serviceDescriptorDataStore
-                .initiateNewDescriptor()
-                .copy(
-                  subdomain = IdGenerator.token(32).toLowerCase(),
-                  domain = s"${IdGenerator.token(32).toLowerCase()}.${IdGenerator.token(8).toLowerCase()}"
-                )
-                .applyOn(v =>
-                  v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-                )
-                .toJson,
-              patch,
-              ServiceDescriptor._fmt,
-              _.save()
-            )
+          //[REMOVE SERVICEDESC] case "services"     =>
+          //[REMOVE SERVICEDESC]   patchTemplate[ServiceDescriptor](
+          //[REMOVE SERVICEDESC]     env.datastores.serviceDescriptorDataStore
+          //[REMOVE SERVICEDESC]       .initiateNewDescriptor()
+          //[REMOVE SERVICEDESC]       .copy(
+          //[REMOVE SERVICEDESC]         subdomain = IdGenerator.token(32).toLowerCase(),
+          //[REMOVE SERVICEDESC]         domain = s"${IdGenerator.token(32).toLowerCase()}.${IdGenerator.token(8).toLowerCase()}"
+          //[REMOVE SERVICEDESC]       )
+          //[REMOVE SERVICEDESC]       .applyOn(v =>
+          //[REMOVE SERVICEDESC]         v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+          //[REMOVE SERVICEDESC]       )
+          //[REMOVE SERVICEDESC]       .toJson,
+          //[REMOVE SERVICEDESC]     patch,
+          //[REMOVE SERVICEDESC]     ServiceDescriptor._fmt,
+          //[REMOVE SERVICEDESC]     _.save()
+          //[REMOVE SERVICEDESC]   )
           case "groups"       =>
             patchTemplate[ServiceGroup](
               env.datastores.serviceGroupDataStore
@@ -590,14 +589,14 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
               )
               .json
           )
-        case "ServiceDescriptor"             =>
-          FastFuture.successful(
-            ServiceDescriptor
-              .fromJsons(
-                toJson(env.datastores.serviceDescriptorDataStore.template(env)).as[JsObject].deepMerge(resource)
-              )
-              .json
-          )
+        //[REMOVE SERVICEDESC] case "ServiceDescriptor"             =>
+        //[REMOVE SERVICEDESC]   FastFuture.successful(
+        //[REMOVE SERVICEDESC]     ServiceDescriptor
+        //[REMOVE SERVICEDESC]       .fromJsons(
+        //[REMOVE SERVICEDESC]         toJson(env.datastores.serviceDescriptorDataStore.template(env)).as[JsObject].deepMerge(resource)
+        //[REMOVE SERVICEDESC]       )
+        //[REMOVE SERVICEDESC]       .json
+        //[REMOVE SERVICEDESC]   )
         case "ServiceGroup"                  =>
           FastFuture.successful(
             ServiceGroup

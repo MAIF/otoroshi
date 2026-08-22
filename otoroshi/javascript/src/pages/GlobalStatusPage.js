@@ -139,11 +139,13 @@ export class GlobalStatusPage extends Component {
                           <h3>{health.service}</h3>
                         </Link>
                       )}
+                      {/*[REMOVE SERVICEDESC]
                       {health.kind === 'service' && (
                         <Link to={`/lines/${health.line}/services/${health.descriptor}/health`}>
                           <h3>{health.service}</h3>
                         </Link>
                       )}
+                      */}
                       <Uptime
                         key={idx}
                         className="global"

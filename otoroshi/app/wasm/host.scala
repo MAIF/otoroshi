@@ -886,7 +886,7 @@ object State {
             "jwtVerifiers"        -> JsArray(proxyState.allJwtVerifiers().map(_.json)),
             "certificates"        -> JsArray(proxyState.allCertificates().map(_.json)),
             "authModules"         -> JsArray(proxyState.allAuthModules().map(_.json)),
-            "services"            -> JsArray(proxyState.allServices().map(_.json)),
+            //[REMOVE SERVICEDESC] "services"            -> JsArray(proxyState.allServices().map(_.json)),
             "teams"               -> JsArray(proxyState.allTeams().map(_.json)),
             "tenants"             -> JsArray(proxyState.allTenants().map(_.json)),
             "serviceGroups"       -> JsArray(proxyState.allServiceGroups().map(_.json)),
@@ -927,7 +927,7 @@ object State {
             case ("jwtVerifiers", None)        => JsArray(env.proxyState.allJwtVerifiers().map(_.json))
             case ("certificates", None)        => JsArray(env.proxyState.allCertificates().map(_.json))
             case ("authModules", None)         => JsArray(env.proxyState.allAuthModules().map(_.json))
-            case ("services", None)            => JsArray(env.proxyState.allServices().map(_.json))
+            //[REMOVE SERVICEDESC] case ("services", None)            => JsArray(env.proxyState.allServices().map(_.json))
             case ("teams", None)               => JsArray(env.proxyState.allTeams().map(_.json))
             case ("tenants", None)             => JsArray(env.proxyState.allTenants().map(_.json))
             case ("serviceGroups", None)       => JsArray(env.proxyState.allServiceGroups().map(_.json))
@@ -947,7 +947,7 @@ object State {
             case ("jwtVerifiers", Some(key))        => env.proxyState.jwtVerifier(key).map(_.json).getOrElse(JsNull)
             case ("certificates", Some(key))        => env.proxyState.certificate(key).map(_.json).getOrElse(JsNull)
             case ("authModules", Some(key))         => env.proxyState.authModule(key).map(_.json).getOrElse(JsNull)
-            case ("services", Some(key))            => env.proxyState.service(key).map(_.json).getOrElse(JsNull)
+            //[REMOVE SERVICEDESC] case ("services", Some(key))            => env.proxyState.service(key).map(_.json).getOrElse(JsNull)
             case ("teams", Some(key))               => env.proxyState.team(key).map(_.json).getOrElse(JsNull)
             case ("tenants", Some(key))             => env.proxyState.tenant(key).map(_.json).getOrElse(JsNull)
             case ("serviceGroups", Some(key))       => env.proxyState.serviceGroup(key).map(_.json).getOrElse(JsNull)

@@ -128,13 +128,13 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
     }
     ().future
   }
-  def asDescriptors(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(
-      using
-      env: Env,
-      ec: ExecutionContext
-  ): Future[Seq[ServiceDescriptor]] = {
-    KubernetesIngressToDescriptor.asDescriptors(this)(conf, otoConfig, client, logger)(using env, ec)
-  }
+  //[REMOVE SERVICEDESC] def asDescriptors(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(
+  //[REMOVE SERVICEDESC]     using
+  //[REMOVE SERVICEDESC]     env: Env,
+  //[REMOVE SERVICEDESC]     ec: ExecutionContext
+  //[REMOVE SERVICEDESC] ): Future[Seq[ServiceDescriptor]] = {
+  //[REMOVE SERVICEDESC]   KubernetesIngressToDescriptor.asDescriptors(this)(conf, otoConfig, client, logger)(using env, ec)
+  //[REMOVE SERVICEDESC] }
 
   def asRoutes(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(
       using

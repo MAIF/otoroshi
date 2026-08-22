@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { ServiceSidebar } from '../components/ServiceSidebar';
+//[REMOVE SERVICEDESC] import { ServiceSidebar } from '../components/ServiceSidebar';
 import { RoundChart, Histogram } from '../components/recharts';
 import { converterBase2 } from 'byte-converter';
 import moment from 'moment';
@@ -29,13 +29,14 @@ export class ServiceAnalyticsPage extends Component {
         />
       );
     }
-    return (
-      <ServiceSidebar
-        env={this.state.service.env}
-        serviceId={this.props.params.serviceId}
-        name={name}
-      />
-    );
+    return null;
+    //[REMOVE SERVICEDESC] return (
+    //[REMOVE SERVICEDESC] <ServiceSidebar
+    //[REMOVE SERVICEDESC] env={this.state.service.env}
+    //[REMOVE SERVICEDESC] serviceId={this.props.params.serviceId}
+    //[REMOVE SERVICEDESC] name={name}
+    //[REMOVE SERVICEDESC] />
+    //[REMOVE SERVICEDESC] );
   }
 
   componentDidMount() {
@@ -44,7 +45,8 @@ export class ServiceAnalyticsPage extends Component {
       : this.props.setTitle(`Service analytics`);
     const fu = this.onRoutes
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
-      : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+      //[REMOVE SERVICEDESC] : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+      : Promise.resolve({});
     fu.then((service) => {
       this.setState({ service }, () => {
         this.update();

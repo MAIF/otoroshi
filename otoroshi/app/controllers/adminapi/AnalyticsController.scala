@@ -10,9 +10,11 @@ import otoroshi.env.Env
 import otoroshi.events.*
 import otoroshi.jobs.updates.*
 import otoroshi.models.{RightsChecker, ServiceDescriptor}
+import otoroshi.next.models.NgRoute
+import otoroshi.utils.controllers.*
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.*
 import play.api.mvc.*
 import reactor.core.publisher.Sinks
 import utils.EntityFiltering
@@ -67,7 +69,7 @@ class AnalyticsTmpListenerActor(sink: Sinks.Many[String], ctx: ApiActionContext[
 
 class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
     env: Env
-) extends AbstractController(cc) {
+) extends AbstractController(cc) with AdminApiHelper {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
@@ -99,9 +101,9 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
   }
 
   def findServiceById(serviceId: String): Future[Option[ServiceDescriptor]] = {
-    env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
-      case Some(service) => service.some.vfuture
-      case None          =>
+    //[REMOVE SERVICEDESC] env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
+    //[REMOVE SERVICEDESC]   case Some(service) => service.some.vfuture
+    //[REMOVE SERVICEDESC]   case None          =>
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => service.legacy.some.vfuture
           case None          =>
@@ -110,7 +112,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
               case None          => None
             }
         }
-    }
+    //[REMOVE SERVICEDESC] }
   }
 
   def withEventStoreAndParser[A](parser: BodyParser[A])(f: ApiActionContext[A] => Future[Result]): Action[A] = {
@@ -269,7 +271,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
       val paginationPosition      = (paginationPage - 1) * paginationPageSize
 
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        env.datastores.serviceDescriptorDataStore.count().flatMap { nbrOfServices =>
+        env.proxyState.allRoutes().size.vfuture.flatMap { nbrOfServices =>
           val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
           val fromDate = from.map(f => new DateTime(f.toLong))
@@ -381,7 +383,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
           from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
         val toDate   = to.map(f => new DateTime(f.toLong))
 
-        val all_services          = env.proxyState.allServices()
+        val all_services          = Seq.empty[ServiceDescriptor] //[REMOVE SERVICEDESC] env.proxyState.allServices()
         val all_routes            = env.proxyState.allRawRoutes()
         val all_routeCompositions = env.proxyState.allRouteCompositions()
         val all_descs             =
@@ -668,20 +670,20 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
           from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
         val toDate   = to.map(f => new DateTime(f.toLong))
 
-        val eventualDescriptors: Future[Seq[ServiceDescriptor]] = ctx.request.body.asOpt[JsArray] match {
-          case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]).toSeq)
-          case None           => env.datastores.serviceDescriptorDataStore.findAll()
+        val eventualDescriptors: Future[Seq[NgRoute]] = ctx.request.body.asOpt[JsArray] match {
+          case Some(services) => env.datastores.routeDataStore.findAllById(services.value.map(_.as[String]).toSeq)
+          case None           => env.datastores.routeDataStore.findAll()
         }
 
         eventualDescriptors
           .map(_.filter(d => ctx.canUserRead(d)))
           .map {
-            case seq: Seq[ServiceDescriptor] if seq.nonEmpty => Some(seq)
+            case seq: Seq[NgRoute] if seq.nonEmpty => Some(seq)
             case _                          => None
           }
           .flatMap {
             case Some(desc) =>
-              analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
+              analyticsService.fetchServicesStatus(desc.map(_.legacy), fromDate, toDate).map {
                 case Some(value) => Ok(value)
                 case None        => NotFound(Json.obj("error" -> "No entity found"))
               }
@@ -721,21 +723,22 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
           from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
         val toDate   = to.map(f => new DateTime(f.toLong))
 
-        env.datastores.serviceDescriptorDataStore
-          .findByGroup(groupId)
+        env.proxyState.allRoutes()
+          .filter(_.groups.contains(groupId))
+          .vfuture
           .map(
             _.filter(d => ctx.canUserRead(d))
-              .filter(d => d.healthCheck.enabled)
+              .filter(d => d.backend.healthCheck.exists(_.enabled))
               .sortWith(_.name < _.name)
           )
           .map {
-            case seq: Seq[ServiceDescriptor] if seq.nonEmpty => Some(seq)
+            case seq: Seq[NgRoute] if seq.nonEmpty => Some(seq)
             case _                         => None
           }
           .flatMap {
             case None       => NotFound(Json.obj("error" -> "No entity found")).future
             case Some(desc) =>
-              analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
+              analyticsService.fetchServicesStatus(desc.map(_.legacy), fromDate, toDate).map {
                 case Some(value) => Ok(value)
                 case None        => NotFound(Json.obj("error" -> "No entity found"))
               }
@@ -766,4 +769,24 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
           }
       }
     }
+
+  def serviceHealth(serviceId: String) = ApiAction.async { ctx =>
+    ctx.canReadService(serviceId) {
+      val options = SendAuditAndAlert(
+        "ACCESS_SERVICE_HEALTH",
+        "User accessed a service descriptor health",
+        None,
+        Json.obj("serviceId" -> serviceId),
+        ctx
+      )
+      fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: HealthCheckEvent) => e.toJson, options) {
+        env.datastores.routeDataStore.findById(serviceId).flatMap {
+          case None =>
+            JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).leftf[Seq[HealthCheckEvent]]
+          case Some(route) =>
+            env.datastores.healthCheckDataStore.findAll(route.legacy).fright[JsonApiError]
+        }
+      }
+    }
+  }
 }

@@ -103,40 +103,47 @@ class ServiceDescriptorMigrationJob extends Job {
   }
 
   override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
-    if (env.configuration.getOptional[Boolean]("otoroshi.service-descriptors-migration-job.enabled").getOrElse(false)) {
-      warn("Running full Service Descriptors migration !!!")
-      warn("")
+    //[REMOVE SERVICEDESC] if (env.configuration.getOptional[Boolean]("otoroshi.service-descriptors-migration-job.enabled").getOrElse(false)) {
+    //[REMOVE SERVICEDESC]   warn("Running full Service Descriptors migration !!!")
+    //[REMOVE SERVICEDESC]   warn("")
       env.datastores.serviceDescriptorDataStore
         .findAll(force = true)
         .flatMap { descriptors =>
-          val backup = new File("./service-descriptors-backup.json")
-          warn(s" - writing a backup to '${backup.getAbsolutePath}'")
-          warn("")
-          val json   = JsArray(descriptors.map(_.json))
-          Files.writeString(backup.toPath, json.stringify)
-          Source(descriptors.toList)
-            .mapAsync(1) { descriptor =>
-              warn(s" - migrating '${descriptor.name}' ...")
-              val route = NgRoute.fromServiceDescriptor(descriptor, debug = false)
-              route
-                .save()
-                .flatMap { _ =>
-                  env.datastores.serviceDescriptorDataStore.delete(descriptor).map { _ =>
-                    warn(s" - migrating '${descriptor.name}' - OK")
+          if (descriptors.nonEmpty) {
+            val backup = new File("./service-descriptors-backup.json")
+            warn("Running full Service Descriptors migration !!!")
+            warn("")
+            warn(s" - writing a backup to '${backup.getAbsolutePath}'")
+            warn("")
+            val json = JsArray(descriptors.map(_.json))
+            Files.writeString(backup.toPath, json.stringify)
+            Source(descriptors.toList)
+              .mapAsync(1) { descriptor =>
+                warn(s" - migrating service descriptor '${descriptor.name}' ...")
+                val route = NgRoute.fromServiceDescriptor(descriptor, debug = false)
+                route
+                  .save()
+                  .flatMap { _ =>
+                    env.datastores.serviceDescriptorDataStore.delete(descriptor).map { _ =>
+                      warn(s" - migrating service descriptor '${descriptor.name}' - OK")
+                    }
                   }
-                }
-                .recover { case t: Throwable =>
-                  error(s"error while migrating '${descriptor.name}'", t)
-                }
-            }
-            .runWith(Sink.ignore)(using env.otoroshiMaterializer)
-            .andThen { case _ =>
-              warn("migration done !")
-            }
+                  .recover { case t: Throwable =>
+                    error(s"error while migrating service descriptor '${descriptor.name}'", t)
+                  }
+              }
+              .runWith(Sink.ignore)(using env.otoroshiMaterializer)
+              .andThen { case _ =>
+                warn("")
+                warn(s"migration of ${descriptors.size} service descriptors done !")
+              }
+          } else {
+            ().future
+          }
         }
         .map(_ => ())
-    } else {
-      ().future
-    }
+    //[REMOVE SERVICEDESC] } else {
+    //[REMOVE SERVICEDESC]   ().future
+    //[REMOVE SERVICEDESC] }
   }
 }
