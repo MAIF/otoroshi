@@ -229,7 +229,10 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       case obj @ JsObject(_) => Ok(NgRoute.fromServiceDescriptor(ServiceDescriptor.fromJsons(
         env.datastores.serviceDescriptorDataStore.template(env).json.as[JsObject].deepMerge(obj)
       ), debug = false).json)
-      case arr @ JsArray(seq) => Ok(JsArray(seq.map { obj =>
+      case arr @ JsArray(seq) => Ok(JsArray(seq.filter {
+        case JsObject(_) => true
+        case _ => false
+      } .map { obj =>
         NgRoute.fromServiceDescriptor(ServiceDescriptor.fromJsons(
           env.datastores.serviceDescriptorDataStore.template(env).json.as[JsObject].deepMerge(obj.asObject)
         ), debug = false).json
