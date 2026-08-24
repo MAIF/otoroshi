@@ -28,6 +28,52 @@ import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+case class NgPluginsWithOverride(plugins: NgPlugins, overrides: Boolean) {
+  def json: JsValue = Json.obj(
+    "plugins" -> plugins.json,
+    "overrides" -> overrides,
+  )
+}
+
+object NgPluginsWithOverride {
+  val format = new Format[NgPluginsWithOverride] {
+    override def writes(o: NgPluginsWithOverride): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgPluginsWithOverride] = Try {
+      NgPluginsWithOverride(
+        plugins = NgPlugins.readFrom(json.select("plugins")),
+        overrides = json.select("overrides").asOpt[Boolean].getOrElse(false)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+  }
+}
+
+case class ApiRef(api: String, plan: String, subscription: String) {
+  def json: JsValue = Json.obj(
+    "api" -> api,
+    "plan" -> plan,
+    "sub" -> subscription,
+  )
+}
+
+object ApiRef {
+  val format = new Format[ApiRef] {
+    override def writes(o: ApiRef): JsValue = o.json
+    override def reads(json: JsValue): JsResult[ApiRef] = Try {
+      ApiRef(
+        api = json.selectAsString("api"),
+        plan = json.selectAsString("plan"),
+        subscription = json.selectAsString("sub"),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+  }
+}
+
 sealed trait ApiState {
   def name: String
 }
@@ -295,13 +341,36 @@ case class ApiDocumentationResourceRef(raw: JsObject) {
     raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
 }
 
-trait ApiDocumentationAccessModeConfiguration {
+trait ApiAccessModeConfiguration {
   def apiKind: ApiKind
+  def plugins: NgPlugins = NgPlugins(Seq.empty) // TODO: implement for each kind with dedicated plugin
+}
+
+case class KeylessAccessModeConfiguration(
+  expr: Option[String] = None
+) extends ApiAccessModeConfiguration {
+  override def apiKind: ApiKind = ApiKind.Keyless
+}
+
+object KeylessAccessModeConfiguration {
+  def fmt = new Format[KeylessAccessModeConfiguration] {
+    override def reads(json: JsValue): JsResult[KeylessAccessModeConfiguration] = Try {
+      KeylessAccessModeConfiguration(
+        expr = json.selectAsOptString("expr")
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: KeylessAccessModeConfiguration): JsValue             = Json.obj(
+      "expr" -> o.expr
+    )
+  }
 }
 
 case class JWTAccessModeConfiguration(
     verifier: Option[String] = None
-) extends ApiDocumentationAccessModeConfiguration {
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.JWT
 }
 
@@ -324,7 +393,7 @@ object JWTAccessModeConfiguration {
 case class MtlsAccessModeConfiguration(
     regexSubjectDNs: Seq[String] = Seq.empty,
     regexIssuerDNs: Seq[String] = Seq.empty
-) extends ApiDocumentationAccessModeConfiguration {
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Mtls
 }
 
@@ -348,7 +417,7 @@ object MtlsAccessModeConfiguration {
 
 case class OAuth2RemoteAccessModeConfiguration(
     verifier: Option[String] = None
-) extends ApiDocumentationAccessModeConfiguration {
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Remote
 }
 
@@ -371,7 +440,7 @@ object OAuth2RemoteAccessModeConfiguration {
 case class OAuth2AccessModeConfiguration(
     defaultKeyPair: String,
     expiration: Int
-) extends ApiDocumentationAccessModeConfiguration {
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Local
 }
 
@@ -406,7 +475,7 @@ case class ApikeyAccessModeConfiguration(
     rotation: ApiKeyRotation = ApiKeyRotation(),
     tags: Seq[String] = Seq.empty[String],
     metadata: Map[String, String] = Map.empty[String, String]
-) extends ApiDocumentationAccessModeConfiguration {
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Apikey
   def json: JsValue = {
     val enabled            = validUntil match {
@@ -539,15 +608,15 @@ object ApiDocumentationPlanVisibilityKind       {
   }
 }
 
-case class ApiDocumentationPlanVisibility(kind: ApiDocumentationPlanVisibilityKind, config: JsObject = Json.obj()) {
-  def json: JsValue = ApiDocumentationPlanVisibility.format.writes(this)
+case class ApiPlanVisibility(kind: ApiDocumentationPlanVisibilityKind, config: JsObject = Json.obj()) {
+  def json: JsValue = ApiPlanVisibility.format.writes(this)
 }
 
-object ApiDocumentationPlanVisibility {
-  val Public: ApiDocumentationPlanVisibility = ApiDocumentationPlanVisibility(ApiDocumentationPlanVisibilityKind.Public)
-  val format                                 = new Format[ApiDocumentationPlanVisibility] {
-    override def reads(json: JsValue): JsResult[ApiDocumentationPlanVisibility] = Try {
-      ApiDocumentationPlanVisibility(
+object ApiPlanVisibility {
+  val Public: ApiPlanVisibility = ApiPlanVisibility(ApiDocumentationPlanVisibilityKind.Public)
+  val format                                 = new Format[ApiPlanVisibility] {
+    override def reads(json: JsValue): JsResult[ApiPlanVisibility] = Try {
+      ApiPlanVisibility(
         kind = ApiDocumentationPlanVisibilityKind(json.select("kind").asOptString.getOrElse("public")),
         config = json.select("config").asOpt[JsObject].getOrElse(Json.obj())
       )
@@ -557,7 +626,7 @@ object ApiDocumentationPlanVisibility {
         JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
-    override def writes(o: ApiDocumentationPlanVisibility): JsValue             = Json.obj(
+    override def writes(o: ApiPlanVisibility): JsValue             = Json.obj(
       "kind"   -> o.kind.json,
       "config" -> o.config
     )
@@ -588,16 +657,16 @@ object ApiDocumentationPlanValidationKind       {
   }
 }
 
-case class ApiDocumentationPlanValidation(kind: ApiDocumentationPlanValidationKind, config: JsObject = Json.obj()) {
+case class ApiPlanValidation(kind: ApiDocumentationPlanValidationKind, config: JsObject = Json.obj()) {
   def isAuto: Boolean = kind == ApiDocumentationPlanValidationKind.Auto
-  def json: JsValue   = ApiDocumentationPlanValidation.format.writes(this)
+  def json: JsValue   = ApiPlanValidation.format.writes(this)
 }
-object ApiDocumentationPlanValidation                                                                              {
-  val Auto   = ApiDocumentationPlanValidation(ApiDocumentationPlanValidationKind.Auto)
-  val format = new Format[ApiDocumentationPlanValidation] {
+object ApiPlanValidation                                                                              {
+  val Auto   = ApiPlanValidation(ApiDocumentationPlanValidationKind.Auto)
+  val format = new Format[ApiPlanValidation] {
 
-    override def reads(json: JsValue): JsResult[ApiDocumentationPlanValidation] = Try {
-      ApiDocumentationPlanValidation(
+    override def reads(json: JsValue): JsResult[ApiPlanValidation] = Try {
+      ApiPlanValidation(
         kind = ApiDocumentationPlanValidationKind(json.select("kind").asOptString.getOrElse("auto")),
         config = json.select("config").asOpt[JsObject].getOrElse(Json.obj())
       )
@@ -608,14 +677,14 @@ object ApiDocumentationPlanValidation                                           
       case Success(value) => JsSuccess(value)
     }
 
-    override def writes(o: ApiDocumentationPlanValidation): JsValue = Json.obj(
+    override def writes(o: ApiPlanValidation): JsValue = Json.obj(
       "kind"   -> o.kind.json,
       "config" -> o.config
     )
   }
 }
 
-case class ApiDocumentationPlan(raw: JsObject) {
+case class ApiPlan(raw: JsObject) {
   lazy val accessModeConfigurationType                                              = raw.selectAsOptString("access_mode_configuration_type").getOrElse("keyless")
   lazy val id: String                                                               = raw.selectAsString("id")
   lazy val name: String                                                             = raw.selectAsString("name")
@@ -626,8 +695,9 @@ case class ApiDocumentationPlan(raw: JsObject) {
       .select("rateLimiting")
       .asOpt[JsObject]
       .flatMap(rateLimiting => rateLimiting.select("strategy").asOpt(using ThrottlingStrategyConfig.fmt))
-  lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
+  lazy val accessModeConfiguration: Option[ApiAccessModeConfiguration] =
     accessModeConfigurationType match {
+      // TODO: case "keyless"       => (raw \ "access_mode_configuration").asOpt(using KeylessAccessModeConfiguration.fmt)
       case "apikey"        => (raw \ "access_mode_configuration").asOpt(using ApikeyAccessModeConfiguration.fmt)
       case "jwt"           => (raw \ "access_mode_configuration").asOpt(using JWTAccessModeConfiguration.fmt)
       case "mtls"          => (raw \ "access_mode_configuration").asOpt(using MtlsAccessModeConfiguration.fmt)
@@ -643,16 +713,23 @@ case class ApiDocumentationPlan(raw: JsObject) {
   }
   lazy val tags: Seq[String]                                                        = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val metadata: Map[String, String]                                            = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
-  lazy val validation: ApiDocumentationPlanValidation                               = raw
+  lazy val validation: ApiPlanValidation                               = raw
     .select("validation")
     .asOpt[JsObject]
-    .flatMap(o => ApiDocumentationPlanValidation.format.reads(o).asOpt)
-    .getOrElse(ApiDocumentationPlanValidation.Auto)
-  lazy val visibility: ApiDocumentationPlanVisibility                               = raw
+    .flatMap(o => ApiPlanValidation.format.reads(o).asOpt)
+    .getOrElse(ApiPlanValidation.Auto)
+  lazy val visibility: ApiPlanVisibility                               = raw
     .select("visibility")
     .asOpt[JsObject]
-    .flatMap(o => ApiDocumentationPlanVisibility.format.reads(o).asOpt)
-    .getOrElse(ApiDocumentationPlanVisibility.Public)
+    .flatMap(o => ApiPlanVisibility.format.reads(o).asOpt)
+    .getOrElse(ApiPlanVisibility.Public)
+  lazy val plugins: Option[NgPluginsWithOverride] =
+    raw.select("plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt)
+  lazy val hasPlugins: Boolean = accessModeConfiguration.isDefined || plugins.isDefined
+  lazy val computedPlugins: NgPluginsWithOverride = NgPluginsWithOverride(
+    plugins = NgPlugins(accessModeConfiguration.map(_.plugins.slots).getOrElse(Seq.empty) ++ plugins.map(_.plugins.slots).getOrElse(Seq.empty)),
+    overrides = plugins.map(_.overrides).getOrElse(false),
+  )
 }
 
 case class ApiDocumentationSource(raw: JsObject) {
@@ -914,8 +991,8 @@ object ApiSubscription {
   val METADATA_AND_TAGS_SEPARATOR = " | "
   val CORE_METADATA               = Seq("updated_at")
 
-  private def generateNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(using
-      env: Env
+  private def generateNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
+                                                                                                env: Env
   ) = {
     val configPlan = plan.accessModeConfiguration
       .map(_.asInstanceOf[ApikeyAccessModeConfiguration])
@@ -953,8 +1030,8 @@ object ApiSubscription {
       .copy(enabled = subscription.status != ApiSubscriptionDisabled)
   }
 
-  private def createNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(using
-      env: Env
+  private def createNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
+                                                                                              env: Env
   ) = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
@@ -991,8 +1068,8 @@ object ApiSubscription {
     currentApikeyTags.filter(key => !managed_keys.contains(key))
   }
 
-  private def updateApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(using
-      env: Env
+  private def updateApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
+                                                                                           env: Env
   ): Future[Seq[Either[String, Boolean]]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
@@ -1025,11 +1102,11 @@ object ApiSubscription {
   }
 
   def handleSubscriptionChanged(
-      api: Api,
-      plan: ApiDocumentationPlan,
-      subscription: ApiSubscription,
-      action: WriteAction,
-      isDraft: Boolean
+                                 api: Api,
+                                 plan: ApiPlan,
+                                 subscription: ApiSubscription,
+                                 action: WriteAction,
+                                 isDraft: Boolean
   )(using
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
@@ -1456,38 +1533,38 @@ object ApiStateHook {
 }
 
 case class Api(
-    kind: String = "Api",
-    location: EntityLocation,
-    id: String,
-    name: String,
-    description: String,
-    domain: String,
-    contextPath: String,
-    tags: Seq[String] = Seq.empty,
-    metadata: Map[String, String] = Map.empty,
-    owner: UserRef = UserRef.empty,
-    members: Seq[UserRef] = Seq.empty,
-    visibility: ApiVisibility = ApiVisibility.Public,
-    version: String,
-    versions: Seq[String] = Seq("0.0.1"),
-    debugFlow: Boolean,
-    capture: Boolean,
-    exportReporting: Boolean,
-    groups: Seq[String],
-    state: ApiState,
-    enabled: Boolean = true,
-    blueprint: ApiBlueprint,
-    routes: Seq[ApiRoute] = Seq.empty,
-    backends: Seq[ApiBackend] = Seq.empty,
-    plans: Seq[ApiDocumentationPlan] = Seq.empty,
-    flows: Seq[ApiFlows] = Seq.empty,
-    clientsBackendConfig: Seq[ApiBackendClient] = Seq.empty,
-    documentation: Option[ApiDocumentation] = None,
-    deployments: Seq[ApiDeployment] = Seq.empty,
-    clients: Seq[ApiClient] = Seq.empty,
-    testing: ApiTesting,
-    hooks: Seq[ApiStateHook] = Seq.empty
-    // TODO: monitoring and heath ????
+                kind: String = "Api",
+                location: EntityLocation,
+                id: String,
+                name: String,
+                description: String,
+                domain: String,
+                contextPath: String,
+                tags: Seq[String] = Seq.empty,
+                metadata: Map[String, String] = Map.empty,
+                owner: UserRef = UserRef.empty,
+                members: Seq[UserRef] = Seq.empty,
+                visibility: ApiVisibility = ApiVisibility.Public,
+                version: String,
+                versions: Seq[String] = Seq("0.0.1"),
+                debugFlow: Boolean,
+                capture: Boolean,
+                exportReporting: Boolean,
+                groups: Seq[String],
+                state: ApiState,
+                enabled: Boolean = true,
+                blueprint: ApiBlueprint,
+                routes: Seq[ApiRoute] = Seq.empty,
+                backends: Seq[ApiBackend] = Seq.empty,
+                plans: Seq[ApiPlan] = Seq.empty,
+                flows: Seq[ApiFlows] = Seq.empty,
+                clientsBackendConfig: Seq[ApiBackendClient] = Seq.empty,
+                documentation: Option[ApiDocumentation] = None,
+                deployments: Seq[ApiDeployment] = Seq.empty,
+                clients: Seq[ApiClient] = Seq.empty,
+                testing: ApiTesting,
+                hooks: Seq[ApiStateHook] = Seq.empty
+                // TODO: monitoring and heath ????
 ) extends EntityLocationSupport {
   override def internalId: String = id
 
@@ -1579,7 +1656,7 @@ case class Api(
 
   case class PluginWithConfig(pluginId: String, config: JsValue = Json.obj(), pluginIndex: Option[PluginIndex] = None)
 
-  private def applyPlan(route: NgRoute, plan: ApiDocumentationPlan): NgRoute = {
+  private def applyPlan(route: NgRoute, plan: ApiPlan): NgRoute = {
     val plugins = plan.accessModeConfigurationType match {
       case "apikey"        =>
         Seq(
@@ -2105,7 +2182,7 @@ object Api {
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiStateHook.format.reads(v).asOpt))
           .getOrElse(Seq.empty).toSeq,
-        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiDocumentationPlan(o))
+        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiPlan(o))
       )
     } match {
       case Failure(ex)    =>

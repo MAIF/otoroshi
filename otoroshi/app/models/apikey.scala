@@ -7,19 +7,12 @@ import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
+
 import java.nio.charset.StandardCharsets
 import com.google.common.hash.Hashing
+import next.models.*
 import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
@@ -33,13 +26,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{
-  BetterDecodedJWT,
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
@@ -211,6 +198,8 @@ case class ApiKey(
     restrictions: Restrictions = Restrictions(),
     validUntil: Option[DateTime] = None,
     rotation: ApiKeyRotation = ApiKeyRotation(),
+    apiRef: Option[ApiRef] = None,
+    plugins: Option[NgPluginsWithOverride] = None,
     tags: Seq[String] = Seq.empty[String],
     metadata: Map[String, String] = Map.empty[String, String],
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
@@ -243,7 +232,7 @@ case class ApiKey(
   def authorizedOnService(id: String): Boolean            = authorizedEntities.contains(ServiceDescriptorIdentifier(id))
   def authorizedOnGroup(id: String): Boolean              = authorizedEntities.contains(ServiceGroupIdentifier(id))
   def authorizedOnRoute(id: String): Boolean              = authorizedEntities.contains(RouteIdentifier(id))
-  def authorizedOnApi(id: String): Boolean                = authorizedEntities.contains(ApiIdentifier(id))
+  def authorizedOnApi(id: String): Boolean                = apiRef.exists(_.api == id) || authorizedEntities.contains(ApiIdentifier(id))
   def authorizedOnRouteComposition(id: String): Boolean   = authorizedEntities.contains(RouteCompositionIdentifier(id))
   def authorizedOnOneGroupFrom(ids: Seq[String]): Boolean = {
     val identifiers = ids.map(ServiceGroupIdentifier.apply)
@@ -459,6 +448,8 @@ object ApiKey {
         "constrainedServicesOnly" -> apk.constrainedServicesOnly,
         "restrictions"            -> apk.restrictions.json,
         "rotation"                -> apk.rotation.json,
+        "apiRef"                  -> apk.apiRef.map(_.json).getOrElse(JsNull).as[JsValue],
+        "plugins"                 -> apk.plugins.map(_.json).getOrElse(JsNull).as[JsValue],
         "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
         "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
         "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).view.mapValues(JsString.apply).toMap)
@@ -526,6 +517,8 @@ object ApiKey {
               .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
               .getOrElse(ApiKeyRotation()),
             validUntil = rawValidUntil,
+            apiRef = (json \ "apiRef").asOpt[JsObject].flatMap(o => ApiRef.format.reads(o).asOpt),
+            plugins = (json \ "plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt),
             tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             metadata = (json \ "metadata")
               .asOpt[Map[String, String]]

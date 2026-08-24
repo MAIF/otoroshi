@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import next.models.{Api, ApiDocumentationPlan}
+import next.models.{Api, ApiPlan}
 import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection}
 import otoroshi.next.models.*
 import otoroshi.next.proxy.NgExecutionReport

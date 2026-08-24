@@ -10,7 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.util.Try
 import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.KaleidoscopeShim.*
-import next.models.{Api, ApiDocumentationPlan}
+import next.models.{Api, ApiPlan}
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
 import otoroshi.security.IdGenerator
@@ -80,17 +80,17 @@ object GlobalExpressionLanguage {
   }
 
   def apply(
-      value: String,
-      req: Option[RequestHeader],
-      service: Option[ServiceDescriptor],
-      route: Option[NgRoute],
-      apiKey: Option[ApiKey],
-      user: Option[PrivateAppsUser],
-      context: Map[String, String],
-      attrs: TypedMap,
-      env: Env,
-      plan: Option[ApiDocumentationPlan] = None,
-      api: Option[Api] = None
+             value: String,
+             req: Option[RequestHeader],
+             service: Option[ServiceDescriptor],
+             route: Option[NgRoute],
+             apiKey: Option[ApiKey],
+             user: Option[PrivateAppsUser],
+             context: Map[String, String],
+             attrs: TypedMap,
+             env: Env,
+             plan: Option[ApiPlan] = None,
+             api: Option[Api] = None
   ): String = env.metrics.withTimer(s"el.apply") {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
@@ -375,6 +375,9 @@ object GlobalExpressionLanguage {
             case "apikey.clientId" if apiKey.isDefined                              => apiKey.get.clientId
             case "apikey.json.pretty" if apiKey.isDefined                           => apiKey.get.lightJson.prettify
             case "apikey.json" if apiKey.isDefined                                  => apiKey.get.lightJson.stringify
+            case "apikey.api.id" if apiKey.isDefined && apiKey.get.apiRef.isDefined => apiKey.get.apiRef.get.api
+            case "apikey.api.plan" if apiKey.isDefined && apiKey.get.apiRef.isDefined => apiKey.get.apiRef.get.plan
+            case "apikey.api.sub" if apiKey.isDefined && apiKey.get.apiRef.isDefined => apiKey.get.apiRef.get.subscription
             case r"apikey.metadata.$field@(.*):$dv@(.*)"                            =>
               apiKey.flatMap(_.metadata.get(field)).getOrElse(dv)
             case r"apikey.metadata.$field@(.*)" if apiKey.isDefined                 =>
@@ -713,17 +716,17 @@ object GlobalExpressionLanguage {
 object HeadersExpressionLanguage {
 
   def apply(
-      value: String,
-      req: Option[RequestHeader],
-      service: Option[ServiceDescriptor],
-      route: Option[NgRoute],
-      apiKey: Option[ApiKey],
-      user: Option[PrivateAppsUser],
-      context: Map[String, String],
-      attrs: TypedMap,
-      env: Env,
-      plan: Option[ApiDocumentationPlan] = None,
-      api: Option[Api] = None
+             value: String,
+             req: Option[RequestHeader],
+             service: Option[ServiceDescriptor],
+             route: Option[NgRoute],
+             apiKey: Option[ApiKey],
+             user: Option[PrivateAppsUser],
+             context: Map[String, String],
+             attrs: TypedMap,
+             env: Env,
+             plan: Option[ApiPlan] = None,
+             api: Option[Api] = None
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -745,17 +748,17 @@ object HeadersExpressionLanguage {
 object RedirectionExpressionLanguage {
 
   def apply(
-      value: String,
-      req: Option[RequestHeader],
-      service: Option[ServiceDescriptor],
-      route: Option[NgRoute],
-      apiKey: Option[ApiKey],
-      user: Option[PrivateAppsUser],
-      context: Map[String, String],
-      attrs: TypedMap,
-      env: Env,
-      plan: Option[ApiDocumentationPlan] = None,
-      api: Option[Api] = None
+             value: String,
+             req: Option[RequestHeader],
+             service: Option[ServiceDescriptor],
+             route: Option[NgRoute],
+             apiKey: Option[ApiKey],
+             user: Option[PrivateAppsUser],
+             context: Map[String, String],
+             attrs: TypedMap,
+             env: Env,
+             plan: Option[ApiPlan] = None,
+             api: Option[Api] = None
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -777,17 +780,17 @@ object RedirectionExpressionLanguage {
 object TargetExpressionLanguage {
 
   def apply(
-      value: String,
-      req: Option[RequestHeader],
-      service: Option[ServiceDescriptor],
-      route: Option[NgRoute],
-      apiKey: Option[ApiKey],
-      user: Option[PrivateAppsUser],
-      context: Map[String, String],
-      attrs: TypedMap,
-      env: Env,
-      plan: Option[ApiDocumentationPlan] = None,
-      api: Option[Api] = None
+             value: String,
+             req: Option[RequestHeader],
+             service: Option[ServiceDescriptor],
+             route: Option[NgRoute],
+             apiKey: Option[ApiKey],
+             user: Option[PrivateAppsUser],
+             context: Map[String, String],
+             attrs: TypedMap,
+             env: Env,
+             plan: Option[ApiPlan] = None,
+             api: Option[Api] = None
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -809,17 +812,17 @@ object TargetExpressionLanguage {
 object JwtExpressionLanguage {
 
   def apply(
-      value: String,
-      req: Option[RequestHeader],
-      service: Option[ServiceDescriptor],
-      route: Option[NgRoute],
-      apiKey: Option[ApiKey],
-      user: Option[PrivateAppsUser],
-      context: Map[String, String],
-      attrs: TypedMap,
-      env: Env,
-      plan: Option[ApiDocumentationPlan] = None,
-      api: Option[Api] = None
+             value: String,
+             req: Option[RequestHeader],
+             service: Option[ServiceDescriptor],
+             route: Option[NgRoute],
+             apiKey: Option[ApiKey],
+             user: Option[PrivateAppsUser],
+             context: Map[String, String],
+             attrs: TypedMap,
+             env: Env,
+             plan: Option[ApiPlan] = None,
+             api: Option[Api] = None
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -838,17 +841,17 @@ object JwtExpressionLanguage {
   }
 
   def fromJson(
-      value: JsValue,
-      req: Option[RequestHeader],
-      service: Option[ServiceDescriptor],
-      route: Option[NgRoute],
-      apiKey: Option[ApiKey],
-      user: Option[PrivateAppsUser],
-      context: Map[String, String],
-      attrs: TypedMap,
-      env: Env,
-      plan: Option[ApiDocumentationPlan] = None,
-      api: Option[Api] = None
+                value: JsValue,
+                req: Option[RequestHeader],
+                service: Option[ServiceDescriptor],
+                route: Option[NgRoute],
+                apiKey: Option[ApiKey],
+                user: Option[PrivateAppsUser],
+                context: Map[String, String],
+                attrs: TypedMap,
+                env: Env,
+                plan: Option[ApiPlan] = None,
+                api: Option[Api] = None
   ): JsValue = {
     value match {
       case JsObject(map)   =>

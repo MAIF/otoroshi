@@ -1,6 +1,6 @@
 package otoroshi.next.services
 
-import next.models.{Api, ApiDocumentationPlan, ApiSubscription}
+import next.models.{Api, ApiPlan, ApiSubscription}
 import otoroshi.api.WriteAction.Update
 import otoroshi.env.Env
 import otoroshi.models.Draft
@@ -48,9 +48,9 @@ object ApiConsistencyService {
     }
   }
 
-  def deleteSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan, isDraft: Boolean)(using
-      env: Env,
-      ec: ExecutionContext
+  def deleteSubscriptionsByPlan(api: Api, plan: ApiPlan, isDraft: Boolean)(using
+                                                                           env: Env,
+                                                                           ec: ExecutionContext
   ): Future[Api] = {
     println(("delete plan", plan.name))
 
@@ -71,11 +71,11 @@ object ApiConsistencyService {
   }
 
   private def _batchSubscriptionsUpdates[A](
-      page: Int,
-      plan: ApiDocumentationPlan,
-      api: Api,
-      fn: Seq[A] => Future[Any],
-      store: BasicStore[A]
+                                             page: Int,
+                                             plan: ApiPlan,
+                                             api: Api,
+                                             fn: Seq[A] => Future[Any],
+                                             store: BasicStore[A]
   )(using env: Env, ec: ExecutionContext): Future[Unit] = {
 
     val pageSize = 50
@@ -106,10 +106,10 @@ object ApiConsistencyService {
   }
 
   private def batchSubscriptionsUpdates[A](
-      plan: ApiDocumentationPlan,
-      api: Api,
-      fnDraft: Option[Seq[Draft] => Future[Any]],
-      fnSub: Option[Seq[ApiSubscription] => Future[Any]] = None
+                                            plan: ApiPlan,
+                                            api: Api,
+                                            fnDraft: Option[Seq[Draft] => Future[Any]],
+                                            fnSub: Option[Seq[ApiSubscription] => Future[Any]] = None
   )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     fnDraft match {
       case Some(fn) => _batchSubscriptionsUpdates[Draft](0, plan, api, fn, env.datastores.draftsDataStore)
@@ -124,9 +124,9 @@ object ApiConsistencyService {
     }
   }
 
-  def updateSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan, isDraft: Boolean)(using
-      env: Env,
-      ec: ExecutionContext
+  def updateSubscriptionsByPlan(api: Api, plan: ApiPlan, isDraft: Boolean)(using
+                                                                           env: Env,
+                                                                           ec: ExecutionContext
   ): Future[Api] = {
     println(("update plan", plan.name))
 

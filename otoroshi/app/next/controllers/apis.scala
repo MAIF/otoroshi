@@ -8,7 +8,7 @@ import next.models.{
   ApiDeployment,
   ApiDeprecated,
   ApiDocumentation,
-  ApiDocumentationPlan,
+  ApiPlan,
   ApiFlows,
   ApiPlanStatus,
   ApiPublished,
@@ -303,7 +303,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
       Right(api)
   }
 
-  private def validatePlan(api: Api, planId: String): Either[Result, ApiDocumentationPlan] =
+  private def validatePlan(api: Api, planId: String): Either[Result, ApiPlan] =
     api.plans.find(_.id == planId) match {
       case None                                                 => Left(BadRequest(Json.obj("error" -> "plan not found")))
       case Some(plan) if plan.status != ApiPlanStatus.Published =>
@@ -398,8 +398,8 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
         val isDraft = ctx.request.getQueryString("version").contains("Draft")
 
-        def getPlanDraftSubscriptions(page: Int, plan: ApiDocumentationPlan)(using
-            env: Env
+        def getPlanDraftSubscriptions(page: Int, plan: ApiPlan)(using
+                                                                env: Env
         ): Future[Seq[JsValue]] = {
           implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
@@ -419,8 +419,8 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
             }
         }
 
-        def getPlanSubscriptions(page: Int, plan: ApiDocumentationPlan)(using
-            env: Env
+        def getPlanSubscriptions(page: Int, plan: ApiPlan)(using
+                                                           env: Env
         ): Future[Seq[ApiSubscription]] = {
           implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
@@ -441,7 +441,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
         ctx.request.body
           .asOpt[JsObject]
-          .map(ApiDocumentationPlan.apply)
+          .map(ApiPlan.apply)
           .toRight(BadRequest(Json.obj("error" -> "wrong plan format"))) match {
           case Left(err)              => err.vfuture
           case Right(plan) if isDraft =>
