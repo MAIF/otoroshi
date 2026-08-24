@@ -14,55 +14,55 @@ import java.nio.file.Files
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
-class ServiceDescriptorUsageWarning extends Job {
-
-  private val logger = Logger("otoroshi-jobs-service-descriptor-usage-warning")
-
-  override def categories: Seq[NgPluginCategory] = Seq.empty
-
-  override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.ServiceDescriptorUsageWarning")
-
-  override def name: String = "Otoroshi service descriptor usage warning"
-
-  override def defaultConfig: Option[JsObject] = None
-
-  override def description: Option[String] =
-    s"""This job will check if there is still service descriptors in the database""".stripMargin.some
-
-  override def jobVisibility: JobVisibility = JobVisibility.Internal
-
-  override def kind: JobKind = JobKind.ScheduledOnce
-
-  override def starting: JobStarting = JobStarting.Automatically
-
-  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
-    JobInstantiation.OneInstancePerOtoroshiInstance
-
-  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.seconds.some
-
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = None
-
-  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
-
-  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
-    env.datastores.serviceDescriptorDataStore.count().map { count =>
-      if (count > 0L) {
-        env.logger.warn("")
-        env.logger.warn(s"-------------------------------------------------------------------------")
-        env.logger.warn(s"##                                                                     ##")
-        env.logger.warn(s"##   It seems that you are still using Service Descriptors             ##")
-        env.logger.warn(s"##   we count ${count} entities remaining. the next major                ")
-        env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
-        env.logger.warn(s"##                                                                     ##")
-        env.logger.warn(s"##   for more information about that, please read                      ##")
-        env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
-        env.logger.warn(s"##                                                                     ##")
-        env.logger.warn(s"-------------------------------------------------------------------------")
-        env.logger.warn("")
-      }
-    }
-  }
-}
+// [REMOVE SERVICEDESC] class ServiceDescriptorUsageWarning extends Job {
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   private val logger = Logger("otoroshi-jobs-service-descriptor-usage-warning")
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def categories: Seq[NgPluginCategory] = Seq.empty
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.ServiceDescriptorUsageWarning")
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def name: String = "Otoroshi service descriptor usage warning"
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def defaultConfig: Option[JsObject] = None
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def description: Option[String] =
+// [REMOVE SERVICEDESC]     s"""This job will check if there is still service descriptors in the database""".stripMargin.some
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def jobVisibility: JobVisibility = JobVisibility.Internal
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def kind: JobKind = JobKind.ScheduledOnce
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def starting: JobStarting = JobStarting.Automatically
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
+// [REMOVE SERVICEDESC]     JobInstantiation.OneInstancePerOtoroshiInstance
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.seconds.some
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = None
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
+// [REMOVE SERVICEDESC]
+// [REMOVE SERVICEDESC]   override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
+// [REMOVE SERVICEDESC]     env.datastores.serviceDescriptorDataStore.count().map { count =>
+// [REMOVE SERVICEDESC]       if (count > 0L) {
+// [REMOVE SERVICEDESC]         env.logger.warn("")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"-------------------------------------------------------------------------")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"##                                                                     ##")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"##   It seems that you are still using Service Descriptors             ##")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"##   we count ${count} entities remaining. the next major                ")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"##                                                                     ##")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"##   for more information about that, please read                      ##")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"##                                                                     ##")
+// [REMOVE SERVICEDESC]         env.logger.warn(s"-------------------------------------------------------------------------")
+// [REMOVE SERVICEDESC]         env.logger.warn("")
+// [REMOVE SERVICEDESC]       }
+// [REMOVE SERVICEDESC]     }
+// [REMOVE SERVICEDESC]   }
+// [REMOVE SERVICEDESC] }
 
 class ServiceDescriptorMigrationJob extends Job {
 
