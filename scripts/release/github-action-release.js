@@ -13,13 +13,39 @@ const BINTRAY_API_KEY = process.env.BINTRAY_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const JAVA_HOME = process.env.JAVA_HOME;
 
+const escapeForRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// The version shows up three ways in the kustomize manifests: as an image tag, as the `newTag:` of
+// an `images:` entry, and as the recommended `app.kubernetes.io/version` label. Several files carry
+// more than one of them (cluster-deployments has two otoroshi containers), so every replacement has
+// to be global — `String.replace` with a string argument only ever replaces the first match, which
+// is how images stayed pinned to 16.x for two years while the first one kept being bumped.
+const kustomizeVersion = (from, to, source) => {
+  const v = escapeForRegExp(from);
+  return source
+    .replace(new RegExp(`maif/otoroshi:${v}`, 'g'), `maif/otoroshi:${to}`)
+    .replace(new RegExp(`(newTag:\\s*)${v}(?=\\s|$)`, 'g'), `$1${to}`)
+    .replace(new RegExp(`(app\\.kubernetes\\.io/version:\\s*")${v}(")`, 'g'), `$1${to}$2`);
+};
+
 const files = [
-  { file: './kubernetes/kustomize/overlays/cluster/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/cluster-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/cluster-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/simple/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/simple-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
+  // Overlays: deployment.yaml carries the images for the two daemonset variants, kustomization.yaml
+  // carries the `newTag:` pin and the version label for all six.
+  { file: './kubernetes/kustomize/overlays/cluster/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal-daemonset/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal-daemonset/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/kustomization.yaml', replace: kustomizeVersion },
+  // The Deployment resources themselves moved here; the overlays above only patch them.
+  { file: './kubernetes/kustomize/components/single-deployment/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/components/cluster-deployments/deployment.yaml', replace: kustomizeVersion },
   //{
   //  file: './manual/src/main/paradox/deploy/kubernetes.md',
   //  replace: (from, to, source) => source.replace(`?ref=v${from}`, `?ref=v${to}`).replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`)

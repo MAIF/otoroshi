@@ -39,7 +39,7 @@ This installs all the required tools at the exact versions defined in `mise.toml
 | Tool | Version | Purpose |
 |------|---------|---------|
 | Java | OpenJDK 17 | Scala backend runtime |
-| SBT | 1.7.2 | Scala build tool |
+| SBT | 1.12.9 | Scala build tool |
 | Node.js | 22 | Frontend build & documentation |
 
 ### Install JS dependencies
@@ -108,7 +108,7 @@ mise run build
 This builds the frontend (webpack production bundle) then compiles and assembles the Scala backend into a fat JAR. The output is:
 
 ```
-otoroshi/target/scala-2.12/otoroshi.jar
+otoroshi/target/scala-3.8.4/otoroshi.jar
 ```
 
 To also build the documentation:

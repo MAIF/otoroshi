@@ -34,7 +34,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:@{version}-jdk11
+      - image: maif/otoroshi:@{version}
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -265,7 +265,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.20.1-dev-dev
+      - image: maif/otoroshi:@{version}
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:

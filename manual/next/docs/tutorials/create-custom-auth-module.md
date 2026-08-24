@@ -13,7 +13,7 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       organization := "com.example",
-      scalaVersion := "2.12.7",
+      scalaVersion := "3.8.4",
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "my-custom-auth-module",
@@ -186,7 +186,7 @@ case class CustomAuthModule(authConfig: CustomModuleConfig) extends AuthModule {
 
 This custom Auth. module inherits from AuthModule (the Auth module have to inherit from the AuthModule trait to be found by Otoroshi). It exposes a simple UI to login, and create an user for each callback request without any verification. Methods starting with bo will be called in case that the auth. module is used on the back office and in other cases, the pa methods (pa for Private App) will be called to protect a route.
 
-This custom Auth. module uses a [Play template](https://www.playframework.com/documentation/2.8.x/ScalaTemplates) to display the login page. It's not required by Otoroshi but it's a easy way to create a login form.
+This custom Auth. module uses a [Play template](https://www.playframework.com/documentation/3.0.x/ScalaTemplates) to display the login page. It's not required by Otoroshi but it's a easy way to create a login form.
 
 ```html 
 @import otoroshi.env.Env

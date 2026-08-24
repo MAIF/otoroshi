@@ -25,13 +25,13 @@ labels:
     pairs:
       app.kubernetes.io/name: otoroshi
       app.kubernetes.io/instance: simple-baremetal
-      app.kubernetes.io/version: "17.16.0"
+      app.kubernetes.io/version: "18.0.0-dev"
       app.kubernetes.io/part-of: otoroshi
       app.kubernetes.io/managed-by: kustomize
 
 images:
   - name: maif/otoroshi
-    newTag: 17.16.0-dev-jdk11
+    newTag: 18.0.0-dev
 
 replicas:
   - name: otoroshi-deployment

@@ -260,7 +260,7 @@ kustomize build overlays/simple
 kubectl apply -k overlays/simple
 
 # Modify the kustomization.yaml in place — only the standalone CLI has `edit`.
-kustomize edit set image       maif/otoroshi=maif/otoroshi:17.13.0      # bump tag
+kustomize edit set image       maif/otoroshi=maif/otoroshi:18.0.0      # bump tag
 kustomize edit set replicas    otoroshi-deployment=5                    # change count
 kustomize edit add component   ../../components/webhooks                # enable an add-on
 kustomize edit fix             # migrate deprecated kustomization fields (already done)
@@ -282,7 +282,7 @@ and pods roll. Disable per-generator with `options: { disableNameSuffixHash: tru
 ## Image tag
 
 The default `images:` entry in each overlay points at a **dev-quality** tag
-(`maif/otoroshi:17.16.0-dev-jdk11`) so that `kubectl kustomize` always
+(`maif/otoroshi:18.0.0-dev`) so that `kubectl kustomize` always
 produces a working render against `master`. **For production, switch to a
 release tag**:
 
@@ -290,7 +290,7 @@ release tag**:
 # overlays/your-overlay/kustomization.yaml
 images:
   - name: maif/otoroshi
-    newTag: "17.13.0"                          # or a digest
+    newTag: "18.0.0"                          # or a digest
     # digest: sha256:abc123…                   # supply-chain pinning (overrides newTag)
 ```
 
@@ -301,7 +301,7 @@ air-gapped or private registries, also set `newName`:
 images:
   - name: maif/otoroshi
     newName: registry.internal/mirror/otoroshi
-    newTag: "17.13.0"
+    newTag: "18.0.0"
 ```
 
 ## Examples
