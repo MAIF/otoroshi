@@ -609,17 +609,16 @@ class NgProxyState(env: Env) {
       routescomp          <- env.datastores.routeCompositionDataStore.findAllAndFillSecrets() // secrets OK
       apis                <- env.datastores.apiDataStore.findAllAndFillSecrets() // secrets OK
       apisRoutes          <- Future.sequence(apis.map(api => api.toRoutes)).map(_.flatten)
-      genRoutesDomain     <- generateRoutesByDomain(env)
-      genRoutesPath       <- generateRoutesByName(env)
-      genRandom           <- generateRandomRoutes(env)
-      //[REMOVE SERVICEDESC] descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
-      fakeRoutes           = if (dev) Seq(NgRoute.fake) else Seq.empty
-      //[REMOVE SERVICEDESC] newRoutes            =
-      //[REMOVE SERVICEDESC]   (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
-      //[REMOVE SERVICEDESC]     NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
-      //[REMOVE SERVICEDESC]   ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ apisRoutes ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
-      newRoutes            =
-        (genRoutesDomain ++ genRoutesPath ++ genRandom ++ routes ++ routescomp.flatMap(_.toRoutes) ++ apisRoutes ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
+      // genRoutesDomain     <- generateRoutesByDomain(env)
+      // genRoutesPath       <- generateRoutesByName(env)
+      // genRandom           <- generateRandomRoutes(env)
+      descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
+      // fakeRoutes           = if (dev) Seq(NgRoute.fake) else Seq.empty
+      /* [REMOVE SERVICEDESC] */ newRoutes            =
+      /* [REMOVE SERVICEDESC] */   (descriptors.map(d =>
+      /* [REMOVE SERVICEDESC] */     NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
+      /* [REMOVE SERVICEDESC] */   ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ apisRoutes).filter(_.enabled)
+      //   (routes ++ routescomp.flatMap(_.toRoutes) ++ apisRoutes).filter(_.enabled)
       apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets() // secrets OK
       certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
       verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
