@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkotoroshi_documentation=self.webpackChunkotoroshi_documentation||[]).push([["8849"],{35579(o){o.exports=JSON.parse('{"metadata":{"permalink":"/otoroshi/devmanual/blog","page":1,"postsPerPage":10,"totalPages":1,"totalCount":3,"blogDescription":"Blog","blogTitle":"Blog"}}')}}]);
