@@ -1357,10 +1357,10 @@ export class ServiceApiKeysPage extends Component {
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
       : this.onApis
         ? nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(this.props.params.apiId)
-        //[REMOVE SERVICEDESC] : nextClient
-        //[REMOVE SERVICEDESC]     .forEntityNext(nextClient.ENTITIES.SERVICES)
-        //[REMOVE SERVICEDESC]     .findById(this.props.params.serviceId);
-        : Promise.resolve({});
+        : //[REMOVE SERVICEDESC] : nextClient
+          //[REMOVE SERVICEDESC]     .forEntityNext(nextClient.ENTITIES.SERVICES)
+          //[REMOVE SERVICEDESC]     .findById(this.props.params.serviceId);
+          Promise.resolve({});
 
     fu.then((service) => {
       if (this.onRoutes) this.props.setTitle(this.props.title || `HTTP Routes Apikeys`);

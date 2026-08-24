@@ -258,40 +258,39 @@ export class GenericLoginPageWithWebAuthn extends Component {
           return c;
         });
         console.log(options);
-        return getCredentials(options)
-          .then((credentials) => {
-            const json = responseToObject(credentials);
-            console.log('fetch2');
-            return fetch(this.props.action, {
-              method: 'POST',
-              credentials: 'include',
-              redirect: 'manual',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'WebAuthn-Login-Step': 'finish',
+        return getCredentials(options).then((credentials) => {
+          const json = responseToObject(credentials);
+          console.log('fetch2');
+          return fetch(this.props.action, {
+            method: 'POST',
+            credentials: 'include',
+            redirect: 'manual',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              'WebAuthn-Login-Step': 'finish',
+            },
+            body: JSON.stringify({
+              requestId,
+              webauthn: json,
+              otoroshi: {
+                origin: window.location.origin,
+                username,
+                password,
               },
-              body: JSON.stringify({
-                requestId,
-                webauthn: json,
-                otoroshi: {
-                  origin: window.location.origin,
-                  username,
-                  password,
-                },
-              }),
-            })
-              .then((r) => r.json())
-              .then((r) => {
-                const location = r.location;
-                this.setState(
-                  { error: null, email: '', password: '', message: `Login successfully` },
-                  () => {
-                    window.location.href = location;
-                  }
-                );
-              }, this.handleError('Authentication error, sorry ...'));
-          });
+            }),
+          })
+            .then((r) => r.json())
+            .then((r) => {
+              const location = r.location;
+              this.setState(
+                { error: null, email: '', password: '', message: `Login successfully` },
+                () => {
+                  window.location.href = location;
+                }
+              );
+            }, this.handleError('Authentication error, sorry ...'));
+        });
       }, this.handleError('Login error, sorry ...'));
   };
 
