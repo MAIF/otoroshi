@@ -45,7 +45,7 @@ Any entity has the following properties
 
 - **[Data exporters](./data-exporters.mdx)**: Export alerts, events ands logs
 
-- **[Service descriptors](./service-descriptors.mdx)**: Proxy your applications with service descriptors
+- **[Service descriptors](./service-descriptors.mdx)**: Removed in `v18.0.0`, kept as a historical reference. See [Sunsetting Service Descriptors](../topics/deprecating-sd.mdx)
 
 - **[Remote Catalogs](./remote-catalogs.md)**: Sync entities from remote sources
 

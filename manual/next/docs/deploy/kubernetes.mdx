@@ -803,7 +803,6 @@ Otoroshi provides some Custom Resource Definitions for kubernetes in order to ma
 - `routes`
 - `backends`
 - `route-compositions`
-- `service-descriptors`
 - `tcp-services`
 - `error-templates`
 - `apikeys`
@@ -827,7 +826,7 @@ using CRDs, you will be able to deploy and manager those entities from kubectl o
 
 ```sh
 sudo kubectl get apikeys --all-namespaces
-sudo kubectl get service-descriptors --all-namespaces
+sudo kubectl get routes --all-namespaces
 curl -X GET \
   -H 'Authorization: Bearer eyJhbGciOiJSUzI....F463SrpOehQRaQ' \
   -H 'Accept: application/json' -k \

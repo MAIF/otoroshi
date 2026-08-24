@@ -47,7 +47,6 @@ const sidebars = {
         'entities/auth-modules',
         'entities/certificates',
         'entities/data-exporters',
-        'entities/service-descriptors',
         'entities/remote-catalogs',
         'entities/http-listeners',
         'entities/workflows',
@@ -55,6 +54,7 @@ const sidebars = {
         'entities/route-templates',
         'entities/error-templates',
         'entities/otoroshi-admins',
+        'entities/service-descriptors',
       ],
     },
     {

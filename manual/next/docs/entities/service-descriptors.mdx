@@ -1,5 +1,6 @@
 ---
 title: Service descriptors
+sidebar_label: Service descriptors (removed)
 sidebar_position: 17
 ---
 
@@ -8,18 +9,21 @@ import { NewTabLink } from '@site/src/components/NewTabLink';
 
 # Service descriptors
 
+:::danger[Removed in Otoroshi v18.0.0]
+Service Descriptors **no longer exist**. The entity, its admin API, its pages in the admin UI and its Kubernetes CRD have all been removed in `v18.0.0`. [Routes](./routes.md) are now the only way to configure HTTP proxying, and your existing descriptors are migrated to Routes automatically the first time a `v18` instance starts.
 
-:::warning
-Service Descriptors are now deprecated and will sunset soon (probably in 2026). You can use [Routes](./routes.md) instead. You can read more about sunsetting Service Descriptors [here](../topics/deprecating-sd.mdx). 
+**Read [Sunsetting Service Descriptors](../topics/deprecating-sd.mdx) instead.** That page covers the automatic migration, what keeps working, what has been removed and how to convert a descriptor you still hold as JSON or YAML.
+
+This page is kept as a **historical reference only**: nothing described below can be configured anymore. It is still useful when you need to make sense of a `v17` export, of a `service-descriptors-backup.json` file or of an old `ServiceDescriptor` manifest — the [Routes](./routes.md) page documents how to do the same things today.
 :::
 
-## Context and deprecation
+## Context and removal
 
-Service Descriptors were the **original and historical way** to configure HTTP proxying in Otoroshi. Since the very first version of the project, they served as the single entity used to define how incoming requests should be matched, authenticated, transformed, and forwarded to backend services.
+Service Descriptors were the **original and historical way** to configure HTTP proxying in Otoroshi. From the very first version of the project, they served as the single entity used to define how incoming requests should be matched, authenticated, transformed, and forwarded to backend services.
 
-### Why they are deprecated
+### Why they were removed
 
-Service Descriptors follow a **monolithic design**: frontend matching (domains, paths), backend targets, authentication, API key constraints, CORS, header manipulation, JWT verification, plugins, and many other concerns are all configured within a single large entity. While this approach was simple for basic use cases, it became increasingly difficult to manage, reuse, and compose as configurations grew more complex.
+Service Descriptors followed a **monolithic design**: frontend matching (domains, paths), backend targets, authentication, API key constraints, CORS, header manipulation, JWT verification, plugins, and many other concerns were all configured within a single large entity. While this approach was simple for basic use cases, it became increasingly difficult to manage, reuse, and compose as configurations grew more complex.
 
 In version 1.5.3 (February 2022), Otoroshi introduced a **new proxy engine** along with a new set of entities that replaced Service Descriptors:
 
@@ -28,19 +32,23 @@ In version 1.5.3 (February 2022), Otoroshi introduced a **new proxy engine** alo
 
 The new route engine is also **more performant** and supports advanced features such as request/response body transformations, traffic policies, and a richer plugin lifecycle that were not possible with the original Service Descriptor model.
 
-### Migration path
+### What happened to them
 
-Service Descriptors **still work and are fully supported** for backward compatibility. Under the hood, the new proxy engine automatically converts Service Descriptors into Routes at runtime to handle traffic. However, all new configurations should use Routes or APIs instead.
+They were deprecated for more than 4 years. `v17.0.0` shipped the migration tooling and `v18.0.0` removed the entity itself.
 
-Otoroshi provides several tools to help migrate existing Service Descriptors to Routes:
+Nothing changed for your traffic along the way: the proxy engine had been converting Service Descriptors into Routes at runtime since `v1.5.3`, so what disappeared in `v18.0.0` is the entity you used to configure, not the way requests are proxied.
 
-- A **migration job** that can be enabled at startup to convert all descriptors automatically
-- A **migration API** endpoint to convert individual descriptors programmatically
-- A **"convert to route" button** in the admin UI on each Service Descriptor page
+- **Existing descriptors are migrated for you.** The first time a `v18` instance starts on a datastore that still contains Service Descriptors, a migration job writes a backup to `./service-descriptors-backup.json` and converts each descriptor into a Route, **keeping the same id**. There is nothing to enable and nothing to run.
+- **Old exports still import.** `POST /api/otoroshi.json` and `POST /api/import` still read the `serviceDescriptors` key of a `v17` backup and convert each entry to a Route on the fly.
+- **Descriptors you hold outside of the datastore can still be converted.** `POST /api/routes/_from_service_descriptor` turns Service Descriptor JSON into Route JSON without storing anything, and `POST /api/new/resources` turns a `proxy.otoroshi.io/ServiceDescriptor` manifest into a `proxy.otoroshi.io/Route` one.
 
-You can read more about the migration process in the [Sunsetting Service Descriptors](../topics/deprecating-sd.mdx) topic.
+All of this — including what has been removed from the admin API, the admin UI and the Kubernetes integration — is detailed in the [Sunsetting Service Descriptors](../topics/deprecating-sd.mdx) topic.
 
 ---
+
+:::note
+Everything below describes the Service Descriptor entity and its admin UI form **as they were in `v17`**, and is kept for reference. The pages, buttons and settings it mentions no longer exist in the admin UI.
+:::
 
 ## Overview
 
