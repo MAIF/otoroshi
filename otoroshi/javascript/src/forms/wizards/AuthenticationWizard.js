@@ -10,6 +10,7 @@ import {
 import { Button } from '../../components/Button';
 import { SquareButton } from '../../components/SquareButton';
 import { Dropdown } from '../../components/Dropdown';
+import { abortCeremony, createCredentials } from '../../webauthn';
 import faker from 'faker';
 import bcrypt from 'bcryptjs';
 import { useHistory } from 'react-router-dom';
@@ -1143,6 +1144,11 @@ class User extends React.Component {
     rawUser: JSON.stringify(this.props.metadata),
   };
 
+  componentWillUnmount() {
+    // never leave a ceremony pending behind a closed screen, it would block every following one
+    abortCeremony();
+  }
+
   handleErrorWithMessage = (message) => () => {
     this.setState({ error: message });
   };
@@ -1185,13 +1191,7 @@ class User extends React.Component {
             publicKeyCredentialCreationOptions.excludeCredentials.map((c) => {
               return { ...c, id: base64url.decode(c.id) };
             });
-          return navigator.credentials
-            .create(
-              {
-                publicKey: publicKeyCredentialCreationOptions,
-              },
-              this.handleErrorWithMessage('Webauthn error')
-            )
+          return createCredentials(publicKeyCredentialCreationOptions)
             .then((credentials) => {
               const json = responseToObject(credentials);
               return fetch(`/bo/api/proxy/api/auths/${this.props.authModuleId}/register/finish`, {

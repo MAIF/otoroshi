@@ -21,6 +21,7 @@ import { Collapse } from '../components/inputs/Collapse';
 import { Location } from '../components/Location';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
+import { abortCeremony, createCredentials } from '../webauthn';
 
 import deepSet from 'set-value';
 import cloneDeep from 'lodash/cloneDeep';
@@ -793,6 +794,11 @@ export class User extends Component {
     rawUser: JSON.stringify(this.props.user.metadata),
   };
 
+  componentWillUnmount() {
+    // never leave a ceremony pending behind a closed modal, it would block every following one
+    abortCeremony();
+  }
+
   handleErrorWithMessage = (message) => () => {
     console.log('error', message);
     this.setState({ error: message });
@@ -836,13 +842,7 @@ export class User extends Component {
             publicKeyCredentialCreationOptions.excludeCredentials.map((c) => {
               return { ...c, id: base64url.decode(c.id) };
             });
-          return navigator.credentials
-            .create(
-              {
-                publicKey: publicKeyCredentialCreationOptions,
-              },
-              this.handleErrorWithMessage('Webauthn error')
-            )
+          return createCredentials(publicKeyCredentialCreationOptions)
             .then((credentials) => {
               const json = responseToObject(credentials);
               return fetch(`/bo/api/proxy/api/auths/${this.props.authModuleId}/register/finish`, {

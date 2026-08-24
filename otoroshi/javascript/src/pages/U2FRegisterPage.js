@@ -6,6 +6,7 @@ import moment from 'moment';
 import faker from 'faker';
 import bcrypt from 'bcryptjs';
 import { Separator } from '../components/Separator';
+import { abortCeremony, createCredentials } from '../webauthn';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 
 function Base64Url() {
@@ -404,6 +405,12 @@ export class U2FRegisterPage extends Component {
 }
 
 export class RegisterAdminModal extends Component {
+  componentWillUnmount() {
+    // the modal can be closed while the browser dialog of a ceremony is still open: without this,
+    // that ceremony stays pending and blocks every following one
+    abortCeremony();
+  }
+
   state = {
     mode: this.props.mode || 'create',
     email: this.props.mode === 'update' && this.props.user ? this.props.user.username : '',
@@ -548,13 +555,7 @@ export class RegisterAdminModal extends Component {
             publicKeyCredentialCreationOptions.excludeCredentials.map((c) => {
               return { ...c, id: base64url.decode(c.id) };
             });
-          return navigator.credentials
-            .create(
-              {
-                publicKey: publicKeyCredentialCreationOptions,
-              },
-              this.handleErrorWithMessage('Webauthn error')
-            )
+          return createCredentials(publicKeyCredentialCreationOptions)
             .then((credentials) => {
               const json = responseToObject(credentials);
               return fetch('/bo/webauthn/register/finish', {
@@ -578,7 +579,6 @@ export class RegisterAdminModal extends Component {
               })
                 .then((r) => r.json())
                 .then((resp) => {
-                  if (this.table) this.table.update();
                   this.setState({
                     error: null,
                     email: '',
@@ -588,6 +588,17 @@ export class RegisterAdminModal extends Component {
                     message: `Registration done for '${username}'`,
                   });
                   this.props.ok(this.state);
+                  // INTENTIONAL AND REQUIRED, DO NOT REMOVE: this reload is not a leftover, it is
+                  // the only thing that makes registering a second admin in a row possible.
+                  // The browser keeps the dialog of a finished ceremony alive (chrome asking where
+                  // to save the passkey it has just created) and refuses every following one with
+                  // "A request is already pending.", naming the previous user. Nothing in this page
+                  // can close that dialog: an AbortController no longer reaches the ceremony once
+                  // its promise is resolved, and hosting the ceremony in a disposable iframe does
+                  // not work either as chrome refuses webauthn in a frame that does not have focus.
+                  // Only dropping the document frees the browser. The list of admins is refreshed
+                  // anyway once an admin has been added, so the reload costs nothing here.
+                  window.location.reload();
                 });
             }, this.handleErrorWithMessage('Webauthn error'))
             .catch(this.handleError);

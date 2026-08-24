@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { getCredentials } from '../webauthn';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -257,13 +258,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
           return c;
         });
         console.log(options);
-        return navigator.credentials
-          .get(
-            {
-              publicKey: options,
-            },
-            this.handleError('Webauthn error, sorry ...')
-          )
+        return getCredentials(options)
           .then((credentials) => {
             const json = responseToObject(credentials);
             console.log('fetch2');
