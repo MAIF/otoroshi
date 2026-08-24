@@ -33,8 +33,8 @@ export class ServiceLiveStatsPage extends Component {
   componentDidMount() {
     const fu = this.onRoutes
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
-      //[REMOVE SERVICEDESC] : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
-      : Promise.resolve({});
+      : //[REMOVE SERVICEDESC] : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+        Promise.resolve({});
     fu.then((service) => {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `Route Live Stats`)

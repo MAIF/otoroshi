@@ -171,32 +171,32 @@ export function stopSnowMonkey() {
 }
 
 //[REMOVE SERVICEDESC] export function fetchCanaryCampaign(serviceId) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}/canary`, {
-    //[REMOVE SERVICEDESC] method: 'GET',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}/canary`, {
+//[REMOVE SERVICEDESC] method: 'GET',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function resetCanaryCampaign(serviceId) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}/canary`, {
-    //[REMOVE SERVICEDESC] method: 'DELETE',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}/canary`, {
+//[REMOVE SERVICEDESC] method: 'DELETE',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function allServices(env, group, paginationState) {
-  //[REMOVE SERVICEDESC] const url = env
-    //[REMOVE SERVICEDESC] ? `/bo/api/proxy/api/services?filter.env=${env}`
-    //[REMOVE SERVICEDESC] : group
-      //[REMOVE SERVICEDESC] ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      //[REMOVE SERVICEDESC] : `/bo/api/proxy/api/services`;
-  //[REMOVE SERVICEDESC] return findAllWithPagination(url, paginationState);
+//[REMOVE SERVICEDESC] const url = env
+//[REMOVE SERVICEDESC] ? `/bo/api/proxy/api/services?filter.env=${env}`
+//[REMOVE SERVICEDESC] : group
+//[REMOVE SERVICEDESC] ? `/bo/api/proxy/api/services?filter.groups=${group}`
+//[REMOVE SERVICEDESC] : `/bo/api/proxy/api/services`;
+//[REMOVE SERVICEDESC] return findAllWithPagination(url, paginationState);
 //[REMOVE SERVICEDESC] }
 
 export function fetchRemainingApikeyQuotas(clientId) {
@@ -414,40 +414,40 @@ export function fetchServiceResponseTime(serviceId) {
 }
 
 //[REMOVE SERVICEDESC] export function fetchLines() {
-  //[REMOVE SERVICEDESC] return fetch('/bo/api/proxy/api/lines', {
-    //[REMOVE SERVICEDESC] method: 'GET',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] })
-    //[REMOVE SERVICEDESC] .then(
-      //[REMOVE SERVICEDESC] (r) => r.json(),
-      //[REMOVE SERVICEDESC] (e) => {
-        //[REMOVE SERVICEDESC] console.log(e);
-        //[REMOVE SERVICEDESC] return ['prod'];
-      //[REMOVE SERVICEDESC] }
-    //[REMOVE SERVICEDESC] )
-    //[REMOVE SERVICEDESC] .then(
-      //[REMOVE SERVICEDESC] (r) => r,
-      //[REMOVE SERVICEDESC] (e) => {
-        //[REMOVE SERVICEDESC] console.log(e);
-        //[REMOVE SERVICEDESC] return ['prod'];
-      //[REMOVE SERVICEDESC] }
-    //[REMOVE SERVICEDESC] );
+//[REMOVE SERVICEDESC] return fetch('/bo/api/proxy/api/lines', {
+//[REMOVE SERVICEDESC] method: 'GET',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] })
+//[REMOVE SERVICEDESC] .then(
+//[REMOVE SERVICEDESC] (r) => r.json(),
+//[REMOVE SERVICEDESC] (e) => {
+//[REMOVE SERVICEDESC] console.log(e);
+//[REMOVE SERVICEDESC] return ['prod'];
+//[REMOVE SERVICEDESC] }
+//[REMOVE SERVICEDESC] )
+//[REMOVE SERVICEDESC] .then(
+//[REMOVE SERVICEDESC] (r) => r,
+//[REMOVE SERVICEDESC] (e) => {
+//[REMOVE SERVICEDESC] console.log(e);
+//[REMOVE SERVICEDESC] return ['prod'];
+//[REMOVE SERVICEDESC] }
+//[REMOVE SERVICEDESC] );
 //[REMOVE SERVICEDESC] }
 export function fetchLines() {
   return Promise.resolve(['prod']);
 }
 
 //[REMOVE SERVICEDESC] export function fetchApiKeys(lineId, serviceId) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys`, {
-    //[REMOVE SERVICEDESC] method: 'GET',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys`, {
+//[REMOVE SERVICEDESC] method: 'GET',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 export function fetchApiKeysForPage(serviceId) {
@@ -465,13 +465,13 @@ export function fetchAllApikeys(paginationState) {
 }
 
 //[REMOVE SERVICEDESC] export function fetchApiKeyById(serviceId, apkid) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${apkid}`, {
-    //[REMOVE SERVICEDESC] method: 'GET',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${apkid}`, {
+//[REMOVE SERVICEDESC] method: 'GET',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 export function deleteApiKey(serviceId, routeId, apiId, ak) {
@@ -631,13 +631,13 @@ export function updateGlobalConfig(gc) {
 }
 
 //[REMOVE SERVICEDESC] export function fetchService(lineId, serviceId) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}`, {
-    //[REMOVE SERVICEDESC] method: 'GET',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}`, {
+//[REMOVE SERVICEDESC] method: 'GET',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 export function findServicesForGroup(group) {
@@ -706,61 +706,61 @@ export function updateGroup(ak) {
 }
 
 //[REMOVE SERVICEDESC] export function deleteService(service) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${service.id}`, {
-    //[REMOVE SERVICEDESC] method: 'DELETE',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${service.id}`, {
+//[REMOVE SERVICEDESC] method: 'DELETE',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function createNewService() {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/new/service`, {
-    //[REMOVE SERVICEDESC] method: 'GET',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/new/service`, {
+//[REMOVE SERVICEDESC] method: 'GET',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function saveService(service) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services`, {
-    //[REMOVE SERVICEDESC] method: 'POST',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-      //[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
-    //[REMOVE SERVICEDESC] },
-    //[REMOVE SERVICEDESC] body: JSON.stringify(service),
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services`, {
+//[REMOVE SERVICEDESC] method: 'POST',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] body: JSON.stringify(service),
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function updateService(serviceId, service) {
-  //[REMOVE SERVICEDESC] delete service.groupId;
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}`, {
-    //[REMOVE SERVICEDESC] method: 'PUT',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-      //[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
-    //[REMOVE SERVICEDESC] },
-    //[REMOVE SERVICEDESC] body: JSON.stringify(service),
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] delete service.groupId;
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${serviceId}`, {
+//[REMOVE SERVICEDESC] method: 'PUT',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] body: JSON.stringify(service),
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function updateRawService(service) {
-  //[REMOVE SERVICEDESC] delete service.groupId;
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${service.id}`, {
-    //[REMOVE SERVICEDESC] method: 'PUT',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-      //[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
-    //[REMOVE SERVICEDESC] },
-    //[REMOVE SERVICEDESC] body: JSON.stringify(service),
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] delete service.groupId;
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${service.id}`, {
+//[REMOVE SERVICEDESC] method: 'PUT',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] body: JSON.stringify(service),
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 export function findAllApps() {
@@ -998,80 +998,80 @@ export function changeLogLevel(name, level) {
 // }
 
 //[REMOVE SERVICEDESC] export function fetchServicesTree() {
-  //[REMOVE SERVICEDESC] return new Promise((s) =>
-    //[REMOVE SERVICEDESC] s({
-      //[REMOVE SERVICEDESC] nodes: [
-        //[REMOVE SERVICEDESC] { id: 'Otoroshi', group: '1' },
-        //[REMOVE SERVICEDESC] { id: 'Group 1', group: '2' },
-        //[REMOVE SERVICEDESC] { id: 'Group 2', group: '3' },
-        //[REMOVE SERVICEDESC] { id: 'Service 11', group: '2' },
-        //[REMOVE SERVICEDESC] { id: 'Service 21', group: '2' },
-        //[REMOVE SERVICEDESC] { id: 'Service 12', group: '3' },
-        //[REMOVE SERVICEDESC] { id: 'Service 22', group: '3' },
-      //[REMOVE SERVICEDESC] ],
-      //[REMOVE SERVICEDESC] links: [
-        //[REMOVE SERVICEDESC] { source: 'Otoroshi', target: 'Group 1', value: 3 },
-        //[REMOVE SERVICEDESC] { source: 'Otoroshi', target: 'Group 2', value: 3 },
+//[REMOVE SERVICEDESC] return new Promise((s) =>
+//[REMOVE SERVICEDESC] s({
+//[REMOVE SERVICEDESC] nodes: [
+//[REMOVE SERVICEDESC] { id: 'Otoroshi', group: '1' },
+//[REMOVE SERVICEDESC] { id: 'Group 1', group: '2' },
+//[REMOVE SERVICEDESC] { id: 'Group 2', group: '3' },
+//[REMOVE SERVICEDESC] { id: 'Service 11', group: '2' },
+//[REMOVE SERVICEDESC] { id: 'Service 21', group: '2' },
+//[REMOVE SERVICEDESC] { id: 'Service 12', group: '3' },
+//[REMOVE SERVICEDESC] { id: 'Service 22', group: '3' },
+//[REMOVE SERVICEDESC] ],
+//[REMOVE SERVICEDESC] links: [
+//[REMOVE SERVICEDESC] { source: 'Otoroshi', target: 'Group 1', value: 3 },
+//[REMOVE SERVICEDESC] { source: 'Otoroshi', target: 'Group 2', value: 3 },
 //[REMOVE SERVICEDESC]
-        //[REMOVE SERVICEDESC] { source: 'Group 1', target: 'Service 11', value: 1 },
-        //[REMOVE SERVICEDESC] { source: 'Group 1', target: 'Service 21', value: 1 },
+//[REMOVE SERVICEDESC] { source: 'Group 1', target: 'Service 11', value: 1 },
+//[REMOVE SERVICEDESC] { source: 'Group 1', target: 'Service 21', value: 1 },
 //[REMOVE SERVICEDESC]
-        //[REMOVE SERVICEDESC] { source: 'Group 2', target: 'Service 12', value: 1 },
-        //[REMOVE SERVICEDESC] { source: 'Group 2', target: 'Service 22', value: 1 },
-      //[REMOVE SERVICEDESC] ],
-    //[REMOVE SERVICEDESC] })
-  //[REMOVE SERVICEDESC] );
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/services/tree`, {
-    //[REMOVE SERVICEDESC] method: 'GET',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] { source: 'Group 2', target: 'Service 12', value: 1 },
+//[REMOVE SERVICEDESC] { source: 'Group 2', target: 'Service 22', value: 1 },
+//[REMOVE SERVICEDESC] ],
+//[REMOVE SERVICEDESC] })
+//[REMOVE SERVICEDESC] );
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/services/tree`, {
+//[REMOVE SERVICEDESC] method: 'GET',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function findTemplateById(id) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${id}/template`, {
-    //[REMOVE SERVICEDESC] method: 'GET',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => (r.status === 404 ? null : r.json()));
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${id}/template`, {
+//[REMOVE SERVICEDESC] method: 'GET',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => (r.status === 404 ? null : r.json()));
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function deleteTemplate(ak) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${ak.serviceId}/template`, {
-    //[REMOVE SERVICEDESC] method: 'DELETE',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-    //[REMOVE SERVICEDESC] },
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${ak.serviceId}/template`, {
+//[REMOVE SERVICEDESC] method: 'DELETE',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function createTemplate(ak) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${ak.serviceId}/template`, {
-    //[REMOVE SERVICEDESC] method: 'POST',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-      //[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
-    //[REMOVE SERVICEDESC] },
-    //[REMOVE SERVICEDESC] body: JSON.stringify(ak),
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${ak.serviceId}/template`, {
+//[REMOVE SERVICEDESC] method: 'POST',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] body: JSON.stringify(ak),
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 //[REMOVE SERVICEDESC] export function updateTemplate(ak) {
-  //[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${ak.serviceId}/template`, {
-    //[REMOVE SERVICEDESC] method: 'PUT',
-    //[REMOVE SERVICEDESC] credentials: 'include',
-    //[REMOVE SERVICEDESC] headers: {
-      //[REMOVE SERVICEDESC] Accept: 'application/json',
-      //[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
-    //[REMOVE SERVICEDESC] },
-    //[REMOVE SERVICEDESC] body: JSON.stringify(ak),
-  //[REMOVE SERVICEDESC] }).then((r) => r.json());
+//[REMOVE SERVICEDESC] return fetch(`/bo/api/proxy/api/services/${ak.serviceId}/template`, {
+//[REMOVE SERVICEDESC] method: 'PUT',
+//[REMOVE SERVICEDESC] credentials: 'include',
+//[REMOVE SERVICEDESC] headers: {
+//[REMOVE SERVICEDESC] Accept: 'application/json',
+//[REMOVE SERVICEDESC] 'Content-Type': 'application/json',
+//[REMOVE SERVICEDESC] },
+//[REMOVE SERVICEDESC] body: JSON.stringify(ak),
+//[REMOVE SERVICEDESC] }).then((r) => r.json());
 //[REMOVE SERVICEDESC] }
 
 export function findAllJwtVerifiers(paginationState) {
@@ -1597,7 +1597,7 @@ export function findAllRoutesWithPagination(ps) {
 }
 
 //[REMOVE SERVICEDESC] export function findAllServicesWithPagination(ps) {
-  //[REMOVE SERVICEDESC] return findAllWithPagination('/bo/api/proxy/api/services', ps);
+//[REMOVE SERVICEDESC] return findAllWithPagination('/bo/api/proxy/api/services', ps);
 //[REMOVE SERVICEDESC] }
 
 ///////////////////////////////

@@ -61,12 +61,12 @@ export const graph = (env) => {
           icon: () => snowmonkeyIcon,
         },
         //[REMOVE SERVICEDESC] {
-          //[REMOVE SERVICEDESC] title: 'Clever Cloud apps',
-          //[REMOVE SERVICEDESC] img: 'clever',
-          //[REMOVE SERVICEDESC] description: 'Create routes from Clever Cloud apps',
-          //[REMOVE SERVICEDESC] display: () => env.userAdmin,
-          //[REMOVE SERVICEDESC] link: '/clever',
-          //[REMOVE SERVICEDESC] icon: () => 'fa-list-alt',
+        //[REMOVE SERVICEDESC] title: 'Clever Cloud apps',
+        //[REMOVE SERVICEDESC] img: 'clever',
+        //[REMOVE SERVICEDESC] description: 'Create routes from Clever Cloud apps',
+        //[REMOVE SERVICEDESC] display: () => env.userAdmin,
+        //[REMOVE SERVICEDESC] link: '/clever',
+        //[REMOVE SERVICEDESC] icon: () => 'fa-list-alt',
         //[REMOVE SERVICEDESC] },
         {
           title: 'User manual',
@@ -83,12 +83,12 @@ export const graph = (env) => {
       description: 'Manage otoroshi resources',
       features: [
         //[REMOVE SERVICEDESC] {
-          //[REMOVE SERVICEDESC] title: 'Services',
-          //[REMOVE SERVICEDESC] description: 'All your service descriptors',
-          //[REMOVE SERVICEDESC] img: 'services',
-          //[REMOVE SERVICEDESC] display: () => true,
-          //[REMOVE SERVICEDESC] icon: () => 'fa-cubes',
-          //[REMOVE SERVICEDESC] link: '/services',
+        //[REMOVE SERVICEDESC] title: 'Services',
+        //[REMOVE SERVICEDESC] description: 'All your service descriptors',
+        //[REMOVE SERVICEDESC] img: 'services',
+        //[REMOVE SERVICEDESC] display: () => true,
+        //[REMOVE SERVICEDESC] icon: () => 'fa-cubes',
+        //[REMOVE SERVICEDESC] link: '/services',
         //[REMOVE SERVICEDESC] },
         {
           title: 'HTTP Routes',

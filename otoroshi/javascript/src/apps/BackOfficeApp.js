@@ -79,47 +79,47 @@ import { globalConfig } from 'antd/lib/config-provider';
 import { RouteTemplatesPage } from '../pages/RouteTemplatesPage';
 
 //[REMOVE SERVICEDESC] class ServiceDescriptorsMigrationPopup extends Component {
-  //[REMOVE SERVICEDESC] render() {
-    //[REMOVE SERVICEDESC] return (
-      //[REMOVE SERVICEDESC] <>
-        //[REMOVE SERVICEDESC] <div className="modal-body">
-          //[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>
-            //[REMOVE SERVICEDESC] It seems that you are still using Service Descriptors to route traffic, as you may know,
-            //[REMOVE SERVICEDESC] Service Descriptors have been deprecated for{' '}
-            //[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 4 years</span>,
-            //[REMOVE SERVICEDESC] since the rewrite of the proxy engine.
-          //[REMOVE SERVICEDESC] </p>
-          //[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>
-            //[REMOVE SERVICEDESC] The next major version of Otoroshi (
-            //[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will{' '}
-            //[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span>{' '}
-            //[REMOVE SERVICEDESC] for Service Descriptors (probably in 2026). Once this version will be deployed, all your
-            //[REMOVE SERVICEDESC] remaning Service Descriptors will be automatically migrated and deleted without further
-            //[REMOVE SERVICEDESC] notice.
-          //[REMOVE SERVICEDESC] </p>
-          //[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>
-            //[REMOVE SERVICEDESC] We count{' '}
-            //[REMOVE SERVICEDESC] <a href="/bo/dashboard/services" target="_blank">
-              //[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>
-                //[REMOVE SERVICEDESC] {this.props.count}
-              //[REMOVE SERVICEDESC] </span>{' '}
-              //[REMOVE SERVICEDESC] Service Descriptor
-            //[REMOVE SERVICEDESC] </a>{' '}
-            //[REMOVE SERVICEDESC] remaining in your database. For more information about that, please read{' '}
-            //[REMOVE SERVICEDESC] <a href="https://www.otoroshi.io/docs/topics/deprecating-sd" target="_blank">
-              //[REMOVE SERVICEDESC] the documentation
-            //[REMOVE SERVICEDESC] </a>
-          //[REMOVE SERVICEDESC] </p>
-          //[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>Thanks for your understanding.</p>
-        //[REMOVE SERVICEDESC] </div>
-        //[REMOVE SERVICEDESC] <div className="modal-footer">
-          //[REMOVE SERVICEDESC] <button type="button" className="btn btn-danger" onClick={(e) => this.props.ok()}>
-            //[REMOVE SERVICEDESC] Close
-          //[REMOVE SERVICEDESC] </button>
-        //[REMOVE SERVICEDESC] </div>
-      //[REMOVE SERVICEDESC] </>
-    //[REMOVE SERVICEDESC] );
-  //[REMOVE SERVICEDESC] }
+//[REMOVE SERVICEDESC] render() {
+//[REMOVE SERVICEDESC] return (
+//[REMOVE SERVICEDESC] <>
+//[REMOVE SERVICEDESC] <div className="modal-body">
+//[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>
+//[REMOVE SERVICEDESC] It seems that you are still using Service Descriptors to route traffic, as you may know,
+//[REMOVE SERVICEDESC] Service Descriptors have been deprecated for{' '}
+//[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 4 years</span>,
+//[REMOVE SERVICEDESC] since the rewrite of the proxy engine.
+//[REMOVE SERVICEDESC] </p>
+//[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>
+//[REMOVE SERVICEDESC] The next major version of Otoroshi (
+//[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will{' '}
+//[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span>{' '}
+//[REMOVE SERVICEDESC] for Service Descriptors (probably in 2026). Once this version will be deployed, all your
+//[REMOVE SERVICEDESC] remaning Service Descriptors will be automatically migrated and deleted without further
+//[REMOVE SERVICEDESC] notice.
+//[REMOVE SERVICEDESC] </p>
+//[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>
+//[REMOVE SERVICEDESC] We count{' '}
+//[REMOVE SERVICEDESC] <a href="/bo/dashboard/services" target="_blank">
+//[REMOVE SERVICEDESC] <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>
+//[REMOVE SERVICEDESC] {this.props.count}
+//[REMOVE SERVICEDESC] </span>{' '}
+//[REMOVE SERVICEDESC] Service Descriptor
+//[REMOVE SERVICEDESC] </a>{' '}
+//[REMOVE SERVICEDESC] remaining in your database. For more information about that, please read{' '}
+//[REMOVE SERVICEDESC] <a href="https://www.otoroshi.io/docs/topics/deprecating-sd" target="_blank">
+//[REMOVE SERVICEDESC] the documentation
+//[REMOVE SERVICEDESC] </a>
+//[REMOVE SERVICEDESC] </p>
+//[REMOVE SERVICEDESC] <p style={{ textAlign: 'justify' }}>Thanks for your understanding.</p>
+//[REMOVE SERVICEDESC] </div>
+//[REMOVE SERVICEDESC] <div className="modal-footer">
+//[REMOVE SERVICEDESC] <button type="button" className="btn btn-danger" onClick={(e) => this.props.ok()}>
+//[REMOVE SERVICEDESC] Close
+//[REMOVE SERVICEDESC] </button>
+//[REMOVE SERVICEDESC] </div>
+//[REMOVE SERVICEDESC] </>
+//[REMOVE SERVICEDESC] );
+//[REMOVE SERVICEDESC] }
 //[REMOVE SERVICEDESC] }
 
 class AnonymousReportingEnabled extends Component {
@@ -227,13 +227,13 @@ class BackOfficeAppContainer extends Component {
   };
 
   //[REMOVE SERVICEDESC] addService = (e) => {
-    //[REMOVE SERVICEDESC] if (e && e.preventDefault) e.preventDefault();
-    //[REMOVE SERVICEDESC] BackOfficeServices.createNewService().then((r) => {
-      //[REMOVE SERVICEDESC] ServicePage.__willCreateService = r;
-      //[REMOVE SERVICEDESC] this.props.history.push({
-        //[REMOVE SERVICEDESC] pathname: `/lines/${r.env}/services/${r.id}`,
-      //[REMOVE SERVICEDESC] });
-    //[REMOVE SERVICEDESC] });
+  //[REMOVE SERVICEDESC] if (e && e.preventDefault) e.preventDefault();
+  //[REMOVE SERVICEDESC] BackOfficeServices.createNewService().then((r) => {
+  //[REMOVE SERVICEDESC] ServicePage.__willCreateService = r;
+  //[REMOVE SERVICEDESC] this.props.history.push({
+  //[REMOVE SERVICEDESC] pathname: `/lines/${r.env}/services/${r.id}`,
+  //[REMOVE SERVICEDESC] });
+  //[REMOVE SERVICEDESC] });
   //[REMOVE SERVICEDESC] };
 
   componentWillReceiveProps(nextProps) {
@@ -265,28 +265,28 @@ class BackOfficeAppContainer extends Component {
   };
 
   //[REMOVE SERVICEDESC] triggerServiceDescriptorsMigrationPopup = (env) => {
-    //[REMOVE SERVICEDESC] if (env.serviceDescriptorsCount > 0) {
-      //[REMOVE SERVICEDESC] const key = 'otoroshi-migrate-service-descs-popup';
-      //[REMOVE SERVICEDESC] const last = JSON.parse(localStorage.getItem(key) || '{"last_seen":0}').last_seen || 0;
-      //[REMOVE SERVICEDESC] const ttl = last + 8 * 24 * 60 * 60 * 1000;
-      //[REMOVE SERVICEDESC] if (ttl < Date.now()) {
-        //[REMOVE SERVICEDESC] window
-          //[REMOVE SERVICEDESC] .popup(
-            //[REMOVE SERVICEDESC] 'Service Descriptors Sunsetting',
-            //[REMOVE SERVICEDESC] (ok, cancel) => (
-              //[REMOVE SERVICEDESC] <ServiceDescriptorsMigrationPopup
-                //[REMOVE SERVICEDESC] count={env.serviceDescriptorsCount}
-                //[REMOVE SERVICEDESC] ok={ok}
-                //[REMOVE SERVICEDESC] cancel={cancel}
-              //[REMOVE SERVICEDESC] />
-            //[REMOVE SERVICEDESC] ),
-            //[REMOVE SERVICEDESC] { style: { width: '100%' } }
-          //[REMOVE SERVICEDESC] )
-          //[REMOVE SERVICEDESC] .then(() => {
-            //[REMOVE SERVICEDESC] localStorage.setItem(key, JSON.stringify({ last_seen: Date.now() }));
-          //[REMOVE SERVICEDESC] });
-      //[REMOVE SERVICEDESC] }
-    //[REMOVE SERVICEDESC] }
+  //[REMOVE SERVICEDESC] if (env.serviceDescriptorsCount > 0) {
+  //[REMOVE SERVICEDESC] const key = 'otoroshi-migrate-service-descs-popup';
+  //[REMOVE SERVICEDESC] const last = JSON.parse(localStorage.getItem(key) || '{"last_seen":0}').last_seen || 0;
+  //[REMOVE SERVICEDESC] const ttl = last + 8 * 24 * 60 * 60 * 1000;
+  //[REMOVE SERVICEDESC] if (ttl < Date.now()) {
+  //[REMOVE SERVICEDESC] window
+  //[REMOVE SERVICEDESC] .popup(
+  //[REMOVE SERVICEDESC] 'Service Descriptors Sunsetting',
+  //[REMOVE SERVICEDESC] (ok, cancel) => (
+  //[REMOVE SERVICEDESC] <ServiceDescriptorsMigrationPopup
+  //[REMOVE SERVICEDESC] count={env.serviceDescriptorsCount}
+  //[REMOVE SERVICEDESC] ok={ok}
+  //[REMOVE SERVICEDESC] cancel={cancel}
+  //[REMOVE SERVICEDESC] />
+  //[REMOVE SERVICEDESC] ),
+  //[REMOVE SERVICEDESC] { style: { width: '100%' } }
+  //[REMOVE SERVICEDESC] )
+  //[REMOVE SERVICEDESC] .then(() => {
+  //[REMOVE SERVICEDESC] localStorage.setItem(key, JSON.stringify({ last_seen: Date.now() }));
+  //[REMOVE SERVICEDESC] });
+  //[REMOVE SERVICEDESC] }
+  //[REMOVE SERVICEDESC] }
   //[REMOVE SERVICEDESC] };
 
   componentDidMount() {

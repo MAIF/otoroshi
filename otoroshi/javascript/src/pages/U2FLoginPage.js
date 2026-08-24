@@ -192,36 +192,35 @@ export class U2FLoginPage extends Component {
           return c;
         });
         console.log(options);
-        return getCredentials(options)
-          .then((credentials) => {
-            const json = responseToObject(credentials);
-            return fetch(`/bo/webauthn/login/finish`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
+        return getCredentials(options).then((credentials) => {
+          const json = responseToObject(credentials);
+          return fetch(`/bo/webauthn/login/finish`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              requestId,
+              webauthn: json,
+              otoroshi: {
+                origin: window.location.origin,
+                username,
+                password,
               },
-              body: JSON.stringify({
-                requestId,
-                webauthn: json,
-                otoroshi: {
-                  origin: window.location.origin,
-                  username,
-                  password,
-                },
-              }),
-            })
-              .then((r) => r.json(), this.handleError('Authentication error, sorry ...'))
-              .then((data) => {
-                this.setState(
-                  { error: null, email: '', password: '', message: `Login successfully` },
-                  () => {
-                    window.location.href = '/bo/dashboard';
-                  }
-                );
-              }, this.handleError('Login error, sorry ...'));
-          });
+            }),
+          })
+            .then((r) => r.json(), this.handleError('Authentication error, sorry ...'))
+            .then((data) => {
+              this.setState(
+                { error: null, email: '', password: '', message: `Login successfully` },
+                () => {
+                  window.location.href = '/bo/dashboard';
+                }
+              );
+            }, this.handleError('Login error, sorry ...'));
+        });
       }, this.handleError('Login error, sorry ...'));
   };
 

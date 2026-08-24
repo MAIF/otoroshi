@@ -767,13 +767,13 @@ export class TopBar extends Component {
   };
 
   //[REMOVE SERVICEDESC] gotoService = (e) => {
-    //[REMOVE SERVICEDESC] if (e) {
-      //[REMOVE SERVICEDESC] if (this.props.history) {
-        //[REMOVE SERVICEDESC] this.props.history.push(`/lines/${e.env}/services/${e.value}`);
-      //[REMOVE SERVICEDESC] } else {
-        //[REMOVE SERVICEDESC] window.location.href = `/bo/dashboard/lines/${e.env}/services/${e.value}`;
-      //[REMOVE SERVICEDESC] }
-    //[REMOVE SERVICEDESC] }
+  //[REMOVE SERVICEDESC] if (e) {
+  //[REMOVE SERVICEDESC] if (this.props.history) {
+  //[REMOVE SERVICEDESC] this.props.history.push(`/lines/${e.env}/services/${e.value}`);
+  //[REMOVE SERVICEDESC] } else {
+  //[REMOVE SERVICEDESC] window.location.href = `/bo/dashboard/lines/${e.env}/services/${e.value}`;
+  //[REMOVE SERVICEDESC] }
+  //[REMOVE SERVICEDESC] }
   //[REMOVE SERVICEDESC] };
 
   gotoRoute = (routeId) => {
