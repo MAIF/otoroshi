@@ -5,7 +5,7 @@ authors: [otoroshi-team]
 tags: [otoroshi, release, scala3, play, pekko, migration]
 ---
 
-Otoroshi `18.0.0` is the largest release we have shipped in years: 1,299 files changed, 37,009 lines added and 120,949 removed since `17.17.0`. The whole runtime moved to Scala 3, Play 3 and Apache Pekko, and Service Descriptors -- deprecated for four years -- are finally gone.
+Otoroshi `18.0.0` is the largest release we have shipped in years. The whole runtime moved to Scala 3, Play 3 and Apache Pekko, and Service Descriptors -- deprecated for four years -- are finally gone.
 
 It is also, by design, meant to be one of the most boring upgrades you will ever do. Your routes, plugins, API keys, certificates and exporters are untouched. Your traffic does not care.
 
@@ -24,21 +24,21 @@ The planks needed swapping for reasons that had been accumulating for a while:
 - **Play 2.8** went out of support, and **Play 3.0** -- the Pekko-based line -- landed in late 2023. Issue [#1755](https://github.com/MAIF/otoroshi/issues/1755) was opened on November 7th, 2023 and stayed open for almost three years.
 - We were shipping a **patched snapshot build of akka-stream** in the repository (`akka-stream_2.12-2.6.21+5-a72bf6ba-SNAPSHOT.jar`) to carry a TLS 1.3 handshake fix that upstream had not released.
 
-Individually, each of those is survivable. Together they meant every security update, every dependency bump and every new feature had to be negotiated against a foundation that was quietly drifting away from the rest of the JVM ecosystem. Thirteen issues in this milestone carry a `waiting-for-scala3-port` label: real bugs and real feature requests that were parked because fixing them on the old foundation was not worth the effort.
+Individually, each of those is survivable. Together they meant the foundation was quietly drifting away from the rest of the JVM ecosystem, and the gap was only going to widen.
 
 So in July we tagged `scala2-freeze`, stopped adding features, and did the port.
 
 ## What actually changed
 
-**Scala 2.12.16 → 3.8.4.** The entire ~180k line backend, plus the test suite. [PR #2595](https://github.com/MAIF/otoroshi/pull/2595) alone is 636 files and 100 commits.
+**Scala 2.12.16 → 3.8.4.** The entire backend, plus the test suite, ported in [PR #2595](https://github.com/MAIF/otoroshi/pull/2595).
 
 **Play 2.8.19 → 3.0.11, Akka 2.6 → Apache Pekko 1.6.** Same actor model, same streams, same HTTP stack -- Pekko is a direct fork of the Akka we were already running. The package names changed, the semantics did not.
 
 **The vendored jars are gone.** The patched akka-stream snapshot was dropped: the TLS 1.3 fix it carried has been part of Pekko since 1.1.0, so we now run straight upstream Pekko with no local patches. A second vendored jar (`scala-schema`) went with it.
 
-**Service Descriptors have been removed.** They were deprecated in `v1.5.3` (February 2022) when the new proxy engine landed, `v17.0.0` shipped the migration tooling, and `v18.0.0` removes the entity, its admin API, its UI pages and its Kubernetes CRD. Routes are now the only way to configure HTTP proxying -- one entity, one mental model, one code path. This is the plank we had been carrying the longest, and removing it accounts for most of those 120,949 deleted lines.
+**Service Descriptors have been removed.** They were deprecated in `v1.5.3` (February 2022) when the new proxy engine landed, `v17.0.0` shipped the migration tooling, and `v18.0.0` removes the entity, its admin API, its UI pages and its Kubernetes CRD. Routes are now the only way to configure HTTP proxying -- one entity, one mental model, one code path. This is the plank we had been carrying the longest, and by far the biggest thing this release takes away.
 
-Six weeks from freeze to `18.0.0-preview1`.
+Six weeks from freeze to the first preview.
 
 ## What this means for you
 
@@ -67,15 +67,15 @@ We did not take the opportunity to redesign anything. That was deliberate. A mig
 
 ## What to expect next
 
-The point of all this work is what comes after it. Being back on supported upstreams means security patches flow again without archaeology; it means the JVM libraries we depend on publish for us; it means the thirteen issues that were parked behind the port are already fixed and shipping in the previews -- OpenSearch support, ACME chain selection, WebSocket ordering and chunking fixes, Redis TLS material from config, Elastic exporters that actually report their failures, and more.
+The point of all this work is what comes after it. Being back on supported upstreams means security patches flow again without archaeology; it means the JVM libraries we depend on publish for us; and it means the fixes we had been holding until the port landed are merged and shipping -- OpenSearch support, ACME chain selection, WebSocket ordering and chunking fixes, Redis TLS material from config, Elastic exporters that actually report their failures, and more.
 
 It also means we can start using Scala 3 properly rather than merely compiling with it. You will see that show up gradually, in internals first.
 
-In the shorter term, expect the `18.0.0` final release imminently, and a `17.x` line that stays available for anyone who needs more time.
+In the shorter term, the `17.x` line stays available for anyone who needs more time.
 
 ## Try it
 
-`18.0.0-preview2` is out now, on [Docker Hub](https://hub.docker.com/r/maif/otoroshi) and in the [GitHub releases](https://github.com/MAIF/otoroshi/releases). The full milestone is [here](https://github.com/MAIF/otoroshi/milestone/141?closed=1).
+`18.0.0` is out now, on [Docker Hub](https://hub.docker.com/r/maif/otoroshi) and in the [GitHub releases](https://github.com/MAIF/otoroshi/releases). The full milestone is [here](https://github.com/MAIF/otoroshi/milestone/141?closed=1).
 
 If you run Otoroshi in production, this is a genuinely useful moment to test an upgrade on a copy of your datastore and tell us what you find -- especially the Service Descriptor migration, which is the one part of this release that touches your data. Open an [issue](https://github.com/MAIF/otoroshi/issues) or come talk to us on [Discord](https://discord.gg/dmbwZrfpcQ).
 
