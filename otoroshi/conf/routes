@@ -528,6 +528,7 @@ GET     /api/data-exporter-configs                          otoroshi.controllers
 POST    /api/data-exporter-configs                          otoroshi.controllers.adminapi.DataExporterConfigController.createAction()
 
 ## NgRoutes
+GET     /api/routes/_from_service_descriptor   otoroshi.next.controllers.adminapi.NgRoutesController.fromServiceDescriptor()
 GET     /api/routes/_form                      otoroshi.next.controllers.adminapi.NgRoutesController.form()
 GET     /api/routes/_template                  otoroshi.next.controllers.adminapi.NgRoutesController.initiateRoute()
 POST    /api/routes/_bulk                      otoroshi.next.controllers.adminapi.NgRoutesController.bulkCreateAction()
@@ -637,6 +638,8 @@ GET     /apis/cluster/node/version                            otoroshi.controlle
 GET     /apis/cluster/node/health                             otoroshi.api.GenericApiController.health()
 GET     /apis/cluster/node/metrics                            otoroshi.api.GenericApiController.metrics()
 GET     /apis/cluster                                         otoroshi.controllers.adminapi.ClusterController.getClusterMembers()
+
+GET     /apis/proxy.otoroshi.io/v1/routes/_from_service_descriptor   otoroshi.next.controllers.adminapi.NgRoutesController.fromServiceDescriptor()
 
 GET     /apis/proxy.otoroshi.io/v1/drafts/:id/live             otoroshi.next.controllers.adminapi.ApisController.draftLiveStats(id, every: Option[Int])
 GET     /apis/proxy.otoroshi.io/v1/drafts/:kind                otoroshi.next.controllers.adminapi.ApisController.findAllByKind(kind)
