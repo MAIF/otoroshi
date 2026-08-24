@@ -560,6 +560,11 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
           val group = parts(0)
           val kind  = parts(1)
           env.allResources.resources.find(r => r.kind == kind && r.group == group) match {
+            case None if groupKind == "proxy.otoroshi.io/ServiceDescriptor" => {
+              NgRoute.fromServiceDescriptor(ServiceDescriptor.fromJsons(
+                env.datastores.serviceDescriptorDataStore.template(env).json.as[JsObject].deepMerge(resource)
+              ), debug = false).json.vfuture
+            }
             case None      => {
               Json
                 .obj(
@@ -597,6 +602,14 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
         //[REMOVE SERVICEDESC]       )
         //[REMOVE SERVICEDESC]       .json
         //[REMOVE SERVICEDESC]   )
+        case "proxy.otoroshi.io/ServiceDescriptor" =>
+          NgRoute.fromServiceDescriptor(ServiceDescriptor.fromJsons(
+            env.datastores.serviceDescriptorDataStore.template(env).json.as[JsObject].deepMerge(resource)
+          ), debug = false).json.vfuture
+        case "ServiceDescriptor" =>
+          NgRoute.fromServiceDescriptor(ServiceDescriptor.fromJsons(
+            env.datastores.serviceDescriptorDataStore.template(env).json.as[JsObject].deepMerge(resource)
+          ), debug = false).json.vfuture
         case "ServiceGroup"                  =>
           FastFuture.successful(
             ServiceGroup
@@ -718,8 +731,9 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
         case "ErrorTemplate"                 => FastFuture.successful(ErrorTemplate.fromJsons(resource).toJson.as[JsObject])
       })
         .map(resource => {
+          val fkind = if (kind == "proxy.otoroshi.io/ServiceDescriptor" || kind == "ServiceDescriptor") "proxy.otoroshi.io/Route" else kind
           Json.obj(
-            "kind"     -> kind,
+            "kind"     -> fkind,
             "resource" -> resource
           )
         })
