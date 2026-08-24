@@ -308,7 +308,9 @@ async function githubTag(location, version) {
 async function publishMavenCentral(location, version) {
   await runScript(`
     cd $LOCATION/otoroshi
-    sbt ";doc;packageDoc;publishSigned"
+    # publishSigned already builds every published artifact, and the doc jar is an empty
+    # placeholder now (see the Maven Central quota comment in build.sbt), so nothing to force here.
+    sbt "publishSigned"
     # sonatypeBundleRelease logs BUNDLE_ZIP_ERROR but still exits 0 when publishSigned wrote the artifacts
     # somewhere else than sonatypeBundleDirectory, silently skipping the whole Maven Central publication.
     if [ -z "$(ls -A target/sonatype-staging/$VERSION 2>/dev/null)" ]; then
