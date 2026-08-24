@@ -298,7 +298,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
            )
       _ <- Future.sequence(serviceGroups.value.map(ServiceGroup.fromJsons).map(_.save()))
       _ <- Future.sequence(apiKeys.value.map(ApiKey.fromJsons).map(_.save()))
-      _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).map(_.save()))
+      _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).map(sd => NgRoute.fromServiceDescriptor(sd, debug = false).save()))
       _ <- Future.sequence(errorTemplates.value.map(ErrorTemplate.fromJsons).map(_.save()))
       _ <- Future.sequence(jwtVerifiers.value.map(GlobalJwtVerifier.fromJsons).map(_.save()))
       _ <- Future.sequence(authConfigs.value.map(AuthModuleConfig.fromJsons).map(_.save()))
@@ -330,7 +330,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     //   )
     for {
       config            <- env.datastores.globalConfigDataStore.singleton()
-      descs             <- env.datastores.serviceDescriptorDataStore.findAll()
+      //[REMOVE SERVICEDESC] descs             <- env.datastores.serviceDescriptorDataStore.findAll()
       apikeys           <- env.datastores.apiKeyDataStore.findAll()
       groups            <- env.datastores.serviceGroupDataStore.findAll()
       tmplts            <- env.datastores.errorTemplateDataStore.findAll()
@@ -356,7 +356,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       extensions        <- env.adminExtensions.exportAllEntities()
     } yield OtoroshiExport(
       config,
-      descs,
+      //[REMOVE SERVICEDESC] descs,
       apikeys,
       groups,
       tmplts,

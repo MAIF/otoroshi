@@ -599,25 +599,25 @@ class OtoroshiResources(env: Env) {
         stateUpdate = seq => env.proxyState.updateNgSRouteCompositions(seq)
       )
     ),
-    Resource(
-      "ServiceDescriptor",
-      "service-descriptors",
-      "service-descriptor",
-      "proxy.otoroshi.io",
-      ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApiWithState[ServiceDescriptor](
-        ServiceDescriptor._fmt,
-        classOf[ServiceDescriptor],
-        env.datastores.serviceDescriptorDataStore.key,
-        env.datastores.serviceDescriptorDataStore.extractId,
-        json => json.select("id").asString,
-        () => "id",
-        (v, p, ctx) => env.datastores.serviceDescriptorDataStore.template(env, ctx).json,
-        stateAll = () => env.proxyState.allServices(),
-        stateOne = id => env.proxyState.service(id),
-        stateUpdate = seq => env.proxyState.updateServices(seq)
-      )
-    ),
+    //[REMOVE SERVICEDESC] Resource(
+    //[REMOVE SERVICEDESC]   "ServiceDescriptor",
+    //[REMOVE SERVICEDESC]   "service-descriptors",
+    //[REMOVE SERVICEDESC]   "service-descriptor",
+    //[REMOVE SERVICEDESC]   "proxy.otoroshi.io",
+    //[REMOVE SERVICEDESC]   ResourceVersion("v1", true, false, true),
+    //[REMOVE SERVICEDESC]   GenericResourceAccessApiWithState[ServiceDescriptor](
+    //[REMOVE SERVICEDESC]     ServiceDescriptor._fmt,
+    //[REMOVE SERVICEDESC]     classOf[ServiceDescriptor],
+    //[REMOVE SERVICEDESC]     env.datastores.serviceDescriptorDataStore.key,
+    //[REMOVE SERVICEDESC]     env.datastores.serviceDescriptorDataStore.extractId,
+    //[REMOVE SERVICEDESC]     json => json.select("id").asString,
+    //[REMOVE SERVICEDESC]     () => "id",
+    //[REMOVE SERVICEDESC]     (v, p, ctx) => env.datastores.serviceDescriptorDataStore.template(env, ctx).json,
+    //[REMOVE SERVICEDESC]     stateAll = () => env.proxyState.allServices(),
+    //[REMOVE SERVICEDESC]     stateOne = id => env.proxyState.service(id),
+    //[REMOVE SERVICEDESC]     stateUpdate = seq => env.proxyState.updateServices(seq)
+    //[REMOVE SERVICEDESC]   )
+    //[REMOVE SERVICEDESC] ),
     Resource(
       "TcpService",
       "tcp-services",

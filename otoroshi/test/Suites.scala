@@ -99,9 +99,9 @@ object OtoroshiTests {
       new ClientValidatorApiSpec(name, config),
       new JWTVerifierApiSpec(name, config),
       new CertificateApiSpec(name, config),
-      new ServicesApiSpec(name, config),
+      //[REMOVE SERVICEDESC] new ServicesApiSpec(name, config),
       new ApikeyGroupApiSpec(name, config),
-      new ApikeyServiceApiSpec(name, config),
+      //[REMOVE SERVICEDESC] new ApikeyServiceApiSpec(name, config),
       new ApikeyApiSpec(name, config),
       new Log4ShellSpec()
     )

@@ -45,7 +45,7 @@ class NgProxyState(env: Env) {
   private val certificates        = new UnboundedTrieMap[String, Cert]()
   private val authModules         = new UnboundedTrieMap[String, AuthModuleConfig]()
   private val errorTemplates      = new UnboundedTrieMap[String, ErrorTemplate]()
-  private val services            = new UnboundedTrieMap[String, ServiceDescriptor]()
+  //[REMOVE SERVICEDESC] private val services            = new UnboundedTrieMap[String, ServiceDescriptor]()
   private val teams               = new UnboundedTrieMap[String, Team]()
   private val tenants             = new UnboundedTrieMap[String, Tenant]()
   private val serviceGroups       = new UnboundedTrieMap[String, ServiceGroup]()
@@ -132,7 +132,7 @@ class NgProxyState(env: Env) {
   def certificate(id: String): Option[Cert]                                   = certificates.get(id)
   def authModule(id: String): Option[AuthModuleConfig]                        = authModules.get(id)
   def authModuleAsync(id: String): Future[Option[AuthModuleConfig]]           = authModules.get(id).vfuture
-  def service(id: String): Option[ServiceDescriptor]                          = services.get(id)
+  //[REMOVE SERVICEDESC] def service(id: String): Option[ServiceDescriptor]                          = services.get(id)
   def team(id: String): Option[Team]                                          = teams.get(id)
   def tenant(id: String): Option[Tenant]                                      = tenants.get(id)
   def serviceGroup(id: String): Option[ServiceGroup]                          = serviceGroups.get(id)
@@ -159,7 +159,7 @@ class NgProxyState(env: Env) {
   def allCertificates(): Seq[Cert]                                   = certificates.values.toSeq
   def allCertificatesMap(): TrieMap[String, Cert]                    = certificates
   def allAuthModules(): Seq[AuthModuleConfig]                        = authModules.values.toSeq
-  def allServices(): Seq[ServiceDescriptor]                          = services.values.toSeq
+  //[REMOVE SERVICEDESC] def allServices(): Seq[ServiceDescriptor]                          = services.values.toSeq
   def allTeams(): Seq[Team]                                          = teams.values.toSeq
   def allTenants(): Seq[Tenant]                                      = tenants.values.toSeq
   def allServiceGroups(): Seq[ServiceGroup]                          = serviceGroups.values.toSeq
@@ -201,9 +201,9 @@ class NgProxyState(env: Env) {
     // java.nio.file.Files.writeString(new java.io.File("./tree-router-config.json").toPath, domainPathTreeRef.get().json.prettify)
   }
 
-  def updateServices(values: Seq[ServiceDescriptor]): Unit = {
-    services.addAll(values.map(v => (v.id, v))).remAll(services.keySet.toSeq.diff(values.map(_.id)))
-  }
+  //[REMOVE SERVICEDESC] def updateServices(values: Seq[ServiceDescriptor]): Unit = {
+  //[REMOVE SERVICEDESC]   services.addAll(values.map(v => (v.id, v))).remAll(services.keySet.toSeq.diff(values.map(_.id)))
+  //[REMOVE SERVICEDESC] }
 
   def updateTeams(values: Seq[Team]): Unit = {
     teams.addAll(values.map(v => (v.id.value, v))).remAll(teams.keySet.toSeq.diff(values.map(_.id.value)))
@@ -609,15 +609,16 @@ class NgProxyState(env: Env) {
       routescomp          <- env.datastores.routeCompositionDataStore.findAllAndFillSecrets() // secrets OK
       apis                <- env.datastores.apiDataStore.findAllAndFillSecrets() // secrets OK
       apisRoutes          <- Future.sequence(apis.map(api => api.toRoutes)).map(_.flatten)
-      genRoutesDomain     <- generateRoutesByDomain(env)
-      genRoutesPath       <- generateRoutesByName(env)
-      genRandom           <- generateRandomRoutes(env)
+      // genRoutesDomain     <- generateRoutesByDomain(env)
+      // genRoutesPath       <- generateRoutesByName(env)
+      // genRandom           <- generateRandomRoutes(env)
       descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
-      fakeRoutes           = if (dev) Seq(NgRoute.fake) else Seq.empty
-      newRoutes            =
-        (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
-          NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
-        ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ apisRoutes ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
+      // fakeRoutes           = if (dev) Seq(NgRoute.fake) else Seq.empty
+      /* [REMOVE SERVICEDESC] */ newRoutes            =
+      /* [REMOVE SERVICEDESC] */   (descriptors.map(d =>
+      /* [REMOVE SERVICEDESC] */     NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
+      /* [REMOVE SERVICEDESC] */   ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ apisRoutes).filter(_.enabled)
+      //   (routes ++ routescomp.flatMap(_.toRoutes) ++ apisRoutes).filter(_.enabled)
       apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets() // secrets OK
       certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
       verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
@@ -687,7 +688,7 @@ class NgProxyState(env: Env) {
       env.proxyState.updateAuthModules(modules)
       env.proxyState.updateJwtVerifiers(verifiers)
       env.proxyState.updateErrorTemplates(errorTemplates)
-      env.proxyState.updateServices(descriptors)
+      //[REMOVE SERVICEDESC] env.proxyState.updateServices(descriptors)
       env.proxyState.updateTeams(teams)
       env.proxyState.updateTenants(tenants)
       env.proxyState.updateServiceGroups(serviceGroups)

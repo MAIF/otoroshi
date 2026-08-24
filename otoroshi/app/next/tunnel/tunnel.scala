@@ -597,7 +597,7 @@ class TunnelManager(env: Env) {
       val requestJson       = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
       val url               = Uri(env.clusterConfig.leader.urls.head)
       val ipAddress         = member.location
-      val service           = env.proxyState.service(env.backOfficeServiceId).get
+      val service           = env.proxyState.route(env.backOfficeServiceId).get //[REMOVE SERVICEDESC] env.proxyState.service(env.backOfficeServiceId).get
       env.Ws
         .akkaUrlWithTarget(
           s"${url.toString()}/api/tunnels/${tunnelId}/relay",
@@ -608,7 +608,7 @@ class TunnelManager(env: Env) {
           )
         )
         .withMethod("POST")
-        .withRequestTimeout(service.clientConfig.globalTimeout.milliseconds)
+        .withRequestTimeout(service.backend.client.globalTimeout.milliseconds)
         .withHttpHeaders(
           env.Headers.OtoroshiClientId     -> env.clusterConfig.leader.clientId,
           env.Headers.OtoroshiClientSecret -> env.clusterConfig.leader.clientSecret,

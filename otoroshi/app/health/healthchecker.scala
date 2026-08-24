@@ -290,7 +290,7 @@ class HealthCheckerActor()(using env: Env) extends Actor {
       val myself            = self
       val date              = DateTime.now()
       if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
-      val services          = env.proxyState.allServices()
+      val services          = Seq.empty[ServiceDescriptor] //[REMOVE SERVICEDESC] env.proxyState.allServices()
       val routes            = env.proxyState.allRoutes()
       val routeCompositions = env.proxyState.allRouteCompositions()
       val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
@@ -300,7 +300,7 @@ class HealthCheckerActor()(using env: Env) extends Actor {
       val myself            = self
       val date              = DateTime.now()
       if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
-      val services          = env.proxyState.allServices()
+      val services          = Seq.empty[ServiceDescriptor] //[REMOVE SERVICEDESC] env.proxyState.allServices()
       val routes            = env.proxyState.allRoutes()
       val routeCompositions = env.proxyState.allRouteCompositions()
       val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
@@ -342,7 +342,7 @@ class HealthCheckJob extends Job {
   override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val parallelChecks    = env.healtCheckWorkers
-    val services          = env.proxyState.allServices()
+    val services          = Seq.empty[ServiceDescriptor] //[REMOVE SERVICEDESC] env.proxyState.allServices()
     val routes            = env.proxyState.allRawRoutes()
     val routeCompositions = env.proxyState.allRouteCompositions()
     val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
