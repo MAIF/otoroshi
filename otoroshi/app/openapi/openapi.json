@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "18.0.0-preview2",
+    "version" : "18.0.0-preview3",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:35887",
+    "url" : "http://otoroshi-api.oto.tools:41921",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -30,9 +30,6 @@
   }, {
     "name" : "route-composition",
     "description" : "all the operations about the route-composition entity"
-  }, {
-    "name" : "service-descriptor",
-    "description" : "all the operations about the service-descriptor entity"
   }, {
     "name" : "tcp-service",
     "description" : "all the operations about the tcp-service entity"
@@ -684,124 +681,6 @@
                 "schema" : {
                   "$ref" : "#/components/schemas/proxy.otoroshi.io.Route"
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/apis/proxy.otoroshi.io/v1/service-descriptors" : {
-      "get" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Find all possible ServiceDescriptor entities",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.findAll",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Creates a ServiceDescriptor",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.create",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "201" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : true,
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
               }
             }
           }
@@ -14529,66 +14408,6 @@
         }
       }
     },
-    "/apis/proxy.otoroshi.io/v1/service-descriptors/_count" : {
-      "get" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Get number of entity of kind ServiceDescriptor",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.count",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "Resources count",
-                  "type" : "object",
-                  "properties" : {
-                    "count" : {
-                      "type" : "number",
-                      "description" : "the number of resources"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/alert/events" : {
       "get" : {
         "tags" : [ "events" ],
@@ -14862,60 +14681,6 @@
                 "schema" : {
                   "description" : "Resource of kind AuthModule",
                   "$ref" : "#/components/schemas/security.otoroshi.io.AuthModule"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/apis/proxy.otoroshi.io/v1/service-descriptors/_template" : {
-      "get" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Return a template of a resource of kind ServiceDescriptor",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.template",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "Resource of kind ServiceDescriptor",
-                  "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
                 }
               }
             }
@@ -16915,6 +16680,60 @@
         }
       }
     },
+    "/api/cluster/live" : {
+      "get" : {
+        "tags" : [ "cluster" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.controllers.adminapi.ClusterController.liveCluster",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "unknown type",
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/proxy.otoroshi.io/v1/routes/_template" : {
       "get" : {
         "tags" : [ "route", "proxy.otoroshi.io" ],
@@ -17230,305 +17049,6 @@
         }
       }
     },
-    "/apis/proxy.otoroshi.io/v1/service-descriptors/_bulk" : {
-      "post" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Create multiple ServiceDescriptor at the same time",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.bulk_create",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BulkResponseBody"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : false,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Update multiple ServiceDescriptor at the same time",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.bulk_update",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BulkResponseBody"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : false,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Update (using json-patch) multiple ServiceDescriptor at the same time",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.bulk_patch",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BulkResponseBody"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : false,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/BulkPatchBody"
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Delete multiple ServiceDescriptor at the same time",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.bulk_delete",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BulkResponseBody"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/cluster/live" : {
-      "get" : {
-        "tags" : [ "cluster" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ClusterController.liveCluster",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "unknown type",
-                  "type" : "object"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/apis/proxy.otoroshi.io/v1/drafts/_bulk" : {
       "post" : {
         "tags" : [ "draft", "proxy.otoroshi.io" ],
@@ -17768,6 +17288,140 @@
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tunnels/{tunnelId}/relay" : {
+      "get" : {
+        "tags" : [ "tunnels" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.tunnel.TunnelController.tunnelRelayWs",
+        "parameters" : [ {
+          "name" : "tunnelId",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "the tunnelId parameter"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "unknown type",
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "tunnels" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.tunnel.TunnelController.tunnelRelay",
+        "parameters" : [ {
+          "name" : "tunnelId",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "the tunnelId parameter"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "unknown type",
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "description" : "unknown type",
+                "type" : "object"
               }
             }
           }
@@ -18181,401 +17835,6 @@
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/apis/proxy.otoroshi.io/v1/service-descriptors/{id}" : {
-      "get" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Find resource of kind ServiceDescriptor by its id",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.findById",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "The id param of the target entity"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "Resource of kind ServiceDescriptor",
-                  "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Updates a specific ServiceDescriptor using its id",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.updateById",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "The id param of the target entity"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : true,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-              }
-            }
-          }
-        }
-      },
-      "patch" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Updates (using json-patch) a specific ServiceDescriptor using its id",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.pathById",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "The id param of the target entity"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : true,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "service-descriptor", "proxy.otoroshi.io" ],
-        "summary" : "Deletes a specific ServiceDescriptor using its id",
-        "operationId" : "proxy.otoroshi.io.ServiceDescriptor.deleteById",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "The id param of the target entity"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/proxy.otoroshi.io.ServiceDescriptor"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/tunnels/{tunnelId}/relay" : {
-      "get" : {
-        "tags" : [ "tunnels" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.next.tunnel.TunnelController.tunnelRelayWs",
-        "parameters" : [ {
-          "name" : "tunnelId",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the tunnelId parameter"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "unknown type",
-                  "type" : "object"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "tunnels" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.next.tunnel.TunnelController.tunnelRelay",
-        "parameters" : [ {
-          "name" : "tunnelId",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the tunnelId parameter"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "unknown type",
-                  "type" : "object"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body",
-          "required" : true,
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "description" : "unknown type",
-                "type" : "object"
               }
             }
           }
@@ -23910,32 +23169,6 @@
         "referencedSchemas" : {
           "Tenant" : {
             "type" : "object"
-          }
-        }
-      },
-      "proxy.otoroshi.io.ServiceDescriptor" : {
-        "schema" : {
-          "type" : "object",
-          "properties" : {
-            "issueCert" : {
-              "type" : "boolean"
-            },
-            "private" : {
-              "type" : "boolean"
-            }
-          }
-        },
-        "referencedSchemas" : {
-          "ServiceDescriptor" : {
-            "type" : "object",
-            "properties" : {
-              "issueCert" : {
-                "type" : "boolean"
-              },
-              "private" : {
-                "type" : "boolean"
-              }
-            }
           }
         }
       },
