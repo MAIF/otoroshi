@@ -40,7 +40,7 @@ async function searchAndOpen(query, optionLabel, expectedText) {
 }
 
 test('Search → HTTP Routes', async () => searchAndOpen('Routes', 'HTTP Routes', 'Routes'));
-test('Search → Services', async () => searchAndOpen('Services', 'Services'));
+//[REMOVE SERVICEDESC] test('Search → Services', async () => searchAndOpen('Services', 'Services'));
 test('Search → Administrators', async () => searchAndOpen('Admin', 'Administrators', 'All administrators'));
 test('Search → Data exporters', async () => searchAndOpen('exporter', 'Data exporters'));
 test('Search → Apikeys', async () => searchAndOpen('Apikeys', 'Apikeys'));
