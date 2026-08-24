@@ -225,19 +225,25 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   def fromServiceDescriptor() = ApiAction(parse.json) { (ctx: otoroshi.actions.ApiActionContext[JsValue]) =>
-    ctx.request.body match {
-      case obj @ JsObject(_) => Ok(NgRoute.fromServiceDescriptor(ServiceDescriptor.fromJsons(
-        env.datastores.serviceDescriptorDataStore.template(env).json.as[JsObject].deepMerge(obj)
-      ), debug = false).json)
-      case arr @ JsArray(seq) => Ok(JsArray(seq.filter {
-        case JsObject(_) => true
-        case _ => false
-      } .map { obj =>
-        NgRoute.fromServiceDescriptor(ServiceDescriptor.fromJsons(
-          env.datastores.serviceDescriptorDataStore.template(env).json.as[JsObject].deepMerge(obj.asObject)
-        ), debug = false).json
-      }))
-      case _ => BadRequest(Json.obj("error" -> "bad input"))
+    try {
+      ctx.request.body match {
+        case obj@JsObject(_) => Ok(NgRoute.fromServiceDescriptor(ServiceDescriptor.fromJsons(
+          env.datastores.serviceDescriptorDataStore.template(env).json.as[JsObject].deepMerge(obj)
+        ), debug = false).json)
+        case arr@JsArray(seq) => Ok(JsArray(seq.filter {
+          case JsObject(_) => true
+          case _ => false
+        }.map { obj =>
+          NgRoute.fromServiceDescriptor(ServiceDescriptor.fromJsons(
+            env.datastores.serviceDescriptorDataStore.template(env).json.as[JsObject].deepMerge(obj.asObject)
+          ), debug = false).json
+        }))
+        case _ => BadRequest(Json.obj("error" -> "bad input"))
+      }
+    } catch {
+      case t: Throwable =>
+        logger.error("error while trying to transform body", t)
+        BadRequest(Json.obj("error" -> "bad input"))
     }
   }
 
