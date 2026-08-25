@@ -78,6 +78,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Api plans - keyless expression with empty default" in {
       new ApiPlanPluginsTests(this).keylessExpressionWithEmptyDefault()
     }
+    "Api plans - keyless runs last among extractors" in {
+      new ApiPlanPluginsTests(this).keylessRunsLastAmongExtractors()
+    }
+    "Api plans - a credential wins over the keyless fallback" in {
+      new ApiPlanPluginsTests(this).credentialWinsOverKeyless()
+    }
     "Api plans - jwt end to end" in {
       new ApiPlanPluginsTests(this).jwtEndToEnd()
     }

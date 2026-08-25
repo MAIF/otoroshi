@@ -1705,8 +1705,10 @@ case class Api(
               throttlingStrategy = plan.rateLimiting,
               apikey = plan.apikeyTemplate
             ).json,
+            // a public plan always resolves an identity, so it is the last resort: it has to run
+            // after every credential based extractor, and still before NgExpectedConsumer at 1000
             pluginIndex = PluginIndex(
-              validateAccess = 2.10.some
+              validateAccess = 900.00.some
             ).some
           )
         )

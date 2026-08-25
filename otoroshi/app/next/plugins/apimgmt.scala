@@ -96,6 +96,13 @@ object ApikeyFromPlan {
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
+    // an api can publish several plans, and every published plan puts its own extractor on every
+    // route. they all write to the same attribute, so the first plan to identify the caller has to
+    // win: without this an extractor that always succeeds, the keyless one typically, would
+    // overwrite the identity a credential just established.
+    if (ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).isDefined) {
+      return Results.Ok(Json.obj()).vfuture
+    }
     //env.datastores.apiKeyDataStore
     //  .findById(clientId)
     //  .map {

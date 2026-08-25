@@ -441,4 +441,67 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
       ApiPlanApikeySeen.get("e2e-jwt-nocreate") mustBe None
     } finally undeploy(api)
   }
+
+  def keylessRunsLastAmongExtractors(): Unit = {
+    val route    = routeOf(
+      apiWith(
+        Seq(
+          plan("plan-order-kl", "keyless"),
+          plan("plan-order-jwt", "jwt", Json.obj("verifier" -> "verifier_1"))
+        )
+      )
+    )
+    val keyless  = slotOf(route, NgPluginHelper.pluginId[NgExpressionApikeyExtractor]).get
+    val jwt      = slotOf(route, NgPluginHelper.pluginId[NgJwtApikeyExtractor]).get
+    val consumer = slotOf(route, NgPluginHelper.pluginId[NgExpectedConsumer]).get
+    // the keyless extractor always resolves an identity, so it must come after the credential based
+    // ones, otherwise it would claim every call before they get a chance
+    val keylessIdx  = keyless.pluginIndex.flatMap(_.validateAccess).get
+    val jwtIdx      = jwt.pluginIndex.flatMap(_.validateAccess).get
+    val consumerIdx = consumer.pluginIndex.flatMap(_.validateAccess).get
+    (jwtIdx < keylessIdx) mustBe true
+    (keylessIdx < consumerIdx) mustBe true
+  }
+
+  def credentialWinsOverKeyless(): Unit = {
+    ApiPlanApikeySeen.reset()
+    val verifierId = s"verifier_${IdGenerator.uuid}"
+    createOtoroshiVerifier(
+      GlobalJwtVerifier(
+        id = verifierId,
+        name = verifierId,
+        desc = verifierId,
+        strict = true,
+        source = InHeader(name = "Authorization", remove = "Bearer "),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> "foo")))
+      )
+    ).futureValue
+
+    // one api, one route, a keyless plan and a jwt plan: both extractors run on every call
+    val api = apiWith(
+      Seq(
+        plan("plan-mix-kl", "keyless"),
+        plan("plan-mix-jwt", "jwt", Json.obj("verifier" -> verifierId, "client_id_path" -> "client_id"))
+      ),
+      flowPlugins = NgPlugins(Seq(probe("mix")))
+    )
+    deploy(api)
+    try {
+      val token = JWT
+        .create()
+        .withIssuer("foo")
+        .withClaim("client_id", "consumer-from-token")
+        .sign(Algorithm.HMAC512("secret"))
+
+      // a caller presenting a credential keeps the identity of that credential
+      callApi(api, Seq("Authorization" -> s"Bearer $token")).status mustBe 200
+      ApiPlanApikeySeen.get("mix") mustBe Some("consumer-from-token")
+
+      // a caller presenting nothing falls back on the public plan
+      ApiPlanApikeySeen.reset()
+      callApi(api).status mustBe 200
+      ApiPlanApikeySeen.get("mix") mustBe Some("keyless_plan-mix-kl_127.0.0.1")
+    } finally undeploy(api)
+  }
 }
