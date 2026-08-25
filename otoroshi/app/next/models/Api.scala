@@ -1658,6 +1658,7 @@ case class Api(
 
   private def applyPlan(route: NgRoute, plan: ApiPlan): NgRoute = {
     val plugins = plan.accessModeConfigurationType match {
+      case "keyless" => ??? // TODO: enforce plan quotas/throttling based on expression, default "${req.ip}"
       case "apikey"        =>
         Seq(
           PluginWithConfig(
@@ -1688,7 +1689,7 @@ case class Api(
             pluginId[NgJwtUserExtractor],
             plan.accessModeConfiguration
               .map(conf => {
-                NgJwtUserExtractorConfig(
+                NgJwtUserExtractorConfig( // TODO: use same kind of plugin but with apikey extraction instead
                   verifier = conf.asInstanceOf[JWTAccessModeConfiguration].verifier.getOrElse(""),
                   strict = false
                 ).json
@@ -1699,17 +1700,17 @@ case class Api(
       case "mtls"          =>
         Seq(
           PluginWithConfig(
-            pluginId[NgHasClientCertMatchingValidator],
-            NgHasClientCertMatchingValidatorConfig(
+            pluginId[NgHasClientCertMatchingValidator], // TODO: use same plugin but extracting to apikey
+            NgHasClientCertMatchingValidatorConfig( // TODO: handle validation here !!! and extract a client id from DN
               mandatory = false
             ).json.asObject
           )
         )
-      case "oauth2-local"  => Seq(PluginWithConfig(pluginId[ApikeyCalls]))
+      case "oauth2-local"  => Seq(PluginWithConfig(pluginId[ApikeyCalls])) // TODO: fix, use same config as apikey, but with jwt extractor to true
       case "oauth2-remote" =>
         Seq(
           PluginWithConfig(
-            pluginId[OIDCJwtVerifier],
+            pluginId[OIDCJwtVerifier], // TODO: use the same kind of plugin but extract apikey instead
             plan.accessModeConfiguration
               .map(conf => {
                 OIDCJwtVerifierConfig(
@@ -1720,7 +1721,6 @@ case class Api(
               .getOrElse(Json.obj())
           )
         )
-      // "keyless"
       case _               => Seq.empty
     }
 
@@ -1741,7 +1741,6 @@ case class Api(
     if (
       routeApiPlans
         .exists(plan =>
-          plan.accessModeConfigurationType != "keyless" &&
           plan.status == ApiPlanStatus.Published
         )
     ) {
@@ -1752,7 +1751,7 @@ case class Api(
             PluginWithConfig(
               pluginId[NgExpectedConsumer],
               Json.obj(),
-              Some(PluginIndex(validateAccess = 1000.00.some))
+              Some(PluginIndex(validateAccess = 1000.00.some)) // still valid
             )
           )
         )
