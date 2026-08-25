@@ -838,9 +838,7 @@ class WasmRequestHandler extends RequestHandler {
 
 case class FakeWasmContext(
     config: JsValue,
-    idx: Int = 0,
-    // synthetic context, it stands in for a real call and needs no cache discriminator
-    attrs: TypedMap = TypedMap.empty
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   override def route: NgRoute = NgRoute.empty
 }

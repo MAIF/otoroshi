@@ -1282,7 +1282,8 @@ class ProxyEngine() extends RequestHandler {
         route = route,
         config = Json.obj(),
         globalConfig = globalConfig.plugins.config,
-        attrs = attrs
+        attrs = attrs,
+        cacheDiscriminator = plugins.cacheDiscriminator
       )
       def markPluginItem(
           item: NgReportPluginSequenceItem,
@@ -1459,7 +1460,8 @@ class ProxyEngine() extends RequestHandler {
         route = route,
         config = Json.obj(),
         globalConfig = globalConfig.plugins.config,
-        attrs = attrs
+        attrs = attrs,
+        cacheDiscriminator = plugins.cacheDiscriminator
       )
       def markPluginItem(
           item: NgReportPluginSequenceItem,
@@ -1654,7 +1656,8 @@ class ProxyEngine() extends RequestHandler {
         attrs = attrs,
         report = report,
         sequence = sequence,
-        markPluginItem = markPluginItem
+        markPluginItem = markPluginItem,
+        cacheDiscriminator = plugins.cacheDiscriminator
       )
       if (all_plugins.size == 1) {
         val wrapper               = all_plugins.head
@@ -1864,7 +1867,8 @@ class ProxyEngine() extends RequestHandler {
         user = attrs.get(otoroshi.plugins.Keys.UserKey),
         report = report,
         sequence = sequence,
-        markPluginItem = markPluginItem
+        markPluginItem = markPluginItem,
+        cacheDiscriminator = plugins.cacheDiscriminator
       )
       if (all_plugins.size == 1) {
         val wrapper               = all_plugins.head
@@ -2016,9 +2020,9 @@ class ProxyEngine() extends RequestHandler {
           case Some(apikeyPluginsFlow) => {
             // from here the chain of the call is composed from the plan and the plugins of this
             // apikey, so (route, plugin, index) no longer identifies a plugin config: the very same
-            // slot of the very same route holds a different plugin for another caller. Scoping the
-            // config caches by client id keeps every composed chain on its own entries.
-            attrs.put(Keys.PluginsCacheDiscriminatorKey -> apikey.clientId)
+            // slot of the very same route holds a different plugin for another caller. The chain
+            // carries the client id so that every composed chain keeps its own cache entries.
+            val discriminator = apikey.clientId
             // the flow runs its phases on its own plugins only: the route and the global ones went
             // through them already and must not run a second time. that is why global_plugins is
             // empty here, it is restored on the merged instance below.
@@ -2030,7 +2034,8 @@ class ProxyEngine() extends RequestHandler {
               nextPluginsMerge = pluginMerge,
               attrs = attrs,
               _env = env,
-              _ec = ec
+              _ec = ec,
+              cacheDiscriminator = discriminator
             ).seffectOn(_.allPlugins)
             for {
               _ <- callPluginsBeforeRequestCallback(
@@ -2069,7 +2074,8 @@ class ProxyEngine() extends RequestHandler {
                 nextPluginsMerge = pluginMerge,
                 attrs = attrs,
                 _env = env,
-                _ec = ec
+                _ec = ec,
+                cacheDiscriminator = discriminator
               ).seffectOn(_.allPlugins)
               attrs.put(Keys.ContextualPluginsKey -> merged)
               merged
@@ -2874,7 +2880,8 @@ class ProxyEngine() extends RequestHandler {
         attrs = attrs,
         report = report,
         sequence = sequence,
-        markPluginItem = markPluginItem
+        markPluginItem = markPluginItem,
+        cacheDiscriminator = plugins.cacheDiscriminator
       )
 
       if (all_plugins.size == 1) {
@@ -3475,7 +3482,8 @@ class ProxyEngine() extends RequestHandler {
         attrs = attrs,
         report = report,
         sequence = sequence,
-        markPluginItem = markPluginItem
+        markPluginItem = markPluginItem,
+        cacheDiscriminator = plugins.cacheDiscriminator
       )
       if (all_plugins.size == 1) {
         val wrapper               = all_plugins.head

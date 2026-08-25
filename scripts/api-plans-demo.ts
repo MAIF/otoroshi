@@ -574,19 +574,51 @@ const results: CallResult[] = [
   }),
 ];
 
+const failures: string[] = [];
+
 for (const r of results) {
-  const ok = r.status === 200 ? '\u2713' : '\u2717';
-  const who = r.consumer ? `${r.consumer}${r.plan ? `  (plan ${r.plan})` : ''}` : 'no consumer';
-  console.log(`  ${ok} ${String(r.how).padEnd(30)} -> ${String(r.status).padEnd(6)} ${who}`);
-  if (r.user && r.user !== 'none') console.log(`       user profile: ${r.user}`);
+  const statusOk = r.status === 200;
   const planOk = r.planPlugin === r.expectedPlanPlugin;
+  const who = r.consumer ? `${r.consumer}${r.plan ? `  (plan ${r.plan})` : ''}` : 'no consumer';
+  console.log(
+    `  ${statusOk ? '\u2713' : '\u2717'} ${String(r.how).padEnd(30)} -> ${String(r.status).padEnd(6)} ${who}`
+  );
+  if (r.user && r.user !== 'none') console.log(`       user profile: ${r.user}`);
   console.log(
     `       plan plugin : ${planOk ? '\u2713' : '\u2717'} ${r.planPlugin ?? 'none'}` +
       (planOk ? '' : `  (expected ${r.expectedPlanPlugin})`)
   );
+  if (!statusOk) failures.push(`${r.how}: expected 200, got ${r.status}`);
+  if (!planOk) {
+    failures.push(`${r.how}: expected plan plugin ${r.expectedPlanPlugin}, got ${r.planPlugin ?? 'none'}`);
+  }
+  // an identity is what every plan is supposed to produce, so its absence is a failure too
+  if (statusOk && !r.consumer) failures.push(`${r.how}: no consumer identity reached the backend`);
 }
 
 oidcMock.stop(true);
+
+const GREEN = '\u001b[32m';
+const RED = '\u001b[31m';
+const BOLD = '\u001b[1m';
+const OFF = '\u001b[0m';
+
+if (failures.length === 0) {
+  console.log(`
+${GREEN}${BOLD}  +--------------------------------------------------------+
+  |                                                        |
+  |   ALL CHECKS PASSED - ${String(results.length).padStart(2)} calls, every plan verified   |
+  |                                                        |
+  +--------------------------------------------------------+${OFF}`);
+} else {
+  console.log(`
+${RED}${BOLD}  +--------------------------------------------------------+
+  |                                                        |
+  |   ${String(failures.length).padStart(2)} CHECK(S) FAILED                                  |
+  |                                                        |
+  +--------------------------------------------------------+${OFF}`);
+  for (const f of failures) console.log(`${RED}   - ${f}${OFF}`);
+}
 
 console.log(`\n=== nothing was deleted, browse it at http://otoroshi.${DOMAIN}:${PORT} ===`);
 console.log(`  api           ${PREFIX} (plans: keyless, apikey, jwt, mtls, oauth2-local)`);
@@ -602,3 +634,5 @@ console.log(
 );
 console.log(`        never persisted, so they will not show up in the apikeys page`);
 console.log(`\n  re-run to wipe and recreate, or --cleanup to only remove it all\n`);
+
+process.exit(failures.length === 0 ? 0 : 1);
