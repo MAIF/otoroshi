@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Provisions one demo API on a local Otoroshi, with a single route and one plan of each kind
- * (keyless, apikey, jwt, mtls), then calls it the way each kind of consumer would. Nothing is
+ * (keyless, apikey, jwt, mtls, oauth2-local), then calls it the way each kind of consumer would. Nothing is
  * deleted at the end so the result can be browsed in the UI; re-running the script wipes what it
  * created before and starts over.
  *
@@ -42,7 +42,9 @@ const AUTH = 'Basic ' + Buffer.from(`${CLIENT_ID}:${SECRET}`).toString('base64')
 const ids = {
   verifier: `${PREFIX}-verifier`,
   apikey: `${PREFIX}-apikey`,
+  oauth2Apikey: `${PREFIX}-oauth2-apikey`,
 };
+const OAUTH2_SECRET = 'demo-oauth2-secret';
 
 // ---------------------------------------------------------------------------------------------
 // admin api plumbing
@@ -116,6 +118,7 @@ async function cleanup() {
   await quiet('DELETE', `/apis/apis.otoroshi.io/v1/apis/${PREFIX}`);
   await quiet('DELETE', `/apis/proxy.otoroshi.io/v1/drafts/${PREFIX}`);
   await quiet('DELETE', `/api/apikeys/${ids.apikey}`);
+  await quiet('DELETE', `/api/apikeys/${ids.oauth2Apikey}`);
   await quiet('DELETE', `/api/verifiers/${ids.verifier}`);
   // the pki assigns its own ids, so our certs are tracked by name
   const certs = (await adminCall('GET', '/api/certificates')).body ?? [];
@@ -287,6 +290,7 @@ function apiPayload() {
         client_id_field: 'UID',
         create_if_missing: true,
       }),
+      plan('oauth2-local', {}),
     ],
     subscriptions: [],
     deployments: [],
@@ -397,8 +401,9 @@ const pki = await createPki();
 console.log('3. creating the jwt verifier');
 await createVerifier();
 
-console.log('4. creating and publishing the api (one route, four plans)');
-await createAndPublish(apiPayload());
+console.log('4. creating and publishing the api (one route, five plans)');
+const apiPl = apiPayload();
+await createAndPublish(apiPl);
 
 console.log('5. creating an apikey for the apikey plan');
 await must(
@@ -408,10 +413,34 @@ await must(
     clientId: ids.apikey,
     clientSecret: 'demo-secret',
     clientName: ids.apikey,
-    authorizedEntities: [`api_${PREFIX}`, `route_${PREFIX}-route_prod`],
+    authorizedEntities: [`api_${PREFIX}`, /*`route_${PREFIX}-route_prod`*/],
+    apiRef: {
+      api: apiPl.id,
+      plan: `apiplansdemo-apikey-plan`,
+      sub: 'xxx',
+    },
     enabled: true,
   },
   'apikey'
+);
+
+console.log('5b. creating a dedicated apikey for the oauth2-local plan');
+await must(
+  'POST',
+  '/api/apikeys',
+  {
+    clientId: ids.oauth2Apikey,
+    clientSecret: OAUTH2_SECRET,
+    clientName: ids.oauth2Apikey,
+    authorizedEntities: [`api_${PREFIX}`],
+    apiRef: {
+      api: apiPl.id,
+      plan: `${PREFIX}-oauth2-local-plan`,
+      sub: 'xxx',
+    },
+    enabled: true,
+  },
+  'oauth2 apikey'
 );
 
 console.log('6. waiting for the proxy state to pick up the generated route');
@@ -433,6 +462,11 @@ const results: CallResult[] = [
     Authorization: `Bearer ${signJwt({ iss: 'demo', client_id: 'consumer-from-token' }, JWT_SECRET)}`,
   }),
   await callMtls('client certificate', pki.client),
+  // the apikey doubles as the signing key: ApikeyCalls reads the clientId claim, looks the apikey
+  // up, then validates the HS512 signature against its own clientSecret
+  await callHttp('apikey as a signed jwt', {
+    Authorization: `Bearer ${signJwt({ clientId: ids.oauth2Apikey }, OAUTH2_SECRET)}`,
+  }),
 ];
 
 for (const r of results) {
@@ -442,10 +476,11 @@ for (const r of results) {
 }
 
 console.log(`\n=== nothing was deleted, browse it at http://otoroshi.${DOMAIN}:${PORT} ===`);
-console.log(`  api           ${PREFIX} (plans: keyless, apikey, jwt, mtls)`);
+console.log(`  api           ${PREFIX} (plans: keyless, apikey, jwt, mtls, oauth2-local)`);
 console.log(`  domain        ${BASE_DOMAIN}`);
 console.log(`  jwt secret    ${JWT_SECRET} (HS512, claim client_id)`);
 console.log(`  apikey        ${ids.apikey} / demo-secret`);
+console.log(`  oauth2 apikey ${ids.oauth2Apikey} / ${OAUTH2_SECRET} (HS512 signer, claim clientId)`);
 console.log(`  client cert   subject UID=demo-consumer, CN=${PREFIX}-client`);
 console.log(
   `\n  note: the apikeys minted by the keyless, jwt and mtls plans live in memory only and are`
