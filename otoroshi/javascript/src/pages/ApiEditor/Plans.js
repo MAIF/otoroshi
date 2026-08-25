@@ -10,6 +10,7 @@ import { RestrictionPath } from '../../components/Restrictions';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 import SimpleLoader from './SimpleLoader';
+import { PluginsChainEditor } from '../../components/PluginsChainEditor';
 import { useDraftOfAPI, historyPush } from './hooks';
 import { VersionBadge } from './DraftOnly';
 import { listImpactedSubscriptions } from '../../services/BackOfficeServices';
@@ -605,6 +606,25 @@ function PlanForm({ plan, onChange }) {
           },
         },
       },
+      plugins: {
+        type: 'form',
+        label: 'Plugins',
+        collapsable: true,
+        collapsed: true,
+        schema: {
+          overrides: {
+            type: 'bool',
+            label: 'Overrides',
+            help: 'When enabled, the plugins of this plan replace the ones of the route, except the access validators that already ran. When disabled, they are appended to them.',
+          },
+          plugins: {
+            renderer: (props) => (
+              <PluginsChainEditor value={props.value} onChange={props.onChange} />
+            ),
+          },
+        },
+        flow: ['overrides', 'plugins'],
+      },
       tags: { type: 'array', label: 'Tags' },
       metadata: { type: 'object', label: 'Metadata' },
       validation: {
@@ -691,6 +711,7 @@ function PlanForm({ plan, onChange }) {
       'rateLimiting',
       'pricing',
       'validation',
+      'plugins',
       { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
     ],
     []
