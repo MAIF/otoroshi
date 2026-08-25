@@ -42,6 +42,39 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Allow HTTP Methods" in {
       new AllowHTTPMethodsTests(this)
     }
+    "Apikey plugins flow - plan computed plugins" in {
+      new ApikeyPluginsFlowTests(this).planComputedPlugins()
+    }
+    "Apikey plugins flow - flow resolution" in {
+      new ApikeyPluginsFlowTests(this).pluginFlowResolution()
+    }
+    "Apikey plugins flow - no flow leaves the chain alone" in {
+      new ApikeyPluginsFlowTests(this).noFlow()
+    }
+    "Apikey plugins flow - merge without override" in {
+      new ApikeyPluginsFlowTests(this).mergeWithoutOverride()
+    }
+    "Apikey plugins flow - override drops route transformers" in {
+      new ApikeyPluginsFlowTests(this).overrideDropsRouteTransformers()
+    }
+    "Apikey plugins flow - override keeps access validators" in {
+      new ApikeyPluginsFlowTests(this).overrideKeepsAccessValidators()
+    }
+    "Apikey plugins flow - flow can reject the call" in {
+      new ApikeyPluginsFlowTests(this).flowCanRejectTheCall()
+    }
+    "Apikey plugins flow - extra plugin only for that apikey" in {
+      new ApikeyPluginsFlowTests(this).extraPluginOnlyForThatApikey()
+    }
+    "Apikey plugins flow - override only for that apikey" in {
+      new ApikeyPluginsFlowTests(this).overrideOnlyForThatApikey()
+    }
+    "Apikey plugins flow - full matrix (source x override)" in {
+      new ApikeyPluginsFlowTests(this).flowMatrix()
+    }
+    "Apikey plugins flow - flow from an api plan" in {
+      new ApikeyPluginsFlowTests(this).flowFromApiPlan()
+    }
     "Apikeys - default" in {
       new ApikeysTests(this).default()
     }
