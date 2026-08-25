@@ -380,8 +380,12 @@ trait NgCachedConfigContext {
   def idx: Int
   def route: NgRoute
   def config: JsValue
+  // the config takes part in the key: a route no longer determines the chain on its own, since
+  // handleApikeyPluginsFlow composes it per call from the plan of the caller. Two calls hitting the
+  // same route with two different plans put a different plugin at the same index, and keying on
+  // (route, plugin, idx) alone would serve the first config seen to every one of them.
   def cachedConfig[A](plugin: String)(reads: Reads[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::$plugin::$idx"
+    val key = s"${route.cacheableId}::$plugin::$idx::${config.hashCode()}"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads.reads(config) match {
@@ -395,7 +399,7 @@ trait NgCachedConfigContext {
   }.toOption.flatten
 
   def cachedConfigFn[A](plugin: String)(reads: JsValue => Option[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::${plugin}::$idx"
+    val key = s"${route.cacheableId}::${plugin}::$idx::${config.hashCode()}"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads(config) match {
