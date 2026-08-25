@@ -42,6 +42,48 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Allow HTTP Methods" in {
       new AllowHTTPMethodsTests(this)
     }
+    "Api plans - keyless plan generation" in {
+      new ApiPlanPluginsTests(this).keylessPlanGeneration()
+    }
+    "Api plans - keyless default expression" in {
+      new ApiPlanPluginsTests(this).keylessPlanDefaultExpression()
+    }
+    "Api plans - jwt plan generation" in {
+      new ApiPlanPluginsTests(this).jwtPlanGeneration()
+    }
+    "Api plans - mtls plan generation" in {
+      new ApiPlanPluginsTests(this).mtlsPlanGeneration()
+    }
+    "Api plans - apikey plan generation" in {
+      new ApiPlanPluginsTests(this).apikeyPlanGeneration()
+    }
+    "Api plans - plan settings are propagated" in {
+      new ApiPlanPluginsTests(this).planSettingsArePropagated()
+    }
+    "Api plans - apikey template falls back on plan fields" in {
+      new ApiPlanPluginsTests(this).apikeyTemplateFallsBackOnPlanFields()
+    }
+    "Api plans - several published plans stack" in {
+      new ApiPlanPluginsTests(this).severalPublishedPlansStack()
+    }
+    "Api plans - only published plans apply" in {
+      new ApiPlanPluginsTests(this).onlyPublishedPlansApply()
+    }
+    "Api plans - keyless end to end" in {
+      new ApiPlanPluginsTests(this).keylessEndToEnd()
+    }
+    "Api plans - keyless end to end with custom expression" in {
+      new ApiPlanPluginsTests(this).keylessEndToEndWithCustomExpression()
+    }
+    "Api plans - keyless expression with empty default" in {
+      new ApiPlanPluginsTests(this).keylessExpressionWithEmptyDefault()
+    }
+    "Api plans - jwt end to end" in {
+      new ApiPlanPluginsTests(this).jwtEndToEnd()
+    }
+    "Api plans - jwt end to end without creation" in {
+      new ApiPlanPluginsTests(this).jwtEndToEndWithoutCreation()
+    }
     "Apikey plugins flow - plan computed plugins" in {
       new ApikeyPluginsFlowTests(this).planComputedPlugins()
     }

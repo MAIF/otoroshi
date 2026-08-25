@@ -1693,11 +1693,11 @@ case class Api(
         Seq(
           PluginWithConfig(
             pluginId[NgExpressionApikeyExtractor],
-            // a public access still gets an identity, so that the quotas and throttling of the plan
+            // a keyless access still gets an identity, so that the quotas and throttling of the plan
             // can be enforced per caller without asking for any credential
             NgExpressionApikeyExtractorConfig(
               expression = keylessConfig.expr.getOrElse("${req.ip}"),
-              clientIdPrefix = s"public_${plan.id}_",
+              clientIdPrefix = s"keyless_${plan.id}_",
               strict = false,
               createIfMissing = keylessConfig.createIfMissing,
               apiId = api.id.some,

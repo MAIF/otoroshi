@@ -273,12 +273,12 @@ function AccessModeConfigurationTypeSelector({ onChange, value, onEdit }) {
             icon: 'fa-lock-open',
             text: 'Open access without authentication. Clients call freely without credentials.',
           },
-          {
-            id: 'public',
-            key: 'Public',
-            icon: 'fa-globe',
-            text: 'Available to all developers. Subscribe directly from the portal without approval.',
-          },
+          //{
+          //  id: 'public',
+          //  key: 'Public',
+          //  icon: 'fa-globe',
+          //  text: 'Available to all developers. Subscribe directly from the portal without approval.',
+          //},
           {
             id: 'apikey',
             key: 'API Key',
