@@ -726,16 +726,10 @@ case class ApiPlan(raw: JsObject) {
   lazy val plugins: Option[NgPluginsWithOverride] =
     raw.select("plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt)
   lazy val hasPlugins: Boolean = accessModeConfiguration.exists(_.plugins.nonEmpty) || plugins.exists(_.plugins.nonEmpty)
-  lazy val computedPlugins: Option[NgPluginsWithOverride] = {
-    if (hasPlugins) {
-      NgPluginsWithOverride(
-        plugins = NgPlugins(accessModeConfiguration.map(_.plugins.slots).getOrElse(Seq.empty) ++ plugins.map(_.plugins.slots).getOrElse(Seq.empty)),
-        overrides = plugins.exists(_.overrides),
-      ).some
-    } else {
-      None
-    }
-  }
+  lazy val computedPlugins: NgPluginsWithOverride = NgPluginsWithOverride(
+    plugins = NgPlugins(accessModeConfiguration.map(_.plugins.slots).getOrElse(Seq.empty) ++ plugins.map(_.plugins.slots).getOrElse(Seq.empty)),
+    overrides = plugins.exists(_.overrides),
+  )
 }
 
 case class ApiDocumentationSource(raw: JsObject) {

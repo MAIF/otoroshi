@@ -1990,7 +1990,7 @@ class ProxyEngine() extends RequestHandler {
             // TODO: call beforeRequest on apikeyPluginsFlow
             // TODO: call pre-route on apikeyPluginsFlow, break if it breaks
             // TODO: call access-validation on apikeyPluginsFlow, break if it breaks
-            // TODO: merge apikeyPluginsFlow and ctxPlugins if not override, else use apikeyPluginsFlow
+            // TODO: merge apikeyPluginsFlow and ctxPlugins if not override, else use apikeyPluginsFlow. if override, keep preroute and access validation plugins that already passed
             // TODO: attrs.put(Keys.ContextualPluginsKey -> mergedCtxPlugins)
             // TODO: and return it
             ???

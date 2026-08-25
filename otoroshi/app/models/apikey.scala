@@ -251,24 +251,18 @@ case class ApiKey(
   def pluginFlow(env: Env): Option[NgPluginsWithOverride] = {
     val localPlugins = plugins.map(_.plugins.slots).getOrElse(Seq.empty)
     val localOverride = plugins.exists(_.overrides)
-    apiRef.flatMap { ref =>
-      env.proxyState.api(ref.api).flatMap { api =>
-        api.plans.find(_.id == ref.plan).map { plan =>
-          if (plan.hasPlugins) {
-            val planPlugins = plan.computedPlugins.map(_.plugins.slots).getOrElse(Seq.empty)
-            val planOverride = plan.computedPlugins.exists(_.overrides)
-            NgPluginsWithOverride(NgPlugins(planPlugins ++ localPlugins), planOverride || localOverride)
-          } else {
-            NgPluginsWithOverride(NgPlugins(localPlugins), localOverride)
-          }
-        }
+    val plan = apiRef.flatMap { ref =>
+      env.proxyState.api(ref.api).flatMap(api => api.plans.find(_.id == ref.plan))
+    }
+    plan match {
+      case Some(p) if p.hasPlugins => {
+        val planFlow = p.computedPlugins
+        NgPluginsWithOverride(NgPlugins(planFlow.plugins.slots ++ localPlugins), planFlow.overrides || localOverride).some
       }
-    }.orElse {
-      if (localPlugins.nonEmpty) {
+      case _ if localPlugins.nonEmpty => {
         NgPluginsWithOverride(NgPlugins(localPlugins), localOverride).some
-      } else {
-        None
       }
+      case _ => None
     }
   }
 
