@@ -8,7 +8,6 @@ import { Row } from '../../components/Row';
 import { ArrayInput, Table } from '../../components/inputs';
 import { RestrictionPath } from '../../components/Restrictions';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
-import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 import SimpleLoader from './SimpleLoader';
 import { PluginsChainEditor } from '../../components/PluginsChainEditor';
 import { useDraftOfAPI, historyPush } from './hooks';
@@ -17,7 +16,7 @@ import { listImpactedSubscriptions } from '../../services/BackOfficeServices';
 import { v4 } from 'uuid';
 import ApikeyCalls from '../../forms/ng_plugins/ApikeyCalls';
 import { findAuthConfigById } from '../../services/BackOfficeServices';
-import NgJwtUserExtractor from '../../forms/ng_plugins/NgJwtUserExtractor';
+import { JwtVerifierLauncher } from '../../forms/wizards/JwtVerifierLauncher';
 import { SelectorWizardLauncher } from '../../forms/wizards/SelectorWizardLauncher';
 import { NewSubscription } from './Subscriptions';
 import { Header } from '../../components/wizardframe';
@@ -211,8 +210,30 @@ const AccessModePluginConfigurationForm = {
     flow: ApikeyCalls.config_flow,
   },
   jwt: {
-    schema: NgJwtUserExtractor.config_schema,
-    flow: ['verifier', 'name_path', 'email_path', 'meta_path'],
+    schema: {
+      verifier: {
+        label: 'JWT verifier',
+        type: 'JwtVerifierWizard',
+        props: {
+          componentLauncher: JwtVerifierLauncher,
+          componentsProps: {
+            allowedNewStrategy: 'Generate',
+          },
+        },
+      },
+      client_id_path: {
+        type: 'string',
+        label: 'Client id claim',
+        help: 'Claim holding the client id of the consumer. A json path such as $.azp works too.',
+        props: { placeholder: 'client_id' },
+      },
+      create_if_missing: {
+        type: 'bool',
+        label: 'Create the apikey if missing',
+        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+      },
+    },
+    flow: ['verifier', 'client_id_path', 'create_if_missing'],
   },
   'oauth2-local': {
     schema: NgClientCredentialTokenEndpoint.config_schema,
@@ -232,22 +253,63 @@ const AccessModePluginConfigurationForm = {
           },
         },
       },
+      client_id_path: {
+        type: 'string',
+        label: 'Client id claim',
+        help: 'Claim holding the client id of the consumer. Identity providers put it in client_id, azp or cid depending on the vendor.',
+        props: { placeholder: 'client_id' },
+      },
+      create_if_missing: {
+        type: 'bool',
+        label: 'Create the apikey if missing',
+        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+      },
     },
-    flow: ['verifier'],
+    flow: ['verifier', 'client_id_path', 'create_if_missing'],
   },
   mtls: {
-    schema: NgHasClientCertMatchingValidator.config_schema,
-    flow: [
-      // 'serial_numbers',
-      // 'subject_dns',
-      // 'issuer_dns',
-      'regex_subject_dns',
-      'regex_issuer_dns',
-    ],
+    schema: {
+      regex_subject_dns: {
+        type: 'array',
+        label: 'Subject DN patterns',
+        help: 'Regex patterns the subject DN of the client certificate may match. Leave both lists empty to accept any trusted certificate.',
+        props: { placeholder: '.*CN=my-client.*' },
+      },
+      regex_issuer_dns: {
+        type: 'array',
+        label: 'Issuer DN patterns',
+        help: 'Regex patterns the issuer DN of the client certificate may match. A certificate matching either list is accepted.',
+        props: { placeholder: '.*CN=my-ca.*' },
+      },
+      client_id_field: {
+        type: 'string',
+        label: 'Client id DN attribute',
+        help: 'DN attribute holding the client id, UID or CN for instance. Left empty, the identity is derived from the whole subject and the serial number. A certificate missing the named attribute is rejected.',
+        props: { placeholder: 'UID' },
+      },
+      create_if_missing: {
+        type: 'bool',
+        label: 'Create the apikey if missing',
+        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+      },
+    },
+    flow: ['regex_subject_dns', 'regex_issuer_dns', 'client_id_field', 'create_if_missing'],
   },
   keyless: {
-    schema: {},
-    flow: [],
+    schema: {
+      expr: {
+        type: 'string',
+        label: 'Consumer expression',
+        help: 'Expression building the consumer identity of a public call, so that the quotas of this plan apply without any credential. Defaults to ${req.ip}. Beware that a missing header resolves to no-header-<field>, which puts every such caller on one shared quota: use an empty default like ${req.headers.x-consumer:} to reject those calls instead.',
+        props: { placeholder: '${req.ip}' },
+      },
+      create_if_missing: {
+        type: 'bool',
+        label: 'Create the apikey if missing',
+        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+      },
+    },
+    flow: ['expr', 'create_if_missing'],
   },
   public: {
     schema: {},
