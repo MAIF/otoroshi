@@ -347,7 +347,8 @@ trait ApiAccessModeConfiguration {
 }
 
 case class KeylessAccessModeConfiguration(
-  expr: Option[String] = None
+  expr: Option[String] = None,
+  createIfMissing: Boolean = false
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Keyless
 }
@@ -356,20 +357,24 @@ object KeylessAccessModeConfiguration {
   def fmt = new Format[KeylessAccessModeConfiguration] {
     override def reads(json: JsValue): JsResult[KeylessAccessModeConfiguration] = Try {
       KeylessAccessModeConfiguration(
-        expr = json.selectAsOptString("expr")
+        expr = json.selectAsOptString("expr"),
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: KeylessAccessModeConfiguration): JsValue             = Json.obj(
-      "expr" -> o.expr
+      "expr"              -> o.expr,
+      "create_if_missing" -> o.createIfMissing
     )
   }
 }
 
 case class JWTAccessModeConfiguration(
-    verifier: Option[String] = None
+    verifier: Option[String] = None,
+    clientIdPath: Option[String] = Some("client_id"),
+    createIfMissing: Boolean = false,
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.JWT
 }
@@ -378,21 +383,27 @@ object JWTAccessModeConfiguration {
   def fmt = new Format[JWTAccessModeConfiguration] {
     override def reads(json: JsValue): JsResult[JWTAccessModeConfiguration] = Try {
       JWTAccessModeConfiguration(
-        verifier = json.select("verifier").asOpt[String]
+        verifier = json.select("verifier").asOpt[String],
+        clientIdPath = json.select("client_id_path").asOpt[String],
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: JWTAccessModeConfiguration): JsValue             = Json.obj(
-      "verifier" -> o.verifier
+      "verifier" -> o.verifier,
+      "client_id_path" -> o.clientIdPath,
+      "create_if_missing" -> o.createIfMissing,
     )
   }
 }
 
 case class MtlsAccessModeConfiguration(
     regexSubjectDNs: Seq[String] = Seq.empty,
-    regexIssuerDNs: Seq[String] = Seq.empty
+    regexIssuerDNs: Seq[String] = Seq.empty,
+    clientIdField: Option[String] = None,
+    createIfMissing: Boolean = false
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Mtls
 }
@@ -402,7 +413,9 @@ object MtlsAccessModeConfiguration {
     override def reads(json: JsValue): JsResult[MtlsAccessModeConfiguration] = Try {
       MtlsAccessModeConfiguration(
         regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
-        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        clientIdField = json.select("client_id_field").asOpt[String].filter(_.trim.nonEmpty),
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -410,13 +423,17 @@ object MtlsAccessModeConfiguration {
     }
     override def writes(o: MtlsAccessModeConfiguration): JsValue             = Json.obj(
       "regex_subject_dns" -> o.regexSubjectDNs,
-      "regex_issuer_dns"  -> o.regexIssuerDNs
+      "regex_issuer_dns"  -> o.regexIssuerDNs,
+      "client_id_field"   -> o.clientIdField,
+      "create_if_missing" -> o.createIfMissing
     )
   }
 }
 
 case class OAuth2RemoteAccessModeConfiguration(
-    verifier: Option[String] = None
+    verifier: Option[String] = None,
+    clientIdPath: Option[String] = Some("client_id"),
+    createIfMissing: Boolean = false
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Remote
 }
@@ -425,14 +442,18 @@ object OAuth2RemoteAccessModeConfiguration {
   def fmt = new Format[OAuth2RemoteAccessModeConfiguration] {
     override def reads(json: JsValue): JsResult[OAuth2RemoteAccessModeConfiguration] = Try {
       OAuth2RemoteAccessModeConfiguration(
-        verifier = json.selectAsOptString("verifier")
+        verifier = json.selectAsOptString("verifier"),
+        clientIdPath = json.select("client_id_path").asOpt[String],
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: OAuth2RemoteAccessModeConfiguration): JsValue             = Json.obj(
-      "verifier" -> o.verifier
+      "verifier"          -> o.verifier,
+      "client_id_path"    -> o.clientIdPath,
+      "create_if_missing" -> o.createIfMissing
     )
   }
 }
@@ -697,7 +718,7 @@ case class ApiPlan(raw: JsObject) {
       .flatMap(rateLimiting => rateLimiting.select("strategy").asOpt(using ThrottlingStrategyConfig.fmt))
   lazy val accessModeConfiguration: Option[ApiAccessModeConfiguration] =
     accessModeConfigurationType match {
-      // TODO: case "keyless"       => (raw \ "access_mode_configuration").asOpt(using KeylessAccessModeConfiguration.fmt)
+      case "keyless"       => (raw \ "access_mode_configuration").asOpt(using KeylessAccessModeConfiguration.fmt)
       case "apikey"        => (raw \ "access_mode_configuration").asOpt(using ApikeyAccessModeConfiguration.fmt)
       case "jwt"           => (raw \ "access_mode_configuration").asOpt(using JWTAccessModeConfiguration.fmt)
       case "mtls"          => (raw \ "access_mode_configuration").asOpt(using MtlsAccessModeConfiguration.fmt)
@@ -723,6 +744,12 @@ case class ApiPlan(raw: JsObject) {
     .asOpt[JsObject]
     .flatMap(o => ApiPlanVisibility.format.reads(o).asOpt)
     .getOrElse(ApiPlanVisibility.Public)
+  // the apikey settings a plan hands over when an apikey has to be minted for a consumer. only an
+  // apikey plan carries a full template, the other kinds only have what the plan itself declares.
+  lazy val apikeyTemplate: ApikeyAccessModeConfiguration = accessModeConfiguration match {
+    case Some(conf: ApikeyAccessModeConfiguration) => conf
+    case _                                         => ApikeyAccessModeConfiguration(tags = tags, metadata = metadata)
+  }
   lazy val plugins: Option[NgPluginsWithOverride] =
     raw.select("plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt)
   lazy val hasPlugins: Boolean = accessModeConfiguration.exists(_.plugins.nonEmpty) || plugins.exists(_.plugins.nonEmpty)
@@ -1018,6 +1045,7 @@ object ApiSubscription {
       rotation = configPlan.rotation,
       authorizedEntities = Seq(ApiIdentifier(api.id)),
       throttlingStrategy = plan.rateLimiting,
+      apiRef = ApiRef(api = api.id, plan = plan.id, subscription = subscription.id).some,
       metadata = configPlan.metadata ++ subscription.metadata +
         (PLAN_METADATA_KEY         -> configPlan.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
         (SUBSCRIPTION_METADATA_KEY -> subscription.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
@@ -1656,10 +1684,34 @@ case class Api(
 
   case class PluginWithConfig(pluginId: String, config: JsValue = Json.obj(), pluginIndex: Option[PluginIndex] = None)
 
-  private def applyPlan(route: NgRoute, plan: ApiPlan): NgRoute = {
+  private def applyPlan(route: NgRoute, plan: ApiPlan, api: Api): NgRoute = {
     val plugins = plan.accessModeConfigurationType match {
-      case "keyless" => ??? // TODO: enforce plan quotas/throttling based on expression, default "${req.ip}"
-      case "apikey"        =>
+      case "keyless"                 =>
+        val keylessConfig = plan.accessModeConfiguration
+          .map(_.asInstanceOf[KeylessAccessModeConfiguration])
+          .getOrElse(KeylessAccessModeConfiguration())
+        Seq(
+          PluginWithConfig(
+            pluginId[NgExpressionApikeyExtractor],
+            // a public access still gets an identity, so that the quotas and throttling of the plan
+            // can be enforced per caller without asking for any credential
+            NgExpressionApikeyExtractorConfig(
+              expression = keylessConfig.expr.getOrElse("${req.ip}"),
+              clientIdPrefix = s"public_${plan.id}_",
+              strict = false,
+              createIfMissing = keylessConfig.createIfMissing,
+              apiId = api.id.some,
+              planId = plan.id.some,
+              throttlingStrategy = plan.rateLimiting,
+              apikey = plan.apikeyTemplate
+            ).json,
+            pluginIndex = PluginIndex(
+              validateAccess = 2.10.some
+            ).some
+          )
+        )
+      // case "oauth2-local"  => Seq(PluginWithConfig(pluginId[ApikeyCalls]))
+      case "apikey" | "oauth2-local" =>
         Seq(
           PluginWithConfig(
             pluginId[ApikeyCalls],
@@ -1669,13 +1721,13 @@ case class Api(
               .deepMerge(
                 NgApikeyCallsConfig(
                   mandatory = false,
-                  extractors = NgApikeyExtractors(
-                    otoBearer = NgApikeyExtractorOtoBearer(enabled = true),
-                    basic = NgApikeyExtractorBasic(enabled = false),
-                    customHeaders = NgApikeyExtractorCustomHeaders(enabled = false),
-                    clientId = NgApikeyExtractorClientId(enabled = false),
-                    jwt = NgApikeyExtractorJwt(enabled = false)
-                  )
+                  // extractors = NgApikeyExtractors(
+                  //   otoBearer = NgApikeyExtractorOtoBearer(enabled = true),
+                  //   basic = NgApikeyExtractorBasic(enabled = false),
+                  //   customHeaders = NgApikeyExtractorCustomHeaders(enabled = false),
+                  //   clientId = NgApikeyExtractorClientId(enabled = false),
+                  //   jwt = NgApikeyExtractorJwt(enabled = true)
+                  // )
                 ).json.asObject
               ),
             pluginIndex = PluginIndex(
@@ -1684,41 +1736,73 @@ case class Api(
           )
         )
       case "jwt"           =>
+        val jwtConfig = plan.accessModeConfiguration
+          .map(_.asInstanceOf[JWTAccessModeConfiguration])
+          .getOrElse(JWTAccessModeConfiguration())
         Seq(
           PluginWithConfig(
-            pluginId[NgJwtUserExtractor],
-            plan.accessModeConfiguration
-              .map(conf => {
-                NgJwtUserExtractorConfig( // TODO: use same kind of plugin but with apikey extraction instead
-                  verifier = conf.asInstanceOf[JWTAccessModeConfiguration].verifier.getOrElse(""),
-                  strict = false
-                ).json
-              })
-              .getOrElse(Json.obj())
+            pluginId[NgJwtApikeyExtractor],
+            NgJwtApikeyExtractorConfig(
+              verifier = jwtConfig.verifier.getOrElse(""),
+              clientIdPath = jwtConfig.clientIdPath.getOrElse("client_id"),
+              strict = false,
+              createIfMissing = jwtConfig.createIfMissing,
+              // an apikey minted from a token has to carry the very same quotas, restrictions and
+              // rotation as one obtained through a subscription on that plan
+              apiId = api.id.some,
+              planId = plan.id.some,
+              throttlingStrategy = plan.rateLimiting,
+              apikey = plan.apikeyTemplate
+            ).json,
+            pluginIndex = PluginIndex(
+              validateAccess = 2.01.some
+            ).some
           )
         )
       case "mtls"          =>
+        val mtlsConfig = plan.accessModeConfiguration
+          .map(_.asInstanceOf[MtlsAccessModeConfiguration])
+          .getOrElse(MtlsAccessModeConfiguration())
         Seq(
           PluginWithConfig(
-            pluginId[NgHasClientCertMatchingValidator], // TODO: use same plugin but extracting to apikey
-            NgHasClientCertMatchingValidatorConfig( // TODO: handle validation here !!! and extract a client id from DN
-              mandatory = false
-            ).json.asObject
+            pluginId[NgClientCertApikeyExtractor],
+            NgClientCertApikeyExtractorConfig(
+              regexSubjectDNs = mtlsConfig.regexSubjectDNs,
+              regexIssuerDNs = mtlsConfig.regexIssuerDNs,
+              clientIdField = mtlsConfig.clientIdField,
+              clientIdPrefix = s"mtls_${plan.id}_",
+              strict = false,
+              createIfMissing = mtlsConfig.createIfMissing,
+              apiId = api.id.some,
+              planId = plan.id.some,
+              throttlingStrategy = plan.rateLimiting,
+              apikey = plan.apikeyTemplate
+            ).json,
+            pluginIndex = PluginIndex(
+              validateAccess = 2.02.some
+            ).some
           )
         )
-      case "oauth2-local"  => Seq(PluginWithConfig(pluginId[ApikeyCalls])) // TODO: fix, use same config as apikey, but with jwt extractor to true
       case "oauth2-remote" =>
+        val oidcConfig = plan.accessModeConfiguration
+          .map(_.asInstanceOf[OAuth2RemoteAccessModeConfiguration])
+          .getOrElse(OAuth2RemoteAccessModeConfiguration())
         Seq(
           PluginWithConfig(
-            pluginId[OIDCJwtVerifier], // TODO: use the same kind of plugin but extract apikey instead
-            plan.accessModeConfiguration
-              .map(conf => {
-                OIDCJwtVerifierConfig(
-                  mandatory = false,
-                  ref = conf.asInstanceOf[OAuth2RemoteAccessModeConfiguration].verifier
-                ).json.asObject
-              })
-              .getOrElse(Json.obj())
+            pluginId[NgOidcApikeyExtractor],
+            NgOidcApikeyExtractorConfig(
+              ref = oidcConfig.verifier,
+              clientIdPath = oidcConfig.clientIdPath.getOrElse("client_id"),
+              strict = false,
+              createIfMissing = oidcConfig.createIfMissing,
+              apiId = api.id.some,
+              planId = plan.id.some,
+              throttlingStrategy = plan.rateLimiting,
+              apikey = plan.apikeyTemplate
+            ).json,
+            pluginIndex = PluginIndex(
+              validateAccess = 2.03.some
+            ).some
           )
         )
       case _               => Seq.empty
@@ -1734,7 +1818,7 @@ case class Api(
     val route         = routeApiPlans
       .filter(plan => plan.status == ApiPlanStatus.Published)
       .foldLeft(routeWithApi.route) { case (route, plan) =>
-        applyPlan(route, plan)
+        applyPlan(route, plan, routeWithApi.api)
       }
     // TODO - replace chain of plugins by MandatoryConsumerPreset plugin
 
