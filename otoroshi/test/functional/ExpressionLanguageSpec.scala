@@ -1,7 +1,7 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
-import next.models.{Api, ApiPlan}
+import otoroshi.next.models.{Api, ApiPlan}
 import otoroshi.el.{
   GlobalExpressionLanguage,
   HeadersExpressionLanguage,

@@ -2,6 +2,7 @@ package otoroshi.next.plugins
 
 import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection}
 import otoroshi.next.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgExecutionReport
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
@@ -24,4 +25,10 @@ object Keys {
   val JwtInjectionKey            = TypedKey[JwtInjection]("otoroshi.next.core.JwtInjection")
   val ResultTransformerKey       = TypedKey[Function[Result, Future[Result]]]("otoroshi.next.core.ResultTransformer")
   val ResponseAddHeadersKey      = TypedKey[Seq[(String, String)]]("otoroshi.next.core.ResponseAddHeaders")
+  // holds the plugins whose beforeRequest actually ran, so that afterRequest can mirror it exactly.
+  // it is a mutable buffer because the plugin chain can be walked more than once per request.
+  val CalledBeforeRequestPluginsKey =
+    TypedKey[scala.collection.mutable.Buffer[NgPluginWrapper[NgRequestTransformer]]](
+      "otoroshi.next.core.CalledBeforeRequestPlugins"
+    )
 }

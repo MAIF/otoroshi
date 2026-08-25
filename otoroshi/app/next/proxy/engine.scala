@@ -429,7 +429,7 @@ class ProxyEngine() extends RequestHandler {
       _          = report.markDoneAndStart(
                      "handle-apikey-plugins-flow",
                    )
-      ctxPlugins <- handleApikeyPluginsFlow(snowflake, request, route, firstCtxPlugins)
+      ctxPlugins <- handleApikeyPluginsFlow(snowflake, request, route, pluginMerge, firstCtxPlugins)
       _          = report.markDoneAndStart(
                      "handle-legacy-checks",
                      attrs
@@ -625,15 +625,15 @@ class ProxyEngine() extends RequestHandler {
                      case _             => _config
                    }
       _          = report.markDoneAndStart("compute-plugins")
-      ctxPlugins = route.contextualPlugins(global_plugins__, pluginMerge, attrs, request).seffectOn(_.allPlugins)
-      _          = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
+      firstCtxPlugins = route.contextualPlugins(global_plugins__, pluginMerge, attrs, request).seffectOn(_.allPlugins)
+      _          = attrs.put(Keys.ContextualPluginsKey -> firstCtxPlugins)
       _          = report.markDoneAndStart(
                      "tenant-check",
                      Json
                        .obj(
-                         "disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)),
-                         "excluded_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin)),
-                         "included_plugins" -> ctxPlugins.allPlugins.map(p => JsString(p.plugin))
+                         "disabled_plugins" -> firstCtxPlugins.disabledPlugins.map(p => JsString(p.plugin)),
+                         "excluded_plugins" -> firstCtxPlugins.filteredPlugins.map(p => JsString(p.plugin)),
+                         "included_plugins" -> firstCtxPlugins.allPlugins.map(p => JsString(p.plugin))
                        )
                        .some
                    )
@@ -641,15 +641,17 @@ class ProxyEngine() extends RequestHandler {
       _          = report.markDoneAndStart("check-global-maintenance")
       _         <- checkGlobalMaintenance(route, request, config)
       _          = report.markDoneAndStart("call-before-request-callbacks")
-      _         <- callPluginsBeforeRequestCallback(snowflake, request, route, ctxPlugins)
+      _         <- callPluginsBeforeRequestCallback(snowflake, request, route, firstCtxPlugins)
       _          = report.markDoneAndStart("extract-tracking-id")
       _          = extractTrackingId(snowflake, request, reqNumber, route)
       _          = report.markDoneAndStart("call-pre-route-plugins")
-      _         <- callPreRoutePlugins(snowflake, request, route, ctxPlugins)
+      _         <- callPreRoutePlugins(snowflake, request, route, firstCtxPlugins)
       _          = report.markDoneAndStart("call-access-validator-plugins")
-      _         <- callAccessValidatorPlugins(snowflake, request, route, ctxPlugins)
+      _         <- callAccessValidatorPlugins(snowflake, request, route, firstCtxPlugins)
       // _          = report.markDoneAndStart("update-apikey-quotas")
       // _         <- updateApikeyQuotas(config)
+      // _          = report.markDoneAndStart("handle-apikey-plugins-flow")
+      ctxPlugins <- handleApikeyPluginsFlowWS(snowflake, request, route, pluginMerge, firstCtxPlugins)
       _          = report.markDoneAndStart("handle-legacy-checks")
       _         <- handleLegacyChecks(request, route, config)
       _          = report.markDoneAndStart(
@@ -1233,11 +1235,20 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
+  // every plugin whose beforeRequest runs here is recorded in CalledBeforeRequestPluginsKey, and
+  // callPluginsAfterRequestCallback replays exactly that record. beforeRequest/afterRequest is a
+  // resource lifecycle pair (NgCorazaWAF starts a wasm vm here and releases it there), so the
+  // afterRequest set has to follow the acquisitions and not the plugin chain, which can be swapped
+  // mid-request by handleApikeyPluginsFlow. do NOT rebalance this by moving the call site later in
+  // the chain instead: CompositeWrapper.beforeRequest delegates to the legacy
+  // RequestTransformer.beforeRequest, so that would reorder every user legacy plugin relatively to
+  // preroute and access-validation.
   def callPluginsBeforeRequestCallback(
       snowflake: String,
       request: RequestHeader,
       route: NgRoute,
-      plugins: NgContextualPlugins
+      plugins: NgContextualPlugins,
+      kind: String = "before-request-plugins"
   )(using
       ec: ExecutionContext,
       env: Env,
@@ -1248,9 +1259,17 @@ class ProxyEngine() extends RequestHandler {
   ): FEither[NgProxyEngineError, Done] = {
     val all_plugins = plugins.transformerPluginsWithCallbacks
     if (all_plugins.nonEmpty) {
+      val called   = attrs.get(Keys.CalledBeforeRequestPluginsKey) match {
+        case Some(buffer) => buffer
+        case None         => {
+          val buffer = new scala.collection.mutable.ArrayBuffer[NgPluginWrapper[NgRequestTransformer]](all_plugins.size)
+          attrs.put(Keys.CalledBeforeRequestPluginsKey -> buffer)
+          buffer
+        }
+      }
       var sequence = NgReportPluginSequence(
         size = all_plugins.size,
-        kind = "before-request-plugins",
+        kind = kind,
         start = System.currentTimeMillis(),
         stop = 0L,
         start_ns = System.nanoTime(),
@@ -1302,6 +1321,7 @@ class ProxyEngine() extends RequestHandler {
           in,
           JsNull
         )
+        called.append(wrapper)
         FEither(
           wrapper.plugin
             .beforeRequest(ctx)
@@ -1358,6 +1378,7 @@ class ProxyEngine() extends RequestHandler {
                 in,
                 JsNull
               )
+              called.append(wrapper)
               wrapper.plugin.beforeRequest(ctx).andThen {
                 case Failure(exception)              =>
                   markPluginItem(
@@ -1419,7 +1440,9 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, Done] = {
-    val all_plugins = plugins.transformerPluginsWithCallbacks
+    // mirrors callPluginsBeforeRequestCallback: only the plugins that got a beforeRequest get an
+    // afterRequest, whatever the plugin chain looks like by now.
+    val all_plugins = attrs.get(Keys.CalledBeforeRequestPluginsKey).map(_.toSeq).getOrElse(Seq.empty)
     if (all_plugins.nonEmpty) {
       var sequence = NgReportPluginSequence(
         size = all_plugins.size,
@@ -1579,8 +1602,13 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callPreRoutePlugins(snowflake: String, request: RequestHeader, route: NgRoute, plugins: NgContextualPlugins)(
-      using
+  def callPreRoutePlugins(
+      snowflake: String,
+      request: RequestHeader,
+      route: NgRoute,
+      plugins: NgContextualPlugins,
+      kind: String = "pre-route-plugins"
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1592,7 +1620,7 @@ class ProxyEngine() extends RequestHandler {
     if (all_plugins.nonEmpty) {
       var sequence = NgReportPluginSequence(
         size = all_plugins.size,
-        kind = "pre-route-plugins",
+        kind = kind,
         start = System.currentTimeMillis(),
         stop = 0L,
         start_ns = System.nanoTime(),
@@ -1786,7 +1814,8 @@ class ProxyEngine() extends RequestHandler {
       snowflake: String,
       request: RequestHeader,
       route: NgRoute,
-      plugins: NgContextualPlugins
+      plugins: NgContextualPlugins,
+      kind: String = "access-validator-plugins"
   )(using
       ec: ExecutionContext,
       env: Env,
@@ -1799,7 +1828,7 @@ class ProxyEngine() extends RequestHandler {
     if (all_plugins.nonEmpty) {
       var sequence = NgReportPluginSequence(
         size = all_plugins.size,
-        kind = "access-validator-plugins",
+        kind = kind,
         start = System.currentTimeMillis(),
         stop = 0L,
         start_ns = System.nanoTime(),
@@ -1965,11 +1994,11 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  // TODO: do the same for ws
   def handleApikeyPluginsFlow(
     snowflake: String,
     request: RequestHeader,
     route: NgRoute,
+    pluginMerge: Boolean,
     ctxPlugins: NgContextualPlugins
   )(using
     ec: ExecutionContext,
@@ -1980,40 +2009,90 @@ class ProxyEngine() extends RequestHandler {
     mat: Materializer
   ): FEither[NgProxyEngineError, NgContextualPlugins] = {
     attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
-      case None => FEither.right(ctxPlugins)
+      case None         => FEither.right(ctxPlugins)
       case Some(apikey) => {
         apikey.pluginFlow(env) match {
-          case None => FEither.right(ctxPlugins)
+          case None                    => FEither.right(ctxPlugins)
           case Some(apikeyPluginsFlow) => {
-            // TODO: contextualize apikeyPluginsFlow
-            // TODO: use specific names for reporting
-            // TODO: call beforeRequest on apikeyPluginsFlow
-            // TODO: call pre-route on apikeyPluginsFlow, break if it breaks
-            // TODO: call access-validation on apikeyPluginsFlow, break if it breaks
-            // TODO: merge apikeyPluginsFlow and ctxPlugins if not override, else use apikeyPluginsFlow.
-            // TODO: if override, keep preroute and access validation plugins that already passed and keep all global plugins
-            // TODO: attrs.put(Keys.ContextualPluginsKey -> mergedCtxPlugins)
-            // TODO: and return it
-            // TODO: make before/after request callbacks follow acquisition instead of the plugin chain.
-            //   callPluginsAfterRequestCallback derives its set from ContextualPluginsKey, which we
-            //   overwrite above, so every plugin evicted by an override gets its beforeRequest (already
-            //   fired before this point) but never its afterRequest. The keep-clause above does not
-            //   cover them: they are pure transformers, not preroute/access-validation plugins. There
-            //   are 33 of those with callbacks on, since usesCallbacks defaults to true on
-            //   NgRequestTransformer - NgCorazaWAF for instance starts a wasm vm in beforeRequest and
-            //   releases it in afterRequest, so it would leak one vm per request.
-            //   Fix: have callPluginsBeforeRequestCallback record what it actually called in a
-            //   dedicated attrs key, and have callPluginsAfterRequestCallback consume that key. Both
-            //   passes then feed the same registry and nothing has to be coordinated between them.
-            //   Do NOT fix it by moving the callPluginsBeforeRequestCallback call after this function
-            //   instead: CompositeWrapper.beforeRequest delegates to the legacy
-            //   RequestTransformer.beforeRequest, so that would reorder every user legacy plugin
-            //   relative to preroute and access-validation.
-            ???
+            // the flow runs its phases on its own plugins only: the route and the global ones went
+            // through them already and must not run a second time. that is why global_plugins is
+            // empty here, it is restored on the merged instance below.
+            val flowCtxPlugins = NgContextualPlugins(
+              route = route,
+              plugins = apikeyPluginsFlow.plugins,
+              global_plugins = NgPlugins(Seq.empty),
+              request = request,
+              nextPluginsMerge = pluginMerge,
+              attrs = attrs,
+              _env = env,
+              _ec = ec
+            ).seffectOn(_.allPlugins)
+            for {
+              _ <- callPluginsBeforeRequestCallback(
+                     snowflake,
+                     request,
+                     route,
+                     flowCtxPlugins,
+                     "apikey-flow-before-request-plugins"
+                   )
+              _ <- callPreRoutePlugins(snowflake, request, route, flowCtxPlugins, "apikey-flow-pre-route-plugins")
+              _ <- callAccessValidatorPlugins(
+                     snowflake,
+                     request,
+                     route,
+                     flowCtxPlugins,
+                     "apikey-flow-access-validator-plugins"
+                   )
+            } yield {
+              val slots  = if (apikeyPluginsFlow.overrides) {
+                // an overriding flow replaces the route plugins, but not those that already passed
+                // preroute or access-validation: dropping them would drop their other steps too,
+                // ApikeyCalls for instance would stop wiping the credential from the backend
+                // request. slots are not expanded here, so a preset expanding into a preroute
+                // plugin is not kept. global plugins are kept through global_plugins below.
+                apikeyPluginsFlow.plugins.slots ++ ctxPlugins.plugins.slots.filter { inst =>
+                  inst.getPlugin[NgPreRouting].isDefined || inst.getPlugin[NgAccessValidator].isDefined
+                }
+              } else {
+                ctxPlugins.plugins.slots ++ apikeyPluginsFlow.plugins.slots
+              }
+              val merged = NgContextualPlugins(
+                route = route,
+                plugins = NgPlugins(slots),
+                global_plugins = ctxPlugins.global_plugins,
+                request = request,
+                nextPluginsMerge = pluginMerge,
+                attrs = attrs,
+                _env = env,
+                _ec = ec
+              ).seffectOn(_.allPlugins)
+              attrs.put(Keys.ContextualPluginsKey -> merged)
+              merged
+            }
           }
         }
       }
     }
+  }
+
+  // the websocket path walks the very same phases, only its later steps differ, so the flow is
+  // computed the same way. kept as its own entry point to give websockets a seam if they ever need
+  // their own plugin phases in here.
+  def handleApikeyPluginsFlowWS(
+    snowflake: String,
+    request: RequestHeader,
+    route: NgRoute,
+    pluginMerge: Boolean,
+    ctxPlugins: NgContextualPlugins
+  )(using
+    ec: ExecutionContext,
+    env: Env,
+    report: NgExecutionReport,
+    globalConfig: GlobalConfig,
+    attrs: TypedMap,
+    mat: Materializer
+  ): FEither[NgProxyEngineError, NgContextualPlugins] = {
+    handleApikeyPluginsFlow(snowflake, request, route, pluginMerge, ctxPlugins)
   }
 
   // def updateApikeyQuotas(config: ProxyEngineConfig)(implicit
