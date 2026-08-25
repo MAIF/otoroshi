@@ -78,6 +78,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Api plans - keyless expression with empty default" in {
       new ApiPlanPluginsTests(this).keylessExpressionWithEmptyDefault()
     }
+    "Api plans - identical plan plugins are deduped" in {
+      new ApiPlanPluginsTests(this).identicalPluginsAreDeduped()
+    }
+    "Api plans - plans with different configs are kept" in {
+      new ApiPlanPluginsTests(this).differentConfigsAreKept()
+    }
     "Api plans - keyless runs last among extractors" in {
       new ApiPlanPluginsTests(this).keylessRunsLastAmongExtractors()
     }

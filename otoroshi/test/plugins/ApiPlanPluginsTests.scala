@@ -504,4 +504,36 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
       ApiPlanApikeySeen.get("mix") mustBe Some("keyless_plan-mix-kl_127.0.0.1")
     } finally undeploy(api)
   }
+
+  def identicalPluginsAreDeduped(): Unit = {
+    val route = routeOf(
+      apiWith(
+        Seq(
+          plan("plan-dedupe-apikey", "apikey"),
+          plan("plan-dedupe-oauth2", "oauth2-local")
+        )
+      )
+    )
+    // both plans yield an ApikeyCalls whose effective config is identical, so a single instance
+    // ends up on the route
+    route.plugins.slots.count(_.plugin == NgPluginHelper.pluginId[ApikeyCalls]) mustBe 1
+  }
+
+  def differentConfigsAreKept(): Unit = {
+    val route = routeOf(
+      apiWith(
+        Seq(
+          plan("plan-keep-a", "keyless", Json.obj("expr" -> "${req.ip}")),
+          plan("plan-keep-b", "keyless", Json.obj("expr" -> "${req.headers.x-consumer}"))
+        )
+      )
+    )
+    // two keyless plans differ at least by their client id prefix, so neither is dropped
+    val slots = route.plugins.slots.filter(_.plugin == NgPluginHelper.pluginId[NgExpressionApikeyExtractor])
+    slots.size mustBe 2
+    slots.map(_.config.raw.select("expression").asString).toSet mustBe Set(
+      "${req.ip}",
+      "${req.headers.x-consumer}"
+    )
+  }
 }

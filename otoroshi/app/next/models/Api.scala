@@ -1684,8 +1684,8 @@ case class Api(
 
   case class PluginWithConfig(pluginId: String, config: JsValue = Json.obj(), pluginIndex: Option[PluginIndex] = None)
 
-  private def applyPlan(route: NgRoute, plan: ApiPlan, api: Api): NgRoute = {
-    val plugins = plan.accessModeConfigurationType match {
+  private def pluginsForPlan(plan: ApiPlan, api: Api): Seq[PluginWithConfig] = {
+    plan.accessModeConfigurationType match {
       case "keyless"                 =>
         val keylessConfig = plan.accessModeConfiguration
           .map(_.asInstanceOf[KeylessAccessModeConfiguration])
@@ -1717,10 +1717,10 @@ case class Api(
         Seq(
           PluginWithConfig(
             pluginId[ApikeyCalls],
-            plan.accessModeConfiguration
-              .map(_.asInstanceOf[ApikeyAccessModeConfiguration].json.asObject)
-              .getOrElse(Json.obj())
-              .deepMerge(
+            //plan.accessModeConfiguration
+            //  .map(_.asInstanceOf[ApikeyAccessModeConfiguration].json.asObject)
+            //  .getOrElse(Json.obj())
+            //  .deepMerge(
                 NgApikeyCallsConfig(
                   updateQuotas = false, // done later !
                   mandatory = false,
@@ -1731,8 +1731,8 @@ case class Api(
                   //   clientId = NgApikeyExtractorClientId(enabled = false),
                   //   jwt = NgApikeyExtractorJwt(enabled = true)
                   // )
-                ).json.asObject
-              ),
+                ).json.asObject,
+            //  ),
             pluginIndex = PluginIndex(
               validateAccess = 2.00.some
             ).some
@@ -1810,26 +1810,30 @@ case class Api(
         )
       case _               => Seq.empty
     }
+  }
 
-    route.copy(
-      plugins = addPluginsToFlow(route.plugins, plugins)
-    )
+  // several plans of an api can contribute the very same plugin with the very same configuration:
+  // two apikey plans, or an apikey plan next to an oauth2-local one, both yield an identical
+  // ApikeyCalls. Keeping only the first of each (plugin, config) pair collapses those without ever
+  // dropping a plan that genuinely configures the plugin differently.
+  private def dedupePlugins(plugins: Seq[PluginWithConfig]): Seq[PluginWithConfig] = {
+    plugins.foldLeft(Seq.empty[PluginWithConfig]) { case (acc, plugin) =>
+      if (acc.exists(p => p.pluginId == plugin.pluginId && p.config == plugin.config)) acc
+      else acc :+ plugin
+    }
   }
 
   private def applyPlansPolicies(routeWithApi: RouteWithApi): NgRoute = {
     val routeApiPlans = routeWithApi.api.plans
-    val route         = routeApiPlans
-      .filter(plan => plan.status == ApiPlanStatus.Published)
-      .foldLeft(routeWithApi.route) { case (route, plan) =>
-        applyPlan(route, plan, routeWithApi.api)
-      }
+    val publishedPlans = routeApiPlans.filter(plan => plan.status == ApiPlanStatus.Published)
+    val route          = routeWithApi.route.copy(
+      plugins = addPluginsToFlow(
+        routeWithApi.route.plugins,
+        dedupePlugins(publishedPlans.flatMap(plan => pluginsForPlan(plan, routeWithApi.api)))
+      )
+    )
 
-    if (
-      routeApiPlans
-        .exists(plan =>
-          plan.status == ApiPlanStatus.Published
-        )
-    ) {
+    if (publishedPlans.nonEmpty) {
       route.copy(
         plugins = addPluginsToFlow(
           route.plugins,
