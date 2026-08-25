@@ -401,15 +401,15 @@ class ProxyEngine() extends RequestHandler {
                    }).applyOnIf(route.capture)(_.copy(capture = true))
       _          = report.markDoneAndStart("compute-plugins")
       gplugs     = global_plugins__
-      ctxPlugins = route.contextualPlugins(gplugs, pluginMerge, attrs, request).seffectOn(_.allPlugins)
-      _          = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
+      firstCtxPlugins = route.contextualPlugins(gplugs, pluginMerge, attrs, request).seffectOn(_.allPlugins)
+      _          = attrs.put(Keys.ContextualPluginsKey -> firstCtxPlugins)
       _          = report.markDoneAndStart(
                      "tenant-check",
                      Json
                        .obj(
-                         "disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)),
-                         "excluded_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin)),
-                         "included_plugins" -> ctxPlugins.allPlugins.map(p => JsString(p.plugin))
+                         "disabled_plugins" -> firstCtxPlugins.disabledPlugins.map(p => JsString(p.plugin)),
+                         "excluded_plugins" -> firstCtxPlugins.filteredPlugins.map(p => JsString(p.plugin)),
+                         "included_plugins" -> firstCtxPlugins.allPlugins.map(p => JsString(p.plugin))
                        )
                        .some
                    )
@@ -417,15 +417,19 @@ class ProxyEngine() extends RequestHandler {
       _          = report.markDoneAndStart("check-global-maintenance")
       _         <- checkGlobalMaintenance(route, request, config)
       _          = report.markDoneAndStart("call-before-request-callbacks")
-      _         <- callPluginsBeforeRequestCallback(snowflake, request, route, ctxPlugins)
+      _         <- callPluginsBeforeRequestCallback(snowflake, request, route, firstCtxPlugins)
       _          = report.markDoneAndStart("extract-tracking-id")
       _          = extractTrackingId(snowflake, request, reqNumber, route)
       _          = report.markDoneAndStart("call-pre-route-plugins")
-      _         <- callPreRoutePlugins(snowflake, request, route, ctxPlugins)
+      _         <- callPreRoutePlugins(snowflake, request, route, firstCtxPlugins)
       _          = report.markDoneAndStart("call-access-validator-plugins")
-      _         <- callAccessValidatorPlugins(snowflake, request, route, ctxPlugins)
+      _         <- callAccessValidatorPlugins(snowflake, request, route, firstCtxPlugins)
       // _          = report.markDoneAndStart("update-apikey-quotas")
       // _         <- updateApikeyQuotas(config)
+      _          = report.markDoneAndStart(
+                     "handle-apikey-plugins-flow",
+                   )
+      ctxPlugins <- handleApikeyPluginsFlow(snowflake, request, route, firstCtxPlugins)
       _          = report.markDoneAndStart(
                      "handle-legacy-checks",
                      attrs
@@ -1958,6 +1962,41 @@ class ProxyEngine() extends RequestHandler {
       }
     } else {
       FEither.right(Done)
+    }
+  }
+
+  // TODO: do the same for ws
+  def handleApikeyPluginsFlow(
+    snowflake: String,
+    request: RequestHeader,
+    route: NgRoute,
+    ctxPlugins: NgContextualPlugins
+  )(using
+    ec: ExecutionContext,
+    env: Env,
+    report: NgExecutionReport,
+    globalConfig: GlobalConfig,
+    attrs: TypedMap,
+    mat: Materializer
+  ): FEither[NgProxyEngineError, NgContextualPlugins] = {
+    attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
+      case None => FEither.right(ctxPlugins)
+      case Some(apikey) => {
+        apikey.pluginFlow(env) match {
+          case None => FEither.right(ctxPlugins)
+          case Some(apikeyPluginsFlow) => {
+            // TODO: contextualize apikeyPluginsFlow
+            // TODO: use specific names for reporting
+            // TODO: call beforeRequest on apikeyPluginsFlow
+            // TODO: call pre-route on apikeyPluginsFlow, break if it breaks
+            // TODO: call access-validation on apikeyPluginsFlow, break if it breaks
+            // TODO: merge apikeyPluginsFlow and ctxPlugins if not override, else use apikeyPluginsFlow
+            // TODO: attrs.put(Keys.ContextualPluginsKey -> mergedCtxPlugins)
+            // TODO: and return it
+            ???
+          }
+        }
+      }
     }
   }
 

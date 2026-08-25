@@ -343,7 +343,7 @@ case class ApiDocumentationResourceRef(raw: JsObject) {
 
 trait ApiAccessModeConfiguration {
   def apiKind: ApiKind
-  def plugins: NgPlugins = NgPlugins(Seq.empty) // TODO: implement for each kind with dedicated plugin
+  def plugins: NgPlugins = NgPlugins(Seq.empty) // TODO: implement for each kind with dedicated plugin when needed
 }
 
 case class KeylessAccessModeConfiguration(
@@ -725,11 +725,17 @@ case class ApiPlan(raw: JsObject) {
     .getOrElse(ApiPlanVisibility.Public)
   lazy val plugins: Option[NgPluginsWithOverride] =
     raw.select("plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt)
-  lazy val hasPlugins: Boolean = accessModeConfiguration.isDefined || plugins.isDefined
-  lazy val computedPlugins: NgPluginsWithOverride = NgPluginsWithOverride(
-    plugins = NgPlugins(accessModeConfiguration.map(_.plugins.slots).getOrElse(Seq.empty) ++ plugins.map(_.plugins.slots).getOrElse(Seq.empty)),
-    overrides = plugins.map(_.overrides).getOrElse(false),
-  )
+  lazy val hasPlugins: Boolean = accessModeConfiguration.exists(_.plugins.nonEmpty) || plugins.exists(_.plugins.nonEmpty)
+  lazy val computedPlugins: Option[NgPluginsWithOverride] = {
+    if (hasPlugins) {
+      NgPluginsWithOverride(
+        plugins = NgPlugins(accessModeConfiguration.map(_.plugins.slots).getOrElse(Seq.empty) ++ plugins.map(_.plugins.slots).getOrElse(Seq.empty)),
+        overrides = plugins.exists(_.overrides),
+      ).some
+    } else {
+      None
+    }
+  }
 }
 
 case class ApiDocumentationSource(raw: JsObject) {

@@ -16,7 +16,7 @@ import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlm
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
-import otoroshi.next.models.NgRoute
+import otoroshi.next.models.*
 import otoroshi.next.plugins.{AllowedQuota, ThrottlingStrategyConfig}
 import play.api.Logger
 import play.api.libs.json.*
@@ -247,6 +247,31 @@ case class ApiKey(
       authorizedEntities.exists(e => identifiers.contains(e))
     }
   }
+
+  def pluginFlow(env: Env): Option[NgPluginsWithOverride] = {
+    val localPlugins = plugins.map(_.plugins.slots).getOrElse(Seq.empty)
+    val localOverride = plugins.exists(_.overrides)
+    apiRef.flatMap { ref =>
+      env.proxyState.api(ref.api).flatMap { api =>
+        api.plans.find(_.id == ref.plan).map { plan =>
+          if (plan.hasPlugins) {
+            val planPlugins = plan.computedPlugins.map(_.plugins.slots).getOrElse(Seq.empty)
+            val planOverride = plan.computedPlugins.exists(_.overrides)
+            NgPluginsWithOverride(NgPlugins(planPlugins ++ localPlugins), planOverride || localOverride)
+          } else {
+            NgPluginsWithOverride(NgPlugins(localPlugins), localOverride)
+          }
+        }
+      }
+    }.orElse {
+      if (localPlugins.nonEmpty) {
+        NgPluginsWithOverride(NgPlugins(localPlugins), localOverride).some
+      } else {
+        None
+      }
+    }
+  }
+
   // def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
   //   FastFuture
   //     .sequence(authorizedEntities.map {
