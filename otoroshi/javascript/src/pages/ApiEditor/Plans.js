@@ -426,7 +426,7 @@ function AccessModeConfigurationTypeSelector({ onChange, value, onEdit }) {
               </div>
               <p style={{ margin: 0, fontSize: '12px', lineHeight: '1.4' }}>{text}</p>
 
-              {selected && !['keyless', 'public'].includes(id) && (
+              {selected && !['public'].includes(id) && (
                 <button
                   className="btn btn-success btn-sm ms-auto d-flex"
                   data-testid="access-mode-edit"
