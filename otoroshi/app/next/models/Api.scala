@@ -1845,6 +1845,10 @@ case class Api(
               Json.obj(),
               Some(PluginIndex(validateAccess = 1001.00.some)) // still valid
             ),
+            PluginWithConfig(
+              pluginId[otoroshi.next.plugins.SendOtoroshiHeadersBack],
+              Json.obj(),
+            ),
           )
         )
       )
