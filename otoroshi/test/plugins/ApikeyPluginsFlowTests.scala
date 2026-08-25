@@ -7,7 +7,9 @@ import otoroshi.models.{ApiKey, EntityLocation, RouteIdentifier}
 import otoroshi.next.models.{
   Api,
   ApiBlueprint,
+  ApiFlows,
   ApiPlan,
+  ApiPlanPlugins,
   ApiStaging,
   ApiRef,
   ApiTesting,
@@ -157,6 +159,9 @@ class ApikeyPluginsFlowTests(parent: PluginsTestSpec) {
   private def flow(overrides: Boolean, plugins: NgPluginInstance*): NgPluginsWithOverride =
     NgPluginsWithOverride(NgPlugins(plugins.toSeq), overrides)
 
+  private def planFlow(overrides: Boolean, plugins: NgPluginInstance*): ApiPlanPlugins =
+    ApiPlanPlugins(NgPlugins(plugins.toSeq), overrides)
+
   private def callWith(routeDomain: String, apikey: ApiKey) = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
@@ -171,7 +176,7 @@ class ApikeyPluginsFlowTests(parent: PluginsTestSpec) {
   // resolution of the flow itself, without going through the engine
   // ---------------------------------------------------------------------------------------------
 
-  private def planWith(id: String, plugins: Option[NgPluginsWithOverride]): ApiPlan = ApiPlan(
+  private def planWith(id: String, plugins: Option[ApiPlanPlugins]): ApiPlan = ApiPlan(
     Json
       .obj("id" -> id, "name" -> id, "access_mode_configuration_type" -> "keyless")
       .applyOnWithOpt(plugins) { case (obj, plgs) => obj ++ Json.obj("plugins" -> plgs.json) }
@@ -211,14 +216,15 @@ class ApikeyPluginsFlowTests(parent: PluginsTestSpec) {
     // no plugins at all
     planWith("p1", None).hasPlugins mustBe false
     // an empty plugin list is not "having plugins"
-    planWith("p2", flow(overrides = false).some).hasPlugins mustBe false
+    planWith("p2", planFlow(overrides = false).some).hasPlugins mustBe false
     // an override with an empty list is not an instruction either
-    planWith("p3", flow(overrides = true).some).hasPlugins mustBe false
+    planWith("p3", planFlow(overrides = true).some).hasPlugins mustBe false
     // an actual plugin
-    val plan = planWith("p4", flow(overrides = true, probe("plan")).some)
+    val plan = planWith("p4", planFlow(overrides = true, probe("plan")).some)
     plan.hasPlugins mustBe true
-    plan.computedPlugins.plugins.slots.size mustBe 1
-    plan.computedPlugins.overrides mustBe true
+    val api = apiWith(s"api_${IdGenerator.uuid}", Seq(plan))
+    plan.computedPlugins(api).plugins.slots.size mustBe 1
+    plan.computedPlugins(api).overrides mustBe true
   }
 
   def pluginFlowResolution(): Unit = {
@@ -248,8 +254,8 @@ class ApikeyPluginsFlowTests(parent: PluginsTestSpec) {
         apiWith(
           apiId,
           Seq(
-            planWith("plan-plain", flow(overrides = false, probe("plan")).some),
-            planWith("plan-override", flow(overrides = true, probe("plan")).some),
+            planWith("plan-plain", planFlow(overrides = false, probe("plan")).some),
+            planWith("plan-override", planFlow(overrides = true, probe("plan")).some),
             planWith("plan-empty", None)
           )
         )
@@ -467,7 +473,7 @@ class ApikeyPluginsFlowTests(parent: PluginsTestSpec) {
 
   private case class FlowCase(
       name: String,
-      planPlugins: Option[NgPluginsWithOverride],
+      planPlugins: Option[ApiPlanPlugins],
       keyPlugins: Option[NgPluginsWithOverride],
       expectedOrder: Seq[String]
   )
@@ -523,37 +529,37 @@ class ApikeyPluginsFlowTests(parent: PluginsTestSpec) {
     ),
     FlowCase(
       "plan only, no override",
-      planPlugins = flow(overrides = false, probe("plan")).some,
+      planPlugins = planFlow(overrides = false, probe("plan")).some,
       keyPlugins = None,
       expectedOrder = Seq("route", "plan")
     ),
     FlowCase(
       "plan only, override on the plan",
-      planPlugins = flow(overrides = true, overrideHost, probe("plan")).some,
+      planPlugins = planFlow(overrides = true, overrideHost, probe("plan")).some,
       keyPlugins = None,
       expectedOrder = Seq("plan")
     ),
     FlowCase(
       "plan and apikey, no override",
-      planPlugins = flow(overrides = false, probe("plan")).some,
+      planPlugins = planFlow(overrides = false, probe("plan")).some,
       keyPlugins = flow(overrides = false, probe("key")).some,
       expectedOrder = Seq("route", "plan", "key")
     ),
     FlowCase(
       "plan and apikey, override on the plan",
-      planPlugins = flow(overrides = true, overrideHost, probe("plan")).some,
+      planPlugins = planFlow(overrides = true, overrideHost, probe("plan")).some,
       keyPlugins = flow(overrides = false, probe("key")).some,
       expectedOrder = Seq("plan", "key")
     ),
     FlowCase(
       "plan and apikey, override on the apikey",
-      planPlugins = flow(overrides = false, overrideHost, probe("plan")).some,
+      planPlugins = planFlow(overrides = false, overrideHost, probe("plan")).some,
       keyPlugins = flow(overrides = true, probe("key")).some,
       expectedOrder = Seq("plan", "key")
     ),
     FlowCase(
       "plan and apikey, override on both",
-      planPlugins = flow(overrides = true, overrideHost, probe("plan")).some,
+      planPlugins = planFlow(overrides = true, overrideHost, probe("plan")).some,
       keyPlugins = flow(overrides = true, probe("key")).some,
       expectedOrder = Seq("plan", "key")
     )
@@ -568,7 +574,7 @@ class ApikeyPluginsFlowTests(parent: PluginsTestSpec) {
     ).futureValue
 
     val apiId = s"api_${IdGenerator.uuid}"
-    val api   = apiWith(apiId, Seq(planWith("plan-1", flow(overrides = false, probe("pl-plan")).some)))
+    val api   = apiWith(apiId, Seq(planWith("plan-1", planFlow(overrides = false, probe("pl-plan")).some)))
     createApi(api)
 
     val apikey = keyWith(apiRef = ApiRef(apiId, "plan-1", "sub").some)
@@ -584,5 +590,36 @@ class ApikeyPluginsFlowTests(parent: PluginsTestSpec) {
     deleteOtoroshiApiKey(apikey).futureValue
     deleteOtoroshiRoute(route).futureValue
     deleteApi(api)
+  }
+
+  def planCanReferenceAFlow(): Unit = {
+    val shared = ApiFlows(
+      id = "shared-chain",
+      name = "shared-chain",
+      plugins = NgPlugins(Seq(probe("from-flow")))
+    )
+    val apiId  = s"api_${IdGenerator.uuid}"
+
+    // a plan pointing at a flow of its api gets the plugins of that flow
+    val refOnly = planWith("plan-ref", ApiPlanPlugins(NgPlugins(Seq.empty), false, "shared-chain".some).some)
+    val api1    = apiWith(apiId, Seq(refOnly)).copy(flows = Seq(shared))
+    refOnly.hasPlugins mustBe true
+    refOnly.computedPlugins(api1).plugins.slots.map(_.config.raw.select("tag").asString) mustBe Seq("from-flow")
+
+    // an inline chain extends the referenced one rather than replacing it, flow first
+    val both = planWith(
+      "plan-both",
+      ApiPlanPlugins(NgPlugins(Seq(probe("inline"))), false, "shared-chain".some).some
+    )
+    val api2 = apiWith(apiId, Seq(both)).copy(flows = Seq(shared))
+    both.computedPlugins(api2).plugins.slots.map(_.config.raw.select("tag").asString) mustBe Seq(
+      "from-flow",
+      "inline"
+    )
+
+    // a reference that resolves to nothing simply brings nothing
+    val dangling = planWith("plan-dangling", ApiPlanPlugins(NgPlugins(Seq.empty), false, "nope".some).some)
+    val api3     = apiWith(apiId, Seq(dangling)).copy(flows = Seq(shared))
+    dangling.computedPlugins(api3).plugins.slots.isEmpty mustBe true
   }
 }

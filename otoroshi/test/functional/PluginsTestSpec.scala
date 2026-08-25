@@ -99,6 +99,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikey plugins flow - plan computed plugins" in {
       new ApikeyPluginsFlowTests(this).planComputedPlugins()
     }
+    "Apikey plugins flow - a plan can reference a flow" in {
+      new ApikeyPluginsFlowTests(this).planCanReferenceAFlow()
+    }
     "Apikey plugins flow - flow resolution" in {
       new ApikeyPluginsFlowTests(this).pluginFlowResolution()
     }

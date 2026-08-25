@@ -569,7 +569,7 @@ function AccessModeConfigurationExceptApikey({ value, hide, onConfirm, accessMod
   );
 }
 
-function PlanForm({ plan, onChange }) {
+function PlanForm({ plan, onChange, flows = [] }) {
   const [openAccessModeModal, setAccessModeModal] = useState(false);
 
   const isApikeyPlan = plan?.access_mode_configuration_type === 'apikey';
@@ -690,13 +690,22 @@ function PlanForm({ plan, onChange }) {
             label: 'Overrides',
             help: 'When enabled, the plugins of this plan replace the ones of the route, except the access validators that already ran. When disabled, they are appended to them.',
           },
+          flow_ref: {
+            type: 'select',
+            label: 'Plugin chain',
+            help: 'Reuse one of the plugin chains of this api instead of listing the plugins here. Any plugin added below extends that chain rather than replacing it.',
+            props: {
+              isClearable: true,
+              options: flows.map((f) => ({ value: f.id, label: f.name || f.id })),
+            },
+          },
           plugins: {
             renderer: (props) => (
               <PluginsChainEditor value={props.value} onChange={props.onChange} />
             ),
           },
         },
-        flow: ['overrides', 'plugins'],
+        flow: ['overrides', 'flow_ref', 'plugins'],
       },
       tags: { type: 'array', label: 'Tags' },
       metadata: { type: 'object', label: 'Metadata' },
@@ -787,7 +796,7 @@ function PlanForm({ plan, onChange }) {
       'plugins',
       { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
     ],
-    []
+    [isApikeyPlan, flows]
   );
 
   console.log(plan);
@@ -1100,7 +1109,7 @@ export function PlanEditor(props) {
           }
         />
       </div>
-      <PlanForm plan={plan} onChange={setPlan} />
+      <PlanForm plan={plan} onChange={setPlan} flows={item?.flows ?? []} />
     </div>
   );
 }

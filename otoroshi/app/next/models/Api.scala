@@ -50,6 +50,34 @@ object NgPluginsWithOverride {
   }
 }
 
+// what a plan declares: the same thing an apikey does, plus the ability to point at a flow of its
+// api rather than carry the chain inline, so that several plans share one chain. Both can be set,
+// the flow comes first and the inline slots extend it. ApiPlan.computedPlugins resolves the
+// reference and hands back a plain NgPluginsWithOverride.
+case class ApiPlanPlugins(plugins: NgPlugins, overrides: Boolean, flowRef: Option[String] = None) {
+  def json: JsValue = Json.obj(
+    "plugins" -> plugins.json,
+    "overrides" -> overrides,
+    "flow_ref" -> flowRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+  )
+}
+
+object ApiPlanPlugins {
+  val format = new Format[ApiPlanPlugins] {
+    override def writes(o: ApiPlanPlugins): JsValue = o.json
+    override def reads(json: JsValue): JsResult[ApiPlanPlugins] = Try {
+      ApiPlanPlugins(
+        plugins = NgPlugins.readFrom(json.select("plugins")),
+        overrides = json.select("overrides").asOpt[Boolean].getOrElse(false),
+        flowRef = json.select("flow_ref").asOpt[String].filter(_.trim.nonEmpty)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(v) => JsSuccess(v)
+    }
+  }
+}
+
 case class ApiRef(api: String, plan: String, subscription: String) {
   def json: JsValue = Json.obj(
     "api" -> api,
@@ -756,13 +784,27 @@ case class ApiPlan(raw: JsObject) {
     case Some(conf: ApikeyAccessModeConfiguration) => conf
     case _                                         => ApikeyAccessModeConfiguration(tags = tags, metadata = metadata)
   }
-  lazy val plugins: Option[NgPluginsWithOverride] =
-    raw.select("plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt)
-  lazy val hasPlugins: Boolean = accessModeConfiguration.exists(_.plugins.nonEmpty) || plugins.exists(_.plugins.nonEmpty)
-  lazy val computedPlugins: NgPluginsWithOverride = NgPluginsWithOverride(
-    plugins = NgPlugins(accessModeConfiguration.map(_.plugins.slots).getOrElse(Seq.empty) ++ plugins.map(_.plugins.slots).getOrElse(Seq.empty)),
-    overrides = plugins.exists(_.overrides),
-  )
+  lazy val plugins: Option[ApiPlanPlugins] =
+    raw.select("plugins").asOpt[JsObject].flatMap(o => ApiPlanPlugins.format.reads(o).asOpt)
+  lazy val hasPlugins: Boolean =
+    accessModeConfiguration.exists(_.plugins.nonEmpty) || plugins.exists(p => p.plugins.nonEmpty || p.flowRef.isDefined)
+  // takes the api because a plan can reference one of its flows instead of listing the plugins:
+  // the reference is resolved here, and an inline chain extends whatever the flow brought.
+  def computedPlugins(api: Api): NgPluginsWithOverride = {
+    val fromFlow = plugins
+      .flatMap(_.flowRef)
+      .flatMap(ref => api.flows.find(_.id == ref))
+      .map(_.plugins.slots)
+      .getOrElse(Seq.empty)
+    NgPluginsWithOverride(
+      plugins = NgPlugins(
+        accessModeConfiguration.map(_.plugins.slots).getOrElse(Seq.empty)
+          ++ fromFlow
+          ++ plugins.map(_.plugins.slots).getOrElse(Seq.empty)
+      ),
+      overrides = plugins.exists(_.overrides),
+    )
+  }
 }
 
 case class ApiDocumentationSource(raw: JsObject) {
