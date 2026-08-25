@@ -259,13 +259,24 @@ const AccessModePluginConfigurationForm = {
         help: 'Claim holding the client id of the consumer. Identity providers put it in client_id, azp or cid depending on the vendor.',
         props: { placeholder: 'client_id' },
       },
+      fetch_user: {
+        type: 'bool',
+        label: 'Fetch the user profile',
+        help: 'Call the userinfo endpoint of the module and store the profile of the token holder in a metadata of the apikey. The call stays a consumer call: no user session is attached to it.',
+      },
+      user_metadata_key: {
+        type: 'string',
+        label: 'Metadata key of the user profile',
+        visible: (props) => props?.fetch_user,
+        props: { placeholder: 'user_profile' },
+      },
       create_if_missing: {
         type: 'bool',
         label: 'Create the apikey if missing',
         help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
       },
     },
-    flow: ['verifier', 'client_id_path', 'create_if_missing'],
+    flow: ['verifier', 'client_id_path', 'fetch_user', 'user_metadata_key', 'create_if_missing'],
   },
   mtls: {
     schema: {

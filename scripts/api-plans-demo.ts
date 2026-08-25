@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Provisions one demo API on a local Otoroshi, with a single route and one plan of each kind
- * (keyless, apikey, jwt, mtls, oauth2-local), then calls it the way each kind of consumer would. Nothing is
+ * (keyless, apikey, jwt, mtls, oauth2-local, oauth2-remote), then calls it the way each kind of consumer would. Nothing is
  * deleted at the end so the result can be browsed in the UI; re-running the script wipes what it
  * created before and starts over.
  *
@@ -43,8 +43,40 @@ const ids = {
   verifier: `${PREFIX}-verifier`,
   apikey: `${PREFIX}-apikey`,
   oauth2Apikey: `${PREFIX}-oauth2-apikey`,
+  authModule: `${PREFIX}-auth-module`,
 };
+const OIDC_SECRET = 'demo-oidc-secret';
+const OIDC_PORT = Number(process.env.OIDC_MOCK_PORT ?? 8099);
 const OAUTH2_SECRET = 'demo-oauth2-secret';
+
+// ---------------------------------------------------------------------------------------------
+// fake oidc userinfo endpoint
+// ---------------------------------------------------------------------------------------------
+
+// The oauth2-remote plan verifies the token signature on its own, against the algo settings of the
+// auth module: nothing remote is needed for that. What does need a server is `fetch_user`, which
+// calls the userinfo endpoint of the module to fetch the profile of the token holder. This mock is
+// only that endpoint, it does not implement any OIDC flow.
+function startOidcMock() {
+  return Bun.serve({
+    port: OIDC_PORT,
+    fetch(req) {
+      const url = new URL(req.url);
+      if (url.pathname === '/userinfo') {
+        const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '');
+        if (!token) return new Response('{"error":"no token"}', { status: 401 });
+        return Response.json({
+          sub: 'consumer-from-oidc',
+          name: 'Demo Consumer',
+          email: 'demo.consumer@example.com',
+          groups: ['demo'],
+          mock: true,
+        });
+      }
+      return new Response('{"error":"not found"}', { status: 404 });
+    },
+  });
+}
 
 // ---------------------------------------------------------------------------------------------
 // admin api plumbing
@@ -120,6 +152,7 @@ async function cleanup() {
   await quiet('DELETE', `/api/apikeys/${ids.apikey}`);
   await quiet('DELETE', `/api/apikeys/${ids.oauth2Apikey}`);
   await quiet('DELETE', `/api/verifiers/${ids.verifier}`);
+  await quiet('DELETE', `/api/auths/${ids.authModule}`);
   // the pki assigns its own ids, so our certs are tracked by name
   const certs = (await adminCall('GET', '/api/certificates')).body ?? [];
   const myCerts = Array.isArray(certs) ? certs.filter((c: any) => (c.name ?? '').startsWith(PREFIX)) : [];
@@ -198,12 +231,51 @@ async function createVerifier() {
   );
 }
 
+// NgOidcApikeyExtractor only needs the jwtVerifier of the module: it mounts a LocalJwtVerifier on
+// those algo settings and never talks to the authorization server, so an HS512 secret is enough and
+// no fake OIDC endpoint has to be served.
+async function createAuthModule() {
+  await must(
+    'POST',
+    '/api/auths',
+    {
+      id: ids.authModule,
+      type: 'oauth2',
+      name: ids.authModule,
+      desc: 'demo oidc module for the oauth2-remote plan',
+      clientId: 'demo-client',
+      clientSecret: 'demo-client-secret',
+      userInfoUrl: `http://127.0.0.1:${OIDC_PORT}/userinfo`,
+      jwtVerifier: { type: 'HSAlgoSettings', size: 512, secret: OIDC_SECRET, base64: false },
+    },
+    'auth module'
+  );
+}
+
 function apiPayload() {
   const id = PREFIX;
   const backendId = `${id}-backend`;
   const flowId = `${id}-flow`;
+  // the plugins of a plan reach the runtime through the apiRef of the apikey: pluginFlow resolves
+  // api + plan, and handleApikeyPluginsFlow merges them into the chain of the call. Same header
+  // everywhere, one value per plan, so a call proves which plan chain actually ran.
+  const planPlugins = (kind: string) => ({
+    overrides: false,
+    plugins: [
+      {
+        enabled: true,
+        debug: false,
+        plugin: 'cp:otoroshi.next.plugins.AdditionalHeadersOut',
+        include: [],
+        exclude: [],
+        bound_listeners: [],
+        config: { headers: { 'X-Plan-Plugin': `from-${kind}-plan` } },
+      },
+    ],
+  });
   const plan = (kind: string, accessModeConfiguration: Record<string, unknown>) => ({
     id: `${id}-${kind}-plan`,
+    plugins: planPlugins(kind),
     name: `${kind} plan`,
     description: `a ${kind} plan`,
     status: 'published',
@@ -265,6 +337,7 @@ function apiPayload() {
               headers: {
                 'X-Demo-Consumer': '${apikey.clientId}',
                 'X-Demo-Plan': '${apikey.api.plan}',
+                'X-Demo-User': '${apikey.metadata.user_profile:none}',
               },
             },
           },
@@ -291,6 +364,13 @@ function apiPayload() {
         create_if_missing: true,
       }),
       plan('oauth2-local', {}),
+      plan('oauth2-remote', {
+        verifier: ids.authModule,
+        client_id_path: 'client_id',
+        fetch_user: true,
+        user_metadata_key: 'user_profile',
+        create_if_missing: true,
+      }),
     ],
     subscriptions: [],
     deployments: [],
@@ -326,7 +406,15 @@ async function createAndPublish(payload: ReturnType<typeof apiPayload>) {
 // the calls
 // ---------------------------------------------------------------------------------------------
 
-type CallResult = { how: string; status: number | string; consumer?: string; plan?: string };
+type CallResult = {
+  how: string;
+  status: number | string;
+  consumer?: string;
+  plan?: string;
+  user?: string;
+  planPlugin?: string;
+  expectedPlanPlugin?: string;
+};
 
 function consumerOf(res: Response): { consumer?: string; plan?: string } {
   const raw = (h: string) => {
@@ -334,26 +422,35 @@ function consumerOf(res: Response): { consumer?: string; plan?: string } {
     // an unresolved expression means no apikey was in the context
     return v && !v.includes('${') ? v : undefined;
   };
-  return { consumer: raw('X-Demo-Consumer'), plan: raw('X-Demo-Plan') };
+  return {
+    consumer: raw('X-Demo-Consumer'),
+    plan: raw('X-Demo-Plan'),
+    user: raw('X-Demo-User'),
+    planPlugin: res.headers.get('X-Plan-Plugin') ?? undefined,
+  };
 }
 
-async function callHttp(how: string, headers: Record<string, string> = {}): Promise<CallResult> {
+async function callHttp(
+  how: string,
+  expectedPlan: string,
+  headers: Record<string, string> = {}
+): Promise<CallResult> {
   try {
     const res = await fetch(`${API_BASE}/`, { headers: { Host: BASE_DOMAIN, ...headers } });
-    return { how, status: res.status, ...consumerOf(res) };
+    return { how, status: res.status, expectedPlanPlugin: expectedPlan, ...consumerOf(res) };
   } catch (e: any) {
-    return { how, status: `error: ${e.message}` };
+    return { how, status: `error: ${e.message}`, expectedPlanPlugin: expectedPlan };
   }
 }
 
-async function callMtls(how: string, cert: any): Promise<CallResult> {
+async function callMtls(how: string, expectedPlan: string, cert: any): Promise<CallResult> {
   try {
     const res = await fetch(`https://${BASE_DOMAIN}:${HTTPS_PORT}/`, {
       tls: { cert: cert.chain, key: cert.privateKey, rejectUnauthorized: false },
     } as any);
-    return { how, status: res.status, ...consumerOf(res) };
+    return { how, status: res.status, expectedPlanPlugin: expectedPlan, ...consumerOf(res) };
   } catch (e: any) {
-    return { how, status: `error: ${e.message}` };
+    return { how, status: `error: ${e.message}`, expectedPlanPlugin: expectedPlan };
   }
 }
 
@@ -398,10 +495,14 @@ if (flags.has('--keep')) {
 console.log('2. creating the pki (ca, wildcard server cert, client cert with UID=demo-consumer)');
 const pki = await createPki();
 
-console.log('3. creating the jwt verifier');
-await createVerifier();
+console.log(`3. starting the fake oidc userinfo endpoint on :${OIDC_PORT}`);
+const oidcMock = startOidcMock();
 
-console.log('4. creating and publishing the api (one route, five plans)');
+console.log('3b. creating the jwt verifier and the oidc auth module');
+await createVerifier();
+await createAuthModule();
+
+console.log('4. creating and publishing the api (one route, six plans)');
 const apiPl = apiPayload();
 await createAndPublish(apiPl);
 
@@ -447,25 +548,29 @@ console.log('6. waiting for the proxy state to pick up the generated route');
 await Bun.sleep(12000);
 
 if (flags.has('--no-calls')) {
+  oidcMock.stop(true);
   console.log(`\n=== provisioned, no call made, browse it at http://otoroshi.${DOMAIN}:${PORT} ===\n`);
   process.exit(0);
 }
 
 console.log('7. calling the api\n');
 const results: CallResult[] = [
-  await callHttp('no credential at all'),
-  await callHttp('Otoroshi-Client-Id / Secret', {
+  await callHttp('no credential at all', 'from-keyless-plan'),
+  await callHttp('Otoroshi-Client-Id / Secret', 'from-apikey-plan', {
     'Otoroshi-Client-Id': ids.apikey,
     'Otoroshi-Client-Secret': 'demo-secret',
   }),
-  await callHttp('Bearer token, client_id claim', {
+  await callHttp('Bearer token, client_id claim', 'from-jwt-plan', {
     Authorization: `Bearer ${signJwt({ iss: 'demo', client_id: 'consumer-from-token' }, JWT_SECRET)}`,
   }),
-  await callMtls('client certificate', pki.client),
+  await callMtls('client certificate', 'from-mtls-plan', pki.client),
   // the apikey doubles as the signing key: ApikeyCalls reads the clientId claim, looks the apikey
   // up, then validates the HS512 signature against its own clientSecret
-  await callHttp('apikey as a signed jwt', {
+  await callHttp('apikey as a signed jwt', 'from-oauth2-local-plan', {
     Authorization: `Bearer ${signJwt({ clientId: ids.oauth2Apikey }, OAUTH2_SECRET)}`,
+  }),
+  await callHttp('oidc token, client_id claim', 'from-oauth2-remote-plan', {
+    Authorization: `Bearer ${signJwt({ iss: 'demo-idp', client_id: 'consumer-from-oidc' }, OIDC_SECRET)}`,
   }),
 ];
 
@@ -473,7 +578,15 @@ for (const r of results) {
   const ok = r.status === 200 ? '\u2713' : '\u2717';
   const who = r.consumer ? `${r.consumer}${r.plan ? `  (plan ${r.plan})` : ''}` : 'no consumer';
   console.log(`  ${ok} ${String(r.how).padEnd(30)} -> ${String(r.status).padEnd(6)} ${who}`);
+  if (r.user && r.user !== 'none') console.log(`       user profile: ${r.user}`);
+  const planOk = r.planPlugin === r.expectedPlanPlugin;
+  console.log(
+    `       plan plugin : ${planOk ? '\u2713' : '\u2717'} ${r.planPlugin ?? 'none'}` +
+      (planOk ? '' : `  (expected ${r.expectedPlanPlugin})`)
+  );
 }
+
+oidcMock.stop(true);
 
 console.log(`\n=== nothing was deleted, browse it at http://otoroshi.${DOMAIN}:${PORT} ===`);
 console.log(`  api           ${PREFIX} (plans: keyless, apikey, jwt, mtls, oauth2-local)`);
@@ -481,6 +594,8 @@ console.log(`  domain        ${BASE_DOMAIN}`);
 console.log(`  jwt secret    ${JWT_SECRET} (HS512, claim client_id)`);
 console.log(`  apikey        ${ids.apikey} / demo-secret`);
 console.log(`  oauth2 apikey ${ids.oauth2Apikey} / ${OAUTH2_SECRET} (HS512 signer, claim clientId)`);
+console.log(`  auth module   ${ids.authModule}, jwtVerifier HS512 ${OIDC_SECRET} (claim client_id)`);
+console.log(`  oidc mock     http://127.0.0.1:${OIDC_PORT}/userinfo, only up while the script runs`);
 console.log(`  client cert   subject UID=demo-consumer, CN=${PREFIX}-client`);
 console.log(
   `\n  note: the apikeys minted by the keyless, jwt and mtls plans live in memory only and are`

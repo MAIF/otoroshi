@@ -50,7 +50,12 @@ object ApikeyFromPlan {
 
   // mirrors Api.generateNewApikeyFromPlan: the same plan must enforce the same quotas, restrictions
   // and rotation whether the consumer got its key through a subscription or through this plugin.
-  private def apikeyFor(clientId: String, config: ApikeyFromPlanConfig, ctx: NgAccessContext)(using
+  private def apikeyFor(
+      clientId: String,
+      config: ApikeyFromPlanConfig,
+      ctx: NgAccessContext,
+      extraMetadata: Map[String, String]
+  )(using
       env: Env
   ): ApiKey = {
     val template           = config.apikey
@@ -83,7 +88,7 @@ object ApikeyFromPlan {
         planId <- config.planId
       } yield ApiRef(apiId, planId, ""),
       tags = template.tags,
-      metadata = template.metadata ++ Map("created_by" -> "apikey-extractor")
+      metadata = template.metadata ++ Map("created_by" -> "apikey-extractor") ++ extraMetadata
     )
   }
 
@@ -92,7 +97,12 @@ object ApikeyFromPlan {
   // built from the plan settings and stays in memory: it is never saved, not even to the cluster,
   // so a public api does not fill the datastore with one entry per caller. quota counters are keyed
   // by client id, so they still add up across calls without the entity being persisted.
-  def resolveOrCreate(clientId: String, config: ApikeyFromPlanConfig, ctx: NgAccessContext)(using
+  def resolveOrCreate(
+      clientId: String,
+      config: ApikeyFromPlanConfig,
+      ctx: NgAccessContext,
+      extraMetadata: Map[String, String] = Map.empty
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -109,7 +119,7 @@ object ApikeyFromPlan {
     env.proxyState.apikey(clientId).vfuture.map {
         case Some(apikey)                   => apikey.some
         case None if !config.createIfMissing => None
-        case None                           => apikeyFor(clientId, config, ctx).some
+        case None                           => apikeyFor(clientId, config, ctx, extraMetadata).some
       }
       .map {
         case Some(apikey) if apikey.isActive() => {
@@ -410,6 +420,8 @@ case class NgOidcApikeyExtractorConfig(
     ref: Option[String] = None,
     clientIdPath: String = "client_id",
     source: Option[JwtTokenLocation] = None,
+    fetchUser: Boolean = false,
+    userMetadataKey: String = "user_profile",
     strict: Boolean = true,
     createIfMissing: Boolean = true,
     apiId: Option[String] = None,
@@ -419,15 +431,18 @@ case class NgOidcApikeyExtractorConfig(
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   override def json: JsValue = Json.obj(
-    "ref"            -> ref.map(_.json).getOrElse(JsNull).asValue,
-    "client_id_path" -> clientIdPath,
-    "source"         -> source.map(_.asJson).getOrElse(JsNull).asValue,
-    "strict"         -> strict
+    "ref"                -> ref.map(_.json).getOrElse(JsNull).asValue,
+    "client_id_path"     -> clientIdPath,
+    "source"             -> source.map(_.asJson).getOrElse(JsNull).asValue,
+    "fetch_user"         -> fetchUser,
+    "user_metadata_key"  -> userMetadataKey,
+    "strict"             -> strict
   ) ++ ApikeyFromPlan.json(this)
 }
 
 object NgOidcApikeyExtractorConfig {
-  val configFlow                     = Seq("ref", "client_id_path", "strict", "create_if_missing", "source")
+  val configFlow                     =
+    Seq("ref", "client_id_path", "fetch_user", "user_metadata_key", "strict", "create_if_missing", "source")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
       "ref"               -> Json.obj(
@@ -439,6 +454,8 @@ object NgOidcApikeyExtractorConfig {
         )
       ),
       "client_id_path"    -> Json.obj("type" -> "string", "label" -> "Client id claim"),
+      "fetch_user"        -> Json.obj("type" -> "bool", "label" -> "Fetch the user profile"),
+      "user_metadata_key" -> Json.obj("type" -> "string", "label" -> "Metadata key of the user profile"),
       "strict"            -> Json.obj("type" -> "bool", "label" -> "Strict"),
       "create_if_missing" -> Json.obj("type" -> "bool", "label" -> "Create the apikey if missing"),
       "source"            -> Json.obj("type" -> "any", "label" -> "JWT Source", "props" -> Json.obj("height" -> 200))
@@ -451,6 +468,8 @@ object NgOidcApikeyExtractorConfig {
         ref = json.select("ref").asOpt[String],
         clientIdPath = json.select("client_id_path").asOpt[String].getOrElse("client_id"),
         source = json.select("source").asOpt[JsObject].flatMap(o => JwtTokenLocation.fromJson(o).toOption),
+        fetchUser = json.select("fetch_user").asOpt[Boolean].getOrElse(false),
+        userMetadataKey = json.select("user_metadata_key").asOpt[String].getOrElse("user_profile"),
         strict = json.select("strict").asOpt[Boolean].getOrElse(true),
         createIfMissing = ApikeyFromPlan.createIfMissing(json),
         apiId = ApikeyFromPlan.apiId(json),
@@ -477,6 +496,45 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
   override def configFlow: Seq[String]        = NgOidcApikeyExtractorConfig.configFlow
   override def configSchema: Option[JsObject] = NgOidcApikeyExtractorConfig.configSchema
 
+  // fetches the profile of the token holder and hands it over as apikey metadata. OIDCAuthToken
+  // stores the user in the attributes as a side effect, which would make the call look like an
+  // authenticated user session to every downstream plugin, NgExpectedConsumer included: the
+  // previous value is put back so the only thing that survives here is the metadata.
+  private def userMetadata(
+      ctx: NgAccessContext,
+      oidcModule: OAuth2ModuleConfig,
+      config: NgOidcApikeyExtractorConfig,
+      token: String
+  )(using env: Env, ec: ExecutionContext): Future[Map[String, String]] = {
+    if (!config.fetchUser) {
+      Map.empty[String, String].vfuture
+    } else {
+      val previousUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
+      OIDCAuthToken
+        .getSession(
+          ctx,
+          oidcModule,
+          OIDCAuthTokenConfig(
+            ref = config.ref.get,
+            opaque = false,
+            fetchUserProfile = true,
+            validateAudience = false,
+            headerName = "Authorization"
+          ),
+          Some(token)
+        )
+        .map { _ =>
+          val fetched = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
+          previousUser match {
+            case Some(user) => ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+            case None       => ctx.attrs.remove(otoroshi.plugins.Keys.UserKey)
+          }
+          fetched.map(user => Map(config.userMetadataKey -> user.profile.stringify)).getOrElse(Map.empty)
+        }
+        .recover { case _: Throwable => Map.empty[String, String] }
+    }
+  }
+
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgOidcApikeyExtractorConfig.format).getOrElse(NgOidcApikeyExtractorConfig())
     config.ref match {
@@ -493,8 +551,8 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
             sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
               tuple
             } match {
-              case None                  => failure(config.strict, "You have to provide a valid apikey").vfuture
-              case Some((source, _)) =>
+              case None                        => failure(config.strict, "You have to provide a valid apikey").vfuture
+              case Some((source, currentToken)) =>
                 verifier
                   .copy(source = source)
                   .verifyGen[NgAccess](
@@ -512,10 +570,12 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
                         JsonPathUtils.getAt[String](jsonToken, config.clientIdPath) match {
                           case None           => failure(config.strict, "No client id in the token").rightf
                           case Some(clientId) =>
-                            ApikeyFromPlan.resolveOrCreate(clientId, config, ctx).map { result =>
-                              result.header.status match {
-                                case 200 => NgAccess.NgAllowed.right
-                                case _   => failure(config.strict, "You have to provide a valid apikey").right
+                            userMetadata(ctx, oidcModule, config, currentToken).flatMap { extraMetadata =>
+                              ApikeyFromPlan.resolveOrCreate(clientId, config, ctx, extraMetadata).map { result =>
+                                result.header.status match {
+                                  case 200 => NgAccess.NgAllowed.right
+                                  case _   => failure(config.strict, "You have to provide a valid apikey").right
+                                }
                               }
                             }
                         }

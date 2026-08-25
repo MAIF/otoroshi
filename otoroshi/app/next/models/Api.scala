@@ -433,6 +433,8 @@ object MtlsAccessModeConfiguration {
 case class OAuth2RemoteAccessModeConfiguration(
     verifier: Option[String] = None,
     clientIdPath: Option[String] = Some("client_id"),
+    fetchUser: Boolean = false,
+    userMetadataKey: String = "user_profile",
     createIfMissing: Boolean = false
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Remote
@@ -444,6 +446,8 @@ object OAuth2RemoteAccessModeConfiguration {
       OAuth2RemoteAccessModeConfiguration(
         verifier = json.selectAsOptString("verifier"),
         clientIdPath = json.select("client_id_path").asOpt[String],
+        fetchUser = json.select("fetch_user").asOpt[Boolean].getOrElse(false),
+        userMetadataKey = json.select("user_metadata_key").asOpt[String].getOrElse("user_profile"),
         createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
       )
     } match {
@@ -453,6 +457,8 @@ object OAuth2RemoteAccessModeConfiguration {
     override def writes(o: OAuth2RemoteAccessModeConfiguration): JsValue             = Json.obj(
       "verifier"          -> o.verifier,
       "client_id_path"    -> o.clientIdPath,
+      "fetch_user"        -> o.fetchUser,
+      "user_metadata_key" -> o.userMetadataKey,
       "create_if_missing" -> o.createIfMissing
     )
   }
@@ -1796,6 +1802,8 @@ case class Api(
             NgOidcApikeyExtractorConfig(
               ref = oidcConfig.verifier,
               clientIdPath = oidcConfig.clientIdPath.getOrElse("client_id"),
+              fetchUser = oidcConfig.fetchUser,
+              userMetadataKey = oidcConfig.userMetadataKey,
               strict = false,
               createIfMissing = oidcConfig.createIfMissing,
               apiId = api.id.some,
