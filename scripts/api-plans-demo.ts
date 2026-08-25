@@ -250,6 +250,8 @@ function apiPayload() {
         name: 'demo-flow',
         plugins: [
           { enabled: true, debug: false, plugin: 'cp:otoroshi.next.plugins.OverrideHost', include: [], exclude: [], config: {}, bound_listeners: [] },
+          // Otoroshi-Request-Id, Otoroshi-Proxy-Latency and friends on the way back
+          { enabled: true, debug: false, plugin: 'cp:otoroshi.next.plugins.SendOtoroshiHeadersBack', include: [], exclude: [], config: {}, bound_listeners: [] },
           // surfaces the identity that actually reached the backend, whichever plan produced it
           {
             enabled: true,

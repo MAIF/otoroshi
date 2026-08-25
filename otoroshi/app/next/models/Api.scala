@@ -1722,6 +1722,7 @@ case class Api(
               .getOrElse(Json.obj())
               .deepMerge(
                 NgApikeyCallsConfig(
+                  updateQuotas = false, // done later !
                   mandatory = false,
                   // extractors = NgApikeyExtractors(
                   //   otoBearer = NgApikeyExtractorOtoBearer(enabled = true),
@@ -1838,7 +1839,12 @@ case class Api(
               pluginId[NgExpectedConsumer],
               Json.obj(),
               Some(PluginIndex(validateAccess = 1000.00.some)) // still valid
-            )
+            ),
+            PluginWithConfig(
+              pluginId[otoroshi.next.plugins.ApikeyQuotas],
+              Json.obj(),
+              Some(PluginIndex(validateAccess = 1001.00.some)) // still valid
+            ),
           )
         )
       )
