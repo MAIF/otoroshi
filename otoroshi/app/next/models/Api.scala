@@ -1823,7 +1823,6 @@ case class Api(
       .foldLeft(routeWithApi.route) { case (route, plan) =>
         applyPlan(route, plan, routeWithApi.api)
       }
-    // TODO - replace chain of plugins by MandatoryConsumerPreset plugin
 
     if (
       routeApiPlans
