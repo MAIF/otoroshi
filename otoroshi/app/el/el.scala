@@ -10,7 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.util.Try
 import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.KaleidoscopeShim.*
-import next.models.{Api, ApiPlan}
+import otoroshi.next.models.{Api, ApiPlan}
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
 import otoroshi.security.IdGenerator

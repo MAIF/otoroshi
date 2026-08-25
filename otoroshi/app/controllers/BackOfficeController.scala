@@ -12,7 +12,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import java.nio.charset.StandardCharsets
 import com.nimbusds.jose.jwk.KeyType
 import io.otoroshi.wasm4s.scaladsl.*
-import next.models.Api
+import otoroshi.next.models.Api
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory

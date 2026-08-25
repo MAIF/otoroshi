@@ -1,6 +1,6 @@
 package otoroshi.controllers.adminapi
 
-import next.models.Api
+import otoroshi.next.models.Api
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.models.ApiKey

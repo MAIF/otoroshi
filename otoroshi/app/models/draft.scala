@@ -1,6 +1,6 @@
 package otoroshi.models
 
-import next.models.{Api, ApiSubscription}
+import otoroshi.next.models.{Api, ApiSubscription}
 import otoroshi.actions.ApiAction
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env

@@ -1,4 +1,4 @@
-package next.models
+package otoroshi.next.models
 
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.util.ByteString

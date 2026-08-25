@@ -5,7 +5,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.*
 import org.apache.pekko.stream.scaladsl.*
 import org.apache.pekko.util.ByteString
-import next.models.{ApiDataStore, ApiSubscriptionDataStore, RouteTemplateDataStore}
+import otoroshi.next.models.{ApiDataStore, ApiSubscriptionDataStore, RouteTemplateDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterMode, ClusterStateDataStore}
 import otoroshi.env.Env

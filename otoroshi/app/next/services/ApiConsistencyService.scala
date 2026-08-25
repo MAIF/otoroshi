@@ -1,6 +1,6 @@
 package otoroshi.next.services
 
-import next.models.{Api, ApiPlan, ApiSubscription}
+import otoroshi.next.models.{Api, ApiPlan, ApiSubscription}
 import otoroshi.api.WriteAction.Update
 import otoroshi.env.Env
 import otoroshi.models.Draft

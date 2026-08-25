@@ -10,7 +10,6 @@ import com.auth0.jwt.interfaces.DecodedJWT
 
 import java.nio.charset.StandardCharsets
 import com.google.common.hash.Hashing
-import next.models.*
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors

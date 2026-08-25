@@ -2,7 +2,7 @@ package otoroshi.plugins
 
 import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
-import next.models.{Api, ApiPlan}
+import otoroshi.next.models.{Api, ApiPlan}
 import org.joda.time.DateTime
 import otoroshi.gateway.GwError
 import otoroshi.models.*

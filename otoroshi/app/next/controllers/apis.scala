@@ -2,7 +2,7 @@ package otoroshi.next.controllers.adminapi
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
-import next.models.{
+import otoroshi.next.models.{
   Api,
   ApiBackend,
   ApiDeployment,
