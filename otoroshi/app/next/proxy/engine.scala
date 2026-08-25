@@ -1990,9 +1990,25 @@ class ProxyEngine() extends RequestHandler {
             // TODO: call beforeRequest on apikeyPluginsFlow
             // TODO: call pre-route on apikeyPluginsFlow, break if it breaks
             // TODO: call access-validation on apikeyPluginsFlow, break if it breaks
-            // TODO: merge apikeyPluginsFlow and ctxPlugins if not override, else use apikeyPluginsFlow. if override, keep preroute and access validation plugins that already passed
+            // TODO: merge apikeyPluginsFlow and ctxPlugins if not override, else use apikeyPluginsFlow.
+            // TODO: if override, keep preroute and access validation plugins that already passed and keep all global plugins
             // TODO: attrs.put(Keys.ContextualPluginsKey -> mergedCtxPlugins)
             // TODO: and return it
+            // TODO: make before/after request callbacks follow acquisition instead of the plugin chain.
+            //   callPluginsAfterRequestCallback derives its set from ContextualPluginsKey, which we
+            //   overwrite above, so every plugin evicted by an override gets its beforeRequest (already
+            //   fired before this point) but never its afterRequest. The keep-clause above does not
+            //   cover them: they are pure transformers, not preroute/access-validation plugins. There
+            //   are 33 of those with callbacks on, since usesCallbacks defaults to true on
+            //   NgRequestTransformer - NgCorazaWAF for instance starts a wasm vm in beforeRequest and
+            //   releases it in afterRequest, so it would leak one vm per request.
+            //   Fix: have callPluginsBeforeRequestCallback record what it actually called in a
+            //   dedicated attrs key, and have callPluginsAfterRequestCallback consume that key. Both
+            //   passes then feed the same registry and nothing has to be coordinated between them.
+            //   Do NOT fix it by moving the callPluginsBeforeRequestCallback call after this function
+            //   instead: CompositeWrapper.beforeRequest delegates to the legacy
+            //   RequestTransformer.beforeRequest, so that would reorder every user legacy plugin
+            //   relative to preroute and access-validation.
             ???
           }
         }
