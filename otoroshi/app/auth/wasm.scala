@@ -114,7 +114,13 @@ case class WasmAuthModuleConfig(
   override def theMetadata: Map[String, String]                                 = metadata
 }
 
-case class WasmAuthModuleContext(config: JsValue, route: NgRoute, idx: Int = 0) extends NgCachedConfigContext
+case class WasmAuthModuleContext(
+    config: JsValue,
+    route: NgRoute,
+    idx: Int = 0,
+    // synthetic context, it stands in for a real call and needs no cache discriminator
+    attrs: TypedMap = TypedMap.empty
+) extends NgCachedConfigContext
 
 object WasmAuthModule {
   val logger = Logger("otoroshi-wasm-auth-module")

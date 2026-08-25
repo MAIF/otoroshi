@@ -2014,6 +2014,11 @@ class ProxyEngine() extends RequestHandler {
         apikey.pluginFlow(env) match {
           case None                    => FEither.right(ctxPlugins)
           case Some(apikeyPluginsFlow) => {
+            // from here the chain of the call is composed from the plan and the plugins of this
+            // apikey, so (route, plugin, index) no longer identifies a plugin config: the very same
+            // slot of the very same route holds a different plugin for another caller. Scoping the
+            // config caches by client id keeps every composed chain on its own entries.
+            attrs.put(Keys.PluginsCacheDiscriminatorKey -> apikey.clientId)
             // the flow runs its phases on its own plugins only: the route and the global ones went
             // through them already and must not run a second time. that is why global_plugins is
             // empty here, it is restored on the merged instance below.

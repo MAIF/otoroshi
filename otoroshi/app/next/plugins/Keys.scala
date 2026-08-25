@@ -27,6 +27,10 @@ object Keys {
   val ResponseAddHeadersKey      = TypedKey[Seq[(String, String)]]("otoroshi.next.core.ResponseAddHeaders")
   // holds the plugins whose beforeRequest actually ran, so that afterRequest can mirror it exactly.
   // it is a mutable buffer because the plugin chain can be walked more than once per request.
+  // set by the engine when the chain of a call is composed from the plan and the plugins of an
+  // apikey: plugin config caches key on (route, plugin, index), which no longer identifies a config
+  // once the same slot can hold a different plugin depending on the caller.
+  val PluginsCacheDiscriminatorKey = TypedKey[String]("otoroshi.next.core.PluginsCacheDiscriminator")
   val CalledBeforeRequestPluginsKey =
     TypedKey[scala.collection.mutable.Buffer[NgPluginWrapper[NgRequestTransformer]]](
       "otoroshi.next.core.CalledBeforeRequestPlugins"

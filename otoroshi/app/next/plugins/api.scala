@@ -380,12 +380,15 @@ trait NgCachedConfigContext {
   def idx: Int
   def route: NgRoute
   def config: JsValue
-  // the config takes part in the key: a route no longer determines the chain on its own, since
-  // handleApikeyPluginsFlow composes it per call from the plan of the caller. Two calls hitting the
-  // same route with two different plans put a different plugin at the same index, and keying on
-  // (route, plugin, idx) alone would serve the first config seen to every one of them.
+  def attrs: TypedMap
+  // empty on a plain route, where (route, plugin, index) is enough to identify a config. The engine
+  // fills it in when it composes the chain of a call from the plan and the plugins of an apikey,
+  // because two callers then put different plugins at the same index of the same route.
+  // WARN: check if it doesn't impact performances too much
+  private def cacheDiscriminator: String =
+    attrs.get(otoroshi.next.plugins.Keys.PluginsCacheDiscriminatorKey).getOrElse("")
   def cachedConfig[A](plugin: String)(reads: Reads[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::$plugin::$idx::${config.hashCode()}"
+    val key = s"${route.cacheableId}::$plugin::$idx::$cacheDiscriminator"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads.reads(config) match {
@@ -399,7 +402,7 @@ trait NgCachedConfigContext {
   }.toOption.flatten
 
   def cachedConfigFn[A](plugin: String)(reads: JsValue => Option[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::${plugin}::$idx::${config.hashCode()}"
+    val key = s"${route.cacheableId}::${plugin}::$idx::$cacheDiscriminator"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads(config) match {
