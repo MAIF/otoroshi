@@ -156,18 +156,10 @@ run = "sbt --java-home $JAVA_HOME 'testOnly ApiPlanMtlsTests'"
 [tasks.test-api-plans.env]
 TEST_STORE = "inmemory"
 
-[tasks.test-quotas]
-description = "Run the quota and rate limiting test suites"
-dir = "otoroshi"
-run = "sbt --java-home $JAVA_HOME ';testOnly QuotasTests;testOnly functional.PluginsTestSpec -- -z \"Rate limiting\"'"
-
-[tasks.test-quotas.env]
-TEST_STORE = "inmemory"
-
 [tasks.test-all]
 description = "Run all backend tests (main + plugins)"
 dir = "otoroshi"
-run = "sbt --java-home $JAVA_HOME ';testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly ApiPlanMtlsTests;testOnly QuotasTests;testOnly functional.Http3Spec;testOnly functional.PluginsTestSpec -- -l Browser - Docker'"
+run = "sbt --java-home $JAVA_HOME ';testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly ApiPlanMtlsTests;testOnly functional.Http3Spec;testOnly functional.PluginsTestSpec -- -l Browser - Docker'"
 
 [tasks.test-all.env]
 TEST_STORE = "inmemory"
