@@ -248,20 +248,25 @@ case class ApiKey(
   }
 
   def pluginFlow(env: Env): Option[NgPluginsWithOverride] = {
-    val localPlugins = plugins.map(_.plugins.slots).getOrElse(Seq.empty)
-    val localOverride = plugins.exists(_.overrides)
-    val planAndApi = apiRef.flatMap { ref =>
-      env.proxyState.api(ref.api).flatMap(api => api.plans.find(_.id == ref.plan).map(plan => (api, plan)))
-    }
-    planAndApi match {
-      case Some((api, p)) if p.hasPlugins => {
-        val planFlow = p.computedPlugins(api)
-        NgPluginsWithOverride(NgPlugins(planFlow.plugins.slots ++ localPlugins), planFlow.overrides || localOverride).some
+    if (plugins.isDefined || apiRef.isDefined) {
+      val localPlugins = plugins.map(_.plugins.slots).getOrElse(Seq.empty)
+      val localOverride = plugins.exists(_.overrides)
+      val planAndApi = apiRef.flatMap { ref =>
+        // TODO: check if we can find something to enhance perfs on the hot path
+        env.proxyState.api(ref.api).flatMap(api => api.plans.find(_.id == ref.plan).map(plan => (api, plan)))
       }
-      case _ if localPlugins.nonEmpty => {
-        NgPluginsWithOverride(NgPlugins(localPlugins), localOverride).some
+      planAndApi match {
+        case Some((api, p)) if p.hasPlugins => {
+          val planFlow = p.computedPlugins(api)
+          NgPluginsWithOverride(NgPlugins(planFlow.plugins.slots ++ localPlugins), planFlow.overrides || localOverride).some
+        }
+        case _ if localPlugins.nonEmpty => {
+          NgPluginsWithOverride(NgPlugins(localPlugins), localOverride).some
+        }
+        case _ => None
       }
-      case _ => None
+    } else {
+      None
     }
   }
 

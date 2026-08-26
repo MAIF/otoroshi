@@ -1736,7 +1736,7 @@ case class Restrictions(
           apikey.exists(_.authorizedOnGroup(id)) && route.groups.contains(id)
         case RestrictionPath(_, _, Some(ServiceDescriptorIdentifier(id))) => route.id == id
         case RestrictionPath(_, _, Some(RouteIdentifier(id)))             => route.id == id
-        case RestrictionPath(_, _, Some(ApiIdentifier(id)))               => route.apiRef.contains(id)
+        case RestrictionPath(_, _, Some(ApiIdentifier(id)))               => route.apiRef.exists(_.id == id)
         case RestrictionPath(_, _, None)                                  => true
         case _                                                            => false
       }
