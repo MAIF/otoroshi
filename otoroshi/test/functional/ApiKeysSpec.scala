@@ -329,8 +329,8 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .get()
         .futureValue
 
-      resp.status mustBe 401
-      resp.body[String].contains("bad apikey") mustBe true
+      resp.status mustBe 400
+      resp.body[String].contains("invalid apikey tuple") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }

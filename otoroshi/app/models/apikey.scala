@@ -2373,7 +2373,7 @@ object ApiKeyHelper {
             error(Results.BadRequest, "invalid apikey tuple", "errors.invalid.api.key.tuple", additionalMessage)
           case Left((Some(apikey), additionalMessage))                              =>
             sendRevokedApiKeyAlert(apikey)
-            error(Results.Unauthorized, "bad apikey---", "errors.bad.api.key", additionalMessage)
+            error(Results.Unauthorized, "bad apikey", "errors.bad.api.key", additionalMessage)
           case Right(apikey) if routingEnabled && !apikey.matchRouting(constraints) =>
             error(
               Results.Unauthorized,
