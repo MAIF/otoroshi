@@ -868,6 +868,21 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .run()
         .futureValue
     }
+    "Rate limiting - a denied call is never counted" in {
+      new RateLimitingTests(this).deniedCallIsNeverCounted()
+    }
+    "Rate limiting - a call denied by the daily quota counts nothing" in {
+      new RateLimitingTests(this).deniedByDailyQuotaCountsNothing()
+    }
+    "Rate limiting - the fixed window enforces the daily quota" in {
+      new RateLimitingTests(this).fixedWindowEnforcesDailyQuota()
+    }
+    "Rate limiting - the fixed window serves exactly its window" in {
+      new RateLimitingTests(this).fixedWindowServesExactlyItsWindow()
+    }
+    "Rate limiting - the token bucket keeps its tokens for served calls" in {
+      new RateLimitingTests(this).tokenBucketKeepsItsTokensForServedCalls()
+    }
     "izanami v2 proxy - should call izanami correctly" in {
       new IzanamiV2ProxyTests(this).izanamiCallShouldBeCorrect()
     }

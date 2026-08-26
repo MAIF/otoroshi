@@ -149,11 +149,10 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
   ): Future[ThrottlingResult] = {
     getDailyAndMonthlyQuotas(key, allowedQuotas)
       .map(state => {
-        val tokensAfter     = bucketRef.get().tokens
-        val hadEnoughTokens = tokensAfter > 0 && state.daily.withinLimit && state.monthly.withinLimit
+        val tokensLeft = bucketRef.get().tokens
 
         ThrottlingResult(
-          allowed = hadEnoughTokens,
+          allowed = tokensLeft >= 1 && state.daily.acceptsMore(1) && state.monthly.acceptsMore(1),
           quotas = state
         )
       })
@@ -168,31 +167,35 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
     askForRefill().flatMap { _ =>
       getDailyAndMonthlyQuotas(key, allowedQuotas)
         .flatMap(currentState => {
-          val tokensBefore = bucketRef.getAndUpdate { current =>
-            if (current.tokens >= increment) {
-              current.copy(tokens = current.tokens - increment)
+          // the quotas are looked at before a token is taken: a call one of them turns away must not
+          // consume a token the calls that will pass are entitled to
+          if (!currentState.daily.acceptsMore(increment) || !currentState.monthly.acceptsMore(increment)) {
+            ThrottlingResult(allowed = false, quotas = currentState).future
+          } else {
+            val tokensBefore = bucketRef.getAndUpdate { current =>
+              if (current.tokens >= increment) {
+                current.copy(tokens = current.tokens - increment)
+              } else {
+                current
+              }
+            }
+
+            if (tokensBefore.tokens >= increment) {
+              super
+                .incrementDailyAndMonthly(key, increment)
+                .map { case (dailyCalls, monthyCalls) =>
+                  ThrottlingResult(
+                    allowed = true,
+                    quotas = currentState.copy(
+                      daily = currentState.daily.copy(consumed = dailyCalls),
+                      monthly = currentState.monthly.copy(consumed = monthyCalls)
+                    )
+                  )
+                }
             } else {
-              current
+              ThrottlingResult(allowed = false, quotas = currentState).future
             }
           }
-
-          val hadEnoughTokens =
-            tokensBefore.tokens >= increment && currentState.daily.withinLimit && currentState.monthly.withinLimit
-
-          if (hadEnoughTokens) {
-            super
-              .incrementDailyAndMonthly(key, increment)
-              .map { case (dailyCalls, monthyCalls) =>
-                ThrottlingResult(
-                  allowed = true,
-                  quotas = currentState.copy(
-                    daily = currentState.daily.copy(consumed = dailyCalls),
-                    monthly = currentState.monthly.copy(consumed = monthyCalls)
-                  )
-                )
-              }
-          } else
-            ThrottlingResult(allowed = false, quotas = currentState).future
         })
     }
   }
@@ -309,27 +312,38 @@ object LuaDistributedRedisThrottlingStrategyConfig {
 }
 
 object LuaDistributedRedisThrottlingStrategy {
-  // Atomic counter update: INCRBY then PEXPIRE if the key has no TTL yet. Single round-trip per call.
+  // Reads the three counters, and only when the call fits under every limit does it INCRBY them and
+  // PEXPIRE the ones that have no TTL yet. Single round-trip per call, and the whole decision is
+  // atomic, so a call that is turned away consumes nothing at all: no give back to do.
   // Runs on the dedicated rate-limiter Redis (standalone or cluster). For cluster compat, the four
   // counter keys share the same hash-tag so they always land on the same slot.
   // KEYS = [windowKey, dailyKey, monthlyKey, totalKey]
-  // ARGV = [increment, windowTtlMs, dailyTtlMs, monthlyTtlMs]
+  // ARGV = [increment, windowTtlMs, dailyTtlMs, monthlyTtlMs, windowLimit, dailyLimit, monthlyLimit]
+  // returns [windowCalls, windowTtl, dailyCalls, dailyTtl, monthlyCalls, monthlyTtl, allowed]
   val script: String =
     """local incr = tonumber(ARGV[1])
-      |local function inc(k, ttl)
-      |  local c = redis.call('INCRBY', k, incr)
-      |  local p = redis.call('PTTL', k)
-      |  if p < 0 then
-      |    redis.call('PEXPIRE', k, ttl)
-      |    p = tonumber(ttl)
-      |  end
-      |  return {c, p}
+      |local function peek(k)
+      |  return {tonumber(redis.call('GET', k) or '0'), redis.call('PTTL', k)}
       |end
-      |local w = inc(KEYS[1], ARGV[2])
-      |local d = inc(KEYS[2], ARGV[3])
-      |local m = inc(KEYS[3], ARGV[4])
+      |local function ttlOf(p, ttl)
+      |  if p < 0 then return tonumber(ttl) else return p end
+      |end
+      |local w = peek(KEYS[1])
+      |local d = peek(KEYS[2])
+      |local m = peek(KEYS[3])
+      |if (w[1] + incr > tonumber(ARGV[5])) or (d[1] + incr > tonumber(ARGV[6])) or (m[1] + incr > tonumber(ARGV[7])) then
+      |  return {w[1], ttlOf(w[2], ARGV[2]), d[1], ttlOf(d[2], ARGV[3]), m[1], ttlOf(m[2], ARGV[4]), 0}
+      |end
+      |local function bump(k, p, ttl)
+      |  local c = redis.call('INCRBY', k, incr)
+      |  if p < 0 then redis.call('PEXPIRE', k, ttl) end
+      |  return c
+      |end
+      |local wc = bump(KEYS[1], w[2], ARGV[2])
+      |local dc = bump(KEYS[2], d[2], ARGV[3])
+      |local mc = bump(KEYS[3], m[2], ARGV[4])
       |redis.call('INCRBY', KEYS[4], incr)
-      |return {w[1], w[2], d[1], d[2], m[1], m[2]}""".stripMargin
+      |return {wc, ttlOf(w[2], ARGV[2]), dc, ttlOf(d[2], ARGV[3]), mc, ttlOf(m[2], ARGV[4]), 1}""".stripMargin
 }
 
 // Throttling strategy backed by a dedicated Redis shared by all otoroshi nodes (leader and workers),
@@ -376,10 +390,11 @@ case class LuaDistributedRedisThrottlingStrategy(
       ByteString(increment.toString),
       ByteString(windowMs.toString),
       ByteString(toDayEnd.toString),
-      ByteString(toMonthEnd.toString)
+      ByteString(toMonthEnd.toString),
+      ByteString(allowedQuotas.window.toString),
+      ByteString(allowedQuotas.daily.toString),
+      ByteString(allowedQuotas.monthly.toString)
     )
-
-    env.clusterAgent.incrementApi(key, increment)
 
     val maybeFut: Option[Future[java.util.List[Object]]] = redis match {
       case l: LettuceRedisStandaloneAndSentinels =>
@@ -416,6 +431,13 @@ case class LuaDistributedRedisThrottlingStrategy(
           val windowTTL    = list(1)
           val dailyCalls   = list(2)
           val monthlyCalls = list(4)
+          val allowed      = list(6) == 1L
+
+          // the script counts nothing for a call it turns away, so the cluster only hears about the
+          // calls that went through
+          if (allowed) {
+            env.clusterAgent.incrementApi(key, increment)
+          }
 
           val state = QuotaState(
             window = Quota(
@@ -435,7 +457,7 @@ case class LuaDistributedRedisThrottlingStrategy(
             )
           )
 
-          ThrottlingResult(allowed = state.withinLimits, quotas = state)
+          ThrottlingResult(allowed = allowed, quotas = state)
         }
     }
   }
@@ -518,18 +540,27 @@ case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConf
     }
   }
 
+  // the calls already made in the current window. a window that is over holds none any more,
+  // whatever the counter still says: the next call going through is what opens the next one
+  private def windowQuota(bucket: FixedWindowBucket, now: Long): Quota = {
+    val over = now - bucket.windowStart >= config.windowDurationMs
+    Quota(
+      limit = config.quota.window,
+      consumed = if (over) 0L else bucket.count,
+      resetsAt = (if (over) now else bucket.windowStart) + config.windowDurationMs
+    )
+  }
+
   override def check(key: String, allowedQuotas: AllowedQuota)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
     getDailyAndMonthlyQuotas(key, allowedQuotas)
       .map(state => {
-        val tokensAfter     = bucketRef.get().count
-        val hadEnoughTokens = tokensAfter > 0 && state.daily.withinLimit && state.monthly.withinLimit
-
+        val window = windowQuota(bucketRef.get(), System.currentTimeMillis())
         ThrottlingResult(
-          allowed = hadEnoughTokens,
-          quotas = state
+          allowed = window.acceptsMore(1) && state.daily.acceptsMore(1) && state.monthly.acceptsMore(1),
+          quotas = state.copy(window = window)
         )
       })
   }
@@ -539,62 +570,52 @@ case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConf
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
-    val now = System.currentTimeMillis()
-
-    val before = bucketRef.getAndUpdate { current =>
-      if (now - current.windowStart >= config.windowDurationMs) {
-        FixedWindowBucket(windowStart = now, count = 0)
-      } else if (current.count < config.quota.window) {
-        current.copy(count = current.count + 1)
+    // the daily and the monthly counters are read before anything is taken from the window: a call
+    // one of them turns away must not eat a slot the calls that will pass are entitled to
+    getDailyAndMonthlyQuotas(key, allowedQuotas).flatMap { currentState =>
+      val now = System.currentTimeMillis()
+      if (!currentState.daily.acceptsMore(increment) || !currentState.monthly.acceptsMore(increment)) {
+        ThrottlingResult(
+          allowed = false,
+          quotas = currentState.copy(window = windowQuota(bucketRef.get(), now))
+        ).vfuture
       } else {
-        current
-      }
-    }
-
-    val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
-    val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
-
-    val allowed = before.count < config.quota.window
-
-    if (allowed) {
-      super
-        .incrementDailyAndMonthly(key, increment)
-        .map { case (dailyCalls, monthyCalls) =>
-          ThrottlingResult(
-            allowed = true,
-            quotas = QuotaState(
-              window = Quota(
-                limit = config.quota.window,
-                consumed = before.count + increment,
-                resetsAt = now + Math.max(0, (config.windowDurationMs - now - before.windowStart))
-              ),
-              daily = Quota(
-                limit = config.quota.daily,
-                consumed = dailyCalls,
-                resetsAt = dayEnd.getMillis
-              ),
-              monthly = Quota(
-                limit = config.quota.monthly,
-                consumed = monthyCalls,
-                resetsAt = monthEnd.getMillis
-              )
-            )
-          )
+        val before = bucketRef.getAndUpdate { current =>
+          if (now - current.windowStart >= config.windowDurationMs) {
+            // the window is over: this call opens the next one and takes its first slot
+            FixedWindowBucket(windowStart = now, count = increment)
+          } else if (current.count + increment <= config.quota.window) {
+            current.copy(count = current.count + increment)
+          } else {
+            current
+          }
         }
-    } else {
-      quotas(key, config.quota, expirationSeconds)
-        .map(quotas =>
-          ThrottlingResult(
-            allowed = false,
-            quotas = quotas.copy(
-              window = Quota(
-                limit = config.quota.window,
-                consumed = before.count,
-                resetsAt = now + Math.max(0, config.windowDurationMs - now - before.windowStart)
-              )
-            )
-          )
+
+        val opened  = now - before.windowStart >= config.windowDurationMs
+        val allowed = opened || (before.count + increment <= config.quota.window)
+        val window  = Quota(
+          limit = config.quota.window,
+          consumed = if (opened) increment else if (allowed) before.count + increment else before.count,
+          resetsAt = (if (opened) now else before.windowStart) + config.windowDurationMs
         )
+
+        if (allowed) {
+          super
+            .incrementDailyAndMonthly(key, increment)
+            .map { case (dailyCalls, monthyCalls) =>
+              ThrottlingResult(
+                allowed = true,
+                quotas = currentState.copy(
+                  window = window,
+                  daily = currentState.daily.copy(consumed = dailyCalls),
+                  monthly = currentState.monthly.copy(consumed = monthyCalls)
+                )
+              )
+            }
+        } else {
+          ThrottlingResult(allowed = false, quotas = currentState.copy(window = window)).vfuture
+        }
+      }
     }
   }
 }
@@ -914,8 +935,12 @@ case class QuotaState(
     daily: Quota = Quota.unlimited,
     monthly: Quota = Quota.unlimited
 ) {
-  def withinLimits: Boolean     = window.withinLimit && daily.withinLimit && monthly.withinLimit
-  def legacy(): RemainingQuotas = RemainingQuotas(
+  def withinLimits: Boolean                 = window.withinLimit && daily.withinLimit && monthly.withinLimit
+  // whether one more call fits under every limit, which is what a strategy has to know before it
+  // counts anything
+  def acceptsMore(increment: Long): Boolean =
+    window.acceptsMore(increment) && daily.acceptsMore(increment) && monthly.acceptsMore(increment)
+  def legacy(): RemainingQuotas             = RemainingQuotas(
     authorizedCallsPerWindow = window.limit,
     throttlingCallsPerWindow = window.consumed,
     remainingCallsPerWindow = window.remaining,
@@ -936,6 +961,9 @@ case class Quota(
   def remaining: Long      = Math.max(0, limit - consumed)
   def withinLimit: Boolean = consumed < (limit + 1)
   def exceeded: Boolean    = consumed > limit
+  // whether one more call fits: the counters are read before they are written, so this is what
+  // decides, where an already incremented counter would be read with withinLimit
+  def acceptsMore(increment: Long): Boolean = (consumed + increment) < (limit + 1)
 }
 
 object Quota {
@@ -968,29 +996,61 @@ trait ThrottlingStrategy {
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
 
-    for {
+    val dailyF   = for {
       dailyCalls <- redisCli.incrby(dailyQuotaKey(key), increment)
       _          <- redisCli.pttl(dailyQuotaKey(key)).flatMap {
                       case -1 => redisCli.expire(dailyQuotaKey(key), (toDayEnd / 1000).toInt)
                       case _  => Future.successful(())
                     }
-
+    } yield dailyCalls
+    val monthlyF = for {
       monthlyCalls <- redisCli.incrby(monthlyQuotaKey(key), increment)
       _            <- redisCli.pttl(monthlyQuotaKey(key)).flatMap {
                         case -1 => redisCli.expire(monthlyQuotaKey(key), (toMonthEnd / 1000).toInt)
                         case _  => Future.successful(())
                       }
+    } yield monthlyCalls
+
+    for {
+      dailyCalls   <- dailyF
+      monthlyCalls <- monthlyF
     } yield {
       (dailyCalls, monthlyCalls)
     }
   }
 
+  // the counters are read before a single one of them is written: a call that does not fit under
+  // every limit must not move any of them, or a consumer hammering a window that is already full
+  // would burn its whole day without one call being served.
+  // two calls landing at the very same instant can both read a counter that still fits and both go
+  // through, where incrementing first would have been exact under concurrency. that is the trade
+  // made here: the overshoot is bounded by how many calls are in flight and the counters are exact
+  // again on the very next call, while counting calls that never happened is wrong for good. the
+  // lua strategy has neither problem, it decides and counts in one atomic script.
   def checkAndIncrement(
       key: String,
       increment: Long,
       allowedQuotas: AllowedQuota,
       expirationSeconds: Int
   )(using env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
+    check(key, allowedQuotas).flatMap { current =>
+      if (!current.quotas.acceptsMore(increment)) {
+        ThrottlingResult(allowed = false, quotas = current.quotas).vfuture
+      } else {
+        incrementCounters(key, increment, allowedQuotas, expirationSeconds)
+          .map(state => ThrottlingResult(allowed = true, quotas = state))
+      }
+    }
+  }
+
+  // counts one call on every counter. the window, the day, the month and the total have no order
+  // between them, so their calls go out together rather than one after the other
+  def incrementCounters(
+      key: String,
+      increment: Long,
+      allowedQuotas: AllowedQuota,
+      expirationSeconds: Int
+  )(using env: Env, ec: ExecutionContext): Future[QuotaState] = {
     val redisCli = client()
 
     // Calculate reset timestamps
@@ -1000,23 +1060,27 @@ trait ThrottlingStrategy {
 
     env.clusterAgent.incrementApi(key, increment)
 
-    for {
+    val windowF          = for {
       secCalls  <- redisCli.incrby(throttlingKey(key), increment)
       windowTTL <- redisCli.pttl(throttlingKey(key)).flatMap {
                      case -1  =>
                        redisCli.expire(throttlingKey(key), expirationSeconds).map(_ => expirationSeconds * 1000L)
                      case ttl => Future.successful(ttl)
                    }
+    } yield (secCalls, windowTTL)
+    val dailyMonthlyF    = incrementDailyAndMonthly(key, increment)
+    val totalF           = redisCli.incrby(totalCallsKey(key), increment)
 
-      dailyAndMonthlyCalls <- incrementDailyAndMonthly(key, increment)
-
-      _ <- redisCli.incrby(totalCallsKey(key), increment)
+    for {
+      window               <- windowF
+      dailyAndMonthlyCalls <- dailyMonthlyF
+      _                    <- totalF
     } yield {
-      val state = QuotaState(
+      QuotaState(
         window = Quota(
           limit = allowedQuotas.window,
-          consumed = secCalls,
-          resetsAt = now + windowTTL
+          consumed = window._1,
+          resetsAt = now + window._2
         ),
         daily = Quota(
           limit = allowedQuotas.daily,
@@ -1028,11 +1092,6 @@ trait ThrottlingStrategy {
           consumed = dailyAndMonthlyCalls._2,
           resetsAt = monthEnd.getMillis
         )
-      )
-
-      ThrottlingResult(
-        allowed = state.withinLimits,
-        quotas = state
       )
     }
   }
@@ -1088,11 +1147,18 @@ trait ThrottlingStrategy {
     val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
     val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
 
+    // every call goes through this before it is counted, so the four reads go out together rather
+    // than one after the other
+    val windowF  = redisCli.get(throttlingKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+    val ttlF     = redisCli.pttl(throttlingKey(key)).fast.map(_.max(0L))
+    val dailyF   = redisCli.get(dailyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+    val monthlyF = redisCli.get(monthlyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+
     for {
-      throttlingCallsPerWindow <- redisCli.get(throttlingKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
-      windowTTL                <- redisCli.pttl(throttlingKey(key)).fast.map(_.max(0L))
-      dailyCalls               <- redisCli.get(dailyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
-      monthlyCalls             <- redisCli.get(monthlyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      throttlingCallsPerWindow <- windowF
+      windowTTL                <- ttlF
+      dailyCalls               <- dailyF
+      monthlyCalls             <- monthlyF
     } yield {
       val state = QuotaState(
         window = Quota(
@@ -1112,8 +1178,10 @@ trait ThrottlingStrategy {
         )
       )
 
+      // the very same question checkAndIncrement asks, so a caller that only checks and a caller
+      // that counts turn away the same calls
       ThrottlingResult(
-        allowed = state.withinLimits,
+        allowed = state.acceptsMore(1),
         quotas = state
       )
     }
