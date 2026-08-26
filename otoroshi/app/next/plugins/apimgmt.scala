@@ -215,7 +215,6 @@ object ApikeyFromPlan {
     //  .map {
     env.proxyState.apikey(clientId).vfuture.map {
         case Some(apikey)                   => apikey.some
-        case None if !config.createIfMissing => None
         case None                           => apikeyFor(clientId, config, ctx, extraMetadata).some
       }
       .flatMap {
@@ -323,7 +322,6 @@ class NgJwtApikeyExtractor extends ApikeyExtractorPlugin {
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtApikeyExtractorConfig("none").some
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    println("pass here !!!!")
     val config =
       ctx.cachedConfig(internalName)(NgJwtApikeyExtractorConfig.format).getOrElse(NgJwtApikeyExtractorConfig("none"))
     env.datastores.globalJwtVerifierDataStore.findById(config.verifier).flatMap {

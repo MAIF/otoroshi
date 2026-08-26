@@ -192,7 +192,6 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
         case None if config.validate && config.mandatory && !pass   => {
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.cacheableId // handling route groups
-          println("1")
           ApiKeyHelper
             .passWithApiKeyFromCache(
               ctx.request,
@@ -213,7 +212,6 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
         case None if config.validate && !config.mandatory && !pass  => {
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.cacheableId // handling route groups
-          println("2")
           ApiKeyHelper
             .passWithApiKeyFromCache(
               ctx.request,
@@ -233,7 +231,6 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
                     .contains("invalid apikey tuple")) =>
                 NgAccess.NgAllowed
               case Left(result)  =>
-                println(s"here: ${result.header.status} - ${result.header.headers.get(env.Headers.OtoroshiErrorMsg)}")
                 NgAccess.NgDenied(result)
               case Right(apikey) =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
@@ -243,7 +240,6 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
         case None if !config.validate && !config.mandatory && !pass => {
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.cacheableId // handling route groups
-          println("3")
           ApiKeyHelper
             .passWithApiKeyFromCache(
               ctx.request,

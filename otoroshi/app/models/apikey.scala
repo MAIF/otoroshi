@@ -2169,7 +2169,6 @@ object ApiKeyHelper {
               case ApikeyTuple(_, None, Some(_), _, _) if !apikey.enabled                                           =>
                 (apikey.some, s"apikey ${apikeyTuple.clientId}' disabled".some).left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                                            => {
-                println("jxt")
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
                 val kid                             = Option(jwt.getKeyId)
                   .orElse(possibleKeyPairId)
@@ -2296,7 +2295,7 @@ object ApiKeyHelper {
                           )
                         )
                         apikey.right
-                      case Failure(e) => (apikey.some, "None".some).left
+                      case Failure(e) => (None/*apikey.some*/, "no apikey".some).left
                     }
                   }
                   case None            => (apikey.some, "JWT alg does not match supported ones".some).left
@@ -2374,7 +2373,7 @@ object ApiKeyHelper {
             error(Results.BadRequest, "invalid apikey tuple", "errors.invalid.api.key.tuple", additionalMessage)
           case Left((Some(apikey), additionalMessage))                              =>
             sendRevokedApiKeyAlert(apikey)
-            error(Results.Unauthorized, "bad apikey 111", "errors.bad.api.key", additionalMessage.debugPrintln)
+            error(Results.Unauthorized, "bad apikey---", "errors.bad.api.key", additionalMessage)
           case Right(apikey) if routingEnabled && !apikey.matchRouting(constraints) =>
             error(
               Results.Unauthorized,
