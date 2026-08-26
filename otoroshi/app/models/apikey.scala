@@ -222,7 +222,9 @@ case class ApiKey(
   def delete()(using ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.delete(this)
   def exists()(using ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.exists(this)
   def toJson                                              = ApiKey.toJson(this)
-  def isActive(): Boolean                                 = enabled && validUntil.map(date => date.isBeforeNow).getOrElse(true)
+  // isBeforeNow on validUntil means the apikey has expired, so an apikey is active while that date
+  // is still ahead of us, exactly like the `enabled` flag computed by the json format
+  def isActive(): Boolean                                 = enabled && validUntil.forall(date => date.isAfterNow)
   def isInactive(): Boolean                               = !isActive()
   def isValid(value: String): Boolean                     =
     enabled && ((value == clientSecret) || (rotation.enabled && rotation.nextSecret.contains(value)))
@@ -442,6 +444,63 @@ class GroupNotFoundException(groupId: String)
 object ApiKey {
 
   lazy val logger = Logger("otoroshi-apkikey")
+
+  // every place enforcing apikey quotas has to raise the very same alerts, whether the apikey was
+  // presented by the caller or minted from an api plan, so the alerting rules live here and not in
+  // each call site.
+  def sendQuotasAlmostExceededAlerts(
+      key: ApiKey,
+      quotas: RemainingQuotas,
+      quotasSettings: QuotasAlmostExceededSettings
+  )(using env: Env): Unit = {
+    if (quotasSettings.enabled) {
+      if (quotas.currentCallsPerDay >= (quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)) {
+        ApiKeyQuotasAlmostExceededAlert(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          `@env` = env.env,
+          apikey = key,
+          remainingQuotas = quotas,
+          settings = quotasSettings,
+          reason = ApiKeyQuotasAlmostExceededReason.DailyQuotasAlmostExceeded
+        ).toAnalytics()
+      }
+      if (quotas.currentCallsPerMonth >= (quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)) {
+        ApiKeyQuotasAlmostExceededAlert(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          `@env` = env.env,
+          apikey = key,
+          remainingQuotas = quotas,
+          settings = quotasSettings,
+          reason = ApiKeyQuotasAlmostExceededReason.MonthlyQuotasAlmostExceeded
+        ).toAnalytics()
+      }
+    }
+  }
+
+  def sendQuotasExceededAlerts(
+      key: ApiKey,
+      quotas: RemainingQuotas,
+      quotasSettings: QuotasAlmostExceededSettings
+  )(using env: Env): Unit = {
+    if (quotas.currentCallsPerDay >= (quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)) {
+      ApiKeyQuotasExceededAlert(
+        `@id` = env.snowflakeGenerator.nextIdStr(),
+        `@env` = env.env,
+        apikey = key,
+        remainingQuotas = quotas,
+        reason = ApiKeyQuotasExceededReason.DailyQuotasExceeded
+      ).toAnalytics()
+    }
+    if (quotas.currentCallsPerMonth >= (quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)) {
+      ApiKeyQuotasExceededAlert(
+        `@id` = env.snowflakeGenerator.nextIdStr(),
+        `@env` = env.env,
+        apikey = key,
+        remainingQuotas = quotas,
+        reason = ApiKeyQuotasExceededReason.MonthlyQuotasExceeded
+      ).toAnalytics()
+    }
+  }
 
   val _fmt: Format[ApiKey]                           = new Format[ApiKey] {
     override def writes(apk: ApiKey): JsValue = {
@@ -1305,59 +1364,11 @@ object ApiKeyHelper {
       )
     }
 
-    def sendQuotasAlmostExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
-      if (ctx.config.quotasSettings.enabled) {
-        if (
-          quotas.currentCallsPerDay >= (ctx.config.quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)
-        ) {
-          ApiKeyQuotasAlmostExceededAlert(
-            `@id` = env.snowflakeGenerator.nextIdStr(),
-            `@env` = env.env,
-            apikey = key,
-            remainingQuotas = quotas,
-            settings = ctx.config.quotasSettings,
-            reason = ApiKeyQuotasAlmostExceededReason.DailyQuotasAlmostExceeded
-          ).toAnalytics()
-        }
-        if (
-          quotas.currentCallsPerMonth >= (ctx.config.quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)
-        ) {
-          ApiKeyQuotasAlmostExceededAlert(
-            `@id` = env.snowflakeGenerator.nextIdStr(),
-            `@env` = env.env,
-            apikey = key,
-            remainingQuotas = quotas,
-            settings = ctx.config.quotasSettings,
-            reason = ApiKeyQuotasAlmostExceededReason.MonthlyQuotasAlmostExceeded
-          ).toAnalytics()
-        }
-      }
-    }
+    def sendQuotasAlmostExceededError(key: ApiKey, quotas: RemainingQuotas): Unit =
+      ApiKey.sendQuotasAlmostExceededAlerts(key, quotas, ctx.config.quotasSettings)
 
-    def sendQuotasExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
-      if (
-        quotas.currentCallsPerDay >= (ctx.config.quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)
-      ) {
-        ApiKeyQuotasExceededAlert(
-          `@id` = env.snowflakeGenerator.nextIdStr(),
-          `@env` = env.env,
-          apikey = key,
-          remainingQuotas = quotas,
-          reason = ApiKeyQuotasExceededReason.DailyQuotasExceeded
-        ).toAnalytics()
-      }
-      if (
-        quotas.currentCallsPerMonth >= (ctx.config.quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)
-      ) {
-        ApiKeyQuotasExceededAlert(
-          `@id` = env.snowflakeGenerator.nextIdStr(),
-          `@env` = env.env,
-          apikey = key,
-          remainingQuotas = quotas,
-          reason = ApiKeyQuotasExceededReason.MonthlyQuotasExceeded
-        ).toAnalytics()
-      }
-    }
+    def sendQuotasExceededError(key: ApiKey, quotas: RemainingQuotas): Unit =
+      ApiKey.sendQuotasExceededAlerts(key, quotas, ctx.config.quotasSettings)
 
     // if (req.headers.get("Otoroshi-Client-Id").isEmpty) {
     //   println("no apikey", req.method, req.path)
@@ -2158,6 +2169,7 @@ object ApiKeyHelper {
               case ApikeyTuple(_, None, Some(_), _, _) if !apikey.enabled                                           =>
                 (apikey.some, s"apikey ${apikeyTuple.clientId}' disabled".some).left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                                            => {
+                println("jxt")
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
                 val kid                             = Option(jwt.getKeyId)
                   .orElse(possibleKeyPairId)
@@ -2346,53 +2358,11 @@ object ApiKeyHelper {
       )
     }
 
-    def sendQuotasAlmostExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
-      val quotasSettings = config.quotasSettings
-      if (quotasSettings.enabled) {
-        if (quotas.currentCallsPerDay >= (quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)) {
-          ApiKeyQuotasAlmostExceededAlert(
-            `@id` = env.snowflakeGenerator.nextIdStr(),
-            `@env` = env.env,
-            apikey = key,
-            remainingQuotas = quotas,
-            settings = config.quotasSettings,
-            reason = ApiKeyQuotasAlmostExceededReason.DailyQuotasAlmostExceeded
-          ).toAnalytics()
-        }
-        if (quotas.currentCallsPerMonth >= (quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)) {
-          ApiKeyQuotasAlmostExceededAlert(
-            `@id` = env.snowflakeGenerator.nextIdStr(),
-            `@env` = env.env,
-            apikey = key,
-            remainingQuotas = quotas,
-            settings = quotasSettings,
-            reason = ApiKeyQuotasAlmostExceededReason.MonthlyQuotasAlmostExceeded
-          ).toAnalytics()
-        }
-      }
-    }
+    def sendQuotasAlmostExceededError(key: ApiKey, quotas: RemainingQuotas): Unit =
+      ApiKey.sendQuotasAlmostExceededAlerts(key, quotas, config.quotasSettings)
 
-    def sendQuotasExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
-      val quotasSettings = config.quotasSettings
-      if (quotas.currentCallsPerDay >= (quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)) {
-        ApiKeyQuotasExceededAlert(
-          `@id` = env.snowflakeGenerator.nextIdStr(),
-          `@env` = env.env,
-          apikey = key,
-          remainingQuotas = quotas,
-          reason = ApiKeyQuotasExceededReason.DailyQuotasExceeded
-        ).toAnalytics()
-      }
-      if (quotas.currentCallsPerMonth >= (quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)) {
-        ApiKeyQuotasExceededAlert(
-          `@id` = env.snowflakeGenerator.nextIdStr(),
-          `@env` = env.env,
-          apikey = key,
-          remainingQuotas = quotas,
-          reason = ApiKeyQuotasExceededReason.MonthlyQuotasExceeded
-        ).toAnalytics()
-      }
-    }
+    def sendQuotasExceededError(key: ApiKey, quotas: RemainingQuotas): Unit =
+      ApiKey.sendQuotasExceededAlerts(key, quotas, config.quotasSettings)
 
     detectApikeyTuple(req, constraints, attrs) match {
       case None              =>
@@ -2404,7 +2374,7 @@ object ApiKeyHelper {
             error(Results.BadRequest, "invalid apikey tuple", "errors.invalid.api.key.tuple", additionalMessage)
           case Left((Some(apikey), additionalMessage))                              =>
             sendRevokedApiKeyAlert(apikey)
-            error(Results.Unauthorized, "bad apikey", "errors.bad.api.key", additionalMessage)
+            error(Results.Unauthorized, "bad apikey 111", "errors.bad.api.key", additionalMessage.debugPrintln)
           case Right(apikey) if routingEnabled && !apikey.matchRouting(constraints) =>
             error(
               Results.Unauthorized,

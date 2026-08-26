@@ -1046,6 +1046,18 @@ export function PlanEditor(props) {
           access_mode_configuration: {
             enabled: true,
           },
+          // a plan is rate limited like a classic apikey unless told otherwise, so the legacy
+          // strategy with the default quotas is what a new plan starts with
+          rateLimiting: {
+            strategy: {
+              id: 'LegacyThrottlingStrategyConfig',
+              quota: {
+                window: 10000000,
+                daily: 10000000,
+                monthly: 10000000,
+              },
+            },
+          },
         }
       : null
   );

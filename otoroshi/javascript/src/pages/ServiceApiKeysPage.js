@@ -1287,7 +1287,10 @@ const ApiKeysConstants = {
       ),
     },
   ],
-  formFlow: [
+  // ApiKey.allowedQuota takes the quotas of the throttling strategy as soon as there is one, and
+  // only falls back on throttlingQuota/dailyQuota/monthlyQuota when there is none. showing the
+  // legacy fields next to a strategy would let one edit numbers nothing reads.
+  formFlow: (apikey) => [
     //'>>>Location',
     '_loc',
     'clientId',
@@ -1327,10 +1330,9 @@ const ApiKeysConstants = {
     'curlCommandWithBasicAuth',
     '>>>Throttling strategy',
     'throttlingStrategy',
-    '>>>Legacy Quotas',
-    'throttlingQuota',
-    'dailyQuota',
-    'monthlyQuota',
+    ...(apikey && apikey.throttlingStrategy
+      ? []
+      : ['>>>Legacy Quotas', 'throttlingQuota', 'dailyQuota', 'monthlyQuota']),
     '>>>Quotas consumption',
     'remainingQuotas',
     'resetQuotas',

@@ -745,11 +745,16 @@ case class ApiPlan(raw: JsObject) {
   lazy val name: String                                                             = raw.selectAsString("name")
   lazy val description: String                                                      = raw.selectAsOptString("description").getOrElse("No description")
   lazy val pricing: ApiPricing                                                      = raw.select("pricing").as(using ApiPricing.format)
+  // a plan always carries a throttling strategy, so that an apikey it mints is rate limited exactly
+  // like a classic one: without an explicit strategy it falls back on the legacy one with the
+  // default quotas, which is what an apikey created by hand gets.
   lazy val rateLimiting: Option[ThrottlingStrategyConfig]                           =
     raw
       .select("rateLimiting")
       .asOpt[JsObject]
+      .orElse(raw.select("rate_limiting").asOpt[JsObject])
       .flatMap(rateLimiting => rateLimiting.select("strategy").asOpt(using ThrottlingStrategyConfig.fmt))
+      .orElse(LegacyThrottlingStrategyConfig().some)
   lazy val accessModeConfiguration: Option[ApiAccessModeConfiguration] =
     accessModeConfigurationType match {
       case "keyless"       => (raw \ "access_mode_configuration").asOpt(using KeylessAccessModeConfiguration.fmt)
@@ -1778,7 +1783,7 @@ case class Api(
             //  .getOrElse(Json.obj())
             //  .deepMerge(
                 NgApikeyCallsConfig(
-                  updateQuotas = false, // done later !
+                  updateQuotas = true,
                   mandatory = false,
                   // extractors = NgApikeyExtractors(
                   //   otoBearer = NgApikeyExtractorOtoBearer(enabled = true),
@@ -1896,16 +1901,17 @@ case class Api(
         plugins = addPluginsToFlow(
           route.plugins,
           Seq(
+            // TODO: need to check and enforce api + increment there !!!
             PluginWithConfig(
               pluginId[NgExpectedConsumer],
               Json.obj(),
               Some(PluginIndex(validateAccess = 1000.00.some)) // still valid
             ),
-            PluginWithConfig(
-              pluginId[otoroshi.next.plugins.ApikeyQuotas],
-              Json.obj(),
-              Some(PluginIndex(validateAccess = 1001.00.some)) // still valid
-            ),
+            // PluginWithConfig(
+            //   pluginId[otoroshi.next.plugins.ApikeyQuotas],
+            //   Json.obj(),
+            //   Some(PluginIndex(validateAccess = 1001.00.some)) // still valid
+            // ),
             PluginWithConfig(
               pluginId[otoroshi.next.plugins.SendOtoroshiHeadersBack],
               Json.obj(),

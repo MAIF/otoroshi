@@ -7,6 +7,10 @@ import otoroshi.next.models.{ApiRef, ApikeyAccessModeConfiguration}
 import otoroshi.next.plugins.api.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import org.apache.commons.codec.binary.Base64
+import org.joda.time.DateTime
+import otoroshi.cluster.ClusterAgent
+import otoroshi.events.{Alerts, RevokedApiKeyUsageAlert}
+import otoroshi.gateway.Errors
 import otoroshi.utils.{JsonPathUtils, RegexPool}
 import otoroshi.utils.http.DN
 import otoroshi.utils.syntax.implicits.*
@@ -56,7 +60,8 @@ object ApikeyFromPlan {
       ctx: NgAccessContext,
       extraMetadata: Map[String, String]
   )(using
-      env: Env
+      env: Env,
+      ec: ExecutionContext
   ): ApiKey = {
     val template           = config.apikey
     val attrs              = ctx.attrs.put(
@@ -69,7 +74,7 @@ object ApikeyFromPlan {
     } else {
       config.apiId.map(id => Seq(ApiIdentifier(id))).getOrElse(Seq(RouteIdentifier(ctx.route.id)))
     }
-    ApiKey(
+    val apk = ApiKey(
       clientId = clientId,
       clientSecret = IdGenerator.token(128),
       clientName = template.clientNamePattern.map(_.evaluateEl(attrs)(using env)).getOrElse(clientId),
@@ -90,6 +95,98 @@ object ApikeyFromPlan {
       tags = template.tags,
       metadata = template.metadata ++ Map("created_by" -> "apikey-extractor") ++ extraMetadata
     )
+    if (config.createIfMissing) {
+      apk.save()
+      if (env.clusterConfig.mode.isWorker) {
+        ClusterAgent.clusterSaveApikey(env, apk)(using ec, env.otoroshiMaterializer)
+      }
+    }
+    apk
+  }
+
+  // an apikey resolved here is the only thing carrying the plan settings, so the call has to go
+  // through the very same checks ApiKeyHelper.passWithApiKeyFromCache applies to a credential based
+  // one: restrictions, key rotation, then quotas and rate limiting through the throttling strategy
+  // of the apikey. going through the strategy matters: the legacy datastore path ignores it and
+  // counts on another set of keys, so a plan quota would never be enforced.
+  private def enforce(apikey: ApiKey, ctx: NgAccessContext)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Result] = {
+    val req   = ctx.request
+    val attrs = ctx.attrs
+
+    def error(
+        status: Results.Status,
+        message: String,
+        code: String,
+        extraAnalyticsMessage: Option[String]
+    ): Future[Result] = {
+      val finalAttrs = extraAnalyticsMessage match {
+        case None          => attrs
+        case Some(message) => {
+          val key = "apikey_rejection_reason"
+          attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
+            case Some(obj @ JsObject(_)) => obj ++ Json.obj(key -> message)
+            case None                    => Json.obj(key -> message)
+          }
+        }
+      }
+      Errors.craftResponseResult(
+        message,
+        status,
+        req,
+        None,
+        code.some,
+        attrs = finalAttrs,
+        maybeRoute = ctx.route.some
+      )
+    }
+
+    val (restricted, errResult) =
+      apikey.restrictions.handleRestrictions(ctx.route.id, None, ctx.route.some, apikey.some, req, attrs)
+    if (restricted) {
+      errResult
+    } else {
+      env.datastores.apiKeyDataStore.keyRotation(apikey).map { rotationInfos =>
+        rotationInfos.foreach { i =>
+          attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+        }
+      }
+      val quotasSettings = env.datastores.globalConfigDataStore.latest().quotasSettings
+      val strategy       = env.rateLimiter.getOrCreate(
+        apikey.clientId,
+        attrs = attrs,
+        throttlingStrategy = apikey.throttlingStrategy
+      )
+      strategy
+        .checkAndIncrement(
+          apikey.clientId,
+          1,
+          apikey.allowedQuota,
+          env.throttlingWindow
+        )
+        .flatMap {
+          case result if result.allowed =>
+            val quotas = result.quotas.legacy()
+            attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+            ApiKey.sendQuotasAlmostExceededAlerts(apikey, quotas, quotasSettings)
+            Results.Ok(Json.obj()).vfuture
+
+          case result =>
+            // Quota exceeded - reject with 429
+            val quotas = result.quotas.legacy()
+            attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey           -> apikey)
+            attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+            ApiKey.sendQuotasExceededAlerts(apikey, quotas, quotasSettings)
+            error(
+              Results.TooManyRequests,
+              "You performed too much requests",
+              "errors.too.much.requests",
+              s"apikey '${apikey.clientId}' quotas exceeded".some
+            )
+        }
+    }
   }
 
   // resolves the apikey behind a client id. an existing one always wins, so that a revoked or
@@ -121,12 +218,29 @@ object ApikeyFromPlan {
         case None if !config.createIfMissing => None
         case None                           => apikeyFor(clientId, config, ctx, extraMetadata).some
       }
-      .map {
+      .flatMap {
         case Some(apikey) if apikey.isActive() => {
           ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
-          Results.Ok(Json.obj())
+          enforce(apikey, ctx)
         }
-        case _                                 => Results.Unauthorized(Json.obj("error" -> "unknown_apikey"))
+        // a persisted apikey can be disabled or reach its validUntil long after the plan minted it,
+        // and it is still resolved here: the caller has to be turned away just like a revoked
+        // credential would be, alert included
+        case Some(apikey)                      => {
+          Alerts.send(
+            RevokedApiKeyUsageAlert(
+              env.snowflakeGenerator.nextIdStr(),
+              DateTime.now(),
+              env.env,
+              ctx.request,
+              apikey,
+              None,
+              env
+            )
+          )
+          Results.Unauthorized(Json.obj("error" -> "unknown_apikey")).vfuture
+        }
+        case None                              => Results.Unauthorized(Json.obj("error" -> "unknown_apikey")).vfuture
       }
   }
 }
@@ -148,6 +262,18 @@ trait ApikeyExtractorPlugin extends NgAccessValidator {
   // decide what to do with it
   protected def failure(strict: Boolean, description: String): NgAccess =
     if (strict) unauthorized(description) else NgAccess.NgAllowed
+
+  // failing to identify a consumer is what the non strict mode is about: the call goes on without
+  // any apikey and something downstream decides. a rejection coming from the restrictions or the
+  // quotas of an apikey that has been identified is a different matter, it is a decision taken
+  // about that consumer and has to reach it as is, or a non strict plan would happily serve someone
+  // who just blew its quotas. those are the only three statuses ApikeyFromPlan.enforce can craft,
+  // and none of them collides with what the jwt or oidc verification answers on its own.
+  protected def outcome(result: Result, strict: Boolean): NgAccess = result.header.status match {
+    case 200                   => NgAccess.NgAllowed
+    case 403 | 404 | 429       => NgAccess.NgDenied(result)
+    case _                     => failure(strict, "You have to provide a valid apikey")
+  }
 }
 
 case class NgJwtApikeyExtractorConfig(
@@ -197,6 +323,7 @@ class NgJwtApikeyExtractor extends ApikeyExtractorPlugin {
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtApikeyExtractorConfig("none").some
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    println("pass here !!!!")
     val config =
       ctx.cachedConfig(internalName)(NgJwtApikeyExtractorConfig.format).getOrElse(NgJwtApikeyExtractorConfig("none"))
     env.datastores.globalJwtVerifierDataStore.findById(config.verifier).flatMap {
@@ -224,12 +351,7 @@ class NgJwtApikeyExtractor extends ApikeyExtractorPlugin {
             }
           }
           .recover { case _: Throwable => Results.Unauthorized(Json.obj()) }
-          .map { result =>
-            result.header.status match {
-              case 200 => NgAccess.NgAllowed
-              case _   => failure(config.strict, "You have to provide a valid apikey")
-            }
-          }
+          .map(result => outcome(result, config.strict))
       }
       case other          => throw new IllegalStateException(s"unreachable case: $other")
     }
@@ -296,12 +418,7 @@ class NgExpressionApikeyExtractor extends ApikeyExtractorPlugin {
       // the prefix keeps generated identities in their own namespace: without it an expression fed
       // by the request could be made to resolve to the client id of a real apikey
       val clientId = s"${config.clientIdPrefix}${extracted}"
-      ApikeyFromPlan.resolveOrCreate(clientId, config, ctx).map { result =>
-        result.header.status match {
-          case 200 => NgAccess.NgAllowed
-          case _   => failure(config.strict, "You have to provide a valid apikey")
-        }
-      }
+      ApikeyFromPlan.resolveOrCreate(clientId, config, ctx).map(result => outcome(result, config.strict))
     }
   }
 }
@@ -403,12 +520,9 @@ class NgClientCertApikeyExtractor extends ApikeyExtractorPlugin {
             case None           =>
               failure(config.strict, s"Your client certificate carries no ${config.clientIdField.get} in its subject").vfuture
             case Some(clientId) =>
-              ApikeyFromPlan.resolveOrCreate(s"${config.clientIdPrefix}${clientId}", config, ctx).map { result =>
-                result.header.status match {
-                  case 200 => NgAccess.NgAllowed
-                  case _   => failure(config.strict, "You have to provide a valid apikey")
-                }
-              }
+              ApikeyFromPlan
+                .resolveOrCreate(s"${config.clientIdPrefix}${clientId}", config, ctx)
+                .map(result => outcome(result, config.strict))
           }
         }
       }
@@ -571,12 +685,9 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
                           case None           => failure(config.strict, "No client id in the token").rightf
                           case Some(clientId) =>
                             userMetadata(ctx, oidcModule, config, currentToken).flatMap { extraMetadata =>
-                              ApikeyFromPlan.resolveOrCreate(clientId, config, ctx, extraMetadata).map { result =>
-                                result.header.status match {
-                                  case 200 => NgAccess.NgAllowed.right
-                                  case _   => failure(config.strict, "You have to provide a valid apikey").right
-                                }
-                              }
+                              ApikeyFromPlan
+                                .resolveOrCreate(clientId, config, ctx, extraMetadata)
+                                .map(result => outcome(result, config.strict).right)
                             }
                         }
                       }

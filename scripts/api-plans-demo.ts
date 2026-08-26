@@ -286,7 +286,18 @@ function apiPayload() {
     pricing: { enabled: false },
     tags: [`${PREFIX}-${kind}`],
     metadata: { demo: kind },
+    // rateLimiting: {
+    //   strategy: {
+    //     id: 'LegacyThrottlingStrategyConfig',
+    //     quota: {
+    //       window: 100,
+    //       daily: 10000,
+    //       monthly: 10000
+    //     }
+    //   }
+    // }
   });
+  const create_if_missing = false;
   return {
     id,
     name: `${PREFIX} demo`,
@@ -355,13 +366,13 @@ function apiPayload() {
       },
     ],
     plans: [
-      plan('keyless', { expr: '${req.ip}', create_if_missing: true }),
+      plan('keyless', { expr: '${req.ip}', create_if_missing }),
       plan('apikey', {}),
-      plan('jwt', { verifier: ids.verifier, client_id_path: 'client_id', create_if_missing: true }),
+      plan('jwt', { verifier: ids.verifier, client_id_path: 'client_id', create_if_missing }),
       plan('mtls', {
         regex_subject_dns: [`.*CN=${PREFIX}-client.*`],
         client_id_field: 'UID',
-        create_if_missing: true,
+        create_if_missing,
       }),
       plan('oauth2-local', {}),
       plan('oauth2-remote', {
@@ -369,7 +380,7 @@ function apiPayload() {
         client_id_path: 'client_id',
         fetch_user: true,
         user_metadata_key: 'user_profile',
-        create_if_missing: true,
+        create_if_missing,
       }),
     ],
     subscriptions: [],
@@ -554,6 +565,7 @@ if (flags.has('--no-calls')) {
 }
 
 console.log('7. calling the api\n');
+console.log(`Bearer ${signJwt({ iss: 'demo', client_id: 'consumer-from-token' }, JWT_SECRET)}`)
 const results: CallResult[] = [
   await callHttp('no credential at all', 'from-keyless-plan'),
   await callHttp('Otoroshi-Client-Id / Secret', 'from-apikey-plan', {
