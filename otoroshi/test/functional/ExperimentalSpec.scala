@@ -17,6 +17,9 @@ import play.api.libs.json.{Json, Reads}
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 
+// LEGACY: not wired into any Suites, and its two constructor arguments make it impossible to run by
+// name, so nothing has executed it for a while. Kept for reference until someone decides to bring it
+// back into a suite or to drop it.
 class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "websocket.oto.tools"
@@ -113,6 +116,9 @@ class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) e
   }
 }
 
+// LEGACY: not wired into any Suites, and its two constructor arguments make it impossible to run by
+// name, so nothing has executed it for a while. Kept for reference until someone decides to bring it
+// back into a suite or to drop it.
 class ExperimentalSpec2(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "api.oto.tools"

@@ -103,6 +103,8 @@ object OtoroshiTests {
       new ApikeyGroupApiSpec(name, config),
       //[REMOVE SERVICEDESC] new ApikeyServiceApiSpec(name, config),
       new ApikeyApiSpec(name, config),
+      new ApikeyBearerSpec(),
+      new ThrottlingTestSpec(),
       new Log4ShellSpec()
     )
     Option(System.getenv("TEST_ANALYTICS")) match {
@@ -117,6 +119,26 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites()*) with BeforeAndAft
 class DevOtoroshiTests
     extends Suites(
       new AdminApiSpec("DEV", Configurations.InMemoryConfiguration)
+    )
+
+// pure logic specs: no otoroshi instance, no datastore, no network. the whole suite runs in seconds,
+// so it belongs in every run rather than being reachable only by name.
+class UnitTests
+    extends Suites(
+      new ApiBusinessRulesSpec(),
+      new plugins.HttpSignatureRfc9421Spec(),
+      new WebAuthnSpec(),
+      new MapFilterSpec(),
+      new JsonPathSpec(),
+      new ElasticWritesAnalyticsSpec(),
+      new LettuceSslOptionsSpec(),
+      new VersionSpec(),
+      // the three deterministic tree router specs. the two others of NgTreeRouterTests stay out: one
+      // is a benchmark over a million routes with no assertion, the other downloads the openapi spec
+      // of master from github before matching against it
+      new NgTreeRouterSpec(),
+      new NgTreeRouterPathParamsSpec(),
+      new NgTreeRouterWildcardSpec()
     )
 
 class MapFilterTest
