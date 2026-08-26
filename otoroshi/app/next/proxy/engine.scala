@@ -2021,8 +2021,28 @@ class ProxyEngine() extends RequestHandler {
             // from here the chain of the call is composed from the plan and the plugins of this
             // apikey, so (route, plugin, index) no longer identifies a plugin config: the very same
             // slot of the very same route holds a different plugin for another caller. The chain
-            // carries the client id so that every composed chain keeps its own cache entries.
-            val discriminator = apikey.clientId
+            // carries a discriminator so that every composed chain keeps its own cache entries.
+            val discriminator = (apikey.plugins, apikey.apiRef) match {
+              // the apikey brings plugins of its own, so the composed chain belongs to it and to it
+              // only, plan or no plan behind it: it cannot share cache entries with anyone. keying on
+              // the client id is not a problem here, an apikey holding its own plugins is a stored
+              // entity, so there are as many entries as there are apikeys, not as there are callers.
+              case (Some(_), _)      => apikey.clientId
+              // the chain is exactly the one of the plan, hence the same for every caller of that
+              // plan. the client id would give one entry per caller instead, and a keyless plan mints
+              // one client id per ip, which would flush the shared config cache on any api with a bit
+              // of traffic, for every other route too.
+              case (None, Some(ref)) => s"${ref.api}::${ref.plan}"
+              // unreachable, pluginFlow only returns something when one of the two is set
+              case (None, None)      => apikey.clientId
+            }
+            // TODO: composing the chain costs two NgContextualPlugins per request, each one expanding
+            // the presets, re-indexing every slot and sorting the plugins of every phase. the slots
+            // themselves only depend on (route, api, plan) once the apikey brings no plugin of its
+            // own, so they could be computed once and cached under that key. what cannot be cached is
+            // everything downstream of the request: matches(request), preset expansion and attrs. so
+            // it means caching the merged NgPlugins, not the NgContextualPlugins. worth a bench
+            // before complicating this path.
             // the flow runs its phases on its own plugins only: the route and the global ones went
             // through them already and must not run a second time. that is why global_plugins is
             // empty here, it is restored on the merged instance below.

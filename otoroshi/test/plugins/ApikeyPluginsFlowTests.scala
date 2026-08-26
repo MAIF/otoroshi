@@ -592,6 +592,58 @@ class ApikeyPluginsFlowTests(parent: PluginsTestSpec) {
     deleteApi(api)
   }
 
+  // an apikey can hold plugins of its own on top of a plan. the engine then composes a chain that
+  // belongs to that apikey only, while the other consumers of the very same plan keep the chain of
+  // the plan: the two must not bleed into each other, neither in the chain nor in the config caches
+  // the engine keeps per composed chain.
+  def planAndApikeyPluginsCombined(): Unit = {
+    ApikeyFlowProbes.reset()
+    val route = createRouteWithExternalTarget(
+      Seq(NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]), apikeyCalls(), probe("mix-route"))
+    ).futureValue
+
+    val apiId = s"api_${IdGenerator.uuid}"
+    val api   = apiWith(apiId, Seq(planWith("plan-1", planFlow(overrides = false, probe("mix-plan")).some)))
+    createApi(api)
+
+    // same plan for both, only the second one brings a plugin of its own
+    val planOnly = keyWith(apiRef = ApiRef(apiId, "plan-1", "sub").some)
+      .copy(authorizedEntities = Seq(RouteIdentifier(route.id)))
+    val withOwn  = keyWith(
+      apiRef = ApiRef(apiId, "plan-1", "sub").some,
+      plugins = flow(overrides = false, probe("mix-local")).some
+    ).copy(authorizedEntities = Seq(RouteIdentifier(route.id)))
+    createOtoroshiApiKey(planOnly).futureValue
+    createOtoroshiApiKey(withOwn).futureValue
+
+    val domain = route.frontend.domains.head.domain
+    callWith(domain, planOnly).status mustBe 200
+    // the plan alone, the plugin of the other apikey stays out of that call
+    ApikeyFlowProbes.count("transform", "mix-plan") mustBe 1
+    ApikeyFlowProbes.count("transform", "mix-local") mustBe 0
+
+    callWith(domain, withOwn).status mustBe 200
+    // the plan first, then the plugin of the apikey
+    ApikeyFlowProbes.count("transform", "mix-plan") mustBe 2
+    ApikeyFlowProbes.count("transform", "mix-local") mustBe 1
+    ApikeyFlowProbes.transformOrder.filter(t => t == "mix-plan" || t == "mix-local") mustBe Seq(
+      "mix-plan",
+      "mix-plan",
+      "mix-local"
+    )
+
+    // and the first apikey still gets the chain of the plan alone afterwards
+    callWith(domain, planOnly).status mustBe 200
+    ApikeyFlowProbes.count("transform", "mix-plan") mustBe 3
+    ApikeyFlowProbes.count("transform", "mix-local") mustBe 1
+    ApikeyFlowProbes.count("transform", "mix-route") mustBe 3
+
+    deleteOtoroshiApiKey(planOnly).futureValue
+    deleteOtoroshiApiKey(withOwn).futureValue
+    deleteOtoroshiRoute(route).futureValue
+    deleteApi(api)
+  }
+
   def planCanReferenceAFlow(): Unit = {
     val shared = ApiFlows(
       id = "shared-chain",

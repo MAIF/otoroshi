@@ -247,23 +247,27 @@ case class ApiKey(
     }
   }
 
+  // called on every request carrying this apikey, so nothing is computed here that could have been
+  // computed once: the chain of the plan comes precomputed from the api, and it is handed over as is
+  // when the apikey brings no plugin of its own, which is the case of every apikey minted by a plan.
   def pluginFlow(env: Env): Option[NgPluginsWithOverride] = {
     if (plugins.isDefined || apiRef.isDefined) {
-      val localPlugins = plugins.map(_.plugins.slots).getOrElse(Seq.empty)
+      val localPlugins  = plugins.map(_.plugins.slots).getOrElse(Seq.empty)
       val localOverride = plugins.exists(_.overrides)
-      val planAndApi = apiRef.flatMap { ref =>
-        // TODO: check if we can find something to enhance perfs on the hot path
-        env.proxyState.api(ref.api).flatMap(api => api.plans.find(_.id == ref.plan).map(plan => (api, plan)))
+      val planFlow      = apiRef.flatMap { ref =>
+        env.proxyState.api(ref.api).flatMap(_.computedPluginsByPlan.get(ref.plan))
       }
-      planAndApi match {
-        case Some((api, p)) if p.hasPlugins => {
-          val planFlow = p.computedPlugins(api)
-          NgPluginsWithOverride(NgPlugins(planFlow.plugins.slots ++ localPlugins), planFlow.overrides || localOverride).some
+      planFlow match {
+        case Some(flow) if localPlugins.isEmpty => flow.some
+        case Some(flow)                         => {
+          // the plan comes first, the plugins of the apikey extend it
+          NgPluginsWithOverride(
+            NgPlugins(flow.plugins.slots ++ localPlugins),
+            flow.overrides || localOverride
+          ).some
         }
-        case _ if localPlugins.nonEmpty => {
-          NgPluginsWithOverride(NgPlugins(localPlugins), localOverride).some
-        }
-        case _ => None
+        case None if localPlugins.nonEmpty      => NgPluginsWithOverride(NgPlugins(localPlugins), localOverride).some
+        case None                               => None
       }
     } else {
       None

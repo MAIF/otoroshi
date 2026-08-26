@@ -1654,6 +1654,14 @@ case class Api(
 
   override def theMetadata: Map[String, String] = metadata
 
+  // the plugin chain a plan contributes to a call never changes for a given api, but ApiKey.pluginFlow
+  // needs it on every request that carries an apiRef. it is computed once per api instance here,
+  // instead of being rebuilt per call: the proxy state rebuilds those instances when the api changes,
+  // so this stays in sync while costing a single map lookup on the hot path. plans without plugins
+  // are left out, they behave like no plan at all.
+  lazy val computedPluginsByPlan: Map[String, NgPluginsWithOverride] =
+    plans.collect { case plan if plan.hasPlugins => (plan.id, plan.computedPlugins(this)) }.toMap
+
   def resolveDocumentation()(using env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
     documentation.flatMap(_.source) match {
       case None         => documentation.vfuture
