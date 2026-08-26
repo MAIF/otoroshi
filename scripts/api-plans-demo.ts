@@ -297,7 +297,7 @@ function apiPayload() {
     //   }
     // }
   });
-  const create_if_missing = false;
+  const create_if_missing = true;
   return {
     id,
     name: `${PREFIX} demo`,
@@ -368,7 +368,7 @@ function apiPayload() {
     plans: [
       plan('keyless', { expr: '${req.ip}', create_if_missing }),
       plan('apikey', {}),
-      plan('jwt', { verifier: ids.verifier, client_id_path: 'client_id', create_if_missing: false }),
+      plan('jwt', { verifier: ids.verifier, client_id_path: 'client_id', create_if_missing }),
       plan('mtls', {
         regex_subject_dns: [`.*CN=${PREFIX}-client.*`],
         client_id_field: 'UID',
@@ -380,7 +380,7 @@ function apiPayload() {
         client_id_path: 'client_id',
         fetch_user: true,
         user_metadata_key: 'user_profile',
-        create_if_missing: false,
+        create_if_missing,
       }),
     ],
     subscriptions: [],
