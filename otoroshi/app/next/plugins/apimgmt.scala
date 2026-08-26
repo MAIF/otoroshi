@@ -104,12 +104,14 @@ object ApikeyFromPlan {
     apk
   }
 
-  // an apikey resolved here is the only thing carrying the plan settings, so the call has to go
-  // through the very same checks ApiKeyHelper.passWithApiKeyFromCache applies to a credential based
-  // one: restrictions, key rotation, then quotas and rate limiting through the throttling strategy
-  // of the apikey. going through the strategy matters: the legacy datastore path ignores it and
-  // counts on another set of keys, so a plan quota would never be enforced.
-  private def enforce(apikey: ApiKey, ctx: NgAccessContext)(using
+  // an apikey identified by a plan is the only thing carrying the plan settings, so the call has to
+  // go through the very same checks ApiKeyHelper.passWithApiKeyFromCache applies to a credential
+  // based one: restrictions, key rotation, then quotas and rate limiting through the throttling
+  // strategy of the apikey. going through the strategy matters: the legacy datastore path ignores
+  // it and counts on another set of keys, so a plan quota would never be enforced.
+  // NgApiConsumerEnforcer is the only caller: the call is counted at the very end of the access
+  // validation, so that a call turned away by anything else is never counted.
+  def enforce(apikey: ApiKey, ctx: NgAccessContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -191,9 +193,10 @@ object ApikeyFromPlan {
 
   // resolves the apikey behind a client id. an existing one always wins, so that a revoked or
   // disabled apikey cannot be resurrected by minting a fresh one over it. otherwise the apikey is
-  // built from the plan settings and stays in memory: it is never saved, not even to the cluster,
-  // so a public api does not fill the datastore with one entry per caller. quota counters are keyed
-  // by client id, so they still add up across calls without the entity being persisted.
+  // built from the plan settings, and create_if_missing decides whether it reaches the datastore:
+  // with it off the apikey only lives for the call, so a public api does not fill the datastore
+  // with one entry per caller. quota counters are keyed by client id, so they add up across calls
+  // either way.
   def resolveOrCreate(
       clientId: String,
       config: ApikeyFromPlanConfig,
@@ -219,8 +222,10 @@ object ApikeyFromPlan {
       }
       .flatMap {
         case Some(apikey) if apikey.isActive() => {
+          // identification only: the restrictions and the quotas of that apikey are enforced by
+          // NgApiConsumerEnforcer, once every other access validator of the route has passed
           ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
-          enforce(apikey, ctx)
+          Results.Ok(Json.obj()).vfuture
         }
         // a persisted apikey can be disabled or reach its validUntil long after the plan minted it,
         // and it is still resolved here: the caller has to be turned away just like a revoked
@@ -263,11 +268,10 @@ trait ApikeyExtractorPlugin extends NgAccessValidator {
     if (strict) unauthorized(description) else NgAccess.NgAllowed
 
   // failing to identify a consumer is what the non strict mode is about: the call goes on without
-  // any apikey and something downstream decides. a rejection coming from the restrictions or the
-  // quotas of an apikey that has been identified is a different matter, it is a decision taken
-  // about that consumer and has to reach it as is, or a non strict plan would happily serve someone
-  // who just blew its quotas. those are the only three statuses ApikeyFromPlan.enforce can craft,
-  // and none of them collides with what the jwt or oidc verification answers on its own.
+  // any apikey and something downstream decides, NgApiConsumerEnforcer typically. a rejection an
+  // extraction step took on its own, a jwt verifier answering with its own error result, is a
+  // decision taken about that caller and has to reach it as is, or a non strict plan would happily
+  // serve someone its verifier just turned away.
   protected def outcome(result: Result, strict: Boolean): NgAccess = result.header.status match {
     case 200                   => NgAccess.NgAllowed
     case 403 | 404 | 429       => NgAccess.NgDenied(result)
@@ -278,6 +282,7 @@ trait ApikeyExtractorPlugin extends NgAccessValidator {
 case class NgJwtApikeyExtractorConfig(
     verifier: String,
     clientIdPath: String = "client_id",
+    clientIdPrefix: String = "jwt_",
     strict: Boolean = true,
     createIfMissing: Boolean = true,
     apiId: Option[String] = None,
@@ -287,9 +292,10 @@ case class NgJwtApikeyExtractorConfig(
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   override def json: JsValue = Json.obj(
-    "verifier"       -> verifier,
-    "client_id_path" -> clientIdPath,
-    "strict"         -> strict
+    "verifier"         -> verifier,
+    "client_id_path"   -> clientIdPath,
+    "client_id_prefix" -> clientIdPrefix,
+    "strict"           -> strict
   ) ++ ApikeyFromPlan.json(this)
 }
 
@@ -300,6 +306,7 @@ object NgJwtApikeyExtractorConfig {
       NgJwtApikeyExtractorConfig(
         verifier = json.select("verifier").as[String],
         clientIdPath = json.select("client_id_path").asOpt[String].getOrElse("client_id"),
+        clientIdPrefix = json.select("client_id_prefix").asOpt[String].getOrElse("jwt_"),
         strict = json.select("strict").asOpt[Boolean].getOrElse(true),
         createIfMissing = ApikeyFromPlan.createIfMissing(json),
         apiId = ApikeyFromPlan.apiId(json),
@@ -318,7 +325,7 @@ class NgJwtApikeyExtractor extends ApikeyExtractorPlugin {
 
   override def name: String                                = "Jwt apikey extractor"
   override def description: Option[String]                 =
-    "This plugin extracts an apikey from a JWT token claim holding its client id. The apikey is created from the plan settings when it does not exist yet, then stored for classic apikey usage".some
+    "This plugin extracts an apikey from a JWT token claim holding its client id. The apikey is built from the plan settings when it does not exist yet, and persisted when create_if_missing is on. It only identifies the consumer: pair it with the 'Api consumer enforcer' plugin to enforce its quotas, like a published plan does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtApikeyExtractorConfig("none").some
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -342,7 +349,11 @@ class NgJwtApikeyExtractor extends ApikeyExtractorPlugin {
                 val jsonToken = new String(OtoroshiClaim.decoder.decode(token.getPayload))
                 JsonPathUtils.getAt[String](jsonToken, config.clientIdPath) match {
                   case None           => Results.Unauthorized(Json.obj("error" -> "no_client_id")).future
-                  case Some(clientId) => ApikeyFromPlan.resolveOrCreate(clientId, config, ctx)
+                  case Some(clientId) =>
+                    // the prefix keeps the identities of that plan in their own namespace: a client
+                    // id comes from a token, so two apis behind the same idp would otherwise share
+                    // one apikey, and the last one to mint it would decide the quotas of both
+                    ApikeyFromPlan.resolveOrCreate(s"${config.clientIdPrefix}${clientId}", config, ctx)
                 }
               }
               case other       => throw new IllegalStateException(s"unreachable case: $other")
@@ -399,7 +410,7 @@ class NgExpressionApikeyExtractor extends ApikeyExtractorPlugin {
 
   override def name: String                                = "Expression apikey extractor"
   override def description: Option[String]                 =
-    "This plugin builds a consumer identity from an expression, the caller ip address by default, and turns it into an apikey. It gives a public access the quotas and throttling of its plan without asking the caller for any credential".some
+    "This plugin builds a consumer identity from an expression, the caller ip address by default, and turns it into an apikey. It gives a public access the quotas and throttling of its plan without asking the caller for any credential. It only identifies the consumer: pair it with the 'Api consumer enforcer' plugin to enforce its quotas, like a published plan does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgExpressionApikeyExtractorConfig().some
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -470,7 +481,7 @@ class NgClientCertApikeyExtractor extends ApikeyExtractorPlugin {
 
   override def name: String                                = "Client certificate apikey extractor"
   override def description: Option[String]                 =
-    "This plugin validates the client certificate against subject and issuer DN patterns, then turns it into an apikey. The apikey is built from the plan settings when it does not exist yet".some
+    "This plugin validates the client certificate against subject and issuer DN patterns, then turns it into an apikey. The apikey is built from the plan settings when it does not exist yet. It only identifies the consumer: pair it with the 'Api consumer enforcer' plugin to enforce its quotas, like a published plan does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgClientCertApikeyExtractorConfig().some
 
   // no pattern at all means the plan puts no constraint on the DNs, the mTLS handshake being the
@@ -531,6 +542,7 @@ class NgClientCertApikeyExtractor extends ApikeyExtractorPlugin {
 case class NgOidcApikeyExtractorConfig(
     ref: Option[String] = None,
     clientIdPath: String = "client_id",
+    clientIdPrefix: String = "oauth2_",
     source: Option[JwtTokenLocation] = None,
     fetchUser: Boolean = false,
     userMetadataKey: String = "user_profile",
@@ -545,6 +557,7 @@ case class NgOidcApikeyExtractorConfig(
   override def json: JsValue = Json.obj(
     "ref"                -> ref.map(_.json).getOrElse(JsNull).asValue,
     "client_id_path"     -> clientIdPath,
+    "client_id_prefix"   -> clientIdPrefix,
     "source"             -> source.map(_.asJson).getOrElse(JsNull).asValue,
     "fetch_user"         -> fetchUser,
     "user_metadata_key"  -> userMetadataKey,
@@ -554,7 +567,16 @@ case class NgOidcApikeyExtractorConfig(
 
 object NgOidcApikeyExtractorConfig {
   val configFlow                     =
-    Seq("ref", "client_id_path", "fetch_user", "user_metadata_key", "strict", "create_if_missing", "source")
+    Seq(
+      "ref",
+      "client_id_path",
+      "client_id_prefix",
+      "fetch_user",
+      "user_metadata_key",
+      "strict",
+      "create_if_missing",
+      "source"
+    )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
       "ref"               -> Json.obj(
@@ -566,6 +588,7 @@ object NgOidcApikeyExtractorConfig {
         )
       ),
       "client_id_path"    -> Json.obj("type" -> "string", "label" -> "Client id claim"),
+      "client_id_prefix"  -> Json.obj("type" -> "string", "label" -> "Client id prefix"),
       "fetch_user"        -> Json.obj("type" -> "bool", "label" -> "Fetch the user profile"),
       "user_metadata_key" -> Json.obj("type" -> "string", "label" -> "Metadata key of the user profile"),
       "strict"            -> Json.obj("type" -> "bool", "label" -> "Strict"),
@@ -579,6 +602,7 @@ object NgOidcApikeyExtractorConfig {
       NgOidcApikeyExtractorConfig(
         ref = json.select("ref").asOpt[String],
         clientIdPath = json.select("client_id_path").asOpt[String].getOrElse("client_id"),
+        clientIdPrefix = json.select("client_id_prefix").asOpt[String].getOrElse("oauth2_"),
         source = json.select("source").asOpt[JsObject].flatMap(o => JwtTokenLocation.fromJson(o).toOption),
         fetchUser = json.select("fetch_user").asOpt[Boolean].getOrElse(false),
         userMetadataKey = json.select("user_metadata_key").asOpt[String].getOrElse("user_profile"),
@@ -600,7 +624,7 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
 
   override def name: String                                = "OIDC apikey extractor"
   override def description: Option[String]                 =
-    "This plugin verifies the request jwt token against the OIDC settings of an auth. module, then extracts an apikey from a claim holding its client id. The apikey is built from the plan settings when it does not exist yet".some
+    "This plugin verifies the request jwt token against the OIDC settings of an auth. module, then extracts an apikey from a claim holding its client id. The apikey is built from the plan settings when it does not exist yet. It only identifies the consumer: pair it with the 'Api consumer enforcer' plugin to enforce its quotas, like a published plan does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgOidcApikeyExtractorConfig().some
   override def isAccessAsync: Boolean                      = true
 
@@ -683,8 +707,10 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
                           case None           => failure(config.strict, "No client id in the token").rightf
                           case Some(clientId) =>
                             userMetadata(ctx, oidcModule, config, currentToken).flatMap { extraMetadata =>
+                              // prefixed for the very same reason as the jwt extractor: the client id
+                              // comes from a token, and every plan needs its own namespace
                               ApikeyFromPlan
-                                .resolveOrCreate(clientId, config, ctx, extraMetadata)
+                                .resolveOrCreate(s"${config.clientIdPrefix}${clientId}", config, ctx, extraMetadata)
                                 .map(result => outcome(result, config.strict).right)
                             }
                         }
@@ -708,6 +734,70 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
                 )
               )
               .vfuture
+        }
+    }
+  }
+}
+
+// the last access validator every published plan puts on a route, and the only place where a call
+// identified by a plan is turned into a consumed call. the extractors above, and the ApikeyCalls an
+// apikey plan relies on, only resolve an identity: counting there would count calls that the rest of
+// the chain still rejects, quotas included.
+class NgApiConsumerEnforcer extends NgAccessValidator {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def isAccessAsync: Boolean                      = true
+  // counting twice is exactly what this plugin exists to avoid, so a single instance per route
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def name: String                                = "Api consumer enforcer"
+  override def description: Option[String]                 =
+    "This plugin expects that a consumer made the call, then enforces the restrictions, the rotation and the quotas of its apikey. It is the only place where a call identified by a plan is counted".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def noJsForm: Boolean                           = true
+
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
+
+    def error(status: Results.Status, message: String, code: String, reason: String): Future[NgAccess] = {
+      val key        = "apikey_rejection_reason"
+      val finalAttrs = ctx.attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
+        case Some(obj @ JsObject(_)) => obj ++ Json.obj(key -> reason)
+        case None                    => Json.obj(key -> reason)
+      }
+      Errors
+        .craftResponseResult(
+          message,
+          status,
+          ctx.request,
+          None,
+          code.some,
+          attrs = finalAttrs,
+          maybeRoute = ctx.route.some
+        )
+        .map(NgAccess.NgDenied.apply)
+    }
+
+    // an apikey wins over a user session: it is the one carrying the plan quotas, so it has to be
+    // enforced even when the caller also went through an auth. module
+    ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
+      case Some(apikey) =>
+        ApikeyFromPlan.enforce(apikey, ctx).map {
+          case result if result.header.status == 200 => NgAccess.NgAllowed
+          case result                                => NgAccess.NgDenied(result)
+        }
+      case None         =>
+        ctx.attrs.get(otoroshi.plugins.Keys.UserKey) match {
+          case Some(_) => NgAccess.NgAllowed.vfuture
+          case None    =>
+            error(
+              Results.Unauthorized,
+              "You're not authorized here !",
+              "errors.auth.unauthorized",
+              "no consumer identified on the call"
+            )
         }
     }
   }

@@ -1767,7 +1767,7 @@ case class Api(
               apikey = plan.apikeyTemplate
             ).json,
             // a public plan always resolves an identity, so it is the last resort: it has to run
-            // after every credential based extractor, and still before NgExpectedConsumer at 1000
+            // after every credential based extractor, and still before the consumer enforcer at 1000
             pluginIndex = PluginIndex(
               validateAccess = 900.00.some
             ).some
@@ -1783,7 +1783,9 @@ case class Api(
             //  .getOrElse(Json.obj())
             //  .deepMerge(
                 NgApikeyCallsConfig(
-                  updateQuotas = true,
+                  // identification and early rejection only: NgApiConsumerEnforcer is the one
+                  // counting the call, once the whole access validation of the route has passed
+                  updateQuotas = false,
                   mandatory = false,
                   // extractors = NgApikeyExtractors(
                   //   otoBearer = NgApikeyExtractorOtoBearer(enabled = true),
@@ -1809,6 +1811,7 @@ case class Api(
             NgJwtApikeyExtractorConfig(
               verifier = jwtConfig.verifier.getOrElse(""),
               clientIdPath = jwtConfig.clientIdPath.getOrElse("client_id"),
+              clientIdPrefix = s"jwt_${plan.id}_",
               strict = false,
               createIfMissing = jwtConfig.createIfMissing,
               // an apikey minted from a token has to carry the very same quotas, restrictions and
@@ -1857,6 +1860,7 @@ case class Api(
             NgOidcApikeyExtractorConfig(
               ref = oidcConfig.verifier,
               clientIdPath = oidcConfig.clientIdPath.getOrElse("client_id"),
+              clientIdPrefix = s"oauth2_${plan.id}_",
               fetchUser = oidcConfig.fetchUser,
               userMetadataKey = oidcConfig.userMetadataKey,
               strict = false,
@@ -1901,17 +1905,16 @@ case class Api(
         plugins = addPluginsToFlow(
           route.plugins,
           Seq(
-            // TODO: need to check and enforce api + increment there !!!
+            // the last access validator of the route: it requires a consumer and is the only place
+            // where the call is counted.
+            // TODO: check that the apikey really belongs to this api. every plan kind namespaces the
+            // identities it mints now, so an apikey reaching a route it does not belong to can be
+            // turned away rather than served under the settings of another plan.
             PluginWithConfig(
-              pluginId[NgExpectedConsumer],
+              pluginId[NgApiConsumerEnforcer],
               Json.obj(),
               Some(PluginIndex(validateAccess = 1000.00.some)) // still valid
             ),
-            // PluginWithConfig(
-            //   pluginId[otoroshi.next.plugins.ApikeyQuotas],
-            //   Json.obj(),
-            //   Some(PluginIndex(validateAccess = 1001.00.some)) // still valid
-            // ),
             PluginWithConfig(
               pluginId[otoroshi.next.plugins.SendOtoroshiHeadersBack],
               Json.obj(),

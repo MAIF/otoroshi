@@ -565,7 +565,6 @@ if (flags.has('--no-calls')) {
 }
 
 console.log('7. calling the api\n');
-console.log(`Bearer ${signJwt({ iss: 'demo', client_id: 'consumer-from-token' }, JWT_SECRET)}`)
 const results: CallResult[] = [
   await callHttp('no credential at all', 'from-keyless-plan'),
   await callHttp('Otoroshi-Client-Id / Secret', 'from-apikey-plan', {

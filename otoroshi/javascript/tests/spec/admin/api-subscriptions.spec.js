@@ -59,7 +59,7 @@ test.afterAll(async () => {
 // ApiPlan reads snake_case keys only, so a camelCase access_mode_configuration_type is silently
 // dropped and the plan falls back to "keyless". The access mode configuration has to be present
 // too: an absent one leaves create_if_missing at false, the extractor then mints no consumer
-// identity and NgExpectedConsumer, which every published plan adds, rejects the call with a 401.
+// identity and NgApiConsumerEnforcer, which every published plan adds, rejects the call with a 401.
 const KEYLESS_PLAN = (id = 'plan_keyless') => ({
     id,
     name: 'Free keyless plan',

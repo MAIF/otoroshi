@@ -136,9 +136,9 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
     cfg.select("api_id").asString mustBe api.id
     cfg.select("plan_id").asString mustBe "plan-keyless"
     cfg.select("create_if_missing").asOpt[Boolean] mustBe Some(true)
-    // a keyless plan requires a consumer too: the extractor above always builds one, so the check
+    // a keyless plan requires a consumer too: the extractor above always builds one, so the enforcer
     // is what makes the plan quotas unavoidable rather than best effort
-    slotOf(route, NgPluginHelper.pluginId[NgExpectedConsumer]).isDefined mustBe true
+    slotOf(route, NgPluginHelper.pluginId[NgApiConsumerEnforcer]).isDefined mustBe true
   }
 
   def keylessPlanDefaultExpression(): Unit = {
@@ -160,11 +160,14 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
     val cfg   = slot.get.config.raw
     cfg.select("verifier").asString mustBe "verifier_1"
     cfg.select("client_id_path").asString mustBe "$.azp"
+    // the client id comes from a token, so it is namespaced by plan just like the keyless and the
+    // mtls ones: two apis behind the same idp must not share a consumer identity
+    cfg.select("client_id_prefix").asString mustBe "jwt_plan-jwt_"
     cfg.select("create_if_missing").asOpt[Boolean] mustBe Some(false)
     cfg.select("api_id").asString mustBe api.id
     cfg.select("plan_id").asString mustBe "plan-jwt"
-    // a non keyless plan requires a consumer, enforced last
-    val consumer = slotOf(route, NgPluginHelper.pluginId[NgExpectedConsumer])
+    // a non keyless plan requires a consumer, checked and counted last
+    val consumer = slotOf(route, NgPluginHelper.pluginId[NgApiConsumerEnforcer])
     consumer.isDefined mustBe true
     consumer.get.pluginIndex.flatMap(_.validateAccess) mustBe Some(1000.0)
   }
@@ -197,7 +200,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
     // the apikey plan keeps the classic plugin
     slotOf(route, NgPluginHelper.pluginId[ApikeyCalls]).isDefined mustBe true
     slotOf(route, NgPluginHelper.pluginId[NgJwtApikeyExtractor]).isDefined mustBe false
-    slotOf(route, NgPluginHelper.pluginId[NgExpectedConsumer]).isDefined mustBe true
+    slotOf(route, NgPluginHelper.pluginId[NgApiConsumerEnforcer]).isDefined mustBe true
   }
 
   def planSettingsArePropagated(): Unit = {
@@ -256,7 +259,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
     slotOf(route, NgPluginHelper.pluginId[NgExpressionApikeyExtractor]).isDefined mustBe true
     slotOf(route, NgPluginHelper.pluginId[NgJwtApikeyExtractor]).isDefined mustBe true
     // one plan being non keyless is enough to require a consumer
-    slotOf(route, NgPluginHelper.pluginId[NgExpectedConsumer]).isDefined mustBe true
+    slotOf(route, NgPluginHelper.pluginId[NgApiConsumerEnforcer]).isDefined mustBe true
   }
 
   def onlyPublishedPlansApply(): Unit = {
@@ -344,7 +347,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
   def keylessExpressionWithEmptyDefault(): Unit = {
     ApiPlanApikeySeen.reset()
     // the EL empty default is how a plan opts out of the shared identity above: an absent header
-    // resolves to nothing, the plugin mints no apikey, and the expected consumer check rejects
+    // resolves to nothing, the plugin mints no apikey, and the consumer enforcer rejects
     val api = apiWith(
       Seq(plan("plan-e2e-kl3", "keyless", Json.obj("expr" -> "${req.headers.x-consumer:}"))),
       flowPlugins = NgPlugins(Seq(probe("e2e-keyless-empty")))
@@ -388,10 +391,16 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
 
       val resp = callApi(api, Seq("Authorization" -> s"Bearer $token"))
       resp.status mustBe 200
-      // the client id carried by the token becomes the consumer identity
-      ApiPlanApikeySeen.get("e2e-jwt") mustBe Some("consumer-from-token")
+      // the client id carried by the token becomes the consumer identity, in the namespace of the plan
+      ApiPlanApikeySeen.get("e2e-jwt") mustBe Some("jwt_plan-e2e-jwt_consumer-from-token")
+      // create_if_missing is on by default, so that identity is also persisted as a real apikey
+      await(2.seconds)
+      env.datastores.apiKeyDataStore
+        .findById("jwt_plan-e2e-jwt_consumer-from-token")
+        .futureValue
+        .isDefined mustBe true
 
-      // no token at all: nothing is extracted, and the expected consumer check rejects the call
+      // no token at all: nothing is extracted, and the consumer enforcer rejects the call
       ApiPlanApikeySeen.reset()
       callApi(api).status mustBe 401
       ApiPlanApikeySeen.get("e2e-jwt") mustBe None
@@ -436,9 +445,16 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
         .withIssuer("foo")
         .withClaim("client_id", "unknown-consumer")
         .sign(Algorithm.HMAC512("secret"))
-      // create_if_missing disabled: only apikeys that really exist are accepted
-      callApi(api, Seq("Authorization" -> s"Bearer $token")).status mustBe 401
-      ApiPlanApikeySeen.get("e2e-jwt-nocreate") mustBe None
+      // create_if_missing only says whether the apikey reaches the datastore: the consumer is
+      // identified and served either way, so the plan can hand its quotas to a caller without
+      // filling the datastore with one entry per client id of the idp
+      callApi(api, Seq("Authorization" -> s"Bearer $token")).status mustBe 200
+      ApiPlanApikeySeen.get("e2e-jwt-nocreate") mustBe Some("jwt_plan-e2e-jwt2_unknown-consumer")
+      await(2.seconds)
+      env.datastores.apiKeyDataStore
+        .findById("jwt_plan-e2e-jwt2_unknown-consumer")
+        .futureValue
+        .isDefined mustBe false
     } finally undeploy(api)
   }
 
@@ -453,7 +469,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
     )
     val keyless  = slotOf(route, NgPluginHelper.pluginId[NgExpressionApikeyExtractor]).get
     val jwt      = slotOf(route, NgPluginHelper.pluginId[NgJwtApikeyExtractor]).get
-    val consumer = slotOf(route, NgPluginHelper.pluginId[NgExpectedConsumer]).get
+    val consumer = slotOf(route, NgPluginHelper.pluginId[NgApiConsumerEnforcer]).get
     // the keyless extractor always resolves an identity, so it must come after the credential based
     // ones, otherwise it would claim every call before they get a chance
     val keylessIdx  = keyless.pluginIndex.flatMap(_.validateAccess).get
@@ -496,7 +512,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
 
       // a caller presenting a credential keeps the identity of that credential
       callApi(api, Seq("Authorization" -> s"Bearer $token")).status mustBe 200
-      ApiPlanApikeySeen.get("mix") mustBe Some("consumer-from-token")
+      ApiPlanApikeySeen.get("mix") mustBe Some("jwt_plan-mix-jwt_consumer-from-token")
 
       // a caller presenting nothing falls back on the public plan
       ApiPlanApikeySeen.reset()

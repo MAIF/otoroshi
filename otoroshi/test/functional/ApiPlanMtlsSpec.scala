@@ -621,7 +621,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
               "Authorization" -> s"Bearer ${demoJwt(demoJwtSecret, "iss" -> "demo", "client_id" -> "consumer-from-token")}"
             ),
             "jwt",
-            "consumer-from-token"
+            s"jwt_$demoPrefix-jwt-plan_consumer-from-token"
           ),
           Expected(
             demoMtlsCall("client certificate", demoClient),
@@ -644,7 +644,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
               "Authorization" -> s"Bearer ${demoJwt(demoOidcSecret, "iss" -> "demo-idp", "client_id" -> "consumer-from-oidc")}"
             ),
             "oauth2-remote",
-            "consumer-from-oidc"
+            s"oauth2_$demoPrefix-oauth2-remote-plan_consumer-from-oidc"
           )
         )
 
