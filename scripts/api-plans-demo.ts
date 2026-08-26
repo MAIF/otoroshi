@@ -19,8 +19,8 @@
  *
  * Env:
  *   OTOROSHI_HOST        default 127.0.0.1
- *   OTOROSHI_PORT        default 8080
- *   OTOROSHI_HTTPS_PORT  default 8443
+ *   OTOROSHI_PORT        default 9999
+ *   OTOROSHI_HTTPS_PORT  default 9998
  *   OTOROSHI_CLIENT_ID   default admin-api-apikey-id
  *   OTOROSHI_SECRET      default admin-api-apikey-secret
  *   OTOROSHI_DOMAIN      default oto.tools
