@@ -26,6 +26,7 @@ body {
 
 a {
   color: var(--color_level1);
+  text-decoration: none;
 }
 
 a:hover {
@@ -67,5 +68,9 @@ h4 {
 
 h1,
 h2 {
+  color: var(--text);
+}
+
+p {
   color: var(--text);
 }

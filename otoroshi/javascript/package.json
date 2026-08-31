@@ -15,6 +15,7 @@
     "build:elk": "cross-env OTOROSHI_ENTRY=elk vite build",
     "build": "npm run clean && npm run build:backoffice && npm run build:genericlogin && npm run build:multilogin && npm run build:simplelogin && npm run build:faker && npm run build:elk",
     "start": "vite",
+    "dev": "vite",
     "prettier": "prettier --write --single-quote --trailing-comma es5 --print-width 100 --tab-width 2 --jsx-bracket-same-line \"src/**/*.js\"",
     "licences": "npx legally"
   },
