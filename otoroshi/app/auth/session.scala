@@ -1,7 +1,7 @@
 package otoroshi.auth
 
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits.BetterConfiguration
+import otoroshi.utils.syntax.implicits.{BetterConfiguration, BetterString}
 import play.api.{Configuration, Logger}
 import play.api.http.{JWTConfiguration, SecretConfiguration, SessionConfiguration}
 import play.api.libs.crypto.CookieSignerProvider
@@ -36,8 +36,9 @@ class PrivateAppsSessionManager(env: Env) {
     )
   )
 
+  // HS256 needs a key >= 32 bytes, env.secretSession is capped at 16 for its AES usage
   private val secretConfig = SecretConfiguration(
-    secret = env.secretSession
+    secret = env.configuration.getOptionalWithFileSupport[String]("otoroshi.sessions.secret").get.sha256
   )
 
   private val backer = new DefaultSessionCookieBaker(
@@ -74,6 +75,8 @@ class PrivateAppsSessionManager(env: Env) {
 
 object implicits {
 
+  private val logger = Logger("otoroshi-papps-session")
+
   implicit class RequestHeaderWithPrivateAppSession(val rh: RequestHeader) extends AnyVal {
     def privateAppSession(using env: Env): Session = {
       if (env.privateAppsSessionManager.isEnabled) {
@@ -101,7 +104,7 @@ object implicits {
       }
     } catch {
       case t: Throwable =>
-        t.printStackTrace()
+        logger.error("error while writing private apps session", t)
         result
     }
 
@@ -113,7 +116,7 @@ object implicits {
       }
     } catch {
       case t: Throwable =>
-        t.printStackTrace()
+        logger.error("error while adding to private apps session", t)
         result
     }
 
@@ -125,7 +128,7 @@ object implicits {
       }
     } catch {
       case t: Throwable =>
-        t.printStackTrace()
+        logger.error("error while removing from private apps session", t)
         result
     }
   }
