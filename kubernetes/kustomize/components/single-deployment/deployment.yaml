@@ -34,7 +34,7 @@ spec:
                   matchLabels:
                     run: otoroshi-deployment
       containers:
-      - image: maif/otoroshi:18.0.0-dev
+      - image: maif/otoroshi:18.0.0-preview4
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
