@@ -9,7 +9,7 @@ import { ArrayInput, Table } from '../../components/inputs';
 import { RestrictionPath } from '../../components/Restrictions';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import SimpleLoader from './SimpleLoader';
-import { PluginsChainEditor } from '../../components/PluginsChainEditor';
+import { PluginsChainDrawer } from '../../components/PluginsChainDrawer';
 import { useDraftOfAPI, historyPush } from './hooks';
 import { VersionBadge } from './DraftOnly';
 import { listImpactedSubscriptions } from '../../services/BackOfficeServices';
@@ -701,7 +701,11 @@ function PlanForm({ plan, onChange, flows = [] }) {
           },
           plugins: {
             renderer: (props) => (
-              <PluginsChainEditor value={props.value} onChange={props.onChange} />
+              <PluginsChainDrawer
+                value={props.value}
+                onChange={props.onChange}
+                entityId={plan?.id}
+              />
             ),
           },
         },

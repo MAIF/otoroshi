@@ -23,6 +23,7 @@ export class ApikeyApiRefField extends Component {
     return (
       <>
         <SelectInput
+          isClearable
           label="API"
           value={ref.api}
           help="The api this apikey is a consumer of. The plugins of the selected plan will run for every call made with this apikey."
@@ -40,6 +41,7 @@ export class ApikeyApiRefField extends Component {
           <SelectInput
             key={ref.api}
             label="Plan"
+            isClearable
             value={ref.plan}
             help={plans.length === 0 ? 'This api has no plan yet' : 'The plan of the api'}
             possibleValues={plans.map((plan) => ({ value: plan.id, label: plan.name }))}

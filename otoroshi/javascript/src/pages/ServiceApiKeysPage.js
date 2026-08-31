@@ -6,7 +6,7 @@ import { Table, SimpleBooleanInput } from '../components/inputs';
 import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 import { ApikeyApiRefField } from '../components/ApikeyFlowFields';
-import { PluginsChainEditor } from '../components/PluginsChainEditor';
+import { PluginsChainDrawer } from '../components/PluginsChainDrawer';
 
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
@@ -1120,7 +1120,7 @@ const ApiKeysConstants = {
       },
     },
     'plugins.plugins': {
-      type: PluginsChainEditor,
+      type: PluginsChainDrawer,
     },
     metadata: {
       type: 'object',
