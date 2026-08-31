@@ -38,18 +38,25 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
     implicit val mat: org.apache.pekko.stream.Materializer = _env.otoroshiMaterializer
     implicit val env: otoroshi.env.Env = _env
     importInitialCerts(logger)
-    cancelRenewRef.set(
-      _env.otoroshiActorSystem.scheduler
-        .scheduleAtFixedRate(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes)(SchedulerHelper.runnable {
-          _env.datastores.certificatesDataStore.renewCertificates()
+    // Renewal and auto-issuance are cluster-wide jobs and must run on the leader only. Every driver calls
+    // startSync(), including the worker one (SwappableInMemoryDataStores), whose rawDataStore is a LOCAL
+    // in-memory store: on a worker the anti-concurrency locks deduplicate nothing across the cluster, and
+    // the certificate written by a successful order is dropped at the next state sync from the leader. So
+    // each worker used to burn its own acme orders, for nothing, and replay them on the next tick.
+    if (_env.clusterConfig.mode.isOff || _env.clusterConfig.mode.isLeader) {
+      cancelRenewRef.set(
+        _env.otoroshiActorSystem.scheduler
+          .scheduleAtFixedRate(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes)(SchedulerHelper.runnable {
+            _env.datastores.certificatesDataStore.renewCertificates()
+          })
+      )
+      cancelCreateRef.set(
+        _env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(60.seconds, 2.minutes)(utils.SchedulerHelper.runnable {
+          LetsEncryptHelper.createFromServices()
+          Cert.createFromServices()
         })
-    )
-    cancelCreateRef.set(
-      _env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(60.seconds, 2.minutes)(utils.SchedulerHelper.runnable {
-        LetsEncryptHelper.createFromServices()
-        Cert.createFromServices()
-      })
-    )
+      )
+    }
     cancelRef.set(
       _env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(2.seconds, 2.seconds)(utils.SchedulerHelper.runnable {
         for {

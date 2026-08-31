@@ -308,6 +308,7 @@ POST    /api/groups                                           otoroshi.controlle
 ## Certificates
 GET     /api/certificates/_template                           otoroshi.controllers.adminapi.TemplatesController.initiateCertificate()
 POST    /api/certificates/:certId/_renew                      otoroshi.controllers.adminapi.CertificatesController.renewCert(certId)
+POST    /api/certificates/_dedupLetsEncrypt                  otoroshi.controllers.adminapi.CertificatesController.dedupLetsEncryptCerts()
 # GET     /api/certificates/:certId                             otoroshi.controllers.adminapi.CertificatesController.oneCert(certId)
 # DELETE  /api/certificates/:certId                             otoroshi.controllers.adminapi.CertificatesController.deleteCert(certId)
 # PUT     /api/certificates/:certId                             otoroshi.controllers.adminapi.CertificatesController.updateCert(certId)

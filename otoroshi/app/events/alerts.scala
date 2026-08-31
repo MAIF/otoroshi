@@ -593,6 +593,38 @@ case class CertRenewalAlert(`@id`: String, `@env`: String, cert: Cert, `@timesta
     )
 }
 
+// Emitted when an automatic renewal failed. Without it, a failing renewal (acme rate limit, dns issue,
+// challenge not served, ...) was indistinguishable from a successful one: a CertRenewalAlert was sent
+// every hour for the whole renewal window while the certificate quietly expired.
+case class CertRenewalFailedAlert(
+    `@id`: String,
+    `@env`: String,
+    cert: Cert,
+    error: String,
+    `@timestamp`: DateTime = DateTime.now()
+) extends AlertEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(using _env: Env): JsValue =
+    Json.obj(
+      "@id"         -> `@id`,
+      "@timestamp"  -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"       -> `@type`,
+      "@product"    -> _env.eventsName,
+      "@serviceId"  -> `@serviceId`,
+      "@service"    -> `@service`,
+      "@env"        -> `@env`,
+      "alert"       -> "CertRenewalFailedAlert",
+      "error"       -> error,
+      "certificate" -> cert.toJson
+    )
+}
+
 case class CertExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
 
