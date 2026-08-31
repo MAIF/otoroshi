@@ -105,7 +105,7 @@ export function PluginsChainDrawer({
           {slots.length === 0 ? (
             <p style={{ opacity: 0.6 }}>No plugin in this chain</p>
           ) : (
-            <ol style={{ listStyle: 'none', paddingLeft: 0 }}>
+            <ol data-testid="plugins-chain-summary" style={{ listStyle: 'none', paddingLeft: 0 }}>
               {slots.map((plugin, idx) => (
                 <li key={idx}>
                   <span style={{ opacity: 0.5 }}>{idx + 1}.</span> {shortName(plugin.plugin)}
@@ -129,7 +129,12 @@ export function PluginsChainDrawer({
               ))}
             </ol>
           )}
-          <button type="button" className="btn btn-sm btn-primary" onClick={() => setOpen(true)}>
+          <button
+            type="button"
+            data-testid="plugins-chain-open"
+            className="btn btn-sm btn-primary"
+            onClick={() => setOpen(true)}
+          >
             <i className="fas fa-edit me-1" /> Edit plugins ({slots.length})
           </button>
         </div>
@@ -151,6 +156,7 @@ export function PluginsChainDrawer({
             <label style={{ fontSize: '1.15rem', marginBottom: '1rem' }}>
               <i
                 className="fas fa-times me-3"
+                data-testid="plugins-chain-close"
                 onClick={() => setOpen(false)}
                 style={{ cursor: 'pointer' }}
               />
