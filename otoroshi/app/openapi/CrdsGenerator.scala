@@ -22,20 +22,20 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
     "Organization"      -> Json
       .obj("plural" -> "organizations", "singular" -> "organization", "entity" -> "otoroshi.models.Tenant"),
     "Team"              -> Json.obj("plural" -> "teams", "singular" -> "team", "entity" -> "otoroshi.models.Team"),
-    "ServiceDescriptor" -> Json.obj(
-      "plural"   -> "service-descriptors",
-      "singular" -> "service-descriptor",
-      "entity"   -> "otoroshi.models.ServiceDescriptor",
-      "rawSpec"  -> Json.obj(
-        "targets"                -> Json.obj(
-          "x-kubernetes-preserve-unknown-fields" -> true
-        ),
-        "enabledAdditionalHosts" -> Json.obj(
-          "type"        -> "boolean",
-          "description" -> "if enabled, the additional hosts will be add to hosts array"
-        )
-      )
-    ),
+    //[REMOVE SERVICEDESC] "ServiceDescriptor" -> Json.obj(
+    //[REMOVE SERVICEDESC]   "plural"   -> "service-descriptors",
+    //[REMOVE SERVICEDESC]   "singular" -> "service-descriptor",
+    //[REMOVE SERVICEDESC]   "entity"   -> "otoroshi.models.ServiceDescriptor",
+    //[REMOVE SERVICEDESC]   "rawSpec"  -> Json.obj(
+    //[REMOVE SERVICEDESC]     "targets"                -> Json.obj(
+    //[REMOVE SERVICEDESC]       "x-kubernetes-preserve-unknown-fields" -> true
+    //[REMOVE SERVICEDESC]     ),
+    //[REMOVE SERVICEDESC]     "enabledAdditionalHosts" -> Json.obj(
+    //[REMOVE SERVICEDESC]       "type"        -> "boolean",
+    //[REMOVE SERVICEDESC]       "description" -> "if enabled, the additional hosts will be add to hosts array"
+    //[REMOVE SERVICEDESC]     )
+    //[REMOVE SERVICEDESC]   )
+    //[REMOVE SERVICEDESC] ),
     "ApiKey"            -> Json.obj(
       "plural"   -> "apikeys",
       "singular" -> "apikey",

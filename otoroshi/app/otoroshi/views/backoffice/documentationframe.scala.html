@@ -30,7 +30,8 @@
         <script src="/assets/swagger-ui/swagger-ui-standalone-preset.js"> </script>
         <script>
           SwaggerUIBundle({
-            url:'@otoroshi.controllers.routes.BackOfficeController.documentationFrameDescriptor(service.env, service.id)',
+            @*[REMOVE SERVICEDESC] url:'@@otoroshi.controllers.routes.BackOfficeController.documentationFrameDescriptor(service.env, service.id)', *@
+            url:'',
             dom_id: '#swagger-ui',
             presets: [
               SwaggerUIBundle.presets.apis,

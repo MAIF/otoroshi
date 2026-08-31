@@ -62,7 +62,7 @@ case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) exten
 }
 
 object ServiceLike {
-  def fromService(service: ServiceDescriptor): ServiceLike           = ServiceLike(service, service.groups)
+  //[REMOVE SERVICEDESC] def fromService(service: ServiceDescriptor): ServiceLike           = ServiceLike(service, service.groups)
   def fromRoute(service: NgRoute): ServiceLike                       = ServiceLike(service, service.groups)
   def fromRouteComposition(service: NgRouteComposition): ServiceLike = ServiceLike(service, service.groups)
   def fromApi(service: Api): ServiceLike                             = ServiceLike(service, service.groups)
@@ -442,7 +442,7 @@ class BackOfficeController(
         users              <- env.datastores.simpleAdminDataStore.findAll()
         refusedOpt         <- env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused")
         preferences        <- env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email)
-        serviceDescriptors <- env.datastores.serviceDescriptorDataStore.count()
+        //[REMOVE SERVICEDESC] serviceDescriptors <- env.datastores.serviceDescriptorDataStore.count()
       } yield {
         val reporting                 = AnonymousReportingJobConfig.fromEnv(env)
         val refusedDate               = refusedOpt.map(_.utf8String).map(DateTime.parse)
@@ -499,7 +499,7 @@ class BackOfficeController(
             "providerDashboardUrl"    -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
             "providerDashboardTitle"  -> env.providerDashboardTitle,
             "providerDashboardSecret" -> env.providerDashboardSecret,
-            "serviceDescriptorsCount" -> serviceDescriptors,
+            "serviceDescriptorsCount" -> 0L, //[REMOVE SERVICEDESC] serviceDescriptors,
             "instanceId"              -> config.otoroshiId,
             "instanceName"            -> env.name,
             "anonymousReporting"      -> Json.obj(
@@ -580,55 +580,56 @@ class BackOfficeController(
 
   def documentationFrame(lineId: String, serviceId: String) =
     BackOfficeActionAuth.async { ctx =>
-      env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
-        case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.forbidden
-        case Some(descriptor)                                 => Ok(otoroshi.views.html.backoffice.documentationframe(descriptor, env))
-        case None                                             => NotFound(Json.obj("error" -> s"Service with id $serviceId not found"))
-      }
+      //[REMOVE SERVICEDESC] env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
+      //[REMOVE SERVICEDESC]   case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.forbidden
+      //[REMOVE SERVICEDESC]   case Some(descriptor)                                 => Ok(otoroshi.views.html.backoffice.documentationframe(descriptor, env))
+      //[REMOVE SERVICEDESC]   case None                                             => NotFound(Json.obj("error" -> s"Service with id $serviceId not found"))
+      //[REMOVE SERVICEDESC] }
+      NotFound(Json.obj("error" -> s"Service with id $serviceId not found")).vfuture
     }
 
   def documentationFrameDescriptor(lineId: String, serviceId: String) =
     BackOfficeActionAuth.async { ctx =>
       import scala.concurrent.duration.*
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-        case Some(descriptor) if !ctx.canUserRead(descriptor)            => ApiActionContext.fforbidden
-        case Some(service) if service.api.openApiDescriptorUrl.isDefined => {
-          val state = IdGenerator.extendedToken(128)
-          val claim = OtoroshiClaim(
-            iss = env.Headers.OtoroshiIssuer,
-            sub = "Documentation",
-            aud = service.name,
-            exp = DateTime.now().plusSeconds(30).toDate.getTime,
-            iat = DateTime.now().toDate.getTime,
-            jti = IdGenerator.uuid
-          ).serialize(service.algoInfoFromOtoToBack)(using env)
-          val url   = service.api.openApiDescriptorUrl.get match {
-            case uri if uri.startsWith("/") => s"${service.target.scheme}://${service.target.host}${uri}"
-            case url                        => url
-          }
-          env.Ws // no need for mtls here
-            .url(url)
-            .withRequestTimeout(10.seconds)
-            .withHttpHeaders(
-              env.Headers.OtoroshiRequestId -> env.snowflakeGenerator.nextIdStr(),
-              env.Headers.OtoroshiState     -> state,
-              env.Headers.OtoroshiClaim     -> claim
-            )
-            .get()
-            .map { resp =>
-              try {
-                val swagger = (resp.json.as[JsObject] \ "swagger").as[String]
-                swagger match {
-                  case "2.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
-                  case "3.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
-                  case _     =>
-                    InternalServerError(otoroshi.views.html.oto.error(s"Swagger version $swagger not supported", env))
-                }
-              } catch {
-                case e: Throwable => InternalServerError(Json.obj("error" -> e.getMessage))
-              }
-            }
-        }
+        //[REMOVE SERVICEDESC] case Some(descriptor) if !ctx.canUserRead(descriptor)            => ApiActionContext.fforbidden
+        //[REMOVE SERVICEDESC] case Some(service) if service.api.openApiDescriptorUrl.isDefined => {
+        //[REMOVE SERVICEDESC]   val state = IdGenerator.extendedToken(128)
+        //[REMOVE SERVICEDESC]   val claim = OtoroshiClaim(
+        //[REMOVE SERVICEDESC]     iss = env.Headers.OtoroshiIssuer,
+        //[REMOVE SERVICEDESC]     sub = "Documentation",
+        //[REMOVE SERVICEDESC]     aud = service.name,
+        //[REMOVE SERVICEDESC]     exp = DateTime.now().plusSeconds(30).toDate.getTime,
+        //[REMOVE SERVICEDESC]     iat = DateTime.now().toDate.getTime,
+        //[REMOVE SERVICEDESC]     jti = IdGenerator.uuid
+        //[REMOVE SERVICEDESC]   ).serialize(service.algoInfoFromOtoToBack)(using env)
+        //[REMOVE SERVICEDESC]   val url   = service.api.openApiDescriptorUrl.get match {
+        //[REMOVE SERVICEDESC]     case uri if uri.startsWith("/") => s"${service.target.scheme}://${service.target.host}${uri}"
+        //[REMOVE SERVICEDESC]     case url                        => url
+        //[REMOVE SERVICEDESC]   }
+        //[REMOVE SERVICEDESC]   env.Ws // no need for mtls here
+        //[REMOVE SERVICEDESC]     .url(url)
+        //[REMOVE SERVICEDESC]     .withRequestTimeout(10.seconds)
+        //[REMOVE SERVICEDESC]     .withHttpHeaders(
+        //[REMOVE SERVICEDESC]       env.Headers.OtoroshiRequestId -> env.snowflakeGenerator.nextIdStr(),
+        //[REMOVE SERVICEDESC]       env.Headers.OtoroshiState     -> state,
+        //[REMOVE SERVICEDESC]       env.Headers.OtoroshiClaim     -> claim
+        //[REMOVE SERVICEDESC]     )
+        //[REMOVE SERVICEDESC]     .get()
+        //[REMOVE SERVICEDESC]     .map { resp =>
+        //[REMOVE SERVICEDESC]       try {
+        //[REMOVE SERVICEDESC]         val swagger = (resp.json.as[JsObject] \ "swagger").as[String]
+        //[REMOVE SERVICEDESC]         swagger match {
+        //[REMOVE SERVICEDESC]           case "2.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
+        //[REMOVE SERVICEDESC]           case "3.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
+        //[REMOVE SERVICEDESC]           case _     =>
+        //[REMOVE SERVICEDESC]             InternalServerError(otoroshi.views.html.oto.error(s"Swagger version $swagger not supported", env))
+        //[REMOVE SERVICEDESC]         }
+        //[REMOVE SERVICEDESC]       } catch {
+        //[REMOVE SERVICEDESC]         case e: Throwable => InternalServerError(Json.obj("error" -> e.getMessage))
+        //[REMOVE SERVICEDESC]       }
+        //[REMOVE SERVICEDESC]     }
+        //[REMOVE SERVICEDESC] }
         case _                                                           => FastFuture.successful(NotFound(otoroshi.views.html.oto.error("Service not found", env)))
       }
     }
@@ -644,7 +645,7 @@ class BackOfficeController(
         ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
       val paginationPosition      = (paginationPage - 1) * paginationPageSize
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+        env.datastores.routeDataStore.findAll().flatMap { services =>
           globalConfig.cleverClient match {
             case Some(client) => {
               client.apps(client.orgaId).map { cleverapps =>
@@ -657,7 +658,7 @@ class BackOfficeController(
                     val preferedHost       =
                       hosts.filterNot(h => h.contains("cleverapps.io")).headOption.getOrElse(hosts.head)
                     val service            =
-                      services.filter(ctx.canUserRead).find(s => s.targets.exists(t => hosts.contains(t.host)))
+                      services.filter(ctx.canUserRead).find(s => s.backend.targets.exists(t => hosts.contains(t.hostname)))
                     Json.obj(
                       "name"    -> (app \ "name").as[String],
                       "id"      -> id,
@@ -665,7 +666,7 @@ class BackOfficeController(
                       "console" -> s"https://console.clever-cloud.com/organisations/${client.orgaId}/applications/$id",
                       "exists"  -> service.isDefined,
                       "host"    -> preferedHost,
-                      "otoUrl"  -> s"/lines/${service.map(_.env).getOrElse("--")}/services/${service.map(_.id).getOrElse("--")}"
+                      "otoUrl"  -> s"/routes/${service.map(_.id).getOrElse("--")}"
                     )
                   }
                   .drop(paginationPosition)
@@ -833,7 +834,7 @@ class BackOfficeController(
       )
       val fu: Future[Seq[SearchedService]] =
         for {
-          services   <- env.datastores.serviceDescriptorDataStore.findAll()
+          services   <- Seq.empty[ServiceDescriptor].vfuture //[REMOVE SERVICEDESC] env.datastores.serviceDescriptorDataStore.findAll()
           tcServices <- env.datastores.tcpServiceDataStore.findAll()
           routes     <- env.datastores.routeDataStore.findAll()
           apis       <- env.datastores.apiDataStore.findAll()
@@ -907,68 +908,68 @@ class BackOfficeController(
 
   case class ServiceRate(rate: Double, name: String, id: String)
 
-  def mostCalledServices() =
-    BackOfficeActionAuth.async { ctx =>
-      val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-      val paginationPageSize: Int =
-        ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(10)
-      val paginationPosition      = (paginationPage - 1) * paginationPageSize
+  //[REMOVE SERVICEDESC] def mostCalledServices() =
+  //[REMOVE SERVICEDESC]   BackOfficeActionAuth.async { ctx =>
+  //[REMOVE SERVICEDESC]     val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+  //[REMOVE SERVICEDESC]     val paginationPageSize: Int =
+  //[REMOVE SERVICEDESC]       ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(10)
+  //[REMOVE SERVICEDESC]     val paginationPosition      = (paginationPage - 1) * paginationPageSize
+  //[REMOVE SERVICEDESC]
+  //[REMOVE SERVICEDESC]     env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+  //[REMOVE SERVICEDESC]       Future.sequence(
+  //[REMOVE SERVICEDESC]         services.map(s =>
+  //[REMOVE SERVICEDESC]           env.datastores.serviceDescriptorDataStore.callsPerSec(s.id).map(rate => ServiceRate(rate, s.name, s.id))
+  //[REMOVE SERVICEDESC]         )
+  //[REMOVE SERVICEDESC]       )
+  //[REMOVE SERVICEDESC]     } map { items =>
+  //[REMOVE SERVICEDESC]       items.sortWith(_.rate > _.rate).drop(paginationPosition).take(paginationPageSize)
+  //[REMOVE SERVICEDESC]     } map { items =>
+  //[REMOVE SERVICEDESC]       items.map { i =>
+  //[REMOVE SERVICEDESC]         val value: Double = Option(i.rate).filterNot(_.isInfinity).getOrElse(0.0)
+  //[REMOVE SERVICEDESC]         Json.obj(
+  //[REMOVE SERVICEDESC]           "rate" -> value,
+  //[REMOVE SERVICEDESC]           "name" -> i.name,
+  //[REMOVE SERVICEDESC]           "id"   -> i.id
+  //[REMOVE SERVICEDESC]         )
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     } map { items =>
+  //[REMOVE SERVICEDESC]       Ok(JsArray(items))
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]   }
 
-      env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-        Future.sequence(
-          services.map(s =>
-            env.datastores.serviceDescriptorDataStore.callsPerSec(s.id).map(rate => ServiceRate(rate, s.name, s.id))
-          )
-        )
-      } map { items =>
-        items.sortWith(_.rate > _.rate).drop(paginationPosition).take(paginationPageSize)
-      } map { items =>
-        items.map { i =>
-          val value: Double = Option(i.rate).filterNot(_.isInfinity).getOrElse(0.0)
-          Json.obj(
-            "rate" -> value,
-            "name" -> i.name,
-            "id"   -> i.id
-          )
-        }
-      } map { items =>
-        Ok(JsArray(items))
-      }
-    }
-
-  def servicesMap() =
-    BackOfficeActionAuth.async { ctx =>
-      env.datastores.serviceGroupDataStore.findAll().flatMap { groups =>
-        Future.sequence(
-          groups.map { group =>
-            env.datastores.serviceDescriptorDataStore.findByGroup(group.id).flatMap { services =>
-              Future.sequence(services.map { service =>
-                env.datastores.serviceDescriptorDataStore.callsPerSec(service.id).map(cps => (service, cps))
-              })
-            } map {
-              case services if services.isEmpty  => Json.obj()
-              case services if services.nonEmpty =>
-                Json.obj(
-                  "name"     -> group.name,
-                  "children" -> JsArray(services.map { case (service, cps) =>
-                    val size: Int = ((1.0 + cps) * 1000.0).toInt
-                    Json.obj(
-                      "name" -> service.name,
-                      "env"  -> service.env,
-                      "id"   -> service.id,
-                      "size" -> size
-                    )
-                  })
-                )
-            }
-          }
-        )
-      } map { children =>
-        Json.obj("name" -> "Otoroshi Services", "children" -> children.filterNot(_ == Json.obj()))
-      } map { json =>
-        Ok(json)
-      }
-    }
+  //[REMOVE SERVICEDESC] def servicesMap() =
+  //[REMOVE SERVICEDESC]   BackOfficeActionAuth.async { ctx =>
+  //[REMOVE SERVICEDESC]     env.datastores.serviceGroupDataStore.findAll().flatMap { groups =>
+  //[REMOVE SERVICEDESC]       Future.sequence(
+  //[REMOVE SERVICEDESC]         groups.map { group =>
+  //[REMOVE SERVICEDESC]           env.datastores.serviceDescriptorDataStore.findByGroup(group.id).flatMap { services =>
+  //[REMOVE SERVICEDESC]             Future.sequence(services.map { service =>
+  //[REMOVE SERVICEDESC]               env.datastores.serviceDescriptorDataStore.callsPerSec(service.id).map(cps => (service, cps))
+  //[REMOVE SERVICEDESC]             })
+  //[REMOVE SERVICEDESC]           } map {
+  //[REMOVE SERVICEDESC]             case services if services.isEmpty  => Json.obj()
+  //[REMOVE SERVICEDESC]             case services if services.nonEmpty =>
+  //[REMOVE SERVICEDESC]               Json.obj(
+  //[REMOVE SERVICEDESC]                 "name"     -> group.name,
+  //[REMOVE SERVICEDESC]                 "children" -> JsArray(services.map { case (service, cps) =>
+  //[REMOVE SERVICEDESC]                   val size: Int = ((1.0 + cps) * 1000.0).toInt
+  //[REMOVE SERVICEDESC]                   Json.obj(
+  //[REMOVE SERVICEDESC]                     "name" -> service.name,
+  //[REMOVE SERVICEDESC]                     "env"  -> service.env,
+  //[REMOVE SERVICEDESC]                     "id"   -> service.id,
+  //[REMOVE SERVICEDESC]                     "size" -> size
+  //[REMOVE SERVICEDESC]                   )
+  //[REMOVE SERVICEDESC]                 })
+  //[REMOVE SERVICEDESC]               )
+  //[REMOVE SERVICEDESC]           }
+  //[REMOVE SERVICEDESC]         }
+  //[REMOVE SERVICEDESC]       )
+  //[REMOVE SERVICEDESC]     } map { children =>
+  //[REMOVE SERVICEDESC]       Json.obj("name" -> "Otoroshi Services", "children" -> children.filterNot(_ == Json.obj()))
+  //[REMOVE SERVICEDESC]     } map { json =>
+  //[REMOVE SERVICEDESC]       Ok(json)
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]   }
 
   def fetchOpenIdConfiguration() =
     BackOfficeActionAuth.async(parse.json) { ctx =>
@@ -1784,7 +1785,7 @@ class BackOfficeController(
     BackOfficeActionAuth.async { ctx =>
       for {
         rgroups            <- env.proxyState.allServiceGroups().vfuture
-        rservices          <- env.proxyState.allServices().vfuture
+        //[REMOVE SERVICEDESC] rservices          <- env.proxyState.allServices().vfuture
         rroutes            <- env.proxyState.allRoutes().vfuture
         rrouteCompositions <- env.proxyState.allNgServices().vfuture
         rapis              <- env.proxyState.allApis().vfuture
@@ -1792,9 +1793,10 @@ class BackOfficeController(
         val groups            = rgroups
           .filter(ctx.canUserRead)
           .map(g => Json.obj("label" -> s"Group - ${g.name}", "value" -> s"group_${g.id}", "kind" -> "group"))
-        val services          = rservices
-          .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> s"Service - ${g.name}", "value" -> s"service_${g.id}", "kind" -> "service"))
+        val services = Seq.empty[JsValue]
+        //[REMOVE SERVICEDESC] val services          = rservices
+        //[REMOVE SERVICEDESC]   .filter(ctx.canUserRead)
+        //[REMOVE SERVICEDESC]   .map(g => Json.obj("label" -> s"Service - ${g.name}", "value" -> s"service_${g.id}", "kind" -> "service"))
         val routes            = rroutes
           .filter(ctx.canUserRead)
           .map(g => Json.obj("label" -> s"Route - ${g.name}", "value" -> s"route_${g.id}", "kind" -> "route"))
@@ -1815,9 +1817,9 @@ class BackOfficeController(
     }
 
   def findServiceLike(serviceId: String): Future[Option[ServiceLike]] = {
-    env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
-      case Some(service) => ServiceLike.fromService(service).some.vfuture
-      case None          =>
+    //[REMOVE SERVICEDESC] env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
+    //[REMOVE SERVICEDESC]   case Some(service) => ServiceLike.fromService(service).some.vfuture
+    //[REMOVE SERVICEDESC]   case None          =>
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => ServiceLike.fromRoute(service).some.vfuture
           case None          =>
@@ -1830,7 +1832,7 @@ class BackOfficeController(
                 }
             }
         }
-    }
+    //[REMOVE SERVICEDESC] }
   }
 
   def fetchApikeysForGroupAndService(serviceId: String) =
@@ -2347,14 +2349,14 @@ class BackOfficeController(
                     "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
                   )
                 )
-              case ServiceDescriptorIdentifier(id) =>
-                Seq(
-                  Json.obj(
-                    "kind"  -> "route",
-                    "value" -> id,
-                    "label" -> env.proxyState.service(id).map(_.name).getOrElse("--").json
-                  )
-                )
+              //[REMOVE SERVICEDESC] case ServiceDescriptorIdentifier(id) =>
+              //[REMOVE SERVICEDESC]   Seq(
+              //[REMOVE SERVICEDESC]     Json.obj(
+              //[REMOVE SERVICEDESC]       "kind"  -> "route",
+              //[REMOVE SERVICEDESC]       "value" -> id,
+              //[REMOVE SERVICEDESC]       "label" -> env.proxyState.service(id).map(_.name).getOrElse("--").json
+              //[REMOVE SERVICEDESC]     )
+              //[REMOVE SERVICEDESC]   )
               case ServiceGroupIdentifier(id)      =>
                 env.proxyState
                   .allRoutes()

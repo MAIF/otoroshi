@@ -143,11 +143,6 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
 
  At this point, your configuration should be similar to :
  
-<!-- oto-scenario
- - goto /bo/dashboard/auth-configs/edit/auth_mod_09975547-a186-4a2d-a550-ca71a0a03c0c
- - wait 1000
- - screenshot-area generated-hows-to-ldap-auth-configs.png #app>div>div.container-fluid>div>div.col-sm-10.col-sm-offset-2.main
--->
 <Image src="/img/docs/generated-hows-to-ldap-auth-configs.png" />
 
 > Dont' forget to save on the bottom page your configuration before to quit the page.
@@ -201,11 +196,6 @@ Start by navigate to your authentication configuration (created in [previous](#c
 
 Then, replace the values of the `Mapping group filter` field to match LDAP groups with Otoroshi rights.
 
-<!-- oto-scenario
- - goto /bo/dashboard/auth-configs/edit/auth_mod_91bb8b38-620e-4c18-9bbc-7c8d1efd63cc
- - wait 1000
- - screenshot-area generated-hows-to-ldap-manage-users.png #app>div>div.container-fluid>div>div.col-sm-10.col-sm-offset-2.main>div>div> div.row>div>div>div>form>div>div:nth-child(3)>div:nth-child(11)
--->
 <Image src="/img/docs/generated-hows-to-ldap-manage-users.png" />
 
 With this configuration, Baz is an administrator of Otoroshi with full rights (read / write) on all organizations.
@@ -289,10 +279,3 @@ To resume, when John connects to Otoroshi, he receives the rights to only read  
   ]
 }
 ```
-
-
-
-
-
-
-

@@ -1341,7 +1341,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "17.18.0-dev"
+  lazy val otoroshiVersion    = "18.0.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1515,6 +1515,15 @@ class Env(
       }
     }
 
+    //val desc = ServiceDescriptor(
+    //  id = IdGenerator.uuid,
+    //  name = "foo-service-descriptor-migration",
+    //  env = "prod",
+    //  domain = "oto.tools",
+    //  subdomain = "migration-foo",
+    //).save()(using otoroshiExecutionContext, this)
+    //Files.writeString(new File("foo.json").toPath, desc.json.asObject.applyOn(_ ++ Json.obj("kind" -> "proxy.otoroshi.io/ServiceDescriptor")).prettify)
+
     configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
       .isOtoroshiEmpty()
@@ -1621,7 +1630,7 @@ class Env(
 
                 val baseExport = OtoroshiExport(
                   config = defaultConfig,
-                  descs = if (defaultConfig.initWithNewEngine) Seq.empty else Seq(backOfficeServiceDescriptor),
+                  //[REMOVE SERVICEDESC] descs = if (defaultConfig.initWithNewEngine) Seq.empty else Seq(backOfficeServiceDescriptor),
                   routes = if (defaultConfig.initWithNewEngine) Seq(backofficeRoute) else Seq.empty,
                   apikeys = Seq(backOfficeApiKey, defaultGroupApiKey),
                   groups = Seq(backOfficeGroup, defaultGroup),

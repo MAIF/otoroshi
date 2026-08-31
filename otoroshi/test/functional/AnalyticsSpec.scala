@@ -247,8 +247,10 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
     """.stripMargin))
     ).futureValue
     otoroshiApiCall("POST", "/api/groups", Some(testGroup.toJson)).futureValue
-    otoroshiApiCall("POST", "/api/services", Some(serviceDescriptor("mon-service-id").toJson)).futureValue
-    otoroshiApiCall("POST", "/api/services", Some(serviceDescriptor("mon-service-id2").toJson)).futureValue
+    //[REMOVE SERVICEDESC] otoroshiApiCall("POST", "/api/services", Some(serviceDescriptor("mon-service-id").toJson)).futureValue
+    //[REMOVE SERVICEDESC] otoroshiApiCall("POST", "/api/services", Some(serviceDescriptor("mon-service-id2").toJson)).futureValue
+    createOtoroshiService(serviceDescriptor("mon-service-id")).futureValue
+    createOtoroshiService(serviceDescriptor("mon-service-id2")).futureValue
 
     test
 

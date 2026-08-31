@@ -7,7 +7,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
-import io.lettuce.core.cluster.RedisClusterClient
+import io.lettuce.core.cluster.{ClusterClientOptions, RedisClusterClient}
 import io.lettuce.core.internal.HostAndPort
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources, MappingSocketAddressResolver}
@@ -89,6 +89,7 @@ class LettuceDataStores(
   lazy val startTLS               = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
   lazy val verifyPeers            =
     configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.verifyPeers").getOrElse(true)
+  lazy val sslOptions             = LettuceSslOptions(configuration, "app.redis.lettuce.ssl")
 
   lazy val redisSentinelUsername =
     configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.sentinels.username")
@@ -155,7 +156,15 @@ class LettuceDataStores(
       .builder()
       .autoReconnect(true)
       .pingBeforeActivateConnection(true)
+      .applyOnWithOpt(sslOptions)((builder, options) => builder.sslOptions(options))
       .build()
+
+    if (sslOptions.isDefined && !nodesRaw.exists(uri => uri.isSsl || uri.isStartTls)) {
+      logger.warn(
+        "TLS material has been configured in 'app.redis.lettuce.ssl' but none of the redis uris uses TLS. " +
+        "Use a 'rediss://' uri or set 'app.redis.lettuce.startTLS' to true"
+      )
+    }
 
     def standardConnection() = {
       val client = RedisClient.create(resources, nodesRaw.head)
@@ -179,6 +188,7 @@ class LettuceDataStores(
       case "sentinels"                      => standardConnection()
       case "default" if redisUris.size > 1  => {
         val redisClient = RedisClient.create(resources)
+        redisClient.setOptions(clientOptions)
         val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
@@ -187,6 +197,7 @@ class LettuceDataStores(
       }
       case "master-replicas"                => {
         val redisClient = RedisClient.create(resources)
+        redisClient.setOptions(clientOptions)
         val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
@@ -197,6 +208,7 @@ class LettuceDataStores(
         // docker run -p '7000-7050:7000-7050' -e "IP=0.0.0.0" grokzen/redis-cluster:latest
         // -Dapp.redis.lettuce.connection=cluster -Dapp.redis.lettuce.uris.0=redis://localhost:7000/0 -Dapp.redis.lettuce.uris.1=redis://localhost:7001/0 -Dapp.redis.lettuce.uris.2=redis://localhost:7002/0
         val redisClient = RedisClusterClient.create(resources, nodes)
+        redisClient.setOptions(ClusterClientOptions.builder(clientOptions).build())
         clientRef.set(redisClient)
         new LettuceRedisCluster(redisActorSystem, redisClient)
       }

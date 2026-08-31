@@ -2,7 +2,7 @@
 
 LOCATION=`pwd`
 
-export SBT_OPTS="-XX:MaxPermSize=2048m -Xmx2048m -Xss8M"
+export SBT_OPTS="${SBT_OPTS:--Xmx8G -Xss16M}"
 
 clean () {
   rm -rf $LOCATION/manual/target/paradox

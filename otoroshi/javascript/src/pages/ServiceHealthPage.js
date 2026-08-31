@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import moment from 'moment';
-import { ServiceSidebar } from '../components/ServiceSidebar';
+//[REMOVE SERVICEDESC] import { ServiceSidebar } from '../components/ServiceSidebar';
 import { Histogram } from '../components/recharts';
 import { BooleanInput } from '../components/inputs';
 import { Uptime, formatPercentage } from '../components/Status';
@@ -30,9 +30,11 @@ export class ServiceHealthPage extends Component {
   componentDidMount() {
     const fu = this.onRoutes
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
-      : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+      : //[REMOVE SERVICEDESC] : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+        Promise.resolve({});
 
-    this.props.setTitle(this.onRoutes ? 'Route health' : 'Service health')
+    this.props.setTitle('Route health')
+      
     fu.then((service) => {
       this.setState({ service }, () => {
         if (
@@ -64,13 +66,14 @@ export class ServiceHealthPage extends Component {
         />
       );
     }
-    return (
-      <ServiceSidebar
-        env={this.state.service.env}
-        serviceId={this.props.params.serviceId}
-        name={name}
-      />
-    );
+    return null;
+    //[REMOVE SERVICEDESC] return (
+    //[REMOVE SERVICEDESC] <ServiceSidebar
+    //[REMOVE SERVICEDESC] env={this.state.service.env}
+    //[REMOVE SERVICEDESC] serviceId={this.props.params.serviceId}
+    //[REMOVE SERVICEDESC] name={name}
+    //[REMOVE SERVICEDESC] />
+    //[REMOVE SERVICEDESC] );
   }
 
   render() {

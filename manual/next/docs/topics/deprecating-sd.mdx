@@ -3,52 +3,140 @@ title: Sunsetting Service Descriptors
 sidebar_position: 6
 ---
 
-import { Image } from '@site/src/components/Image';
-
 # Sunsetting Service Descriptors
 
-For more than 4 years, after the [rewrite of the proxy engine](./engine.mdx) in `v1.5.3` (Feb 14, 2022), Service Descriptors has been deprecated.
+Service Descriptors have been **removed in Otoroshi `v18.0.0`**. [Routes](../entities/routes.md) are now the only way to configure HTTP proxying.
 
-Now (v17.0.0) it's time to go ahead and provide some migration tools to help users getting rid of Service Descriptor in favor of routes before completely removing support of Service Descriptors in v18.0.0 (probably in 2026). Under the hood the new proxy engine already convert your Service Descriptors to Route in order to route traffic to your backends. The idea here is to remove the Service Descriptor entity in favor of the Route entity and let the user adapt their workflows and automations.
+They had been deprecated for more than 4 years, since the [rewrite of the proxy engine](./engine.mdx) in `v1.5.3` (Feb 14, 2022). `v17.0.0` shipped the migration tooling, `v18.0.0` removes the entity itself.
 
-If you still have Service Descriptors in you database, otoroshi will warn you in the logs
+Nothing changes for your traffic. Under the hood, the proxy engine was already converting every Service Descriptor into a Route at runtime in order to reach your backends. What `v18.0.0` removes is the Service Descriptor **entity** and its API, so that there is a single way to describe how a request is routed.
 
-<Image src="/img/docs/sd-migration-logs.png" />
+## Upgrading: your Service Descriptors are migrated for you
 
-you will also have a popup displayed in the backoffice from time to time
+There is nothing to do. The first time an Otoroshi `v18` instance starts on a datastore that still contains Service Descriptors, a migration job runs — once per cluster, 10 seconds after startup. It first writes a backup of **all** your descriptors to `./service-descriptors-backup.json`, then, for each descriptor:
 
-<Image src="/img/docs/sd-migration-popup.png" />
+1. converts it to a Route, **keeping the same id**
+2. saves the Route and reads it back from the datastore
+3. only then deletes the Service Descriptor
 
-This toolkit consists of 3 tools that you can use to migrate existing Service Descriptors
+You will see it in the logs:
 
-## Migration Job
-
-you can enable a job launched after the start of the otoroshi cluster by setting `otoroshi.service-descriptors-migration-job.enabled=true` or `OTOROSHI_SERVICE_DESCRIPTORS_MIGRATION_JOB_ENABLED=true`
-
-<Image src="/img/docs/sd-migration-job-auto.png" />
-
-## Migration API
-
-You can migrate service descriptor to routes by calling the following endpoint
-
-```sh
-curl -X POST -H 'Content-Type: application/json' "http://otoroshi-api.oto.tools:8080/api/services/service-xxxxxxxx/route" -d '{}'
+```
+[warn] otoroshi-env - [service-descriptors-migration] Running full Service Descriptors migration !!!
+[warn] otoroshi-env - [service-descriptors-migration]
+[warn] otoroshi-env - [service-descriptors-migration]  - writing a backup to '/path/to/otoroshi/./service-descriptors-backup.json'
+[warn] otoroshi-env - [service-descriptors-migration]
+[warn] otoroshi-env - [service-descriptors-migration]  - migrating service descriptor 'my-service' ...
+[warn] otoroshi-env - [service-descriptors-migration]  - migrating service descriptor 'my-service' - OK
+[warn] otoroshi-env - [service-descriptors-migration]
+[warn] otoroshi-env - [service-descriptors-migration] migration done: 3 migrated, 0 skipped, 0 failed (out of 3)
 ```
 
-## Migration button
+The job is a no-op when no Service Descriptor is left, so it is harmless on every subsequent restart.
 
-on any Service Descriptor, you can click on the `convert to route` button
+### Nothing is lost if a migration goes wrong
 
-<Image src="/img/docs/sd-migration-ui.png" />
+The job is built around a single invariant: **for a given id there is always either a Route or a Service Descriptor in the datastore, never neither**.
 
-and just confirm it
+* If the backup file cannot be written, the migration is aborted before anything is touched. No backup, no migration.
+* A descriptor is deleted only once its Route has been saved *and* read back successfully. If the conversion throws, if the write fails, or if the Route is not readable afterwards, the descriptor is left untouched — and restored if it had already been deleted.
+* If a Route with the same id already exists and was **not** created by a previous run of this migration (it does not carry the `otoroshi-core-legacy: true` metadata), the descriptor is skipped rather than overwriting your Route. That conflict is yours to resolve.
+* Anything skipped or failed stays in the datastore, and the migration runs again at the next startup. The summary line tells you where you stand:
 
-<Image src="/img/docs/sd-migration-ui-confirm.png" />
+```
+[warn] otoroshi-env - [service-descriptors-migration] migration done: 2 migrated, 1 skipped, 0 failed (out of 3)
+[warn] otoroshi-env - [service-descriptors-migration]
+[warn] otoroshi-env - [service-descriptors-migration] 1 service descriptor(s) could not be migrated and are still in your datastore.
+[warn] otoroshi-env - [service-descriptors-migration] a backup of all of them is available at '/path/to/otoroshi/./service-descriptors-backup.json'.
+[warn] otoroshi-env - [service-descriptors-migration] the migration will run again at the next otoroshi startup.
+```
 
-## Kubernetes usage
+In the meantime your traffic keeps flowing. When the proxy engine builds its routing table it still converts any leftover Service Descriptor into a Route in memory, exactly as it did in `v17`. A descriptor that could not be migrated is still served — it is simply not migrated yet. This runtime conversion is a safety net for the upgrade and will be dropped in a later version, so do not rely on it to keep descriptors alive.
 
-if you still use Service Descriptor through Kubernetes Ingress job or Kubernetes CRDs job, you will have logs warning you about it from time to time.
+:::warning
+Keep `service-descriptors-backup.json` around until you have checked your routes. It is a plain JSON array of your Service Descriptors, exactly as they were before the migration. It is not a full Otoroshi export, so it cannot be re-imported as-is, but it lets you inspect or rebuild a descriptor by hand if a conversion did not do what you expected.
+:::
 
-For the `Kubernetes CRDs job` case, just use `Route` CRDs instead of `ServiceDescriptor` CRDs.
+The `otoroshi.service-descriptors-migration-job.enabled` flag (`OTOROSHI_SERVICE_DESCRIPTORS_MIGRATION_JOB_ENABLED`) that gated this job in `v17` has been dropped from the reference configuration and is **no longer read**. The migration always runs.
 
-For the `Kubernetes Ingress job`, you can use the `ingress.otoroshi.io/is-route=true` annotation and use `NgRoute specific annotations`. You'll find the list[here](https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/plugins/jobs/kubernetes/ingress.scala#L310-L328).
+## What keeps working
+
+Because the conversion preserves the descriptor id, most of what referenced a Service Descriptor keeps working untouched:
+
+* **Api keys** whose `authorizedEntities` contain `service_<id>` still authorize the migrated Route. You do not have to rewrite them to `route_<id>`, both forms are accepted.
+* **Analytics endpoints** are unchanged and now serve routes: `GET /api/services/:id/stats`, `/events`, `/status`, `/health`, `/response` and `GET /api/live/:id`.
+* **Old exports** still import. `POST /api/otoroshi.json` and `POST /api/import` still read the `serviceDescriptors` key of a `v17` backup and convert each entry to a Route on the fly. New exports no longer contain that key.
+
+## Converting a descriptor without importing it
+
+You probably still have `v17` Service Descriptors lying around outside of the datastore — in a git repository, in a CI pipeline, in Kubernetes manifests. Two endpoints convert them to Routes without storing anything, so you can rewrite those files at your own pace.
+
+`POST /api/routes/_from_service_descriptor` takes the JSON of a Service Descriptor and answers with the JSON of the matching Route:
+
+```sh
+curl -X POST -H 'Content-Type: application/json' \
+  "http://otoroshi-api.oto.tools:8080/api/routes/_from_service_descriptor" \
+  -d @my-service-descriptor.json
+```
+
+It also accepts a JSON array and answers with an array of Routes, which is the quick way to convert the whole `serviceDescriptors` block of an old export — or your `service-descriptors-backup.json` — in one call. The body is merged over the default descriptor template, so a partial descriptor works too. Array entries that are not JSON objects are ignored, and a body that cannot be converted gets you a `400` instead of an error page. The same handler is exposed as `POST /apis/proxy.otoroshi.io/v1/routes/_from_service_descriptor`.
+
+For manifests, `POST /api/new/resources` now understands the `proxy.otoroshi.io/ServiceDescriptor` kind (and the bare `ServiceDescriptor`) and answers with a `proxy.otoroshi.io/Route` resource:
+
+```sh
+curl -X POST -H 'Content-Type: application/json' \
+  "http://otoroshi-api.oto.tools:8080/api/new/resources" \
+  -d '{"content": {"kind": "proxy.otoroshi.io/ServiceDescriptor", "name": "my-service", "...": "..."}}'
+```
+
+```json
+{
+  "created": {
+    "kind": "proxy.otoroshi.io/Route",
+    "resource": { "...": "..." }
+  }
+}
+```
+
+`content` accepts a JSON object, a JSON array, a YAML document or a multi-document YAML string (`---` separated), so this is the path to translate your `v17` `ServiceDescriptor` CRDs into `Route` CRDs before applying them.
+
+## What has been removed
+
+### Admin API
+
+| Removed | Use instead |
+| --- | --- |
+| `GET`/`POST` `/api/services`, `GET`/`PUT`/`PATCH`/`DELETE` `/api/services/:id` | `/api/routes`, `/api/routes/:id` |
+| `/api/services/_bulk` | `/api/routes/_bulk` |
+| `/api/services/_template`, `/api/new/service` | `/api/routes/_template` |
+| `/api/services/:id/apikeys`, `/api/services/:id/apikeys/:clientId` (and `/quotas`) | `/api/routes/:id/apikeys`, `/api/routes/:id/apikeys/:clientId` |
+| `/api/services/:id/targets` | the `backend.targets` field of the Route |
+| `/api/services/:id/template` | `/api/error-templates` |
+| `/api/services/:id/canary` | the canary plugin on the Route |
+| `/api/services/:id/route` (the `v17` migration endpoint) | nothing — migration is automatic. To convert a descriptor you hold as JSON, `POST /api/routes/_from_service_descriptor` |
+| `/api/lines`, `/api/lines/:line/services` | nothing — `env` is now a `env:<name>` tag on the Route |
+| `/apis/proxy.otoroshi.io/v1/service-descriptors` | `/apis/proxy.otoroshi.io/v1/routes` |
+
+### Global config
+
+The `Use circuit breakers` toggle of the `Danger zone` is gone. It only ever existed to switch circuit breakers off globally for Service Descriptors, and it is now always on — circuit breaking is configured per Route, in the client settings of its backend. The `useCircuitBreakers` field is still present in the global config JSON, always `true`, so `v17` configurations still import.
+
+### Admin UI
+
+The `Services` pages, the per-service documentation tab, the `Clever Cloud apps` page that created a service from a Clever app, and the `Convert a service descriptor` button of the route designer are gone. Everything happens in the [route designer](../entities/routes.md) now.
+
+### Kubernetes
+
+* The `ServiceDescriptor` CRD no longer exists. Use `Route` CRDs. Remember to apply the updated CRD manifests when upgrading.
+* The Ingress controller always creates Routes. The `ingress.otoroshi.io/is-route=true` annotation, which was the opt-in in `v17`, is no longer read and can be removed from your ingresses.
+
+## If a conversion is not what you expected
+
+A Route produced by the migration carries the `otoroshi-core-legacy: true` and `otoroshi-core-env: <env>` metadata, and an `env:<env>` tag, so you can find them all easily:
+
+```sh
+curl -X GET -H 'Content-Type: application/json' \
+  "http://otoroshi-api.oto.tools:8080/api/routes" | jq '[.[] | select(.metadata."otoroshi-core-legacy" == "true") | .name]'
+```
+
+From there you can edit them like any other Route. If something looks wrong, compare it with the original descriptor in `service-descriptors-backup.json` and open an [issue](https://github.com/MAIF/otoroshi/issues).

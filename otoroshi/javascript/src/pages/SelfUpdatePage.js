@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import moment from 'moment';
+import { abortCeremony, createCredentials } from '../webauthn';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -137,6 +138,8 @@ export class SelfUpdatePage extends Component {
 
   componentWillUnmount() {
     clearInterval(this.interval);
+    // never leave a ceremony pending, it would block every following one
+    abortCeremony();
   }
 
   onChange = (e) => {
@@ -264,13 +267,7 @@ export class SelfUpdatePage extends Component {
               publicKeyCredentialCreationOptions.excludeCredentials.map((c) => {
                 return { ...c, id: base64url.decode(c.id) };
               });
-            return navigator.credentials
-              .create(
-                {
-                  publicKey: publicKeyCredentialCreationOptions,
-                },
-                this.handleErrorWithMessage('Webauthn error 1')
-              )
+            return createCredentials(publicKeyCredentialCreationOptions)
               .then((credentials) => {
                 const json = responseToObject(credentials);
                 return fetch(`/privateapps/register/finish?session=${this.props.session}`, {

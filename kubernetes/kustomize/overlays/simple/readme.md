@@ -32,7 +32,7 @@ Before deploying to anything other than a throwaway cluster, edit
 | `secretGenerator.otoroshi-admin-secret.otoroshiSecret` | `verysecretvaluethatyoumustoverwrite` | A real secret (`$(openssl rand -hex 32)`) |
 | `secretGenerator.otoroshi-redis-secret.redisUrl` | `redis://redis-leader-service:6379/0` | Your Redis URL with password embedded |
 | `configMapGenerator.otoroshi-config.domain` | `oto.tools` | Your real domain |
-| `images.maif/otoroshi.newTag` | `17.16.0-dev-jdk11` | A release tag — see top-level readme |
+| `images.maif/otoroshi.newTag` | `18.0.0-dev` | A release tag — see top-level readme |
 | `app.kubernetes.io/instance` label | `simple` | Whatever identifies your deployment |
 
 ## Common operations
@@ -45,7 +45,7 @@ kubectl kustomize overlays/simple
 kubectl apply -k overlays/simple
 
 # Bump the image tag (requires standalone kustomize CLI)
-kustomize edit set image maif/otoroshi=maif/otoroshi:17.13.0
+kustomize edit set image maif/otoroshi=maif/otoroshi:18.0.0
 
 # Scale
 kustomize edit set replicas otoroshi-deployment=5

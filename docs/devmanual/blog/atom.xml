@@ -2,11 +2,92 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://maif.github.io/otoroshi/devmanual/blog</id>
     <title>Otoroshi Blog</title>
-    <updated>2026-05-28T00:00:00.000Z</updated>
+    <updated>2026-08-24T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://maif.github.io/otoroshi/devmanual/blog"/>
     <subtitle>Otoroshi Blog</subtitle>
     <icon>https://maif.github.io/otoroshi/devmanual/img/favicon.png</icon>
+    <entry>
+        <title type="html"><![CDATA[Otoroshi 18 - new foundations, same gateway]]></title>
+        <id>https://maif.github.io/otoroshi/devmanual/blog/otoroshi-18-new-foundations</id>
+        <link href="https://maif.github.io/otoroshi/devmanual/blog/otoroshi-18-new-foundations"/>
+        <updated>2026-08-24T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Otoroshi 18.0.0 is the largest release we have shipped in years. The whole runtime moved to Scala 3, Play 3 and Apache Pekko, and Service Descriptors -- deprecated for four years -- are finally gone.]]></summary>
+        <content type="html"><![CDATA[<p>Otoroshi <code>18.0.0</code> is the largest release we have shipped in years. The whole runtime moved to Scala 3, Play 3 and Apache Pekko, and Service Descriptors -- deprecated for four years -- are finally gone.</p>
+<p>It is also, by design, meant to be one of the most boring upgrades you will ever do. Your routes, plugins, API keys, certificates and exporters are untouched. Your traffic does not care.</p>
+<!-- -->
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-ship-and-why-it-needed-new-planks">The ship, and why it needed new planks<a href="https://maif.github.io/otoroshi/devmanual/blog/otoroshi-18-new-foundations#the-ship-and-why-it-needed-new-planks" class="hash-link" aria-label="Direct link to The ship, and why it needed new planks" title="Direct link to The ship, and why it needed new planks" translate="no">​</a></h2>
+<p>There is an old puzzle about a ship whose planks are replaced one by one until none of the originals remain: is it still the same ship? Philosophers have argued about it for two thousand years. The crew, meanwhile, never stopped sailing.</p>
+<p>That is roughly what <code>18.0.0</code> is. Underneath, almost every foundational plank has been swapped. On deck, nothing moved.</p>
+<p>The planks needed swapping for reasons that had been accumulating for a while:</p>
+<ul>
+<li class=""><strong>Scala 2.12</strong> first shipped in 2016. Staying on it meant an ever-shrinking set of libraries willing to publish for it, and no access to anything the language has learned since.</li>
+<li class=""><strong>Akka</strong> was relicensed under the BSL in September 2023. The Apache Software Foundation forked the last Apache-2.0 release as <strong>Apache Pekko</strong>, and the ecosystem followed. Otoroshi did not, yet.</li>
+<li class=""><strong>Play 2.8</strong> went out of support, and <strong>Play 3.0</strong> -- the Pekko-based line -- landed in late 2023. Issue <a href="https://github.com/MAIF/otoroshi/issues/1755" target="_blank" rel="noopener noreferrer" class="">#1755</a> was opened on November 7th, 2023 and stayed open for almost three years.</li>
+<li class="">We were shipping a <strong>patched snapshot build of akka-stream</strong> in the repository (<code>akka-stream_2.12-2.6.21+5-a72bf6ba-SNAPSHOT.jar</code>) to carry a TLS 1.3 handshake fix that upstream had not released.</li>
+</ul>
+<p>Individually, each of those is survivable. Together they meant the foundation was quietly drifting away from the rest of the JVM ecosystem, and the gap was only going to widen.</p>
+<p>So in July we tagged <code>scala2-freeze</code>, stopped adding features, and did the port.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-actually-changed">What actually changed<a href="https://maif.github.io/otoroshi/devmanual/blog/otoroshi-18-new-foundations#what-actually-changed" class="hash-link" aria-label="Direct link to What actually changed" title="Direct link to What actually changed" translate="no">​</a></h2>
+<p><strong>Scala 2.12.16 → 3.8.4.</strong> The entire backend, plus the test suite, ported in <a href="https://github.com/MAIF/otoroshi/pull/2595" target="_blank" rel="noopener noreferrer" class="">PR #2595</a>.</p>
+<p><strong>Play 2.8.19 → 3.0.11, Akka 2.6 → Apache Pekko 1.6.</strong> Same actor model, same streams, same HTTP stack -- Pekko is a direct fork of the Akka we were already running. The package names changed, the semantics did not.</p>
+<p><strong>The vendored jars are gone.</strong> The patched akka-stream snapshot was dropped: the TLS 1.3 fix it carried has been part of Pekko since 1.1.0, so we now run straight upstream Pekko with no local patches. A second vendored jar (<code>scala-schema</code>) went with it.</p>
+<p><strong>Service Descriptors have been removed.</strong> They were deprecated in <code>v1.5.3</code> (February 2022) when the new proxy engine landed, <code>v17.0.0</code> shipped the migration tooling, and <code>v18.0.0</code> removes the entity, its admin API, its UI pages and its Kubernetes CRD. Routes are now the only way to configure HTTP proxying -- one entity, one mental model, one code path. This is the plank we had been carrying the longest, and by far the biggest thing this release takes away.</p>
+<p>Six weeks from freeze to the first preview.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-this-means-for-you">What this means for you<a href="https://maif.github.io/otoroshi/devmanual/blog/otoroshi-18-new-foundations#what-this-means-for-you" class="hash-link" aria-label="Direct link to What this means for you" title="Direct link to What this means for you" translate="no">​</a></h2>
+<p>For the vast majority of installations, the answer is: run the new version.</p>
+<p><strong>Your Service Descriptors migrate themselves.</strong> On first startup, a job runs once per cluster, writes a backup of every descriptor to <code>./service-descriptors-backup.json</code>, then converts each one to a Route <em>keeping the same id</em>. A descriptor is only deleted once its Route has been written and read back successfully -- for any given id there is always either a Route or a Descriptor in the datastore, never neither. Anything that fails or conflicts is left alone, logged, and retried at the next startup, and keeps serving traffic in the meantime. API keys pointing at <code>service_&lt;id&gt;</code> still work, old exports still import, and the analytics endpoints are unchanged. The full story is in <a class="" href="https://maif.github.io/otoroshi/devmanual/docs/topics/deprecating-sd">Sunsetting Service Descriptors</a>.</p>
+<p>Four things are worth checking before you upgrade:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>If you...</th><th>then...</th></tr></thead><tbody><tr><td>tuned <code>akka.*</code> settings in your config</td><td>rename them to <code>pekko.*</code> (<code>akka.http.parsing.max-uri-length</code> → <code>pekko.http.parsing.max-uri-length</code>, and so on)</td></tr><tr><td>depend on Otoroshi as a library</td><td>the Maven artifact moves from <code>fr.maif:otoroshi_2.12</code> to <code>fr.maif:otoroshi_3</code></td></tr><tr><td>ship <strong>custom Scala plugins</strong> as JARs</td><td>they must be recompiled against Scala 3 and the new artifact. WASM plugins are unaffected</td></tr><tr><td>deploy on <strong>Kubernetes</strong></td><td>apply the updated CRD manifests -- the <code>ServiceDescriptor</code> CRD is gone, and the <code>ingress.otoroshi.io/is-route=true</code> annotation is no longer read (the Ingress controller always creates Routes now)</td></tr></tbody></table>
+<p>One small UI removal: the <code>Use circuit breakers</code> global toggle in the Danger Zone is gone. It only ever existed to switch circuit breakers off for Service Descriptors; circuit breaking is now configured per Route, in the client settings of its backend.</p>
+<p>If you still have <code>v17</code> descriptors living outside the datastore -- in Git, in a CI pipeline, in Kubernetes manifests -- <code>POST /api/routes/_from_service_descriptor</code> converts them to Routes without storing anything, one at a time or a whole array at once. <code>POST /api/new/resources</code> does the same for <code>ServiceDescriptor</code> manifests, including multi-document YAML.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="still-the-same-ship">Still the same ship<a href="https://maif.github.io/otoroshi/devmanual/blog/otoroshi-18-new-foundations#still-the-same-ship" class="hash-link" aria-label="Direct link to Still the same ship" title="Direct link to Still the same ship" translate="no">​</a></h2>
+<p>Here is the part that matters, and the reason the paradox is a comfort rather than a warning: <strong>the identity of Otoroshi was never in its build tooling.</strong> It is in your routes, your plugins, your API keys, your TLS material, your exporters, your admin API calls, your GitOps pipelines. None of that changed. The proxy engine that handles your requests is the same engine, with the same plugin pipeline, on the same entities.</p>
+<p>We did not take the opportunity to redesign anything. That was deliberate. A migration this size is dangerous exactly when it becomes a rewrite, so the rule for the whole port was: change the foundation, change nothing else. The only user-visible removal is the one we had announced four years in advance.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-to-expect-next">What to expect next<a href="https://maif.github.io/otoroshi/devmanual/blog/otoroshi-18-new-foundations#what-to-expect-next" class="hash-link" aria-label="Direct link to What to expect next" title="Direct link to What to expect next" translate="no">​</a></h2>
+<p>The point of all this work is what comes after it. Being back on supported upstreams means security patches flow again without archaeology; it means the JVM libraries we depend on publish for us; and it means the fixes we had been holding until the port landed are merged and shipping -- OpenSearch support, ACME chain selection, WebSocket ordering and chunking fixes, Redis TLS material from config, Elastic exporters that actually report their failures, and more.</p>
+<p>It also means we can start using Scala 3 properly rather than merely compiling with it. You will see that show up gradually, in internals first.</p>
+<p>In the shorter term, the <code>17.x</code> line stays available for anyone who needs more time.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="try-it">Try it<a href="https://maif.github.io/otoroshi/devmanual/blog/otoroshi-18-new-foundations#try-it" class="hash-link" aria-label="Direct link to Try it" title="Direct link to Try it" translate="no">​</a></h2>
+<p><code>18.0.0</code> is out now, on <a href="https://hub.docker.com/r/maif/otoroshi" target="_blank" rel="noopener noreferrer" class="">Docker Hub</a> and in the <a href="https://github.com/MAIF/otoroshi/releases" target="_blank" rel="noopener noreferrer" class="">GitHub releases</a>. The full milestone is <a href="https://github.com/MAIF/otoroshi/milestone/141?closed=1" target="_blank" rel="noopener noreferrer" class="">here</a>.</p>
+<p>If you run Otoroshi in production, this is a genuinely useful moment to test an upgrade on a copy of your datastore and tell us what you find -- especially the Service Descriptor migration, which is the one part of this release that touches your data. Open an <a href="https://github.com/MAIF/otoroshi/issues" target="_blank" rel="noopener noreferrer" class="">issue</a> or come talk to us on <a href="https://discord.gg/dmbwZrfpcQ" target="_blank" rel="noopener noreferrer" class="">Discord</a>.</p>
+<p>The planks are new. It is still the same ship, and it never stopped sailing.</p>]]></content>
+        <author>
+            <name>Otoroshi Team</name>
+            <uri>https://github.com/MAIF/otoroshi</uri>
+        </author>
+        <category label="otoroshi" term="otoroshi"/>
+        <category label="release" term="release"/>
+        <category label="scala3" term="scala3"/>
+        <category label="play" term="play"/>
+        <category label="pekko" term="pekko"/>
+        <category label="migration" term="migration"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[User Analytics & Dashboards - live observability, natively inside Otoroshi]]></title>
         <id>https://maif.github.io/otoroshi/devmanual/blog/user-analytics-and-dashboards</id>
@@ -16,6 +97,7 @@
         <content type="html"><![CDATA[<p>For a long time, getting a clear picture of what was actually happening on your gateway meant plugging Otoroshi into an external observability stack -- Elastic, Kafka, Grafana, you name it -- then maintaining yet another set of dashboards, queries and alert rules far away from where your routes and APIs actually live.</p>
 <p>We thought this should be a lot simpler. So we built <strong>User Analytics &amp; Dashboards</strong>: a complete analytics stack that lives directly inside Otoroshi, on top of a dedicated PostgreSQL data exporter, with curated queries, a beautiful grid of widgets and a threshold-based alert engine. No external stack to plug, no extra UI to learn.</p>
 <p><img decoding="async" loading="lazy" alt="User Dashboards overview" src="https://maif.github.io/otoroshi/devmanual/assets/images/user-dashboard-view-506a604707bf39d4850d1d54b540338d.png" width="1424" height="967" class="img_ev3q"></p>
+<!-- -->
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="built-where-your-gateway-already-lives">Built where your gateway already lives<a href="https://maif.github.io/otoroshi/devmanual/blog/user-analytics-and-dashboards#built-where-your-gateway-already-lives" class="hash-link" aria-label="Direct link to Built where your gateway already lives" title="Direct link to Built where your gateway already lives" translate="no">​</a></h2>
 <p>The whole feature is designed around one idea: the people who configure routes, APIs and API keys in Otoroshi are also the ones who need to see how that traffic behaves -- and they should not have to leave the product to do it.</p>
 <p>Concretely, that means:</p>
@@ -85,6 +167,7 @@
         <summary type="html"><![CDATA[The Otoroshi backoffice has been with us for a long time, and over the years it grew organically -- screen by screen, feature by feature. The result was a UI that worked, but felt dated, a little inconsistent from one page to another, and frankly a bit harsh on the eyes (especially in light mode, where staring at a wall of pure white is no one's idea of fun).]]></summary>
         <content type="html"><![CDATA[<p>The Otoroshi backoffice has been with us for a long time, and over the years it grew organically -- screen by screen, feature by feature. The result was a UI that worked, but felt dated, a little inconsistent from one page to another, and frankly a bit harsh on the eyes (especially in light mode, where staring at a wall of pure white is no one's idea of fun).</p>
 <p>We took the time to refresh both themes from the ground up, and we are pretty happy with the result.</p>
+<!-- -->
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="a-new-light-theme-that-doesnt-burn-your-retinas">A new light theme that doesn't burn your retinas<a href="https://maif.github.io/otoroshi/devmanual/blog/new-ui-themes#a-new-light-theme-that-doesnt-burn-your-retinas" class="hash-link" aria-label="Direct link to A new light theme that doesn't burn your retinas" title="Direct link to A new light theme that doesn't burn your retinas" translate="no">​</a></h2>
 <p>The light theme has been the most aggressive change. We moved away from the previous high-contrast white-on-white look toward a softer, more neutral palette: gentle off-whites for the background, light gray cards with subtle borders, and just enough contrast to make every block stand out without screaming for attention. Typography has been tightened, spacing rebalanced, and the iconic Otoroshi yellow now plays a clearer accent role instead of fighting with the rest of the page.</p>
 <p><img decoding="async" loading="lazy" alt="New light theme - home page" src="https://maif.github.io/otoroshi/devmanual/assets/images/capture-home-light-1d74f34447f3c4d898a0f4c442239fb0.png" width="1551" height="1177" class="img_ev3q"></p>
@@ -123,6 +206,7 @@
         <updated>2026-03-16T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[Welcome to the official Otoroshi blog! This is the place where we will share news, release announcements, tutorials, and insights about Otoroshi and the API gateway ecosystem.]]></summary>
         <content type="html"><![CDATA[<p>Welcome to the official Otoroshi blog! This is the place where we will share news, release announcements, tutorials, and insights about Otoroshi and the API gateway ecosystem.</p>
+<!-- -->
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-to-expect">What to expect<a href="https://maif.github.io/otoroshi/devmanual/blog/welcome#what-to-expect" class="hash-link" aria-label="Direct link to What to expect" title="Direct link to What to expect" translate="no">​</a></h2>
 <p>Here are some of the topics we plan to cover:</p>
 <ul>

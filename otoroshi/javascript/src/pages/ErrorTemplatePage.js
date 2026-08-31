@@ -139,41 +139,42 @@ export class ErrorTemplatesPage extends Component {
 
   componentDidMount() {
     this.props.setTitle('Error templates');
-    BackOfficeServices.findAllServicesWithPagination({
+    //[REMOVE SERVICEDESC] BackOfficeServices.findAllServicesWithPagination({
+    //[REMOVE SERVICEDESC]   page: 1,
+    //[REMOVE SERVICEDESC]   pageSize: 999,
+    //[REMOVE SERVICEDESC]   fields: ['id', 'name'],
+    //[REMOVE SERVICEDESC] }).then((services) => {
+    BackOfficeServices.findAllRoutesWithPagination({
       page: 1,
       pageSize: 999,
       fields: ['id', 'name'],
-    }).then((services) => {
-      BackOfficeServices.findAllRoutesWithPagination({
-        page: 1,
-        pageSize: 999,
-        fields: ['id', 'name'],
-      }).then((routes) => {
-        const list = [
-          {
-            label: <div>All routes and services</div>,
-            value: 'global',
-          },
-          ...services.data.map((s) => ({
-            label: (
-              <div>
-                <span className="badge bg-warning">service</span> {s.name}
-              </div>
-            ),
-            value: s.id,
-          })),
-          ...routes.data.map((s) => ({
-            label: (
-              <div>
-                <span className="badge bg-info">route</span> {s.name}
-              </div>
-            ),
-            value: s.id,
-          })),
-        ];
-        this.setState({ list, fetched: true });
-      });
+    }).then((routes) => {
+      const list = [
+        {
+          //[REMOVE SERVICEDESC] label: <div>All routes and services</div>,
+          label: <div>All routes</div>,
+          value: 'global',
+        },
+        //[REMOVE SERVICEDESC] ...services.data.map((s) => ({
+        //[REMOVE SERVICEDESC]   label: (
+        //[REMOVE SERVICEDESC]     <div>
+        //[REMOVE SERVICEDESC]       <span className="badge bg-warning">service</span> {s.name}
+        //[REMOVE SERVICEDESC]     </div>
+        //[REMOVE SERVICEDESC]   ),
+        //[REMOVE SERVICEDESC]   value: s.id,
+        //[REMOVE SERVICEDESC] })),
+        ...routes.data.map((s) => ({
+          label: (
+            <div>
+              <span className="badge bg-info">route</span> {s.name}
+            </div>
+          ),
+          value: s.id,
+        })),
+      ];
+      this.setState({ list, fetched: true });
     });
+    //[REMOVE SERVICEDESC] });
   }
 
   gotoErrorTemplate = (errorTemplate) => {

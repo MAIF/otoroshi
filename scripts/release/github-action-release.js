@@ -1,6 +1,6 @@
 // node github-action-release.js --from=1.4.2-dev --to=1.4.0 --next=1.4.2-dev --last=1.3.1 --location=/path/to/otoroshi
 const cmd = require('node-cmd');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
 const _ = require('lodash');
 const moment = require('moment');
@@ -13,13 +13,39 @@ const BINTRAY_API_KEY = process.env.BINTRAY_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const JAVA_HOME = process.env.JAVA_HOME;
 
+const escapeForRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// The version shows up three ways in the kustomize manifests: as an image tag, as the `newTag:` of
+// an `images:` entry, and as the recommended `app.kubernetes.io/version` label. Several files carry
+// more than one of them (cluster-deployments has two otoroshi containers), so every replacement has
+// to be global — `String.replace` with a string argument only ever replaces the first match, which
+// is how images stayed pinned to 16.x for two years while the first one kept being bumped.
+const kustomizeVersion = (from, to, source) => {
+  const v = escapeForRegExp(from);
+  return source
+    .replace(new RegExp(`maif/otoroshi:${v}`, 'g'), `maif/otoroshi:${to}`)
+    .replace(new RegExp(`(newTag:\\s*)${v}(?=\\s|$)`, 'g'), `$1${to}`)
+    .replace(new RegExp(`(app\\.kubernetes\\.io/version:\\s*")${v}(")`, 'g'), `$1${to}$2`);
+};
+
 const files = [
-  { file: './kubernetes/kustomize/overlays/cluster/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/cluster-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/cluster-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/simple/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/simple-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
+  // Overlays: deployment.yaml carries the images for the two daemonset variants, kustomization.yaml
+  // carries the `newTag:` pin and the version label for all six.
+  { file: './kubernetes/kustomize/overlays/cluster/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal-daemonset/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal-daemonset/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal/kustomization.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/kustomization.yaml', replace: kustomizeVersion },
+  // The Deployment resources themselves moved here; the overlays above only patch them.
+  { file: './kubernetes/kustomize/components/single-deployment/deployment.yaml', replace: kustomizeVersion },
+  { file: './kubernetes/kustomize/components/cluster-deployments/deployment.yaml', replace: kustomizeVersion },
   //{
   //  file: './manual/src/main/paradox/deploy/kubernetes.md',
   //  replace: (from, to, source) => source.replace(`?ref=v${from}`, `?ref=v${to}`).replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`)
@@ -107,6 +133,9 @@ function runScript(script, where, env = {}, fit) {
 
 let steps = [];
 
+// commit holding the currently published documentation website, captured before the release starts to modify the repository
+let docsBaseRef = null;
+
 async function ensureStep(step, file, f) {
   const found = _.find(steps, s => s.step === step && s.state === 'stop');
   if (!!found) {
@@ -193,6 +222,14 @@ async function buildDocumentation(version, where, releaseDir, releaseFile) {
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
   await runSystemCommand('zip', ['-r', path.resolve(releaseDir, `otoroshi-manual-${version}.zip`), path.resolve(where, 'docs/manual'), '-x', '*.DS_Store'], where);
+  if (preview) {
+    // preview release: the manual archive is still built and shipped, but the published website stays on the previous version.
+    // restore from docsBaseRef and not from HEAD: `scripts/build.sh clean` deletes docs/manual at the cleanup step and the
+    // openapi step commits that deletion with `git add --all`, so by now HEAD no longer holds the published website.
+    console.log(`Skipping documentation website publication, restoring docs/manual and docs/manual-root from ${docsBaseRef}`);
+    await runSystemCommand('git', ['checkout', docsBaseRef, '--', 'docs/manual', 'docs/manual-root'], location);
+    await runSystemCommand('git', ['clean', '-fdq', 'docs/manual', 'docs/manual-root'], location);
+  }
   await runSystemCommand('git', ['add', '--all'], location);
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update site documentation before release`], location);
 }
@@ -297,7 +334,16 @@ async function githubTag(location, version) {
 async function publishMavenCentral(location, version) {
   await runScript(`
     cd $LOCATION/otoroshi
-    sbt ";doc;packageDoc;publishSigned;sonatypeBundleRelease"
+    # publishSigned already builds every published artifact, and the doc jar is an empty
+    # placeholder now (see the Maven Central quota comment in build.sbt), so nothing to force here.
+    sbt "publishSigned"
+    # sonatypeBundleRelease logs BUNDLE_ZIP_ERROR but still exits 0 when publishSigned wrote the artifacts
+    # somewhere else than sonatypeBundleDirectory, silently skipping the whole Maven Central publication.
+    if [ -z "$(ls -A target/sonatype-staging/$VERSION 2>/dev/null)" ]; then
+      echo "ERROR: nothing staged in otoroshi/target/sonatype-staging/$VERSION, check the publishTo setting"
+      exit 1
+    fi
+    sbt "sonatypeBundleRelease"
     cd $LOCATION
     `,
     location,
@@ -381,6 +427,11 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     steps = fs.readFileSync(releaseFile, 'utf8').split('\n').map(a => a.trim()).filter(a => a !== '').map(line => JSON.parse(line));
   }
 
+  if (preview) {
+    docsBaseRef = execSync('git rev-parse HEAD', { cwd: location }).toString().trim();
+    console.log(`Preview release: the published documentation website will be kept as it is in ${docsBaseRef}`);
+  }
+
   await ensureStep('INSTALL_DEPS', releaseFile, () => installDependencies(location));
   await ensureStep('CHANGE_TO_RELEASE_VERSION', releaseFile, async () => {
     {
@@ -423,6 +474,7 @@ function printEnv() {
   console.log({
     JAVA_HOME,
     dryRun,
+    preview,
     releaseFrom,
     releaseTo,
     releaseNext,
@@ -434,6 +486,7 @@ function printEnv() {
 }
 
 const dryRun = argv.dry || false;
+const preview = argv.preview || false;
 const releaseFrom = argv.from;
 const releaseTo = argv.to;
 const releaseNext = argv.next;

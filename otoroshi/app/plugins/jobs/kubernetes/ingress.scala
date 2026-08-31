@@ -353,230 +353,230 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
         }
       }
   }
-  def apply(desc: ServiceDescriptor): ServiceDescriptor = {
-    annotations
-      .filter {
-        case (key, _) if key.startsWith("ingress.otoroshi.io/") => true
-        case _                                                  => false
-      }
-      .map { case (key, value) =>
-        (key.replace("ingress.otoroshi.io/", ""), value)
-      }
-      .foldLeft(desc) { case (d, (key, value)) =>
-        toCamelCase(key) match {
-          case "raw"                     => {
-            val raw     = Json.parse(value).as[JsObject]
-            val current = desc.toJson.as[JsObject]
-            ServiceDescriptor.fromJsonSafe(current.deepMerge(raw)).get
-          }
-          case "group"                   => d.copy(groups = Seq(value))
-          case "groupId"                 => d.copy(groups = Seq(value))
-          case "groups"                  => d.copy(groups = value.split(",").map(_.trim).toSeq)
-          case "name"                    => d.copy(name = value)
-          // case "env" =>
-          // case "domain" =>
-          // case "subdomain" =>
-          case "targetsLoadBalancing"    =>
-            d.copy(targetsLoadBalancing = value match {
-              case "RoundRobin"       => RoundRobin
-              case "Random"           => Random
-              case "Sticky"           => Sticky
-              case "IpAddressHash"    => IpAddressHash
-              case "BestResponseTime" => BestResponseTime
-              case _                  => RoundRobin
-            })
-          // case "targets" =>
-          // case "root" =>
-          // case "matchingRoot" =>
-          case "stripPath"               => d.copy(stripPath = value.toBoolean)
-          // case "localHost" =>
-          // case "localScheme" =>
-          // case "redirectToLocal" =>
-          case "enabled"                 => d.copy(enabled = value.toBoolean)
-          case "userFacing"              => d.copy(userFacing = value.toBoolean)
-          case "privateApp"              => d.copy(privateApp = value.toBoolean)
-          case "forceHttps"              => d.copy(forceHttps = value.toBoolean)
-          case "maintenanceMode"         => d.copy(maintenanceMode = value.toBoolean)
-          case "buildMode"               => d.copy(buildMode = value.toBoolean)
-          case "strictlyPrivate"         => d.copy(strictlyPrivate = value.toBoolean)
-          case "sendOtoroshiHeadersBack" => d.copy(sendOtoroshiHeadersBack = value.toBoolean)
-          case "readOnly"                => d.copy(readOnly = value.toBoolean)
-          case "xForwardedHeaders"       => d.copy(xForwardedHeaders = value.toBoolean)
-          case "overrideHost"            => d.copy(overrideHost = value.toBoolean)
-          case "allowHttp10"             => d.copy(allowHttp10 = value.toBoolean)
-          case "logAnalyticsOnServer"    => d.copy(logAnalyticsOnServer = value.toBoolean)
-          case "useAkkaHttpClient"       => d.copy(useAkkaHttpClient = value.toBoolean)
-          case "useNewWSClient"          => d.copy(useNewWSClient = value.toBoolean)
-          case "tcpUdpTunneling"         => d.copy(tcpUdpTunneling = value.toBoolean)
-          case "detectApiKeySooner"      => d.copy(detectApiKeySooner = value.toBoolean)
-          case "letsEncrypt"             => d.copy(letsEncrypt = value.toBoolean)
-
-          case _
-              if key.startsWith("secCom") || key == "enforceSecureCommunication"
-                || key == "sendInfoToken"
-                || key == "sendStateChallenge"
-                || key == "securityExcludedPatterns" =>
-            securityOptions(key, value, d)
-
-          case "publicPatterns"                     => d.copy(publicPatterns = asSeqString(value))
-          case "privatePatterns"                    => d.copy(privatePatterns = asSeqString(value))
-          case "additionalHeaders"                  => d.copy(additionalHeaders = asMapString(value))
-          case "additionalHeadersOut"               => d.copy(additionalHeadersOut = asMapString(value))
-          case "missingOnlyHeadersIn"               => d.copy(missingOnlyHeadersIn = asMapString(value))
-          case "missingOnlyHeadersOut"              => d.copy(missingOnlyHeadersOut = asMapString(value))
-          case "removeHeadersIn"                    => d.copy(removeHeadersIn = asSeqString(value))
-          case "removeHeadersOut"                   => d.copy(removeHeadersOut = asSeqString(value))
-          case "headersVerification"                => d.copy(headersVerification = asMapString(value))
-          case "matchingHeaders"                    => d.copy(matchingHeaders = asMapString(value))
-          case "ipFiltering.whitelist"              => d.copy(ipFiltering = d.ipFiltering.copy(whitelist = asSeqString(value)))
-          case "ipFiltering.blacklist"              => d.copy(ipFiltering = d.ipFiltering.copy(blacklist = asSeqString(value)))
-          case "api.exposeApi"                      => d.copy(api = d.api.copy(exposeApi = value.toBoolean))
-          case "api.openApiDescriptorUrl"           => d.copy(api = d.api.copy(openApiDescriptorUrl = value.some))
-          case "healthCheck.enabled"                => d.copy(healthCheck = d.healthCheck.copy(enabled = value.toBoolean))
-          case "healthCheck.url"                    => d.copy(healthCheck = d.healthCheck.copy(url = value))
-          case _ if key.startsWith("clientConfig.") => clientConfigOptions(key, value, d)
-          case _ if key.startsWith("cors.")         => corsConfigOptions(key, value, d)
-          case _ if key.startsWith("gzip.")         => gzipConfigOptions(key, value, d)
-          // case "canary" =>
-          // case "metadata" =>
-          // case "chaosConfig" =>
-          case "jwtVerifier.ids"                    =>
-            d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(ids = asSeqString(value)))
-          case "jwtVerifier.enabled"                =>
-            d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(enabled = value.toBoolean))
-          case "jwtVerifier.excludedPatterns"       =>
-            d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(excludedPatterns = asSeqString(value)))
-          case "authConfigRef"                      => d.copy(authConfigRef = value.some)
-          case "redirection.enabled"                => d.copy(redirection = d.redirection.copy(enabled = value.toBoolean))
-          case "redirection.code"                   => d.copy(redirection = d.redirection.copy(code = value.toInt))
-          case "redirection.to"                     => d.copy(redirection = d.redirection.copy(to = value))
-          // case "clientValidatorRef" => d.copy(authConfigRef = value.some)
-          // case "transformerRefs" => d.copy(transformerRefs = asSeqString(value))
-          // case "transformerConfig" => d.copy(transformerConfig = Json.parse(value))
-          // case "accessValidator.enabled" => d.copy(accessValidator = d.accessValidator.copy(enabled = value.toBoolean))
-          // case "accessValidator.excludedPatterns" => d.copy(accessValidator = d.accessValidator.copy(excludedPatterns = asSeqString(value)))
-          // case "accessValidator.refs" => d.copy(accessValidator = d.accessValidator.copy(refs = asSeqString(value)))
-          // case "accessValidator.config" => d.copy(accessValidator = d.accessValidator.copy(config = Json.parse(value)))
-          // case "preRouting.enabled" => d.copy(preRouting = d.preRouting.copy(enabled = value.toBoolean))
-          // case "preRouting.excludedPatterns" => d.copy(preRouting = d.preRouting.copy(excludedPatterns = asSeqString(value)))
-          // case "preRouting.refs" => d.copy(preRouting = d.preRouting.copy(refs = asSeqString(value)))
-          // case "preRouting.config" => d.copy(preRouting = d.preRouting.copy(config = Json.parse(value)))
-          // case "thirdPartyApiKey" =>
-          // case "apiKeyConstraints" =>
-          // case "restrictions" =>
-          // case "hosts" => d.copy(hosts = asSeqString(value))
-          // case "paths" => d.copy(paths = asSeqString(value))
-          case "issueCert"                          => d.copy(issueCert = value.toBoolean)
-          case "issueCertCA"                        => d.copy(issueCertCA = value.some)
-          case _                                    => d
-        }
-      }
-  }
+  //[REMOVE SERVICEDESC] def apply(desc: ServiceDescriptor): ServiceDescriptor = {
+  //[REMOVE SERVICEDESC]   annotations
+  //[REMOVE SERVICEDESC]     .filter {
+  //[REMOVE SERVICEDESC]       case (key, _) if key.startsWith("ingress.otoroshi.io/") => true
+  //[REMOVE SERVICEDESC]       case _                                                  => false
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]     .map { case (key, value) =>
+  //[REMOVE SERVICEDESC]       (key.replace("ingress.otoroshi.io/", ""), value)
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]     .foldLeft(desc) { case (d, (key, value)) =>
+  //[REMOVE SERVICEDESC]       toCamelCase(key) match {
+  //[REMOVE SERVICEDESC]         case "raw"                     => {
+  //[REMOVE SERVICEDESC]           val raw     = Json.parse(value).as[JsObject]
+  //[REMOVE SERVICEDESC]           val current = desc.toJson.as[JsObject]
+  //[REMOVE SERVICEDESC]           ServiceDescriptor.fromJsonSafe(current.deepMerge(raw)).get
+  //[REMOVE SERVICEDESC]         }
+  //[REMOVE SERVICEDESC]         case "group"                   => d.copy(groups = Seq(value))
+  //[REMOVE SERVICEDESC]         case "groupId"                 => d.copy(groups = Seq(value))
+  //[REMOVE SERVICEDESC]         case "groups"                  => d.copy(groups = value.split(",").map(_.trim).toSeq)
+  //[REMOVE SERVICEDESC]         case "name"                    => d.copy(name = value)
+  //[REMOVE SERVICEDESC]         // case "env" =>
+  //[REMOVE SERVICEDESC]         // case "domain" =>
+  //[REMOVE SERVICEDESC]         // case "subdomain" =>
+  //[REMOVE SERVICEDESC]         case "targetsLoadBalancing"    =>
+  //[REMOVE SERVICEDESC]           d.copy(targetsLoadBalancing = value match {
+  //[REMOVE SERVICEDESC]             case "RoundRobin"       => RoundRobin
+  //[REMOVE SERVICEDESC]             case "Random"           => Random
+  //[REMOVE SERVICEDESC]             case "Sticky"           => Sticky
+  //[REMOVE SERVICEDESC]             case "IpAddressHash"    => IpAddressHash
+  //[REMOVE SERVICEDESC]             case "BestResponseTime" => BestResponseTime
+  //[REMOVE SERVICEDESC]             case _                  => RoundRobin
+  //[REMOVE SERVICEDESC]           })
+  //[REMOVE SERVICEDESC]         // case "targets" =>
+  //[REMOVE SERVICEDESC]         // case "root" =>
+  //[REMOVE SERVICEDESC]         // case "matchingRoot" =>
+  //[REMOVE SERVICEDESC]         case "stripPath"               => d.copy(stripPath = value.toBoolean)
+  //[REMOVE SERVICEDESC]         // case "localHost" =>
+  //[REMOVE SERVICEDESC]         // case "localScheme" =>
+  //[REMOVE SERVICEDESC]         // case "redirectToLocal" =>
+  //[REMOVE SERVICEDESC]         case "enabled"                 => d.copy(enabled = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "userFacing"              => d.copy(userFacing = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "privateApp"              => d.copy(privateApp = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "forceHttps"              => d.copy(forceHttps = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "maintenanceMode"         => d.copy(maintenanceMode = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "buildMode"               => d.copy(buildMode = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "strictlyPrivate"         => d.copy(strictlyPrivate = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "sendOtoroshiHeadersBack" => d.copy(sendOtoroshiHeadersBack = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "readOnly"                => d.copy(readOnly = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "xForwardedHeaders"       => d.copy(xForwardedHeaders = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "overrideHost"            => d.copy(overrideHost = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "allowHttp10"             => d.copy(allowHttp10 = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "logAnalyticsOnServer"    => d.copy(logAnalyticsOnServer = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "useAkkaHttpClient"       => d.copy(useAkkaHttpClient = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "useNewWSClient"          => d.copy(useNewWSClient = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "tcpUdpTunneling"         => d.copy(tcpUdpTunneling = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "detectApiKeySooner"      => d.copy(detectApiKeySooner = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "letsEncrypt"             => d.copy(letsEncrypt = value.toBoolean)
+  //[REMOVE SERVICEDESC]
+  //[REMOVE SERVICEDESC]         case _
+  //[REMOVE SERVICEDESC]             if key.startsWith("secCom") || key == "enforceSecureCommunication"
+  //[REMOVE SERVICEDESC]               || key == "sendInfoToken"
+  //[REMOVE SERVICEDESC]               || key == "sendStateChallenge"
+  //[REMOVE SERVICEDESC]               || key == "securityExcludedPatterns" =>
+  //[REMOVE SERVICEDESC]           securityOptions(key, value, d)
+  //[REMOVE SERVICEDESC]
+  //[REMOVE SERVICEDESC]         case "publicPatterns"                     => d.copy(publicPatterns = asSeqString(value))
+  //[REMOVE SERVICEDESC]         case "privatePatterns"                    => d.copy(privatePatterns = asSeqString(value))
+  //[REMOVE SERVICEDESC]         case "additionalHeaders"                  => d.copy(additionalHeaders = asMapString(value))
+  //[REMOVE SERVICEDESC]         case "additionalHeadersOut"               => d.copy(additionalHeadersOut = asMapString(value))
+  //[REMOVE SERVICEDESC]         case "missingOnlyHeadersIn"               => d.copy(missingOnlyHeadersIn = asMapString(value))
+  //[REMOVE SERVICEDESC]         case "missingOnlyHeadersOut"              => d.copy(missingOnlyHeadersOut = asMapString(value))
+  //[REMOVE SERVICEDESC]         case "removeHeadersIn"                    => d.copy(removeHeadersIn = asSeqString(value))
+  //[REMOVE SERVICEDESC]         case "removeHeadersOut"                   => d.copy(removeHeadersOut = asSeqString(value))
+  //[REMOVE SERVICEDESC]         case "headersVerification"                => d.copy(headersVerification = asMapString(value))
+  //[REMOVE SERVICEDESC]         case "matchingHeaders"                    => d.copy(matchingHeaders = asMapString(value))
+  //[REMOVE SERVICEDESC]         case "ipFiltering.whitelist"              => d.copy(ipFiltering = d.ipFiltering.copy(whitelist = asSeqString(value)))
+  //[REMOVE SERVICEDESC]         case "ipFiltering.blacklist"              => d.copy(ipFiltering = d.ipFiltering.copy(blacklist = asSeqString(value)))
+  //[REMOVE SERVICEDESC]         case "api.exposeApi"                      => d.copy(api = d.api.copy(exposeApi = value.toBoolean))
+  //[REMOVE SERVICEDESC]         case "api.openApiDescriptorUrl"           => d.copy(api = d.api.copy(openApiDescriptorUrl = value.some))
+  //[REMOVE SERVICEDESC]         case "healthCheck.enabled"                => d.copy(healthCheck = d.healthCheck.copy(enabled = value.toBoolean))
+  //[REMOVE SERVICEDESC]         case "healthCheck.url"                    => d.copy(healthCheck = d.healthCheck.copy(url = value))
+  //[REMOVE SERVICEDESC]         case _ if key.startsWith("clientConfig.") => clientConfigOptions(key, value, d)
+  //[REMOVE SERVICEDESC]         case _ if key.startsWith("cors.")         => corsConfigOptions(key, value, d)
+  //[REMOVE SERVICEDESC]         case _ if key.startsWith("gzip.")         => gzipConfigOptions(key, value, d)
+  //[REMOVE SERVICEDESC]         // case "canary" =>
+  //[REMOVE SERVICEDESC]         // case "metadata" =>
+  //[REMOVE SERVICEDESC]         // case "chaosConfig" =>
+  //[REMOVE SERVICEDESC]         case "jwtVerifier.ids"                    =>
+  //[REMOVE SERVICEDESC]           d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(ids = asSeqString(value)))
+  //[REMOVE SERVICEDESC]         case "jwtVerifier.enabled"                =>
+  //[REMOVE SERVICEDESC]           d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(enabled = value.toBoolean))
+  //[REMOVE SERVICEDESC]         case "jwtVerifier.excludedPatterns"       =>
+  //[REMOVE SERVICEDESC]           d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(excludedPatterns = asSeqString(value)))
+  //[REMOVE SERVICEDESC]         case "authConfigRef"                      => d.copy(authConfigRef = value.some)
+  //[REMOVE SERVICEDESC]         case "redirection.enabled"                => d.copy(redirection = d.redirection.copy(enabled = value.toBoolean))
+  //[REMOVE SERVICEDESC]         case "redirection.code"                   => d.copy(redirection = d.redirection.copy(code = value.toInt))
+  //[REMOVE SERVICEDESC]         case "redirection.to"                     => d.copy(redirection = d.redirection.copy(to = value))
+  //[REMOVE SERVICEDESC]         // case "clientValidatorRef" => d.copy(authConfigRef = value.some)
+  //[REMOVE SERVICEDESC]         // case "transformerRefs" => d.copy(transformerRefs = asSeqString(value))
+  //[REMOVE SERVICEDESC]         // case "transformerConfig" => d.copy(transformerConfig = Json.parse(value))
+  //[REMOVE SERVICEDESC]         // case "accessValidator.enabled" => d.copy(accessValidator = d.accessValidator.copy(enabled = value.toBoolean))
+  //[REMOVE SERVICEDESC]         // case "accessValidator.excludedPatterns" => d.copy(accessValidator = d.accessValidator.copy(excludedPatterns = asSeqString(value)))
+  //[REMOVE SERVICEDESC]         // case "accessValidator.refs" => d.copy(accessValidator = d.accessValidator.copy(refs = asSeqString(value)))
+  //[REMOVE SERVICEDESC]         // case "accessValidator.config" => d.copy(accessValidator = d.accessValidator.copy(config = Json.parse(value)))
+  //[REMOVE SERVICEDESC]         // case "preRouting.enabled" => d.copy(preRouting = d.preRouting.copy(enabled = value.toBoolean))
+  //[REMOVE SERVICEDESC]         // case "preRouting.excludedPatterns" => d.copy(preRouting = d.preRouting.copy(excludedPatterns = asSeqString(value)))
+  //[REMOVE SERVICEDESC]         // case "preRouting.refs" => d.copy(preRouting = d.preRouting.copy(refs = asSeqString(value)))
+  //[REMOVE SERVICEDESC]         // case "preRouting.config" => d.copy(preRouting = d.preRouting.copy(config = Json.parse(value)))
+  //[REMOVE SERVICEDESC]         // case "thirdPartyApiKey" =>
+  //[REMOVE SERVICEDESC]         // case "apiKeyConstraints" =>
+  //[REMOVE SERVICEDESC]         // case "restrictions" =>
+  //[REMOVE SERVICEDESC]         // case "hosts" => d.copy(hosts = asSeqString(value))
+  //[REMOVE SERVICEDESC]         // case "paths" => d.copy(paths = asSeqString(value))
+  //[REMOVE SERVICEDESC]         case "issueCert"                          => d.copy(issueCert = value.toBoolean)
+  //[REMOVE SERVICEDESC]         case "issueCertCA"                        => d.copy(issueCertCA = value.some)
+  //[REMOVE SERVICEDESC]         case _                                    => d
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC] }
 
   private def toCamelCase(key: String): String = {
     CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL, key)
   }
 
-  private def gzipConfigOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor =
-    key match {
-      case "gzip.enabled"          => d.copy(gzip = d.gzip.copy(enabled = value.toBoolean))
-      case "gzip.excludedPatterns" => d.copy(gzip = d.gzip.copy(excludedPatterns = asSeqString(value)))
-      case "gzip.whiteList"        => d.copy(gzip = d.gzip.copy(whiteList = asSeqString(value)))
-      case "gzip.blackList"        => d.copy(gzip = d.gzip.copy(blackList = asSeqString(value)))
-      case "gzip.bufferSize"       => d.copy(gzip = d.gzip.copy(bufferSize = value.toInt))
-      case "gzip.chunkedThreshold" => d.copy(gzip = d.gzip.copy(chunkedThreshold = value.toInt))
-      case "gzip.compressionLevel" => d.copy(gzip = d.gzip.copy(compressionLevel = value.toInt))
-    }
-
-  private def corsConfigOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor =
-    key match {
-      case "cors.enabled"          => d.copy(cors = d.cors.copy(enabled = value.toBoolean))
-      case "cors.allowOrigin"      => d.copy(cors = d.cors.copy(allowOrigin = value))
-      case "cors.exposeHeaders"    => d.copy(cors = d.cors.copy(exposeHeaders = asSeqString(value)))
-      case "cors.allowHeaders"     => d.copy(cors = d.cors.copy(allowHeaders = asSeqString(value)))
-      case "cors.allowMethods"     => d.copy(cors = d.cors.copy(allowMethods = asSeqString(value)))
-      case "cors.excludedPatterns" => d.copy(cors = d.cors.copy(excludedPatterns = asSeqString(value)))
-      case "cors.maxAge"           => d.copy(cors = d.cors.copy(maxAge = value.toInt.millis.some))
-      case "cors.allowCredentials" => d.copy(cors = d.cors.copy(allowCredentials = value.toBoolean))
-      case _                       => d
-    }
-
-  private def clientConfigOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor =
-    key match {
-      case "clientConfig.useCircuitBreaker"    =>
-        d.copy(clientConfig = d.clientConfig.copy(useCircuitBreaker = value.toBoolean))
-      case "clientConfig.retries"              => d.copy(clientConfig = d.clientConfig.copy(retries = value.toInt))
-      case "clientConfig.maxErrors"            => d.copy(clientConfig = d.clientConfig.copy(maxErrors = value.toInt))
-      case "clientConfig.retryInitialDelay"    =>
-        d.copy(clientConfig = d.clientConfig.copy(retryInitialDelay = value.toLong))
-      case "clientConfig.backoffFactor"        => d.copy(clientConfig = d.clientConfig.copy(backoffFactor = value.toLong))
-      case "clientConfig.connectionTimeout"    =>
-        d.copy(clientConfig = d.clientConfig.copy(connectionTimeout = value.toLong))
-      case "clientConfig.idleTimeout"          => d.copy(clientConfig = d.clientConfig.copy(idleTimeout = value.toLong))
-      case "clientConfig.callAndStreamTimeout" =>
-        d.copy(clientConfig = d.clientConfig.copy(callAndStreamTimeout = value.toLong))
-      case "clientConfig.callTimeout"          => d.copy(clientConfig = d.clientConfig.copy(callTimeout = value.toLong))
-      case "clientConfig.globalTimeout"        => d.copy(clientConfig = d.clientConfig.copy(globalTimeout = value.toLong))
-      case "clientConfig.sampleInterval"       => d.copy(clientConfig = d.clientConfig.copy(sampleInterval = value.toLong))
-      case _                                   => d
-    }
-
-  private def securityOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor =
-    key match {
-      case "enforceSecureCommunication"          => d.copy(enforceSecureCommunication = value.toBoolean)
-      case "sendInfoToken"                       => d.copy(sendInfoToken = value.toBoolean)
-      case "sendStateChallenge"                  => d.copy(sendStateChallenge = value.toBoolean)
-      case "secComHeaders.claimRequestName"      =>
-        d.copy(secComHeaders = d.secComHeaders.copy(claimRequestName = value.some))
-      case "secComHeaders.stateRequestName"      =>
-        d.copy(secComHeaders = d.secComHeaders.copy(stateRequestName = value.some))
-      case "secComHeaders.stateResponseName"     =>
-        d.copy(secComHeaders = d.secComHeaders.copy(stateResponseName = value.some))
-      case "secComTtl"                           => d.copy(secComTtl = value.toInt.millis)
-      case "secComVersion"                       => d.copy(secComVersion = SecComVersion.apply(value).getOrElse(SecComVersion.V2))
-      case "secComInfoTokenVersion"              =>
-        d.copy(secComInfoTokenVersion = SecComInfoTokenVersion.apply(value).getOrElse(SecComInfoTokenVersion.Latest))
-      case "secComExcludedPatterns"              => d.copy(secComExcludedPatterns = asSeqString(value))
-      case "secComSettings.size"                 =>
-        d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
-      case "secComSettings.secret"               =>
-        d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(secret = value))
-      case "secComSettings.base64"               =>
-        d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
-      case "secComUseSameAlgo"                   => d.copy(secComUseSameAlgo = value.toBoolean)
-      case "secComAlgoChallengeOtoToBack.size"   =>
-        d.copy(secComAlgoChallengeOtoToBack =
-          d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(size = value.toInt)
-        )
-      case "secComAlgoChallengeOtoToBack.secret" =>
-        d.copy(secComAlgoChallengeOtoToBack =
-          d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(secret = value)
-        )
-      case "secComAlgoChallengeOtoToBack.base64" =>
-        d.copy(secComAlgoChallengeOtoToBack =
-          d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean)
-        )
-      case "secComAlgoChallengeBackToOto.size"   =>
-        d.copy(secComAlgoChallengeBackToOto =
-          d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(size = value.toInt)
-        )
-      case "secComAlgoChallengeBackToOto.secret" =>
-        d.copy(secComAlgoChallengeBackToOto =
-          d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(secret = value)
-        )
-      case "secComAlgoChallengeBackToOto.base64" =>
-        d.copy(secComAlgoChallengeBackToOto =
-          d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean)
-        )
-      case "secComAlgoInfoToken.size"            =>
-        d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
-      case "secComAlgoInfoToken.secret"          =>
-        d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(secret = value))
-      case "secComAlgoInfoToken.base64"          =>
-        d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
-      case "securityExcludedPatterns"            => d.copy(securityExcludedPatterns = asSeqString(value))
-      case _                                     => d
-    }
+  //[REMOVE SERVICEDESC] private def gzipConfigOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor =
+  //[REMOVE SERVICEDESC]   key match {
+  //[REMOVE SERVICEDESC]     case "gzip.enabled"          => d.copy(gzip = d.gzip.copy(enabled = value.toBoolean))
+  //[REMOVE SERVICEDESC]     case "gzip.excludedPatterns" => d.copy(gzip = d.gzip.copy(excludedPatterns = asSeqString(value)))
+  //[REMOVE SERVICEDESC]     case "gzip.whiteList"        => d.copy(gzip = d.gzip.copy(whiteList = asSeqString(value)))
+  //[REMOVE SERVICEDESC]     case "gzip.blackList"        => d.copy(gzip = d.gzip.copy(blackList = asSeqString(value)))
+  //[REMOVE SERVICEDESC]     case "gzip.bufferSize"       => d.copy(gzip = d.gzip.copy(bufferSize = value.toInt))
+  //[REMOVE SERVICEDESC]     case "gzip.chunkedThreshold" => d.copy(gzip = d.gzip.copy(chunkedThreshold = value.toInt))
+  //[REMOVE SERVICEDESC]     case "gzip.compressionLevel" => d.copy(gzip = d.gzip.copy(compressionLevel = value.toInt))
+  //[REMOVE SERVICEDESC]   }
+  //[REMOVE SERVICEDESC]
+  //[REMOVE SERVICEDESC] private def corsConfigOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor =
+  //[REMOVE SERVICEDESC]   key match {
+  //[REMOVE SERVICEDESC]     case "cors.enabled"          => d.copy(cors = d.cors.copy(enabled = value.toBoolean))
+  //[REMOVE SERVICEDESC]     case "cors.allowOrigin"      => d.copy(cors = d.cors.copy(allowOrigin = value))
+  //[REMOVE SERVICEDESC]     case "cors.exposeHeaders"    => d.copy(cors = d.cors.copy(exposeHeaders = asSeqString(value)))
+  //[REMOVE SERVICEDESC]     case "cors.allowHeaders"     => d.copy(cors = d.cors.copy(allowHeaders = asSeqString(value)))
+  //[REMOVE SERVICEDESC]     case "cors.allowMethods"     => d.copy(cors = d.cors.copy(allowMethods = asSeqString(value)))
+  //[REMOVE SERVICEDESC]     case "cors.excludedPatterns" => d.copy(cors = d.cors.copy(excludedPatterns = asSeqString(value)))
+  //[REMOVE SERVICEDESC]     case "cors.maxAge"           => d.copy(cors = d.cors.copy(maxAge = value.toInt.millis.some))
+  //[REMOVE SERVICEDESC]     case "cors.allowCredentials" => d.copy(cors = d.cors.copy(allowCredentials = value.toBoolean))
+  //[REMOVE SERVICEDESC]     case _                       => d
+  //[REMOVE SERVICEDESC]   }
+  //[REMOVE SERVICEDESC]
+  //[REMOVE SERVICEDESC] private def clientConfigOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor =
+  //[REMOVE SERVICEDESC]   key match {
+  //[REMOVE SERVICEDESC]     case "clientConfig.useCircuitBreaker"    =>
+  //[REMOVE SERVICEDESC]       d.copy(clientConfig = d.clientConfig.copy(useCircuitBreaker = value.toBoolean))
+  //[REMOVE SERVICEDESC]     case "clientConfig.retries"              => d.copy(clientConfig = d.clientConfig.copy(retries = value.toInt))
+  //[REMOVE SERVICEDESC]     case "clientConfig.maxErrors"            => d.copy(clientConfig = d.clientConfig.copy(maxErrors = value.toInt))
+  //[REMOVE SERVICEDESC]     case "clientConfig.retryInitialDelay"    =>
+  //[REMOVE SERVICEDESC]       d.copy(clientConfig = d.clientConfig.copy(retryInitialDelay = value.toLong))
+  //[REMOVE SERVICEDESC]     case "clientConfig.backoffFactor"        => d.copy(clientConfig = d.clientConfig.copy(backoffFactor = value.toLong))
+  //[REMOVE SERVICEDESC]     case "clientConfig.connectionTimeout"    =>
+  //[REMOVE SERVICEDESC]       d.copy(clientConfig = d.clientConfig.copy(connectionTimeout = value.toLong))
+  //[REMOVE SERVICEDESC]     case "clientConfig.idleTimeout"          => d.copy(clientConfig = d.clientConfig.copy(idleTimeout = value.toLong))
+  //[REMOVE SERVICEDESC]     case "clientConfig.callAndStreamTimeout" =>
+  //[REMOVE SERVICEDESC]       d.copy(clientConfig = d.clientConfig.copy(callAndStreamTimeout = value.toLong))
+  //[REMOVE SERVICEDESC]     case "clientConfig.callTimeout"          => d.copy(clientConfig = d.clientConfig.copy(callTimeout = value.toLong))
+  //[REMOVE SERVICEDESC]     case "clientConfig.globalTimeout"        => d.copy(clientConfig = d.clientConfig.copy(globalTimeout = value.toLong))
+  //[REMOVE SERVICEDESC]     case "clientConfig.sampleInterval"       => d.copy(clientConfig = d.clientConfig.copy(sampleInterval = value.toLong))
+  //[REMOVE SERVICEDESC]     case _                                   => d
+  //[REMOVE SERVICEDESC]   }
+  //[REMOVE SERVICEDESC]
+  //[REMOVE SERVICEDESC] private def securityOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor =
+  //[REMOVE SERVICEDESC]   key match {
+  //[REMOVE SERVICEDESC]     case "enforceSecureCommunication"          => d.copy(enforceSecureCommunication = value.toBoolean)
+  //[REMOVE SERVICEDESC]     case "sendInfoToken"                       => d.copy(sendInfoToken = value.toBoolean)
+  //[REMOVE SERVICEDESC]     case "sendStateChallenge"                  => d.copy(sendStateChallenge = value.toBoolean)
+  //[REMOVE SERVICEDESC]     case "secComHeaders.claimRequestName"      =>
+  //[REMOVE SERVICEDESC]       d.copy(secComHeaders = d.secComHeaders.copy(claimRequestName = value.some))
+  //[REMOVE SERVICEDESC]     case "secComHeaders.stateRequestName"      =>
+  //[REMOVE SERVICEDESC]       d.copy(secComHeaders = d.secComHeaders.copy(stateRequestName = value.some))
+  //[REMOVE SERVICEDESC]     case "secComHeaders.stateResponseName"     =>
+  //[REMOVE SERVICEDESC]       d.copy(secComHeaders = d.secComHeaders.copy(stateResponseName = value.some))
+  //[REMOVE SERVICEDESC]     case "secComTtl"                           => d.copy(secComTtl = value.toInt.millis)
+  //[REMOVE SERVICEDESC]     case "secComVersion"                       => d.copy(secComVersion = SecComVersion.apply(value).getOrElse(SecComVersion.V2))
+  //[REMOVE SERVICEDESC]     case "secComInfoTokenVersion"              =>
+  //[REMOVE SERVICEDESC]       d.copy(secComInfoTokenVersion = SecComInfoTokenVersion.apply(value).getOrElse(SecComInfoTokenVersion.Latest))
+  //[REMOVE SERVICEDESC]     case "secComExcludedPatterns"              => d.copy(secComExcludedPatterns = asSeqString(value))
+  //[REMOVE SERVICEDESC]     case "secComSettings.size"                 =>
+  //[REMOVE SERVICEDESC]       d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
+  //[REMOVE SERVICEDESC]     case "secComSettings.secret"               =>
+  //[REMOVE SERVICEDESC]       d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(secret = value))
+  //[REMOVE SERVICEDESC]     case "secComSettings.base64"               =>
+  //[REMOVE SERVICEDESC]       d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
+  //[REMOVE SERVICEDESC]     case "secComUseSameAlgo"                   => d.copy(secComUseSameAlgo = value.toBoolean)
+  //[REMOVE SERVICEDESC]     case "secComAlgoChallengeOtoToBack.size"   =>
+  //[REMOVE SERVICEDESC]       d.copy(secComAlgoChallengeOtoToBack =
+  //[REMOVE SERVICEDESC]         d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(size = value.toInt)
+  //[REMOVE SERVICEDESC]       )
+  //[REMOVE SERVICEDESC]     case "secComAlgoChallengeOtoToBack.secret" =>
+  //[REMOVE SERVICEDESC]       d.copy(secComAlgoChallengeOtoToBack =
+  //[REMOVE SERVICEDESC]         d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(secret = value)
+  //[REMOVE SERVICEDESC]       )
+  //[REMOVE SERVICEDESC]     case "secComAlgoChallengeOtoToBack.base64" =>
+  //[REMOVE SERVICEDESC]       d.copy(secComAlgoChallengeOtoToBack =
+  //[REMOVE SERVICEDESC]         d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean)
+  //[REMOVE SERVICEDESC]       )
+  //[REMOVE SERVICEDESC]     case "secComAlgoChallengeBackToOto.size"   =>
+  //[REMOVE SERVICEDESC]       d.copy(secComAlgoChallengeBackToOto =
+  //[REMOVE SERVICEDESC]         d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(size = value.toInt)
+  //[REMOVE SERVICEDESC]       )
+  //[REMOVE SERVICEDESC]     case "secComAlgoChallengeBackToOto.secret" =>
+  //[REMOVE SERVICEDESC]       d.copy(secComAlgoChallengeBackToOto =
+  //[REMOVE SERVICEDESC]         d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(secret = value)
+  //[REMOVE SERVICEDESC]       )
+  //[REMOVE SERVICEDESC]     case "secComAlgoChallengeBackToOto.base64" =>
+  //[REMOVE SERVICEDESC]       d.copy(secComAlgoChallengeBackToOto =
+  //[REMOVE SERVICEDESC]         d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean)
+  //[REMOVE SERVICEDESC]       )
+  //[REMOVE SERVICEDESC]     case "secComAlgoInfoToken.size"            =>
+  //[REMOVE SERVICEDESC]       d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
+  //[REMOVE SERVICEDESC]     case "secComAlgoInfoToken.secret"          =>
+  //[REMOVE SERVICEDESC]       d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(secret = value))
+  //[REMOVE SERVICEDESC]     case "secComAlgoInfoToken.base64"          =>
+  //[REMOVE SERVICEDESC]       d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
+  //[REMOVE SERVICEDESC]     case "securityExcludedPatterns"            => d.copy(securityExcludedPatterns = asSeqString(value))
+  //[REMOVE SERVICEDESC]     case _                                     => d
+  //[REMOVE SERVICEDESC]   }
 }
 
 object KubernetesIngressSyncJob {
@@ -634,7 +634,7 @@ object KubernetesIngressSyncJob {
   def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(using env: Env, ec: ExecutionContext): Future[Unit] =
     env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync") {
       implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
-      val syncedServiceDescriptors = new AtomicLong(0L)
+      //[REMOVE SERVICEDESC] val syncedServiceDescriptors = new AtomicLong(0L)
       val _client                  = new KubernetesClient(_conf, env)
       if (running.compareAndSet(false, true)) {
         shouldRunNext.set(false)
@@ -667,38 +667,38 @@ object KubernetesIngressSyncJob {
                           val certsToImport = certs.filter(c => certNames.contains(c.name.toLowerCase()))
                           (ingressRaw.ingress.spec.backend match {
                             case Some(backend)
-                                if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true") => {
+                                /*//[REMOVE SERVICEDESC] if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true")*/ => {
                               backend.asRoute(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
                                 case None        => ().future
                                 case Some(route) => route.save()
                               }
                             }
-                            case Some(backend) => {
-                              backend.asDescriptor(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
-                                case None       => ().future
-                                case Some(desc) =>
-                                  syncedServiceDescriptors.incrementAndGet()
-                                  desc.save()
-                              }
-                            }
+                            //[REMOVE SERVICEDESC]case Some(backend) => {
+                            //[REMOVE SERVICEDESC]  backend.asDescriptor(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
+                            //[REMOVE SERVICEDESC]    case None       => ().future
+                            //[REMOVE SERVICEDESC]    case Some(desc) =>
+                            //[REMOVE SERVICEDESC]      syncedServiceDescriptors.incrementAndGet()
+                            //[REMOVE SERVICEDESC]      desc.save()
+                            //[REMOVE SERVICEDESC]  }
+                            //[REMOVE SERVICEDESC]}
                             case None
-                                if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true") => {
+                                /*//[REMOVE SERVICEDESC] if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true")*/ => {
                               ingressRaw.updateIngressStatus(client).flatMap { _ =>
                                 ingressRaw.asRoutes(conf, otoroshiConfig, client, logger).flatMap { routes =>
                                   Future.sequence(routes.map(_.save()))
                                 }
                               }
                             }
-                            case None          => {
-                              ingressRaw.updateIngressStatus(client).flatMap { _ =>
-                                ingressRaw.asDescriptors(conf, otoroshiConfig, client, logger).flatMap { descs =>
-                                  Future.sequence(descs.map { c =>
-                                    syncedServiceDescriptors.incrementAndGet()
-                                    c.save()
-                                  })
-                                }
-                              }
-                            }
+                            //[REMOVE SERVICEDESC] case None          => {
+                            //[REMOVE SERVICEDESC]   ingressRaw.updateIngressStatus(client).flatMap { _ =>
+                            //[REMOVE SERVICEDESC]     ingressRaw.asDescriptors(conf, otoroshiConfig, client, logger).flatMap { descs =>
+                            //[REMOVE SERVICEDESC]       Future.sequence(descs.map { c =>
+                            //[REMOVE SERVICEDESC]         syncedServiceDescriptors.incrementAndGet()
+                            //[REMOVE SERVICEDESC]         c.save()
+                            //[REMOVE SERVICEDESC]       })
+                            //[REMOVE SERVICEDESC]     }
+                            //[REMOVE SERVICEDESC]   }
+                            //[REMOVE SERVICEDESC] }
                           }) andThen { case _ =>
                             KubernetesCertSyncJob.importCerts(certsToImport)
                           }
@@ -744,27 +744,27 @@ object KubernetesIngressSyncJob {
                           }
                       }
 
-                      env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-                        val toDelete = services
-                          .filter { service =>
-                            service.metadata.get("otoroshi-provider").contains("kubernetes-ingress")
-                          }
-                          .map { service =>
-                            (service.metadata.getOrElse("kubernetes-ingress-id", "--"), service.id, service.name)
-                          }
-                          .filterNot { case (ingressId, _, _) =>
-                            existingInKube.contains(ingressId)
-                          }
-                        logger.info(s"Deleting services: ${toDelete.map(_._3).mkString(", ")}")
-                        env.datastores.serviceDescriptorDataStore
-                          .deleteByIds(toDelete.map(_._2))
-                          .andThen { case Failure(e) =>
-                            e.printStackTrace()
-                          }
-                          .map { _ =>
-                            ()
-                          }
-                      }
+                      //[REMOVE SERVICEDESC] env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+                      //[REMOVE SERVICEDESC]   val toDelete = services
+                      //[REMOVE SERVICEDESC]     .filter { service =>
+                      //[REMOVE SERVICEDESC]       service.metadata.get("otoroshi-provider").contains("kubernetes-ingress")
+                      //[REMOVE SERVICEDESC]     }
+                      //[REMOVE SERVICEDESC]     .map { service =>
+                      //[REMOVE SERVICEDESC]       (service.metadata.getOrElse("kubernetes-ingress-id", "--"), service.id, service.name)
+                      //[REMOVE SERVICEDESC]     }
+                      //[REMOVE SERVICEDESC]     .filterNot { case (ingressId, _, _) =>
+                      //[REMOVE SERVICEDESC]       existingInKube.contains(ingressId)
+                      //[REMOVE SERVICEDESC]     }
+                      //[REMOVE SERVICEDESC]   logger.info(s"Deleting services: ${toDelete.map(_._3).mkString(", ")}")
+                      //[REMOVE SERVICEDESC]   env.datastores.serviceDescriptorDataStore
+                      //[REMOVE SERVICEDESC]     .deleteByIds(toDelete.map(_._2))
+                      //[REMOVE SERVICEDESC]     .andThen { case Failure(e) =>
+                      //[REMOVE SERVICEDESC]       e.printStackTrace()
+                      //[REMOVE SERVICEDESC]     }
+                      //[REMOVE SERVICEDESC]     .map { _ =>
+                      //[REMOVE SERVICEDESC]       ()
+                      //[REMOVE SERVICEDESC]     }
+                      //[REMOVE SERVICEDESC] }
                     }
                 }
               }
@@ -772,7 +772,7 @@ object KubernetesIngressSyncJob {
           }
           .flatMap { _ =>
             logger.info("sync done !")
-            warnAboutServiceDescriptorUsage(syncedServiceDescriptors)
+            //[REMOVE SERVICEDESC] warnAboutServiceDescriptorUsage(syncedServiceDescriptors)
             if (shouldRunNext.get()) {
               shouldRunNext.set(false)
               logger.info("restart job right now because sync was asked during sync ")
@@ -797,42 +797,42 @@ object KubernetesIngressSyncJob {
 
   private val callsCounter = new AtomicLong(0L)
 
-  def warnAboutServiceDescriptorUsage(counter: AtomicLong)(using env: Env, ec: ExecutionContext): Unit = {
-    val count = counter.get()
-    if (count > 0) {
-      val calls = callsCounter.incrementAndGet()
-      if (calls == 1 || calls % 10 == 0) {
-        env.logger.warn("")
-        env.logger.warn(s"-------------------------------------------------------------------------")
-        env.logger.warn(s"##                                                                     ##")
-        env.logger.warn(s"##   It seems that you are still using Service Descriptors             ##")
-        env.logger.warn(s"##   through the Kubernetes Ingresses integration job.                 ##")
-        env.logger.warn(s"##   we count ${count} entities remaining. the next major                ")
-        env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
-        env.logger.warn(s"##                                                                     ##")
-        env.logger.warn(s"##   for more information about that, please read                      ##")
-        env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
-        env.logger.warn(s"##                                                                     ##")
-        env.logger.warn(s"-------------------------------------------------------------------------")
-        env.logger.warn("")
-      }
-    }
-  }
+  //[REMOVE SERVICEDESC] def warnAboutServiceDescriptorUsage(counter: AtomicLong)(using env: Env, ec: ExecutionContext): Unit = {
+  //[REMOVE SERVICEDESC]   val count = counter.get()
+  //[REMOVE SERVICEDESC]   if (count > 0) {
+  //[REMOVE SERVICEDESC]     val calls = callsCounter.incrementAndGet()
+  //[REMOVE SERVICEDESC]     if (calls == 1 || calls % 10 == 0) {
+  //[REMOVE SERVICEDESC]       env.logger.warn("")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"-------------------------------------------------------------------------")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##                                                                     ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   It seems that you are still using Service Descriptors             ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   through the Kubernetes Ingresses integration job.                 ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   we count ${count} entities remaining. the next major                ")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##                                                                     ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   for more information about that, please read                      ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"##                                                                     ##")
+  //[REMOVE SERVICEDESC]       env.logger.warn(s"-------------------------------------------------------------------------")
+  //[REMOVE SERVICEDESC]       env.logger.warn("")
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]   }
+  //[REMOVE SERVICEDESC] }
 }
 
 object KubernetesIngressToDescriptor {
-  def asDescriptors(
-      obj: KubernetesIngress
-  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(using
-      env: Env,
-      ec: ExecutionContext
-  ): Future[Seq[ServiceDescriptor]] = {
-    val uid       = obj.uid
-    val name      = obj.name
-    val namespace = obj.namespace
-    val ingress   = obj.ingress
-    asDescriptors(uid, name, namespace, ingress, conf, otoConfig, client, logger)(using env, ec)
-  }
+  //[REMOVE SERVICEDESC] def asDescriptors(
+  //[REMOVE SERVICEDESC]     obj: KubernetesIngress
+  //[REMOVE SERVICEDESC] )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(using
+  //[REMOVE SERVICEDESC]     env: Env,
+  //[REMOVE SERVICEDESC]     ec: ExecutionContext
+  //[REMOVE SERVICEDESC] ): Future[Seq[ServiceDescriptor]] = {
+  //[REMOVE SERVICEDESC]   val uid       = obj.uid
+  //[REMOVE SERVICEDESC]   val name      = obj.name
+  //[REMOVE SERVICEDESC]   val namespace = obj.namespace
+  //[REMOVE SERVICEDESC]   val ingress   = obj.ingress
+  //[REMOVE SERVICEDESC]   asDescriptors(uid, name, namespace, ingress, conf, otoConfig, client, logger)(using env, ec)
+  //[REMOVE SERVICEDESC] }
 
   def asRoutes(
       obj: KubernetesIngress
@@ -847,153 +847,153 @@ object KubernetesIngressToDescriptor {
     asRoutes(uid, name, namespace, ingress, conf, otoConfig, client, logger)(using env, ec)
   }
 
-  def asDescriptors(
-      uid: String,
-      name: String,
-      namespace: String,
-      ingress: IngressSupport.NetworkingV1beta1IngressItem,
-      conf: KubernetesConfig,
-      otoConfig: OtoAnnotationConfig,
-      client: KubernetesClient,
-      logger: Logger
-  )(using env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
-    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
-    Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
-      .mapAsync(1) {
-        case (rule, path) => {
-          client.fetchService(namespace, path.backend.serviceName).flatMap {
-            case None              =>
-              logger.info(s"Service ${path.backend.serviceName} not found on namespace $namespace")
-              None.future
-            case Some(kubeService) =>
-              client.fetchEndpoint(namespace, path.backend.serviceName).flatMap { kubeEndpointOpt =>
-                val id = ("kubernetes-service-" + namespace + "-" + name + "-" + rule.host.getOrElse(
-                  "wildcard"
-                ) + path.path.filterNot(_ == "/").map(v => "-" + v).getOrElse("")).slugifyWithSlash
-
-                val serviceName                    = kubeService.name
-                val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
-                val maybePortSpec: Option[JsValue] =
-                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
-                    path.backend.servicePort match {
-                      case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
-                      case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
-                      case _                       => false
-                    }
-                  }
-                maybePortSpec match {
-                  case None           =>
-                    logger.info(s"Service port not found")
-                    None.future
-                  case Some(portSpec) => {
-                    val portName             = (portSpec \ "name").as[String]
-                    val portValue            = (portSpec \ "port").as[Int]
-                    val protocol             = if (portValue == 443 || portName == "https") "https" else "http"
-                    val targets: Seq[Target] = serviceType match {
-                      case "ExternalName" =>
-                        val serviceExternalName = (kubeService.raw \ "spec" \ "externalName").as[String]
-                        Seq(Target(s"$serviceExternalName:$portValue", protocol))
-                      case _              =>
-                        kubeEndpointOpt match {
-                          case None               =>
-                            serviceType match {
-                              case "ClusterIP"    =>
-                                val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
-                              case "NodePort"     =>
-                                val serviceIp =
-                                  (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
-                              case "LoadBalancer" =>
-                                val serviceIp =
-                                  (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
-                              case _              => Seq.empty
-                            }
-                          case Some(kubeEndpoint) => {
-                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
-                            if (subsets.isEmpty) {
-                              Seq.empty
-                            } else {
-                              subsets.flatMap { subset =>
-                                val endpointPort: Int = (subset \ "ports")
-                                  .as[JsArray]
-                                  .value.toSeq
-                                  .find { port =>
-                                    (port \ "name").as[String] == portName
-                                  }
-                                  .map(v => (v \ "port").as[Int])
-                                  .getOrElse(80)
-                                val endpointProtocol  =
-                                  if (endpointPort == 443 || portName == "https") "https" else "http"
-                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
-                                addresses.map { address =>
-                                  val serviceIp = (address \ "ip").as[String]
-                                  Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
-                                }
-                              }
-                            }
-                          }
-                        }
-                    }
-                    env.datastores.serviceDescriptorDataStore
-                      .findById(id)
-                      .map {
-                        case None       => ("create", env.datastores.serviceDescriptorDataStore.initiateNewDescriptor())
-                        case Some(desc) => ("update", desc)
-                      }
-                      .map { case (action, desc) =>
-                        val creationDate: String =
-                          if (action == "create") DateTime.now().toString
-                          else desc.metadata.getOrElse("created-at", DateTime.now().toString)
-                        val newDesc              = desc.copy(
-                          id = id,
-                          groups = Seq(conf.defaultGroup),
-                          name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path
-                            .getOrElse("/"),
-                          env = "prod",
-                          domain = "otoroshi.internal.kube.cluster",
-                          subdomain = id,
-                          targets = targets,
-                          root = path.path.getOrElse("/"),
-                          matchingRoot = path.path,
-                          hosts = Seq(rule.host.getOrElse("*")),
-                          paths = path.path.toSeq,
-                          publicPatterns = Seq("/.*"),
-                          useAkkaHttpClient = true,
-                          metadata = Map(
-                            "otoroshi-provider"     -> "kubernetes-ingress",
-                            "created-at"            -> creationDate,
-                            "updated-at"            -> DateTime.now().toString,
-                            "kubernetes-name"       -> name,
-                            "kubernetes-namespace"  -> namespace,
-                            "kubernetes-path"       -> s"$namespace/$name",
-                            "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path
-                              .getOrElse("/")}".slugifyWithSlash,
-                            "kubernetes-uid"        -> uid
-                          )
-                        )
-                        action match {
-                          case "create" =>
-                            logger.info(s"""Creating service "${newDesc.name}" from "$namespace/$name"""")
-                          case "update" =>
-                            logger.info(s"""Updating service "${newDesc.name}" from "$namespace/$name"""")
-                          case _        =>
-                        }
-                        newDesc
-                      }
-                      .map { desc =>
-                        otoConfig.apply(desc).some
-                      }
-                  }
-                }
-              }
-          }
-        }
-      }
-      .runWith(Sink.seq)
-      .map(_.flatten)
-  }
+  //[REMOVE SERVICEDESC] def asDescriptors(
+  //[REMOVE SERVICEDESC]     uid: String,
+  //[REMOVE SERVICEDESC]     name: String,
+  //[REMOVE SERVICEDESC]     namespace: String,
+  //[REMOVE SERVICEDESC]     ingress: IngressSupport.NetworkingV1beta1IngressItem,
+  //[REMOVE SERVICEDESC]     conf: KubernetesConfig,
+  //[REMOVE SERVICEDESC]     otoConfig: OtoAnnotationConfig,
+  //[REMOVE SERVICEDESC]     client: KubernetesClient,
+  //[REMOVE SERVICEDESC]     logger: Logger
+  //[REMOVE SERVICEDESC] )(using env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
+  //[REMOVE SERVICEDESC]   implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  //[REMOVE SERVICEDESC]   Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
+  //[REMOVE SERVICEDESC]     .mapAsync(1) {
+  //[REMOVE SERVICEDESC]       case (rule, path) => {
+  //[REMOVE SERVICEDESC]         client.fetchService(namespace, path.backend.serviceName).flatMap {
+  //[REMOVE SERVICEDESC]           case None              =>
+  //[REMOVE SERVICEDESC]             logger.info(s"Service ${path.backend.serviceName} not found on namespace $namespace")
+  //[REMOVE SERVICEDESC]             None.future
+  //[REMOVE SERVICEDESC]           case Some(kubeService) =>
+  //[REMOVE SERVICEDESC]             client.fetchEndpoint(namespace, path.backend.serviceName).flatMap { kubeEndpointOpt =>
+  //[REMOVE SERVICEDESC]               val id = ("kubernetes-service-" + namespace + "-" + name + "-" + rule.host.getOrElse(
+  //[REMOVE SERVICEDESC]                 "wildcard"
+  //[REMOVE SERVICEDESC]               ) + path.path.filterNot(_ == "/").map(v => "-" + v).getOrElse("")).slugifyWithSlash
+  //[REMOVE SERVICEDESC]
+  //[REMOVE SERVICEDESC]               val serviceName                    = kubeService.name
+  //[REMOVE SERVICEDESC]               val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
+  //[REMOVE SERVICEDESC]               val maybePortSpec: Option[JsValue] =
+  //[REMOVE SERVICEDESC]                 (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
+  //[REMOVE SERVICEDESC]                   path.backend.servicePort match {
+  //[REMOVE SERVICEDESC]                     case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
+  //[REMOVE SERVICEDESC]                     case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
+  //[REMOVE SERVICEDESC]                     case _                       => false
+  //[REMOVE SERVICEDESC]                   }
+  //[REMOVE SERVICEDESC]                 }
+  //[REMOVE SERVICEDESC]               maybePortSpec match {
+  //[REMOVE SERVICEDESC]                 case None           =>
+  //[REMOVE SERVICEDESC]                   logger.info(s"Service port not found")
+  //[REMOVE SERVICEDESC]                   None.future
+  //[REMOVE SERVICEDESC]                 case Some(portSpec) => {
+  //[REMOVE SERVICEDESC]                   val portName             = (portSpec \ "name").as[String]
+  //[REMOVE SERVICEDESC]                   val portValue            = (portSpec \ "port").as[Int]
+  //[REMOVE SERVICEDESC]                   val protocol             = if (portValue == 443 || portName == "https") "https" else "http"
+  //[REMOVE SERVICEDESC]                   val targets: Seq[Target] = serviceType match {
+  //[REMOVE SERVICEDESC]                     case "ExternalName" =>
+  //[REMOVE SERVICEDESC]                       val serviceExternalName = (kubeService.raw \ "spec" \ "externalName").as[String]
+  //[REMOVE SERVICEDESC]                       Seq(Target(s"$serviceExternalName:$portValue", protocol))
+  //[REMOVE SERVICEDESC]                     case _              =>
+  //[REMOVE SERVICEDESC]                       kubeEndpointOpt match {
+  //[REMOVE SERVICEDESC]                         case None               =>
+  //[REMOVE SERVICEDESC]                           serviceType match {
+  //[REMOVE SERVICEDESC]                             case "ClusterIP"    =>
+  //[REMOVE SERVICEDESC]                               val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
+  //[REMOVE SERVICEDESC]                               Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+  //[REMOVE SERVICEDESC]                             case "NodePort"     =>
+  //[REMOVE SERVICEDESC]                               val serviceIp =
+  //[REMOVE SERVICEDESC]                                 (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+  //[REMOVE SERVICEDESC]                               Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+  //[REMOVE SERVICEDESC]                             case "LoadBalancer" =>
+  //[REMOVE SERVICEDESC]                               val serviceIp =
+  //[REMOVE SERVICEDESC]                                 (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+  //[REMOVE SERVICEDESC]                               Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+  //[REMOVE SERVICEDESC]                             case _              => Seq.empty
+  //[REMOVE SERVICEDESC]                           }
+  //[REMOVE SERVICEDESC]                         case Some(kubeEndpoint) => {
+  //[REMOVE SERVICEDESC]                           val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
+  //[REMOVE SERVICEDESC]                           if (subsets.isEmpty) {
+  //[REMOVE SERVICEDESC]                             Seq.empty
+  //[REMOVE SERVICEDESC]                           } else {
+  //[REMOVE SERVICEDESC]                             subsets.flatMap { subset =>
+  //[REMOVE SERVICEDESC]                               val endpointPort: Int = (subset \ "ports")
+  //[REMOVE SERVICEDESC]                                 .as[JsArray]
+  //[REMOVE SERVICEDESC]                                 .value.toSeq
+  //[REMOVE SERVICEDESC]                                 .find { port =>
+  //[REMOVE SERVICEDESC]                                   (port \ "name").as[String] == portName
+  //[REMOVE SERVICEDESC]                                 }
+  //[REMOVE SERVICEDESC]                                 .map(v => (v \ "port").as[Int])
+  //[REMOVE SERVICEDESC]                                 .getOrElse(80)
+  //[REMOVE SERVICEDESC]                               val endpointProtocol  =
+  //[REMOVE SERVICEDESC]                                 if (endpointPort == 443 || portName == "https") "https" else "http"
+  //[REMOVE SERVICEDESC]                               val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
+  //[REMOVE SERVICEDESC]                               addresses.map { address =>
+  //[REMOVE SERVICEDESC]                                 val serviceIp = (address \ "ip").as[String]
+  //[REMOVE SERVICEDESC]                                 Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
+  //[REMOVE SERVICEDESC]                               }
+  //[REMOVE SERVICEDESC]                             }
+  //[REMOVE SERVICEDESC]                           }
+  //[REMOVE SERVICEDESC]                         }
+  //[REMOVE SERVICEDESC]                       }
+  //[REMOVE SERVICEDESC]                   }
+  //[REMOVE SERVICEDESC]                   env.datastores.serviceDescriptorDataStore
+  //[REMOVE SERVICEDESC]                     .findById(id)
+  //[REMOVE SERVICEDESC]                     .map {
+  //[REMOVE SERVICEDESC]                       case None       => ("create", env.datastores.serviceDescriptorDataStore.initiateNewDescriptor())
+  //[REMOVE SERVICEDESC]                       case Some(desc) => ("update", desc)
+  //[REMOVE SERVICEDESC]                     }
+  //[REMOVE SERVICEDESC]                     .map { case (action, desc) =>
+  //[REMOVE SERVICEDESC]                       val creationDate: String =
+  //[REMOVE SERVICEDESC]                         if (action == "create") DateTime.now().toString
+  //[REMOVE SERVICEDESC]                         else desc.metadata.getOrElse("created-at", DateTime.now().toString)
+  //[REMOVE SERVICEDESC]                       val newDesc              = desc.copy(
+  //[REMOVE SERVICEDESC]                         id = id,
+  //[REMOVE SERVICEDESC]                         groups = Seq(conf.defaultGroup),
+  //[REMOVE SERVICEDESC]                         name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path
+  //[REMOVE SERVICEDESC]                           .getOrElse("/"),
+  //[REMOVE SERVICEDESC]                         env = "prod",
+  //[REMOVE SERVICEDESC]                         domain = "otoroshi.internal.kube.cluster",
+  //[REMOVE SERVICEDESC]                         subdomain = id,
+  //[REMOVE SERVICEDESC]                         targets = targets,
+  //[REMOVE SERVICEDESC]                         root = path.path.getOrElse("/"),
+  //[REMOVE SERVICEDESC]                         matchingRoot = path.path,
+  //[REMOVE SERVICEDESC]                         hosts = Seq(rule.host.getOrElse("*")),
+  //[REMOVE SERVICEDESC]                         paths = path.path.toSeq,
+  //[REMOVE SERVICEDESC]                         publicPatterns = Seq("/.*"),
+  //[REMOVE SERVICEDESC]                         useAkkaHttpClient = true,
+  //[REMOVE SERVICEDESC]                         metadata = Map(
+  //[REMOVE SERVICEDESC]                           "otoroshi-provider"     -> "kubernetes-ingress",
+  //[REMOVE SERVICEDESC]                           "created-at"            -> creationDate,
+  //[REMOVE SERVICEDESC]                           "updated-at"            -> DateTime.now().toString,
+  //[REMOVE SERVICEDESC]                           "kubernetes-name"       -> name,
+  //[REMOVE SERVICEDESC]                           "kubernetes-namespace"  -> namespace,
+  //[REMOVE SERVICEDESC]                           "kubernetes-path"       -> s"$namespace/$name",
+  //[REMOVE SERVICEDESC]                           "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path
+  //[REMOVE SERVICEDESC]                             .getOrElse("/")}".slugifyWithSlash,
+  //[REMOVE SERVICEDESC]                           "kubernetes-uid"        -> uid
+  //[REMOVE SERVICEDESC]                         )
+  //[REMOVE SERVICEDESC]                       )
+  //[REMOVE SERVICEDESC]                       action match {
+  //[REMOVE SERVICEDESC]                         case "create" =>
+  //[REMOVE SERVICEDESC]                           logger.info(s"""Creating service "${newDesc.name}" from "$namespace/$name"""")
+  //[REMOVE SERVICEDESC]                         case "update" =>
+  //[REMOVE SERVICEDESC]                           logger.info(s"""Updating service "${newDesc.name}" from "$namespace/$name"""")
+  //[REMOVE SERVICEDESC]                         case _        =>
+  //[REMOVE SERVICEDESC]                       }
+  //[REMOVE SERVICEDESC]                       newDesc
+  //[REMOVE SERVICEDESC]                     }
+  //[REMOVE SERVICEDESC]                     .map { desc =>
+  //[REMOVE SERVICEDESC]                       otoConfig.apply(desc).some
+  //[REMOVE SERVICEDESC]                     }
+  //[REMOVE SERVICEDESC]                 }
+  //[REMOVE SERVICEDESC]               }
+  //[REMOVE SERVICEDESC]             }
+  //[REMOVE SERVICEDESC]         }
+  //[REMOVE SERVICEDESC]       }
+  //[REMOVE SERVICEDESC]     }
+  //[REMOVE SERVICEDESC]     .runWith(Sink.seq)
+  //[REMOVE SERVICEDESC]     .map(_.flatten)
+  //[REMOVE SERVICEDESC] }
 
   def asRoutes(
       uid: String,
@@ -1368,40 +1368,40 @@ object IngressSupport {
   }
 
   case class NetworkingV1beta1IngressBackend(serviceName: String, servicePort: IntOrString) {
-    def asDescriptor(
-        namespace: String,
-        conf: KubernetesConfig,
-        otoConfig: OtoAnnotationConfig,
-        client: KubernetesClient,
-        logger: Logger
-    )(using env: Env, ec: ExecutionContext): Future[Option[ServiceDescriptor]] = {
-      val ingress = IngressSupport.NetworkingV1beta1IngressItem(
-        spec = NetworkingV1beta1IngressSpec(
-          backend = None,
-          rules = Seq(
-            NetworkingV1beta1IngressRule(
-              host = "*".some,
-              http = NetworkingV1beta1HTTPIngressRuleValue.apply(
-                Seq(
-                  NetworkingV1beta1HTTPIngressPath(
-                    backend = this,
-                    path = "/".some
-                  )
-                )
-              )
-            )
-          ),
-          tls = Seq.empty
-        ),
-        status = NetworkingV1beta1IngressStatus(V1LoadBalancerStatus(Seq.empty))
-      )
-      KubernetesIngressToDescriptor
-        .asDescriptors("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(using 
-          env,
-          ec
-        )
-        .map(_.headOption)
-    }
+    //[REMOVE SERVICEDESC]def asDescriptor(
+    //[REMOVE SERVICEDESC]    namespace: String,
+    //[REMOVE SERVICEDESC]    conf: KubernetesConfig,
+    //[REMOVE SERVICEDESC]    otoConfig: OtoAnnotationConfig,
+    //[REMOVE SERVICEDESC]    client: KubernetesClient,
+    //[REMOVE SERVICEDESC]    logger: Logger
+    //[REMOVE SERVICEDESC])(using env: Env, ec: ExecutionContext): Future[Option[ServiceDescriptor]] = {
+    //[REMOVE SERVICEDESC]  val ingress = IngressSupport.NetworkingV1beta1IngressItem(
+    //[REMOVE SERVICEDESC]    spec = NetworkingV1beta1IngressSpec(
+    //[REMOVE SERVICEDESC]      backend = None,
+    //[REMOVE SERVICEDESC]      rules = Seq(
+    //[REMOVE SERVICEDESC]        NetworkingV1beta1IngressRule(
+    //[REMOVE SERVICEDESC]          host = "*".some,
+    //[REMOVE SERVICEDESC]          http = NetworkingV1beta1HTTPIngressRuleValue.apply(
+    //[REMOVE SERVICEDESC]            Seq(
+    //[REMOVE SERVICEDESC]              NetworkingV1beta1HTTPIngressPath(
+    //[REMOVE SERVICEDESC]                backend = this,
+    //[REMOVE SERVICEDESC]                path = "/".some
+    //[REMOVE SERVICEDESC]              )
+    //[REMOVE SERVICEDESC]            )
+    //[REMOVE SERVICEDESC]          )
+    //[REMOVE SERVICEDESC]        )
+    //[REMOVE SERVICEDESC]      ),
+    //[REMOVE SERVICEDESC]      tls = Seq.empty
+    //[REMOVE SERVICEDESC]    ),
+    //[REMOVE SERVICEDESC]    status = NetworkingV1beta1IngressStatus(V1LoadBalancerStatus(Seq.empty))
+    //[REMOVE SERVICEDESC]  )
+    //[REMOVE SERVICEDESC]  KubernetesIngressToDescriptor
+    //[REMOVE SERVICEDESC]    .asDescriptors("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(using
+    //[REMOVE SERVICEDESC]      env,
+    //[REMOVE SERVICEDESC]      ec
+    //[REMOVE SERVICEDESC]    )
+    //[REMOVE SERVICEDESC]    .map(_.headOption)
+    //[REMOVE SERVICEDESC]}
     def asRoute(
         namespace: String,
         conf: KubernetesConfig,

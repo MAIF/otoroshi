@@ -12,7 +12,7 @@ import { ServiceHealthPage } from '../ServiceHealthPage';
 import { ServiceAnalyticsPage } from '../ServiceAnalyticsPage';
 import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
 import { RouteWizard } from './RouteWizard';
-import { ImportServiceDescriptor } from './ImportServiceDescriptor';
+//[REMOVE SERVICEDESC] import { ImportServiceDescriptor } from './ImportServiceDescriptor';
 import { v4 } from 'uuid';
 import { FeedbackButton } from './FeedbackButton';
 import Loader from '../../components/Loader';
@@ -320,14 +320,16 @@ class Manager extends React.Component {
 
 const RoutesView = ({ history, globalEnv }) => {
   const [creation, setCreation] = useState(false);
-  const [importServiceDescriptor, setImportServiceDescriptor] = useState(false);
+  //[REMOVE SERVICEDESC] const [importServiceDescriptor, setImportServiceDescriptor] = useState(false);
 
   return (
     <>
       {creation && <RouteWizard hide={() => setCreation(false)} history={history} />}
+      {/*[REMOVE SERVICEDESC]
       {importServiceDescriptor && (
         <ImportServiceDescriptor hide={() => setImportServiceDescriptor(false)} history={history} />
       )}
+      */}
       <RoutesTable
         globalEnv={globalEnv}
         injectTopBar={
@@ -343,6 +345,7 @@ const RoutesView = ({ history, globalEnv }) => {
             >
               <i className="fas fa-hat-wizard" /> Create with wizard
             </button>
+            {/*[REMOVE SERVICEDESC]
             <button
               onClick={() => setImportServiceDescriptor(true)}
               className="btn btn-primary btn-sm"
@@ -354,6 +357,7 @@ const RoutesView = ({ history, globalEnv }) => {
             >
               <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
             </button>
+            */}
           </>
         }
       />

@@ -1,6 +1,6 @@
 # Otoroshi
 
-[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/dmbwZrfpcQ) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://github.com/MAIF/otoroshi/releases/download/v17.17.0/otoroshi.jar) [![Build status](https://github.com/MAIF/otoroshi/actions/workflows/server_build_and_test.yaml/badge.svg)](https://github.com/MAIF/otoroshi/actions/workflows/server_build_and_test.yaml) [![Playwright E2E](https://github.com/MAIF/otoroshi/actions/workflows/playwright_e2e.yaml/badge.svg)](https://github.com/MAIF/otoroshi/actions/workflows/playwright_e2e.yaml)
+[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/dmbwZrfpcQ) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://github.com/MAIF/otoroshi/releases/download/v18.0.0-preview3/otoroshi.jar) [![Build status](https://github.com/MAIF/otoroshi/actions/workflows/server_build_and_test.yaml/badge.svg)](https://github.com/MAIF/otoroshi/actions/workflows/server_build_and_test.yaml) [![Playwright E2E](https://github.com/MAIF/otoroshi/actions/workflows/playwright_e2e.yaml/badge.svg)](https://github.com/MAIF/otoroshi/actions/workflows/playwright_e2e.yaml)
 
 <p align="center">
   <img style="width: 45%;" src="https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png" alt="Otoroshi http reverse proxy and api management"/>
@@ -8,7 +8,7 @@
 
 **Otoroshi** is a layer of lightweight api management on top of a modern http reverse proxy written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developed by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamically at runtime.
 
-**Otoroshi** is built on top of <a href="https://akka.io">akka</a> and <a href="https://www.playframework.com">playframework</a>.
+**Otoroshi** is built on top of <a href="https://pekko.apache.org">Apache Pekko</a> and <a href="https://www.playframework.com">playframework</a>.
 
 ## Reference Documentation
 

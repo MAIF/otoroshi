@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkotoroshi_documentation=self.webpackChunkotoroshi_documentation||[]).push([["3220"],{1912(o){o.exports=JSON.parse('{"blogBasePath":"/otoroshi/devmanual/blog","blogTitle":"Blog","authorsListPath":"/otoroshi/devmanual/blog/authors"}')}}]);

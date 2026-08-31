@@ -20,13 +20,11 @@ cd otoroshi-vx.x.x
 
 ## From .jar file
 
-For Java 11
+Otoroshi requires **Java 17 or later**. The jar is compiled for Java 17, and the
+official docker images ship JDK 17, 21 and 25.
 
-```sh
-java -jar otoroshi.jar
-```
-
-if you want to run the jar file for on a JDK above JDK11, you'll have to add the following flags
+Because the gateway reaches into internal JDK APIs for TLS and certificate handling, the
+following flags are required on every supported JDK:
 
 ```sh
 java \
