@@ -1,4 +1,4 @@
-package next.models
+package otoroshi.next.models
 
 import org.joda.time.DateTime
 import otoroshi.env.Env

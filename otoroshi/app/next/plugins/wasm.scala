@@ -836,7 +836,10 @@ class WasmRequestHandler extends RequestHandler {
   }
 }
 
-case class FakeWasmContext(config: JsValue, idx: Int = 0) extends NgCachedConfigContext {
+case class FakeWasmContext(
+    config: JsValue,
+    idx: Int = 0
+) extends NgCachedConfigContext {
   override def route: NgRoute = NgRoute.empty
 }
 

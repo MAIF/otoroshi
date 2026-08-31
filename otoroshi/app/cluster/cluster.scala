@@ -17,7 +17,7 @@ import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
-import next.models.{
+import otoroshi.next.models.{
   ApiDataStore,
   ApiSubscriptionDataStore,
   KvApiDataStore,

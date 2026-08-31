@@ -1,4 +1,4 @@
-package next.models
+package otoroshi.next.models
 
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.util.ByteString
@@ -27,6 +27,80 @@ import java.net.URI
 import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+
+case class NgPluginsWithOverride(plugins: NgPlugins, overrides: Boolean) {
+  def json: JsValue = Json.obj(
+    "plugins" -> plugins.json,
+    "overrides" -> overrides,
+  )
+}
+
+object NgPluginsWithOverride {
+  val format = new Format[NgPluginsWithOverride] {
+    override def writes(o: NgPluginsWithOverride): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgPluginsWithOverride] = Try {
+      NgPluginsWithOverride(
+        plugins = NgPlugins.readFrom(json.select("plugins")),
+        overrides = json.select("overrides").asOpt[Boolean].getOrElse(false)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+  }
+}
+
+// what a plan declares: the same thing an apikey does, plus the ability to point at a flow of its
+// api rather than carry the chain inline, so that several plans share one chain. Both can be set,
+// the flow comes first and the inline slots extend it. ApiPlan.computedPlugins resolves the
+// reference and hands back a plain NgPluginsWithOverride.
+case class ApiPlanPlugins(plugins: NgPlugins, overrides: Boolean, flowRef: Option[String] = None) {
+  def json: JsValue = Json.obj(
+    "plugins" -> plugins.json,
+    "overrides" -> overrides,
+    "flow_ref" -> flowRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+  )
+}
+
+object ApiPlanPlugins {
+  val format = new Format[ApiPlanPlugins] {
+    override def writes(o: ApiPlanPlugins): JsValue = o.json
+    override def reads(json: JsValue): JsResult[ApiPlanPlugins] = Try {
+      ApiPlanPlugins(
+        plugins = NgPlugins.readFrom(json.select("plugins")),
+        overrides = json.select("overrides").asOpt[Boolean].getOrElse(false),
+        flowRef = json.select("flow_ref").asOpt[String].filter(_.trim.nonEmpty)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(v) => JsSuccess(v)
+    }
+  }
+}
+
+case class ApiRef(api: String, plan: String, subscription: String) {
+  def json: JsValue = Json.obj(
+    "api" -> api,
+    "plan" -> plan,
+    "sub" -> subscription,
+  )
+}
+
+object ApiRef {
+  val format = new Format[ApiRef] {
+    override def writes(o: ApiRef): JsValue = o.json
+    override def reads(json: JsValue): JsResult[ApiRef] = Try {
+      ApiRef(
+        api = json.selectAsString("api"),
+        plan = json.selectAsString("plan"),
+        subscription = json.selectAsString("sub"),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+  }
+}
 
 sealed trait ApiState {
   def name: String
@@ -295,13 +369,41 @@ case class ApiDocumentationResourceRef(raw: JsObject) {
     raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
 }
 
-trait ApiDocumentationAccessModeConfiguration {
+trait ApiAccessModeConfiguration {
   def apiKind: ApiKind
+  def plugins: NgPlugins = NgPlugins(Seq.empty) // TODO: implement for each kind with dedicated plugin when needed
+}
+
+case class KeylessAccessModeConfiguration(
+  expr: Option[String] = None,
+  createIfMissing: Boolean = false
+) extends ApiAccessModeConfiguration {
+  override def apiKind: ApiKind = ApiKind.Keyless
+}
+
+object KeylessAccessModeConfiguration {
+  def fmt = new Format[KeylessAccessModeConfiguration] {
+    override def reads(json: JsValue): JsResult[KeylessAccessModeConfiguration] = Try {
+      KeylessAccessModeConfiguration(
+        expr = json.selectAsOptString("expr"),
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: KeylessAccessModeConfiguration): JsValue             = Json.obj(
+      "expr"              -> o.expr,
+      "create_if_missing" -> o.createIfMissing
+    )
+  }
 }
 
 case class JWTAccessModeConfiguration(
-    verifier: Option[String] = None
-) extends ApiDocumentationAccessModeConfiguration {
+    verifier: Option[String] = None,
+    clientIdPath: Option[String] = Some("client_id"),
+    createIfMissing: Boolean = false,
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.JWT
 }
 
@@ -309,22 +411,28 @@ object JWTAccessModeConfiguration {
   def fmt = new Format[JWTAccessModeConfiguration] {
     override def reads(json: JsValue): JsResult[JWTAccessModeConfiguration] = Try {
       JWTAccessModeConfiguration(
-        verifier = json.select("verifier").asOpt[String]
+        verifier = json.select("verifier").asOpt[String],
+        clientIdPath = json.select("client_id_path").asOpt[String],
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: JWTAccessModeConfiguration): JsValue             = Json.obj(
-      "verifier" -> o.verifier
+      "verifier" -> o.verifier,
+      "client_id_path" -> o.clientIdPath,
+      "create_if_missing" -> o.createIfMissing,
     )
   }
 }
 
 case class MtlsAccessModeConfiguration(
     regexSubjectDNs: Seq[String] = Seq.empty,
-    regexIssuerDNs: Seq[String] = Seq.empty
-) extends ApiDocumentationAccessModeConfiguration {
+    regexIssuerDNs: Seq[String] = Seq.empty,
+    clientIdField: Option[String] = None,
+    createIfMissing: Boolean = false
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Mtls
 }
 
@@ -333,7 +441,9 @@ object MtlsAccessModeConfiguration {
     override def reads(json: JsValue): JsResult[MtlsAccessModeConfiguration] = Try {
       MtlsAccessModeConfiguration(
         regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
-        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        clientIdField = json.select("client_id_field").asOpt[String].filter(_.trim.nonEmpty),
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -341,14 +451,20 @@ object MtlsAccessModeConfiguration {
     }
     override def writes(o: MtlsAccessModeConfiguration): JsValue             = Json.obj(
       "regex_subject_dns" -> o.regexSubjectDNs,
-      "regex_issuer_dns"  -> o.regexIssuerDNs
+      "regex_issuer_dns"  -> o.regexIssuerDNs,
+      "client_id_field"   -> o.clientIdField,
+      "create_if_missing" -> o.createIfMissing
     )
   }
 }
 
 case class OAuth2RemoteAccessModeConfiguration(
-    verifier: Option[String] = None
-) extends ApiDocumentationAccessModeConfiguration {
+    verifier: Option[String] = None,
+    clientIdPath: Option[String] = Some("client_id"),
+    fetchUser: Boolean = false,
+    userMetadataKey: String = "user_profile",
+    createIfMissing: Boolean = false
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Remote
 }
 
@@ -356,14 +472,22 @@ object OAuth2RemoteAccessModeConfiguration {
   def fmt = new Format[OAuth2RemoteAccessModeConfiguration] {
     override def reads(json: JsValue): JsResult[OAuth2RemoteAccessModeConfiguration] = Try {
       OAuth2RemoteAccessModeConfiguration(
-        verifier = json.selectAsOptString("verifier")
+        verifier = json.selectAsOptString("verifier"),
+        clientIdPath = json.select("client_id_path").asOpt[String],
+        fetchUser = json.select("fetch_user").asOpt[Boolean].getOrElse(false),
+        userMetadataKey = json.select("user_metadata_key").asOpt[String].getOrElse("user_profile"),
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: OAuth2RemoteAccessModeConfiguration): JsValue             = Json.obj(
-      "verifier" -> o.verifier
+      "verifier"          -> o.verifier,
+      "client_id_path"    -> o.clientIdPath,
+      "fetch_user"        -> o.fetchUser,
+      "user_metadata_key" -> o.userMetadataKey,
+      "create_if_missing" -> o.createIfMissing
     )
   }
 }
@@ -371,7 +495,7 @@ object OAuth2RemoteAccessModeConfiguration {
 case class OAuth2AccessModeConfiguration(
     defaultKeyPair: String,
     expiration: Int
-) extends ApiDocumentationAccessModeConfiguration {
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Local
 }
 
@@ -406,7 +530,7 @@ case class ApikeyAccessModeConfiguration(
     rotation: ApiKeyRotation = ApiKeyRotation(),
     tags: Seq[String] = Seq.empty[String],
     metadata: Map[String, String] = Map.empty[String, String]
-) extends ApiDocumentationAccessModeConfiguration {
+) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Apikey
   def json: JsValue = {
     val enabled            = validUntil match {
@@ -539,15 +663,15 @@ object ApiDocumentationPlanVisibilityKind       {
   }
 }
 
-case class ApiDocumentationPlanVisibility(kind: ApiDocumentationPlanVisibilityKind, config: JsObject = Json.obj()) {
-  def json: JsValue = ApiDocumentationPlanVisibility.format.writes(this)
+case class ApiPlanVisibility(kind: ApiDocumentationPlanVisibilityKind, config: JsObject = Json.obj()) {
+  def json: JsValue = ApiPlanVisibility.format.writes(this)
 }
 
-object ApiDocumentationPlanVisibility {
-  val Public: ApiDocumentationPlanVisibility = ApiDocumentationPlanVisibility(ApiDocumentationPlanVisibilityKind.Public)
-  val format                                 = new Format[ApiDocumentationPlanVisibility] {
-    override def reads(json: JsValue): JsResult[ApiDocumentationPlanVisibility] = Try {
-      ApiDocumentationPlanVisibility(
+object ApiPlanVisibility {
+  val Public: ApiPlanVisibility = ApiPlanVisibility(ApiDocumentationPlanVisibilityKind.Public)
+  val format                                 = new Format[ApiPlanVisibility] {
+    override def reads(json: JsValue): JsResult[ApiPlanVisibility] = Try {
+      ApiPlanVisibility(
         kind = ApiDocumentationPlanVisibilityKind(json.select("kind").asOptString.getOrElse("public")),
         config = json.select("config").asOpt[JsObject].getOrElse(Json.obj())
       )
@@ -557,7 +681,7 @@ object ApiDocumentationPlanVisibility {
         JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
-    override def writes(o: ApiDocumentationPlanVisibility): JsValue             = Json.obj(
+    override def writes(o: ApiPlanVisibility): JsValue             = Json.obj(
       "kind"   -> o.kind.json,
       "config" -> o.config
     )
@@ -588,16 +712,16 @@ object ApiDocumentationPlanValidationKind       {
   }
 }
 
-case class ApiDocumentationPlanValidation(kind: ApiDocumentationPlanValidationKind, config: JsObject = Json.obj()) {
+case class ApiPlanValidation(kind: ApiDocumentationPlanValidationKind, config: JsObject = Json.obj()) {
   def isAuto: Boolean = kind == ApiDocumentationPlanValidationKind.Auto
-  def json: JsValue   = ApiDocumentationPlanValidation.format.writes(this)
+  def json: JsValue   = ApiPlanValidation.format.writes(this)
 }
-object ApiDocumentationPlanValidation                                                                              {
-  val Auto   = ApiDocumentationPlanValidation(ApiDocumentationPlanValidationKind.Auto)
-  val format = new Format[ApiDocumentationPlanValidation] {
+object ApiPlanValidation                                                                              {
+  val Auto   = ApiPlanValidation(ApiDocumentationPlanValidationKind.Auto)
+  val format = new Format[ApiPlanValidation] {
 
-    override def reads(json: JsValue): JsResult[ApiDocumentationPlanValidation] = Try {
-      ApiDocumentationPlanValidation(
+    override def reads(json: JsValue): JsResult[ApiPlanValidation] = Try {
+      ApiPlanValidation(
         kind = ApiDocumentationPlanValidationKind(json.select("kind").asOptString.getOrElse("auto")),
         config = json.select("config").asOpt[JsObject].getOrElse(Json.obj())
       )
@@ -608,26 +732,32 @@ object ApiDocumentationPlanValidation                                           
       case Success(value) => JsSuccess(value)
     }
 
-    override def writes(o: ApiDocumentationPlanValidation): JsValue = Json.obj(
+    override def writes(o: ApiPlanValidation): JsValue = Json.obj(
       "kind"   -> o.kind.json,
       "config" -> o.config
     )
   }
 }
 
-case class ApiDocumentationPlan(raw: JsObject) {
+case class ApiPlan(raw: JsObject) {
   lazy val accessModeConfigurationType                                              = raw.selectAsOptString("access_mode_configuration_type").getOrElse("keyless")
   lazy val id: String                                                               = raw.selectAsString("id")
   lazy val name: String                                                             = raw.selectAsString("name")
   lazy val description: String                                                      = raw.selectAsOptString("description").getOrElse("No description")
   lazy val pricing: ApiPricing                                                      = raw.select("pricing").as(using ApiPricing.format)
+  // a plan always carries a throttling strategy, so that an apikey it mints is rate limited exactly
+  // like a classic one: without an explicit strategy it falls back on the legacy one with the
+  // default quotas, which is what an apikey created by hand gets.
   lazy val rateLimiting: Option[ThrottlingStrategyConfig]                           =
     raw
       .select("rateLimiting")
       .asOpt[JsObject]
+      .orElse(raw.select("rate_limiting").asOpt[JsObject])
       .flatMap(rateLimiting => rateLimiting.select("strategy").asOpt(using ThrottlingStrategyConfig.fmt))
-  lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
+      .orElse(LegacyThrottlingStrategyConfig().some)
+  lazy val accessModeConfiguration: Option[ApiAccessModeConfiguration] =
     accessModeConfigurationType match {
+      case "keyless"       => (raw \ "access_mode_configuration").asOpt(using KeylessAccessModeConfiguration.fmt)
       case "apikey"        => (raw \ "access_mode_configuration").asOpt(using ApikeyAccessModeConfiguration.fmt)
       case "jwt"           => (raw \ "access_mode_configuration").asOpt(using JWTAccessModeConfiguration.fmt)
       case "mtls"          => (raw \ "access_mode_configuration").asOpt(using MtlsAccessModeConfiguration.fmt)
@@ -643,16 +773,43 @@ case class ApiDocumentationPlan(raw: JsObject) {
   }
   lazy val tags: Seq[String]                                                        = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val metadata: Map[String, String]                                            = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
-  lazy val validation: ApiDocumentationPlanValidation                               = raw
+  lazy val validation: ApiPlanValidation                               = raw
     .select("validation")
     .asOpt[JsObject]
-    .flatMap(o => ApiDocumentationPlanValidation.format.reads(o).asOpt)
-    .getOrElse(ApiDocumentationPlanValidation.Auto)
-  lazy val visibility: ApiDocumentationPlanVisibility                               = raw
+    .flatMap(o => ApiPlanValidation.format.reads(o).asOpt)
+    .getOrElse(ApiPlanValidation.Auto)
+  lazy val visibility: ApiPlanVisibility                               = raw
     .select("visibility")
     .asOpt[JsObject]
-    .flatMap(o => ApiDocumentationPlanVisibility.format.reads(o).asOpt)
-    .getOrElse(ApiDocumentationPlanVisibility.Public)
+    .flatMap(o => ApiPlanVisibility.format.reads(o).asOpt)
+    .getOrElse(ApiPlanVisibility.Public)
+  // the apikey settings a plan hands over when an apikey has to be minted for a consumer. only an
+  // apikey plan carries a full template, the other kinds only have what the plan itself declares.
+  lazy val apikeyTemplate: ApikeyAccessModeConfiguration = accessModeConfiguration match {
+    case Some(conf: ApikeyAccessModeConfiguration) => conf
+    case _                                         => ApikeyAccessModeConfiguration(tags = tags, metadata = metadata)
+  }
+  lazy val plugins: Option[ApiPlanPlugins] =
+    raw.select("plugins").asOpt[JsObject].flatMap(o => ApiPlanPlugins.format.reads(o).asOpt)
+  lazy val hasPlugins: Boolean =
+    accessModeConfiguration.exists(_.plugins.nonEmpty) || plugins.exists(p => p.plugins.nonEmpty || p.flowRef.isDefined)
+  // takes the api because a plan can reference one of its flows instead of listing the plugins:
+  // the reference is resolved here, and an inline chain extends whatever the flow brought.
+  def computedPlugins(api: Api): NgPluginsWithOverride = {
+    val fromFlow = plugins
+      .flatMap(_.flowRef)
+      .flatMap(ref => api.flows.find(_.id == ref))
+      .map(_.plugins.slots)
+      .getOrElse(Seq.empty)
+    NgPluginsWithOverride(
+      plugins = NgPlugins(
+        accessModeConfiguration.map(_.plugins.slots).getOrElse(Seq.empty)
+          ++ fromFlow
+          ++ plugins.map(_.plugins.slots).getOrElse(Seq.empty)
+      ),
+      overrides = plugins.exists(_.overrides),
+    )
+  }
 }
 
 case class ApiDocumentationSource(raw: JsObject) {
@@ -914,8 +1071,8 @@ object ApiSubscription {
   val METADATA_AND_TAGS_SEPARATOR = " | "
   val CORE_METADATA               = Seq("updated_at")
 
-  private def generateNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(using
-      env: Env
+  private def generateNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
+                                                                                                env: Env
   ) = {
     val configPlan = plan.accessModeConfiguration
       .map(_.asInstanceOf[ApikeyAccessModeConfiguration])
@@ -941,6 +1098,7 @@ object ApiSubscription {
       rotation = configPlan.rotation,
       authorizedEntities = Seq(ApiIdentifier(api.id)),
       throttlingStrategy = plan.rateLimiting,
+      apiRef = ApiRef(api = api.id, plan = plan.id, subscription = subscription.id).some,
       metadata = configPlan.metadata ++ subscription.metadata +
         (PLAN_METADATA_KEY         -> configPlan.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
         (SUBSCRIPTION_METADATA_KEY -> subscription.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
@@ -953,8 +1111,8 @@ object ApiSubscription {
       .copy(enabled = subscription.status != ApiSubscriptionDisabled)
   }
 
-  private def createNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(using
-      env: Env
+  private def createNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
+                                                                                              env: Env
   ) = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
@@ -991,8 +1149,8 @@ object ApiSubscription {
     currentApikeyTags.filter(key => !managed_keys.contains(key))
   }
 
-  private def updateApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(using
-      env: Env
+  private def updateApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
+                                                                                           env: Env
   ): Future[Seq[Either[String, Boolean]]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
@@ -1025,11 +1183,11 @@ object ApiSubscription {
   }
 
   def handleSubscriptionChanged(
-      api: Api,
-      plan: ApiDocumentationPlan,
-      subscription: ApiSubscription,
-      action: WriteAction,
-      isDraft: Boolean
+                                 api: Api,
+                                 plan: ApiPlan,
+                                 subscription: ApiSubscription,
+                                 action: WriteAction,
+                                 isDraft: Boolean
   )(using
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
@@ -1456,38 +1614,38 @@ object ApiStateHook {
 }
 
 case class Api(
-    kind: String = "Api",
-    location: EntityLocation,
-    id: String,
-    name: String,
-    description: String,
-    domain: String,
-    contextPath: String,
-    tags: Seq[String] = Seq.empty,
-    metadata: Map[String, String] = Map.empty,
-    owner: UserRef = UserRef.empty,
-    members: Seq[UserRef] = Seq.empty,
-    visibility: ApiVisibility = ApiVisibility.Public,
-    version: String,
-    versions: Seq[String] = Seq("0.0.1"),
-    debugFlow: Boolean,
-    capture: Boolean,
-    exportReporting: Boolean,
-    groups: Seq[String],
-    state: ApiState,
-    enabled: Boolean = true,
-    blueprint: ApiBlueprint,
-    routes: Seq[ApiRoute] = Seq.empty,
-    backends: Seq[ApiBackend] = Seq.empty,
-    plans: Seq[ApiDocumentationPlan] = Seq.empty,
-    flows: Seq[ApiFlows] = Seq.empty,
-    clientsBackendConfig: Seq[ApiBackendClient] = Seq.empty,
-    documentation: Option[ApiDocumentation] = None,
-    deployments: Seq[ApiDeployment] = Seq.empty,
-    clients: Seq[ApiClient] = Seq.empty,
-    testing: ApiTesting,
-    hooks: Seq[ApiStateHook] = Seq.empty
-    // TODO: monitoring and heath ????
+                kind: String = "Api",
+                location: EntityLocation,
+                id: String,
+                name: String,
+                description: String,
+                domain: String,
+                contextPath: String,
+                tags: Seq[String] = Seq.empty,
+                metadata: Map[String, String] = Map.empty,
+                owner: UserRef = UserRef.empty,
+                members: Seq[UserRef] = Seq.empty,
+                visibility: ApiVisibility = ApiVisibility.Public,
+                version: String,
+                versions: Seq[String] = Seq("0.0.1"),
+                debugFlow: Boolean,
+                capture: Boolean,
+                exportReporting: Boolean,
+                groups: Seq[String],
+                state: ApiState,
+                enabled: Boolean = true,
+                blueprint: ApiBlueprint,
+                routes: Seq[ApiRoute] = Seq.empty,
+                backends: Seq[ApiBackend] = Seq.empty,
+                plans: Seq[ApiPlan] = Seq.empty,
+                flows: Seq[ApiFlows] = Seq.empty,
+                clientsBackendConfig: Seq[ApiBackendClient] = Seq.empty,
+                documentation: Option[ApiDocumentation] = None,
+                deployments: Seq[ApiDeployment] = Seq.empty,
+                clients: Seq[ApiClient] = Seq.empty,
+                testing: ApiTesting,
+                hooks: Seq[ApiStateHook] = Seq.empty
+                // TODO: monitoring and heath ????
 ) extends EntityLocationSupport {
   override def internalId: String = id
 
@@ -1500,6 +1658,14 @@ case class Api(
   override def theTags: Seq[String] = tags
 
   override def theMetadata: Map[String, String] = metadata
+
+  // the plugin chain a plan contributes to a call never changes for a given api, but ApiKey.pluginFlow
+  // needs it on every request that carries an apiRef. it is computed once per api instance here,
+  // instead of being rebuilt per call: the proxy state rebuilds those instances when the api changes,
+  // so this stays in sync while costing a single map lookup on the hot path. plans without plugins
+  // are left out, they behave like no plan at all.
+  lazy val computedPluginsByPlan: Map[String, NgPluginsWithOverride] =
+    plans.collect { case plan if plan.hasPlugins => (plan.id, plan.computedPlugins(this)) }.toMap
 
   def resolveDocumentation()(using env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
     documentation.flatMap(_.source) match {
@@ -1579,104 +1745,180 @@ case class Api(
 
   case class PluginWithConfig(pluginId: String, config: JsValue = Json.obj(), pluginIndex: Option[PluginIndex] = None)
 
-  private def applyPlan(route: NgRoute, plan: ApiDocumentationPlan): NgRoute = {
-    val plugins = plan.accessModeConfigurationType match {
-      case "apikey"        =>
+  private def pluginsForPlan(plan: ApiPlan, api: Api): Seq[PluginWithConfig] = {
+    plan.accessModeConfigurationType match {
+      case "keyless"                 =>
+        val keylessConfig = plan.accessModeConfiguration
+          .map(_.asInstanceOf[KeylessAccessModeConfiguration])
+          .getOrElse(KeylessAccessModeConfiguration())
+        Seq(
+          PluginWithConfig(
+            pluginId[NgExpressionApikeyExtractor],
+            // a keyless access still gets an identity, so that the quotas and throttling of the plan
+            // can be enforced per caller without asking for any credential
+            NgExpressionApikeyExtractorConfig(
+              expression = keylessConfig.expr.getOrElse("${req.ip}"),
+              clientIdPrefix = s"keyless_${plan.id}_",
+              strict = false,
+              createIfMissing = keylessConfig.createIfMissing,
+              apiId = api.id.some,
+              planId = plan.id.some,
+              throttlingStrategy = plan.rateLimiting,
+              apikey = plan.apikeyTemplate
+            ).json,
+            // a public plan always resolves an identity, so it is the last resort: it has to run
+            // after every credential based extractor, and still before the consumer enforcer at 1000
+            pluginIndex = PluginIndex(
+              validateAccess = 900.00.some
+            ).some
+          )
+        )
+      // case "oauth2-local"  => Seq(PluginWithConfig(pluginId[ApikeyCalls]))
+      case "apikey" | "oauth2-local" =>
         Seq(
           PluginWithConfig(
             pluginId[ApikeyCalls],
-            plan.accessModeConfiguration
-              .map(_.asInstanceOf[ApikeyAccessModeConfiguration].json.asObject)
-              .getOrElse(Json.obj())
-              .deepMerge(
+            //plan.accessModeConfiguration
+            //  .map(_.asInstanceOf[ApikeyAccessModeConfiguration].json.asObject)
+            //  .getOrElse(Json.obj())
+            //  .deepMerge(
                 NgApikeyCallsConfig(
+                  // identification and early rejection only: NgApiConsumerEnforcer is the one
+                  // counting the call, once the whole access validation of the route has passed
+                  updateQuotas = false,
                   mandatory = false,
-                  extractors = NgApikeyExtractors(
-                    otoBearer = NgApikeyExtractorOtoBearer(enabled = true),
-                    basic = NgApikeyExtractorBasic(enabled = false),
-                    customHeaders = NgApikeyExtractorCustomHeaders(enabled = false),
-                    clientId = NgApikeyExtractorClientId(enabled = false),
-                    jwt = NgApikeyExtractorJwt(enabled = false)
-                  )
-                ).json.asObject
-              ),
+                  // extractors = NgApikeyExtractors(
+                  //   otoBearer = NgApikeyExtractorOtoBearer(enabled = true),
+                  //   basic = NgApikeyExtractorBasic(enabled = false),
+                  //   customHeaders = NgApikeyExtractorCustomHeaders(enabled = false),
+                  //   clientId = NgApikeyExtractorClientId(enabled = false),
+                  //   jwt = NgApikeyExtractorJwt(enabled = true)
+                  // )
+                ).json.asObject,
+            //  ),
             pluginIndex = PluginIndex(
               validateAccess = 2.00.some
             ).some
           )
         )
       case "jwt"           =>
+        val jwtConfig = plan.accessModeConfiguration
+          .map(_.asInstanceOf[JWTAccessModeConfiguration])
+          .getOrElse(JWTAccessModeConfiguration())
         Seq(
           PluginWithConfig(
-            pluginId[NgJwtUserExtractor],
-            plan.accessModeConfiguration
-              .map(conf => {
-                NgJwtUserExtractorConfig(
-                  verifier = conf.asInstanceOf[JWTAccessModeConfiguration].verifier.getOrElse(""),
-                  strict = false
-                ).json
-              })
-              .getOrElse(Json.obj())
+            pluginId[NgJwtApikeyExtractor],
+            NgJwtApikeyExtractorConfig(
+              verifier = jwtConfig.verifier.getOrElse(""),
+              clientIdPath = jwtConfig.clientIdPath.getOrElse("client_id"),
+              clientIdPrefix = s"jwt_${plan.id}_",
+              strict = false,
+              createIfMissing = jwtConfig.createIfMissing,
+              // an apikey minted from a token has to carry the very same quotas, restrictions and
+              // rotation as one obtained through a subscription on that plan
+              apiId = api.id.some,
+              planId = plan.id.some,
+              throttlingStrategy = plan.rateLimiting,
+              apikey = plan.apikeyTemplate
+            ).json,
+            pluginIndex = PluginIndex(
+              validateAccess = 2.01.some
+            ).some
           )
         )
       case "mtls"          =>
+        val mtlsConfig = plan.accessModeConfiguration
+          .map(_.asInstanceOf[MtlsAccessModeConfiguration])
+          .getOrElse(MtlsAccessModeConfiguration())
         Seq(
           PluginWithConfig(
-            pluginId[NgHasClientCertMatchingValidator],
-            NgHasClientCertMatchingValidatorConfig(
-              mandatory = false
-            ).json.asObject
+            pluginId[NgClientCertApikeyExtractor],
+            NgClientCertApikeyExtractorConfig(
+              regexSubjectDNs = mtlsConfig.regexSubjectDNs,
+              regexIssuerDNs = mtlsConfig.regexIssuerDNs,
+              clientIdField = mtlsConfig.clientIdField,
+              clientIdPrefix = s"mtls_${plan.id}_",
+              strict = false,
+              createIfMissing = mtlsConfig.createIfMissing,
+              apiId = api.id.some,
+              planId = plan.id.some,
+              throttlingStrategy = plan.rateLimiting,
+              apikey = plan.apikeyTemplate
+            ).json,
+            pluginIndex = PluginIndex(
+              validateAccess = 2.02.some
+            ).some
           )
         )
-      case "oauth2-local"  => Seq(PluginWithConfig(pluginId[ApikeyCalls]))
       case "oauth2-remote" =>
+        val oidcConfig = plan.accessModeConfiguration
+          .map(_.asInstanceOf[OAuth2RemoteAccessModeConfiguration])
+          .getOrElse(OAuth2RemoteAccessModeConfiguration())
         Seq(
           PluginWithConfig(
-            pluginId[OIDCJwtVerifier],
-            plan.accessModeConfiguration
-              .map(conf => {
-                OIDCJwtVerifierConfig(
-                  mandatory = false,
-                  ref = conf.asInstanceOf[OAuth2RemoteAccessModeConfiguration].verifier
-                ).json.asObject
-              })
-              .getOrElse(Json.obj())
+            pluginId[NgOidcApikeyExtractor],
+            NgOidcApikeyExtractorConfig(
+              ref = oidcConfig.verifier,
+              clientIdPath = oidcConfig.clientIdPath.getOrElse("client_id"),
+              clientIdPrefix = s"oauth2_${plan.id}_",
+              fetchUser = oidcConfig.fetchUser,
+              userMetadataKey = oidcConfig.userMetadataKey,
+              strict = false,
+              createIfMissing = oidcConfig.createIfMissing,
+              apiId = api.id.some,
+              planId = plan.id.some,
+              throttlingStrategy = plan.rateLimiting,
+              apikey = plan.apikeyTemplate
+            ).json,
+            pluginIndex = PluginIndex(
+              validateAccess = 2.03.some
+            ).some
           )
         )
-      // "keyless"
       case _               => Seq.empty
     }
+  }
 
-    route.copy(
-      plugins = addPluginsToFlow(route.plugins, plugins)
-    )
+  // several plans of an api can contribute the very same plugin with the very same configuration:
+  // two apikey plans, or an apikey plan next to an oauth2-local one, both yield an identical
+  // ApikeyCalls. Keeping only the first of each (plugin, config) pair collapses those without ever
+  // dropping a plan that genuinely configures the plugin differently.
+  private def dedupePlugins(plugins: Seq[PluginWithConfig]): Seq[PluginWithConfig] = {
+    plugins.foldLeft(Seq.empty[PluginWithConfig]) { case (acc, plugin) =>
+      if (acc.exists(p => p.pluginId == plugin.pluginId && p.config == plugin.config)) acc
+      else acc :+ plugin
+    }
   }
 
   private def applyPlansPolicies(routeWithApi: RouteWithApi): NgRoute = {
     val routeApiPlans = routeWithApi.api.plans
-    val route         = routeApiPlans
-      .filter(plan => plan.status == ApiPlanStatus.Published)
-      .foldLeft(routeWithApi.route) { case (route, plan) =>
-        applyPlan(route, plan)
-      }
-    // TODO - replace chain of plugins by MandatoryConsumerPreset plugin
+    val publishedPlans = routeApiPlans.filter(plan => plan.status == ApiPlanStatus.Published)
+    val route          = routeWithApi.route.copy(
+      plugins = addPluginsToFlow(
+        routeWithApi.route.plugins,
+        dedupePlugins(publishedPlans.flatMap(plan => pluginsForPlan(plan, routeWithApi.api)))
+      )
+    )
 
-    if (
-      routeApiPlans
-        .exists(plan =>
-          plan.accessModeConfigurationType != "keyless" &&
-          plan.status == ApiPlanStatus.Published
-        )
-    ) {
+    if (publishedPlans.nonEmpty) {
       route.copy(
         plugins = addPluginsToFlow(
           route.plugins,
           Seq(
+            // the last access validator of the route: it requires a consumer and is the only place
+            // where the call is counted.
+            // TODO: check that the apikey really belongs to this api. every plan kind namespaces the
+            // identities it mints now, so an apikey reaching a route it does not belong to can be
+            // turned away rather than served under the settings of another plan.
             PluginWithConfig(
-              pluginId[NgExpectedConsumer],
+              pluginId[NgApiConsumerEnforcer],
               Json.obj(),
-              Some(PluginIndex(validateAccess = 1000.00.some))
-            )
+              Some(PluginIndex(validateAccess = 1000.00.some)) // still valid
+            ),
+            PluginWithConfig(
+              pluginId[otoroshi.next.plugins.SendOtoroshiHeadersBack],
+              Json.obj(),
+            ),
           )
         )
       )
@@ -1763,7 +2005,8 @@ case class Api(
               .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
             description = description,
             tags = tags,
-            metadata = metadata ++ Map("Otoroshi-Api-Ref" -> id),
+            metadata = metadata ++ Map(RouteApiRef.metadataKey -> id),
+            apiRef = RouteApiRef(id).some,
             enabled = apiRoute.enabled,
             capture = capture,
             debugFlow = debugFlow,
@@ -2105,7 +2348,7 @@ object Api {
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiStateHook.format.reads(v).asOpt))
           .getOrElse(Seq.empty).toSeq,
-        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiDocumentationPlan(o))
+        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiPlan(o))
       )
     } match {
       case Failure(ex)    =>

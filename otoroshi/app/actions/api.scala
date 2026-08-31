@@ -6,7 +6,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import java.nio.charset.StandardCharsets
-import next.models.Api
+import otoroshi.next.models.Api
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, *}

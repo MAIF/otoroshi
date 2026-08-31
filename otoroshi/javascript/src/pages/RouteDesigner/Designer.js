@@ -265,6 +265,8 @@ export default forwardRef(({ value, setSaveButton, history, setValue, ...props }
       value={value}
       setValue={setValue}
       setSaveButton={setSaveButton}
+      chainOnly={props.chainOnly}
+      getScrollContainer={props.getScrollContainer}
     />
   );
 });
@@ -522,7 +524,7 @@ class Designer extends React.Component {
   componentDidMount() {
     this.loadData();
     this.injectSaveButton();
-    this.mountShortcuts();
+    if (!this.props.chainOnly) this.mountShortcuts();
   }
 
   componentWillUnmount() {
@@ -677,14 +679,10 @@ class Designer extends React.Component {
 
         let routeWithNodeId = {
           ...route,
-          plugins: route.plugins
-            .filter((ref) =>
-              formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
-            )
-            .map((plugin, i) => ({
-              ...plugin,
-              nodeId: pluginsWithNodeId[i].nodeId,
-            })),
+          plugins: route.plugins.map((plugin, i) => ({
+            ...plugin,
+            nodeId: pluginsWithNodeId[i].nodeId,
+          })),
         };
 
         this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
@@ -704,9 +702,10 @@ class Designer extends React.Component {
         }
 
         const isApis = window.location.pathname.includes('/apis');
+        const readOnlyEntities = this.props.chainOnly || isApis;
 
-        const frontendConfiguration = isApis ? ApiFrontend : Frontend;
-        const backendConfiguration = isApis ? ApiBackend : Backend;
+        const frontendConfiguration = readOnlyEntities ? ApiFrontend : Frontend;
+        const backendConfiguration = readOnlyEntities ? ApiBackend : Backend;
 
         this.setState({
           ports,
@@ -728,14 +727,14 @@ class Designer extends React.Component {
             config_schema: toUpperCaseLabels(frontendConfiguration.schema),
             config_flow: frontendConfiguration.flow,
             nodeId: 'Frontend',
-            readOnly: isApis,
+            readOnly: readOnlyEntities,
           },
           backend: {
             ...backendConfiguration,
             config_schema: toUpperCaseLabels(backendConfiguration.schema),
             config_flow: backendConfiguration.flow,
             nodeId: 'Backend',
-            readOnly: isApis,
+            readOnly: readOnlyEntities,
           },
           selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
         });
@@ -1543,24 +1542,26 @@ class Designer extends React.Component {
             .filter((p) => !!p)
         : [];
 
-    const ownTemplates = getOwnTemplates(
-      plugins,
-      this.setNodes,
-      this.state.routeTemplates,
-      (frontend, backend, callback) =>
-        this.setState(
-          {
-            route: {
-              ...this.state.route,
-              frontend: { ...this.state.route.frontend, ...frontend },
-              backend: { ...this.state.route.backend, ...backend },
-            },
-          },
-          callback
-        )
-    );
+    const ownTemplates = this.props.chainOnly
+      ? []
+      : getOwnTemplates(
+          plugins,
+          this.setNodes,
+          this.state.routeTemplates,
+          (frontend, backend, callback) =>
+            this.setState(
+              {
+                route: {
+                  ...this.state.route,
+                  frontend: { ...this.state.route.frontend, ...frontend },
+                  backend: { ...this.state.route.backend, ...backend },
+                },
+              },
+              callback
+            )
+        );
 
-    const patterns = getPluginsPatterns(plugins, this.setNodes);
+    const patterns = this.props.chainOnly ? [] : getPluginsPatterns(plugins, this.setNodes);
 
     plugins.map((p) => {
       if (p.legacy) {
@@ -1578,23 +1579,25 @@ class Designer extends React.Component {
 
     return (
       <Loader loading={loading}>
-        <DraftStateDaemon
-          processDraft={this.processRouteBeforeUpdate}
-          value={this.state.route}
-          setValue={(route) => {
-            this.props.setValue(route);
-            this.setState(
-              {
-                route,
-                selectedNode: undefined,
-              },
-              () => this.loadData(this.state.route)
-            );
-          }}
-          updateEntityURL={() => {
-            updateEntityURLSignal.value = this.saveRoute;
-          }}
-        />
+        {!this.props.chainOnly && (
+          <DraftStateDaemon
+            processDraft={this.processRouteBeforeUpdate}
+            value={this.state.route}
+            setValue={(route) => {
+              this.props.setValue(route);
+              this.setState(
+                {
+                  route,
+                  selectedNode: undefined,
+                },
+                () => this.loadData(this.state.route)
+              );
+            }}
+            updateEntityURL={() => {
+              updateEntityURLSignal.value = this.saveRoute;
+            }}
+          />
+        )}
         <Container
           onClick={() => {
             this.setState({
@@ -1636,7 +1639,11 @@ class Designer extends React.Component {
             expandAll={expandAll}
             searched={searched}
             plugins={[...plugins, ...patterns, ...ownTemplates]}
-            categories={[...categories, 'Legacy', 'Patterns', 'My own templates']}
+            categories={[
+              ...categories,
+              'Legacy',
+              ...(this.props.chainOnly ? [] : ['Patterns', 'My own templates']),
+            ]}
             addNode={this.addNode}
             showPreview={(element) =>
               this.setState({
@@ -1679,6 +1686,8 @@ class Designer extends React.Component {
                 route={route}
                 plugins={plugins}
                 backends={backends}
+                chainOnly={this.props.chainOnly}
+                getScrollContainer={this.props.getScrollContainer}
               />
             ) : (
               <div className="row h-100 mx-1">
@@ -1831,6 +1840,8 @@ class Designer extends React.Component {
                   }
                   originalRoute={originalRoute}
                   alertModal={alertModal}
+                  chainOnly={this.props.chainOnly}
+                  getScrollContainer={this.props.getScrollContainer}
                 />
               </div>
             )}
@@ -2362,6 +2373,8 @@ class EditView extends React.Component {
 
   formRef = React.createRef();
 
+  scrollTarget = window;
+
   componentDidMount() {
     this.manageScrolling();
     this.loadForm();
@@ -2372,20 +2385,22 @@ class EditView extends React.Component {
   }
 
   manageScrolling = () => {
-    window.removeEventListener('scroll', this.onScroll);
-    window.addEventListener('scroll', this.onScroll, { passive: true });
+    this.scrollTarget = this.props.getScrollContainer?.() || window;
+
+    this.scrollTarget.removeEventListener('scroll', this.onScroll);
+    this.scrollTarget.addEventListener('scroll', this.onScroll, { passive: true });
 
     this.onScroll();
   };
 
   onScroll = () => {
     this.setState({
-      offset: window.scrollY,
+      offset: this.scrollTarget === window ? window.scrollY : this.scrollTarget.scrollTop,
     });
   };
 
   componentWillUnmount() {
-    window.removeEventListener('scroll', this.onScroll);
+    this.scrollTarget.removeEventListener('scroll', this.onScroll);
   }
 
   loadForm = () => {
@@ -2523,6 +2538,7 @@ class EditView extends React.Component {
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
 
     const isApis = window.location.pathname.includes('/apis');
+    const readOnlyEntities = this.props.chainOnly || isApis;
 
     if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
 
@@ -2552,7 +2568,7 @@ class EditView extends React.Component {
         <div
           className="dark-background"
           style={{
-            paddingTop: isApis ? '1rem' : 'inherit',
+            paddingTop: readOnlyEntities ? '1rem' : 'inherit',
           }}
         >
           {selectedNode.description && (
@@ -2578,7 +2594,7 @@ class EditView extends React.Component {
             />
           )}
           <BackendSelector
-            enabled={id === 'Backend' && !window.location.pathname.includes('/apis')}
+            enabled={id === 'Backend' && !readOnlyEntities}
             backends={backends}
             setUsingExistingBackend={(e) => {
               this.setState({

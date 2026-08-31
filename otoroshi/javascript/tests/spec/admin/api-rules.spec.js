@@ -201,19 +201,13 @@ test.describe('production read-only', () => {
       trackedApis.add(apiId);
     try {
       const prod = await getProd(page, apiId);
+      // snake_case only: ApiPlan silently ignores camelCase keys
       const plan = {
         id: 'plan_test',
         name: 'Free plan',
-        type: 'free',
-        accessModeConfigurationType: 'keyless',
-        accessModeConfiguration: null,
-        consumerKind: 'keyless',
-        visibility: 'public',
-        documentation: null,
-        autoValidation: true,
-        subscriptionProcess: [],
-        integrationProcess: 'apikey',
         status: 'published',
+        access_mode_configuration_type: 'keyless',
+        access_mode_configuration: { create_if_missing: true },
       };
       const res = await putProd(page, apiId, { ...prod, plans: [...(prod.plans || []), plan] });
       expect(res.status()).toBeLessThan(400);

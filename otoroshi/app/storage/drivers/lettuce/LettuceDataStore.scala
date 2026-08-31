@@ -13,7 +13,7 @@ import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaC
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources, MappingSocketAddressResolver}
 import io.lettuce.core.{AbstractRedisClient, ClientOptions, ReadFrom, RedisClient, RedisURI}
 import io.netty.resolver.DefaultAddressResolverGroup
-import next.models.{
+import otoroshi.next.models.{
   ApiDataStore,
   ApiSubscriptionDataStore,
   KvApiDataStore,

@@ -953,3 +953,33 @@
         transform: translateY(0);
     }
 }
+
+.plugins-chain-drawer {
+    z-index: 1060;
+    display: flex;
+}
+
+.plugins-chain-drawer-handle {
+    margin-left: auto;
+    width: 8px;
+    cursor: col-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-color_level3);
+
+    &::after {
+        content: '';
+        width: 4px;
+        height: 36px;
+        border-radius: 12px;
+        background: #fff;
+    }
+}
+
+.plugins-chain-drawer .wizard-container {
+    max-width: 95vw;
+    min-width: 600px;
+    margin-left: 0;
+    padding: 1.5rem;
+}

@@ -266,6 +266,18 @@ async function publishDockerOtoroshi(location, version) {
   //await runSystemCommand('sh', [path.resolve(location, `./tools/otoroshi-wasm-manager/build.sh`), 'push-all', version], path.resolve(location, `./tools/otoroshi-wasm-manager`));
 }
 
+// master is not frozen while a release runs, so a concurrent push must not blow up the release:
+// git-push-master.sh replays the release commits on top of what landed (and moves the release tag
+// accordingly), and if even that fails the release keeps going, the commits can be pushed by hand.
+async function pushToMaster(location, tag) {
+  const script = path.resolve(location, './scripts/release/git-push-master.sh');
+  try {
+    await runScript(`bash ${script} ${tag}`, location);
+  } catch (e) {
+    console.log(`::warning::unable to push the release commits and the tag ${tag} to master (${e.message}). The release continues, push them by hand once the run is over`);
+  }
+}
+
 async function publishHelmChart(location, version) {
   await runSystemCommand('/bin/sh', [path.resolve(location, './scripts/helm.sh'), version], location);
 }
@@ -459,9 +471,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
       await runSystemCommand('git', ['commit', '-am', `[release ${to}] Update version to ${next}`], location);
-      await runSystemCommand('git', ['pull', '--rebase', 'origin', 'master'], location);
-      await runSystemCommand('git', ['push', 'origin', 'master'], location);
-      await runSystemCommand('git', ['push', '--tags'], location);
+      await pushToMaster(location, `v${to}`);
     });
     await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
     console.log("Release done !");

@@ -78,7 +78,14 @@ jobs:
           docker buildx create --name multiarchbuilder --driver docker-container --bootstrap --use
           node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --location=${LOC} ${{ inputs.preview && '--preview' || '' }}
           git commit -am 'Update helm chart' || true
-          git push origin master
+      - name: push-release-commits
+        # master is not frozen while the release builds (~25mn, mostly docker publish): when someone
+        # pushes in the meantime, replay the release commits on top of theirs instead of letting a
+        # rejected push kill the milestone, the checksums and the GitHub release. And if the push is
+        # really impossible, only this step fails: everything is already published at that point.
+        continue-on-error: true
+        run: |
+          bash ./scripts/release/git-push-master.sh v${{ inputs.version_to }}
       - name: close-milestone
         if: ${{ !inputs.preview }}
         env:

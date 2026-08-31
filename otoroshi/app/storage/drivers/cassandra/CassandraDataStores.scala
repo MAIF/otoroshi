@@ -7,7 +7,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
-import next.models.{
+import otoroshi.next.models.{
   ApiDataStore,
   ApiSubscriptionDataStore,
   KvApiDataStore,

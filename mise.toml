@@ -148,10 +148,18 @@ run = "sbt --java-home $JAVA_HOME 'testOnly functional.PluginsTestSpec'"
 [tasks.test-plugins.env]
 TEST_STORE = "inmemory"
 
+[tasks.test-api-plans]
+description = "Run the api plan mtls test suite (needs its own https listener)"
+dir = "otoroshi"
+run = "sbt --java-home $JAVA_HOME 'testOnly ApiPlanMtlsTests'"
+
+[tasks.test-api-plans.env]
+TEST_STORE = "inmemory"
+
 [tasks.test-all]
 description = "Run all backend tests (main + plugins)"
 dir = "otoroshi"
-run = "sbt --java-home $JAVA_HOME ';testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.Http3Spec;testOnly functional.PluginsTestSpec -- -l Browser - Docker'"
+run = "sbt --java-home $JAVA_HOME ';testOnly UnitTests;testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly ApiPlanMtlsTests;testOnly functional.Http3Spec;testOnly functional.PluginsTestSpec -- -l Browser - Docker'"
 
 [tasks.test-all.env]
 TEST_STORE = "inmemory"

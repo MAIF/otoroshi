@@ -42,6 +42,99 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Allow HTTP Methods" in {
       new AllowHTTPMethodsTests(this)
     }
+    "Api plans - keyless plan generation" in {
+      new ApiPlanPluginsTests(this).keylessPlanGeneration()
+    }
+    "Api plans - keyless default expression" in {
+      new ApiPlanPluginsTests(this).keylessPlanDefaultExpression()
+    }
+    "Api plans - jwt plan generation" in {
+      new ApiPlanPluginsTests(this).jwtPlanGeneration()
+    }
+    "Api plans - mtls plan generation" in {
+      new ApiPlanPluginsTests(this).mtlsPlanGeneration()
+    }
+    "Api plans - apikey plan generation" in {
+      new ApiPlanPluginsTests(this).apikeyPlanGeneration()
+    }
+    "Api plans - plan settings are propagated" in {
+      new ApiPlanPluginsTests(this).planSettingsArePropagated()
+    }
+    "Api plans - apikey template falls back on plan fields" in {
+      new ApiPlanPluginsTests(this).apikeyTemplateFallsBackOnPlanFields()
+    }
+    "Api plans - several published plans stack" in {
+      new ApiPlanPluginsTests(this).severalPublishedPlansStack()
+    }
+    "Api plans - only published plans apply" in {
+      new ApiPlanPluginsTests(this).onlyPublishedPlansApply()
+    }
+    "Api plans - keyless end to end" in {
+      new ApiPlanPluginsTests(this).keylessEndToEnd()
+    }
+    "Api plans - keyless end to end with custom expression" in {
+      new ApiPlanPluginsTests(this).keylessEndToEndWithCustomExpression()
+    }
+    "Api plans - keyless expression with empty default" in {
+      new ApiPlanPluginsTests(this).keylessExpressionWithEmptyDefault()
+    }
+    "Api plans - identical plan plugins are deduped" in {
+      new ApiPlanPluginsTests(this).identicalPluginsAreDeduped()
+    }
+    "Api plans - plans with different configs are kept" in {
+      new ApiPlanPluginsTests(this).differentConfigsAreKept()
+    }
+    "Api plans - keyless runs last among extractors" in {
+      new ApiPlanPluginsTests(this).keylessRunsLastAmongExtractors()
+    }
+    "Api plans - a credential wins over the keyless fallback" in {
+      new ApiPlanPluginsTests(this).credentialWinsOverKeyless()
+    }
+    "Api plans - jwt end to end" in {
+      new ApiPlanPluginsTests(this).jwtEndToEnd()
+    }
+    "Api plans - jwt end to end without creation" in {
+      new ApiPlanPluginsTests(this).jwtEndToEndWithoutCreation()
+    }
+    "Apikey plugins flow - plan computed plugins" in {
+      new ApikeyPluginsFlowTests(this).planComputedPlugins()
+    }
+    "Apikey plugins flow - a plan can reference a flow" in {
+      new ApikeyPluginsFlowTests(this).planCanReferenceAFlow()
+    }
+    "Apikey plugins flow - flow resolution" in {
+      new ApikeyPluginsFlowTests(this).pluginFlowResolution()
+    }
+    "Apikey plugins flow - no flow leaves the chain alone" in {
+      new ApikeyPluginsFlowTests(this).noFlow()
+    }
+    "Apikey plugins flow - merge without override" in {
+      new ApikeyPluginsFlowTests(this).mergeWithoutOverride()
+    }
+    "Apikey plugins flow - override drops route transformers" in {
+      new ApikeyPluginsFlowTests(this).overrideDropsRouteTransformers()
+    }
+    "Apikey plugins flow - override keeps access validators" in {
+      new ApikeyPluginsFlowTests(this).overrideKeepsAccessValidators()
+    }
+    "Apikey plugins flow - flow can reject the call" in {
+      new ApikeyPluginsFlowTests(this).flowCanRejectTheCall()
+    }
+    "Apikey plugins flow - extra plugin only for that apikey" in {
+      new ApikeyPluginsFlowTests(this).extraPluginOnlyForThatApikey()
+    }
+    "Apikey plugins flow - override only for that apikey" in {
+      new ApikeyPluginsFlowTests(this).overrideOnlyForThatApikey()
+    }
+    "Apikey plugins flow - full matrix (source x override)" in {
+      new ApikeyPluginsFlowTests(this).flowMatrix()
+    }
+    "Apikey plugins flow - flow from an api plan" in {
+      new ApikeyPluginsFlowTests(this).flowFromApiPlan()
+    }
+    "Apikey plugins flow - plan plugins and apikey plugins combined" in {
+      new ApikeyPluginsFlowTests(this).planAndApikeyPluginsCombined()
+    }
     "Apikeys - default" in {
       new ApikeysTests(this).default()
     }
@@ -774,6 +867,21 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       new LocalTokenBucketTests(this)
         .run()
         .futureValue
+    }
+    "Rate limiting - a denied call is never counted" in {
+      new RateLimitingTests(this).deniedCallIsNeverCounted()
+    }
+    "Rate limiting - a call denied by the daily quota counts nothing" in {
+      new RateLimitingTests(this).deniedByDailyQuotaCountsNothing()
+    }
+    "Rate limiting - the fixed window enforces the daily quota" in {
+      new RateLimitingTests(this).fixedWindowEnforcesDailyQuota()
+    }
+    "Rate limiting - the fixed window serves exactly its window" in {
+      new RateLimitingTests(this).fixedWindowServesExactlyItsWindow()
+    }
+    "Rate limiting - the token bucket keeps its tokens for served calls" in {
+      new RateLimitingTests(this).tokenBucketKeepsItsTokensForServedCalls()
     }
     "izanami v2 proxy - should call izanami correctly" in {
       new IzanamiV2ProxyTests(this).izanamiCallShouldBeCorrect()

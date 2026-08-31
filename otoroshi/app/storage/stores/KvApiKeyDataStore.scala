@@ -4,6 +4,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.models.*
+import otoroshi.next.models.RouteApiRef
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Format
@@ -299,7 +300,8 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
             }
           case Some(service) => {
             val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
-            service.metadata.get("Otoroshi-Api-Ref") match {
+            // service is a legacy ServiceDescriptor here, the api ref only lives in its metadata
+            service.metadata.get(RouteApiRef.metadataKey) match {
               case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef) => apiKey.some.vfuture
               case _                                                        => {
                 val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
@@ -331,9 +333,9 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
             }
           case Some(service) => {
             val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
-            service.metadata.get("Otoroshi-Api-Ref") match {
-              case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef) => apiKey.some
-              case _                                                        => {
+            service.apiRef match {
+              case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef.id) => apiKey.some
+              case _                                                           => {
                 val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
                 identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
               }

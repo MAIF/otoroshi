@@ -343,7 +343,11 @@ case class NgContextualPlugins(
     nextPluginsMerge: Boolean,
     attrs: TypedMap,
     _env: Env,
-    _ec: ExecutionContext
+    _ec: ExecutionContext,
+    // empty for the chain of a route, which (route, plugin, index) identifies on its own. Set when
+    // the engine composes a chain per call from the plan and the plugins of an apikey, so that the
+    // config caches of two callers landing on the same slot of the same route stay apart.
+    cacheDiscriminator: String = ""
 ) {
 
   implicit val env: Env             = _env

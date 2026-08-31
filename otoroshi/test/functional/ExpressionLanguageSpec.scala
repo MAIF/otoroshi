@@ -1,7 +1,7 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
-import next.models.{Api, ApiDocumentationPlan}
+import otoroshi.next.models.{Api, ApiPlan}
 import otoroshi.el.{
   GlobalExpressionLanguage,
   HeadersExpressionLanguage,
@@ -94,8 +94,8 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
     location = EntityLocation()
   )
 
-  private lazy val samplePlan: ApiDocumentationPlan =
-    ApiDocumentationPlan(Json.obj("id" -> "plan_free", "name" -> "Free plan"))
+  private lazy val samplePlan: ApiPlan =
+    ApiPlan(Json.obj("id" -> "plan_free", "name" -> "Free plan"))
 
   private lazy val sampleApi: Api = env.datastores.apiDataStore.template(env).copy(id = "api_test", name = "my-api")
 
@@ -135,15 +135,15 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
 
   /** call the EL directly with our sample objects; each argument is overridable per-case */
   private def el(
-      value: String,
-      req: Option[RequestHeader] = Some(sampleRequest),
-      route: Option[NgRoute] = Some(sampleRoute),
-      apiKey: Option[ApiKey] = Some(sampleApiKey),
-      user: Option[PrivateAppsUser] = Some(sampleUser),
-      context: Map[String, String] = sampleContext,
-      attrs: TypedMap = sampleAttrs,
-      plan: Option[ApiDocumentationPlan] = Some(samplePlan),
-      api: Option[Api] = Some(sampleApi)
+                  value: String,
+                  req: Option[RequestHeader] = Some(sampleRequest),
+                  route: Option[NgRoute] = Some(sampleRoute),
+                  apiKey: Option[ApiKey] = Some(sampleApiKey),
+                  user: Option[PrivateAppsUser] = Some(sampleUser),
+                  context: Map[String, String] = sampleContext,
+                  attrs: TypedMap = sampleAttrs,
+                  plan: Option[ApiPlan] = Some(samplePlan),
+                  api: Option[Api] = Some(sampleApi)
   ): String =
     GlobalExpressionLanguage.apply(value, req, None, route, apiKey, user, context, attrs, env, plan, api)
 
