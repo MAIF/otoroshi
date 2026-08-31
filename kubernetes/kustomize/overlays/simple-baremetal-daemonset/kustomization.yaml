@@ -23,13 +23,13 @@ labels:
     pairs:
       app.kubernetes.io/name: otoroshi
       app.kubernetes.io/instance: simple-baremetal-daemonset
-      app.kubernetes.io/version: "18.0.0-preview4"
+      app.kubernetes.io/version: "18.0.0-dev"
       app.kubernetes.io/part-of: otoroshi
       app.kubernetes.io/managed-by: kustomize
 
 images:
   - name: maif/otoroshi
-    newTag: 18.0.0-preview4
+    newTag: 18.0.0-dev
 
 # (no `replicas:` block — this overlay uses a DaemonSet, which has one pod per
 #  matching node and ignores `replicas`.)
