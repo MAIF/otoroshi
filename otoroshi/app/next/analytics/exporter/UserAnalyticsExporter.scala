@@ -311,7 +311,7 @@ object EventDenormalizer {
     val teams    = stripped.select("route").select("_loc").select("teams").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val routeId  = stripped.select("route").select("id").asOptString
     val routeNm  = stripped.select("route").select("name").asOptString
-    val apiId    = stripped.select("route").select("metadata").select("Otoroshi-Api-Ref").asOptString
+    val apiId    = stripped.select("route").select("api_ref").select("id").asOptString
     val groupIds = stripped.select("route").select("groups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
     val identityType          = stripped.select("identity").select("identityType").asOptString

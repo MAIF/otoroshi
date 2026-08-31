@@ -380,8 +380,14 @@ trait NgCachedConfigContext {
   def idx: Int
   def route: NgRoute
   def config: JsValue
+  // empty on a plain route, where (route, plugin, index) is enough to identify a config. The engine
+  // fills it in when it composes the chain of a call from the plan and the plugins of an apikey,
+  // because two callers then put different plugins at the same index of the same route. Read once
+  // per phase by the engine and carried here as a field: cachedConfig runs per plugin and per call,
+  // so a map lookup at that depth would be paid on every step of every request.
+  def cacheDiscriminator: String = ""
   def cachedConfig[A](plugin: String)(reads: Reads[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::$plugin::$idx"
+    val key = s"${route.cacheableId}::$plugin::$idx::$cacheDiscriminator"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads.reads(config) match {
@@ -395,7 +401,7 @@ trait NgCachedConfigContext {
   }.toOption.flatten
 
   def cachedConfigFn[A](plugin: String)(reads: JsValue => Option[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::${plugin}::$idx"
+    val key = s"${route.cacheableId}::${plugin}::$idx::$cacheDiscriminator"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads(config) match {
@@ -474,6 +480,8 @@ case class NgPreRoutingContext(
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgPreRoutingContext, Boolean, JsValue, Unit],
     idx: Int = 0
+,
+    override val cacheDiscriminator: String = ""
 ) extends NgCachedConfigContext {
   def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
   def json: JsValue     = Json.obj(
@@ -602,6 +610,8 @@ case class NgBeforeRequestContext(
     attrs: TypedMap,
     globalConfig: JsValue = Json.obj(),
     idx: Int = 0
+,
+    override val cacheDiscriminator: String = ""
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -621,6 +631,8 @@ case class NgAfterRequestContext(
     attrs: TypedMap,
     globalConfig: JsValue = Json.obj(),
     idx: Int = 0
+,
+    override val cacheDiscriminator: String = ""
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -647,6 +659,8 @@ case class NgTransformerRequestContext(
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue, Unit],
     idx: Int = 0
+,
+    override val cacheDiscriminator: String = ""
 ) extends NgCachedConfigContext
     with RequestTransformerErrors {
   def json: JsValue = Json.obj(
@@ -700,6 +714,8 @@ case class NgTransformerResponseContext(
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue, Unit],
     idx: Int = 0
+,
+    override val cacheDiscriminator: String = ""
 ) extends NgCachedConfigContext
     with RequestTransformerErrors {
   def json: JsValue = Json.obj(
@@ -877,6 +893,8 @@ case class NgAccessContext(
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue, Unit],
     idx: Int = 0
+,
+    override val cacheDiscriminator: String = ""
 ) extends NgCachedConfigContext
     with NgAccessContextErrors
     with RequestTransformerErrors {

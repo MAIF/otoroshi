@@ -1,6 +1,6 @@
 package functional
 
-import next.models.*
+import otoroshi.next.models.*
 
 import otoroshi.models.EntityLocation
 import otoroshi.next.models.{NgFrontend, NgPlugins}
@@ -105,19 +105,26 @@ class ApiBusinessRulesSpec extends org.scalatest.wordspec.AnyWordSpec with org.s
       Api.diffProtectedFields(a, a) mustBe empty
     }
 
-    "ignore changes on unprotected fields (name, description, domain, etc.)" in {
+    "ignore changes on unprotected fields (name, description, metadata, etc.)" in {
       val a = baseApi(ApiPublished)
       val b = a.copy(
         name = "renamed",
         description = "new desc",
-        domain = "other.oto.tools",
-        contextPath = "/v2",
         metadata = Map("k" -> "v"),
         tags = Seq("t"),
         enabled = false,
         version = "1.0.0"
       )
       Api.diffProtectedFields(a, b) mustBe empty
+    }
+
+    // the domain and the context path are what the frontend of the generated route is built from, so
+    // moving them on a published api reroutes production traffic on the spot: they are protected just
+    // like the routes themselves
+    "flag a domain or a context path diff" in {
+      val a = baseApi(ApiPublished)
+      Api.diffProtectedFields(a, a.copy(domain = "other.oto.tools")) must contain("domain")
+      Api.diffProtectedFields(a, a.copy(contextPath = "/v2")) must contain("contextPath")
     }
 
     "flag a routes diff" in {

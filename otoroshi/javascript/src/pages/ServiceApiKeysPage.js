@@ -5,6 +5,8 @@ import { Table, SimpleBooleanInput } from '../components/inputs';
 //[REMOVE SERVICEDESC] import { ServiceSidebar } from '../components/ServiceSidebar';
 import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
+import { ApikeyApiRefField } from '../components/ApikeyFlowFields';
+import { PluginsChainEditor } from '../components/PluginsChainEditor';
 
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
@@ -1107,6 +1109,19 @@ const ApiKeysConstants = {
         help: 'This apikey can only be used on services using apikey routing constraints',
       },
     },
+    apiRef: {
+      type: ApikeyApiRefField,
+    },
+    'plugins.overrides': {
+      type: 'bool',
+      props: {
+        label: 'Overrides',
+        help: 'When enabled, these plugins replace the ones of the route, except the access validators that already ran. When disabled, they are appended to them.',
+      },
+    },
+    'plugins.plugins': {
+      type: PluginsChainEditor,
+    },
     metadata: {
       type: 'object',
       props: {
@@ -1272,7 +1287,10 @@ const ApiKeysConstants = {
       ),
     },
   ],
-  formFlow: [
+  // ApiKey.allowedQuota takes the quotas of the throttling strategy as soon as there is one, and
+  // only falls back on throttlingQuota/dailyQuota/monthlyQuota when there is none. showing the
+  // legacy fields next to a strategy would let one edit numbers nothing reads.
+  formFlow: (apikey) => [
     //'>>>Location',
     '_loc',
     'clientId',
@@ -1291,6 +1309,11 @@ const ApiKeysConstants = {
     //'>>>Authorized on',
     '---',
     'authorizedEntities',
+    '>>>API',
+    'apiRef',
+    '>>>Plugins',
+    'plugins.overrides',
+    'plugins.plugins',
     '>>> Metadata and tags',
     'tags',
     'metadata',
@@ -1307,10 +1330,9 @@ const ApiKeysConstants = {
     'curlCommandWithBasicAuth',
     '>>>Throttling strategy',
     'throttlingStrategy',
-    '>>>Legacy Quotas',
-    'throttlingQuota',
-    'dailyQuota',
-    'monthlyQuota',
+    ...(apikey && apikey.throttlingStrategy
+      ? []
+      : ['>>>Legacy Quotas', 'throttlingQuota', 'dailyQuota', 'monthlyQuota']),
     '>>>Quotas consumption',
     'remainingQuotas',
     'resetQuotas',

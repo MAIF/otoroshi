@@ -13,7 +13,7 @@ import io.vertx.core.net.{ClientSSLOptions, NetClientOptions, PemKeyCertOptions,
 import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
 import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.{PoolOptions, Row}
-import next.models.{
+import otoroshi.next.models.{
   ApiDataStore,
   ApiSubscriptionDataStore,
   KvApiDataStore,

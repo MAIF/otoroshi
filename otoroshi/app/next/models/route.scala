@@ -27,6 +27,24 @@ import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
+// reference to the api that generated this route. the value is also mirrored in the
+// `Otoroshi-Api-Ref` metadata for everything still reading the raw route metadata
+// (analytics events, legacy service descriptors, etc.)
+case class RouteApiRef(id: String) {
+  def json: JsValue = JsString(id)
+}
+
+object RouteApiRef {
+  val metadataKey: String         = "Otoroshi-Api-Ref"
+  val format: Format[RouteApiRef] = new Format[RouteApiRef] {
+    override def writes(o: RouteApiRef): JsValue             = o.json
+    override def reads(json: JsValue): JsResult[RouteApiRef] = json match {
+      case JsString(id) if id.nonEmpty => JsSuccess(RouteApiRef(id))
+      case _                           => JsError("not a valid api ref")
+    }
+  }
+}
+
 case class NgRoute(
     location: EntityLocation,
     id: String,
@@ -43,6 +61,7 @@ case class NgRoute(
     frontend: NgFrontend,
     backend: NgBackend,
     backendRef: Option[String] = None,
+    apiRef: Option[RouteApiRef] = None,
     // client: ClientConfig,
     plugins: NgPlugins
 ) extends EntityLocationSupport {
@@ -69,6 +88,7 @@ case class NgRoute(
     "frontend"         -> frontend.json,
     "backend"          -> backend.json,
     "backend_ref"      -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "api_ref"          -> apiRef.map(_.json).getOrElse(JsNull).as[JsValue],
     // "client" -> client.toJson,
     "plugins"          -> plugins.json
   )
@@ -215,7 +235,6 @@ case class NgRoute(
     }
   }
 
-  lazy val apiRef: Option[String]               = metadata.get("Otoroshi-Api-Ref")
   lazy val userFacing: Boolean                  = metadata.get("otoroshi-core-user-facing").contains("true")
   lazy val useAhcClient: Boolean                = !useAkkaHttpClient && !useNettyClient
   lazy val useAkkaHttpClient: Boolean           = metadata.get("otoroshi-core-use-akka-http-client").contains("true")
@@ -264,7 +283,7 @@ case class NgRoute(
       name = name,
       description = description,
       tags = tags,
-      metadata = metadata,
+      metadata = if (apiRef.isDefined) metadata + (RouteApiRef.metadataKey -> apiRef.get.id) else metadata,
       enabled = enabled,
       groups = groups,
       env = metadata.get("otoroshi-core-env").getOrElse("prod"),
@@ -853,13 +872,14 @@ object NgRoute {
     override def reads(json: JsValue): JsResult[NgRoute] = Try {
       val ref        = json.select("backend_ref").asOpt[String]
       val refBackend = ref.flatMap(r => OtoroshiEnvHolder.get().proxyState.backend(r)).getOrElse(NgBackend.empty)
+      val meta       = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
       NgRoute(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = json.select("id").as[String],
         name = json.select("name").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
-        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        metadata = meta,
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         debugFlow = json.select("debug_flow").asOpt[Boolean].getOrElse(false),
         capture = json.select("capture").asOpt[Boolean].getOrElse(false),
@@ -872,6 +892,13 @@ object NgRoute {
           case Some(r) => refBackend
         },
         backendRef = ref,
+        // older routes only had the api ref in their metadata, keep reading it from there
+        apiRef = json
+          .select("api_ref")
+          .asOptString
+          .orElse(meta.get(RouteApiRef.metadataKey))
+          .filter(_.nonEmpty)
+          .map(RouteApiRef.apply),
         // client = (json \ "client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
         plugins = NgPlugins.readFrom(json.select("plugins"))
       )

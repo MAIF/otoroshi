@@ -1,7 +1,7 @@
 package otoroshi.next.proxy
 
 import com.github.blemale.scaffeine.Scaffeine
-import next.models.{Api, ApiSubscription, RouteTemplate}
+import otoroshi.next.models.{Api, ApiSubscription, RouteTemplate}
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models.*

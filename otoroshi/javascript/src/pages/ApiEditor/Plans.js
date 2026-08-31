@@ -8,15 +8,15 @@ import { Row } from '../../components/Row';
 import { ArrayInput, Table } from '../../components/inputs';
 import { RestrictionPath } from '../../components/Restrictions';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
-import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 import SimpleLoader from './SimpleLoader';
+import { PluginsChainEditor } from '../../components/PluginsChainEditor';
 import { useDraftOfAPI, historyPush } from './hooks';
 import { VersionBadge } from './DraftOnly';
 import { listImpactedSubscriptions } from '../../services/BackOfficeServices';
 import { v4 } from 'uuid';
 import ApikeyCalls from '../../forms/ng_plugins/ApikeyCalls';
 import { findAuthConfigById } from '../../services/BackOfficeServices';
-import NgJwtUserExtractor from '../../forms/ng_plugins/NgJwtUserExtractor';
+import { JwtVerifierLauncher } from '../../forms/wizards/JwtVerifierLauncher';
 import { SelectorWizardLauncher } from '../../forms/wizards/SelectorWizardLauncher';
 import { NewSubscription } from './Subscriptions';
 import { Header } from '../../components/wizardframe';
@@ -210,8 +210,30 @@ const AccessModePluginConfigurationForm = {
     flow: ApikeyCalls.config_flow,
   },
   jwt: {
-    schema: NgJwtUserExtractor.config_schema,
-    flow: ['verifier', 'name_path', 'email_path', 'meta_path'],
+    schema: {
+      verifier: {
+        label: 'JWT verifier',
+        type: 'JwtVerifierWizard',
+        props: {
+          componentLauncher: JwtVerifierLauncher,
+          componentsProps: {
+            allowedNewStrategy: 'Generate',
+          },
+        },
+      },
+      client_id_path: {
+        type: 'string',
+        label: 'Client id claim',
+        help: 'Claim holding the client id of the consumer. A json path such as $.azp works too.',
+        props: { placeholder: 'client_id' },
+      },
+      create_if_missing: {
+        type: 'bool',
+        label: 'Create the apikey if missing',
+        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+      },
+    },
+    flow: ['verifier', 'client_id_path', 'create_if_missing'],
   },
   'oauth2-local': {
     schema: NgClientCredentialTokenEndpoint.config_schema,
@@ -231,22 +253,74 @@ const AccessModePluginConfigurationForm = {
           },
         },
       },
+      client_id_path: {
+        type: 'string',
+        label: 'Client id claim',
+        help: 'Claim holding the client id of the consumer. Identity providers put it in client_id, azp or cid depending on the vendor.',
+        props: { placeholder: 'client_id' },
+      },
+      fetch_user: {
+        type: 'bool',
+        label: 'Fetch the user profile',
+        help: 'Call the userinfo endpoint of the module and store the profile of the token holder in a metadata of the apikey. The call stays a consumer call: no user session is attached to it.',
+      },
+      user_metadata_key: {
+        type: 'string',
+        label: 'Metadata key of the user profile',
+        visible: (props) => props?.fetch_user,
+        props: { placeholder: 'user_profile' },
+      },
+      create_if_missing: {
+        type: 'bool',
+        label: 'Create the apikey if missing',
+        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+      },
     },
-    flow: ['verifier'],
+    flow: ['verifier', 'client_id_path', 'fetch_user', 'user_metadata_key', 'create_if_missing'],
   },
   mtls: {
-    schema: NgHasClientCertMatchingValidator.config_schema,
-    flow: [
-      // 'serial_numbers',
-      // 'subject_dns',
-      // 'issuer_dns',
-      'regex_subject_dns',
-      'regex_issuer_dns',
-    ],
+    schema: {
+      regex_subject_dns: {
+        type: 'array',
+        label: 'Subject DN patterns',
+        help: 'Regex patterns the subject DN of the client certificate may match. Leave both lists empty to accept any trusted certificate.',
+        props: { placeholder: '.*CN=my-client.*' },
+      },
+      regex_issuer_dns: {
+        type: 'array',
+        label: 'Issuer DN patterns',
+        help: 'Regex patterns the issuer DN of the client certificate may match. A certificate matching either list is accepted.',
+        props: { placeholder: '.*CN=my-ca.*' },
+      },
+      client_id_field: {
+        type: 'string',
+        label: 'Client id DN attribute',
+        help: 'DN attribute holding the client id, UID or CN for instance. Left empty, the identity is derived from the whole subject and the serial number. A certificate missing the named attribute is rejected.',
+        props: { placeholder: 'UID' },
+      },
+      create_if_missing: {
+        type: 'bool',
+        label: 'Create the apikey if missing',
+        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+      },
+    },
+    flow: ['regex_subject_dns', 'regex_issuer_dns', 'client_id_field', 'create_if_missing'],
   },
   keyless: {
-    schema: {},
-    flow: [],
+    schema: {
+      expr: {
+        type: 'string',
+        label: 'Consumer expression',
+        help: 'Expression building the consumer identity of a public call, so that the quotas of this plan apply without any credential. Defaults to ${req.ip}. Beware that a missing header resolves to no-header-<field>, which puts every such caller on one shared quota: use an empty default like ${req.headers.x-consumer:} to reject those calls instead.',
+        props: { placeholder: '${req.ip}' },
+      },
+      create_if_missing: {
+        type: 'bool',
+        label: 'Create the apikey if missing',
+        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+      },
+    },
+    flow: ['expr', 'create_if_missing'],
   },
   public: {
     schema: {},
@@ -272,12 +346,12 @@ function AccessModeConfigurationTypeSelector({ onChange, value, onEdit }) {
             icon: 'fa-lock-open',
             text: 'Open access without authentication. Clients call freely without credentials.',
           },
-          {
-            id: 'public',
-            key: 'Public',
-            icon: 'fa-globe',
-            text: 'Available to all developers. Subscribe directly from the portal without approval.',
-          },
+          //{
+          //  id: 'public',
+          //  key: 'Public',
+          //  icon: 'fa-globe',
+          //  text: 'Available to all developers. Subscribe directly from the portal without approval.',
+          //},
           {
             id: 'apikey',
             key: 'API Key',
@@ -363,7 +437,7 @@ function AccessModeConfigurationTypeSelector({ onChange, value, onEdit }) {
               </div>
               <p style={{ margin: 0, fontSize: '12px', lineHeight: '1.4' }}>{text}</p>
 
-              {selected && !['keyless', 'public'].includes(id) && (
+              {selected && !['public'].includes(id) && (
                 <button
                   className="btn btn-success btn-sm ms-auto d-flex"
                   data-testid="access-mode-edit"
@@ -495,7 +569,7 @@ function AccessModeConfigurationExceptApikey({ value, hide, onConfirm, accessMod
   );
 }
 
-function PlanForm({ plan, onChange }) {
+function PlanForm({ plan, onChange, flows = [] }) {
   const [openAccessModeModal, setAccessModeModal] = useState(false);
 
   const isApikeyPlan = plan?.access_mode_configuration_type === 'apikey';
@@ -605,6 +679,34 @@ function PlanForm({ plan, onChange }) {
           },
         },
       },
+      plugins: {
+        type: 'form',
+        label: 'Plugins',
+        collapsable: true,
+        collapsed: true,
+        schema: {
+          overrides: {
+            type: 'bool',
+            label: 'Overrides',
+            help: 'When enabled, the plugins of this plan replace the ones of the route, except the access validators that already ran. When disabled, they are appended to them.',
+          },
+          flow_ref: {
+            type: 'select',
+            label: 'Plugin chain',
+            help: 'Reuse one of the plugin chains of this api instead of listing the plugins here. Any plugin added below extends that chain rather than replacing it.',
+            props: {
+              isClearable: true,
+              options: flows.map((f) => ({ value: f.id, label: f.name || f.id })),
+            },
+          },
+          plugins: {
+            renderer: (props) => (
+              <PluginsChainEditor value={props.value} onChange={props.onChange} />
+            ),
+          },
+        },
+        flow: ['overrides', 'flow_ref', 'plugins'],
+      },
       tags: { type: 'array', label: 'Tags' },
       metadata: { type: 'object', label: 'Metadata' },
       validation: {
@@ -691,9 +793,10 @@ function PlanForm({ plan, onChange }) {
       'rateLimiting',
       'pricing',
       'validation',
+      'plugins',
       { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
     ],
-    []
+    [isApikeyPlan, flows]
   );
 
   console.log(plan);
@@ -943,6 +1046,18 @@ export function PlanEditor(props) {
           access_mode_configuration: {
             enabled: true,
           },
+          // a plan is rate limited like a classic apikey unless told otherwise, so the legacy
+          // strategy with the default quotas is what a new plan starts with
+          rateLimiting: {
+            strategy: {
+              id: 'LegacyThrottlingStrategyConfig',
+              quota: {
+                window: 10000000,
+                daily: 10000000,
+                monthly: 10000000,
+              },
+            },
+          },
         }
       : null
   );
@@ -1006,7 +1121,7 @@ export function PlanEditor(props) {
           }
         />
       </div>
-      <PlanForm plan={plan} onChange={setPlan} />
+      <PlanForm plan={plan} onChange={setPlan} flows={item?.flows ?? []} />
     </div>
   );
 }

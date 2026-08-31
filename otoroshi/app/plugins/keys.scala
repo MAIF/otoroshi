@@ -2,7 +2,7 @@ package otoroshi.plugins
 
 import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
-import next.models.{Api, ApiDocumentationPlan}
+import otoroshi.next.models.{Api, ApiPlan}
 import org.joda.time.DateTime
 import otoroshi.gateway.GwError
 import otoroshi.models.*
@@ -60,6 +60,6 @@ object Keys {
   val ForCurrentListenerOnlyKey         = TypedKey[Boolean]("otoroshi.core.ForCurrentListenerOnly")
   val CurrentListenerKey                = TypedKey[String]("otoroshi.core.CurrentListener")
 
-  val PlanKey = TypedKey[ApiDocumentationPlan]("otoroshi.core.Plan")
+  val PlanKey = TypedKey[ApiPlan]("otoroshi.core.Plan")
   val ApiKey  = TypedKey[Api]("otoroshi.core.Api")
 }

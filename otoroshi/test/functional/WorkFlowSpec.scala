@@ -5,6 +5,9 @@ import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
 import play.api.Configuration
 import play.api.libs.json.Json
 
+// LEGACY: not wired into any Suites, and its two constructor arguments make it impossible to run by
+// name, so nothing has executed it for a while. Kept for reference until someone decides to bring it
+// back into a suite or to drop it.
 class WorkFlowTestSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   implicit lazy val mat: org.apache.pekko.stream.Materializer = otoroshiComponents.materializer

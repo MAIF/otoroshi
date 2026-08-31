@@ -39,7 +39,7 @@ object EventStripper {
 
   /**
    * Fields kept inside `route` (everything else removed).
-   * Keep `metadata` to retain the `Otoroshi-Api-Ref` link and any user metadata.
+   * Keep `api_ref` to retain the `Api` link and any user metadata.
    * Keep `frontend.domains` for domain-based queries.
    */
   private val keptRouteFields: Set[String] = Set(
@@ -49,7 +49,8 @@ object EventStripper {
     "groups",
     "metadata",
     "tags",
-    "description"
+    "description",
+    "api_ref",
   )
 
   def stripGatewayEvent(event: JsValue): JsValue = event match {

@@ -56,34 +56,24 @@ test.afterAll(async () => {
 
 // Helpers -------------------------------------------------------------
 
+// ApiPlan reads snake_case keys only, so a camelCase access_mode_configuration_type is silently
+// dropped and the plan falls back to "keyless". The access mode configuration has to be present
+// too: an absent one leaves create_if_missing at false, the extractor then mints no consumer
+// identity and NgApiConsumerEnforcer, which every published plan adds, rejects the call with a 401.
 const KEYLESS_PLAN = (id = 'plan_keyless') => ({
     id,
     name: 'Free keyless plan',
-    type: 'free',
-    accessModeConfigurationType: 'keyless',
-    accessModeConfiguration: null,
-    consumerKind: 'keyless',
-    visibility: 'public',
-    documentation: null,
-    autoValidation: true,
-    subscriptionProcess: [],
-    integrationProcess: 'apikey',
     status: 'published',
+    access_mode_configuration_type: 'keyless',
+    access_mode_configuration: { create_if_missing: true },
 });
 
 const APIKEY_PLAN = (id = 'plan_apikey') => ({
     id,
     name: 'Free apikey plan',
-    type: 'free',
-    accessModeConfigurationType: 'apikey',
-    accessModeConfiguration: null,
-    consumerKind: 'apikey',
-    visibility: 'public',
-    documentation: null,
-    autoValidation: true,
-    subscriptionProcess: [],
-    integrationProcess: 'apikey',
     status: 'published',
+    access_mode_configuration_type: 'apikey',
+    access_mode_configuration: { enabled: true },
 });
 
 const ROUTE = (flowId, backendId) => ({
@@ -236,9 +226,10 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
     const subCreate = await page.request.post(`${PROXY_ANY}/apisubscriptions`, { data: subBody });
     expect(subCreate.status(), `subscription should be accepted on published plan: ${await subCreate.text().catch(() => '')}`).toBeLessThan(400);
     const sub = await subCreate.json();
-    if (sub.tokenRefs?.[0]?.clientId) {
-        trackedApikeys.add(sub.tokenRefs[0].clientId);
-    }
+    // ApiSubscription serializes as token_refs: [{ apikey: "<clientId>" }]
+    const apikeyId = sub.token_refs?.[0]?.apikey;
+    expect(apikeyId, 'subscribing to an apikey plan must generate an apikey').toBeTruthy();
+    trackedApikeys.add(apikeyId);
 
     const depRes = await putProdWithRetry(page, apiId, (prod) => ({
         ...prod,
@@ -252,10 +243,8 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
 
     const stillThere = await page.request.get(`${PROXY_ANY}/apisubscriptions/${sub.id}`);
     expect(stillThere.status()).toBeLessThan(400);
-    if (sub.tokenRefs?.[0]?.clientId) {
-        const apikey = await page.request.get(`${PROXY_ANY}/apikeys/${sub.tokenRefs[0].clientId}`);
-        expect(apikey.status(), 'existing apikey should remain in the store on deprecated').toBeLessThan(400);
-    }
+    const apikey = await page.request.get(`${PROXY_ANY}/apikeys/${apikeyId}`);
+    expect(apikey.status(), 'existing apikey should remain in the store on deprecated').toBeLessThan(400);
 
     const closeRes = await putProdWithRetry(page, apiId, (prod) => ({
         ...prod,

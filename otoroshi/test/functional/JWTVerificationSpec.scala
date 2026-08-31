@@ -20,6 +20,9 @@ import play.api.libs.json.Json
 
 import scala.util.{Failure, Success, Try}
 
+// LEGACY: not wired into any Suites, and its two constructor arguments make it impossible to run by
+// name, so nothing has executed it for a while. Kept for reference until someone decides to bring it
+// back into a suite or to drop it.
 class JWTVerification2Spec(name: String, configurationSpec: => Configuration) extends PlaySpec {
   "blah" should {
     "very blah" in {
