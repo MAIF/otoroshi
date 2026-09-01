@@ -8,8 +8,7 @@ this is the home of the Otoroshi server app
 * docker
 * jdk 17 at least
 * sbt
-* node
-* yarn
+* node 24
 * rustup toolchain with the latest stable version of rust
 
 ## Build Otoroshi for prod
@@ -44,8 +43,8 @@ in the second bash session, run the following commands
 
 ```sh
 cd ./otorosohi/javascript
-yarn install
-yarn start
+npm install
+npm start
 ```
 
 it will run a build server for the JS app of the admin dashboard

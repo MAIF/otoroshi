@@ -40,7 +40,7 @@ This installs all the required tools at the exact versions defined in `mise.toml
 |------|---------|---------|
 | Java | OpenJDK 17 | Scala backend runtime |
 | SBT | 1.12.9 | Scala build tool |
-| Node.js | 22 | Frontend build & documentation |
+| Node.js | 24 | Frontend build & documentation |
 
 ### Install JS dependencies
 
