@@ -24,10 +24,11 @@ jobs:
         java-version: 17
     - name: install sbt
       uses: sbt/setup-sbt@v1.1.5
-     # setup node to use yarn
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '24'
+        cache: 'npm'
+        cache-dependency-path: otoroshi/javascript/package-lock.json
     - uses: coursier/cache-action@v6
     # The Google mirror is a lagging snapshot of Maven Central: artifacts published
     # in the last few days are often missing from it. So it is listed *before*

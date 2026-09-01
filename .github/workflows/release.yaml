@@ -30,9 +30,9 @@ jobs:
           java-version: 17
       - uses: sbt/setup-sbt@v1.1.5
       - name: setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '24'
       - name: setup release dir
         run: |
           mkdir -p ./release-${{ inputs.version_to }}
@@ -72,7 +72,7 @@ jobs:
           LOC=$(pwd)
           cd ./scripts/release
           npm install
-          npm install -g prettier yarn
+          npm install -g prettier
           node changelog.js --version=${{ inputs.version_to }} --last=${{ inputs.version_last }} --milestone=${{ inputs.milestone }} --dir=${LOC}
           git commit -am '[release ${{ inputs.version_to }}] Update changelog'
           docker buildx create --name multiarchbuilder --driver docker-container --bootstrap --use

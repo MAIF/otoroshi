@@ -53,9 +53,9 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'yarn'
-          cache-dependency-path: otoroshi/javascript/yarn.lock
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: otoroshi/javascript/package-lock.json
       
       - name: install playwright dependencies
         run: |
@@ -76,11 +76,11 @@ jobs:
 
       - name: Install JS dependencies
         working-directory: otoroshi/javascript
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Build UI bundles
         working-directory: otoroshi/javascript
-        run: yarn build
+        run: npm run build
 
       # The Google mirror is a lagging snapshot of Maven Central: artifacts published
       # in the last few days are often missing from it. So it is listed *before*
