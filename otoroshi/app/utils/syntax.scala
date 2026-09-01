@@ -359,8 +359,19 @@ object implicits {
         case Some(value) => JsDefined(value)
       }
     }
+    // Backed by the fast reader. Its callers (rbac, the auth module user validators, graphql,
+    // JsonPathValidator) turn the result into a decision rather than propagating the value, which is
+    // the class of use the differential corpus shows to be free of any divergence. atPathLegacy is
+    // there for a caller that needs the regular engine back.
     def atPath(path: String): JsLookupResult = {
-      JsonPathUtils.getAtPolyJson(obj, path) match {
+      JsonPathUtils.getAtPolyJsonFast(obj, path) match {
+        case None        => JsUndefined(s"path '${path}' does not exists")
+        case Some(value) => JsDefined(value)
+      }
+    }
+
+    def atPathLegacy(path: String): JsLookupResult = {
+      JsonPathUtils.getAtPolyJsonLegacy(obj, path) match {
         case None        => JsUndefined(s"path '${path}' does not exists")
         case Some(value) => JsDefined(value)
       }

@@ -674,13 +674,13 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
         val mismatches = paths.flatMap { path =>
           // three ways in: the JsonPathUtils primitive, the JsValue.atPath extension the rest of
           // otoroshi goes through, and the fast reader
-          val viaUtils  = outcomeOf(JsonPathUtils.getAtPolyJson(payload, path))
-          val viaAtPath = outcomeOf(payload.atPath(path).asOpt[JsValue])
+          val viaUtils  = outcomeOf(JsonPathUtils.getAtPolyJsonLegacy(payload, path))
+          val viaAtPath = outcomeOf(payload.atPathLegacy(path).asOpt[JsValue])
           val viaFast   = outcomeOf(document.read(path))
           if (viaUtils == viaFast && viaUtils == viaAtPath) None
           else
             Some(
-              s"[$label] $path -> getAtPolyJson=${render(viaUtils)} atPath=${render(viaAtPath)} fast=${render(viaFast)}"
+              s"[$label] $path -> legacy=${render(viaUtils)} atPathLegacy=${render(viaAtPath)} fast=${render(viaFast)}"
             )
         }
 
@@ -733,7 +733,7 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
         val mismatches = paths.flatMap { path =>
           expectedValues.flatMap { value =>
             val validator = JsonPathValidator(path, value)
-            val legacy    = outcome(validator.validate(payload))
+            val legacy    = outcome(validator.validateLegacy(payload))
             val fast      = outcome(validator.validate(document))
             if (legacy == fast) None
             else Some(s"[$label] $path with ${Json.stringify(value)} -> legacy=$legacy fast=$fast")
@@ -807,7 +807,7 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
           }
 
           // what the users plugins go through
-          val legacyMatch = Try(JsonPathUtils.matchWith(payload)(path)).toEither.left.map(_.getClass.getName)
+          val legacyMatch = Try(JsonPathUtils.matchWithLegacy(payload)(path)).toEither.left.map(_.getClass.getName)
           val fastMatch   = Try(fastMatchWith(document)(path)).toEither.left.map(_.getClass.getName)
           if (legacyMatch != fastMatch) {
             mismatches += s"[$label] matchWith $path -> legacy=$legacyMatch fast=$fastMatch"
@@ -867,13 +867,13 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
 
         (exoticPaths ++ harvestPaths(payload, "$", 4)).distinct.foreach { path =>
           compared += 1
-          val viaUtils  = outcomeOf(JsonPathUtils.getAtPolyJson(payload, path))
-          val viaAtPath = outcomeOf(payload.atPath(path).asOpt[JsValue])
+          val viaUtils  = outcomeOf(JsonPathUtils.getAtPolyJsonLegacy(payload, path))
+          val viaAtPath = outcomeOf(payload.atPathLegacy(path).asOpt[JsValue])
           val viaFast   = outcomeOf(document.read(path))
           if (viaUtils != viaFast || viaUtils != viaAtPath) {
             val kind = if (sameIgnoringNumericPrecision(viaUtils, viaFast)) "NUMERIC" else "REAL"
             mismatches +=
-              s"$kind [$label] $path -> getAtPolyJson=${render(viaUtils)} atPath=${render(viaAtPath)} fast=${render(viaFast)}"
+              s"$kind [$label] $path -> legacy=${render(viaUtils)} atPathLegacy=${render(viaAtPath)} fast=${render(viaFast)}"
           }
         }
 
@@ -927,8 +927,8 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
             if (samples.size < 40) samples += s"$kind | $path | legacy=$legacy fast=$fast"
           }
 
-          val viaUtils  = outcomeOf(JsonPathUtils.getAtPolyJson(payload, path))
-          val viaAtPath = outcomeOf(payload.atPath(path).asOpt[JsValue])
+          val viaUtils  = outcomeOf(JsonPathUtils.getAtPolyJsonLegacy(payload, path))
+          val viaAtPath = outcomeOf(payload.atPathLegacy(path).asOpt[JsValue])
           val viaFast   = outcomeOf(document.read(path))
           // a divergence that goes away once numbers are compared as text is a precision difference
           // and nothing else. counted apart, because that distinction is the whole decision.
@@ -936,7 +936,7 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
             val kind = if (sameIgnoringNumericPrecision(viaUtils, viaFast)) "getAtPolyJson NUMERIC" else "getAtPolyJson"
             note(kind, render(viaUtils), render(viaFast))
           }
-          if (viaUtils != viaAtPath) note("atPath vs getAtPolyJson", render(viaUtils), render(viaAtPath))
+          if (viaUtils != viaAtPath) note("atPathLegacy vs getAtPolyJsonLegacy", render(viaUtils), render(viaAtPath))
 
           // a divergence on this path is a precision one when the raw reads only differ that way
           val numericOnly = sameIgnoringNumericPrecision(viaUtils, viaFast)
@@ -948,7 +948,7 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
             note(s"getAtPolyJsonStr$suffix", legacyStr.toString.take(80), fastStr.toString.take(80))
           }
 
-          val legacyMatch = Try(JsonPathUtils.matchWith(payload)(path)).toEither.left.map(_.getClass.getName)
+          val legacyMatch = Try(JsonPathUtils.matchWithLegacy(payload)(path)).toEither.left.map(_.getClass.getName)
           val fastMatch   = Try(fastMatchWith(document)(path)).toEither.left.map(_.getClass.getName)
           if (legacyMatch != fastMatch) note("matchWith", legacyMatch.toString, fastMatch.toString)
 
@@ -960,7 +960,7 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
           Seq(JsString("IsDefined()"), JsString("NotDefined()"), JsString("Contains(a)"), JsNumber(1)).foreach {
             expected =>
               val validator = JsonPathValidator(path, expected)
-              val l         = outcome(validator.validate(payload))
+              val l         = outcome(validator.validateLegacy(payload))
               val f         = outcome(validator.validate(document))
               if (l != f) note(s"validate ${Json.stringify(expected)}", l.toString, f.toString)
           }
@@ -980,6 +980,24 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
       byKind.filterNot(_._1.endsWith("NUMERIC")).keys.toSeq.sorted mustBe Seq.empty
     }
 
+    "still be comparing two genuinely different engines" in {
+
+      // If the legacy entry points ever get pointed at the fast reader, this whole suite turns into
+      // a comparison of the fast reader with itself: green, and proving nothing. This pins down a
+      // value the two engines are known to carry differently, so that day fails loudly here.
+      val big     = BigDecimal("1.234567890123456789012345678901234567890")
+      val payload = Json.obj("n" -> JsNumber(big))
+
+      val legacy = JsonPathUtils.getAtPolyJsonLegacy(payload, "$.n")
+      val fast   = JsonPathUtils.getAtPolyJsonFast(payload, "$.n")
+
+      report(s"  legacy reads $legacy")
+      report(s"  fast   reads $fast")
+
+      fast mustBe Some(JsNumber(big))
+      legacy must not be fast
+    }
+
     "not depend on the null read flag for an explicit json null" in {
 
       // The flag guards the branch taken when jayway hands back a java null. With
@@ -990,15 +1008,15 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
 
       report(s"  jsonPathNullReadIsJsNull = ${env.jsonPathNullReadIsJsNull}")
 
-      JsonPathUtils.getAtPolyJson(payload, "$.a") mustBe Some(JsNull)
-      JsonPathUtils.getAtPolyJson(payload, "$.b.c") mustBe Some(JsNull)
+      JsonPathUtils.getAtPolyJsonLegacy(payload, "$.a") mustBe Some(JsNull)
+      JsonPathUtils.getAtPolyJsonLegacy(payload, "$.b.c") mustBe Some(JsNull)
 
       val document = JsonPathUtils.document(payload)
       document.read("$.a") mustBe Some(JsNull)
       document.read("$.b.c") mustBe Some(JsNull)
 
       // and a genuinely absent path stays absent on both roads whatever the flag says
-      JsonPathUtils.getAtPolyJson(payload, "$.nope") mustBe None
+      JsonPathUtils.getAtPolyJsonLegacy(payload, "$.nope") mustBe None
       document.read("$.nope") mustBe None
     }
 
@@ -1055,7 +1073,7 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
           // the unit is the realistic one: evaluating a whole predicate list against one payload,
           // which is what a plugin does once per phase. the fast road pays for building its document
           // inside that unit, exactly as the plugin does.
-          def legacyRound(): Boolean = scenario.predicates.forall(_.validate(payload))
+          def legacyRound(): Boolean = scenario.predicates.forall(_.validateLegacy(payload))
           def fastRound(): Boolean   = {
             val document = JsonPathUtils.document(payload)
             scenario.predicates.forall(_.validate(document))
@@ -1148,7 +1166,7 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
 
       val results = payloads.flatMap { case (label, payload) =>
         singleShotPaths.map { path =>
-          def legacyOne(): Boolean = JsonPathUtils.getAtPolyJson(payload, path).isDefined
+          def legacyOne(): Boolean = JsonPathUtils.getAtPolyJsonLegacy(payload, path).isDefined
           def fastOne(): Boolean   = JsonPathUtils.document(payload).read(path).isDefined
 
           legacyOne() mustBe fastOne()
@@ -1251,7 +1269,7 @@ class JsonPathNullReadOnSpec(configurationSpec: => Configuration) extends Otoros
       val document = JsonPathUtils.document(payload)
 
       val mismatches = paths.flatMap { path =>
-        val legacy = Try(JsonPathUtils.getAtPolyJson(payload, path)).toEither.left.map(_.getClass.getName)
+        val legacy = Try(JsonPathUtils.getAtPolyJsonLegacy(payload, path)).toEither.left.map(_.getClass.getName)
         val fast   = Try(document.read(path)).toEither.left.map(_.getClass.getName)
         if (legacy == fast) None else Some(s"$path -> legacy=$legacy fast=$fast")
       }

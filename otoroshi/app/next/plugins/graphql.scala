@@ -172,7 +172,8 @@ class GraphQLQuery extends NgBackendCall {
       .execute()
       .map { resp =>
         if (resp.status == 200) {
-          val partialBody = resp.json.atPath(config.responsePath.getOrElse("$")).asOpt[JsValue].getOrElse(JsNull)
+          val partialBody =
+            resp.json.atPathLegacy(config.responsePath.getOrElse("$")).asOpt[JsValue].getOrElse(JsNull)
           config.responseFilter match {
             case None         =>
               inMemoryBodyResponse(
@@ -689,7 +690,7 @@ class GraphQLBackend extends NgBackendCall {
       .execute()
       .map { resp =>
         if (resp.status == 200) {
-          resp.json.atPath(c.arg(responsePathArg).getOrElse("$")).asOpt[JsValue].getOrElse(JsNull) match {
+          resp.json.atPathLegacy(c.arg(responsePathArg).getOrElse("$")).asOpt[JsValue].getOrElse(JsNull) match {
             case JsArray(value) =>
               val res = sliceArrayWithArgs(value, c)
               res.map {

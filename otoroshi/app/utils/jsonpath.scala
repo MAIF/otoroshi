@@ -35,11 +35,25 @@ object JsonPathUtils {
 
   private val logger = Logger("otoroshi-jsonpath-utils")
 
-  def matchWith(payload: JsValue): String => Boolean = { (query: String) =>
+  // Reads a payload once and answers many queries off it. Backed by the fast reader: matchWith is a
+  // presence test, and that is exactly the class of use the differential corpus shows to be free of
+  // any divergence.
+  def matchWith(payload: JsValue): String => Boolean = {
+    val doc = document(payload)
+    (query: String) => doc.read(query).isDefined
+  }
+
+  // The regular engine, under an explicit name. Kept reachable so that a caller can be moved back
+  // one line at a time, and so that the differential corpus has something to compare against once
+  // the shared entry points have moved over.
+  def matchWithLegacy(payload: JsValue): String => Boolean = { (query: String) =>
     {
-      getAtPolyJson(payload, query).isDefined
+      getAtPolyJsonLegacy(payload, query).isDefined
     }
   }
+
+  // The fast engine as a one shot read, for call sites that resolve a single path and move on.
+  def getAtPolyJsonFast(payload: JsValue, path: String): Option[JsValue] = document(payload).read(path)
 
   def getAtJson[T](payload: JsValue, path: String)(using r: Reads[T]): Option[T] = {
     getAt[T](Json.stringify(payload), path)(using r)
@@ -71,7 +85,13 @@ object JsonPathUtils {
       .build()
   }
 
-  def getAtPolyJson(payload: JsValue, path: String): Option[JsValue] = {
+  // Still the regular engine. Its callers (graphql, mapfilter, workflows) use the value it returns,
+  // and the two engines do not carry numbers identically: a string round trip truncates anything
+  // beyond a double, the fast reader hands back what was there. Moving this one is a deliberate
+  // behaviour change, so it has not been made here.
+  def getAtPolyJson(payload: JsValue, path: String): Option[JsValue] = getAtPolyJsonLegacy(payload, path)
+
+  def getAtPolyJsonLegacy(payload: JsValue, path: String): Option[JsValue] = {
     getAtPoly(Json.stringify(payload), path)
     // val env = OtoroshiEnvHolder.get()
     // env.metrics.withTimer("JsonPathUtils.getAtPolyJson") {
@@ -235,6 +255,12 @@ case class JsonPathValidator(path: String, value: JsValue, error: Option[String]
   override def kind: String = "json-path-validator"
   def validate(ctx: JsValue)(using env: Env): Boolean =
     check(ctx.atPath(path).asOpt[JsValue], ctx.isInstanceOf[JsObject])
+
+  // The regular engine, under an explicit name. atPath is backed by the fast reader now, so this is
+  // what a caller needing the previous behaviour back reaches for, and what the differential suite
+  // has to compare against so that it does not end up comparing the fast reader with itself.
+  def validateLegacy(ctx: JsValue)(using env: Env): Boolean =
+    check(ctx.atPathLegacy(path).asOpt[JsValue], ctx.isInstanceOf[JsObject])
 
   // reads the path off a payload that was parsed once. a list of validators sharing the same payload
   // then pays a single serialisation and a single json parse instead of one per validator.
