@@ -10,7 +10,7 @@ import {
   NumberInput,
 } from './inputs';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('./inputs/CodeInput'));
 
 import deepSet from 'set-value';
 import cloneDeep from 'lodash/cloneDeep';

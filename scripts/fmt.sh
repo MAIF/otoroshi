@@ -5,7 +5,7 @@ LOCATION=`pwd`
 
 fmt_ui () {
   cd $LOCATION/otoroshi/javascript
-  yarn prettier
+  npm run prettier
 }
 
 fmt_server () {

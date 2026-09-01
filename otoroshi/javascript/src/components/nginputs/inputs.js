@@ -12,7 +12,7 @@ import { v4 as uuid } from 'uuid';
 import MonacoEditor from '@monaco-editor/react';
 import { Button } from '../Button';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('../inputs/CodeInput'));
 
 export const RawMonacoEditor = MonacoEditor;
 

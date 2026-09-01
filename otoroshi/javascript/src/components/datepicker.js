@@ -5,7 +5,6 @@ import DatePicker from 'antd/lib/date-picker';
 import LocaleProvider from 'antd/lib/locale-provider';
 import enUS from 'antd/lib/locale-provider/en_US';
 import 'antd/lib/date-picker/style/index.css';
-import './datepicker.css';
 
 export class OtoDatePicker extends Component {
   onChange = (value, dateString) => {
@@ -34,7 +33,7 @@ export class OtoDatePicker extends Component {
           format={dateFormat}
           placeholder={['Start Time', 'End Time']}
           onChange={this.onChange}
-          onOk={(value) => value}
+          onOk={() => {}}
         />
       </LocaleProvider>
     );
@@ -50,9 +49,11 @@ export class OtoDateTimePicker extends Component {
     }
   };
 
+
   render() {
     const { date } = this.props;
     const dateFormat = 'YYYY-MM-DD HH:mm:ss';
+
     return (
       <LocaleProvider locale={enUS}>
         <DatePicker
@@ -61,7 +62,7 @@ export class OtoDateTimePicker extends Component {
           format={dateFormat}
           placeholder="Date and time"
           onChange={this.onChange}
-          onOk={(value) => value}
+          onOk={() => { }}
         />
       </LocaleProvider>
     );

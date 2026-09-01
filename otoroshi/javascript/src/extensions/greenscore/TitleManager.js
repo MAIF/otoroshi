@@ -2,7 +2,7 @@ import React from 'react';
 import PageTitle from '../../components/PageTitle';
 import { useHistory, useLocation } from 'react-router-dom';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
-import faker from 'faker';
+import { randomFirstName, randomWords } from '../../util';
 
 export function Tab({ isActive, title, icon, to, fillBackground }) {
   const history = useHistory();
@@ -76,8 +76,8 @@ export function ManagerTitle(props) {
       const groupTemplate = await client.template();
       return client.create({
         ...groupTemplate,
-        name: faker.name.firstName(),
-        description: faker.lorem.words(),
+        name: randomFirstName(),
+        description: randomWords(),
         routes: [
           {
             routeId: route.id,

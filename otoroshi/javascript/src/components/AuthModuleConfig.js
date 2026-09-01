@@ -12,7 +12,7 @@ import {
   Help,
 } from './inputs';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('./inputs/CodeInput'));
 
 import { Proxy } from './Proxy';
 import { Separator } from './Separator';
@@ -25,7 +25,7 @@ import { abortCeremony, createCredentials } from '../webauthn';
 
 import deepSet from 'set-value';
 import cloneDeep from 'lodash/cloneDeep';
-import faker from 'faker';
+import { randomAlphaNumeric, randomFirstName, randomLastName } from '../util';
 import bcrypt from 'bcryptjs';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 import { Form } from './inputs';
@@ -913,7 +913,7 @@ export class User extends Component {
             className="btn btn-sm btn-success"
             title="Generate password"
             onClick={(e) => {
-              const password = faker.random.alphaNumeric(16);
+              const password = randomAlphaNumeric(16);
               this.props.hashPassword(this.props.user.email, password);
               window.newAlert(`The generated password is: ${password}`, 'Generated password');
             }}
@@ -1098,8 +1098,8 @@ export class BasicModuleConfig extends Component {
 
   addUser = () => {
     const newValue = cloneDeep(this.props.value);
-    const firstName = faker.name.firstName();
-    const lastName = faker.name.lastName();
+    const firstName = randomFirstName();
+    const lastName = randomLastName();
     newValue.users.push({
       name: firstName + ' ' + lastName,
       password: bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
@@ -2051,7 +2051,7 @@ export class AuthModuleConfig extends Component {
           /*switch (e) {
             case 'basic':
               this.props.onChange({
-                id: faker.random.alphaNumeric(64),
+                id: randomAlphaNumeric(64),
                 type: 'basic',
                 name: 'Basic config.',
                 sessionMaxAge: 86400,
@@ -2071,7 +2071,7 @@ export class AuthModuleConfig extends Component {
               break;
             case 'ldap':
               this.props.onChange({
-                id: faker.random.alphaNumeric(64),
+                id: randomAlphaNumeric(64),
                 name: 'Ldap config.',
                 type: 'ldap',
                 serverUrl: 'ldap://ldap.forumsys.com:389',
@@ -2093,7 +2093,7 @@ export class AuthModuleConfig extends Component {
               break;
             case 'oauth2':
               this.props.onChange({
-                id: faker.random.alphaNumeric(64),
+                id: randomAlphaNumeric(64),
                 name: 'OAuth2 config.',
                 type: 'oauth2',
                 clientId: 'client',

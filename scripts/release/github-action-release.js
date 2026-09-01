@@ -189,8 +189,6 @@ async function cleanup(version, where, releaseDir) {
 async function buildUi(version, where, releaseDir) {
   // build ui
   await runScript(`
-    cd ${where}/otoroshi/javascript
-    yarn install
     cd ${where}
     sh ${where}/scripts/build.sh ui
   `, where);

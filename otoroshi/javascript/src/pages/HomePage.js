@@ -1,6 +1,6 @@
 import React, { Component, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { converterBase2 } from 'byte-converter';
+import { converterBase2 } from '../util';
 import { Sparklines, SparklinesLine, SparklinesSpots } from 'react-sparklines';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { dynamicTitleContent } from '../components/DynamicTitleSignal';

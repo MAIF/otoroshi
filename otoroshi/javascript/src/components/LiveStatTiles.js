@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { converterBase2 } from 'byte-converter';
+import { converterBase2 } from '../util';
 import { Sparklines, SparklinesLine, SparklinesSpots } from 'react-sparklines';
 
 function init(size, value = 0) {

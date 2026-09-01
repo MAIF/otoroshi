@@ -338,27 +338,6 @@ export function fetchGlobalStatus(page, limit) {
   );
 }
 
-export function fetchHealthCheckEvents(serviceId) {
-  return fetch(`/bo/api/proxy/api/services/${serviceId}/health`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  })
-    .then((r) => {
-      if (r.status !== 200) {
-        return [];
-      } else {
-        return r.json();
-      }
-    })
-    .catch((e) => {
-      console.log('error while fetching service status');
-      return [];
-    });
-}
-
 export function fetchServiceStatus(serviceId) {
   return fetch(`/bo/api/proxy/api/services/${serviceId}/status`, {
     method: 'GET',

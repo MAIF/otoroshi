@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
-const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('../components/inputs/CodeInput'));
 
 export function EurekaServerPage(props) {
   const { setTitle, params } = props;

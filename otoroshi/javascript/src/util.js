@@ -67,6 +67,47 @@ export const humanMillisecond = function (ms, digits = 1) {
   return value.toFixed(digits) + ' ' + name;
 };
 
+const BYTE_UNIT_POWERS = {
+  B: 0,
+  KB: 10,
+  MB: 20,
+  GB: 30,
+  TB: 40,
+  PB: 50,
+  EB: 60,
+  ZB: 70,
+  YB: 80,
+};
+
+export const converterBase2 = (value, originalUnit, targetUnit) =>
+  value * Math.pow(2, BYTE_UNIT_POWERS[originalUnit] - BYTE_UNIT_POWERS[targetUnit]);
+
+export const classNames = (...args) => args.filter(Boolean).join(' ');
+
+const ALPHANUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+export const randomAlphaNumeric = (length) => {
+  const values = new Uint32Array(length);
+  window.crypto.getRandomValues(values);
+  return Array.from(values, (value) => ALPHANUMERIC[value % ALPHANUMERIC.length]).join('');
+};
+
+const FIRST_NAMES = [
+  'Alex', 'Camille', 'Dominique', 'Eliott', 'Farah', 'Gabriel', 'Hana', 'Ines',
+  'Jules', 'Karim', 'Lena', 'Marius', 'Nadia', 'Oscar', 'Paul', 'Sofia',
+];
+const LAST_NAMES = [
+  'Bernard', 'Chevalier', 'Dubois', 'Fontaine', 'Girard', 'Henry', 'Lambert',
+  'Martin', 'Moreau', 'Perrin', 'Robin', 'Roussel', 'Simon', 'Vincent',
+];
+const LOREM = ['aperture', 'binary', 'cluster', 'gateway', 'lattice', 'proxy', 'route', 'signal'];
+
+const pick = (values) => values[Math.floor(Math.random() * values.length)];
+
+export const randomFirstName = () => pick(FIRST_NAMES);
+export const randomLastName = () => pick(LAST_NAMES);
+export const randomWords = () => [pick(LOREM), pick(LOREM), pick(LOREM)].join(' ');
+
 export const unsecuredCopyToClipboard = (text) => {
   const textArea = document.createElement('textarea');
   textArea.value = text;

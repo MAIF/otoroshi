@@ -34,7 +34,7 @@ function tryOrFalse(f) {
   }
 }
 
-const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
+const CodeInput = React.lazy(() => import('../components/inputs/CodeInput'));
 
 //[REMOVE SERVICEDESC] function CircuitBreakerWarn(props) {
 //[REMOVE SERVICEDESC] if (props.rawValue.useCircuitBreakers) {

@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 //[REMOVE SERVICEDESC] import { ServiceSidebar } from '../components/ServiceSidebar';
-import { converterBase2 } from 'byte-converter';
 import { Table, SimpleBooleanInput } from '../components/inputs';
 import moment from 'moment';
 import queryString from 'query-string';

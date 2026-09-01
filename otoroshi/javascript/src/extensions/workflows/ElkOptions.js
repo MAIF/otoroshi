@@ -1,4 +1,17 @@
-import ELK from 'elkjs/lib/elk.bundled.js';
+let elkBundle = null;
+
+const loadElk = () => {
+  if (!elkBundle) {
+    elkBundle = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = '/assets/javascripts/bundle/elk.js';
+      script.onload = () => resolve(new window.OtoroshiElk.ELK());
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+  return elkBundle;
+};
 
 const elkOptions = {
   'elk.algorithm': 'layered',
@@ -43,8 +56,6 @@ const elkOptions = {
   'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
 };
 
-const elk = new ELK();
-
 const getLayoutedElements = (nodes, edges, options = {}) => {
   const isHorizontal = options?.['elk.direction'] === 'RIGHT';
   const graph = {
@@ -82,8 +93,8 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
     edges: edges,
   };
 
-  return elk
-    .layout(graph)
+  return loadElk()
+    .then((elk) => elk.layout(graph))
     .then((layoutedGraph) => ({
       nodes: layoutedGraph.children.map((node) => ({
         ...node,

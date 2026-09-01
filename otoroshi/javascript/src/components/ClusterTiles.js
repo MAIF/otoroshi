@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { converterBase2 } from 'byte-converter';
+import { converterBase2 } from '../util';
 import { Sparklines, SparklinesLine, SparklinesSpots } from 'react-sparklines';
 import { Link } from 'react-router-dom';
 

@@ -10,8 +10,8 @@ import {
 import { Button } from '../../components/Button';
 import { SquareButton } from '../../components/SquareButton';
 import { Dropdown } from '../../components/Dropdown';
+import { randomAlphaNumeric, randomFirstName, randomLastName } from '../../util';
 import { abortCeremony, createCredentials } from '../../webauthn';
-import faker from 'faker';
 import bcrypt from 'bcryptjs';
 import { useHistory } from 'react-router-dom';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
@@ -1024,8 +1024,8 @@ function OAuth1Configuration({ value, onChange }) {
 
 function InMemoryConfiguration({ value, onChange }) {
   const addUser = () => {
-    const firstName = faker.name.firstName();
-    const lastName = faker.name.lastName();
+    const firstName = randomFirstName();
+    const lastName = randomLastName();
     onChange({
       ...value,
       users: [
@@ -1248,7 +1248,7 @@ class User extends React.Component {
   };
 
   generatePassword = () => {
-    const password = faker.random.alphaNumeric(16);
+    const password = randomAlphaNumeric(16);
     this.hashPassword(password);
     window.newAlert(() => <GetPassword password={password} />, 'Generated password');
   };

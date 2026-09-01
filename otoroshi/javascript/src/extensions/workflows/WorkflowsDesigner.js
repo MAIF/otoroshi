@@ -19,7 +19,6 @@ import { TagsModal } from './TagsModal';
 import { useSignalValue } from 'signals-react-safe';
 import debounce from 'lodash/debounce';
 import Terminal from './Terminal';
-import { useSuppressResizeObserverError } from './useSuppressionResizeObserverError';
 
 export const INFORMATION_FIELDS = [
   'description',
@@ -72,8 +71,6 @@ export function WorkflowsDesigner(props) {
   const [workflow, setWorkflow] = useState(props.workflow);
 
   const catalog = useSignalValue(nodesCatalogSignal);
-
-  useSuppressResizeObserverError();
 
   const saveTerminalSize = debounce((newSize) => {
     localStorage.setItem(LOCAL_STORAGE_TERMINAL_KEY, newSize);

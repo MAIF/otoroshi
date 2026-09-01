@@ -133,7 +133,11 @@ dependencyOverrides ++= Seq(
   // ask for netty-codec 4.1.x, which ships those same class names with the 4.1 signatures and
   // shadows netty-codec-base on the classpath -> NoSuchMethodError DefaultHeaders.containsAny at
   // runtime. Keep netty-codec on nettyVersion so only the 4.2 copies are loaded.
-  "io.netty"               % "netty-codec"             % nettyVersion
+  "io.netty"               % "netty-codec"             % nettyVersion,
+  // diffson-play-json 4.7.0 asks for play-json 3.1.0-M9, where JsBoolean.unapply returns Some
+  // instead of Option: code compiled against it breaks (NoSuchMethodError) when the 3.0.x copy
+  // is the one shipped. Pin play-json so compile and runtime agree.
+  "org.playframework"      %% "play-json"               % playJsonVersion
 )
 
 libraryDependencies ++= Seq(
@@ -195,7 +199,9 @@ libraryDependencies ++= Seq(
   "org.bouncycastle"                 % "bcpkix-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson *),
   "org.bouncycastle"                 % "bcprov-ext-jdk18on"                   % bouncyCastleExtVersion excludeAll (excludesJackson *),
   "org.bouncycastle"                 % "bcprov-jdk18on"                       % s"$bouncyCastleVersion.2" excludeAll (excludesJackson *),
-  "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                   % pulsarVersion excludeAll (excludesJackson: _*),
+  // pulsar4s-play-json pulls the legacy com.typesafe.play:play-json (same play.api.libs.json
+  // package, different groupId so never evicted): its JsBoolean$ shadows ours in the fat jar.
+  "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                   % pulsarVersion excludeAll ((excludesJackson :+ ExclusionRule(organization = "com.typesafe.play")): _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                        % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-pekko-streams"               % pulsarVersion excludeAll (excludesJackson: _*),
   "org.jsoup"                        % "jsoup"                                % "1.23.1",

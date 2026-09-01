@@ -15,8 +15,8 @@ copy_build () {
 prepare_build () {
   if [ ! -f ./otoroshi.jar ]; then
     cd $LOCATION/../../otoroshi/javascript
-    yarn install
-    yarn build
+    npm install
+    npm run build
     cd $LOCATION/../../otoroshi
     sbt assembly
     cd $LOCATION

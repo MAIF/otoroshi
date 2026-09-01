@@ -60,7 +60,7 @@ class PluginsDescription extends Component {
   }
 
   update = () => {
-    window.$('.plugin-doc pre code').each((i, block) => {
+    document.querySelectorAll('.plugin-doc pre code').forEach((block) => {
       window.hljs.highlightBlock(block);
     });
   };

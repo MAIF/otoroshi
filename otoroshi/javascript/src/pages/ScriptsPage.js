@@ -1,7 +1,7 @@
 import React, { Component, useState } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { SelectInput, Table } from '../components/inputs';
-import faker from 'faker';
+import { randomAlphaNumeric } from '../util';
 import bcrypt from 'bcryptjs';
 
 const basicTransformer = `import akka.stream.Materializer
@@ -513,7 +513,7 @@ export class ScriptsPage extends Component {
         injectTable={(t) => (this.table = t)}
         defaultValue={BackOfficeServices.createNewScript}
         _defaultValue={() => ({
-          id: faker.random.alphaNumeric(64),
+          id: randomAlphaNumeric(64),
           name: 'My plugin',
           desc: 'A plugin',
           code: basicTransformer,

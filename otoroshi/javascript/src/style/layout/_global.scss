@@ -3,6 +3,8 @@ body {
   font-weight: 500;
   background-color: var(--bg-color_level1);
   color: var(--color_level1);
+  font-size: 14px;
+  line-height: 1.5715;
 }
 
 #app {
@@ -24,6 +26,7 @@ body {
 
 a {
   color: var(--color_level1);
+  text-decoration: none;
 }
 
 a:hover {
@@ -65,5 +68,9 @@ h4 {
 
 h1,
 h2 {
+  color: var(--text);
+}
+
+p {
   color: var(--text);
 }

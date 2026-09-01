@@ -1,13 +1,11 @@
 import 'es6-shim';
 import 'whatwg-fetch';
-import 'core-js/es6/map';
-import 'core-js/es6/set';
+import 'core-js/es/map';
+import 'core-js/es/set';
 import './raf';
 import 'react-table/react-table.css';
-import './style/main.scss';
 
 import Symbol from 'es-symbol';
-import $ from 'jquery';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import browserUpdate from 'browser-update';
@@ -34,17 +32,17 @@ import { setupRemoteCatalogsExtension } from './extensions/catalogs';
 
 import * as Forms from './forms/ng_plugins/index';
 
+import './style/main.scss';
+
 if (!window.Symbol) {
   window.Symbol = Symbol;
 }
-window.$ = $;
-window.jQuery = $;
 
 Number.prototype.prettify = function () {
   return this.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
 };
 
-window._fetch = window.fetch;
+window._fetch = window._fetch || window.fetch;
 window.fetch = function (...params) {
   const url = params[0];
   const options = params[1];
@@ -101,6 +99,7 @@ function Konami(callback) {
       if (input.length > pattern.length) {
         input = input.substr(input.length - pattern.length);
       }
+
       if (input === pattern) {
         callback(); // eslint-disable-line
         input = '';
@@ -113,6 +112,7 @@ function Konami(callback) {
 function setupKonami() {
   Konami(() => {
     function showClippy() {
+      window.clippy.BASE_PATH = '/__otoroshi_assets/clippy/agents/';
       window.clippy.load('Clippy', function (agent) {
         agent.moveTo(window.innerWidth - 200, 150);
         agent.show();
@@ -125,26 +125,43 @@ function setupKonami() {
       });
     }
 
-    if (!document.getElementById('clippycss')) {
-      const css = document.createElement('link');
-      css.setAttribute('id', 'clippycss');
-      css.setAttribute('rel', 'stylesheet');
-      css.setAttribute('type', 'text/css');
-      css.setAttribute('media', 'all');
-      css.setAttribute('href', '/__otoroshi_assets/clippy/build/clippy.css');
-      const js = document.createElement('script');
-      js.setAttribute('src', '/__otoroshi_assets/clippy/build/clippy.min.js');
-      document.head.appendChild(css);
-      document.body.appendChild(js);
-      js.addEventListener(
+    function loadClippy() {
+      if (!document.getElementById('clippycss')) {
+        const css = document.createElement('link');
+        css.setAttribute('id', 'clippycss');
+        css.setAttribute('rel', 'stylesheet');
+        css.setAttribute('type', 'text/css');
+        css.setAttribute('media', 'all');
+        css.setAttribute('href', '/__otoroshi_assets/clippy/build/clippy.css');
+        const js = document.createElement('script');
+        js.setAttribute('src', '/__otoroshi_assets/clippy/build/clippy.min.js');
+        document.head.appendChild(css);
+        document.body.appendChild(js);
+        js.addEventListener(
+          'load',
+          () => {
+            showClippy();
+          },
+          false
+        );
+      } else {
+        showClippy();
+      }
+    }
+
+    if (window.jQuery) {
+      loadClippy();
+    } else {
+      const jq = document.createElement('script');
+      jq.setAttribute('src', '/__otoroshi_assets/javascripts/jquery.js');
+      document.body.appendChild(jq);
+      jq.addEventListener(
         'load',
         () => {
-          showClippy();
+          loadClippy();
         },
         false
       );
-    } else {
-      showClippy();
     }
   });
 }

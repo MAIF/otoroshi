@@ -300,6 +300,7 @@ export default function ({ route }) {
                   }}
                   className="p-2 px-3"
                   style={{
+                    color: 'var(--text)',
                     padding: 0,
                     border: 'none',
                     borderRight: i === 1 || i === 2 ? '1px solid var(--border-color)' : 0,
