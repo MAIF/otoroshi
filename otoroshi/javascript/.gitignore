@@ -1,6 +1,5 @@
 node_modules
 .DS_Store
-stats.json
 /test-results/
 /playwright-report/
 /blob-report/

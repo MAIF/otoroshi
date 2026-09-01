@@ -279,62 +279,6 @@ async function pushToMaster(location, tag) {
 async function publishHelmChart(location, version) {
   await runSystemCommand('/bin/sh', [path.resolve(location, './scripts/helm.sh'), version], location);
 }
-/*
-async function buildTcpTunnelingCli(location, version) {
-  await runScript(`
-    cd ${location}/tools/tcp-udp-tunnel-client
-    yarn install
-    yarn pkg
-    cp -v "$LOCATION/tools/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-linux" "$LOCATION/release-$VERSION/"
-    cp -v "$LOCATION/tools/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-macos" "$LOCATION/release-$VERSION/"
-    cp -v "$LOCATION/tools/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-win.exe" "$LOCATION/release-$VERSION/"
-    `,
-    location,
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
-
-async function buildTcpTunnelingCliGUI(location, version) {
-  await runScript(`
-    cd ${location}/tools/tcp-udp-tunnel-client-gui
-    yarn install
-    yarn dist-mac
-    # hdiutil create -format UDZO -srcfolder "$LOCATION/tools/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
-    `,
-    location,
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
-
-async function buildTlsTermination(location, version) {
-  await runScript(`
-    cd ${location}/experiments/otoroshi-tls-termination
-    cargo build --release --target-dir target-darwin
-    cp ${location}/experiments/otoroshi-tls-termination/target-darwin/release/otoroshi_tls_termination "$LOCATION/release-$VERSION/experimental-tls-termination-darwin"
-    rm -rf ./target
-    docker run --rm --user "$(id -u)":"$(id -g)" -v "$PWD":/usr/src/myapp -w /usr/src/myapp rust:latest cargo build --release --target-dir target-linux
-    cp ${location}/experiments/otoroshi-tls-termination/target-linux/release/otoroshi_tls_termination "$LOCATION/release-$VERSION/experimental-tls-termination-linux"
-    `,
-    location,
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
-  */
 
 async function githubTag(location, version) {
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Prepare the release of Otoroshi version ${version}`], location);
@@ -418,8 +362,7 @@ async function uploadFilesToRelease(release, file) {
 }
 
 async function installDependencies(location) {
-  //await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/loadbalancing'));
-  //await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/snowmonkey'));
+  // no-op: the demos this step used to install were removed from the repo
 }
 
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
