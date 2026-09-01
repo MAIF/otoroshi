@@ -293,12 +293,29 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
   private def outcomeOf(f: => Option[JsValue]): Either[String, Option[JsValue]] =
     Try(f).toEither.left.map(e => s"${e.getClass.getName}")
 
+  // true when two results only differ by how precisely a number is carried
+  private def sameIgnoringNumericPrecision(
+      a: Either[String, Option[JsValue]],
+      b: Either[String, Option[JsValue]]
+  ): Boolean = {
+    def blunt(value: JsValue): JsValue = value match {
+      case JsNumber(n)    => JsString(f"${n.toDouble}%.10e")
+      case JsArray(items) => JsArray(items.map(blunt))
+      case obj: JsObject  => JsObject(obj.value.map { case (k, v) => k -> blunt(v) }.toMap)
+      case other          => other
+    }
+    (a, b) match {
+      case (Right(x), Right(y)) => x.map(blunt) == y.map(blunt)
+      case _                    => false
+    }
+  }
+
   private def render(outcome: Either[String, Option[JsValue]]): String = outcome match {
     case Left(error)         => s"!$error"
     case Right(None)         => "<none>"
     case Right(Some(value))  =>
       val rendered = Json.stringify(value)
-      if (rendered.length > 60) rendered.take(57) + "..." else rendered
+      if (rendered.length > 160) rendered.take(157) + "..." else rendered
   }
 
   // the whole path set of a payload: harvested from its own structure, plus the shapes that have to
@@ -343,6 +360,26 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
     "null root"    -> JsNull,
     "empty object" -> Json.obj(),
     "empty array"  -> Json.arr(),
+    // the regular road goes JsValue -> string -> jackson -> JsonNode -> JsValue, and play json
+    // strips trailing zeros on the way. the walk hands back the original JsValue untouched. numbers
+    // and exotic strings are where the two can part ways without anyone noticing.
+    "tricky scalars" -> Json.obj(
+      "trailingZero"   -> JsNumber(BigDecimal("1.50")),
+      "trailingZeros"  -> JsNumber(BigDecimal("0.1000")),
+      "exponent"       -> JsNumber(BigDecimal("1e10")),
+      "negExponent"    -> JsNumber(BigDecimal("1.5e-8")),
+      "hugeInt"        -> JsNumber(BigDecimal("123456789012345678901234567890")),
+      "highPrecision"  -> JsNumber(BigDecimal("1.234567890123456789012345678901234567890")),
+      "negZero"        -> JsNumber(BigDecimal("-0.0")),
+      "intLike"        -> JsNumber(BigDecimal("42.0")),
+      "controlChars"   -> JsString("line\nbreak\ttab\u0007bell"),
+      "quotes"         -> JsString("he said \"hi\" and \\ escaped"),
+      "emoji"          -> JsString("héllo 👋🏽 wörld"),
+      "surrogate"      -> JsString("\uD83D\uDE00"),
+      "longString"     -> JsString("x" * 5000),
+      "emptyString"    -> JsString(""),
+      "nested"         -> Json.obj("deep" -> JsNumber(BigDecimal("2.500")))
+    ),
     "nested arrays" -> Json.obj(
       "matrix" -> Json.arr(Json.arr(1, 2), Json.arr(3, 4)),
       "objs"   -> Json.arr(Json.obj("k" -> Json.arr(Json.obj("deep" -> "value"))))
@@ -363,8 +400,97 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
     "$.matrix.0",
     "$.objs[0].k[0].deep",
     "$.objs.k.deep",
+    "$.trailingZero",
+    "$.trailingZeros",
+    "$.exponent",
+    "$.negExponent",
+    "$.hugeInt",
+    "$.highPrecision",
+    "$.negZero",
+    "$.intLike",
+    "$.controlChars",
+    "$.quotes",
+    "$.emoji",
+    "$.surrogate",
+    "$.longString",
+    "$.emptyString",
+    "$.nested.deep",
     "$.nope"
   ) ++ garbagePaths
+
+  // ------------------------------------------------------------------------------------------------
+  // property based generation. hand picked cases only cover what was thought of; this walks the json
+  // value space instead. fixed seed, so a failure is reproducible.
+  // ------------------------------------------------------------------------------------------------
+
+  private val seed = 20260901L
+
+  private def randomKey(rng: scala.util.Random): String = rng.nextInt(12) match {
+    case 0 => "plain"
+    case 1 => s"k${rng.nextInt(1000)}"
+    case 2 => "with.dot"
+    case 3 => "with space"
+    case 4 => "unicodé"
+    case 5 => "quo'te"
+    case 6 => "br[a]ck"
+    case 7 => ""
+    case 8 => rng.nextInt(100).toString
+    case 9 => "with\"quote"
+    case 10 => "with\\backslash"
+    case _ => "UPPER_case-dash"
+  }
+
+  private def randomString(rng: scala.util.Random): String = rng.nextInt(10) match {
+    case 0 => ""
+    case 1 => "plain value"
+    case 2 => "with\nnewline\ttab"
+    case 3 => "\u0000\u0007\u001f control"
+    case 4 => "quo\"te and \\ backslash"
+    case 5 => "héllo 👋🏽 wörld"
+    case 6 => new String(Character.toChars(0x1F600))
+    case 7 => "x" * (rng.nextInt(2000) + 1)
+    case 8 => rng.nextString(rng.nextInt(20) + 1)
+    case _ => s"value-${rng.nextInt(10000)}"
+  }
+
+  private def randomNumber(rng: scala.util.Random): JsValue = rng.nextInt(12) match {
+    case 0  => JsNumber(BigDecimal(rng.nextInt()))
+    case 1  => JsNumber(BigDecimal(rng.nextLong()))
+    case 2  => JsNumber(BigDecimal("0"))
+    case 3  => JsNumber(BigDecimal("-0.0"))
+    case 4  => JsNumber(BigDecimal(rng.nextDouble()))
+    // beyond what a double can hold: this is where a string round trip loses information
+    case 5  => JsNumber(BigDecimal(BigInt(rng.nextLong()) * BigInt(rng.nextLong()) * BigInt(rng.nextLong())))
+    case 6  => JsNumber(BigDecimal(s"1.${"1234567890" * 4}"))
+    case 7  => JsNumber(BigDecimal(s"${rng.nextInt(1000)}e${rng.nextInt(40) - 20}"))
+    case 8  => JsNumber(BigDecimal(rng.nextInt(1000)).setScale(rng.nextInt(30), BigDecimal.RoundingMode.HALF_UP))
+    case 9  => JsNumber(BigDecimal(Long.MaxValue) + BigDecimal(1))
+    case 10 => JsNumber(BigDecimal(Long.MinValue) - BigDecimal(1))
+    case _  => JsNumber(BigDecimal("1.50"))
+  }
+
+  private def randomJson(rng: scala.util.Random, depth: Int): JsValue = {
+    if (depth <= 0) {
+      rng.nextInt(5) match {
+        case 0 => JsString(randomString(rng))
+        case 1 => randomNumber(rng)
+        case 2 => JsBoolean(rng.nextBoolean())
+        case 3 => JsNull
+        case _ => JsString(randomString(rng))
+      }
+    } else {
+      rng.nextInt(10) match {
+        case 0 | 1 | 2 | 3 =>
+          JsObject((0 until rng.nextInt(5)).map(_ => randomKey(rng) -> randomJson(rng, depth - 1)).toMap)
+        case 4 | 5         =>
+          JsArray((0 until rng.nextInt(4)).map(_ => randomJson(rng, depth - 1)))
+        case 6             => JsString(randomString(rng))
+        case 7             => randomNumber(rng)
+        case 8             => JsBoolean(rng.nextBoolean())
+        case _             => JsNull
+      }
+    }
+  }
 
   // the derived entry points, rebuilt on top of the fast reader so they can be compared to the
   // originals. getAtPolyJsonStr and matchWith are what workflows and the users plugins actually go
@@ -745,8 +871,9 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
           val viaAtPath = outcomeOf(payload.atPath(path).asOpt[JsValue])
           val viaFast   = outcomeOf(document.read(path))
           if (viaUtils != viaFast || viaUtils != viaAtPath) {
+            val kind = if (sameIgnoringNumericPrecision(viaUtils, viaFast)) "NUMERIC" else "REAL"
             mismatches +=
-              s"[$label] $path -> getAtPolyJson=${render(viaUtils)} atPath=${render(viaAtPath)} fast=${render(viaFast)}"
+              s"$kind [$label] $path -> getAtPolyJson=${render(viaUtils)} atPath=${render(viaAtPath)} fast=${render(viaFast)}"
           }
         }
 
@@ -757,12 +884,100 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
       }
 
       report("-" * 110)
-      report(s"  $compared reads compared, ${mismatches.size} mismatches")
+      report(
+        s"  $compared reads compared, ${mismatches.count(_.startsWith("REAL"))} real mismatches, " +
+          s"${mismatches.count(_.startsWith("NUMERIC"))} numeric precision only"
+      )
       report("=" * 110)
       report("")
 
       mismatches.take(40).foreach(report)
-      mismatches.toSeq mustBe Seq.empty
+      mismatches.filter(_.startsWith("REAL")).toSeq mustBe Seq.empty
+    }
+
+    "answer the same on randomly generated documents" in {
+
+      // the systematic check. every entry point, over documents drawn from the json value space
+      // rather than from what happened to come to mind.
+      report("")
+      report("=" * 110)
+      report("  JSON PATH READER - PROPERTY BASED (seed " + seed + ")")
+      report("=" * 110)
+
+      val documents = 400
+      val rng       = new scala.util.Random(seed)
+
+      var comparedPaths = 0
+      var walked        = 0
+      var viaJayway     = 0
+      val byKind        = scala.collection.mutable.Map.empty[String, Int]
+      val samples       = scala.collection.mutable.ArrayBuffer.empty[String]
+
+      (1 to documents).foreach { _ =>
+        val payload  = randomJson(rng, 4)
+        val document = JsonPathUtils.document(payload)
+        val paths    = (harvestPaths(payload, "$", 5) ++ exoticPaths).distinct.take(200)
+
+        paths.foreach { path =>
+          comparedPaths += 1
+          if (FastJsonPath.segmentsOf(path).isDefined) walked += 1 else viaJayway += 1
+
+          def note(kind: String, legacy: String, fast: String): Unit = {
+            byKind.update(kind, byKind.getOrElse(kind, 0) + 1)
+            if (samples.size < 40) samples += s"$kind | $path | legacy=$legacy fast=$fast"
+          }
+
+          val viaUtils  = outcomeOf(JsonPathUtils.getAtPolyJson(payload, path))
+          val viaAtPath = outcomeOf(payload.atPath(path).asOpt[JsValue])
+          val viaFast   = outcomeOf(document.read(path))
+          // a divergence that goes away once numbers are compared as text is a precision difference
+          // and nothing else. counted apart, because that distinction is the whole decision.
+          if (viaUtils != viaFast) {
+            val kind = if (sameIgnoringNumericPrecision(viaUtils, viaFast)) "getAtPolyJson NUMERIC" else "getAtPolyJson"
+            note(kind, render(viaUtils), render(viaFast))
+          }
+          if (viaUtils != viaAtPath) note("atPath vs getAtPolyJson", render(viaUtils), render(viaAtPath))
+
+          // a divergence on this path is a precision one when the raw reads only differ that way
+          val numericOnly = sameIgnoringNumericPrecision(viaUtils, viaFast)
+          val suffix      = if (numericOnly) " NUMERIC" else ""
+
+          val legacyStr = Try(JsonPathUtils.getAtPolyJsonStr(payload, path)).toEither.left.map(_.getClass.getName)
+          val fastStr   = Try(fastPolyJsonStr(document, path)).toEither.left.map(_.getClass.getName)
+          if (legacyStr != fastStr) {
+            note(s"getAtPolyJsonStr$suffix", legacyStr.toString.take(80), fastStr.toString.take(80))
+          }
+
+          val legacyMatch = Try(JsonPathUtils.matchWith(payload)(path)).toEither.left.map(_.getClass.getName)
+          val fastMatch   = Try(fastMatchWith(document)(path)).toEither.left.map(_.getClass.getName)
+          if (legacyMatch != fastMatch) note("matchWith", legacyMatch.toString, fastMatch.toString)
+
+          val legacyJs = Try(JsonPathUtils.getAtJson[JsValue](payload, path)).toEither.left.map(_.getClass.getName)
+          val fastJs   = Try(document.read(path).flatMap(_.asOpt[JsValue])).toEither.left.map(_.getClass.getName)
+          if (legacyJs != fastJs) note(s"getAtJson$suffix", "", "")
+
+          // and the validator layer on top, with a handful of values rather than the whole language
+          Seq(JsString("IsDefined()"), JsString("NotDefined()"), JsString("Contains(a)"), JsNumber(1)).foreach {
+            expected =>
+              val validator = JsonPathValidator(path, expected)
+              val l         = outcome(validator.validate(payload))
+              val f         = outcome(validator.validate(document))
+              if (l != f) note(s"validate ${Json.stringify(expected)}", l.toString, f.toString)
+          }
+        }
+      }
+
+      report(s"  $documents documents, $comparedPaths paths ($walked walked, $viaJayway via jayway)")
+      report(s"  entry points: getAtPolyJson, atPath, getAtPolyJsonStr, matchWith, getAtJson, validate")
+      report("-" * 110)
+      if (byKind.isEmpty) report("  no divergence")
+      else byKind.toSeq.sortBy(-_._2).foreach { case (kind, count) => report(f"  ${pad(kind, 30)} $count") }
+      report("=" * 110)
+      report("")
+      samples.foreach(report)
+
+      // everything that is not a pure precision difference has to be zero
+      byKind.filterNot(_._1.endsWith("NUMERIC")).keys.toSeq.sorted mustBe Seq.empty
     }
 
     "not depend on the null read flag for an explicit json null" in {

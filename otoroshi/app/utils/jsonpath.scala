@@ -145,8 +145,12 @@ case class JsonPathReadError(message: String, path: String, payload: String, err
 object FastJsonPath {
 
   // a path made only of plain segments, which is what the overwhelming majority of predicates are
-  private val simplePath = """^\$(?:\.[A-Za-z_][A-Za-z0-9_\-]*|\['[^'\[\]]+'\]|\["[^"\[\]]+"\])+$""".r
-  private val segment    = """\.([A-Za-z_][A-Za-z0-9_\-]*)|\['([^'\[\]]+)'\]|\["([^"\[\]]+)"\]""".r
+  // a bracket segment must not contain anything jayway gives a meaning to. a backslash is an escape
+  // for it, so `$['a\b']` does not select the literal key `a\b` there, while a direct walk would.
+  // narrowing the fast lane is always safe: whatever it rejects goes to jayway, which is the
+  // reference behaviour.
+  private val simplePath = """^\$(?:\.[A-Za-z_][A-Za-z0-9_\-]*|\['[^'"\[\]\\]+'\]|\["[^'"\[\]\\]+"\])+$""".r
+  private val segment    = """\.([A-Za-z_][A-Za-z0-9_\-]*)|\['([^'"\[\]\\]+)'\]|\["([^'"\[\]\\]+)"\]""".r
 
   private val segmentsCache: Cache[String, Option[List[String]]] =
     Scaffeine().maximumSize(2000).build[String, Option[List[String]]]()
