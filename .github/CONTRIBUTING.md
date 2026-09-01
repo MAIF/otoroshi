@@ -46,7 +46,7 @@ All tasks are declared in [`mise.toml`](https://github.com/MAIF/otoroshi/blob/ma
 
 | Task | Description |
 |------|-------------|
-| `mise run dev` | Start the backend (sbt `~reStart`, hot reload) and the frontend webpack dev server |
+| `mise run dev` | Start the backend (sbt `~reStart`, hot reload) and the frontend dev server |
 | `mise run dev-w-doc` | Same as `dev` plus the Docusaurus dev server for the documentation |
 | `mise run dev-backend` | Run only the backend in dev mode |
 | `mise run dev-frontend` | Run only the admin UI dev server (port 3040) |

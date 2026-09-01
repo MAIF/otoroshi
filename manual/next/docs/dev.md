@@ -60,7 +60,7 @@ You're ready to go!
 mise run dev
 ```
 
-This starts **both** the Scala backend (with hot reload) and the frontend webpack dev server in parallel. Once running, access Otoroshi at:
+This starts **both** the Scala backend (with hot reload) and the frontend dev server in parallel. Once running, access Otoroshi at:
 
 **http://otoroshi.oto.tools:9999**
 
@@ -78,7 +78,7 @@ You can also start each component separately:
 # Backend only (sbt ~reStart with hot reload)
 mise run dev-backend
 
-# Frontend only (webpack dev server on port 3040)
+# Frontend only (dev server on port 3040)
 mise run dev-frontend
 
 # Documentation only (Docusaurus dev server)
@@ -105,7 +105,7 @@ You can also pass JVM args directly to the sbt `reStart` command by editing the 
 mise run build
 ```
 
-This builds the frontend (webpack production bundle) then compiles and assembles the Scala backend into a fat JAR. The output is:
+This builds the frontend (production bundle) then compiles and assembles the Scala backend into a fat JAR. The output is:
 
 ```
 otoroshi/target/scala-3.8.4/otoroshi.jar
@@ -228,14 +228,14 @@ Run `mise tasks` to see the full list. Here is a summary:
 | `dev` | Start backend + frontend in dev mode |
 | `dev-w-doc` | Start backend + frontend + doc in dev mode |
 | `dev-backend` | Run otoroshi backend in dev mode (sbt ~reStart, hot reload) |
-| `dev-frontend` | Start frontend webpack dev server (port 3040) |
+| `dev-frontend` | Start frontend dev server (port 3040) |
 | `dev-doc` | Run documentation Docusaurus dev server |
 | **Build** | |
 | `compile` | Compile Scala backend (no assembly) |
 | `build` | Build otoroshi (frontend + backend jar) |
 | `build-w-doc` | Build otoroshi (frontend + backend + doc) |
 | `build-backend` | Build otoroshi backend jar (compile + assembly) |
-| `build-frontend` | Build otoroshi frontend (webpack production) |
+| `build-frontend` | Build otoroshi frontend (production) |
 | `build-doc` | Build the documentation static site |
 | **Run** | |
 | `jar` | Run the built otoroshi jar locally |
