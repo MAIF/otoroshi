@@ -96,7 +96,25 @@ test.beforeAll(async () => {
             },
         ],
     });
+
+    await waitForProxyState(
+        `${PRIVATE_APPS}/privateapps/generic/choose-provider?route=${ROUTE_ID}`,
+        (status, body) => status === 200 && body.includes(AUTH_MODULE_NAME)
+    );
 });
+
+async function waitForProxyState(url, isReady, timeoutMs = 30_000) {
+    const deadline = Date.now() + timeoutMs;
+    let last = '';
+    while (Date.now() < deadline) {
+        const res = await fetch(url);
+        const body = await res.text();
+        if (isReady(res.status, body)) return;
+        last = `${res.status} ${body.replace(/\s+/g, ' ').slice(0, 200)}`;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    throw new Error(`setup: ${url} not ready after ${timeoutMs}ms (last response: ${last})`);
+}
 
 function collectPageErrors(page) {
     const errors = [];
