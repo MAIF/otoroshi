@@ -158,6 +158,13 @@ class JsonPathTests
       new JsonPathFastReaderSpec(Configurations.InMemoryConfiguration)
     )
 
+// same corpus with jsonPathNullReadIsJsNull on. JsonPathUtils reads that flag through a per JVM
+// lazy val, so it cannot share a run with JsonPathTests.
+class JsonPathNullReadTests
+    extends Suites(
+      new JsonPathNullReadOnSpec(Configurations.InMemoryConfiguration)
+    )
+
 class BackendMtlsTests
     extends Suites(
       new BackendMtlsSpec(Configurations.InMemoryConfiguration)

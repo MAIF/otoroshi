@@ -2,7 +2,7 @@ package functional
 
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
-import otoroshi.utils.{FastJsonPath, JsonPathUtils, JsonPathValidator}
+import otoroshi.utils.{FastJsonPath, JsonPathDocument, JsonPathUtils, JsonPathValidator}
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
@@ -79,7 +79,21 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
     "apikey"        -> Json.obj(
       "clientId"   -> "vrmElDerycXrofar",
       "clientName" -> "default-apikey",
-      "metadata"   -> Json.obj("tier" -> "gold", "count" -> 3, "ratio" -> 1.5, "beta" -> true, "empty" -> ""),
+      "metadata"   -> Json.obj(
+        "tier"      -> "gold",
+        "count"     -> 3,
+        "ratio"     -> 1.5,
+        "beta"      -> true,
+        "empty"     -> "",
+        "nulled"    -> JsNull,
+        "a.b"       -> "dotted-key",
+        "weird key" -> "spaced-key",
+        "clé"       -> "unicode-key",
+        "quo'te"    -> "quoted-key",
+        "br[a]ck"   -> "bracket-key",
+        "0"         -> "numeric-key",
+        "nested"    -> Json.obj("deep" -> Json.obj("deeper" -> Json.obj("deepest" -> "bottom")))
+      ),
       "tags"       -> Json.arr("alpha", "beta", "gamma")
     ),
     "user"          -> JsNull,
@@ -133,18 +147,64 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
 
   private val plainSegment = "^[A-Za-z_][A-Za-z0-9_-]*$".r
 
+  // descends objects AND arrays, and emits both the dotted and the bracket form of a key whenever
+  // both are legal, so that the two lanes are compared on the same data seen through both notations
   private def harvestPaths(json: JsValue, prefix: String, depth: Int): Seq[String] = {
     if (depth <= 0) Seq.empty
     else
       json match {
         case obj: JsObject =>
           obj.fields.toSeq.flatMap { case (key, value) =>
-            val segment = if (plainSegment.matches(key)) s"$prefix.$key" else s"$prefix['$key']"
+            val plain     = plainSegment.matches(key)
+            val canonical = if (plain) s"$prefix.$key" else s"$prefix['$key']"
+            val alternate = if (plain) Seq(s"$prefix['$key']") else Seq.empty
+            Seq(canonical) ++ alternate ++ harvestPaths(value, canonical, depth - 1)
+          }
+        case arr: JsArray  =>
+          arr.value.toSeq.zipWithIndex.take(3).flatMap { case (value, idx) =>
+            val segment = s"$prefix[$idx]"
             Seq(segment) ++ harvestPaths(value, segment, depth - 1)
           }
         case _             => Seq.empty
       }
   }
+
+  // plain segments that land on or traverse an array. this is where the direct walk and jayway are
+  // the most likely to part ways: jayway can match indefinitely across an array, the walk cannot.
+  private val throughArrayPaths = Seq(
+    "$.apikey.tags.foo",
+    "$.apikey.tags.length",
+    "$.apikey.tags.0",
+    "$.attrs['otoroshi.next.core.Route'].plugins.plugin",
+    "$.attrs['otoroshi.next.core.Route'].plugins.enabled",
+    "$.attrs['otoroshi.next.core.Route'].plugins.config",
+    "$.attrs['otoroshi.next.core.Route'].plugins.config.name",
+    "$.attrs['otoroshi.next.core.Route'].backend.targets.hostname",
+    "$.attrs['otoroshi.next.core.Route'].backend.targets.port",
+    "$.attrs['otoroshi.next.core.Route'].frontend.domains.nope",
+    "$.request.cookies.name"
+  )
+
+  // root level bracket notation, and keys that are hostile to either notation
+  private val notationPaths = Seq(
+    "$['apikey']",
+    "$['apikey']['metadata']",
+    "$['apikey']['metadata']['tier']",
+    "$['apikey'].metadata['tier']",
+    "$.apikey['metadata'].tier",
+    "$.apikey.metadata['a.b']",
+    "$.apikey.metadata['weird key']",
+    "$.apikey.metadata['clé']",
+    "$.apikey.metadata.clé",
+    "$.apikey.metadata[\'quo\'te\']",
+    "$.apikey.metadata['br[a]ck']",
+    "$.apikey.metadata['0']",
+    "$.apikey.metadata.0",
+    "$.apikey.metadata.nulled",
+    "$.apikey.metadata.nested.deep.deeper.deepest",
+    "$.apikey.metadata.nested.deep.deeper.nope",
+    "$[\'apikey\'][\'metadata\'][\'a.b\']"
+  )
 
   // paths that cannot be walked and have to be handed over to jayway
   private val jaywayPaths = Seq(
@@ -229,6 +289,98 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
   // failing the run. Two roads throwing the same exception are still in agreement.
   private def outcome(f: => Boolean): Either[String, Boolean] =
     Try(f).toEither.left.map(e => s"${e.getClass.getName}")
+
+  private def outcomeOf(f: => Option[JsValue]): Either[String, Option[JsValue]] =
+    Try(f).toEither.left.map(e => s"${e.getClass.getName}")
+
+  private def render(outcome: Either[String, Option[JsValue]]): String = outcome match {
+    case Left(error)         => s"!$error"
+    case Right(None)         => "<none>"
+    case Right(Some(value))  =>
+      val rendered = Json.stringify(value)
+      if (rendered.length > 60) rendered.take(57) + "..." else rendered
+  }
+
+  // the whole path set of a payload: harvested from its own structure, plus the shapes that have to
+  // be exercised on purpose because harvesting cannot produce them
+  private def pathsFor(payload: JsValue): Seq[String] =
+    (harvestPaths(payload, "$", 6) ++ throughArrayPaths ++ notationPaths ++ jaywayPaths ++ missingPaths ++
+      garbagePaths).distinct
+
+  // malformed, empty or plain nonsensical paths. neither road is expected to resolve them, but both
+  // have to fail the same way rather than one of them sneaking a value through.
+  private val garbagePaths = Seq(
+    "",
+    " ",
+    "$",
+    "$.",
+    "..",
+    "...",
+    "$..",
+    "$[",
+    "$]",
+    "$['unclosed",
+    "$.a[[",
+    "$.a..b",
+    "@.foo",
+    "foo",
+    "$..*",
+    "$[*]",
+    "$[?()]",
+    "$[?(@)]",
+    "$.a[?(",
+    "\u0000",
+    "$." + ("a." * 40) + "b"
+  )
+
+  // payloads that are not json objects, plus degenerate ones. `isObject` drives one branch of the
+  // validator, and the reader has to cope with a root that cannot be walked at all.
+  private val exoticPayloads: Seq[(String, JsValue)] = Seq(
+    "array root"   -> Json.arr(Json.obj("a" -> 1), Json.obj("a" -> 2), "plain", 3, JsNull),
+    "string root"  -> JsString("just a string"),
+    "number root"  -> JsNumber(42),
+    "bool root"    -> JsBoolean(true),
+    "null root"    -> JsNull,
+    "empty object" -> Json.obj(),
+    "empty array"  -> Json.arr(),
+    "nested arrays" -> Json.obj(
+      "matrix" -> Json.arr(Json.arr(1, 2), Json.arr(3, 4)),
+      "objs"   -> Json.arr(Json.obj("k" -> Json.arr(Json.obj("deep" -> "value"))))
+    )
+  )
+
+  private val exoticPaths = Seq(
+    "$",
+    "$.a",
+    "$[0]",
+    "$[0].a",
+    "$[*]",
+    "$[*].a",
+    "$..a",
+    "$.matrix",
+    "$.matrix[0]",
+    "$.matrix[0][1]",
+    "$.matrix.0",
+    "$.objs[0].k[0].deep",
+    "$.objs.k.deep",
+    "$.nope"
+  ) ++ garbagePaths
+
+  // the derived entry points, rebuilt on top of the fast reader so they can be compared to the
+  // originals. getAtPolyJsonStr and matchWith are what workflows and the users plugins actually go
+  // through, so they are compared directly and not merely reasoned about.
+  private def fastPolyJsonStr(document: JsonPathDocument, path: String): String =
+    (document.read(path) match {
+      case Some(JsString(value))  => value.some
+      case Some(JsBoolean(value)) => value.toString.some
+      case Some(JsNumber(value))  => value.toString.some
+      case Some(o @ JsObject(_))  => o.stringify.some
+      case Some(o @ JsArray(_))   => o.stringify.some
+      case _                      => "null".some
+    }).getOrElse("null")
+
+  private def fastMatchWith(document: JsonPathDocument): String => Boolean =
+    (path: String) => document.read(path).isDefined
 
   // ------------------------------------------------------------------------------------------------
   // measurement
@@ -372,6 +524,65 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
       getOtoroshiServices().andThen { case Failure(e) => e.printStackTrace() }.futureValue
     }
 
+    "read exactly what the regular reader reads, path by path" in {
+
+      // The strong oracle. Comparing validate() booleans is weak: two different reads can both end
+      // up false and hide a divergence. Here the raw Option[JsValue] of every entry point is
+      // compared instead, which is what a future replacement of JsonPathUtils would rest on.
+      report("")
+      report("=" * 110)
+      report("  JSON PATH READER - RAW READ EQUIVALENCE")
+      report("=" * 110)
+
+      var totalPaths      = 0
+      var totalFastLane   = 0
+      var totalJaywayLane = 0
+      val rawMismatches   = scala.collection.mutable.ArrayBuffer.empty[String]
+
+      payloads.foreach { case (label, payload) =>
+        val paths    = pathsFor(payload)
+        val document = JsonPathUtils.document(payload)
+
+        val fastLane = paths.count(p => FastJsonPath.segmentsOf(p).isDefined)
+
+        val mismatches = paths.flatMap { path =>
+          // three ways in: the JsonPathUtils primitive, the JsValue.atPath extension the rest of
+          // otoroshi goes through, and the fast reader
+          val viaUtils  = outcomeOf(JsonPathUtils.getAtPolyJson(payload, path))
+          val viaAtPath = outcomeOf(payload.atPath(path).asOpt[JsValue])
+          val viaFast   = outcomeOf(document.read(path))
+          if (viaUtils == viaFast && viaUtils == viaAtPath) None
+          else
+            Some(
+              s"[$label] $path -> getAtPolyJson=${render(viaUtils)} atPath=${render(viaAtPath)} fast=${render(viaFast)}"
+            )
+        }
+
+        totalPaths += paths.size
+        totalFastLane += fastLane
+        totalJaywayLane += (paths.size - fastLane)
+        rawMismatches ++= mismatches
+
+        report(
+          f"  ${pad(label, 8)} ${padLeft(sizeOf(payload).toString, 7)} bytes  " +
+            f"${padLeft(paths.size.toString, 4)} paths (${fastLane} walked, ${paths.size - fastLane} via jayway)  " +
+            f"${if (mismatches.isEmpty) "OK" else s"${mismatches.size} MISMATCHES"}"
+        )
+      }
+
+      report("-" * 110)
+      report(
+        s"  $totalPaths raw reads compared across 3 entry points, $totalFastLane walked directly, " +
+          s"$totalJaywayLane handed to jayway, ${rawMismatches.size} mismatches"
+      )
+      report("=" * 110)
+      report("")
+
+      rawMismatches.take(60).foreach(report)
+
+      rawMismatches.toSeq mustBe Seq.empty
+    }
+
     "answer exactly like the regular reader over a generated corpus" in {
 
       report("")
@@ -385,9 +596,10 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
       val allMismatches   = scala.collection.mutable.ArrayBuffer.empty[String]
 
       payloads.foreach { case (label, payload) =>
-        val harvested = harvestPaths(payload, "$", 5).distinct
-        val paths     = (harvested ++ jaywayPaths ++ missingPaths).distinct
-        val document  = JsonPathUtils.document(payload)
+        // capped: the cross product with every expected value is what costs here, and the raw read
+        // comparison above already covers the full path set
+        val paths    = pathsFor(payload).take(160)
+        val document = JsonPathUtils.document(payload)
 
         val fastLane   = paths.count(p => FastJsonPath.segmentsOf(p).isDefined)
         val jaywayLane = paths.size - fastLane
@@ -442,6 +654,183 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
       FastJsonPath.segmentsOf("$.request.headers.*") mustBe None
       FastJsonPath.segmentsOf("$.apikey.tags.length()") mustBe None
       FastJsonPath.segmentsOf("[?(@.foo == 'bar')]") mustBe None
+    }
+
+    "answer the same on every derived entry point" in {
+
+      report("")
+      report("=" * 110)
+      report("  JSON PATH READER - DERIVED ENTRY POINTS")
+      report("=" * 110)
+
+      val mismatches = scala.collection.mutable.ArrayBuffer.empty[String]
+      var compared   = 0
+
+      payloads.foreach { case (label, payload) =>
+        val paths    = pathsFor(payload)
+        val document = JsonPathUtils.document(payload)
+
+        paths.foreach { path =>
+          compared += 1
+
+          // what workflows go through
+          val legacyStr = Try(JsonPathUtils.getAtPolyJsonStr(payload, path)).toEither.left.map(_.getClass.getName)
+          val fastStr   = Try(fastPolyJsonStr(document, path)).toEither.left.map(_.getClass.getName)
+          if (legacyStr != fastStr) {
+            mismatches += s"[$label] getAtPolyJsonStr $path -> legacy=$legacyStr fast=$fastStr"
+          }
+
+          // what the users plugins go through
+          val legacyMatch = Try(JsonPathUtils.matchWith(payload)(path)).toEither.left.map(_.getClass.getName)
+          val fastMatch   = Try(fastMatchWith(document)(path)).toEither.left.map(_.getClass.getName)
+          if (legacyMatch != fastMatch) {
+            mismatches += s"[$label] matchWith $path -> legacy=$legacyMatch fast=$fastMatch"
+          }
+
+          // the typed reads, which have no caller in app but are public api. they are
+          // getAtPoly + asOpt[T], so proving them for several T pins the derivation down too.
+          val legacyJs = Try(JsonPathUtils.getAtJson[JsValue](payload, path)).toEither.left.map(_.getClass.getName)
+          val fastJs   = Try(document.read(path).flatMap(_.asOpt[JsValue])).toEither.left.map(_.getClass.getName)
+          if (legacyJs != fastJs) mismatches += s"[$label] getAtJson[JsValue] $path -> legacy=$legacyJs fast=$fastJs"
+
+          val legacyStrT = Try(JsonPathUtils.getAtJson[String](payload, path)).toEither.left.map(_.getClass.getName)
+          val fastStrT   = Try(document.read(path).flatMap(_.asOpt[String])).toEither.left.map(_.getClass.getName)
+          if (legacyStrT != fastStrT) mismatches += s"[$label] getAtJson[String] $path -> legacy=$legacyStrT fast=$fastStrT"
+
+          val legacyInt = Try(JsonPathUtils.getAtJson[Int](payload, path)).toEither.left.map(_.getClass.getName)
+          val fastInt   = Try(document.read(path).flatMap(_.asOpt[Int])).toEither.left.map(_.getClass.getName)
+          if (legacyInt != fastInt) mismatches += s"[$label] getAtJson[Int] $path -> legacy=$legacyInt fast=$fastInt"
+
+          val legacyBool = Try(JsonPathUtils.getAtJson[Boolean](payload, path)).toEither.left.map(_.getClass.getName)
+          val fastBool   = Try(document.read(path).flatMap(_.asOpt[Boolean])).toEither.left.map(_.getClass.getName)
+          if (legacyBool != fastBool) mismatches += s"[$label] getAtJson[Boolean] $path -> legacy=$legacyBool fast=$fastBool"
+
+          // getAt takes an already serialised payload, the other half of the typed api
+          val legacyRaw = Try(JsonPathUtils.getAt[JsValue](Json.stringify(payload), path)).toEither.left
+            .map(_.getClass.getName)
+          if (legacyRaw != fastJs) mismatches += s"[$label] getAt[JsValue] $path -> legacy=$legacyRaw fast=$fastJs"
+        }
+
+        report(f"  ${pad(label, 8)} ${padLeft(paths.size.toString, 4)} paths x 7 entry points  " +
+          f"${if (mismatches.isEmpty) "OK" else s"${mismatches.size} MISMATCHES"}")
+      }
+
+      report("-" * 110)
+      report(s"  $compared paths compared on getAtPolyJsonStr, matchWith, getAtJson[JsValue|String|Int|Boolean] " +
+          s"and getAt, ${mismatches.size} mismatches")
+      report("=" * 110)
+      report("")
+
+      mismatches.take(40).foreach(report)
+      mismatches.toSeq mustBe Seq.empty
+    }
+
+    "behave the same on payloads that are not objects, and on malformed paths" in {
+
+      report("")
+      report("=" * 110)
+      report("  JSON PATH READER - EXOTIC PAYLOADS AND MALFORMED PATHS")
+      report("=" * 110)
+
+      val mismatches = scala.collection.mutable.ArrayBuffer.empty[String]
+      var compared   = 0
+
+      exoticPayloads.foreach { case (label, payload) =>
+        val document = JsonPathUtils.document(payload)
+        val local    = mismatches.size
+
+        (exoticPaths ++ harvestPaths(payload, "$", 4)).distinct.foreach { path =>
+          compared += 1
+          val viaUtils  = outcomeOf(JsonPathUtils.getAtPolyJson(payload, path))
+          val viaAtPath = outcomeOf(payload.atPath(path).asOpt[JsValue])
+          val viaFast   = outcomeOf(document.read(path))
+          if (viaUtils != viaFast || viaUtils != viaAtPath) {
+            mismatches +=
+              s"[$label] $path -> getAtPolyJson=${render(viaUtils)} atPath=${render(viaAtPath)} fast=${render(viaFast)}"
+          }
+        }
+
+        report(
+          f"  ${pad(label, 15)} ${padLeft((exoticPaths.size).toString, 4)}+ paths  " +
+            f"isObject=${document.isObject}%-5s  ${if (mismatches.size == local) "OK" else s"${mismatches.size - local} MISMATCHES"}"
+        )
+      }
+
+      report("-" * 110)
+      report(s"  $compared reads compared, ${mismatches.size} mismatches")
+      report("=" * 110)
+      report("")
+
+      mismatches.take(40).foreach(report)
+      mismatches.toSeq mustBe Seq.empty
+    }
+
+    "not depend on the null read flag for an explicit json null" in {
+
+      // The flag guards the branch taken when jayway hands back a java null. With
+      // JacksonJsonNodeJsonProvider a json null comes back as a NullNode, which is not a java null,
+      // so the branch is not what decides the answer for an explicit null. Pinned down rather than
+      // assumed, because the walked lane does not consult the flag at all.
+      val payload = Json.obj("a" -> JsNull, "b" -> Json.obj("c" -> JsNull))
+
+      report(s"  jsonPathNullReadIsJsNull = ${env.jsonPathNullReadIsJsNull}")
+
+      JsonPathUtils.getAtPolyJson(payload, "$.a") mustBe Some(JsNull)
+      JsonPathUtils.getAtPolyJson(payload, "$.b.c") mustBe Some(JsNull)
+
+      val document = JsonPathUtils.document(payload)
+      document.read("$.a") mustBe Some(JsNull)
+      document.read("$.b.c") mustBe Some(JsNull)
+
+      // and a genuinely absent path stays absent on both roads whatever the flag says
+      JsonPathUtils.getAtPolyJson(payload, "$.nope") mustBe None
+      document.read("$.nope") mustBe None
+    }
+
+    "give the same answers when hammered from several threads" in {
+
+      // a switch would put this on every request, so the shared caches and the lazy document are
+      // exercised concurrently, including their very first use
+      val payload  = payloads.last._2
+      val paths    = pathsFor(payload).take(120)
+      val expected = {
+        val document = JsonPathUtils.document(payload)
+        paths.map(path => path -> outcomeOf(document.read(path))).toMap
+      }
+
+      val threads   = 8
+      val rounds    = 40
+      val executor  = java.util.concurrent.Executors.newFixedThreadPool(threads)
+      val failures  = new java.util.concurrent.ConcurrentLinkedQueue[String]()
+      val latch     = new java.util.concurrent.CountDownLatch(threads)
+
+      (1 to threads).foreach { _ =>
+        executor.submit(new Runnable {
+          override def run(): Unit = {
+            try {
+              (1 to rounds).foreach { _ =>
+                // a fresh document per round, as a plugin would build one per phase
+                val document = JsonPathUtils.document(payload)
+                paths.foreach { path =>
+                  val got = outcomeOf(document.read(path))
+                  if (got != expected(path)) {
+                    failures.add(s"$path -> expected ${render(expected(path))} got ${render(got)}")
+                  }
+                }
+              }
+            } catch {
+              case e: Throwable => failures.add(s"thread blew up: ${e}")
+            } finally latch.countDown()
+          }
+        })
+      }
+
+      latch.await(120, java.util.concurrent.TimeUnit.SECONDS) mustBe true
+      executor.shutdownNow()
+
+      report(s"  $threads threads x $rounds rounds x ${paths.size} paths, ${failures.size} failures")
+      failures.toArray.take(20).foreach(f => report(s"  $f"))
+      failures.isEmpty mustBe true
     }
 
     "be faster than the regular reader" in {
@@ -518,6 +907,145 @@ class JsonPathFastReaderSpec(configurationSpec: => Configuration) extends Otoros
       }
 
       blackhole must be > 0L
+    }
+
+    "not be slower on a single shot read, which is how atPath is called" in {
+
+      // rbac, graphql and the auth module user validators call atPath once and move on. a switch
+      // would make each of those build a document, so the one shot cost is what decides whether the
+      // reader can go under atPath at all.
+      report("")
+      report("=" * 110)
+      report("  JSON PATH READER - SINGLE SHOT READ (microseconds per read)")
+      report("=" * 110)
+      report(
+        "  " + pad("payload", 9) + pad("bytes", 8) + pad("path", 34) +
+          padLeft("legacy mean", 12) + padLeft("fast mean", 12) + padLeft("speedup", 10)
+      )
+      report("-" * 110)
+
+      val singleShotPaths = Seq(
+        "$.apikey.metadata.tier",
+        "$.attrs['otoroshi.next.core.Route'].metadata.tier",
+        "$.apikey.tags[0]",
+        "$..tier"
+      )
+
+      val results = payloads.flatMap { case (label, payload) =>
+        singleShotPaths.map { path =>
+          def legacyOne(): Boolean = JsonPathUtils.getAtPolyJson(payload, path).isDefined
+          def fastOne(): Boolean   = JsonPathUtils.document(payload).read(path).isDefined
+
+          legacyOne() mustBe fastOne()
+
+          val legacy  = measure(legacyOne())
+          val fast    = measure(fastOne())
+          val speedup = legacy.mean / fast.mean
+
+          report(
+            "  " + pad(label, 9) + pad(sizeOf(payload).toString, 8) + pad(path.take(32), 34) +
+              padLeft(micros(legacy.mean), 12) + padLeft(micros(fast.mean), 12) +
+              padLeft(f"x$speedup%.1f", 10)
+          )
+
+          (label, path, speedup)
+        }
+      }
+
+      report("=" * 110)
+      report("")
+
+      // a single shot on a path that needs jayway is the worst case for the reader: it builds a
+      // document for one read, exactly like the regular road does. it must not lose ground there.
+      results.foreach { case (label, path, speedup) =>
+        withClue(s"$label / $path: ") {
+          speedup must be > 0.85
+        }
+      }
+    }
+
+    "shutdown" in {
+      stopAll()
+    }
+  }
+}
+
+
+/**
+ * The same differential corpus, with `jsonPathNullReadIsJsNull` forced on.
+ *
+ * The flag is read once per JVM through a `lazy val` in `JsonPathUtils`, so this cannot share a run
+ * with [[JsonPathFastReaderSpec]]. It is its own suite for that reason:
+ *
+ * {{{
+ * sbt 'testOnly JsonPathNullReadTests'
+ * }}}
+ */
+class JsonPathNullReadOnSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
+
+  override def getTestConfiguration(configuration: Configuration): Configuration =
+    Configuration(
+      ConfigFactory
+        .parseString("""
+          |{
+          |  otoroshi.options.jsonPathNullReadIsJsNull = true
+          |}
+        """.stripMargin)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
+
+  private lazy implicit val env: Env = otoroshiComponents.env
+
+  private val payload = Json.obj(
+    "nulled" -> JsNull,
+    "nested" -> Json.obj("nulled" -> JsNull, "value" -> "here"),
+    "list"   -> Json.arr(JsNull, "a", 2),
+    "value"  -> "here"
+  )
+
+  private val paths = Seq(
+    "$.nulled",
+    "$.nested.nulled",
+    "$.nested.value",
+    "$.nested.nope",
+    "$.list",
+    "$.list[0]",
+    "$.list[1]",
+    "$..nulled",
+    "$.nope",
+    "$.value.nope"
+  )
+
+  "the fast json path reader, with jsonPathNullReadIsJsNull on" should {
+
+    "warm up" in {
+      startOtoroshi()
+      getOtoroshiServices().andThen { case Failure(e) => e.printStackTrace() }.futureValue
+    }
+
+    "read exactly what the regular reader reads" in {
+
+      // guard against a silent pass: if the flag did not actually take, this suite proves nothing
+      if (!env.jsonPathNullReadIsJsNull) {
+        cancel(
+          "jsonPathNullReadIsJsNull is still false. JsonPathUtils reads it through a per JVM lazy val, " +
+            "so this suite has to run on its own: sbt 'testOnly JsonPathNullReadTests'"
+        )
+      }
+
+      val document = JsonPathUtils.document(payload)
+
+      val mismatches = paths.flatMap { path =>
+        val legacy = Try(JsonPathUtils.getAtPolyJson(payload, path)).toEither.left.map(_.getClass.getName)
+        val fast   = Try(document.read(path)).toEither.left.map(_.getClass.getName)
+        if (legacy == fast) None else Some(s"$path -> legacy=$legacy fast=$fast")
+      }
+
+      println(s"  jsonPathNullReadIsJsNull = ${env.jsonPathNullReadIsJsNull}, " +
+        s"${paths.size} paths compared, ${mismatches.size} mismatches")
+      mismatches.foreach(m => println(s"  $m"))
+
+      mismatches mustBe Seq.empty
     }
 
     "shutdown" in {
