@@ -356,13 +356,11 @@ class NgJwtApikeyExtractor extends ApikeyExtractorPlugin {
                     ApikeyFromPlan.resolveOrCreate(s"${config.clientIdPrefix}${clientId}", config, ctx)
                 }
               }
-              case other       => throw new IllegalStateException(s"unreachable case: $other")
             }
           }
           .recover { case _: Throwable => Results.Unauthorized(Json.obj()) }
           .map(result => outcome(result, config.strict))
       }
-      case other          => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }
@@ -715,15 +713,12 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
                             }
                         }
                       }
-                      case other       => throw new IllegalStateException(s"unreachable case: $other")
                     }
                   }
                   .map {
                     case Left(result) => failure(config.strict, "You have to provide a valid apikey")
                     case Right(r)     => r
-                    case other        => throw new IllegalStateException(s"unreachable case: $other")
                   }
-              case other                 => throw new IllegalStateException(s"unreachable case: $other")
             }
           }
           case _                                                                 =>
