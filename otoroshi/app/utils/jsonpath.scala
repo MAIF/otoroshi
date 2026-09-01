@@ -1,6 +1,7 @@
 package otoroshi.utils
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import com.jayway.jsonpath.{Configuration, DocumentContext, JsonPath}
@@ -26,6 +27,7 @@ import play.api.libs.json.{
 import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.jackson.JacksonJson
 
+import scala.annotation.tailrec
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 
@@ -58,7 +60,7 @@ object JsonPathUtils {
     }).getOrElse("null")
   }
 
-  private val config: Configuration = {
+  private[utils] val config: Configuration = {
     val default = Configuration.defaultConfiguration()
     Configuration
       .builder()
@@ -110,27 +112,10 @@ object JsonPathUtils {
   }
 
   // parses a payload once so that several validators can read their own path off it, instead of
-  // each of them serialising and re-parsing the whole payload
-  def document(payload: JsValue): JsonPathDocument =
-    new JsonPathDocument(JsonPath.parse(Json.stringify(payload), config), payload.isInstanceOf[JsObject])
+  // each of them serialising and re-parsing the whole payload. see JsonPathDocument.
+  def document(payload: JsValue): JsonPathDocument = new JsonPathDocument(payload)
 
-  def getAtPolyDoc(doc: DocumentContext, path: String): Option[JsValue] = {
-    Try {
-      val read = doc.read[JsonNode](path)
-      if (read != null) {
-        Writes.jsonNodeWrites.writes(read).some
-      } else if (jsonPathNullReadIsJsNull) {
-        JsNull.some
-      } else {
-        None
-      }
-    } match {
-      case Failure(e) =>
-        if (logger.isDebugEnabled) logger.debug(s"error while trying to read '$path'", e)
-        None
-      case Success(s) => s
-    }
-  }
+  private[utils] def nullRead: Option[JsValue] = if (jsonPathNullReadIsJsNull) JsNull.some else None
 
   def getAtPoly(payload: String, path: String): Option[JsValue] = {
     getAtPolyF(payload, path) match {
@@ -147,10 +132,95 @@ object JsonPathUtils {
 
 case class JsonPathReadError(message: String, path: String, payload: String, err: Option[Throwable])
 
-// a payload parsed once, meant to be read by a whole list of validators. `isObject` is carried along
-// because JsonPathValidator needs to know the shape of the payload it was built from.
-final class JsonPathDocument(private val doc: DocumentContext, val isObject: Boolean) {
-  def read(path: String): Option[JsValue] = JsonPathUtils.getAtPolyDoc(doc, path)
+// Opt in fast reader for the case where the same payload is read by a whole list of json paths.
+// Deliberately kept apart from JsonPathUtils.getAtPoly*, which the rest of otoroshi relies on and
+// whose exact behaviour must not move. Three things are done differently here:
+//
+//   - a plain dotted path ($.a.b, $.attrs['x.y'].z) is walked straight on the JsValue, so the common
+//     case never touches jackson nor jayway at all;
+//   - the jayway document is built lazily, and only when a path that actually needs jayway shows up;
+//   - it is built from a JsonNode rather than from a string, which skips a full text serialisation
+//     and the matching text parse;
+//   - compiled paths are cached, so a path is analysed once and not on every read.
+object FastJsonPath {
+
+  // a path made only of plain segments, which is what the overwhelming majority of predicates are
+  private val simplePath = """^\$(?:\.[A-Za-z_][A-Za-z0-9_\-]*|\['[^'\[\]]+'\]|\["[^"\[\]]+"\])+$""".r
+  private val segment    = """\.([A-Za-z_][A-Za-z0-9_\-]*)|\['([^'\[\]]+)'\]|\["([^"\[\]]+)"\]""".r
+
+  private val segmentsCache: Cache[String, Option[List[String]]] =
+    Scaffeine().maximumSize(2000).build[String, Option[List[String]]]()
+
+  private val compiledCache: Cache[String, Option[JsonPath]] =
+    Scaffeine().maximumSize(2000).build[String, Option[JsonPath]]()
+
+  // Some(segments) when the path can be walked directly, None when jayway is needed
+  def segmentsOf(path: String): Option[List[String]] = segmentsCache.get(
+    path,
+    p =>
+      if (simplePath.matches(p)) {
+        segment
+          .findAllMatchIn(p)
+          .map(m => if (m.group(1) != null) m.group(1) else if (m.group(2) != null) m.group(2) else m.group(3))
+          .toList
+          .some
+      } else {
+        None
+      }
+  )
+
+  def compiledOf(path: String): Option[JsonPath] =
+    compiledCache.get(path, p => Try(JsonPath.compile(p)).toOption)
+
+  @tailrec
+  def walk(current: JsValue, segments: List[String]): Option[JsValue] = segments match {
+    case Nil          => current.some
+    case head :: tail =>
+      current match {
+        case obj: JsObject =>
+          obj.value.get(head) match {
+            case None        => None
+            case Some(value) => walk(value, tail)
+          }
+        case _             => None
+      }
+  }
+}
+
+// A payload read several times, by several json paths. `isObject` is carried along because
+// JsonPathValidator needs to know the shape of the payload it was built from.
+final class JsonPathDocument(payload: JsValue) {
+
+  val isObject: Boolean = payload.isInstanceOf[JsObject]
+
+  // only paid for when a path that jayway has to handle actually shows up
+  private lazy val document: DocumentContext = Reads.JsonNodeReads.reads(payload) match {
+    case JsSuccess(node, _) => JsonPath.parse(node, JsonPathUtils.config)
+    case _                  => JsonPath.parse(Json.stringify(payload), JsonPathUtils.config)
+  }
+
+  def read(path: String): Option[JsValue] = FastJsonPath.segmentsOf(path) match {
+    case Some(segments) => FastJsonPath.walk(payload, segments)
+    case None           => readWithJsonPath(path)
+  }
+
+  private def readWithJsonPath(path: String): Option[JsValue] = FastJsonPath.compiledOf(path) match {
+    case None           => None
+    case Some(compiled) =>
+      Try(document.read(compiled, classOf[JsonNode])) match {
+        case Failure(e)                  =>
+          if (JsonPathDocument.logger.isDebugEnabled) {
+            JsonPathDocument.logger.debug(s"error while trying to read '$path'", e)
+          }
+          None
+        case Success(node) if node != null => Writes.jsonNodeWrites.writes(node).some
+        case Success(_)                    => JsonPathUtils.nullRead
+      }
+  }
+}
+
+object JsonPathDocument {
+  private val logger = Logger("otoroshi-jsonpath-document")
 }
 
 case class JsonPathValidator(path: String, value: JsValue, error: Option[String] = None) extends JsonValidator {

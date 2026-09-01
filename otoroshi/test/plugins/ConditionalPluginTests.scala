@@ -19,7 +19,7 @@ import otoroshi.next.plugins.{
   StaticBackendConfig
 }
 import otoroshi.security.IdGenerator
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{FastJsonPath, JsonPathUtils, JsonPathValidator}
 import otoroshi.utils.syntax.implicits.*
 import play.api.http.Status
 import play.api.libs.json.*
@@ -139,6 +139,77 @@ class ConditionalPluginTests(parent: PluginsTestSpec) {
     await(2.seconds)
     route
   }
+
+  // -----------------------------------------------------------------------------------------------
+  // the opt in fast reader must answer exactly like the regular one
+  // -----------------------------------------------------------------------------------------------
+
+  // covers the three roads at once: paths walked directly on the JsValue, paths that fall back to
+  // jayway, and the jayway document itself, which the fast reader builds from a JsonNode where
+  // JsonPathValidator.validate(JsValue) builds it from a serialised string
+  private val samplePayload = Json.obj(
+    "snowflake" -> "1516772930422308903",
+    "apikey"    -> Json.obj(
+      "metadata" -> Json.obj("tier" -> "gold", "count" -> 3, "beta" -> true),
+      "tags"     -> Json.arr("a", "b")
+    ),
+    "user"      -> JsNull,
+    "request"   -> Json.obj(
+      "method"  -> "GET",
+      "headers" -> Json.obj("cond" -> "on", "x-tier" -> "gold")
+    ),
+    "attrs"     -> Json.obj(
+      "otoroshi.next.core.Route" -> Json.obj("metadata" -> Json.obj("tier" -> "gold"))
+    )
+  )
+
+  private val equivalenceCases: Seq[(String, JsValue)] = Seq(
+    // plain dotted paths, walked without jackson
+    "$.apikey.metadata.tier"                            -> JsString("gold"),
+    "$.apikey.metadata.tier"                            -> JsString("silver"),
+    "$.apikey.metadata.count"                           -> JsString("3"),
+    "$.apikey.metadata.beta"                            -> JsString("true"),
+    "$.apikey.metadata.missing"                         -> JsString("NotDefined()"),
+    "$.apikey.metadata.missing"                         -> JsString("gold"),
+    "$.apikey.tags"                                     -> JsString("Size(2)"),
+    "$.apikey.tags"                                     -> JsString("Contains(a)"),
+    "$.apikey.tags"                                     -> JsString("ContainsNot(z)"),
+    "$.request.method"                                  -> JsString("Not(POST)"),
+    "$.request.headers.cond"                            -> JsString("on"),
+    // a dash in a segment, which header names are full of
+    "$.request.headers.x-tier"                          -> JsString("gold"),
+    // bracket notation, and dots inside the key
+    "$.attrs['otoroshi.next.core.Route'].metadata.tier" -> JsString("gold"),
+    // an explicit null, and a path walking through something that is not an object
+    "$.user"                                            -> JsString("IsDefined()"),
+    "$.user.name"                                       -> JsString("NotDefined()"),
+    "$.request.method.nope"                             -> JsString("NotDefined()"),
+    // these three cannot be walked and have to fall back to jayway
+    "$..tier"                                           -> JsString("Size(2)"),
+    "$.apikey.tags[0]"                                  -> JsString("a"),
+    "$.request.headers.*"                               -> JsString("Size(2)")
+  )
+
+  private val fastDocument = JsonPathUtils.document(samplePayload)
+
+  private val equivalenceMismatches = equivalenceCases.filter { case (path, expected) =>
+    val validator = JsonPathValidator(path, expected)
+    validator.validate(fastDocument) != validator.validate(samplePayload)
+  }
+
+  equivalenceMismatches.map { case (path, expected) => s"$path -> ${expected}" } mustBe Seq.empty
+
+  // the equivalence above would pass just as well if every path fell back to jayway, which would
+  // make the fast reader pointless, so the classification itself is checked
+  FastJsonPath.segmentsOf("$.apikey.metadata.tier") mustBe Some(List("apikey", "metadata", "tier"))
+  FastJsonPath.segmentsOf("$.request.headers.x-tier") mustBe Some(List("request", "headers", "x-tier"))
+  FastJsonPath.segmentsOf("$.attrs['otoroshi.next.core.Route'].metadata.tier") mustBe
+    Some(List("attrs", "otoroshi.next.core.Route", "metadata", "tier"))
+  FastJsonPath.segmentsOf("$..tier") mustBe None
+  FastJsonPath.segmentsOf("$.apikey.tags[0]") mustBe None
+  FastJsonPath.segmentsOf("$.request.headers.*") mustBe None
+  FastJsonPath.segmentsOf("$.apikey.tags.length()") mustBe None
+  FastJsonPath.segmentsOf("[?(@.foo == 'bar')]") mustBe None
 
   // -----------------------------------------------------------------------------------------------
   // the predicates gate the wrapped plugin

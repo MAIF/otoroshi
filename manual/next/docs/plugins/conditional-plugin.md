@@ -146,8 +146,10 @@ capped at 5 levels.
 * The flow report of a route shows the Conditional plugin, not the wrapped one: the report is built
   per slot of the plugin chain, and the wrapper occupies the slot. Enable `debugFlow` on the route
   to see the wrapper being entered.
-* Evaluating the predicates means serialising and parsing the whole context once, whatever the
-  number of predicates — they all read their path off the same parsed document. That context
-  contains the full route and all the request attributes, so it is not free. With `per_phase` it is
-  paid on every phase the wrapped plugin takes part in; `once` brings it down to a single evaluation
-  per request.
+* A plain dotted path such as `$.apikey.metadata.tier`, or a bracket one such as
+  `$.attrs['otoroshi.next.core.Route'].metadata.tier`, is read straight off the context: no
+  serialisation, no JSON parsing. Anything richer — a recursive descent `$..tier`, a wildcard, an
+  array index, a filter expression — falls back to a full JSONPath evaluation. That fallback
+  serialises and parses the whole context, which holds the full route and every request attribute,
+  once per phase, however many such predicates there are. If you need one of those and care about
+  the cost, `once` brings it down to a single evaluation for the whole request.
