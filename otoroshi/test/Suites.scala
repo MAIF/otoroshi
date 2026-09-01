@@ -151,6 +151,13 @@ class ExpressionLanguageTests
       new ExpressionLanguageSpec(Configurations.InMemoryConfiguration)
     )
 
+// differential test and comparison report between the regular json path reader and the opt in fast
+// one. prints a report, so it is its own suite rather than part of the default run.
+class JsonPathTests
+    extends Suites(
+      new JsonPathFastReaderSpec(Configurations.InMemoryConfiguration)
+    )
+
 class BackendMtlsTests
     extends Suites(
       new BackendMtlsSpec(Configurations.InMemoryConfiguration)

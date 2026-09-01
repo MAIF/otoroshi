@@ -207,7 +207,10 @@ final class JsonPathDocument(payload: JsValue) {
   private def readWithJsonPath(path: String): Option[JsValue] = FastJsonPath.compiledOf(path) match {
     case None           => None
     case Some(compiled) =>
-      Try(document.read(compiled, classOf[JsonNode])) match {
+      // the untyped read on purpose, exactly like getAtPolyF does. asking jayway for a JsonNode
+      // instead would engage its mapping provider, and a path whose result is not a node, such as
+      // `length()`, would start resolving here while it does not on the regular road.
+      Try(document.read[JsonNode](compiled)) match {
         case Failure(e)                  =>
           if (JsonPathDocument.logger.isDebugEnabled) {
             JsonPathDocument.logger.debug(s"error while trying to read '$path'", e)
