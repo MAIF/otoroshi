@@ -44,12 +44,14 @@
   }
 
   .node-trash {
+    color: var(--text);
     opacity: 0;
     transition: opacity 0.15s;
     position: absolute;
     top: -1.5rem;
     margin: auto;
     padding-bottom: 1rem;
+    color: var(--text);
   }
 
   .react-flow__edges svg {
@@ -503,6 +505,7 @@
   }
 
   .node-description {
+    color: var(--text);
     position: fixed;
     top: 100%;
     font-size: .75rem;
