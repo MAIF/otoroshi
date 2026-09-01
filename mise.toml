@@ -12,7 +12,7 @@
 [tools]
 java = "openjdk-17"
 sbt = "1.12.9"
-node = "22"
+node = "24"
 
 # ─── Install ─────────────────────────────────────────────────────────
 
@@ -47,9 +47,9 @@ run = "sbt -J-Xmx2G --java-home $JAVA_HOME ~reStart"
 #OTOROSHI_API_CLIENT_SECRET = "secret"
 
 [tasks.dev-frontend]
-description = "Start frontend webpack dev server (port 3040)"
+description = "Start frontend dev server (port 3040)"
 dir = "otoroshi/javascript"
-run = "npm run webpack:start"
+run = "npm run start"
 
 [tasks.dev-doc]
 description = "Run documentation Docusaurus dev server"
@@ -79,9 +79,9 @@ dir = "otoroshi"
 run = "sbt --java-home $JAVA_HOME clean compile assembly"
 
 [tasks.build-frontend]
-description = "Build otoroshi frontend (webpack production)"
+description = "Build otoroshi frontend (production)"
 dir = "otoroshi/javascript"
-run = "npm run webpack:build"
+run = "npm run build"
 
 [tasks.build-doc]
 description = "Build the documentation static site"
