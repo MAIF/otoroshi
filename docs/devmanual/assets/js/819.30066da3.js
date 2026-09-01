@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkotoroshi_documentation=self.webpackChunkotoroshi_documentation||[]).push([["819"],{75390(e,t,o){o.d(t,{createArchitectureServices:()=>c.S});var c=o(65530);o(93345)}}]);
