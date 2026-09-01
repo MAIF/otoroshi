@@ -49,7 +49,6 @@ export class OtoDateTimePicker extends Component {
     }
   };
 
-
   render() {
     const { date } = this.props;
     const dateFormat = 'YYYY-MM-DD HH:mm:ss';
@@ -62,7 +61,7 @@ export class OtoDateTimePicker extends Component {
           format={dateFormat}
           placeholder="Date and time"
           onChange={this.onChange}
-          onOk={() => { }}
+          onOk={() => {}}
         />
       </LocaleProvider>
     );

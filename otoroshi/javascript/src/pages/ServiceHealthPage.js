@@ -33,8 +33,8 @@ export class ServiceHealthPage extends Component {
       : //[REMOVE SERVICEDESC] : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
         Promise.resolve({});
 
-    this.props.setTitle('Route health')
-      
+    this.props.setTitle('Route health');
+
     fu.then((service) => {
       this.setState({ service }, () => {
         if (
@@ -90,7 +90,9 @@ export class ServiceHealthPage extends Component {
               <p>
                 Enable it in the <strong>Health check</strong> section of{' '}
                 {this.onRoutes ? (
-                  <Link to={`/routes/${this.props.params.routeId}?tab=flow`}>the route configuration</Link>
+                  <Link to={`/routes/${this.props.params.routeId}?tab=flow`}>
+                    the route configuration
+                  </Link>
                 ) : (
                   <Link
                     to={`/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}`}
@@ -151,7 +153,7 @@ class OverallUptime extends Component {
             value.status
               .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
               .reduce((acc, curr) => acc + curr.percentage, 0) /
-            length
+              length
           );
         }, 0);
 

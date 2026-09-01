@@ -884,8 +884,8 @@ export class CertificatesPage extends Component {
               automatically renewed before expiration.
             </li>
             <li>
-              <strong>Let's Encrypt/ACME integration</strong> — request and auto-renew certificates from
-              Let's Encrypt/ACME for your public-facing domains.
+              <strong>Let's Encrypt/ACME integration</strong> — request and auto-renew certificates
+              from Let's Encrypt/ACME for your public-facing domains.
             </li>
           </ul>
           <p>

@@ -93,12 +93,38 @@ export const randomAlphaNumeric = (length) => {
 };
 
 const FIRST_NAMES = [
-  'Alex', 'Camille', 'Dominique', 'Eliott', 'Farah', 'Gabriel', 'Hana', 'Ines',
-  'Jules', 'Karim', 'Lena', 'Marius', 'Nadia', 'Oscar', 'Paul', 'Sofia',
+  'Alex',
+  'Camille',
+  'Dominique',
+  'Eliott',
+  'Farah',
+  'Gabriel',
+  'Hana',
+  'Ines',
+  'Jules',
+  'Karim',
+  'Lena',
+  'Marius',
+  'Nadia',
+  'Oscar',
+  'Paul',
+  'Sofia',
 ];
 const LAST_NAMES = [
-  'Bernard', 'Chevalier', 'Dubois', 'Fontaine', 'Girard', 'Henry', 'Lambert',
-  'Martin', 'Moreau', 'Perrin', 'Robin', 'Roussel', 'Simon', 'Vincent',
+  'Bernard',
+  'Chevalier',
+  'Dubois',
+  'Fontaine',
+  'Girard',
+  'Henry',
+  'Lambert',
+  'Martin',
+  'Moreau',
+  'Perrin',
+  'Robin',
+  'Roussel',
+  'Simon',
+  'Vincent',
 ];
 const LOREM = ['aperture', 'binary', 'cluster', 'gateway', 'lattice', 'proxy', 'route', 'signal'];
 
