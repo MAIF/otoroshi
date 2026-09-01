@@ -30,13 +30,13 @@ labels:
     pairs:
       app.kubernetes.io/name: otoroshi
       app.kubernetes.io/instance: cluster-baremetal
-      app.kubernetes.io/version: "18.0.0-preview5"
+      app.kubernetes.io/version: "18.0.0-dev"
       app.kubernetes.io/part-of: otoroshi
       app.kubernetes.io/managed-by: kustomize
 
 images:
   - name: maif/otoroshi
-    newTag: 18.0.0-preview5
+    newTag: 18.0.0-dev
 
 replicas:
   - name: otoroshi-leader-deployment

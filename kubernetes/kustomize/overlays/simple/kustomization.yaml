@@ -32,14 +32,14 @@ labels:
     pairs:
       app.kubernetes.io/name: otoroshi
       app.kubernetes.io/instance: simple
-      app.kubernetes.io/version: "18.0.0-preview5"
+      app.kubernetes.io/version: "18.0.0-dev"
       app.kubernetes.io/part-of: otoroshi
       app.kubernetes.io/managed-by: kustomize
 
 # Image — bump with `kustomize edit set image maif/otoroshi=maif/otoroshi:NEW`
 images:
   - name: maif/otoroshi
-    newTag: 18.0.0-preview5
+    newTag: 18.0.0-dev
 
 # Replicas — bump with `kustomize edit set replicas otoroshi-deployment=N`
 replicas:
