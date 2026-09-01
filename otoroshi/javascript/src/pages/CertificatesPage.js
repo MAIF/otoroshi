@@ -131,7 +131,7 @@ class CertificateInfos extends Component {
         ))}
         {/*<ArrayInput label="Subject Alternate Names" disabled={true} value={this.state.cert.subAltNames || []} />*/}
         <BooleanInput
-          label="Let's Encrypt"
+          label="Let's Encrypt/ACME"
           disabled={true}
           value={this.props.rawValue.letsEncrypt}
         />
@@ -530,7 +530,7 @@ export class CertificatesPage extends Component {
         ) : item.ca ? (
           <span className="badge bg-info">ca</span>
         ) : item.letsEncrypt ? (
-          <span className="badge bg-warning">let's encrypt</span>
+          <span className="badge bg-warning">Let's Encrypt/ACME</span>
         ) : item.keypair ? (
           <span className="badge bg-secondary">keypair</span>
         ) : item.selfSigned ? (
@@ -855,7 +855,7 @@ export class CertificatesPage extends Component {
       <>
         <InfoCollapse title="What is a Certificate?">
           <p>
-            Otoroshi embeds its own <strong>Public Key Infrastructure (PKI)</strong> and also lets
+            Otoroshi embeds its own <strong>Public Key Infrastructure (PKI)</strong> and also let
             you import and use <strong>external certificates and Certificate Authorities</strong>.
             Whether you generate everything internally or bring your own certs from an external CA,
             Otoroshi manages them all from one place.
@@ -884,8 +884,8 @@ export class CertificatesPage extends Component {
               automatically renewed before expiration.
             </li>
             <li>
-              <strong>Let's Encrypt integration</strong> — request and auto-renew certificates from
-              Let's Encrypt for your public-facing domains.
+              <strong>Let's Encrypt/ACME integration</strong> — request and auto-renew certificates from
+              Let's Encrypt/ACME for your public-facing domains.
             </li>
           </ul>
           <p>
@@ -959,7 +959,7 @@ export class CertificatesPage extends Component {
                   style={{ marginLeft: '5px' }}
                   className="btn btn-primary btn-sm"
                 >
-                  <i className="fas fa-plus-circle" /> Let's Encrypt Certificate
+                  <i className="fas fa-plus-circle" /> Let's Encrypt/ACME Certificate
                 </button>
                 <button
                   type="button"
@@ -1045,7 +1045,7 @@ export class NewCertificateForm extends Component {
                 label="Let's Encrypt"
                 value={this.state.letsEncrypt}
                 onChange={(v) => this.changeTheValue('letsEncrypt', v)}
-                help="Is your certificate a Let's Encrypt certificate"
+                help="Is your certificate a Let's Encrypt/ACME certificate"
               />
               <TextInput
                 label="Host"
@@ -1108,7 +1108,7 @@ export class NewCertificateForm extends Component {
                   label="Let's Encrypt"
                   value={this.state.letsEncrypt}
                   onChange={(v) => this.changeTheValue('letsEncrypt', v)}
-                  help="Is your certificate a Let's Encrypt certificate"
+                  help="Is your certificate a Let's Encrypt/ACME certificate"
                 />
                 <BiColumnBooleanInput
                   label="Include A.I.A"

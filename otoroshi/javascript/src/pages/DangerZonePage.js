@@ -965,6 +965,32 @@ export class DangerZonePage extends Component {
         help: "CN of the preferred root/trust anchor. When set, Otoroshi presents the ACME alternate chain that terminates at this root (matched on the issuer CN of the topmost certificate, like certbot's --preferred-chain). Leave empty to keep the ACME server's default chain.",
       },
     },
+    'letsEncryptSettings.renewalPercentage': {
+      type: 'number',
+      props: {
+        label: 'Renewal threshold (%)',
+        suffix: '% of lifetime left',
+        min: 1,
+        max: 100,
+        help: 'Renew a certificate once less than this percentage of its total lifetime remains. 20% is 18 days for a 90-day certificate, but only 9 days for the 47-day certificates public CAs will issue from 2029: use the absolute margin below for short-lived certificates.',
+      },
+    },
+    'letsEncryptSettings.renewBeforeDays': {
+      type: 'number',
+      props: {
+        label: 'Renew before (days)',
+        suffix: 'days before expiration',
+        min: 0,
+        help: 'Absolute renewal margin, in days. When set, it takes precedence over the percentage above. Leave empty to keep the percentage rule.',
+      },
+    },
+    'letsEncryptSettings.deleteOldCertificatesAfterRenewal': {
+      type: 'bool',
+      props: {
+        label: 'Delete old certificates after renewal',
+        help: "When enabled, a successful renewal of a Let's Encrypt certificate does not leave an '[UNTIL EXPIRATION]' archive copy behind, and the copies left by the previous renewals are deleted. Only applies to Let's Encrypt certificates: the archive copy of a keypair is what JWT verifiers use to validate tokens signed with the previous key.",
+      },
+    },
     'mailGunSettings.eu': {
       type: 'bool',
       props: {
@@ -1399,6 +1425,9 @@ export class DangerZonePage extends Component {
     'letsEncryptSettings.publicKey',
     'letsEncryptSettings.privateKey',
     'letsEncryptSettings.preferredChain',
+    'letsEncryptSettings.renewalPercentage',
+    'letsEncryptSettings.renewBeforeDays',
+    'letsEncryptSettings.deleteOldCertificatesAfterRenewal',
     '>>>CleverCloud settings',
     'cleverSettings.consumerKey',
     'cleverSettings.consumerSecret',

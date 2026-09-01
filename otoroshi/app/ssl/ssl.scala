@@ -25,7 +25,7 @@ import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import otoroshi.metrics.{FakeHasMetrics, HasMetrics}
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, CertAlmostExpiredAlert, CertExpiredAlert, CertRenewalAlert}
+import otoroshi.events.{Alerts, CertAlmostExpiredAlert, CertExpiredAlert, CertRenewalAlert, CertRenewalFailedAlert}
 import otoroshi.gateway.Errors
 
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -49,7 +49,7 @@ import org.bouncycastle.util.io.pem.PemReader
 import org.joda.time.{DateTime, Interval}
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
-import otoroshi.utils.letsencrypt.LetsEncryptHelper
+import otoroshi.utils.letsencrypt.{LetsEncryptHelper, LetsEncryptSettings}
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
@@ -212,79 +212,98 @@ case class Cert(
     }
   }
 
+  /**
+   * Renews this certificate and PERSISTS it, keeping its id. Returns a Left when the renewal failed:
+   * the ACME path can fail for good (rate limit, dns, challenge) and its callers must be able to tell,
+   * instead of archiving a copy of the old certificate and alerting as if it had succeeded.
+   *
+   * A successful renewal emits exactly one CertRenewalAlert, from here, whether it was triggered by the
+   * renewal job or manually through the api - the let's encrypt path used to emit one of its own on top
+   * of the job's.
+   */
   def renew(
       _duration: Option[FiniteDuration] = None
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[String, Cert]] = {
     import SSLImplicits.*
     val duration = _duration.getOrElse(FiniteDuration(365, TimeUnit.DAYS))
-    this match {
+    val renewed: Future[Either[String, Cert]] = this match {
       case original if original.letsEncrypt => LetsEncryptHelper.renew(this)
       case _                                => {
-        env.datastores.certificatesDataStore.findAll().map { certificates =>
+        env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
           val cas = certificates.filter(cert => cert.ca)
-          caRef.flatMap(ref => cas.find(_.id == ref)) match {
-            case None if ca         =>
-              val resp = FakeKeyStore
-                .createCA(subject, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
-              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
-            case None if selfSigned =>
-              val resp = FakeKeyStore.createSelfSignedCertificate(
-                domain,
-                duration,
-                Some(cryptoKeyPair),
-                certificate.map(_.getSerialNumber.longValue())
-              )
-              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
-            case None if keypair    =>
-              val resp = FakeKeyStore.createSelfSignedCertificate(
-                domain,
-                duration,
-                Some(cryptoKeyPair),
-                certificate.map(_.getSerialNumber.longValue())
-              )
-              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
-            case None               => // should not happens
-              val resp = FakeKeyStore.createSelfSignedCertificate(
-                domain,
-                duration,
-                Some(cryptoKeyPair),
-                certificate.map(_.getSerialNumber.longValue())
-              )
-              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
-            case Some(caCert) if ca =>
-              val resp = FakeKeyStore.createSubCa(
-                domain,
-                duration,
-                Some(cryptoKeyPair),
-                certificate.map(_.getSerialNumber.longValue()),
-                caCert.certificate.get,
-                caCert.certificates.tail,
-                caCert.cryptoKeyPair
-              )
-              copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
-            case Some(caCert)       =>
-              val resp = FakeKeyStore.createCertificateFromCA(
-                domain,
-                duration,
-                Some(cryptoKeyPair),
-                certificate.map(_.getSerialNumber.longValue()),
-                caCert.certificate.get,
-                caCert.certificates.tail,
-                caCert.cryptoKeyPair
-              )
-              copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
-            // case _                  =>
-            //   // println("wait what ???")
-            //   val resp = FakeKeyStore.createSelfSignedCertificate(
-            //     domain,
-            //     duration,
-            //     Some(cryptoKeyPair),
-            //     certificate.map(_.getSerialNumber.longValue())
-            //   )
-            //   copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+          Try {
+            caRef.flatMap(ref => cas.find(_.id == ref)) match {
+              case None if ca         =>
+                val resp = FakeKeyStore
+                  .createCA(subject, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
+                copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+              case None if selfSigned =>
+                val resp = FakeKeyStore.createSelfSignedCertificate(
+                  domain,
+                  duration,
+                  Some(cryptoKeyPair),
+                  certificate.map(_.getSerialNumber.longValue())
+                )
+                copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+              case None if keypair    =>
+                val resp = FakeKeyStore.createSelfSignedCertificate(
+                  domain,
+                  duration,
+                  Some(cryptoKeyPair),
+                  certificate.map(_.getSerialNumber.longValue())
+                )
+                copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+              case None               => // should not happens
+                val resp = FakeKeyStore.createSelfSignedCertificate(
+                  domain,
+                  duration,
+                  Some(cryptoKeyPair),
+                  certificate.map(_.getSerialNumber.longValue())
+                )
+                copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+              case Some(caCert) if ca =>
+                val resp = FakeKeyStore.createSubCa(
+                  domain,
+                  duration,
+                  Some(cryptoKeyPair),
+                  certificate.map(_.getSerialNumber.longValue()),
+                  caCert.certificate.get,
+                  caCert.certificates.tail,
+                  caCert.cryptoKeyPair
+                )
+                copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
+              case Some(caCert)       =>
+                val resp = FakeKeyStore.createCertificateFromCA(
+                  domain,
+                  duration,
+                  Some(cryptoKeyPair),
+                  certificate.map(_.getSerialNumber.longValue()),
+                  caCert.certificate.get,
+                  caCert.certificates.tail,
+                  caCert.cryptoKeyPair
+                )
+                copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
+              // case _                  =>
+              //   // println("wait what ???")
+              //   val resp = FakeKeyStore.createSelfSignedCertificate(
+              //     domain,
+              //     duration,
+              //     Some(cryptoKeyPair),
+              //     certificate.map(_.getSerialNumber.longValue())
+              //   )
+              //   copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+            }
+          } match {
+            case Failure(e)    =>
+              Cert.logger.error(s"error while renewing certificate $id for $domain", e)
+              FastFuture.successful(Left(s"error while renewing certificate $id for $domain: ${e.getMessage}"))
+            case Success(cert) => cert.save().map(_ => Right(cert))
           }
         }
       }
+    }
+    renewed.andThen { case Success(Right(cert)) =>
+      Alerts.send(CertRenewalAlert(env.snowflakeGenerator.nextIdStr(), env.env, cert))
     }
   }
   // def password: Option[String] = None
@@ -624,45 +643,71 @@ object Cert {
     }
   def fromJsonSafe(value: JsValue): JsResult[Cert] = _fmt.reads(value)
 
+  /**
+   * Auto-issues an internal-PKI certificate for the hosts of every route flagged `issueCert` that has no
+   * certificate yet.
+   *
+   * This used to call `.get` on a `find` that was None by construction - the hosts had just been filtered
+   * down to exactly those with NO matching certificate - so the stream died on a NoSuchElementException
+   * inside a scheduler runnable (silently, the failure had nowhere to go) and this auto-issuance never
+   * actually issued anything.
+   */
   def createFromServices()(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
     env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
       env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-        val certs                    = certificates.filterNot(_.letsEncrypt)
-        val letsEncryptServicesHosts = services
+        val certs        = certificates.filterNot(_.letsEncrypt)
+        val cas          = certificates.filter(c => c.ca && c.notRevoked && c.certificate.isDefined)
+        val hostsToIssue = services
           .filter(_.issueCert)
           .flatMap(s => s.allHosts.map(h => (s, h)))
-          .filterNot(s => certs.exists(c => RegexPool(c.domain).matches(s._2)))
-        Source(letsEncryptServicesHosts.toList)
+          .filterNot { case (_, host) => certs.exists(c => RegexPool(c.domain).matches(host)) }
+          .distinctBy(_._2)
+        Source(hostsToIssue.toList)
           .mapAsync(1) { case (service, host) =>
-            env.datastores.rawDataStore.get(s"${env.storageRoot}:certs-issuer:local:create:$host").flatMap {
+            val lockKey = s"${env.storageRoot}:certs-issuer:local:create:$host"
+            env.datastores.rawDataStore.get(lockKey).flatMap {
               case Some(_) =>
                 logger.warn(s"Certificate already in creating process: $host")
                 FastFuture.successful(())
               case None    => {
                 env.datastores.rawDataStore
-                  .set(
-                    s"${env.storageRoot}:certs-issuer:local:create:$host",
-                    ByteString("true"),
-                    Some(1.minutes.toMillis)
-                  )
+                  .set(lockKey, ByteString("true"), Some(1.minutes.toMillis))
                   .flatMap { _ =>
-                    val cert = certs.find(c => RegexPool(c.domain).matches(host)).get
-                    if (cert.autoRenew) {
-                      cert.renew()
-                    } else {
-                      FastFuture.successful(cert)
+                    service.issueCertCA.flatMap(ref => cas.find(_.id == ref)) match {
+                      case None     =>
+                        val caRef = service.issueCertCA.getOrElse("none")
+                        logger.error(
+                          s"no ca found to issue a certificate for $host (service ${service.id}, ca $caRef)"
+                        )
+                        FastFuture.successful(())
+                      case Some(ca) =>
+                        env.pki
+                          .genCert(
+                            GenCsrQuery(hosts = Seq(host), subject = Some(s"CN=$host")),
+                            ca.certificate.get,
+                            ca.certificates.tail,
+                            ca.cryptoKeyPair.getPrivate
+                          )
+                          .flatMap {
+                            case Left(err)   =>
+                              logger.error(s"error while creating certificate for $host: $err")
+                              FastFuture.successful(())
+                            case Right(resp) => {
+                              val cert = resp.toCert.copy(caRef = Some(ca.id), autoRenew = true)
+                              cert
+                                .copy(name = cert.domain, description = s"Certificate for ${cert.subject}")
+                                .save()
+                                .map(_ => logger.info(s"Successfully created certificate for $host"))
+                            }
+                          }
                     }
                   }
                   .andThen { case _ =>
-                    env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:local:create:$host"))
+                    env.datastores.rawDataStore.del(Seq(lockKey))
                   }
               }
             }
           }
-          // .map {
-          //   case (host, Left(err)) => logger.error(s"Error while creating certificate for $host. $err")
-          //   case (host, Right(_))  => logger.info(s"Successfully created certificate for $host")
-          // }
           .runWith(Sink.ignore)
           .map(_ => ())
       }
@@ -721,92 +766,99 @@ trait CertificateDataStore extends BasicStore[Cert] {
   }
 
   def renewCertificates()(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
+
+    val letsEncryptSettings =
+      env.datastores.globalConfigDataStore.latestSafe.map(_.letsEncryptSettings).getOrElse(LetsEncryptSettings())
+
+    // A certificate must be renewed once the remaining part of its lifetime drops under the configured
+    // threshold. The rule used to be a hardcoded 20 %, which is 18 days for a 90-day certificate but only
+    // 9 days for the 47-day certificates public CAs will issue from 2029: `renewBeforeDays` expresses the
+    // margin in absolute days instead, and takes precedence when set.
     def willBeInvalidSoon(cert: Cert): Boolean = {
       val enriched       = cert.enrich()
       val globalInterval = new Interval(enriched.from, enriched.to)
       if (enriched.to.isBefore(DateTime.now())) {
         false
+      } else if (globalInterval.toDurationMillis <= 0L) {
+        true
       } else {
         val nowInterval      = new Interval(DateTime.now(), enriched.to)
         val percentage: Long = (nowInterval.toDurationMillis * 100) / globalInterval.toDurationMillis
-        percentage < 20
+        percentage < letsEncryptSettings.renewalThresholdPercentage(globalInterval.toDurationMillis)
       }
     }
 
-    def renewCAs(certificates: Seq[Cert]): Future[Unit] = {
-      val renewableCas = certificates
-        .filter(_.notRevoked)
-        .filter(_.autoRenew)
-        .filter(cert => cert.ca)
-        .filter(willBeInvalidSoon)
-        .filterNot(c =>
-          c.entityMetadata.get("untilExpiration").contains("true") || c.name.startsWith("[UNTIL EXPIRATION] ")
-        )
-      Source(renewableCas.toList)
-        .mapAsync(1) { case c =>
-          c.renew()
-            .flatMap(d =>
-              c.copy(
-                id = IdGenerator.token,
-                name = "[UNTIL EXPIRATION] " + c.name,
-                entityMetadata = c.entityMetadata ++ Map(
-                  "untilExpiration" -> "true",
-                  "nextCertificate" -> c.id
-                )
-              ).save()
-                .map(_ => d)
-            )
-            .flatMap(c => c.save().map(_ => c))
-        }
-        .map { c =>
-          Alerts.send(
-            CertRenewalAlert(
-              env.snowflakeGenerator.nextIdStr(),
-              env.env,
-              c
-            )
+    // The "[UNTIL EXPIRATION]" copy exists so that jwt verifiers can still validate tokens signed with the
+    // previous key of a rotated keypair (they look the previous certificate up through the
+    // "nextCertificate" metadata). A replaced TLS server certificate has no such role, so for let's
+    // encrypt certificates the copy is pure garbage that nothing ever purges - hence the opt-in setting.
+    def archiveOldCertificate(c: Cert): Future[Unit] = {
+      if (c.letsEncrypt && letsEncryptSettings.deleteOldCertificatesAfterRenewal) {
+        // drop the archive copies left behind by the previous renewals of this certificate too
+        env.datastores.certificatesDataStore
+          .findAll()
+          .flatMap { all =>
+            val obsolete = all
+              .filter(_.entityMetadata.get("untilExpiration").contains("true"))
+              .filter(_.entityMetadata.get("nextCertificate").contains(c.id))
+              .map(_.id)
+            if (obsolete.isEmpty) FastFuture.successful(())
+            else env.datastores.certificatesDataStore.deleteByIds(obsolete).map(_ => ())
+          }
+      } else {
+        c.copy(
+          id = IdGenerator.token,
+          name = "[UNTIL EXPIRATION] " + c.name,
+          entityMetadata = c.entityMetadata ++ Map(
+            "untilExpiration" -> "true",
+            "nextCertificate" -> c.id
           )
+        ).save()
+          .map(_ => ())
+      }
+    }
+
+    // Shared by the CA pass and the leaf pass: renew, and only once the renewal actually succeeded,
+    // archive the previous certificate. The renewal alert is emitted by Cert.renew itself.
+    def renewAll(renewable: Seq[Cert]): Future[Unit] = {
+      Source(renewable.toList)
+        .mapAsync(1) { c =>
+          c.renew().flatMap {
+            case Left(err) =>
+              Cert.logger.error(s"error while renewing certificate ${c.id} (${c.name}) for ${c.domain}: $err")
+              Alerts.send(CertRenewalFailedAlert(env.snowflakeGenerator.nextIdStr(), env.env, c, err))
+              FastFuture.successful(())
+            case Right(_)  => archiveOldCertificate(c)
+          }
         }
         .runWith(Sink.ignore)
         .map(_ => ())
     }
 
-    def renewNonCaCertificates(certificates: Seq[Cert]): Future[Unit] = {
-      val renewableCertificates = certificates
-        .filter(_.notRevoked)
-        .filter(_.autoRenew)
-        .filterNot(_.ca)
-        .filter(willBeInvalidSoon) // TODO: fix
-        .filterNot(c =>
-          c.entityMetadata.get("untilExpiration").contains("true") || c.name.startsWith("[UNTIL EXPIRATION] ")
-        )
-      Source(renewableCertificates.toList)
-        .mapAsync(1) { case c =>
-          c.renew()
-            .flatMap(d =>
-              c.copy(
-                id = IdGenerator.token,
-                name = "[UNTIL EXPIRATION] " + c.name,
-                entityMetadata = c.entityMetadata ++ Map(
-                  "untilExpiration" -> "true",
-                  "nextCertificate" -> c.id
-                )
-              ).save()
-                .map(_ => d)
-            )
-            .flatMap(c => c.save().map(_ => c))
-        }
-        .map { c =>
-          Alerts.send(
-            CertRenewalAlert(
-              env.snowflakeGenerator.nextIdStr(),
-              env.env,
-              c
-            )
+    def renewCAs(certificates: Seq[Cert]): Future[Unit] = {
+      renewAll(
+        certificates
+          .filter(_.notRevoked)
+          .filter(_.autoRenew)
+          .filter(cert => cert.ca)
+          .filter(willBeInvalidSoon)
+          .filterNot(c =>
+            c.entityMetadata.get("untilExpiration").contains("true") || c.name.startsWith("[UNTIL EXPIRATION] ")
           )
-        }
-        .runWith(Sink.ignore)
-        .map(_ => ())
+      )
+    }
+
+    def renewNonCaCertificates(certificates: Seq[Cert]): Future[Unit] = {
+      renewAll(
+        certificates
+          .filter(_.notRevoked)
+          .filter(_.autoRenew)
+          .filterNot(_.ca)
+          .filter(willBeInvalidSoon)
+          .filterNot(c =>
+            c.entityMetadata.get("untilExpiration").contains("true") || c.name.startsWith("[UNTIL EXPIRATION] ")
+          )
+      )
     }
 
     def markExpiredCertsAsExpired(certificates: Seq[Cert]): Future[Unit] = {

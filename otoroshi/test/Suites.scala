@@ -171,6 +171,13 @@ class Log4ShellTests
       new Log4ShellSpec()
     )
 
+// acme end-to-end against a real acme server (pebble) started with testcontainers: needs docker, so it is
+// its own suite rather than part of the default run.
+class LetsEncryptTests
+    extends Suites(
+      new LetsEncryptSpec(Configurations.InMemoryConfiguration)
+    )
+
 class NgTreeRouterTests
     extends Suites(
       new NgTreeRouterOpenapiWithEnvSpec(Configurations.InMemoryConfiguration),
