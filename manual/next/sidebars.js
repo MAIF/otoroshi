@@ -166,6 +166,7 @@ const sidebars = {
       items: [
         'plugins/plugins-system',
         'plugins/create-plugins',
+        'plugins/conditional-plugin',
         'plugins/built-in-plugins',
       ],
     },

@@ -3,7 +3,7 @@ package otoroshi.utils
 import com.fasterxml.jackson.databind.JsonNode
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
-import com.jayway.jsonpath.{Configuration, JsonPath}
+import com.jayway.jsonpath.{Configuration, DocumentContext, JsonPath}
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import play.api.Logger
@@ -109,6 +109,29 @@ object JsonPathUtils {
     //}
   }
 
+  // parses a payload once so that several validators can read their own path off it, instead of
+  // each of them serialising and re-parsing the whole payload
+  def document(payload: JsValue): JsonPathDocument =
+    new JsonPathDocument(JsonPath.parse(Json.stringify(payload), config), payload.isInstanceOf[JsObject])
+
+  def getAtPolyDoc(doc: DocumentContext, path: String): Option[JsValue] = {
+    Try {
+      val read = doc.read[JsonNode](path)
+      if (read != null) {
+        Writes.jsonNodeWrites.writes(read).some
+      } else if (jsonPathNullReadIsJsNull) {
+        JsNull.some
+      } else {
+        None
+      }
+    } match {
+      case Failure(e) =>
+        if (logger.isDebugEnabled) logger.debug(s"error while trying to read '$path'", e)
+        None
+      case Success(s) => s
+    }
+  }
+
   def getAtPoly(payload: String, path: String): Option[JsValue] = {
     getAtPolyF(payload, path) match {
       case Right(value)                                      => value.some
@@ -124,19 +147,33 @@ object JsonPathUtils {
 
 case class JsonPathReadError(message: String, path: String, payload: String, err: Option[Throwable])
 
+// a payload parsed once, meant to be read by a whole list of validators. `isObject` is carried along
+// because JsonPathValidator needs to know the shape of the payload it was built from.
+final class JsonPathDocument(private val doc: DocumentContext, val isObject: Boolean) {
+  def read(path: String): Option[JsValue] = JsonPathUtils.getAtPolyDoc(doc, path)
+}
+
 case class JsonPathValidator(path: String, value: JsValue, error: Option[String] = None) extends JsonValidator {
   def json: JsValue         = JsonPathValidator.format.writes(this)
   override def kind: String = "json-path-validator"
-  def validate(ctx: JsValue)(using env: Env): Boolean = {
+  def validate(ctx: JsValue)(using env: Env): Boolean =
+    check(ctx.atPath(path).asOpt[JsValue], ctx.isInstanceOf[JsObject])
+
+  // reads the path off a payload that was parsed once. a list of validators sharing the same payload
+  // then pays a single serialisation and a single json parse instead of one per validator.
+  def validate(doc: JsonPathDocument)(using env: Env): Boolean =
+    check(doc.read(path), doc.isObject)
+
+  private def check(read: Option[JsValue], payloadIsObject: Boolean): Boolean = {
     val maybeExpr = value.asOptString.getOrElse("")
-    ctx.atPath(path).asOpt[JsValue] match {
+    read match {
       case None if maybeExpr == "NotDefined()"                      => true
       case None                                                     => false
       case Some(_) if maybeExpr == "IsDefined()"                    => true
       case Some(JsNumber(v)) if value.isInstanceOf[JsString]        => v.toString == value.asString
       case Some(JsBoolean(v)) if value.isInstanceOf[JsString]       => v.toString == value.asString
       case Some(JsArray(seq))
-          if path.startsWith("[?(") && path.endsWith(")]") && ctx.isInstanceOf[JsObject] && value
+          if path.startsWith("[?(") && path.endsWith(")]") && payloadIsObject && value
             .isInstanceOf[JsBoolean] =>
         seq.nonEmpty
       case Some(arr @ JsArray(seq)) if value.isInstanceOf[JsString] => {

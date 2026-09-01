@@ -4,6 +4,7 @@ import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection}
 import otoroshi.next.models.*
 import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgExecutionReport
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
 
@@ -31,4 +32,11 @@ object Keys {
     TypedKey[scala.collection.mutable.Buffer[NgPluginWrapper[NgRequestTransformer]]](
       "otoroshi.next.core.CalledBeforeRequestPlugins"
     )
+  // state of the ConditionalPlugin instances of a request, keyed by route and wrapper config
+  val ConditionalPluginsStateKey        =
+    TypedKey[UnboundedTrieMap[String, ConditionalPluginState]]("otoroshi.next.core.ConditionalPluginsState")
+  // nesting depth of the ConditionalPlugin delegations, to break a misconfigured cycle
+  val ConditionalPluginDepthKey         = TypedKey[Int]("otoroshi.next.core.ConditionalPluginDepth")
+  // position reached in backendCallPlugins when a ConditionalPlugin hands over to the next one
+  val ConditionalBackendCallPositionKey = TypedKey[Int]("otoroshi.next.core.ConditionalBackendCallPosition")
 }

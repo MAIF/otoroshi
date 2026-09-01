@@ -10,6 +10,7 @@ In this section, you will find information about the Otoroshi plugin system
 
 * [Plugin system](./plugins-system.md)
 * [Create plugins](./create-plugins.md)
+* [Conditional plugin](./conditional-plugin.md)
 * [Built-in plugins](./built-in-plugins.mdx)
 * [Admin extensions](../topics/admin-extensions.md)
 

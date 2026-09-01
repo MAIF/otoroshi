@@ -11,6 +11,7 @@ import BrotliResponseCompressor from './BrotliResponseCompressor';
 import CanaryMode from './CanaryMode';
 import ExposeDaikoku from './ExposeDaikoku';
 import TimeControlledCanaryMode from './TimeControlledCanaryMode';
+import ConditionalPlugin from './ConditionalPlugin';
 import ContextValidation from './ContextValidation';
 import NgCorazaWAF from './NgCorazaWAF';
 import Cors from './Cors';
@@ -177,6 +178,7 @@ const pluginsArray = [
   CanaryMode,
   ExposeDaikoku,
   TimeControlledCanaryMode,
+  ConditionalPlugin,
   ContextValidation,
   NgCorazaWAF,
   Cors,

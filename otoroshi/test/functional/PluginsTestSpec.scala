@@ -450,6 +450,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Context Validator" in {
       new ContextValidatorTests(this)
     }
+    "Conditional plugin" in {
+      new ConditionalPluginTests(this)
+    }
     "HTTP Client Cache - add cache headers when method, status, and content-type match" in {
       new HTTPClientCacheTests(this).addCacheHeadersWhenMethodStatusAndContentTypeMatch()
     }
