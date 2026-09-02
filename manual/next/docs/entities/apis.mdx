@@ -41,7 +41,7 @@ When Otoroshi starts or when an API is updated, each API is converted into a set
 1. Each API route's frontend paths are prefixed with the API's `domain` and `context_path` (e.g., a route with path `/users` on an API with domain `api.example.com` and context path `/v1` becomes `api.example.com/v1/users`)
 2. Backend references are resolved — either from the API's local backends or from global [stored backends](./backends.md)
 3. The plugin flow referenced by each route is attached as the route's plugin chain
-4. Published [consumer plans](#plans) inject the appropriate security plugins (API key validation, JWT verification, mTLS checks, etc.) into each route automatically
+4. Published [consumer plans](#plans) inject the appropriate security plugins (API key validation, JWT verification, mTLS checks, etc.) into each route automatically. Whatever the plan kind, the caller is turned into an [API key consumer](../topics/api-consumers.md) whose quotas and restrictions are enforced at the end of the access validation phase
 5. If [testing mode](#testing) is enabled, additional draft routes are generated that require a special header to access
 
 This means you get the organizational benefits of the API entity without any runtime overhead — under the hood, Otoroshi's engine processes the same optimized route structures it always has.
@@ -270,24 +270,22 @@ You can check the list of available plugins [here](../plugins/built-in-plugins.m
 {
   "id": "authenticated_flow",
   "name": "Authenticated flow",
-  "plugins": {
-    "slots": [
-      {
-        "plugin": "cp:otoroshi.next.plugins.OverrideHost",
-        "enabled": true,
-        "include": [],
-        "exclude": [],
-        "config": {}
-      },
-      {
-        "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
-        "enabled": true,
-        "include": [],
-        "exclude": [],
-        "config": {}
-      }
-    ]
-  }
+  "plugins": [
+    {
+      "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+      "enabled": true,
+      "include": [],
+      "exclude": [],
+      "config": {}
+    },
+    {
+      "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+      "enabled": true,
+      "include": [],
+      "exclude": [],
+      "config": {}
+    }
+  ]
 }
 ```
 
@@ -341,22 +339,76 @@ Plans (also referred to as consumers in the UI) define security policies and pri
 | `status` | string | Plan status: `staging`, `published`, `deprecated`, or `closed` |
 | `access_mode_configuration_type` | string | Access mode type (see below) |
 | `access_mode_configuration` | object | Access mode configuration (depends on type) |
+| `rateLimiting` | object | Rate limiting of the plan: `{ "strategy": { ... } }`. Every consumer of the plan is rate limited with that strategy. Defaults to the legacy strategy with the default quotas |
+| `plugins` | object | Plugin chain applied for the consumers of this plan. See [plan plugins](#plan-plugins) |
+| `validation` | object | How subscriptions are validated: `{ "kind": "auto" \| "manual" \| "webhook" \| "workflow" }` |
+| `visibility` | object | Visibility of the plan in the developer portal: `{ "kind": "public" \| "semi_public" \| "private" \| "custom" }` |
 | `pricing` | [ApiPricing](#pricing) | Pricing configuration |
 | `tags` | array of string | Tags |
 | `metadata` | object | Metadata |
 
 ### Access modes
 
-Otoroshi supports the following access modes for plans:
+Whatever the access mode, a published plan turns the caller into a **consumer**, and a consumer is
+always an API key: the quotas, restrictions and rotation of the plan are enforced the same way for a
+public plan and for a plan asking for client credentials. See
+[API consumers and plugin flows](../topics/api-consumers.md) for the whole picture.
 
 | Mode | Description | Plugins applied |
 |------|-------------|-----------------|
-| `keyless` | No authentication required. Open access. | None |
-| `apikey` | Requires a valid API key. Configurable key patterns, restrictions, quotas, and rotation. | `ApikeyCalls` |
-| `jwt` | Requires a valid JWT token with expected signature. | `JwtUserExtractor` |
-| `mtls` | Requires a valid TLS client certificate matching configured subject/issuer patterns. | `HasClientCertMatchingValidator` |
-| `oauth2-local` | OAuth2 client credentials flow with local token generation. Clients obtain a JWT to call other routes. | `ApikeyCalls` + client credentials endpoint |
-| `oauth2-remote` | OAuth2 with remote token introspection via an external OIDC provider. | `OIDCJwtVerifier` |
+| `keyless` | No credential required. The consumer is derived from an expression, the caller IP address by default | `NgExpressionApikeyExtractor` |
+| `apikey` | Requires a valid API key. Configurable key patterns, restrictions, quotas, and rotation | `ApikeyCalls` |
+| `jwt` | Requires a valid JWT token. The consumer is the client id claim of the token | `NgJwtApikeyExtractor` |
+| `mtls` | Requires a TLS client certificate matching the configured subject/issuer patterns | `NgClientCertApikeyExtractor` |
+| `oauth2-local` | OAuth2 client credentials flow with local token generation. Clients obtain a JWT to call other routes | `ApikeyCalls` + client credentials endpoint |
+| `oauth2-remote` | OAuth2 token verified against the OIDC settings of an auth. module. The consumer is the client id claim of the token | `NgOidcApikeyExtractor` |
+
+Every published plan also adds `NgApiConsumerEnforcer` on the routes of the API. It runs last, requires
+a consumer, and is the only place where a call is counted against the quotas of the plan.
+
+All the access modes but `apikey` and `oauth2-local` generate an API key for a consumer they have
+never seen, and they all share the `create_if_missing` flag for that. When it is on, the default,
+the generated API key is persisted and shows up in the UI. When it is off, the identity only lives
+for the duration of the call. In both cases the caller is served and its consumption is counted.
+
+### Keyless access mode configuration
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `expr` | string | `${req.ip}` | Expression building the consumer identity of a public call |
+| `create_if_missing` | boolean | `true` | Persist the generated API key |
+
+:::warning
+A missing value resolves to `no-header-<field>` and puts every such caller on one shared quota. Use
+an empty default (`${req.headers.x-consumer:}`) to have those calls rejected instead.
+:::
+
+### JWT access mode configuration
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `verifier` | string | | ID of the [JWT verifier](./jwt-verifiers.md) validating the token |
+| `client_id_path` | string | `client_id` | Claim holding the client id of the consumer. A JSON path such as `$.azp` works too |
+| `create_if_missing` | boolean | `true` | Persist the generated API key |
+
+### mTLS access mode configuration
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `regex_subject_dns` | array of string | `[]` | Regex patterns the subject DN of the client certificate may match |
+| `regex_issuer_dns` | array of string | `[]` | Regex patterns the issuer DN may match. A certificate matching either list is accepted. Both lists empty means any trusted certificate is accepted |
+| `client_id_field` | string | `null` | DN attribute holding the client id (`UID`, `CN`, ...). Left empty, the identity is derived from the whole subject and the serial number. A certificate missing the named attribute is rejected |
+| `create_if_missing` | boolean | `true` | Persist the generated API key |
+
+### OAuth2 remote access mode configuration
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `verifier` | string | | ID of the [auth. module](./auth-modules.md) whose OIDC settings validate the token |
+| `client_id_path` | string | `client_id` | Claim holding the client id of the consumer (`client_id`, `azp` or `cid` depending on the vendor) |
+| `fetch_user` | boolean | `false` | Call the userinfo endpoint of the module and store the profile of the token holder in a metadata of the API key. The call stays a consumer call, no user session is attached to it |
+| `user_metadata_key` | string | `user_profile` | Metadata key holding that profile |
+| `create_if_missing` | boolean | `true` | Persist the generated API key |
 
 ### Apikey access mode configuration
 
@@ -375,6 +427,56 @@ Otoroshi supports the following access modes for plans:
 | `validUntil` | number | Expiration timestamp (milliseconds) |
 | `tags` | array of string | Tags for generated keys |
 | `metadata` | object | Metadata for generated keys |
+
+### Rate limiting
+
+The `rateLimiting` property of a plan holds the throttling strategy handed over to every consumer of
+the plan, whether it got its API key through a subscription or was generated on the fly by the access
+mode. A plan without an explicit strategy falls back on the legacy one with the default quotas, which
+is what an API key created by hand gets.
+
+```json
+{
+  "rateLimiting": {
+    "strategy": {
+      "id": "LegacyThrottlingStrategyConfig",
+      "quota": { "window": 100, "daily": 10000, "monthly": 300000 }
+    }
+  }
+}
+```
+
+### Plan plugins
+
+A plan can bring its own plugins. They are applied on top of the plugin chain of the route, for the
+consumers of that plan only. See
+[API consumers and plugin flows](../topics/api-consumers.md#plugin-flows-per-consumer).
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `plugins` | array | `[]` | Plugin chain, same format as the plugins of a [route](./routes.md) |
+| `flow_ref` | string | `null` | ID of one of the [flows](#flows) of the API to use instead of listing the plugins here. An inline chain extends the referenced flow, it does not replace it |
+| `overrides` | boolean | `false` | Replace the plugins of the route instead of extending them. The pre-route and access validation plugins that already ran are kept, as are the global plugins |
+
+```json
+{
+  "plugins": {
+    "overrides": false,
+    "flow_ref": "authenticated_flow",
+    "plugins": [
+      {
+        "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+        "enabled": true,
+        "include": [],
+        "exclude": [],
+        "config": {
+          "headers": { "X-Plan": "${apikey.api.plan}" }
+        }
+      }
+    ]
+  }
+}
+```
 
 ### Plan JSON example
 
@@ -401,6 +503,19 @@ Otoroshi supports the following access modes for plans:
     "tags": [],
     "metadata": {}
   },
+  "rateLimiting": {
+    "strategy": {
+      "id": "LegacyThrottlingStrategyConfig",
+      "quota": { "window": 10, "daily": 1000, "monthly": 10000 }
+    }
+  },
+  "plugins": {
+    "plugins": [],
+    "overrides": false,
+    "flow_ref": null
+  },
+  "validation": { "kind": "auto", "config": {} },
+  "visibility": { "kind": "public", "config": {} },
   "pricing": {
     "id": "pricing_free",
     "name": "Free",
@@ -592,17 +707,15 @@ Otoroshi can generate an API entity from an OpenAPI specification. When importin
     {
       "id": "default_plugin_chain",
       "name": "Default flow",
-      "plugins": {
-        "slots": [
-          {
-            "plugin": "cp:otoroshi.next.plugins.OverrideHost",
-            "enabled": true,
-            "include": [],
-            "exclude": [],
-            "config": {}
-          }
-        ]
-      }
+      "plugins": [
+        {
+          "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+          "enabled": true,
+          "include": [],
+          "exclude": [],
+          "config": {}
+        }
+      ]
     }
   ],
   "routes": [
@@ -721,3 +834,4 @@ DELETE /api/api-subscriptions/:id    # Delete a subscription
 * [API Keys](./apikeys.mdx) - Credentials generated when subscribing with `apikey` access mode
 * [Certificates](./certificates.md) - Certificates used with `mtls` access mode
 * [JWT Verifiers](./jwt-verifiers.md) - Verifiers used with `jwt` and `oauth2-remote` access modes
+* [API consumers and plugin flows](../topics/api-consumers.md) - How a plan identifies its callers and how plan plugins are applied

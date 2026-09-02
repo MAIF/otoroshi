@@ -38,36 +38,34 @@ if you need to enable global plugin with the new engine, you can add the followi
 ```javascript
 {
   ...
-  "ng": {
-    "slots": [
-      {
-        "plugin": "cp:otoroshi.next.plugins.W3CTracing",
-        "enabled": true,
-        "include": [],
-        "exclude": [],
-        "config": {
-          "baggage": {
-            "foo": "bar"
-          }
-        }
-      },
-      {
-        "plugin": "cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper",
-        "enabled": true,
-        "include": [],
-        "exclude": [],
-        "config": {
-          "plugin": "cp:otoroshi.plugins.apikeys.ClientCredentialService",
-          "ClientCredentialService": {
-            "domain": "ccs-next-gen.oto.tools",
-            "expiration": 3600000,
-            "defaultKeyPair": "otoroshi-jwt-signing",
-            "secure": false
-          }
+  "ng": [
+    {
+      "plugin": "cp:otoroshi.next.plugins.W3CTracing",
+      "enabled": true,
+      "include": [],
+      "exclude": [],
+      "config": {
+        "baggage": {
+          "foo": "bar"
         }
       }
-    ]
-  }
+    },
+    {
+      "plugin": "cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper",
+      "enabled": true,
+      "include": [],
+      "exclude": [],
+      "config": {
+        "plugin": "cp:otoroshi.plugins.apikeys.ClientCredentialService",
+        "ClientCredentialService": {
+          "domain": "ccs-next-gen.oto.tools",
+          "expiration": 3600000,
+          "defaultKeyPair": "otoroshi-jwt-signing",
+          "secure": false
+        }
+      }
+    }
+  ]
   ...
 }
 ```

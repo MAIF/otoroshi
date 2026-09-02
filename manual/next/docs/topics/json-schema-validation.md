@@ -81,12 +81,10 @@ Stacking `JsonSchemaRequestValidator` and `JsonSchemaResponseValidator` on the s
 
 ```json
 {
-  "plugins": {
-    "slots": [
-      { "plugin": "cp:otoroshi.next.plugins.JsonSchemaRequestValidator",  "config": { "schema": "..." } },
-      { "plugin": "cp:otoroshi.next.plugins.JsonSchemaResponseValidator", "config": { "schema": "..." } }
-    ]
-  }
+  "plugins": [
+    { "plugin": "cp:otoroshi.next.plugins.JsonSchemaRequestValidator",  "config": { "schema": "..." } },
+    { "plugin": "cp:otoroshi.next.plugins.JsonSchemaResponseValidator", "config": { "schema": "..." } }
+  ]
 }
 ```
 

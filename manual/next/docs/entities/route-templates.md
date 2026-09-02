@@ -91,24 +91,22 @@ Otoroshi can have a global default route template configured in the [Global Conf
       "rewrite": false,
       "load_balancing": { "type": "RoundRobin" }
     },
-    "plugins": {
-      "slots": [
-        {
-          "plugin": "cp:otoroshi.next.plugins.OverrideHost",
-          "enabled": true,
-          "include": [],
-          "exclude": [],
-          "config": {}
-        },
-        {
-          "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
-          "enabled": true,
-          "include": [],
-          "exclude": [],
-          "config": {}
-        }
-      ]
-    }
+    "plugins": [
+      {
+        "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+        "enabled": true,
+        "include": [],
+        "exclude": [],
+        "config": {}
+      },
+      {
+        "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+        "enabled": true,
+        "include": [],
+        "exclude": [],
+        "config": {}
+      }
+    ]
   }
 }
 ```

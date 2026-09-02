@@ -109,6 +109,7 @@ Key concepts:
 - **Per-plugin debug**: enable `debug: true` on a single plugin slot to get detailed execution info for that plugin only, without turning on `debug_flow` for the entire route.
 - **Listener binding**: a plugin can be restricted to specific [HTTP listeners](./http-listeners.md) via `bound_listeners`.
 - **Enable/disable**: toggle a plugin with `enabled: true/false` without removing it from the configuration.
+- **Per-consumer plugins**: a call identified as the consumer of an [API plan](./apis.mdx#plan-plugins), or made with an [API key carrying its own chain](./apikeys.mdx#plugin-flow), goes through those plugins on top of the ones listed here. See [API consumers and plugin flows](../topics/api-consumers.md).
 
 For the full list of available plugins, see [built-in plugins](../plugins/built-in-plugins.mdx).
 
@@ -134,6 +135,7 @@ You can find all routes [here](http://otoroshi.oto.tools:8080/bo/dashboard/route
 | `frontend` | object |    | Frontend configuration (how the router matches this route). See [below](#frontend-configuration) |
 | `backend` | object |    | Backend configuration (where to forward requests). See [backends](./backends.md) |
 | `backend_ref` | string | `null` | Reference to a global [stored backend](./backends.md) by ID. If set, takes precedence over inline `backend` |
+| `api_ref` | string | `null` | ID of the [API](./apis.mdx) this route was generated from. Set automatically, and also mirrored in the `Otoroshi-Api-Ref` metadata |
 | `plugins` | object |    | Plugin chain configuration. See [below](#plugins) |
 
 ### Reserved metadata
@@ -271,17 +273,16 @@ For the full list of available plugins, see [built-in plugins](../plugins/built-
     "load_balancing": { "type": "RoundRobin" }
   },
   "backend_ref": null,
-  "plugins": {
-    "slots": [
-      {
-        "plugin": "cp:otoroshi.next.plugins.OverrideHost",
-        "enabled": true,
-        "include": [],
-        "exclude": [],
-        "config": {}
-      }
-    ]
-  }
+  "api_ref": null,
+  "plugins": [
+    {
+      "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+      "enabled": true,
+      "include": [],
+      "exclude": [],
+      "config": {}
+    }
+  ]
 }
 ```
 

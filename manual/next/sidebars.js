@@ -66,6 +66,7 @@ const sidebars = {
       },
       items: [
         'topics/engine',
+        'topics/api-consumers',
         'topics/generic-resource-api',
         'topics/expression-language',
         'topics/secrets',

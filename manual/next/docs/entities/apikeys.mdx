@@ -83,6 +83,9 @@ You can find all API keys [here](http://otoroshi.oto.tools:8080/bo/dashboard/api
 | `allowClientIdOnly` | boolean | `false` | Allow clients to authenticate with only the client ID (in a specific header), without the secret |
 | `constrainedServicesOnly` | boolean | `false` | This API key can only be used on services with API key routing constraints |
 | `validUntil` | number | `null` | Auto-disable the API key after this timestamp (milliseconds). Once expired, the key is disabled |
+| `throttlingStrategy` | object | `null` | Rate limiting strategy of this key. When set, it takes precedence over the legacy `throttlingQuota`/`dailyQuota`/`monthlyQuota` fields |
+| `apiRef` | object | `null` | The [API](./apis.mdx) plan this key consumes: `{ "api": <api id>, "plan": <plan id>, "sub": <subscription id> }`. See [API reference](#api-reference) |
+| `plugins` | object | `null` | Plugin chain applied for the calls made with this key. See [plugin flow](#plugin-flow) |
 | `tags` | array of string | `[]` | Tags for categorization |
 | `metadata` | object | `{}` | Key/value metadata |
 
@@ -95,6 +98,12 @@ Quotas control the rate of API calls allowed for this key.
 | `throttlingQuota` | number | unlimited | Maximum number of calls per second |
 | `dailyQuota` | number | unlimited | Maximum number of calls per day |
 | `monthlyQuota` | number | unlimited | Maximum number of calls per month |
+
+:::note
+These three fields are the legacy quotas. As soon as the key carries a `throttlingStrategy` — every
+key coming from an [API plan](./apis.mdx#rate-limiting) does — the quotas of that strategy are the
+ones being enforced, and the legacy fields are ignored. The UI hides them in that case.
+:::
 
 :::warning
 Daily and monthly quotas are computed as follows:
@@ -179,6 +188,60 @@ For example, to forbid `DELETE` requests only on a specific route:
 
 When `authorized_entity` is not set (or `null`), the restriction applies regardless of which route or API the request targets.
 
+## API reference
+
+An API key can point at the plan of an [API](./apis.mdx) it consumes:
+
+```json
+{
+  "apiRef": {
+    "api": "api_1a2b3c",
+    "plan": "plan_gold",
+    "sub": "sub_4d5e6f"
+  }
+}
+```
+
+Subscriptions fill it automatically. Plans that generate an identity for their callers — a `keyless`,
+`jwt`, `mtls` or `oauth2-remote` plan — fill it too, and it can be set by hand on any API key, from
+the UI or the admin API.
+
+It has two effects: the key is authorized on the API it references, and the plugins of the plan are
+applied on every call made with it.
+
+## Plugin flow
+
+An API key can carry its own plugin chain, applied on top of the chain of the route it calls, for
+that consumer only.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `plugins` | array | `[]` | Plugin chain, same format as the plugins of a [route](./routes.md) |
+| `overrides` | boolean | `false` | Replace the plugins of the route instead of extending them. The pre-route and access validation plugins that already ran are kept, as are the global plugins |
+
+```json
+{
+  "plugins": {
+    "overrides": false,
+    "plugins": [
+      {
+        "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+        "enabled": true,
+        "include": [],
+        "exclude": [],
+        "config": {
+          "headers": { "X-Consumer": "${apikey.clientId}" }
+        }
+      }
+    ]
+  }
+}
+```
+
+When the key also has an `apiRef`, the plugins of the plan run first and the plugins of the key are
+appended. The whole composition is described in
+[API consumers and plugin flows](../topics/api-consumers.md#plugin-flows-per-consumer).
+
 ## Call examples
 
 Once an API key is created, you can call protected routes using one of these methods:
@@ -243,6 +306,8 @@ curl -H "Otoroshi-Client-Id: <clientId>" \
     "rotationEvery": 744,
     "gracePeriod": 168
   },
+  "apiRef": null,
+  "plugins": null,
   "tags": ["payment"],
   "metadata": {
     "team": "billing"
@@ -274,3 +339,4 @@ GET /api/groups/:groupId/apikeys  # List API keys for a group
 * [Service Groups](./service-groups.mdx) - Groups that API keys can be authorized on
 * [Routes](./routes.md) - Routes that API keys can be authorized on
 * [APIs](./apis.mdx) - APIs where API keys are generated via subscriptions
+* [API consumers and plugin flows](../topics/api-consumers.md) - How plans identify consumers and how per-consumer plugin chains are applied

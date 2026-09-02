@@ -277,6 +277,18 @@ Useful computed fields: `path`, `host`, `queryString`, `queryParams`, `contentTy
 | `cookies` | `Seq[WSCookie]` | Response cookies |
 | `body` | `Source[ByteString, _]` | Response body as a streaming source |
 
+## Per-consumer plugin chains
+
+A plugin chain does not always come from the route alone. When a call is identified as the consumer of
+an [API plan](../entities/apis.mdx#plan-plugins), or is made with an
+[API key carrying its own chain](../entities/apikeys.mdx#plugin-flow), the engine composes a second
+chain for that consumer and applies it on top of the one of the route, once the access validation
+phase of the route is done. Those plugins go through their own `PreRoute` and `ValidateAccess` phases
+before the two chains are merged for the rest of the request.
+
+See [API consumers and plugin flows](../topics/api-consumers.md#plugin-flows-per-consumer) for the
+composition rules.
+
 ## Configuration caching
 
 All plugin contexts extend `NgCachedConfigContext`, which provides efficient configuration parsing with a 5-second TTL cache:
@@ -293,6 +305,11 @@ val config = ctx.rawConfig(MyConfig.format)
 ```
 
 Always prefer `cachedConfig` in hot paths for performance.
+
+Cache entries are keyed by route, plugin and index. A chain composed for a consumer adds a
+discriminator to that key — the plan for a chain shared by every caller of a plan, the client id for
+a chain belonging to a single API key — so two consumers landing on the same slot of the same route
+never share a configuration entry.
 
 ## Related
 

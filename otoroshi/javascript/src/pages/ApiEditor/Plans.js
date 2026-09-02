@@ -230,7 +230,7 @@ const AccessModePluginConfigurationForm = {
       create_if_missing: {
         type: 'bool',
         label: 'Create the apikey if missing',
-        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+        help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
     flow: ['verifier', 'client_id_path', 'create_if_missing'],
@@ -273,7 +273,7 @@ const AccessModePluginConfigurationForm = {
       create_if_missing: {
         type: 'bool',
         label: 'Create the apikey if missing',
-        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+        help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
     flow: ['verifier', 'client_id_path', 'fetch_user', 'user_metadata_key', 'create_if_missing'],
@@ -301,7 +301,7 @@ const AccessModePluginConfigurationForm = {
       create_if_missing: {
         type: 'bool',
         label: 'Create the apikey if missing',
-        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+        help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
     flow: ['regex_subject_dns', 'regex_issuer_dns', 'client_id_field', 'create_if_missing'],
@@ -317,7 +317,7 @@ const AccessModePluginConfigurationForm = {
       create_if_missing: {
         type: 'bool',
         label: 'Create the apikey if missing',
-        help: 'Build an apikey from this plan when the extracted client id has none yet. The apikey lives in memory only, it is never persisted. When disabled, only apikeys that really exist are accepted.',
+        help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
     flow: ['expr', 'create_if_missing'],

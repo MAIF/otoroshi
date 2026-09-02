@@ -84,6 +84,9 @@ const expressions = [
       { expression: "${apikey.metadata.<field>}", description: "if apikey is present, got the expected metadata, else got the default value `no-meta-<field>`" },
       { expression: "${apikey.tags[<field>:'<default value>']}", description: "if apikey is present, got the nth tags or the default value" },
       { expression: "${apikey.tags[<field>]}", description: "if apikey is present, got the nth tags or `no-tag-<field>` as value" },
+      { expression: "${apikey.api.id}", description: "if the apikey consumes an api plan, the id of that api" },
+      { expression: "${apikey.api.plan}", description: "if the apikey consumes an api plan, the id of that plan" },
+      { expression: "${apikey.api.sub}", description: "if the apikey comes from a subscription, the id of that subscription" },
     ],
     values: [
       { expression: "${apikey.name}", value: "Otoroshi Backoffice ApiKey" },

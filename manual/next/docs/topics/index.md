@@ -9,6 +9,7 @@ slug: /topics
 In this sections, you will find informations about various Otoroshi topics  
 
 * [Proxy engine](./engine.mdx)
+* [API consumers and plugin flows](./api-consumers.md)
 * [Generic resource API (`/apis/...`)](./generic-resource-api.md)
 * [WASM support](./wasm-usage.mdx)
 * [Chaos engineering](./chaos-engineering.mdx)
