@@ -264,11 +264,11 @@ class NgServiceQuotas extends NgAccessValidator {
   def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
-        "Too many requests",
+        "You performed too much requests",
         Results.TooManyRequests,
         ctx.request,
         None,
-        Some("errors.too.many.requests"),
+        Some("errors.too.much.requests"),
         duration = ctx.report.getDurationNow(),
         overhead = ctx.report.getOverheadInNow(),
         attrs = ctx.attrs,
@@ -425,11 +425,11 @@ class NgCustomQuotas extends NgAccessValidator {
   def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
-        "Too many requests",
+        "You performed too much requests",
         Results.TooManyRequests,
         ctx.request,
         None,
-        Some("errors.too.many.requests"),
+        Some("errors.too.much.requests"),
         duration = ctx.report.getDurationNow(),
         overhead = ctx.report.getOverheadInNow(),
         attrs = ctx.attrs,
@@ -580,11 +580,11 @@ class NgCustomThrottling extends NgAccessValidator {
   def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
-        "Too many requests",
+        "You performed too much requests",
         Results.TooManyRequests,
         ctx.request,
         None,
-        Some("errors.too.many.requests"),
+        Some("errors.too.much.requests"),
         duration = ctx.report.getDurationNow(),
         overhead = ctx.report.getOverheadInNow(),
         attrs = ctx.attrs,

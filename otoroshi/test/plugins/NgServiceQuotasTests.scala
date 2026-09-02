@@ -51,7 +51,7 @@ class NgServiceQuotasTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  notFoundFile.status mustBe Status.FORBIDDEN
+  notFoundFile.status mustBe Status.TOO_MANY_REQUESTS
 
   deleteOtoroshiRoute(route).futureValue
 }

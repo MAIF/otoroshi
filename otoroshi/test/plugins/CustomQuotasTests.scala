@@ -78,7 +78,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
 
     {
       val resp = call(route)
-      resp.status mustBe Status.FORBIDDEN
+      resp.status mustBe Status.TOO_MANY_REQUESTS
     }
 
     deleteOtoroshiRoute(secondRoute).futureValue
@@ -125,7 +125,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
 
     {
       val resp = call("bar")
-      resp.status mustBe Status.FORBIDDEN
+      resp.status mustBe Status.TOO_MANY_REQUESTS
     }
 
     {
