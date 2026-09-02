@@ -1,0 +1,417 @@
+<!doctype html><html lang=en dir=ltr class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-topics/api-consumers" data-has-hydrated=false><head><meta charset=UTF-8><meta name=generator content="Docusaurus v3.10.2"><title data-rh=true>API consumers and plugin flows | Otoroshi</title><meta data-rh=true name=viewport content="width=device-width, initial-scale=1.0"/><meta data-rh=true name=twitter:card content=summary_large_image /><meta data-rh=true property=og:image content=https://maif.github.io/otoroshi/devmanual/img/otoroshi-social-card.png /><meta data-rh=true name=twitter:image content=https://maif.github.io/otoroshi/devmanual/img/otoroshi-social-card.png /><meta data-rh=true property=og:url content=https://maif.github.io/otoroshi/devmanual/docs/topics/api-consumers /><meta data-rh=true property=og:locale content=en /><meta data-rh=true name=docusaurus_locale content=en /><meta data-rh=true name=docsearch:language content=en /><meta data-rh=true name=docusaurus_version content=current /><meta data-rh=true name=docusaurus_tag content=docs-default-current /><meta data-rh=true name=docsearch:version content=current /><meta data-rh=true name=docsearch:docusaurus_tag content=docs-default-current /><meta data-rh=true property=og:title content="API consumers and plugin flows | Otoroshi"/><meta data-rh=true name=description content="Since v18.0.0, every call going through an API plan is attached to a"/><meta data-rh=true property=og:description content="Since v18.0.0, every call going through an API plan is attached to a"/><link data-rh=true rel=icon href=/otoroshi/devmanual/img/favicon.png /><link data-rh=true rel=canonical href=https://maif.github.io/otoroshi/devmanual/docs/topics/api-consumers /><link data-rh=true rel=alternate href=https://maif.github.io/otoroshi/devmanual/docs/topics/api-consumers hreflang=en /><link data-rh=true rel=alternate href=https://maif.github.io/otoroshi/devmanual/docs/topics/api-consumers hreflang=x-default /><script data-rh=true type=application/ld+json>{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://maif.github.io/otoroshi/devmanual/docs/topics","name":"Detailed Topics","position":1},{"@type":"ListItem","item":"https://maif.github.io/otoroshi/devmanual/docs/topics/api-consumers","name":"API consumers and plugin flows","position":2}]}</script><link rel=alternate type=application/rss+xml href=/otoroshi/devmanual/blog/rss.xml title="Otoroshi RSS Feed"><link rel=alternate type=application/atom+xml href=/otoroshi/devmanual/blog/atom.xml title="Otoroshi Atom Feed"><link rel=stylesheet href=/otoroshi/devmanual/assets/css/styles.14d96071.css /><script src=/otoroshi/devmanual/assets/js/runtime~main.2684fd36.js defer></script><script src=/otoroshi/devmanual/assets/js/main.1cae3f6e.js defer></script></head><body><svg style="display: none;"><defs>
+<symbol id=theme-svg-external-link viewBox="0 0 24 24"><path fill=currentColor d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme-01d")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{for(var[t,e]of new URLSearchParams(window.location.search).entries())if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}(),document.documentElement.setAttribute("data-announcement-bar-initially-dismissed",function(){try{return"true"===localStorage.getItem("docusaurus.announcement.dismiss-01d")}catch(t){}return!1}())</script><div id=__docusaurus><link rel=preload as=image href=/otoroshi/devmanual/img/otoroshi-logo.png /><div role=region aria-label="Skip to main content"><a class=skipToContent_fXgn href=#__docusaurus_skipToContent_fallback>Skip to main content</a></div><div class="theme-announcement-bar announcementBar_mb4j" style=background-color:#f9b000;color:#1b1b1d role=banner><div class=announcementBarPlaceholder_vyr4></div><div class="content_knG7 announcementBarContent_xLdY">If you like Otoroshi, give it a <a target=_blank rel="noopener noreferrer" href=https://github.com/MAIF/otoroshi>star on GitHub</a>!</div><button type=button aria-label=Close class="clean-btn close closeButton_CVFx announcementBarClose_gvF7"><svg viewBox="0 0 15 15" width=14 height=14><g stroke=currentColor stroke-width=3.1><path d="M.75.75l13.5 13.5M14.25.75L.75 14.25"/></g></svg></button></div><nav aria-label=Main class="theme-layout-navbar navbar navbar--fixed-top"><div class=navbar__inner><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded=false class="navbar__toggle clean-btn" type=button><svg width=30 height=30 viewBox="0 0 30 30" aria-hidden=true><path stroke=currentColor stroke-linecap=round stroke-miterlimit=10 stroke-width=2 d="M4 7h22M4 15h22M4 23h22"/></svg></button><a class=navbar__brand href=/otoroshi/devmanual/><div class=navbar__logo><img src=/otoroshi/devmanual/img/otoroshi-logo.png alt="Otoroshi Logo" class="themedComponent_mlkZ themedComponent--light_NVdE"/><img src=/otoroshi/devmanual/img/otoroshi-logo.png alt="Otoroshi Logo" class="themedComponent_mlkZ themedComponent--dark_xIcU"/></div><b class="navbar__title text--truncate">Otoroshi</b></a><a aria-current=page class="navbar__item navbar__link navbar__link--active" href=/otoroshi/devmanual/docs/>Documentation</a><a class="navbar__item navbar__link" href=/otoroshi/devmanual/api-reference>API Reference</a><a class="navbar__item navbar__link" href=/otoroshi/devmanual/blog>Blog</a><a class="navbar__item navbar__link" href=/otoroshi/devmanual/ecosystem>Ecosystem</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href=https://discord.gg/dmbwZrfpcQ target=_blank rel="noopener noreferrer" class="navbar__item navbar__link">Discord<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a><a href=https://github.com/MAIF/otoroshi target=_blank rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type=button disabled title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width=24 height=24 aria-hidden=true class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill=currentColor d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"/></svg><svg viewBox="0 0 24 24" width=24 height=24 aria-hidden=true class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill=currentColor d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"/></svg><svg viewBox="0 0 24 24" width=24 height=24 aria-hidden=true class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill=currentColor d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"/></svg></button></div><div class=navbarSearchContainer_Bca1><div class="navbar__search searchBarContainer_NW3z" dir=ltr><svg aria-hidden=true class=searchIcon_T3tP focusable=false viewBox="0 0 16 16"><path fill=currentColor d="M6.02945 10.20327a4.17382 4.17382 0 1 1 4.17382-4.17382 4.15609 4.15609 0 0 1-4.17382 4.17382Zm9.69195 4.2199-4.8225-4.82338A5.88021 5.88021 0 0 0 12.058 6.02856 6.00467 6.00467 0 1 0 9.59979 10.8989l4.82338 4.82338a.89729.89729 0 0 0 1.29912 0 .89749.89749 0 0 0-.00087-1.29909Z"/></svg><input placeholder=Search aria-label=Search class="navbar__search-input searchInput_YFbd" value="" /><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role=presentation class=navbar-sidebar__backdrop></div></nav><div id=__docusaurus_skipToContent_fallback class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class=docsWrapper_hBAB><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type=button></button><div class=docRoot_UBD9><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class=sidebarViewport_aRkj><div class=sidebar_njMd><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG menuWithAnnouncementBar_GW3s"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class=menu__link href=/otoroshi/devmanual/docs/><span class=linkLabel_WmDU>Overview</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class=menu__link href=/otoroshi/devmanual/docs/about><span class=linkLabel_WmDU>About Otoroshi</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class=menu__link href=/otoroshi/devmanual/docs/architecture><span class=linkLabel_WmDU>Architecture</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class=menu__link href=/otoroshi/devmanual/docs/features><span class=linkLabel_WmDU>Features</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class=menu__link href=/otoroshi/devmanual/docs/faq><span class=linkLabel_WmDU>FAQ</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class=menu__link href=/otoroshi/devmanual/docs/getting-started><span class=linkLabel_WmDU>Getting Started</span></a><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class=menu__list-item-collapsible><a class="categoryLink_byQd menu__link menu__link--sublist" href=/otoroshi/devmanual/docs/install><span class=categoryLinkLabel_W154>Installation</span></a><button aria-label="Expand sidebar category 'Installation'" aria-expanded=false type=button class="clean-btn menu__caret"></button></div><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class=menu__list-item-collapsible><a class="categoryLink_byQd menu__link menu__link--sublist" href=/otoroshi/devmanual/docs/entities><span class=categoryLinkLabel_W154>Main Entities</span></a><button aria-label="Expand sidebar category 'Main Entities'" aria-expanded=false type=button class="clean-btn menu__caret"></button></div><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class=menu__list-item-collapsible><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--active" href=/otoroshi/devmanual/docs/topics><span class=categoryLinkLabel_W154>Detailed Topics</span></a><button aria-label="Collapse sidebar category 'Detailed Topics'" aria-expanded=true type=button class="clean-btn menu__caret"></button></div><ul class=menu__list><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/engine><span class=linkLabel_WmDU>Proxy engine</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current=page tabindex=0 href=/otoroshi/devmanual/docs/topics/api-consumers><span class=linkLabel_WmDU>API consumers and plugin flows</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/generic-resource-api><span class=linkLabel_WmDU>Generic Admin API (/apis/...)</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/expression-language><span class=linkLabel_WmDU>Expression language</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/secrets><span class=linkLabel_WmDU>Secrets management</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/otoroshi-protocol><span class=linkLabel_WmDU>The Otoroshi communication protocol</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/tls><span class=linkLabel_WmDU>TLS</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/user-rights><span class=linkLabel_WmDU>Otoroshi user rights</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/events-and-analytics><span class=linkLabel_WmDU>Events and analytics</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/user-analytics><span class=linkLabel_WmDU>User Analytics</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/monitoring><span class=linkLabel_WmDU>Monitoring</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/sessions-mgmt><span class=linkLabel_WmDU>Sessions management</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/wasm-usage><span class=linkLabel_WmDU>Otoroshi and WASM</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/chaos-engineering><span class=linkLabel_WmDU>Chaos engineering with the Snow Monkey</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/pki><span class=linkLabel_WmDU>Otoroshi's PKI</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/dev-portal><span class=linkLabel_WmDU>Developer portal with Daikoku</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/graphql-composer><span class=linkLabel_WmDU>GraphQL Composer Plugin</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/tunnels><span class=linkLabel_WmDU>Otoroshi tunnels</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/relay-routing><span class=linkLabel_WmDU>Relay Routing</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/netty-server><span class=linkLabel_WmDU>Netty Server</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/http3><span class=linkLabel_WmDU>HTTP/3 support</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/opentelemetry><span class=linkLabel_WmDU>OpenTelemetry support</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/green-score><span class=linkLabel_WmDU>Green Score</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/http-listeners><span class=linkLabel_WmDU>Custom HTTP Listeners</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/circuit-breaker><span class=linkLabel_WmDU>Circuit Breaker in Otoroshi</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/durations><span class=linkLabel_WmDU>Understanding GatewayEvent Durations in Otoroshi</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/workflows><span class=linkLabel_WmDU>Otoroshi Workflows</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/workflows-input><span class=linkLabel_WmDU>Workflow input reference</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/workflows-editor><span class=linkLabel_WmDU>Workflows Editor</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/remote-catalogs><span class=linkLabel_WmDU>Remote Catalogs</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/kubernetes-gateway-api><span class=linkLabel_WmDU>Kubernetes Gateway API support</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/admin-extensions><span class=linkLabel_WmDU>Admin Extensions</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/otoroshictl><span class=linkLabel_WmDU>Managing Otoroshi with otoroshictl</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/ai-gateway><span class=linkLabel_WmDU>AI Gateway</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/deprecating-sd><span class=linkLabel_WmDU>Sunsetting Service Descriptors</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class=menu__link tabindex=0 href=/otoroshi/devmanual/docs/topics/anonymous-reporting><span class=linkLabel_WmDU>Anonymous reporting</span></a></ul><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class=menu__list-item-collapsible><a class="categoryLink_byQd menu__link menu__link--sublist" href=/otoroshi/devmanual/docs/recipes><span class=categoryLinkLabel_W154>Recipes</span></a><button aria-label="Expand sidebar category 'Recipes'" aria-expanded=false type=button class="clean-btn menu__caret"></button></div><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class=menu__list-item-collapsible><a class="categoryLink_byQd menu__link menu__link--sublist" href=/otoroshi/devmanual/docs/tutorials><span class=categoryLinkLabel_W154>Tutorials</span></a><button aria-label="Expand sidebar category 'Tutorials'" aria-expanded=false type=button class="clean-btn menu__caret"></button></div><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class=menu__list-item-collapsible><a class="categoryLink_byQd menu__link menu__link--sublist" href=/otoroshi/devmanual/docs/plugins><span class=categoryLinkLabel_W154>Plugins</span></a><button aria-label="Expand sidebar category 'Plugins'" aria-expanded=false type=button class="clean-btn menu__caret"></button></div><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class=menu__list-item-collapsible><a class="categoryLink_byQd menu__link menu__link--sublist" href=/otoroshi/devmanual/docs/deploy><span class=categoryLinkLabel_W154>Deploy to Production</span></a><button aria-label="Expand sidebar category 'Deploy to Production'" aria-expanded=false type=button class="clean-btn menu__caret"></button></div><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class=menu__link href=/otoroshi/devmanual/docs/api><span class=linkLabel_WmDU>Admin REST API</span></a><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class=menu__link href=/otoroshi/devmanual/docs/dev><span class=linkLabel_WmDU>Developing Otoroshi</span></a></ul></nav></div></div></aside><main class=docMainContainer_TBSr><div class="container padding-top--md padding-bottom--lg"><div class=row><div class="col docItemCol_VOVn"><div class=docItemContainer_Djhp><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label=Breadcrumbs><ul class=breadcrumbs><li class=breadcrumbs__item><a aria-label="Home page" class=breadcrumbs__link href=/otoroshi/devmanual/><svg viewBox="0 0 24 24" class=breadcrumbHomeIcon_YNFT><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill=currentColor /></svg></a><li class=breadcrumbs__item><a class=breadcrumbs__link href=/otoroshi/devmanual/docs/topics><span>Detailed Topics</span></a><li class="breadcrumbs__item breadcrumbs__item--active"><span class=breadcrumbs__link>API consumers and plugin flows</span></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type=button class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>API consumers and plugin flows</h1></header>
+<p>Since <code>v18.0.0</code>, every call going through an <a class="" href=/otoroshi/devmanual/docs/entities/apis>API</a> plan is attached to a
+<strong>consumer</strong>, and a consumer is always an <a class="" href=/otoroshi/devmanual/docs/entities/apikeys>API key</a>. It does not matter
+whether the caller presents client credentials, a JWT token, a client certificate or nothing at all:
+the plan turns whatever identifies the caller into an API key, and everything an API key carries
+(quotas, restrictions, rotation, metadata, plugins) then applies to the call.</p>
+<p>That single change makes two things possible:</p>
+<ul>
+<li class=""><strong>the same rules for every plan kind</strong> — a <code>keyless</code> or <code>jwt</code> plan can rate limit its callers, one
+by one, exactly like an <code>apikey</code> plan does;</li>
+<li class=""><strong>a plugin chain per consumer</strong> — a plan, or a single API key, can add its own plugins to the
+route it calls, so two consumers of the same route do not go through the same pipeline.</li>
+</ul>
+<div class="theme-admonition theme-admonition-note admonition_xJq3 alert alert--secondary"><div class=admonitionHeading_Gvgb><span class=admonitionIcon_Rf37><svg viewBox="0 0 14 16"><path fill-rule=evenodd d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"/></svg></span>note</div><div class=admonitionContent_BuS1><p>This page describes the runtime behaviour. The properties themselves are documented with their
+entity: <a class="" href=/otoroshi/devmanual/docs/entities/apis#plans>plans</a> for an API, and <a class="" href=/otoroshi/devmanual/docs/entities/apikeys#plugin-flow>plugin flow</a>
+for an API key.</div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id=every-plan-identifies-a-consumer>Every plan identifies a consumer<a href=#every-plan-identifies-a-consumer class=hash-link aria-label="Direct link to Every plan identifies a consumer" title="Direct link to Every plan identifies a consumer" translate=no>​</a></h2>
+<p>When an API is deployed, each <strong>published</strong> plan adds its own <em>apikey extractor</em> to every route of
+the API, plus one shared <code>Api consumer enforcer</code> at the very end of the access validation phase.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Plan kind<th>Plugin added<th>Identity comes from<th>Generated client id<tbody><tr><td><code>keyless</code><td><code>Expression apikey extractor</code><td>an <a class="" href=/otoroshi/devmanual/docs/topics/expression-language>expression</a>, <code>${req.ip}</code> by default<td><code>keyless_&lt;plan id>_&lt;value></code><tr><td><code>apikey</code><td><code>Apikey calls</code><td>client credentials (basic auth, headers, client id, bearer, signed JWT)<td>the client id of the API key<tr><td><code>oauth2-local</code><td><code>Apikey calls</code><td>a token delivered by the client credentials endpoint of the plan<td>the client id of the API key<tr><td><code>jwt</code><td><code>Jwt apikey extractor</code><td>a claim of a token verified by a <a class="" href=/otoroshi/devmanual/docs/entities/jwt-verifiers>JWT verifier</a><td><code>jwt_&lt;plan id>_&lt;claim value></code><tr><td><code>mtls</code><td><code>Client certificate apikey extractor</code><td>the client certificate of the TLS connection<td><code>mtls_&lt;plan id>_&lt;DN attribute, or a value derived from the subject and the serial number></code><tr><td><code>oauth2-remote</code><td><code>OIDC apikey extractor</code><td>a claim of a token verified against the OIDC settings of an <a class="" href=/otoroshi/devmanual/docs/entities/auth-modules>auth. module</a><td><code>oauth2_&lt;plan id>_&lt;claim value></code></table>
+<p>The client id of a generated identity is always prefixed with the kind and the id of the plan. Two
+APIs sitting behind the same identity provider therefore never share a consumer, and a value coming
+from a request can never resolve to the client id of a real API key.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id=what-the-plan-hands-over>What the plan hands over<a href=#what-the-plan-hands-over class=hash-link aria-label="Direct link to What the plan hands over" title="Direct link to What the plan hands over" translate=no>​</a></h3>
+<p>An API key generated by a plan is built exactly like the one a subscription would create, so the
+consumer gets the same treatment whether it subscribed or not:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Property<th>Value<tbody><tr><td><code>clientId</code><td>the prefixed identity described above<tr><td><code>clientSecret</code><td>a random token, never handed to the caller<tr><td><code>throttlingStrategy</code><td>the <code>rateLimiting.strategy</code> of the plan<tr><td><code>apiRef</code><td><code>{ "api": &lt;api id>, "plan": &lt;plan id>, "sub": "" }</code><tr><td><code>authorizedEntities</code><td>the API itself, or whatever the plan template declares<tr><td><code>restrictions</code>, <code>rotation</code>, <code>validUntil</code>, <code>readOnly</code>, ...<td>the apikey template of the plan (an <code>apikey</code> plan carries a full template, the other kinds only carry the tags and metadata of the plan)<tr><td><code>metadata</code><td>the plan metadata, plus <code>created_by: apikey-extractor</code></table>
+<p>An API key that already exists always wins over a generated one: a revoked, disabled or expired key
+cannot be resurrected by a caller presenting the same identity. Such a call is answered with
+<code>401 unknown_apikey</code> and raises a <em>revoked apikey usage</em> alert.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id=creating-the-api-key-or-not>Creating the API key, or not<a href=#creating-the-api-key-or-not class=hash-link aria-label="Direct link to Creating the API key, or not" title="Direct link to Creating the API key, or not" translate=no>​</a></h3>
+<p>Every extractor has a <code>create_if_missing</code> flag, on by default.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><code>create_if_missing</code><th>Behaviour<tbody><tr><td><code>true</code><td>the generated API key is written to the datastore, appears in the UI, and can be edited like any other<tr><td><code>false</code><td>the API key only lives for the duration of the call</table>
+<p>In both cases the caller is identified and served, and in both cases quota counters are keyed by
+client id, so consumption adds up across calls. Turning it off is what keeps a public API from
+filling the datastore with one entry per caller.</p>
+<div class="theme-admonition theme-admonition-warning admonition_xJq3 alert alert--warning"><div class=admonitionHeading_Gvgb><span class=admonitionIcon_Rf37><svg viewBox="0 0 16 16"><path fill-rule=evenodd d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg></span>warning</div><div class=admonitionContent_BuS1><p><code>create_if_missing: false</code> does <strong>not</strong> mean <em>only accept API keys that already exist</em>. It only
+decides whether the identity is persisted.</div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id=the-consumer-enforcer>The consumer enforcer<a href=#the-consumer-enforcer class=hash-link aria-label="Direct link to The consumer enforcer" title="Direct link to The consumer enforcer" translate=no>​</a></h3>
+<p><code>Api consumer enforcer</code> runs last (plugin index <code>1000</code> in the access validation phase) and is the
+only place where a call made through a plan is <strong>counted</strong>:</p>
+<ol>
+<li class="">it requires a consumer — no API key and no authenticated user means <code>401</code>
+(<code>errors.auth.unauthorized</code>, with <code>apikey_rejection_reason: no consumer identified on the call</code>);</li>
+<li class="">it applies the <a class="" href=/otoroshi/devmanual/docs/entities/apikeys#restrictions>restrictions</a> of the API key;</li>
+<li class="">it triggers <a class="" href=/otoroshi/devmanual/docs/entities/apikeys#automatic-secret-rotation>secret rotation</a> when due;</li>
+<li class="">it consumes one unit of the throttling strategy of the API key, answering <code>429</code>
+(<code>errors.too.much.requests</code>) when a quota is exhausted, and raising the usual
+<em>quotas almost exceeded</em> / <em>quotas exceeded</em> alerts.</li>
+</ol>
+<p>Because the count happens at the very end of access validation, a call rejected by anything else —
+another plugin, a failed JWT verification, a restriction — never consumes quota. An API key wins
+over a user session: a caller that went through an auth. module <em>and</em> carries an API key is
+enforced against the API key.</p>
+<p>APIs with at least one published plan also get <code>Send otoroshi headers back</code>, so the caller receives
+the usual <code>Otoroshi-*</code> response headers, remaining quotas included.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id=several-plans-on-the-same-route>Several plans on the same route<a href=#several-plans-on-the-same-route class=hash-link aria-label="Direct link to Several plans on the same route" title="Direct link to Several plans on the same route" translate=no>​</a></h3>
+<p>All the published plans of an API are applied on all its routes, and every extractor writes to the same
+place: <strong>the first plugin that identifies a consumer wins</strong>. The order is fixed by the plugin index
+of each extractor:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Order<th>Plugin<th>Index<tbody><tr><td>1<td><code>Apikey calls</code> (<code>apikey</code>, <code>oauth2-local</code>)<td><code>2.00</code><tr><td>2<td><code>Jwt apikey extractor</code><td><code>2.01</code><tr><td>3<td><code>Client certificate apikey extractor</code><td><code>2.02</code><tr><td>4<td><code>OIDC apikey extractor</code><td><code>2.03</code><tr><td>5<td><code>Expression apikey extractor</code> (<code>keyless</code>)<td><code>900</code><tr><td>6<td><code>Api consumer enforcer</code><td><code>1000</code></table>
+<p>A <code>keyless</code> plan always resolves an identity, so it runs last: a caller presenting real credentials
+is identified by its own plan, and only the others fall back on the public plan.</p>
+<p>Extractors added by a plan are <strong>not strict</strong>: failing to identify a caller lets the call continue,
+and the enforcer is the one turning it away at the end. A rejection an extractor took on its own
+(<code>403</code>, <code>404</code> or <code>429</code>, a JWT verifier answering with its own error result) is returned as is.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id=using-the-extractors-on-a-plain-route>Using the extractors on a plain route<a href=#using-the-extractors-on-a-plain-route class=hash-link aria-label="Direct link to Using the extractors on a plain route" title="Direct link to Using the extractors on a plain route" translate=no>​</a></h2>
+<p>The four extractors are regular plugins: they can be added to any route, outside of any API, to give
+a consumer identity to callers that have none. They all share the same settings on top of their own:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Property<th>Default<th>Description<tbody><tr><td><code>strict</code><td>depends on the plugin<td>Reject the call when no identity can be extracted. When <code>false</code>, the call goes on without any API key<tr><td><code>client_id_prefix</code><td>depends on the plugin<td>Namespace of the identities this plugin mints<tr><td><code>create_if_missing</code><td><code>true</code><td>Persist the generated API key<tr><td><code>api_id</code> / <code>plan_id</code><td>none<td>Fill the <code>apiRef</code> of the generated API key, which is what binds it to the plugins of a plan<tr><td><code>throttling_strategy</code><td>none<td>Rate limiting strategy of the generated API key<tr><td><code>apikey</code><td><code>{}</code><td>Template of the generated API key (same shape as the <a class="" href=/otoroshi/devmanual/docs/entities/apis#apikey-access-mode-configuration>apikey access mode configuration</a>)</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Plugin<th>Own settings<tbody><tr><td><code>cp:otoroshi.next.plugins.NgExpressionApikeyExtractor</code><td><code>expression</code> (default <code>${req.ip}</code>), <code>client_id_prefix</code> default <code>public_</code>, <code>strict</code> default <code>false</code><tr><td><code>cp:otoroshi.next.plugins.NgJwtApikeyExtractor</code><td><code>verifier</code>, <code>client_id_path</code> (default <code>client_id</code>, JSON path supported), <code>client_id_prefix</code> default <code>jwt_</code>, <code>strict</code> default <code>true</code><tr><td><code>cp:otoroshi.next.plugins.NgClientCertApikeyExtractor</code><td><code>regex_subject_dns</code>, <code>regex_issuer_dns</code>, <code>client_id_field</code>, <code>client_id_prefix</code> default <code>mtls_</code>, <code>strict</code> default <code>true</code><tr><td><code>cp:otoroshi.next.plugins.NgOidcApikeyExtractor</code><td><code>ref</code> (auth. module), <code>client_id_path</code>, <code>source</code> (token location), <code>fetch_user</code>, <code>user_metadata_key</code>, <code>client_id_prefix</code> default <code>oauth2_</code>, <code>strict</code> default <code>true</code></table>
+<p>An extractor only <strong>identifies</strong> the caller. To also enforce the quotas and the restrictions of the
+resulting API key, add <code>cp:otoroshi.next.plugins.NgApiConsumerEnforcer</code> after it, like a published
+plan does.</p>
+<div class="language-json codeBlockContainer_Ckt0 theme-code-block" style=--prism-color:#393A34;--prism-background-color:#f6f8fa><div class=codeBlockContent_QJqH><pre tabindex=0 class="prism-code language-json codeBlock_bY9V thin-scrollbar" style=color:#393A34;background-color:#f6f8fa><code class=codeBlockLines_e6Vv><div class=token-line style=color:#393A34><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">  </span><span class="token property" style=color:#36acaa>"plugin"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"cp:otoroshi.next.plugins.NgExpressionApikeyExtractor"</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">  </span><span class="token property" style=color:#36acaa>"enabled"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token boolean" style=color:#36acaa>true</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">  </span><span class="token property" style=color:#36acaa>"config"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">    </span><span class="token property" style=color:#36acaa>"expression"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"${req.headers.x-consumer}"</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">    </span><span class="token property" style=color:#36acaa>"client_id_prefix"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"public_"</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">    </span><span class="token property" style=color:#36acaa>"strict"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token boolean" style=color:#36acaa>true</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">    </span><span class="token property" style=color:#36acaa>"create_if_missing"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token boolean" style=color:#36acaa>false</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">    </span><span class="token property" style=color:#36acaa>"throttling_strategy"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">      </span><span class="token property" style=color:#36acaa>"id"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"LegacyThrottlingStrategyConfig"</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">      </span><span class="token property" style=color:#36acaa>"quota"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"> </span><span class="token property" style=color:#36acaa>"window"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token number" style=color:#36acaa>10</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"> </span><span class="token property" style=color:#36acaa>"daily"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token number" style=color:#36acaa>1000</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"> </span><span class="token property" style=color:#36acaa>"monthly"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token number" style=color:#36acaa>10000</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>}</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">    </span><span class="token punctuation" style=color:#393A34>}</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">  </span><span class="token punctuation" style=color:#393A34>}</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain"></span><span class="token punctuation" style=color:#393A34>}</span><br/></div></code></pre></div></div>
+<div class="theme-admonition theme-admonition-warning admonition_xJq3 alert alert--warning"><div class=admonitionHeading_Gvgb><span class=admonitionIcon_Rf37><svg viewBox="0 0 16 16"><path fill-rule=evenodd d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg></span>warning</div><div class=admonitionContent_BuS1><p>Beware of what an expression resolves to when the value is missing: <code>${req.headers.x-consumer}</code>
+gives <code>no-header-x-consumer</code> when the header is absent, which puts every such caller on one shared
+quota. Use an empty default (<code>${req.headers.x-consumer:}</code>) to have those calls rejected instead —
+an empty or unresolved expression is treated as a failed extraction.</div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id=plugin-flows-per-consumer>Plugin flows per consumer<a href=#plugin-flows-per-consumer class=hash-link aria-label="Direct link to Plugin flows per consumer" title="Direct link to Plugin flows per consumer" translate=no>​</a></h2>
+<p>A route has a plugin chain. With an API, the plan a consumer subscribed to and the API key itself
+can each bring plugins of their own, which are applied <strong>on top of</strong> the chain of the route, for
+that consumer only.</p>
+<p>Plugins come from two places:</p>
+<ul>
+<li class=""><strong>the plan</strong>, through its <code>plugins</code> property — either an inline chain, or a <code>flow_ref</code> pointing at
+one of the <a class="" href=/otoroshi/devmanual/docs/entities/apis#flows>flows</a> of the API so that several plans share the same
+chain (an inline chain extends the referenced flow, it does not replace it);</li>
+<li class=""><strong>the API key</strong>, through its own <code>plugins</code> property.</li>
+</ul>
+<p>An API key is bound to a plan through its <code>apiRef</code>. Subscriptions fill it automatically, plans
+generating identities fill it too, and it can be set by hand on any API key.</p>
+<div class="language-json codeBlockContainer_Ckt0 theme-code-block" style=--prism-color:#393A34;--prism-background-color:#f6f8fa><div class=codeBlockContent_QJqH><pre tabindex=0 class="prism-code language-json codeBlock_bY9V thin-scrollbar" style=color:#393A34;background-color:#f6f8fa><code class=codeBlockLines_e6Vv><div class=token-line style=color:#393A34><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">  </span><span class="token property" style=color:#36acaa>"clientId"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"consumer-123"</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">  </span><span class="token property" style=color:#36acaa>"apiRef"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"> </span><span class="token property" style=color:#36acaa>"api"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"api_xxxx"</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"> </span><span class="token property" style=color:#36acaa>"plan"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"plan_gold"</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"> </span><span class="token property" style=color:#36acaa>"sub"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"sub_yyyy"</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>}</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">  </span><span class="token property" style=color:#36acaa>"plugins"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">    </span><span class="token property" style=color:#36acaa>"overrides"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token boolean" style=color:#36acaa>false</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">    </span><span class="token property" style=color:#36acaa>"plugins"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>[</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">      </span><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">        </span><span class="token property" style=color:#36acaa>"plugin"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"cp:otoroshi.next.plugins.AdditionalHeadersOut"</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">        </span><span class="token property" style=color:#36acaa>"enabled"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token boolean" style=color:#36acaa>true</span><span class="token punctuation" style=color:#393A34>,</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">        </span><span class="token property" style=color:#36acaa>"config"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"> </span><span class="token property" style=color:#36acaa>"headers"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>{</span><span class="token plain"> </span><span class="token property" style=color:#36acaa>"X-Consumer"</span><span class="token operator" style=color:#393A34>:</span><span class="token plain"> </span><span class="token string" style=color:#e3116c>"${apikey.clientId}"</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>}</span><span class="token plain"> </span><span class="token punctuation" style=color:#393A34>}</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">      </span><span class="token punctuation" style=color:#393A34>}</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">    </span><span class="token punctuation" style=color:#393A34>]</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain">  </span><span class="token punctuation" style=color:#393A34>}</span><span class="token plain"></span><br/></div><div class=token-line style=color:#393A34><span class="token plain"></span><span class="token punctuation" style=color:#393A34>}</span><br/></div></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id=composition-rules>Composition rules<a href=#composition-rules class=hash-link aria-label="Direct link to Composition rules" title="Direct link to Composition rules" translate=no>​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Situation<th>Result<tbody><tr><td>the plan has plugins, the API key has none<td>the chain of the plan<tr><td>both have plugins<td>the plan first, the plugins of the API key appended<tr><td>the API key has plugins, no plan behind it<td>the chain of the API key<tr><td>an empty chain, on either side<td>behaves like no chain at all<tr><td><code>overrides</code> set on either side<td>the composed chain overrides</table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id=what-runs-and-when>What runs, and when<a href=#what-runs-and-when class=hash-link aria-label="Direct link to What runs, and when" title="Direct link to What runs, and when" translate=no>​</a></h3>
+<p>The composed chain is applied right after the access validation phase of the route, once a consumer
+has been identified:</p>
+<ol>
+<li class="">the route runs its own <code>before request</code>, <code>pre-route</code> and <code>access validation</code> phases, as usual —
+this is where the API key is identified;</li>
+<li class="">the plugins brought by the consumer run <strong>their</strong> <code>before request</code>, <code>pre-route</code> and
+<code>access validation</code> phases (they can reject the call at that point);</li>
+<li class="">the two chains are merged, and the rest of the request — request transformation, backend call,
+response transformation — goes through the merged chain.</li>
+</ol>
+<p>With <code>overrides</code> enabled, the plugins of the route are replaced by those of the consumer, <strong>except</strong>
+the pre-route and access validation plugins that already ran: dropping them would drop their other
+steps too — <code>Apikey calls</code> for instance would stop wiping the credentials from the backend request.
+Global plugins are always kept. A route plugin evicted by an override still gets its <code>afterRequest</code>
+callback if its <code>beforeRequest</code> had run, so plugins holding a resource (the Coraza WAF, for
+instance) are never left hanging.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id=debugging>Debugging<a href=#debugging class=hash-link aria-label="Direct link to Debugging" title="Direct link to Debugging" translate=no>​</a></h3>
+<p>Enabling <code>debug_flow</code>, or exporting the <a class="" href=/otoroshi/devmanual/docs/topics/engine#reporting>execution report</a>, shows the
+composition as its own steps:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Task<th>Content<tbody><tr><td><code>handle-apikey-plugins-flow</code><td>resolution and composition of the chain<tr><td><code>apikey-flow-before-request-plugins</code><td><code>beforeRequest</code> of the plugins brought by the consumer<tr><td><code>apikey-flow-pre-route-plugins</code><td>their pre-route phase<tr><td><code>apikey-flow-access-validator-plugins</code><td>their access validation phase</table>
+<p>The identity that actually reached the backend can be surfaced with the expression language:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Expression<th>Value<tbody><tr><td><code>${apikey.clientId}</code><td>client id of the consumer<tr><td><code>${apikey.api.id}</code><td>id of the API the API key consumes<tr><td><code>${apikey.api.plan}</code><td>id of the plan<tr><td><code>${apikey.api.sub}</code><td>id of the subscription, when the API key comes from one</table>
+<div class="theme-admonition theme-admonition-note admonition_xJq3 alert alert--secondary"><div class=admonitionHeading_Gvgb><span class=admonitionIcon_Rf37><svg viewBox="0 0 14 16"><path fill-rule=evenodd d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"/></svg></span>note</div><div class=admonitionContent_BuS1><p>Composing a chain per call costs more than serving a plain route: the slots of the consumer are
+expanded, indexed and sorted on every request. Plugin configuration caches stay correct — each
+composed chain gets its own cache entries — but a chain that is the same for everyone is better
+placed on the route or in a flow of the API.</div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id=related>Related<a href=#related class=hash-link aria-label="Direct link to Related" title="Direct link to Related" translate=no>​</a></h2>
+<ul>
+<li class=""><a class="" href=/otoroshi/devmanual/docs/entities/apis>APIs</a> — plans, access modes and flows</li>
+<li class=""><a class="" href=/otoroshi/devmanual/docs/entities/apikeys>API keys</a> — quotas, restrictions and plugin flow</li>
+<li class=""><a class="" href=/otoroshi/devmanual/docs/topics/engine>Proxy engine</a> — request pipeline and execution reports</li>
+<li class=""><a class="" href=/otoroshi/devmanual/docs/plugins/plugins-system>Plugin system</a> — plugin phases</li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href=https://github.com/MAIF/otoroshi/tree/master/manual/next/docs/topics/api-consumers.md target=_blank rel="noopener noreferrer" class=theme-edit-this-page><svg fill=currentColor height=20 width=20 viewBox="0 0 40 40" class=iconEdit_Z9Sw aria-hidden=true><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"/></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href=/otoroshi/devmanual/docs/topics/engine><div class=pagination-nav__sublabel>Previous</div><div class=pagination-nav__label>Proxy engine</div></a><a class="pagination-nav__link pagination-nav__link--next" href=/otoroshi/devmanual/docs/topics/generic-resource-api><div class=pagination-nav__sublabel>Next</div><div class=pagination-nav__label>Generic Admin API (/apis/...)</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href=#every-plan-identifies-a-consumer class="table-of-contents__link toc-highlight">Every plan identifies a consumer</a><ul><li><a href=#what-the-plan-hands-over class="table-of-contents__link toc-highlight">What the plan hands over</a><li><a href=#creating-the-api-key-or-not class="table-of-contents__link toc-highlight">Creating the API key, or not</a><li><a href=#the-consumer-enforcer class="table-of-contents__link toc-highlight">The consumer enforcer</a><li><a href=#several-plans-on-the-same-route class="table-of-contents__link toc-highlight">Several plans on the same route</a></ul><li><a href=#using-the-extractors-on-a-plain-route class="table-of-contents__link toc-highlight">Using the extractors on a plain route</a><li><a href=#plugin-flows-per-consumer class="table-of-contents__link toc-highlight">Plugin flows per consumer</a><ul><li><a href=#composition-rules class="table-of-contents__link toc-highlight">Composition rules</a><li><a href=#what-runs-and-when class="table-of-contents__link toc-highlight">What runs, and when</a><li><a href=#debugging class="table-of-contents__link toc-highlight">Debugging</a></ul><li><a href=#related class="table-of-contents__link toc-highlight">Related</a></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class=footer__title>Documentation</div><ul class="footer__items clean-list"><li class=footer__item><a class=footer__link-item href=/otoroshi/devmanual/docs/getting-started>Getting Started</a><li class=footer__item><a class=footer__link-item href=/otoroshi/devmanual/docs/entities>Main Entities</a><li class=footer__item><a class=footer__link-item href=/otoroshi/devmanual/docs/topics>Detailed Topics</a><li class=footer__item><a class=footer__link-item href=/otoroshi/devmanual/docs/tutorials>Tutorials</a></ul></div><div class="theme-layout-footer-column col footer__col"><div class=footer__title>Community</div><ul class="footer__items clean-list"><li class=footer__item><a href=https://discord.gg/dmbwZrfpcQ target=_blank rel="noopener noreferrer" class=footer__link-item>Discord<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a><li class=footer__item><a href=https://github.com/MAIF/otoroshi/discussions target=_blank rel="noopener noreferrer" class=footer__link-item>GitHub Discussions<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a><li class=footer__item><a href=https://stackoverflow.com/questions/tagged/otoroshi target=_blank rel="noopener noreferrer" class=footer__link-item>Stack Overflow<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a></ul></div><div class="theme-layout-footer-column col footer__col"><div class=footer__title>More</div><ul class="footer__items clean-list"><li class=footer__item><a href=https://github.com/MAIF/otoroshi target=_blank rel="noopener noreferrer" class=footer__link-item>GitHub<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a><li class=footer__item><a href=https://github.com/MAIF/otoroshi/releases target=_blank rel="noopener noreferrer" class=footer__link-item>Releases<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a><li class=footer__item><a href=https://github.com/orgs/MAIF/projects/20/views/1 target=_blank rel="noopener noreferrer" class=footer__link-item>Roadmap<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a><li class=footer__item><a href=https://maif.github.io/ target=_blank rel="noopener noreferrer" class=footer__link-item>MAIF Open Source<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a></ul></div><div class="theme-layout-footer-column col footer__col"><div class=footer__title>Ecosystem</div><ul class="footer__items clean-list"><li class=footer__item><a class=footer__link-item href=/otoroshi/devmanual/ecosystem>Otoroshi's Ecosystem</a><li class=footer__item><a href=https://maif.github.io/daikoku/ target=_blank rel="noopener noreferrer" class=footer__link-item>Daikoku<svg width=13.5 height=13.5 aria-label="(opens in new tab)" class=iconExternalLink_nPIU><use href=#theme-svg-external-link /></svg></a></ul></div></div><div class="footer__bottom text--center"><div class=margin-bottom--sm><a href=https://www.otoroshi.io/ rel="noopener noreferrer" class=footerLogoLink_BH7S><img src=/otoroshi/devmanual/img/otoroshi-logo.png alt="Otoroshi Logo" class="footer__logo themedComponent_mlkZ themedComponent--light_NVdE" width=50 height=50 /><img src=/otoroshi/devmanual/img/otoroshi-logo.png alt="Otoroshi Logo" class="footer__logo themedComponent_mlkZ themedComponent--dark_xIcU" width=50 height=50 /></a></div><div class=footer__copyright>Copyright © 2026 #OSSbyMAIF. Built with Docusaurus.</div></div></div></footer></div></body>
