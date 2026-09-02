@@ -54,7 +54,8 @@ class ContextValidation extends NgAccessValidator {
   override def name: String                                = "Context validator"
   //override def description: Option[String]                 = "This plugin validates the current context using JSONPath validators".some
   //override def documentation: Option[String]                 =
-  override def description: Option[String]                 =
+  override def description: Option[String]                 = "This plugin validates the current context using JSONPath validators.".some
+  override def documentation: Option[String]                 =
     """This plugin validates the current context using JSONPath validators.
       |
       |This plugin let you configure a list of validators that will check if the current call can pass.

@@ -25,7 +25,7 @@ the request attributes.
   ],
   "invert": false,
   "evaluation_mode": "per_phase",
-  "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+  "plugin_id": "cp:otoroshi.next.plugins.ApikeyCalls",
   "plugin_config": {
     "validate": true
   }
@@ -37,7 +37,7 @@ the request attributes.
 | `predicates` | The JSONPath validators, in the same format as the [Context validator](./built-in-plugins.mdx) plugin. **All** of them must match. An empty list always matches. |
 | `invert` | Runs the wrapped plugin when the predicates do **not** match. |
 | `evaluation_mode` | `per_phase` (default), `once` or `latch`. See below. |
-| `plugin` | The id of the plugin to run, for instance `cp:otoroshi.next.plugins.ApikeyCalls`. |
+| `plugin_id` | The id of the plugin to run, for instance `cp:otoroshi.next.plugins.ApikeyCalls`. |
 | `plugin_config` | The configuration handed to the wrapped plugin, exactly as if it were declared on its own in the route. |
 
 The predicate values support the whole expected-value language of `JsonPathValidator`:
@@ -117,7 +117,7 @@ not change during a request: route metadata, request headers, the client IP, the
     { "path": "$.request.method", "value": "Not(GET)" }
   ],
   "evaluation_mode": "once",
-  "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+  "plugin_id": "cp:otoroshi.next.plugins.ApikeyCalls",
   "plugin_config": {}
 }
 ```
@@ -130,7 +130,7 @@ not change during a request: route metadata, request headers, the client IP, the
     { "path": "$.request.remote", "value": "RegexNot(10\\..*)" }
   ],
   "evaluation_mode": "once",
-  "plugin": "cp:otoroshi.next.plugins.MaintenanceMode",
+  "plugin_id": "cp:otoroshi.next.plugins.MaintenanceMode",
   "plugin_config": {}
 }
 ```

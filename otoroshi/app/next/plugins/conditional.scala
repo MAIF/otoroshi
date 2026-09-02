@@ -67,7 +67,7 @@ object ConditionalPluginConfig {
       "predicates"      -> JsArray(o.predicates.map(_.json)),
       "invert"          -> o.invert,
       "evaluation_mode" -> o.evaluationMode.json,
-      "plugin"          -> o.plugin.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "plugin_id"       -> o.plugin.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "plugin_config"   -> o.pluginConfig
     )
 
@@ -85,7 +85,7 @@ object ConditionalPluginConfig {
           .asOpt[String]
           .flatMap(ConditionalEvaluationMode.apply)
           .getOrElse(ConditionalEvaluationMode.PerPhase),
-        plugin = json.select("plugin").asOpt[String].filter(_.trim.nonEmpty),
+        plugin = json.select("plugin_id").asOpt[String].filter(_.trim.nonEmpty),
         pluginConfig = json.select("plugin_config").asOpt[JsObject].getOrElse(Json.obj())
       )
     } match {
@@ -98,7 +98,7 @@ object ConditionalPluginConfig {
     "predicates",
     "invert",
     "evaluation_mode",
-    "plugin",
+    "plugin_id",
     "plugin_config"
   )
 
@@ -142,7 +142,7 @@ object ConditionalPluginConfig {
           )
         )
       ),
-      "plugin"          -> Json.obj(
+      "plugin_id"          -> Json.obj(
         "type"  -> "select",
         "label" -> "Plugin",
         "props" -> Json.obj(
@@ -203,6 +203,9 @@ class ConditionalPlugin
   override def configSchema: Option[JsObject]              = ConditionalPluginConfig.configSchema
 
   override def description: Option[String] =
+    """This plugin runs another plugin conditionally.""".some
+
+  override def documentation: Option[String] =
     """This plugin runs another plugin conditionally.
       |
       |It holds a list of JSONPath predicates, the id of a plugin and the configuration of that

@@ -105,7 +105,7 @@ export default {
         ],
       },
     },
-    plugin: {
+    plugin_id: {
       renderer: (props) => {
         const plugins = useWrappablePlugins();
         return (
@@ -121,7 +121,7 @@ export default {
               const selected = plugins.find((plugin) => plugin.id === id);
               props.rootOnChange({
                 ...(props.rootValue || {}),
-                plugin: id,
+                plugin_id: id,
                 plugin_config: (selected || {}).default_config || {},
               });
             }}
@@ -132,7 +132,7 @@ export default {
     plugin_config: {
       renderer: (props) => {
         const plugins = useWrappablePlugins();
-        const pluginId = (props.rootValue || {}).plugin;
+        const pluginId = (props.rootValue || {}).plugin_id;
 
         if (!pluginId) return null;
 
@@ -165,5 +165,5 @@ export default {
       },
     },
   },
-  config_flow: ['predicates', 'invert', 'evaluation_mode', 'plugin', 'plugin_config'],
+  config_flow: ['predicates', 'invert', 'evaluation_mode', 'plugin_id', 'plugin_config'],
 };
