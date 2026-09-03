@@ -335,6 +335,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-api-action")
+  lazy val jwtVerifier = JWT.require(Algorithm.HMAC512(env.sharedKey)).build()
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
@@ -358,73 +359,75 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
 
     val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
     def perform(): Future[Result] = {
-      request.headers.get(env.Headers.OtoroshiClaim).get.split("\\.").toSeq match {
-        case Seq(head, body, signature) => {
-          val claim          = Json.parse(new String(OtoroshiClaim.decoder.decode(body), StandardCharsets.UTF_8))
-          val lastestApikey  = (claim \ "access_type").asOpt[String].exists(v => v == "apikey" || v == "both")
-          val latestClientId = (claim \ "apikey" \ "clientId").asOpt[String]
-          (claim \ "sub").as[String].split(":").toSeq match {
-            case Seq("apikey", clientId)                        => {
-              env.datastores.globalConfigDataStore
-                .singleton()
-                .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
-                .flatMap { _ =>
-                  env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-                    case Some(apikey)
-                        if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
-                          .authorizedOnService(env.backOfficeDescriptor.id) => {
-                      block(ApiActionContext(apikey, request)).foldM {
-                        case Success(res) =>
-                          res
-                            .withHeaders(
-                              env.Headers.OtoroshiStateResp -> request.headers
-                                .get(env.Headers.OtoroshiState)
-                                .getOrElse("--")
-                            )
-                            .asFuture
-                        case Failure(err) => error(s"Server error : $err", Some(err))
+      request.headers.get(env.Headers.OtoroshiClaim).map(_.split("\\.").toSeq) match {
+        case Some(Seq(head, body, signature)) => Try(jwtVerifier.verify(s"$head.$body.$signature")) match {
+          case Failure(e) => error(s"You're not authorized - ${request.method} ${request.uri}")
+          case Success(_) =>
+            val claim          = Json.parse(new String(OtoroshiClaim.decoder.decode(body), StandardCharsets.UTF_8))
+            val lastestApikey  = (claim \ "access_type").asOpt[String].exists(v => v == "apikey" || v == "both")
+            val latestClientId = (claim \ "apikey" \ "clientId").asOpt[String]
+            (claim \ "sub").as[String].split(":").toSeq match {
+              case Seq("apikey", clientId)                        => {
+                env.datastores.globalConfigDataStore
+                  .singleton()
+                  .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
+                  .flatMap { _ =>
+                    env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+                      case Some(apikey)
+                          if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
+                            .authorizedOnService(env.backOfficeDescriptor.id) => {
+                        block(ApiActionContext(apikey, request)).foldM {
+                          case Success(res) =>
+                            res
+                              .withHeaders(
+                                env.Headers.OtoroshiStateResp -> request.headers
+                                  .get(env.Headers.OtoroshiState)
+                                  .getOrElse("--")
+                              )
+                              .asFuture
+                          case Failure(err) => error(s"Server error : $err", Some(err))
+                        }
                       }
+                      case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
                     }
-                    case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
-                  }
-                } recoverWith { case e =>
-                e.printStackTrace()
-                error(s"You're not authorized - ${request.method} ${request.uri}")
+                  } recoverWith { case e =>
+                  e.printStackTrace()
+                  error(s"You're not authorized - ${request.method} ${request.uri}")
+                }
               }
-            }
-            case _ if lastestApikey && latestClientId.isDefined => {
-              env.datastores.globalConfigDataStore
-                .singleton()
-                .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
-                .flatMap { _ =>
-                  env.datastores.apiKeyDataStore.findById(latestClientId.get).flatMap {
-                    case Some(apikey)
-                        if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
-                          .authorizedOnService(env.backOfficeDescriptor.id) => {
-                      block(ApiActionContext(apikey, request)).foldM {
-                        case Success(res) =>
-                          res
-                            .withHeaders(
-                              env.Headers.OtoroshiStateResp -> request.headers
-                                .get(env.Headers.OtoroshiState)
-                                .getOrElse("--")
-                            )
-                            .asFuture
-                        case Failure(err) => error(s"Server error : $err", Some(err))
+              case _ if lastestApikey && latestClientId.isDefined => {
+                env.datastores.globalConfigDataStore
+                  .singleton()
+                  .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
+                  .flatMap { _ =>
+                    env.datastores.apiKeyDataStore.findById(latestClientId.get).flatMap {
+                      case Some(apikey)
+                          if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
+                            .authorizedOnService(env.backOfficeDescriptor.id) => {
+                        block(ApiActionContext(apikey, request)).foldM {
+                          case Success(res) =>
+                            res
+                              .withHeaders(
+                                env.Headers.OtoroshiStateResp -> request.headers
+                                  .get(env.Headers.OtoroshiState)
+                                  .getOrElse("--")
+                              )
+                              .asFuture
+                          case Failure(err) => error(s"Server error : $err", Some(err))
+                        }
                       }
+                      case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
                     }
-                    case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
-                  }
-                } recoverWith { case e =>
-                e.printStackTrace()
-                error(s"You're not authorized - ${request.method} ${request.uri}")
+                  } recoverWith { case e =>
+                  e.printStackTrace()
+                  error(s"You're not authorized - ${request.method} ${request.uri}")
+                }
               }
+              case _                                              => error(s"You're not authorized - ${request.method} ${request.uri}")
             }
-            case _                                              => error(s"You're not authorized - ${request.method} ${request.uri}")
           }
+          case _                          => error(s"You're not authorized - ${request.method} ${request.uri}")
         }
-        case _                          => error(s"You're not authorized - ${request.method} ${request.uri}")
-      }
     }
     host match {
       case env.adminApiHost                     => perform()

@@ -124,7 +124,7 @@ class BackOfficeRequest(
       sub = None,
       addFields = None
     )(using env)
-    .serialize(HSAlgoSettings(256, env.sharedKey))(using env)
+    .serialize(HSAlgoSettings(512, env.sharedKey))(using env)
   private val addHeaders = Seq(
     env.Headers.OtoroshiClaim        -> otoClaim,
     "Host"                           -> host,
