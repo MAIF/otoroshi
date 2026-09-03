@@ -3,7 +3,7 @@ package otoroshi.controllers.adminapi
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.actions.ApiAction
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.auth.*
 import otoroshi.env.Env
 import otoroshi.events.*
@@ -257,21 +257,40 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
       }
     }
 
-  private def patchTemplate[T](
+  private def saveFromTemplate[T](
+      entity: => JsValue,
+      patch: JsValue,
+      format: Format[T],
+      save: T => Future[Boolean],
+      authorized: T => Boolean
+  ): Future[Result] = {
+    val merged = entity.as[JsObject].deepMerge(patch.as[JsObject])
+    format.reads(merged) match {
+      case JsError(e)                                  =>
+        FastFuture.successful(BadRequest(Json.obj("error" -> s"bad entity $e")))
+      case JsSuccess(entity, _) if !authorized(entity) =>
+        FastFuture.successful(
+          Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !"))
+        )
+      case JsSuccess(entity, _)                        =>
+        save(entity).map(_ => Created(format.writes(entity)))
+    }
+  }
+
+  // the caller controls the whole body here, location included, so the merged entity is the only thing
+  // worth checking: exactly what the standard crud create path does before writing anything
+  private def patchTemplate[T <: EntityLocationSupport](
       entity: => JsValue,
       patch: JsValue,
       format: Format[T],
       save: T => Future[Boolean]
-  ): Future[Result] = {
-    val merged = entity.as[JsObject].deepMerge(patch.as[JsObject])
-    format.reads(merged) match {
-      case JsError(e)           => FastFuture.successful(BadRequest(Json.obj("error" -> s"bad entity $e")))
-      case JsSuccess(entity, _) => save(entity).map(_ => Created(format.writes(entity)))
-    }
+  )(using ctx: ApiActionContext[JsValue]): Future[Result] = {
+    saveFromTemplate[T](entity, patch, format, save, ctx.canUserWrite)
   }
 
   def createFromTemplate(entity: String) =
     ApiAction.async(parse.json) { ctx =>
+      given ApiActionContext[JsValue] = ctx
       ctx.checkRights(RightsChecker.Anyone) {
         val patch = ctx.request.body
         entity.toLowerCase() match {
@@ -316,17 +335,17 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
               _.save()
             )
           case "tenants"      =>
-            patchTemplate[ServiceGroup](
+            patchTemplate[Tenant](
               env.datastores.tenantDataStore.template(env).json,
               patch,
-              ServiceGroup._fmt,
+              Tenant.format,
               _.save()
             )
           case "teams"        =>
-            patchTemplate[ServiceGroup](
+            patchTemplate[Team](
               env.datastores.teamDataStore.template(ctx.currentTenant).json,
               patch,
-              ServiceGroup._fmt,
+              Team.format,
               _.save()
             )
           case "certificates" =>
@@ -345,12 +364,15 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                 )
               )
           case "globalconfig" =>
-            patchTemplate[GlobalConfig](
-              env.datastores.globalConfigDataStore.template.toJson,
-              patch,
-              GlobalConfig._fmt,
-              _.save()
-            )
+            ctx.checkRights(RightsChecker.SuperAdminOnly) {
+              saveFromTemplate[GlobalConfig](
+                env.datastores.globalConfigDataStore.template.toJson,
+                patch,
+                GlobalConfig._fmt,
+                _.save(),
+                _ => true
+              )
+            }
           case "verifiers"    =>
             patchTemplate[GlobalJwtVerifier](
               env.datastores.globalJwtVerifierDataStore

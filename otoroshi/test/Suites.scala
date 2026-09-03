@@ -79,6 +79,7 @@ object OtoroshiTests {
     val suites         = Seq(
       new BasicSpec,
       new AdminApiSpec(name, config),
+      new AdminApiRightsSpec(name, config),
       new CircuitBreakerSpec(name, config),
       new AlertAndAnalyticsSpec(name, config),
       // new AnalyticsSpec(name, config),
@@ -183,6 +184,12 @@ class ApiPlanMtlsTests
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()
+    )
+
+// rights enforcement on the admin api, one test per finding of the security review
+class AdminApiRightsTests
+    extends Suites(
+      new AdminApiRightsSpec("InMemory", Configurations.InMemoryConfiguration)
     )
 
 // acme end-to-end against a real acme server (pebble) started with testcontainers: needs docker, so it is
