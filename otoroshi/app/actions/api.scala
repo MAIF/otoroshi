@@ -55,7 +55,7 @@ trait ApiActionContextCapable {
       case Left(_)           => false
       case Right(None)       => {
         val tenantAccess = apiKey.metadata
-          .get("otoroshi-access-rights")
+          .get(ApiKey.accessRightsMetadataKey)
           .map(Json.parse)
           .flatMap(_.asOpt[JsArray])
           .map(UserRights.readFromArray)
@@ -83,7 +83,7 @@ trait ApiActionContextCapable {
           request.headers.get("Otoroshi-BackOffice-User") match {
             case None          =>
               val tenantAccess = apiKey.metadata
-                .get("otoroshi-access-rights")
+                .get(ApiKey.accessRightsMetadataKey)
                 .map(Json.parse)
                 .flatMap(_.asOpt[JsArray])
                 .map(UserRights.readFromArray)
@@ -160,13 +160,28 @@ trait ApiActionContextCapable {
     canUserWrite(FakeEntityLocationSupport(EntityLocation.readFromKey(item)))
   }
 
+  // an apikey carries the admin api rights of its holder in its own metadata, so writing one is also
+  // granting rights: refuse to write an apikey that would grant more than the writer already has
+  private def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
+    apikey.metadata.get(ApiKey.accessRightsMetadataKey) match {
+      case None      => true
+      case Some(raw) =>
+        Try(Json.parse(raw)).toOption.flatMap(_.asOpt[JsArray]).map(UserRights.readFromArray) match {
+          // unreadable rights are read as "no restriction at all" when the apikey is used, which is
+          // the widest grant there is
+          case None         => false
+          case Some(rights) => user.rights.covers(rights)
+        }
+    }
+  }
+
   def canUserWrite[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     backOfficeUser match {
       case Left(_)           => false
       case Right(None)       => true
       case Right(Some(user)) =>
         rootOrTenantAdmin(user) {
-          item match {
+          val locationIsMine = item match {
             case _: Tenant =>
               (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
                 .canWriteTenant(item.location.tenant)
@@ -174,11 +189,17 @@ trait ApiActionContextCapable {
               (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
                 .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
           }
+          locationIsMine && (item match {
+            case apikey: ApiKey => canUserGrantApikeyRights(apikey, user)
+            case _              => true
+          })
         }
     }
   }
 
-  def checkRights(rc: RightsChecker)(f: Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
+  // by name, like every other guard here: a by value body would run the whole guarded block, side
+  // effects included, before the rights are even checked, and only the result would be discarded
+  def checkRights(rc: RightsChecker)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     if (env.bypassUserRightsCheck) {
       f
     } else {

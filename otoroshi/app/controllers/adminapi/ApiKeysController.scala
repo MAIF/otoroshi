@@ -163,6 +163,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                   case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                   case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                     BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                  case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
                   case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                     env.datastores.apiKeyDataStore.findById(clientId).flatMap {
                       case None                                        => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
@@ -212,6 +213,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                 case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                 case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                   BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
                 case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                   sendAuditAndAlert(
                     "UPDATE_APIKEY",
@@ -581,6 +583,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                 case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                 case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                   BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
                 case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                   env.datastores.apiKeyDataStore.findById(clientId).flatMap {
                     case None                                        => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
@@ -630,6 +633,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                 case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                 case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                   BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
                 case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                   sendAuditAndAlert(
                     "UPDATE_APIKEY",

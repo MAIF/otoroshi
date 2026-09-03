@@ -445,6 +445,10 @@ object ApiKey {
 
   lazy val logger = Logger("otoroshi-apkikey")
 
+  // rights of the holder of this apikey when it is used against the admin api, see
+  // otoroshi.actions.ApiActionContextCapable
+  val accessRightsMetadataKey = "otoroshi-access-rights"
+
   // every place enforcing apikey quotas has to raise the very same alerts, whether the apikey was
   // presented by the caller or minted from an api plan, so the alerting rules live here and not in
   // each call site.

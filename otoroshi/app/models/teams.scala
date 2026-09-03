@@ -60,6 +60,16 @@ case class UserRights(rights: Seq[UserRight]) {
         rights.exists(ur => ur.teams.exists(t => t.matches(ut) && t.canReadWrite))
       )
     }
+  // does this set of rights allow everything `other` allows ? entities that carry rights for their
+  // holder (apikeys, users) must never be written with more than what the writer already has
+  def covers(other: UserRights): Boolean = {
+    other.rights.forall { requested =>
+      rights.exists { mine =>
+        mine.tenant.covers(requested.tenant) &&
+        requested.teams.forall(requestedTeam => mine.teams.exists(_.covers(requestedTeam)))
+      }
+    }
+  }
   def oneAuthorizedTenant: TenantId                                                   =
     rights.headOption.filter(_.tenant.plain).map(_.tenant.asTenantId).getOrElse(TenantId.default)
   def oneAuthorizedTeam: TeamId                                                       =
@@ -240,7 +250,24 @@ object TenantId                       {
   def apply(value: String): TenantId = new TenantId(value.toLowerCase.trim)
 }
 
+object AccessCoverage {
+  // a plain value is covered by itself, by "*", or by a pattern matching it. a pattern is only covered
+  // by itself or by "*", so asking for a wildcard never widens the scope of the one who grants it
+  def coversValue(mine: String, requested: String): Boolean = {
+    if (mine == "*") true
+    else if (requested.contains("*")) mine == requested
+    else RegexPool(mine).matches(requested)
+  }
+  def coversPermissions(mine: (Boolean, Boolean), requested: (Boolean, Boolean)): Boolean = {
+    (!requested._1 || mine._1) && (!requested._2 || mine._2)
+  }
+}
+
 case class TeamAccess(value: String, canRead: Boolean, canWrite: Boolean) {
+  def covers(other: TeamAccess): Boolean = {
+    AccessCoverage.coversValue(value, other.value) &&
+    AccessCoverage.coversPermissions((canRead, canWrite), (other.canRead, other.canWrite))
+  }
   lazy val raw: String = {
     s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
   }
@@ -287,6 +314,10 @@ object TenantAccess {
 }
 
 case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
+  def covers(other: TenantAccess): Boolean = {
+    AccessCoverage.coversValue(value, other.value) &&
+    AccessCoverage.coversPermissions((canRead, canWrite), (other.canRead, other.canWrite))
+  }
   def matches(tenant: TenantId): Boolean = {
     value == "*" || tenant == TenantId.all || RegexPool(value).matches(tenant.value)
   }
