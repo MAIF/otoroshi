@@ -1805,6 +1805,19 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                         .stringify
                         .byteString
                         .vfuture
+                    // like the single patch: the stored entity is checked above, the patched one has
+                    // to be checked too or its location can be rewritten
+                    case JsSuccess(_, _) if !ctx.canUserWriteJson(patchedEntity) =>
+                      Json
+                        .obj(
+                          "status"            -> 400,
+                          "error"             -> "bad_entity",
+                          "error_description" -> "you cannot access this resource",
+                          "entity"            -> entity
+                        )
+                        .stringify
+                        .byteString
+                        .vfuture
                     case JsSuccess(_, _) =>
                       resource.access
                         .create(
@@ -2388,22 +2401,6 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
           case Right(__body) => {
             val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
-            //resource.access.findOne(version, id).flatMap {
-            //  case None                                                =>
-            //    result(
-            //      Results.Unauthorized,
-            //      Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
-            //      ctx.request,
-            //      resource.some
-            //    ).vfuture
-            //  case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
-            //    result(
-            //      Results.Unauthorized,
-            //      Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-            //      ctx.request,
-            //      resource.some
-            //    ).vfuture
-            //  case Some(oldEntity)                                     => {
             resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
               case err @ JsError(_)                                =>
                 result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
@@ -2431,6 +2428,13 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                           )
                           result(Results.Created, res, ctx.request, resource.some)
                       }
+                  case Some(old) if !ctx.canUserWriteJson(old) =>
+                    result(
+                      Results.Unauthorized,
+                      Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+                      ctx.request,
+                      resource.some
+                    )
                   case Some(old) =>
                     val oldEntity  = resource.access.format.reads(old).get
                     val newEntity  = resource.access.format.reads(body).get
@@ -2457,8 +2461,6 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                       }
                 }
               }
-              //  }
-              //}
             }
           }
         }
@@ -2559,6 +2561,13 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                         "error"             -> "bad_request",
                         "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply))
                       ),
+                      ctx.request,
+                      resource.some
+                    )
+                  case JsSuccess(_, _) if !ctx.canUserWriteJson(patchedBody) =>
+                    result(
+                      Results.Unauthorized,
+                      Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
                       ctx.request,
                       resource.some
                     )

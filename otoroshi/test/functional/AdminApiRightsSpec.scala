@@ -173,6 +173,57 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
     body
   }
 
+  // the bulk endpoints speak ndjson in and out, so neither the body nor the response is a single json
+  def ndjsonCall(method: String, path: String, user: BackOfficeUser, body: String): Int = {
+    ws.url(s"http://localhost:${port}${path}")
+      .withHttpHeaders(
+        "Host"                     -> "otoroshi-api.oto.tools",
+        "Accept"                   -> "application/x-ndjson",
+        "Content-Type"             -> "application/x-ndjson",
+        "Otoroshi-Tenant"          -> tenant.value,
+        "Otoroshi-BackOffice-User" -> JWT
+          .create()
+          .withClaim("user", Json.stringify(user.toJson))
+          .sign(Algorithm.HMAC512("admin-api-apikey-secret"))
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .withFollowRedirects(false)
+      .withMethod(method)
+      .withBody(body)
+      .execute()
+      .futureValue
+      .status
+  }
+
+  def createRoute(id: String, tenantId: String, teamId: String): Unit = {
+    val (body, status) = otoroshiApiCall(
+      "POST",
+      "/api/routes",
+      Json
+        .obj(
+          "id"       -> id,
+          "name"     -> id,
+          "frontend" -> Json.obj("domains" -> Json.arr(s"$id.oto.tools")),
+          "backend"  -> Json.obj(
+            "targets" -> Json.arr(Json.obj("hostname" -> "127.0.0.1", "port" -> 9999, "tls" -> false))
+          ),
+          "_loc"     -> Json.obj("tenant" -> tenantId, "teams" -> Json.arr(teamId))
+        )
+        .some
+    ).futureValue
+    withClue(s"create route $id: ${Json.stringify(body)} ") {
+      status mustBe 201
+    }
+  }
+
+  def route(id: String): JsValue = {
+    val (body, status) = otoroshiApiCall("GET", s"/api/routes/$id").futureValue
+    status mustBe 200
+    body
+  }
+
+  def routeTenant(id: String): String = (route(id) \ "_loc" \ "tenant").as[String]
+
   def maxConcurrentRequests(): Long = {
     val (body, status) = otoroshiApiCall("GET", "/api/globalconfig").futureValue
     status mustBe 200
@@ -519,6 +570,94 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
         currentTenant = TenantId("default")
       )
       status mustBe 200
+    }
+
+    // the generic api upsert only validated the location the caller sent, never the one of the entity
+    // it was about to overwrite
+    "not let a scoped user hijack an entity of another tenant through POST /apis/:group/:version/:entity/:id" in {
+      createRoute("victim-route", "default", "default")
+      val hijacked    = route("victim-route").as[JsObject] ++ Json.obj(
+        "_loc" -> Json.obj("tenant" -> tenant.value, "teams" -> Json.arr(team.value))
+      )
+      val (_, status) =
+        call("POST", "/apis/proxy.otoroshi.io/v1/routes/victim-route", scopedUser, hijacked.some)
+      val after = routeTenant("victim-route")
+      withClue(s"write=$status tenant=$after ") {
+        status mustBe 401
+        after mustBe "default"
+      }
+    }
+
+    // patch checked the stored entity but never the patched one, so the location could be rewritten
+    "not let a scoped user move an entity out of its scope through PATCH /apis/:group/:version/:entity/:id" in {
+      createRoute("escaping-route", tenant.value, team.value)
+      val (_, status) = call(
+        "PATCH",
+        "/apis/proxy.otoroshi.io/v1/routes/escaping-route",
+        scopedUser,
+        Json.arr(Json.obj("op" -> "replace", "path" -> "/_loc/tenant", "value" -> "default")).some
+      )
+      val after = routeTenant("escaping-route")
+      withClue(s"write=$status tenant=$after ") {
+        status mustBe 401
+        after mustBe tenant.value
+      }
+    }
+
+    "still let a scoped user upsert an entity inside its own scope" in {
+      createRoute("owned-route", tenant.value, team.value)
+      val body        = route("owned-route").as[JsObject] ++ Json.obj("name" -> "renamed")
+      val (_, status) = call("POST", "/apis/proxy.otoroshi.io/v1/routes/owned-route", scopedUser, body.some)
+      status mustBe 200
+      (route("owned-route") \ "name").as[String] mustBe "renamed"
+    }
+
+    // upsert on an unknown id has to keep creating, so the check must only apply when the entity exists
+    "still let a scoped user create an entity through POST /apis/:group/:version/:entity/:id" in {
+      createRoute("model-route", tenant.value, team.value)
+      val body        = route("model-route").as[JsObject] ++ Json.obj(
+        "id"       -> "created-route",
+        "name"     -> "created route",
+        "frontend" -> Json.obj("domains" -> Json.arr("created-route.oto.tools"))
+      )
+      val (_, status) = call("POST", "/apis/proxy.otoroshi.io/v1/routes/created-route", scopedUser, body.some)
+      status mustBe 201
+      routeTenant("created-route") mustBe tenant.value
+    }
+
+    "not let a scoped user move an entity out of its scope through PATCH /apis/:group/:version/:entity/_bulk" in {
+      createRoute("bulk-escaping-route", tenant.value, team.value)
+      val status = ndjsonCall(
+        "PATCH",
+        "/apis/proxy.otoroshi.io/v1/routes/_bulk",
+        scopedUser,
+        Json
+          .obj(
+            "id"    -> "bulk-escaping-route",
+            "patch" -> Json.arr(Json.obj("op" -> "replace", "path" -> "/_loc/tenant", "value" -> "default"))
+          )
+          .stringify
+      )
+      val after = routeTenant("bulk-escaping-route")
+      withClue(s"write=$status tenant=$after ") {
+        after mustBe tenant.value
+      }
+    }
+
+    "still let a scoped user bulk patch an entity inside its own scope" in {
+      createRoute("bulk-owned-route", tenant.value, team.value)
+      ndjsonCall(
+        "PATCH",
+        "/apis/proxy.otoroshi.io/v1/routes/_bulk",
+        scopedUser,
+        Json
+          .obj(
+            "id"    -> "bulk-owned-route",
+            "patch" -> Json.arr(Json.obj("op" -> "replace", "path" -> "/name", "value" -> "bulk renamed"))
+          )
+          .stringify
+      )
+      (route("bulk-owned-route") \ "name").as[String] mustBe "bulk renamed"
     }
 
     "shutdown" in {
