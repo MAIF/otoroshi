@@ -271,40 +271,15 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env:
           true
         case Right(None)       =>
           true
-        case Right(Some(user)) => {
-//           println(s"right some ${user.json}")
-          val tenantAccesses    = user.rights.rights.map(_.tenant)
-          val newTenantAccesses = rights.rights.map(_.tenant)
-
-          val hasAccessToTenant = tenantAccesses.map(_.value).contains("*")
-          val badTenantAccess   = newTenantAccesses.exists(v => !tenantAccesses.contains(v))
-
-          val badTeamAccess = user.rights.rights.exists { right =>
-            user.rights.rights.find(_.tenant.value == right.tenant.value) match {
-              case None    => false
-              case Some(r) =>
-                val teams    = r.teams
-                val newTeams = right.teams
-
-                if (r.teams.map(_.value).contains("*")) {
-                  false
-                } else {
-                  newTeams.exists(v => !teams.contains(v))
-                }
-            }
-          }
-
-          if (hasAccessToTenant) {
-            !badTeamAccess
-          } else {
-            !(badTenantAccess || badTeamAccess)
-          }
-        }
+        // granting rights one does not have is an escalation, so the new rights have to stay inside
+        // the ones of the caller, tenants and teams alike
+        case Right(Some(user)) =>
+          user.rights.covers(rights)
       }
       if (pass) {
         f
       } else {
-        FastFuture.successful(Forbidden(Json.obj("error" -> "you can't set superadmin rights to an admin")))
+        FastFuture.successful(Forbidden(Json.obj("error" -> "you can't grant rights you don't have yourself")))
       }
     }
   }
@@ -432,7 +407,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env:
               case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
               case Right(_)   =>
                 val _newUser = SimpleOtoroshiAdmin.fmt.reads(body).get
-                checkNewUserRights(ctx, _newUser.rights) {
+                if (!ctx.canUserWrite(_newUser)) ctx.fforbidden
+                else checkNewUserRights(ctx, _newUser.rights) {
                   val newUser = _newUser.copy(username = username)
                   env.datastores.simpleAdminDataStore.registerUser(newUser).map { _ =>
                     Ok(newUser.json)
@@ -467,7 +443,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env:
               case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
               case Right(_)   =>
                 val _newUser = WebAuthnOtoroshiAdmin.fmt.reads(body).get
-                checkNewUserRights(ctx, _newUser.rights) {
+                if (!ctx.canUserWrite(_newUser)) ctx.fforbidden
+                else checkNewUserRights(ctx, _newUser.rights) {
                   val newUser = _newUser.copy(username = username)
                   env.datastores.webAuthnAdminDataStore.registerUser(newUser).map { _ =>
                     Ok(newUser.json)

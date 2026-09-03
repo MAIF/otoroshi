@@ -60,6 +60,27 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
     rights = UserRights(Seq(UserRight(TenantAccess("*"), Seq(TeamAccess("*")))))
   )
 
+  // tenant admin on its own tenant, plus a narrow team on every other one. that "*" in the tenant list
+  // is what used to switch checkNewUserRights to its dead team check
+  val mixedUser = scopedUser.copy(
+    randomId = "mixed@otoroshi.io",
+    name = "mixed@otoroshi.io",
+    email = "mixed@otoroshi.io",
+    rights = UserRights(
+      Seq(
+        UserRight(TenantAccess("*"), Seq(TeamAccess(team.value))),
+        UserRight(TenantAccess(tenant.value), Seq(TeamAccess("*")))
+      )
+    )
+  )
+
+  val tenantAdminUser = scopedUser.copy(
+    randomId = "tenantadmin@otoroshi.io",
+    name = "tenantadmin@otoroshi.io",
+    email = "tenantadmin@otoroshi.io",
+    rights = UserRights(Seq(UserRight(TenantAccess(tenant.value), Seq(TeamAccess("*")))))
+  )
+
   startOtoroshi()
 
   def call(
@@ -133,6 +154,24 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
     "metadata"           -> Json.obj("otoroshi-access-rights" -> accessRights),
     "_loc"               -> Json.obj("tenant" -> tenant.value, "teams" -> Json.arr(team.value))
   )
+
+  def createSimpleAdmin(username: String, user: BackOfficeUser): Unit = {
+    val (body, status) = call(
+      "POST",
+      "/api/admins/simple",
+      user,
+      Json.obj("username" -> username, "password" -> "password", "label" -> username).some
+    )
+    withClue(s"create admin $username: ${Json.stringify(body)} ") {
+      status mustBe 200
+    }
+  }
+
+  def simpleAdmin(username: String): JsValue = {
+    val (body, status) = otoroshiApiCall("GET", s"/api/admins/simple/$username").futureValue
+    status mustBe 200
+    body
+  }
 
   def maxConcurrentRequests(): Long = {
     val (body, status) = otoroshiApiCall("GET", "/api/globalconfig").futureValue
@@ -417,6 +456,69 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
         scopedApiKeyJson("legit-child-apikey", ownRights).some
       )
       status mustBe 201
+    }
+
+    // checkNewUserRights computed its team containment over the caller's own rights instead of the
+    // requested ones, so the check was always true as soon as the caller had a "*" tenant access
+    "not let an admin grant another admin rights it does not have itself" in {
+      createSimpleAdmin("victim-admin", mixedUser)
+      val before      = simpleAdmin("victim-admin") \ "rights"
+      val (_, status) = call(
+        "PUT",
+        "/api/admins/simple/victim-admin",
+        mixedUser,
+        (simpleAdmin("victim-admin").as[JsObject] ++ Json.obj(
+          "rights" -> Json.arr(Json.obj("tenant" -> "*:rw", "teams" -> Json.arr("*:r")))
+        )).some
+      )
+      val after = simpleAdmin("victim-admin") \ "rights"
+      withClue(s"write=$status rights=${Json.stringify(after.as[JsValue])} ") {
+        status mustBe 403
+        after.as[JsValue] mustBe before.as[JsValue]
+      }
+    }
+
+    "not let a tenant admin move an admin into another tenant" in {
+      createSimpleAdmin("moved-admin", tenantAdminUser)
+      val (_, status) = call(
+        "PUT",
+        "/api/admins/simple/moved-admin",
+        tenantAdminUser,
+        (simpleAdmin("moved-admin").as[JsObject] ++ Json.obj(
+          "_loc" -> Json.obj("tenant" -> "default", "teams" -> Json.arr("default"))
+        )).some
+      )
+      val after = (simpleAdmin("moved-admin") \ "_loc" \ "tenant").as[String]
+      withClue(s"write=$status tenant=$after ") {
+        status mustBe 403
+        after mustBe tenant.value
+      }
+    }
+
+    "still let a tenant admin update an admin inside its own rights" in {
+      createSimpleAdmin("legit-admin", tenantAdminUser)
+      val (_, status) = call(
+        "PUT",
+        "/api/admins/simple/legit-admin",
+        tenantAdminUser,
+        (simpleAdmin("legit-admin").as[JsObject] ++ Json.obj("label" -> "renamed")).some
+      )
+      status mustBe 200
+      (simpleAdmin("legit-admin") \ "label").as[String] mustBe "renamed"
+    }
+
+    "still let a super admin grant super admin rights to an admin" in {
+      createSimpleAdmin("promoted-admin", adminUser)
+      val (_, status) = call(
+        "PUT",
+        "/api/admins/simple/promoted-admin",
+        adminUser,
+        (simpleAdmin("promoted-admin").as[JsObject] ++ Json.obj(
+          "rights" -> Json.arr(Json.obj("tenant" -> "*:rw", "teams" -> Json.arr("*:rw")))
+        )).some,
+        currentTenant = TenantId("default")
+      )
+      status mustBe 200
     }
 
     "shutdown" in {
