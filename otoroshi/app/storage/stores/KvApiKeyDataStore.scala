@@ -352,6 +352,8 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       env: Env
   ): Future[Option[ApiKey]] = {
     val clientId = OtoroshiBearerToken.extractClientId(bearer)
-    findAuthorizeKeyForFromCache(clientId, serviceId).vfuture
+    // the client id is readable straight out of the bearer, so the signature is the only part proving
+    // the caller knows the secret. same checks as the ng path in ApiKeyHelper.validateApikeyTuple
+    findAuthorizeKeyForFromCache(clientId, serviceId).filter(apikey => apikey.enabled && apikey.checkBearer(bearer)).vfuture
   }
 }

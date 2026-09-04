@@ -41,6 +41,15 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// the otoroshi bearer alone: sbt "testOnly functional.OtoBearerAuthSpec"
+class OtoBearerAuthSpec extends PluginsTestSpecBase {
+  s"otoroshi bearer" should {
+    "only authenticate a bearer whose signature matches the apikey secret" in {
+      new OtoBearerAuthTests(this)
+    }
+  }
+}
+
 // the apikey auth module alone: sbt "testOnly functional.ApikeyAuthModuleSpec"
 class ApikeyAuthModuleSpec extends PluginsTestSpecBase {
   s"apikey auth module" should {
