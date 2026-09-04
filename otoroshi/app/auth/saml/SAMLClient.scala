@@ -779,8 +779,9 @@ case class SamlAuthModuleConfig(
     issuer: String,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
     validatingCertificates: List[String] = List.empty,
-    validateSignature: Boolean = false,
-    validateAssertions: Boolean = false,
+    // secure by default: a new module, and one built from idp metadata, authenticates what it receives
+    validateSignature: Boolean = true,
+    validateAssertions: Boolean = true,
     usedNameIDAsEmail: Boolean = true,
     emailAttributeName: Option[String] = Some("Email"),
     sessionCookieValues: SessionCookieValues,

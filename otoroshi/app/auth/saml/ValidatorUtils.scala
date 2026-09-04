@@ -48,7 +48,7 @@ object ValidatorUtils {
   }
 
   def validateIssuer(request: RequestAbstractType, requestIssuer: String): Either[String, Unit] =
-    if (!request.getIssuer.getValue.equals(requestIssuer)) {
+    if (request.getIssuer.getValue.equals(requestIssuer)) {
       if (logger.isDebugEnabled) logger.debug(s"Request Issuer validated : $requestIssuer")
       Right(())
     } else
@@ -60,7 +60,7 @@ object ValidatorUtils {
       credentials: List[Credential],
       validateAssertions: Boolean
   ): Either[String, Unit] = {
-    if (response.getAssertions.size() > 1)
+    if (response.getAssertions.size() != 1)
       Left("The response doesn't contain exactly 1 assertion")
     else {
       val assertion = response.getAssertions.get(0)
@@ -80,12 +80,15 @@ object ValidatorUtils {
       credentials: List[Credential],
       validateSign: Boolean
   ): Either[String, Unit] = {
-    if (response.getSignature != null && !validate(response.getSignature, credentials, validateSign))
+    if (!validateSign) {
+      if (logger.isDebugEnabled) logger.debug("Validation of Response Signature not required")
+      Right(())
+    } else if (response.getSignature == null)
+      Left("The response is not signed")
+    else if (!validate(response.getSignature, credentials, validateSign))
       Left("The response signature is invalid")
     else {
-      if (validateSign)
-        if (logger.isDebugEnabled) logger.debug(s"Response Signature validated")
-        else if (logger.isDebugEnabled) logger.debug(s"Validation of Response Signature not required")
+      if (logger.isDebugEnabled) logger.debug("Response Signature validated")
       Right(())
     }
   }
@@ -110,8 +113,10 @@ object ValidatorUtils {
   }
 
   def validateResponse(response: Response, responseIssuer: String): Either[String, Unit] = {
-    validateIssuer(response, responseIssuer)
-    validateStatus(response)
+    validateIssuer(response, responseIssuer) match {
+      case Left(value) => Left(value)
+      case Right(_)    => validateStatus(response)
+    }
   }
 
   def validateLogoutRequest(request: LogoutRequest, requestIssuer: String, nameID: String): Either[String, Unit] = {
