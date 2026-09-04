@@ -10,7 +10,9 @@ import plugins.*
 
 import scala.concurrent.duration.DurationInt
 
-class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
+// one otoroshi instance and the helpers every plugin test class needs. it lives apart from the test
+// list so that a spec can pick a handful of plugin tests instead of running the whole catalog
+trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
 
   implicit lazy val mat: org.apache.pekko.stream.Materializer = otoroshiComponents.materializer
   implicit lazy val env: otoroshi.env.Env = otoroshiComponents.env
@@ -37,6 +39,21 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     system.terminate()
     stopAll()
   }
+}
+
+// the apikey auth module alone: sbt "testOnly functional.ApikeyAuthModuleSpec"
+class ApikeyAuthModuleSpec extends PluginsTestSpecBase {
+  s"apikey auth module" should {
+    "only let through the apikeys the route accepts" in {
+      new ApikeyAuthModuleTests(this)
+    }
+    "only let through the apikeys the route accepts, legacy plugin through the wrapper" in {
+      new LegacyApikeyAuthModuleTests(this)
+    }
+  }
+}
+
+class PluginsTestSpec extends PluginsTestSpecBase {
 
   s"plugins" should {
     "Allow HTTP Methods" in {
@@ -632,9 +649,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
     "Global Maintenance mode" in {
       new GlobalMaintenanceModeTests(this)
-    }
-    "Apikey auth module" in {
-      new ApikeyAuthModuleTests(this)
     }
     "Apikey quotas" in {
       new ApikeyQuotasTests(this)

@@ -874,8 +874,14 @@ class ApikeyAuthModule extends NgPreRouting {
           case None                       => Left(NgPreRoutingErrorWithResult(forbidden(config))).vfuture
           case Some((username, password)) =>
             env.datastores.apiKeyDataStore.findById(username).flatMap {
+              // the matcher only filters on tags and metadata, so everything that makes an apikey
+              // usable on this route has to be checked here: secret and enabled flag, expiration,
+              // and the entities the apikey is authorized on
               case Some(apikey)
-                  if apikey.clientSecret == password && validApikey(
+                  if apikey.isValid(password) && apikey.isActive() && apikey.authorizedOnServiceOrGroups(
+                    ctx.route.id,
+                    ctx.route.groups
+                  ) && validApikey(
                     apikey,
                     config.matcher.getOrElse(ApiKeyRouteMatcher())
                   ) =>

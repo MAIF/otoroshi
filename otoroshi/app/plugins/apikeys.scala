@@ -1469,13 +1469,13 @@ class ApikeyAuthModule extends PreRouting {
     )
   }
 
-  def validApikey(apikey: ApiKey, password: String, groups: Seq[ServiceGroupIdentifier], config: JsValue): Boolean = {
+  def validApikey(apikey: ApiKey, password: String, service: String, groups: Seq[String], config: JsValue): Boolean = {
 
     import otoroshi.models.SeqImplicits.*
 
     val validSecret            =
       apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password))
-    val validGroups            = apikey.authorizedEntities.intersect(groups).nonEmpty
+    val validEntities          = apikey.authorizedOnServiceOrGroups(service, groups)
     val routing                = ApiKeyRouteMatcher.format.reads(config).getOrElse(ApiKeyRouteMatcher())
     val matchOnRole: Boolean   = Option(routing.oneTagIn)
       .filter(_.nonEmpty)
@@ -1508,6 +1508,9 @@ class ApikeyAuthModule extends PreRouting {
       .exists(keys => apikey.metadata.toSeq.map(_._1).findOne(keys))
 
     val result = Seq(
+      validSecret,
+      validEntities,
+      apikey.isActive(),
       matchOnRole,
       matchAllRoles,
       matchNoneRole,
@@ -1528,9 +1531,15 @@ class ApikeyAuthModule extends PreRouting {
         extractUsernamePassword(auth) match {
           case None                       => forbidden(ctx)
           case Some((username, password)) => {
-            val groups = ctx.descriptor.groups.map(g => ServiceGroupIdentifier(g))
             env.datastores.apiKeyDataStore.findById(username).flatMap {
-              case Some(apikey) if validApikey(apikey, password, groups, ctx.configFor("ApikeyAuthModule")) => {
+              case Some(apikey)
+                  if validApikey(
+                    apikey,
+                    password,
+                    ctx.descriptor.id,
+                    ctx.descriptor.groups,
+                    ctx.configFor("ApikeyAuthModule")
+                  ) => {
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
                 ().future
               }
