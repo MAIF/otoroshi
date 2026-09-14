@@ -1121,6 +1121,153 @@ class UserAnalyticsActivationBlock extends Component {
   }
 }
 
+/**
+ * Lists every event family the user-analytics exporter can store (extensions included) and lets
+ * some of them be excluded. The field holds the excluded projection ids, so a family added later
+ * by a new extension is captured unless someone opts it out.
+ */
+class UserAnalyticsCapturedEvents extends Component {
+  state = { projections: null, error: null };
+
+  componentDidMount() {
+    this.load();
+  }
+
+  componentDidUpdate(prevProps) {
+    const prev = prevProps.rawValue || {};
+    const next = this.props.rawValue || {};
+    if (prev.schema !== next.schema || prev.table_prefix !== next.table_prefix) {
+      clearTimeout(this.timeout);
+      this.timeout = setTimeout(this.load, 300);
+    }
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this.timeout);
+  }
+
+  load = () => {
+    const raw = this.props.rawValue || {};
+    const params = new URLSearchParams();
+    if (raw.schema) params.set('schema', raw.schema);
+    if (raw.table_prefix) params.set('table_prefix', raw.table_prefix);
+    fetch(`/bo/api/proxy/api/analytics/_projections?${params.toString()}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (Array.isArray(res)) {
+          this.setState({ projections: res, error: null });
+        } else {
+          this.setState({ error: (res && res.error) || 'unable to list captured events' });
+        }
+      })
+      .catch((e) => this.setState({ error: e.message }));
+  };
+
+  excluded() {
+    return Array.isArray(this.props.value) ? this.props.value : [];
+  }
+
+  toggle = (id, captured) => {
+    const others = this.excluded().filter((e) => e !== id);
+    this.props.onChange(captured ? others : [...others, id]);
+  };
+
+  render() {
+    const { projections, error } = this.state;
+    const excluded = this.excluded();
+    const known = (projections || []).map((p) => p.id);
+    // ids excluded by a config but whose extension is not installed here anymore
+    const unknown = projections ? excluded.filter((id) => !known.includes(id)) : [];
+    return (
+      <div className="row mb-3">
+        <label className="col-sm-2 col-form-label">{this.props.label}</label>
+        <div className="col-sm-10">
+          <p style={{ color: '#aaa', marginTop: 6 }}>
+            Event families stored by this exporter, including the ones declared by admin
+            extensions. Excluding one saves space: its table is still created and pruned, but
+            nothing new is written to it, so the queries, widgets and alerts built on it stop
+            seeing new data.
+          </p>
+          {error && <div className="alert alert-danger">{error}</div>}
+          {!projections && !error && (
+            <span>
+              <i className="fas fa-spinner fa-spin" /> Loading event families…
+            </span>
+          )}
+          {projections &&
+            projections.map((p) => {
+              const captured = !excluded.includes(p.id);
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'flex-start',
+                    padding: '8px 0',
+                    borderBottom: '1px solid var(--bg-color_level2, rgba(128,128,128,0.2))',
+                  }}
+                >
+                  <SimpleBooleanInput
+                    value={captured}
+                    disabled={this.props.disabled}
+                    onChange={(v) => this.toggle(p.id, v)}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div>
+                      <strong>{p.name}</strong>{' '}
+                      <span className={`badge ${p.core ? 'bg-secondary' : 'bg-info'}`}>
+                        {p.core ? 'core' : 'extension'}
+                      </span>
+                    </div>
+                    {p.description && <div style={{ color: '#aaa' }}>{p.description}</div>}
+                    <div style={{ fontSize: 12, color: '#888', wordBreak: 'break-all' }}>
+                      <code>{p.id}</code>
+                      {p.table && (
+                        <>
+                          {' → '}
+                          <code>{p.table}</code>
+                        </>
+                      )}
+                    </div>
+                    {!captured && p.id === 'otoroshi.gateway-events' && (
+                      <div className="alert alert-warning" style={{ marginTop: 8, marginBottom: 0 }}>
+                        Without gateway events, the core queries and the default dashboards will
+                        stop showing new traffic.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          {unknown.length > 0 && (
+            <div style={{ marginTop: 8, color: '#aaa' }}>
+              Also excluded, but not provided by any installed extension:{' '}
+              {unknown.map((id) => (
+                <span key={id} style={{ marginRight: 8 }}>
+                  <code>{id}</code>{' '}
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-quiet"
+                    title="Remove from the exclusions"
+                    onClick={() => this.toggle(id, true)}
+                  >
+                    <i className="fas fa-times" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+}
+
 const CustomMtlsChooser = ({ onChange, value, rawValue }) => {
   console.log(value);
   if (!['SASL_SSL', 'SSL'].includes(rawValue.securityProtocol)) return null;
@@ -2929,12 +3076,13 @@ const possibleExporterConfigFormValues = {
       'user',
       'password',
       'schema',
-      'table',
+      'table_prefix',
       'pool_size',
       'ssl',
       'retention_days',
       'statement_timeout_ms',
       'rollup_enabled',
+      'excluded_projections',
     ],
     schema: {
       uri: {
@@ -2951,9 +3099,17 @@ const possibleExporterConfigFormValues = {
       user: { type: 'string', props: { label: 'User' } },
       password: { type: 'password', props: { label: 'Password' } },
       schema: { type: 'string', props: { label: 'Schema', placeholder: 'public' } },
-      table: {
+      table_prefix: {
         type: 'string',
-        props: { label: 'Table', placeholder: 'otoroshi_analytics_events' },
+        props: {
+          label: 'Table prefix',
+          placeholder: 'otoroshi_analytics_events',
+          help: 'Gateway events are stored in <schema>.<prefix>, every other event family in <schema>.<prefix>_<suffix>. Changing it starts new, empty tables.',
+        },
+      },
+      excluded_projections: {
+        type: UserAnalyticsCapturedEvents,
+        props: { label: 'Captured events' },
       },
       pool_size: { type: 'number', props: { label: 'Pool size' } },
       ssl: { type: 'bool', props: { label: 'SSL (REQUIRE mode)' } },

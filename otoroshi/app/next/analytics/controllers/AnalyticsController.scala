@@ -6,7 +6,12 @@ import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.PoolOptions
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
-import otoroshi.next.analytics.exporter.{AnalyticsSchema, UserAnalyticsExporterRegistry, UserAnalyticsExporterSettings}
+import otoroshi.next.analytics.exporter.{
+  AnalyticsProjection,
+  AnalyticsSchema,
+  UserAnalyticsExporterRegistry,
+  UserAnalyticsExporterSettings
+}
 import otoroshi.next.analytics.queries.{AnalyticsRuntime, Filters}
 import otoroshi.storage.drivers.reactivepg.pgimplicits.*
 import otoroshi.utils.syntax.implicits.*
@@ -110,6 +115,34 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using 
           val queries = JsArray(reg.all.map(_.toCatalogJson))
           Ok(Json.obj("queries" -> queries, "widget_types" -> widgets)).future
       }
+    }
+  }
+
+  // ----- GET /api/analytics/_projections -------------------------------------
+
+  /**
+   * The event families the user-analytics exporter can store, extensions included, so the exporter
+   * config can list them and let some be excluded. `schema` and `table_prefix` are optional and only
+   * used to tell where each family lands; they default to the exporter defaults.
+   */
+  def projections: Action[AnyContent] = ApiAction.async { ctx =>
+    requireTenantAccess(ctx) { _ =>
+      val defaults = UserAnalyticsExporterSettings()
+      val settings = defaults.copy(
+        schema = ctx.request.getQueryString("schema").filterNot(_.isBlank).getOrElse(defaults.schema),
+        tablePrefix = ctx.request.getQueryString("table_prefix").filterNot(_.isBlank).getOrElse(defaults.tablePrefix)
+      )
+      val core     = AnalyticsProjection.core.map(_.id).toSet
+      val items    = AnalyticsProjection.installed(env).map { p =>
+        Json.obj(
+          "id"          -> p.id,
+          "name"        -> p.name,
+          "description" -> p.description,
+          "core"        -> core.contains(p.id),
+          "table"       -> scala.util.Try(p.table(settings)).toOption.map(JsString.apply).getOrElse(JsNull).asValue
+        )
+      }
+      Ok(JsArray(items)).future
     }
   }
 

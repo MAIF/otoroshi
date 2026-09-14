@@ -52,13 +52,12 @@ class AnalyticsRetentionJob extends Job {
     }
   }
 
-  /** Core first, then whatever the extensions declared — a table nobody prunes grows forever. */
-  private def projections(using env: Env): Seq[AnalyticsProjection] = AnalyticsProjection
-    .resolve(
-      try env.adminExtensions.analyticsProjections()
-      catch { case _: Throwable => Seq.empty[AnalyticsProjection] }
-    )
-    .filter(_.retention)
+  /**
+   * Core first, then whatever the extensions declared — a table nobody prunes grows forever.
+   * Excluded projections are pruned too: what they stored before the exclusion still has to age out.
+   */
+  private def projections(using env: Env): Seq[AnalyticsProjection] =
+    AnalyticsProjection.installed(env).filter(_.retention)
 
   private def deleteOld(s: UserAnalyticsExporterSettings, projections: Seq[AnalyticsProjection])(using
       ec: ExecutionContext

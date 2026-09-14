@@ -134,6 +134,96 @@ class AnalyticsProjectionSpec
     }
   }
 
+  "Excluding projections" should {
+
+    "capture everything when nothing is excluded" in {
+      AnalyticsProjection.capturedRouteOf(AnalyticsProjection.core, settings, gatewayEvent).value.id mustBe
+      "otoroshi.gateway-events"
+    }
+
+    "drop the events of an excluded projection" in {
+      val s = settings.copy(excludedProjections = Seq("otoroshi.fired-alerts"))
+      AnalyticsProjection.capturedRouteOf(AnalyticsProjection.core, s, analyticsAlert) mustBe None
+      AnalyticsProjection.capturedRouteOf(AnalyticsProjection.core, s, gatewayEvent).value.id mustBe
+      "otoroshi.gateway-events"
+    }
+
+    "not hand an excluded family over to the next projection that accepts it" in {
+      // filtering the list before routing would let a greedy extension write gateway events with
+      // its own denormaliser as soon as the core projection is excluded
+      val greedy   = new FakeProjection("ext.greedy", "GatewayEvent")
+      val resolved = AnalyticsProjection.resolve(Seq(greedy))
+      val s        = settings.copy(excludedProjections = Seq("otoroshi.gateway-events"))
+      AnalyticsProjection.capturedRouteOf(resolved, s, gatewayEvent) mustBe None
+    }
+
+    "exclude an extension's projection like a core one" in {
+      val extra    = new FakeProjection("ext.custom", "CloudApimSecurityEvent")
+      val resolved = AnalyticsProjection.resolve(Seq(extra))
+      val s        = settings.copy(excludedProjections = Seq("ext.custom"))
+      AnalyticsProjection.capturedRouteOf(resolved, s, customEvent) mustBe None
+      s.captures(GatewayEventProjection) mustBe true
+    }
+
+    "give every core projection a name to list it under" in {
+      AnalyticsProjection.core.foreach { p =>
+        p.name must not be p.id
+        p.description must not be empty
+      }
+    }
+
+    "fall back to the id for a projection that declares no name" in {
+      new FakeProjection("ext.plain", "x").name mustBe "ext.plain"
+    }
+  }
+
+  "Exporter settings" should {
+
+    "read and write the excluded projections" in {
+      val json   = Json.obj("excluded_projections" -> Json.arr("otoroshi.fired-alerts", "ext.custom"))
+      val parsed = UserAnalyticsExporterSettings.format.reads(json).get
+      parsed.excludedProjections mustBe Seq("otoroshi.fired-alerts", "ext.custom")
+      (UserAnalyticsExporterSettings.format.writes(parsed) \ "excluded_projections").as[Seq[String]] mustBe
+      Seq("otoroshi.fired-alerts", "ext.custom")
+    }
+
+    "exclude nothing when the field is absent" in {
+      UserAnalyticsExporterSettings.format.reads(Json.obj()).get.excludedProjections mustBe Seq.empty
+    }
+
+    "read a config saved before the rename from its `table` field" in {
+      val parsed = UserAnalyticsExporterSettings.format.reads(Json.obj("table" -> "my_events")).get
+      parsed.tablePrefix mustBe "my_events"
+    }
+
+    "prefer `table_prefix` over the legacy `table`" in {
+      // the UI edits `table_prefix` and posts back the stale `table` it was given
+      val json = Json.obj("table" -> "old_events", "table_prefix" -> "new_events")
+      UserAnalyticsExporterSettings.format.reads(json).get.tablePrefix mustBe "new_events"
+    }
+
+    "keep the default table names" in {
+      val parsed = UserAnalyticsExporterSettings.format.reads(Json.obj()).get
+      AnalyticsSchema.fullTable(parsed) mustBe "public.otoroshi_analytics_events"
+      AnalyticsSchema.firedAlertsTable(parsed) mustBe "public.otoroshi_analytics_events_fired_alerts"
+    }
+
+    "still write `table` for nodes that predate the rename" in {
+      val json = UserAnalyticsExporterSettings.format.writes(settings.copy(tablePrefix = "my_events"))
+      (json \ "table_prefix").as[String] mustBe "my_events"
+      (json \ "table").as[String] mustBe "my_events"
+    }
+
+    "derive extension tables from the prefix the way extensions always have" in {
+      val s = settings.copy(schema = "analytics", tablePrefix = "my_events")
+      // what the llm and waf extensions compute today, through the deprecated accessor
+      @annotation.nowarn
+      val legacy = s"${s.schema}.${s.table}_cloudapim_security"
+      s.prefixedTable("cloudapim_security") mustBe "analytics.my_events_cloudapim_security"
+      s.prefixedTable("cloudapim_security") mustBe legacy
+    }
+  }
+
   "The shared column contract" should {
 
     "name the columns the console's filters are written against" in {

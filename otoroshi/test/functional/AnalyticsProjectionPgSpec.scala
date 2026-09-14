@@ -78,7 +78,7 @@ class AnalyticsProjectionPgSpec
     override val id                                              = "test.custom-events"
     override def accepts(event: JsValue): Boolean                =
       (event \ "@type").asOpt[String].contains("CustomSecurityEvent")
-    override def table(s: UserAnalyticsExporterSettings): String = s"${s.schema}.${s.table}_custom"
+    override def table(s: UserAnalyticsExporterSettings): String = s.prefixedTable("custom")
     override def createTableSql(s: UserAnalyticsExporterSettings): String =
       s"""CREATE TABLE IF NOT EXISTS ${table(s)} (
          |${AnalyticsProjection.commonColumns}
@@ -86,7 +86,7 @@ class AnalyticsProjectionPgSpec
          |  raw             JSONB       NOT NULL DEFAULT '{}'::jsonb
          |);""".stripMargin
     override def indexStatements(s: UserAnalyticsExporterSettings): Seq[String] =
-      AnalyticsProjection.commonIndexes(table(s), s"${s.table}_custom")
+      AnalyticsProjection.commonIndexes(table(s), s"${s.tablePrefix}_custom")
     override def insertSql(s: UserAnalyticsExporterSettings): String =
       s"""INSERT INTO ${table(s)} (id, ts, env, tenant, teams, route_id, route_name, apikey_id, user_email, from_ip, verdict, raw)
          |VALUES ($$1, $$2, $$3, $$4, $$5, $$6, $$7, $$8, $$9, $$10, $$11, $$12::jsonb)""".stripMargin

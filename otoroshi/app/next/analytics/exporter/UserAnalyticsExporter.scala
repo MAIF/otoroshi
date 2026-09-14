@@ -28,19 +28,44 @@ case class UserAnalyticsExporterSettings(
     user: String = "otoroshi",
     password: String = "otoroshi",
     schema: String = "public",
-    table: String = "otoroshi_analytics_events",
+    tablePrefix: String = UserAnalyticsExporterSettings.DefaultTablePrefix,
     poolSize: Int = 10,
     ssl: Boolean = false,
     retentionDays: Int = 30,
     statementTimeoutMs: Int = 30000,
-    rollupEnabled: Boolean = false
+    rollupEnabled: Boolean = false,
+    excludedProjections: Seq[String] = Seq.empty
 ) extends Exporter {
+
   override def toJson: JsValue = UserAnalyticsExporterSettings.format.writes(this)
+
+  /**
+   * The name every projection derives its table from.
+   *
+   * It was called `table` because it once named the only table there was, but extensions have been
+   * suffixing it (`<table>_cloudapim_security`, ...) ever since projections existed, so it was a
+   * prefix in all but name. Kept so already compiled extensions keep linking.
+   */
+  @deprecated("use tablePrefix", "18.0.0")
+  def table: String = tablePrefix
+
+  /** `<schema>.<tablePrefix>_<suffix>`, the table naming every non-gateway projection follows. */
+  def prefixedTable(suffix: String): String = s"$schema.${tablePrefix}_$suffix"
+
+  /**
+   * Whether events of that projection are stored.
+   *
+   * An excluded projection still gets its table created and pruned: its queries and widgets keep
+   * answering (with nothing new), and capturing it again is a config change, not a migration.
+   */
+  def captures(projection: AnalyticsProjection): Boolean = !excludedProjections.contains(projection.id)
 }
 
 object UserAnalyticsExporterSettings {
 
   val ActiveMetadataKey: String = "otoroshi:user-analytics:active"
+
+  val DefaultTablePrefix: String = "otoroshi_analytics_events"
 
   val format: Format[UserAnalyticsExporterSettings] = new Format[UserAnalyticsExporterSettings] {
     override def reads(json: JsValue): JsResult[UserAnalyticsExporterSettings] = Try {
@@ -52,12 +77,19 @@ object UserAnalyticsExporterSettings {
         user = json.select("user").asOptString.getOrElse("otoroshi"),
         password = json.select("password").asOptString.getOrElse("otoroshi"),
         schema = json.select("schema").asOptString.getOrElse("public"),
-        table = json.select("table").asOptString.getOrElse("otoroshi_analytics_events"),
+        // configs saved before the rename only carry `table`
+        tablePrefix = json
+          .select("table_prefix")
+          .asOptString
+          .filterNot(_.isEmpty)
+          .orElse(json.select("table").asOptString.filterNot(_.isEmpty))
+          .getOrElse(DefaultTablePrefix),
         poolSize = json.select("pool_size").asOptInt.getOrElse(10),
         ssl = json.select("ssl").asOptBoolean.getOrElse(false),
         retentionDays = json.select("retention_days").asOptInt.getOrElse(30),
         statementTimeoutMs = json.select("statement_timeout_ms").asOptInt.getOrElse(30000),
-        rollupEnabled = json.select("rollup_enabled").asOptBoolean.getOrElse(false)
+        rollupEnabled = json.select("rollup_enabled").asOptBoolean.getOrElse(false),
+        excludedProjections = json.select("excluded_projections").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -72,12 +104,16 @@ object UserAnalyticsExporterSettings {
       "user"                 -> o.user,
       "password"             -> o.password,
       "schema"               -> o.schema,
-      "table"                -> o.table,
+      "table_prefix"         -> o.tablePrefix,
+      // still written for nodes that predate the rename: during a rolling upgrade an older worker
+      // reading only `table` would otherwise fall back to the default and write to the wrong tables
+      "table"                -> o.tablePrefix,
       "pool_size"            -> o.poolSize,
       "ssl"                  -> o.ssl,
       "retention_days"       -> o.retentionDays,
       "statement_timeout_ms" -> o.statementTimeoutMs,
-      "rollup_enabled"       -> o.rollupEnabled
+      "rollup_enabled"       -> o.rollupEnabled,
+      "excluded_projections" -> JsArray(o.excludedProjections.map(JsString.apply))
     )
   }
 
@@ -153,7 +189,7 @@ object AnalyticsSchema {
   private val logger = Logger("otoroshi-user-analytics-schema")
 
   def fullTable(settings: UserAnalyticsExporterSettings): String =
-    s"${settings.schema}.${settings.table}"
+    s"${settings.schema}.${settings.tablePrefix}"
 
   def createTableSql(settings: UserAnalyticsExporterSettings): String = {
     val t = fullTable(settings)
@@ -191,7 +227,7 @@ object AnalyticsSchema {
 
   def indexStatements(settings: UserAnalyticsExporterSettings): Seq[String] = {
     val t      = fullTable(settings)
-    val prefix = s"${settings.table}"
+    val prefix = settings.tablePrefix
     Seq(
       s"CREATE INDEX IF NOT EXISTS idx_${prefix}_ts        ON $t (ts DESC);",
       s"CREATE INDEX IF NOT EXISTS idx_${prefix}_route_ts  ON $t (route_id, ts DESC);",
@@ -210,7 +246,7 @@ object AnalyticsSchema {
    *  the same PG and lifecycle as the events table.
    */
   def firedAlertsTable(settings: UserAnalyticsExporterSettings): String =
-    s"${settings.schema}.${settings.table}_fired_alerts"
+    settings.prefixedTable("fired_alerts")
 
   def createFiredAlertsTableSql(settings: UserAnalyticsExporterSettings): String = {
     val t = firedAlertsTable(settings)
@@ -235,7 +271,7 @@ object AnalyticsSchema {
 
   def firedAlertsIndexStatements(settings: UserAnalyticsExporterSettings): Seq[String] = {
     val t      = firedAlertsTable(settings)
-    val prefix = s"${settings.table}_fa"
+    val prefix = s"${settings.tablePrefix}_fa"
     Seq(
       s"CREATE INDEX IF NOT EXISTS idx_${prefix}_alert_ts  ON $t (alert_id, ts DESC);",
       s"CREATE INDEX IF NOT EXISTS idx_${prefix}_tenant_ts ON $t (tenant, ts DESC);",
@@ -523,13 +559,12 @@ class UserAnalyticsExporter(config: DataExporterConfig)(using ec: ExecutionConte
   /**
    * Core projections first, so an extension can never take over a family the platform already owns.
    */
-  private def projections: Seq[AnalyticsProjection] = AnalyticsProjection.resolve(
-    try env.adminExtensions.analyticsProjections()
-    catch { case _: Throwable => Seq.empty[AnalyticsProjection] }
-  )
+  private def projections: Seq[AnalyticsProjection] = AnalyticsProjection.installed(env)
 
   override def accept(event: JsValue): Boolean =
-    super.accept(event) && projections.exists(_.accepts(event))
+    super.accept(event) && exporter[UserAnalyticsExporterSettings].exists { s =>
+      AnalyticsProjection.capturedRouteOf(projections, s, event).isDefined
+    }
 
   override def start(): Future[Unit] = {
     exporter[UserAnalyticsExporterSettings] match {
@@ -554,7 +589,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(using ec: ExecutionConte
               } else FastFuture.successful(())
             }
             .recover { case e: Throwable =>
-              logger.error(s"[user-analytics-exporter] error while migrating schema for ${s.schema}.${s.table}", e)
+              logger.error(s"[user-analytics-exporter] error while migrating schema for ${AnalyticsSchema.fullTable(s)}", e)
             }
         } else {
           FastFuture.successful(())
@@ -583,8 +618,11 @@ class UserAnalyticsExporter(config: DataExporterConfig)(using ec: ExecutionConte
             byProjection.get(None).foreach { orphans =>
               logger.warn(s"[user-analytics-exporter] ${orphans.size} event(s) matched no projection, dropped")
             }
-            val writes = byProjection.collect { case (Some(projection), evs) if evs.nonEmpty =>
-              insert(pool, s, projection, evs)
+            // `accept` already left excluded projections out, but events buffered before the
+            // exclusion was saved can still arrive here
+            val writes = byProjection.collect {
+              case (Some(projection), evs) if evs.nonEmpty && s.captures(projection) =>
+                insert(pool, s, projection, evs)
             }.toSeq
             Future
               .sequence(writes)

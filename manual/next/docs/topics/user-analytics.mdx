@@ -220,6 +220,24 @@ override def analyticsQueries(): Seq[AnalyticsQuery] = Seq(
 
 Prefix the query id with your extension namespace (`waf.blocked_per_route`, `billing.cost_per_apikey`) — they're fully integrated everywhere queries appear in the UI.
 
+### Choose which events are stored
+
+The exporter does not only store gateway events. Each family of events it knows how to store is a *projection*: gateway events and fired alerts come with Otoroshi, and admin extensions can add their own (LLM usage, WAF events, MCP calls, ...).
+
+The **Captured events** section of the exporter config lists every projection available on your instance, with the table it writes to. Turn one off to stop storing its events and save space. Its table is still created and still pruned by the retention job, so the queries, widgets and alerts built on it keep working, they just stop seeing new data. Turning it back on resumes the writes, with no migration.
+
+Excluded projections are stored by id in the `excluded_projections` field of the exporter config. A projection added later by a newly installed extension is captured unless you exclude it too. The list itself is available at:
+
+```
+GET /api/analytics/_projections?schema=public&table_prefix=otoroshi_analytics_events
+```
+
+### Table naming
+
+All tables derive their name from the **Table prefix** of the exporter: gateway events go to `<schema>.<prefix>`, every other projection to `<schema>.<prefix>_<suffix>` (for instance `<prefix>_fired_alerts`). The field used to be called `table`: configs that only carry `table` are still read, and the exporter keeps writing both fields so nodes that predate the rename keep working during a rolling upgrade. Changing the prefix of an existing exporter starts new, empty tables.
+
+When you write a projection in an extension, derive its table with `settings.prefixedTable("my_suffix")` and prefix its indexes with `settings.tablePrefix`. `settings.table` still works but is deprecated.
+
 ### Bring your own delivery
 
 Alerts go through the standard Otoroshi alert pipeline, so any data exporter type can deliver them: webhooks for PagerDuty / Opsgenie / generic services, mailer for email, Kafka for downstream pipelines, a custom WASM exporter for anything bespoke.

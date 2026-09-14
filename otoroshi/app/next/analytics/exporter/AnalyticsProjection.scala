@@ -1,6 +1,7 @@
 package otoroshi.next.analytics.exporter
 
 import io.vertx.sqlclient.{Tuple => VertxTuple}
+import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.*
 
@@ -22,8 +23,14 @@ import play.api.libs.json.*
  */
 trait AnalyticsProjection {
 
-  /** Stable identifier, namespaced by whoever owns it. Used in logs and to deduplicate. */
+  /** Stable identifier, namespaced by whoever owns it. Used in logs, to deduplicate and to exclude. */
   def id: String
+
+  /** Human readable name, shown in the exporter config where projections can be excluded. */
+  def name: String = id
+
+  /** What these events are and what stops working without them, shown next to [[name]]. */
+  def description: String = ""
 
   /** Whether this projection is the one that stores that event. */
   def accepts(event: JsValue): Boolean
@@ -112,12 +119,35 @@ object AnalyticsProjection {
   def resolve(extras: Seq[AnalyticsProjection], core: Seq[AnalyticsProjection] = core): Seq[AnalyticsProjection] =
     core ++ extras.filterNot(p => core.exists(_.id == p.id))
 
+  /** Core projections plus every installed extension's, in routing order. */
+  def installed(env: Env): Seq[AnalyticsProjection] = resolve(
+    try env.adminExtensions.analyticsProjections()
+    catch { case _: Throwable => Seq.empty[AnalyticsProjection] }
+  )
+
   def routeOf(projections: Seq[AnalyticsProjection], event: JsValue): Option[AnalyticsProjection] =
     projections.find(_.accepts(event))
+
+  /**
+   * The projection that stores that event, if that projection is not excluded.
+   *
+   * Exclusion is applied after routing, never before: filtering the list first would hand an
+   * excluded core family to the next projection that happens to accept it, and it would be written
+   * with a denormaliser that was never meant for it.
+   */
+  def capturedRouteOf(
+      projections: Seq[AnalyticsProjection],
+      settings: UserAnalyticsExporterSettings,
+      event: JsValue
+  ): Option[AnalyticsProjection] =
+    routeOf(projections, event).filter(settings.captures)
 }
 
 object GatewayEventProjection extends AnalyticsProjection {
   override val id                                                     = "otoroshi.gateway-events"
+  override val name                                                   = "Gateway events"
+  override val description                                            =
+    "Every request proxied by Otoroshi. Feeds the core queries, the default dashboards and most alerts."
   override def accepts(event: JsValue): Boolean                       =
     event.select("@type").asOptString.contains("GatewayEvent")
   override def table(s: UserAnalyticsExporterSettings): String        = AnalyticsSchema.fullTable(s)
@@ -131,6 +161,9 @@ object GatewayEventProjection extends AnalyticsProjection {
 
 object FiredAlertProjection extends AnalyticsProjection {
   override val id                                                  = "otoroshi.fired-alerts"
+  override val name                                                = "Fired user analytics alerts"
+  override val description                                         =
+    "Alerts raised by user analytics alert rules. Feeds the alert log; alert delivery is not affected."
   override def accepts(event: JsValue): Boolean                    =
     event.select("@type").asOptString.contains("AlertEvent") &&
       event.select("alertSubcategory").asOptString.contains("user-analytics")

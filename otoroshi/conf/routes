@@ -590,6 +590,7 @@ GET     /api/node/eventstream                                 otoroshi.controlle
 ###  User analytics (PostgreSQL-backed dashboards)  ###
 POST    /api/analytics/_query                                 otoroshi.next.analytics.controllers.AnalyticsController.runQuery
 GET     /api/analytics/_schema                                otoroshi.next.analytics.controllers.AnalyticsController.schema
+GET     /api/analytics/_projections                           otoroshi.next.analytics.controllers.AnalyticsController.projections
 POST    /api/analytics/_test-connection                       otoroshi.next.analytics.controllers.AnalyticsController.testConnection
 POST    /api/analytics/_set-active-exporter/:id               otoroshi.next.analytics.controllers.AnalyticsController.setActiveExporter(id)
 POST    /api/analytics/_migrate                               otoroshi.next.analytics.controllers.AnalyticsController.migrateLegacy
