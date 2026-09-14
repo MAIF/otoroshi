@@ -23,25 +23,114 @@ import {
 
 const MS = 1000;
 
-function formatValue(format, decimals = 0) {
+function formatCurrency(v, decimals, currency) {
+  const code = currency || 'USD';
+  const abs = Math.abs(v);
+  try {
+    if (v === 0) {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: code,
+        maximumFractionDigits: 0,
+      }).format(0);
+    }
+    // per-call prices live far below a dollar: two significant digits rather than two decimals, or
+    // amounts round to 0 and neighbouring axis ticks all read "0.01"
+    if (abs < 1 && decimals == null) {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: code,
+        maximumSignificantDigits: 2,
+      }).format(v);
+    }
+    if (abs >= 1000000) {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: code,
+        notation: 'compact',
+        maximumFractionDigits: 1,
+      }).format(v);
+    }
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: decimals != null ? decimals : 2,
+    }).format(v);
+  } catch (e) {
+    // an unknown currency code must not break the widget
+    return `${v.toLocaleString(undefined, {
+      maximumFractionDigits: decimals != null ? decimals : 2,
+    })} ${code}`;
+  }
+}
+
+/** Fixed decimals when asked; otherwise as many as the magnitude deserves: 1234, 56.19, 0.0389. */
+function numberPrecision(n, decimals) {
+  if (decimals != null) return { maximumFractionDigits: decimals };
+  const abs = Math.abs(n);
+  if (abs === 0 || abs >= 100) return { maximumFractionDigits: 0 };
+  if (abs >= 1) return { maximumFractionDigits: 2 };
+  return { maximumSignificantDigits: 3 };
+}
+
+/**
+ * Wide enough for the longest tick label. Recharts gives the value axis a fixed 60px and clips
+ * anything longer, which currencies and units routinely are.
+ */
+function axisWidth(fmt, values) {
+  const finite = values.filter((v) => typeof v === 'number' && isFinite(v));
+  if (!finite.length) return 60;
+  const candidates = [0, Math.max(...finite), Math.min(...finite), Math.max(...finite) / 3];
+  const longest = Math.max(...candidates.map((v) => String(fmt(v)).length));
+  return Math.min(140, Math.max(40, longest * 7 + 14));
+}
+
+/**
+ * `decimals` is the maximum number of fraction digits, `unit` a suffix appended to plain numbers
+ * (count, number, compact) — "Wh", "gCO2eq", "tokens/s" — and `currency` an ISO code for the
+ * currency format.
+ */
+function formatValue(format, decimals, unit, currency) {
+  const withUnit = (s) => (unit ? `${s} ${unit}` : s);
   return (v) => {
     if (v == null || isNaN(v)) return '-';
+    const n = Number(v);
     switch (format) {
       case 'count':
-        return Number(v).toLocaleString();
+        return withUnit(
+          n.toLocaleString(
+            undefined,
+            decimals != null ? { maximumFractionDigits: decimals } : undefined
+          )
+        );
+      case 'number':
+        return withUnit(n.toLocaleString(undefined, numberPrecision(n, decimals)));
+      case 'compact':
+        return withUnit(
+          new Intl.NumberFormat(undefined, {
+            notation: 'compact',
+            maximumFractionDigits: decimals != null ? decimals : 1,
+          }).format(n)
+        );
+      case 'currency':
+        return formatCurrency(n, decimals, currency);
       case 'rps':
-        return `${Number(v).toFixed(decimals || 2)} req/s`;
+        return `${n.toFixed(decimals || 2)} req/s`;
       case 'ms':
-        return `${Math.round(Number(v))} ms`;
+        return `${Math.round(n)} ms`;
       case 'percent':
-        return `${(Number(v) * 100).toFixed(decimals || 1)} %`;
+        return `${(n * 100).toFixed(decimals || 1)} %`;
       case 'bytes':
-        return formatBytes(Number(v));
+        return formatBytes(n);
       default:
-        return Number(v).toLocaleString();
+        return withUnit(n.toLocaleString());
     }
   };
 }
+
+const formatterOf = (options = {}) =>
+  formatValue(options.format || 'count', options.decimals, options.unit, options.currency);
 
 function formatBytes(b) {
   if (b < 1024) return `${b} B`;
@@ -86,23 +175,30 @@ function toSeries(data) {
 
 /** Pivot list of series ({name, points: [{ts, value}]}) into a flat array of
  *  rows for Recharts (one entry per timestamp, one key per series).
+ *
+ *  Rows are keyed by series index, never by series name: Recharts reads a string dataKey as a
+ *  lookup path, so a series named `gpt-4.1` would be looked up as `gpt-4` → `1` and draw nothing.
+ *  The name is only ever used as a label.
  */
+const seriesKey = (i) => `s${i}`;
+const prevSeriesKey = (i) => `s${i}_prev`;
+
 function pivotForRecharts(series, compareSeries) {
   const allTs = new Set();
   series.forEach((s) => s.points.forEach((p) => allTs.add(p.ts)));
   const sorted = Array.from(allTs).sort((a, b) => a - b);
   const map = sorted.map((ts) => ({ ts }));
-  const idx = (ts) => sorted.indexOf(ts);
-  series.forEach((s) => {
+  const index = new Map(sorted.map((ts, i) => [ts, i]));
+  series.forEach((s, i) => {
     s.points.forEach((p) => {
-      map[idx(p.ts)][s.name] = p.value;
+      map[index.get(p.ts)][seriesKey(i)] = p.value;
     });
   });
   if (compareSeries && compareSeries.length) {
-    compareSeries.forEach((s) => {
-      s.points.forEach((p, i) => {
+    compareSeries.forEach((s, i) => {
+      s.points.forEach((p, j) => {
         // Align previous period points by index, not by absolute timestamp.
-        if (map[i]) map[i][`${s.name}_prev`] = p.value;
+        if (map[j]) map[j][prevSeriesKey(i)] = p.value;
       });
     });
   }
@@ -117,7 +213,15 @@ function TimeseriesChart({ data, compare, options = {}, height, ChartCmp, AreaOr
   const series = toSeries(data);
   const compareSeries = compare ? toSeries(compare.data) : null;
   const flat = pivotForRecharts(series, compareSeries);
-  const fmt = formatValue(options.format || 'count', options.decimals);
+  const fmt = formatterOf(options);
+  const yWidth = axisWidth(
+    fmt,
+    flat.flatMap((row) =>
+      Object.keys(row)
+        .filter((k) => k !== 'ts')
+        .map((k) => row[k])
+    )
+  );
   return (
     <ResponsiveContainer width="100%" height={height || 220}>
       <ChartCmp data={flat}>
@@ -130,6 +234,7 @@ function TimeseriesChart({ data, compare, options = {}, height, ChartCmp, AreaOr
         />
         <YAxis
           tickFormatter={fmt}
+          width={yWidth}
           stroke="currentColor"
           tick={{ fill: 'currentColor', opacity: 0.7 }}
         />
@@ -145,9 +250,11 @@ function TimeseriesChart({ data, compare, options = {}, height, ChartCmp, AreaOr
         {options.legend !== false && <Legend />}
         {series.map((s, i) => (
           <AreaOrLine
-            key={s.name}
+            key={seriesKey(i)}
             type="monotone"
-            dataKey={s.name}
+            dataKey={seriesKey(i)}
+            name={s.name}
+            stackId={options.stacked ? 'stack' : undefined}
             stroke={PALETTE[i % PALETTE.length]}
             fill={PALETTE[i % PALETTE.length]}
             fillOpacity={0.3}
@@ -157,9 +264,11 @@ function TimeseriesChart({ data, compare, options = {}, height, ChartCmp, AreaOr
         {compareSeries &&
           compareSeries.map((s, i) => (
             <AreaOrLine
-              key={`${s.name}_prev`}
+              key={prevSeriesKey(i)}
               type="monotone"
-              dataKey={`${s.name}_prev`}
+              dataKey={prevSeriesKey(i)}
+              name={`${s.name} (previous period)`}
+              stackId={options.stacked ? 'stack_prev' : undefined}
               stroke={PALETTE[i % PALETTE.length]}
               strokeDasharray="3 3"
               fill="none"
@@ -185,7 +294,7 @@ export function AreaWidget(props) {
 
 export function BarWidget({ data, options = {}, height, onItemClick }) {
   const items = (data && data.items) || [];
-  const fmt = formatValue(options.format || 'count', options.decimals);
+  const fmt = formatterOf(options);
   const onClick = onItemClick
     ? (e) => {
         if (e && e.activePayload && e.activePayload[0]) {
@@ -240,7 +349,7 @@ export function BarWidget({ data, options = {}, height, onItemClick }) {
 
 function PieBase({ data, options = {}, height, innerRadius, onItemClick }) {
   const items = (data && data.items) || [];
-  const fmt = formatValue(options.format || 'count', options.decimals);
+  const fmt = formatterOf(options);
   return (
     <ResponsiveContainer width="100%" height={height || 220}>
       <PieChart style={onItemClick ? { cursor: 'pointer' } : undefined}>
@@ -248,7 +357,7 @@ function PieBase({ data, options = {}, height, innerRadius, onItemClick }) {
           data={items}
           dataKey="value"
           nameKey="key"
-          outerRadius="80%"
+          outerRadius="68%"
           innerRadius={innerRadius || 0}
           isAnimationActive={false}
           label={(e) => e.key}
@@ -286,7 +395,7 @@ export function DonutWidget(props) {
 
 export function ScalarWidget({ data, options = {}, height }) {
   const value = data && (data.value != null ? data.value : 0);
-  const fmt = formatValue(options.format || 'count', options.decimals);
+  const fmt = formatterOf(options);
   const color = pickThresholdColor(value, options.thresholds);
   return (
     <div
@@ -318,7 +427,7 @@ export function ScalarWidget({ data, options = {}, height }) {
 export function MetricWidget({ data, options = {}, height }) {
   const value = data && data.value;
   const label = (data && data.label) || options.title || '';
-  const fmt = formatValue(options.format || 'count', options.decimals);
+  const fmt = formatterOf(options);
   const color = pickThresholdColor(value, options.thresholds);
   return (
     <div
@@ -354,17 +463,53 @@ function pickThresholdColor(value, thresholds) {
 // Table
 // ============================================================================
 
+// bootstrap paints table cells with its own body background and emphasis color, which are the light
+// theme's whatever the backoffice theme is: rebind them to the backoffice's variables
+const TABLE_THEME = {
+  '--bs-table-bg': 'transparent',
+  '--bs-table-color': 'var(--text)',
+  '--bs-table-border-color': 'var(--border-color)',
+  '--bs-table-hover-bg': 'var(--bg-color_level3)',
+  '--bs-table-hover-color': 'var(--text)',
+  color: 'var(--text)',
+  marginBottom: 0,
+};
+
+const TABLE_HEADER = {
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
+  background: 'var(--bg-color_level2)',
+  color: 'var(--text-muted)',
+  fontWeight: 600,
+  whiteSpace: 'nowrap',
+  borderBottom: '1px solid var(--border-color-strong)',
+};
+
+function formatCell(v) {
+  if (v == null) return '-';
+  if (typeof v === 'number') return v.toLocaleString(undefined, { maximumFractionDigits: 6 });
+  return String(v);
+}
+
 export function TableWidget({ data, options = {}, height, onItemClick }) {
   const items = (data && (data.items || data.rows)) || [];
-  const fmt = formatValue(options.format || 'count', options.decimals);
+  const fmt = formatterOf(options);
   const cols = items.length > 0 ? Object.keys(items[0]).filter((k) => k !== 'key') : [];
+  // numbers read down a column only when they line up on the right
+  const numeric = cols.filter(
+    (c) => c === 'value' || items.every((row) => row[c] == null || typeof row[c] === 'number')
+  );
+  const align = (c) => (numeric.includes(c) ? { textAlign: 'right' } : undefined);
   return (
     <div style={{ height: height || 220, overflow: 'auto' }}>
-      <table className="table table-sm" style={{ color: 'var(--text)' }}>
+      <table className={`table table-sm${onItemClick ? ' table-hover' : ''}`} style={TABLE_THEME}>
         <thead>
           <tr>
             {cols.map((c) => (
-              <th key={c}>{c}</th>
+              <th key={c} style={{ ...TABLE_HEADER, ...align(c) }}>
+                {c.replace(/_/g, ' ')}
+              </th>
             ))}
           </tr>
         </thead>
@@ -376,7 +521,9 @@ export function TableWidget({ data, options = {}, height, onItemClick }) {
               style={onItemClick ? { cursor: 'pointer' } : undefined}
             >
               {cols.map((c) => (
-                <td key={c}>{c === 'value' ? fmt(row[c]) : String(row[c])}</td>
+                <td key={c} style={align(c)}>
+                  {c === 'value' ? fmt(row[c]) : formatCell(row[c])}
+                </td>
               ))}
             </tr>
           ))}
@@ -391,10 +538,16 @@ export function TableWidget({ data, options = {}, height, onItemClick }) {
 // ============================================================================
 
 export function HeatmapWidget({ data, options = {}, height }) {
-  const xBuckets = (data && data.xBuckets) || [];
+  // columns are time buckets by default; a query can name them instead (`xLabels`) when they are
+  // not instants — hours of the day, days of the week, latency bands…
+  const xLabels = (data && Array.isArray(data.xLabels) && data.xLabels) || null;
+  const xBuckets = xLabels || (data && data.xBuckets) || [];
   const yBuckets = (data && data.yBuckets) || [];
   const values = (data && data.values) || [];
   const h = height || 260;
+  const fmt = formatterOf(options);
+  const columnLabel = (i) => (xLabels ? String(xLabels[i]) : formatTsShort(xBuckets[i]));
+  const columnTitle = (i) => (xLabels ? String(xLabels[i]) : formatTs(xBuckets[i]));
 
   const rows = yBuckets.length;
   const cols = xBuckets.length;
@@ -413,13 +566,30 @@ export function HeatmapWidget({ data, options = {}, height }) {
   const cellH = Math.max(8, Math.floor((h - 30) / rows));
   return (
     <div style={{ height: h, overflow: 'auto', padding: 8 }}>
-      <table style={{ borderCollapse: 'collapse', fontSize: 11, color: 'var(--text)' }}>
+      <table
+        style={{
+          borderCollapse: 'collapse',
+          fontSize: 11,
+          color: 'var(--text)',
+          width: '100%',
+          tableLayout: 'fixed',
+        }}
+      >
         <thead>
           <tr>
-            <th style={{ padding: 2 }}></th>
-            {xBuckets.map((ts, i) => (
-              <th key={i} style={{ padding: 2, fontWeight: 'normal', color: 'var(--text-muted)' }}>
-                {i % Math.ceil(cols / 8) === 0 ? formatTsShort(ts) : ''}
+            <th style={{ padding: 2, width: 72 }}></th>
+            {xBuckets.map((_, i) => (
+              <th
+                key={i}
+                style={{
+                  padding: 2,
+                  fontWeight: 'normal',
+                  color: 'var(--text-muted)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible',
+                }}
+              >
+                {i % Math.ceil(cols / 8) === 0 ? columnLabel(i) : ''}
               </th>
             ))}
           </tr>
@@ -437,9 +607,8 @@ export function HeatmapWidget({ data, options = {}, height }) {
                 return (
                   <td
                     key={x}
-                    title={`${label} @ ${formatTs(xBuckets[x])}: ${v}`}
+                    title={`${label} @ ${columnTitle(x)}: ${fmt(v)}`}
                     style={{
-                      width: 12,
                       height: cellH,
                       background: bg,
                       border: '1px solid var(--bg-color_level1)',

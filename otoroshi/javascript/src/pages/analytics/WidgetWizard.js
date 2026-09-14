@@ -5,11 +5,17 @@ import { fetchSchema } from './service';
 
 const FORMAT_OPTIONS = [
   { value: 'count', label: 'count' },
+  { value: 'number', label: 'number (with decimals)' },
+  { value: 'compact', label: 'compact (1.2K, 3.4M)' },
+  { value: 'currency', label: 'currency' },
   { value: 'rps', label: 'requests/sec' },
   { value: 'ms', label: 'milliseconds' },
   { value: 'bytes', label: 'bytes' },
   { value: 'percent', label: 'percent (0–1)' },
 ];
+
+// formats a unit suffix makes sense on
+const FORMATS_WITH_UNIT = ['count', 'number', 'compact'];
 
 const SHAPE_TO_TYPES = {
   timeseries: ['line', 'area'],
@@ -38,6 +44,10 @@ function inferDefaultFormat(queryId) {
   if (queryId === 'error_rate_ts') return 'percent';
   if (queryId === 'traffic_in_out_ts') return 'bytes';
   if (queryId.includes('duration') || queryId.includes('overhead')) return 'ms';
+  // extension queries follow the same naming habits
+  if (queryId.includes('cost') || queryId.includes('spend')) return 'currency';
+  if (queryId.includes('latency')) return 'ms';
+  if (queryId.includes('error_rate') || queryId.includes('hit_rate')) return 'percent';
   return 'count';
 }
 
@@ -59,6 +69,11 @@ export class WidgetWizard extends Component {
       width: init.width || 4,
       height: init.height || 2,
       format: (init.options && init.options.format) || 'count',
+      decimals: init.options && init.options.decimals != null ? init.options.decimals : '',
+      unit: (init.options && init.options.unit) || '',
+      currency: (init.options && init.options.currency) || '',
+      // options the wizard does not edit (stacked, legend, thresholds…) must survive an edit
+      otherOptions: init.options || {},
       paramValues: { ...(init.params || {}) },
     };
   }
@@ -84,9 +99,21 @@ export class WidgetWizard extends Component {
       width: s.width,
       height: s.height,
       params: { ...(s.paramValues || {}) },
-      options: { format: s.format || 'count' },
+      options: this.optionsOf(s),
     };
     this.props.onChange(widget);
+  };
+
+  optionsOf = (s) => {
+    const options = { ...(s.otherOptions || {}), format: s.format || 'count' };
+    delete options.decimals;
+    delete options.unit;
+    delete options.currency;
+    if (s.decimals !== '' && s.decimals != null && !isNaN(Number(s.decimals)))
+      options.decimals = Number(s.decimals);
+    if (s.unit && FORMATS_WITH_UNIT.includes(options.format)) options.unit = s.unit;
+    if (s.currency && options.format === 'currency') options.currency = s.currency.toUpperCase();
+    return options;
   };
 
   set = (patch) => {
@@ -126,8 +153,20 @@ export class WidgetWizard extends Component {
   }
 
   render() {
-    const { schema, loading, title, queryId, type, width, height, format, paramValues } =
-      this.state;
+    const {
+      schema,
+      loading,
+      title,
+      queryId,
+      type,
+      width,
+      height,
+      format,
+      decimals,
+      unit,
+      currency,
+      paramValues,
+    } = this.state;
     if (loading) {
       return (
         <div style={{ padding: 24, color: 'var(--text-muted)' }}>
@@ -215,6 +254,43 @@ export class WidgetWizard extends Component {
                 onChange={(val) => this.set({ format: val || 'count' })}
               />
             </Field>
+
+            <Field
+              label="Decimals"
+              hint="Maximum number of fraction digits (leave empty for the format's default)"
+            >
+              <input
+                type="number"
+                min="0"
+                max="10"
+                className="form-control"
+                value={decimals}
+                onChange={(e) => this.set({ decimals: e.target.value })}
+              />
+            </Field>
+
+            {FORMATS_WITH_UNIT.includes(format) && (
+              <Field label="Unit" hint="Suffix appended to values, e.g. Wh, gCO2eq, tokens/s">
+                <input
+                  type="text"
+                  className="form-control"
+                  value={unit}
+                  onChange={(e) => this.set({ unit: e.target.value })}
+                />
+              </Field>
+            )}
+
+            {format === 'currency' && (
+              <Field label="Currency" hint="ISO 4217 code, USD by default">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="USD"
+                  value={currency}
+                  onChange={(e) => this.set({ currency: e.target.value })}
+                />
+              </Field>
+            )}
 
             {(selectedQuery.params || []).map((p) => (
               <Field key={p.name} label={`${p.name} (${p.kind})`} hint={p.description}>
