@@ -72,7 +72,7 @@ class MandatoryConsumerPreset extends NgPresetPlugin {
 
   override def expand(ctx: NgPresetPluginContext): Seq[NgPluginInstance] = {
     val config = MandatoryConsumerPresetConfig.format.reads(ctx.config).getOrElse(MandatoryConsumerPresetConfig.default)
-    Seq(
+    var plugins = Seq(
       NgPluginInstance(
         plugin = "cp:otoroshi.next.plugins.ApikeyCalls",
         config = NgPluginInstanceConfig(
@@ -98,8 +98,10 @@ class MandatoryConsumerPreset extends NgPresetPlugin {
             validateAccess = Some(0.02)
           )
         )
-      ),
-      NgPluginInstance(
+      )
+    )
+    if (config.ref.isDefined) {
+      plugins = plugins :+ NgPluginInstance(
         plugin = "cp:otoroshi.next.plugins.OIDCJwtVerifier",
         config = NgPluginInstanceConfig(
           OIDCJwtVerifierConfig(
@@ -117,15 +119,16 @@ class MandatoryConsumerPreset extends NgPresetPlugin {
             validateAccess = Some(0.03)
           )
         )
-      ),
-      NgPluginInstance(
-        plugin = "cp:otoroshi.next.plugins.NgExpectedConsumer",
-        pluginIndex = Some(
-          PluginIndex(
-            validateAccess = Some(999.0)
-          )
+      )
+    }
+    plugins = plugins :+ NgPluginInstance(
+      plugin = "cp:otoroshi.next.plugins.NgExpectedConsumer",
+      pluginIndex = Some(
+        PluginIndex(
+          validateAccess = Some(999.0)
         )
       )
     )
+    plugins
   }
 }
