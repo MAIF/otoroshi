@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "18.0.0-preview6",
+    "version" : "18.0.0-preview7",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:35097",
+    "url" : "http://otoroshi-api.oto.tools:35217",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
