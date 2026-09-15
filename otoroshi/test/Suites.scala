@@ -185,6 +185,11 @@ class ApiPlanMtlsTests
       new ApiPlanMtlsSpec(Configurations.InMemoryConfiguration)
     )
 
+class FakeTrustManagerVulnTests
+    extends Suites(
+      new FakeTrustManagerVulnSpec(Configurations.InMemoryConfiguration)
+    )
+
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()
