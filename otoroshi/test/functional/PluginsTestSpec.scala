@@ -82,6 +82,24 @@ class ApikeyAuthModuleSpec extends PluginsTestSpecBase {
   }
 }
 
+// the otoroshi info. token alone: sbt "testOnly functional.OtoroshiInfoTokenSpec"
+class OtoroshiInfoTokenSpec extends PluginsTestSpecBase {
+  s"Otoroshi info. token" should {
+    "be generated for a public call" in {
+      new OtoroshiInfoTokenTests(this).default()
+    }
+    "be generated for an apikey call" in {
+      new OtoroshiInfoTokenTests(this).withApikeys()
+    }
+    "be generated for a user call" in {
+      new OtoroshiInfoTokenTests(this).withUser()
+    }
+    "name its signing keypair in the kid header" in {
+      new OtoroshiInfoTokenTests(this).withRsaKeyPair()
+    }
+  }
+}
+
 class PluginsTestSpec extends PluginsTestSpecBase {
 
   s"plugins" should {
@@ -456,15 +474,6 @@ class PluginsTestSpec extends PluginsTestSpecBase {
     }
     "Defer Responses" in {
       new DeferResponsesTests(this)
-    }
-    "Otoroshi info. token" in {
-      new OtoroshiInfoTokenTests(this).default()
-    }
-    "Otoroshi info. token with apikeys" in {
-      new OtoroshiInfoTokenTests(this).withApikeys()
-    }
-    "Otoroshi info. token with user" in {
-      new OtoroshiInfoTokenTests(this).withUser()
     }
     "Websocket json format validator (drop)" in {
       new WebsocketJsonFormatValidatorTests(this).drop()

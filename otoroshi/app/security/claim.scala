@@ -6,7 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.env.Env
 import otoroshi.models.AlgoSettings
 import org.joda.time.DateTime
-import otoroshi.utils.syntax.implicits.BetterJsValue
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.Logger
 import play.api.libs.json.*
 
@@ -69,10 +69,13 @@ object OtoroshiClaim {
   def serialize(claim: OtoroshiClaim, jwtSettings: AlgoSettings)(using env: Env): String = {
     val algorithm = jwtSettings.asAlgorithm(otoroshi.models.OutputMode).get
     // Here we bypass JWT lib limitations ...
-    val header    = Json.obj(
-      "typ" -> "JWT",
-      "alg" -> algorithm.getName
-    )
+    // the kid lets a verifier pick the right key out of a multi-key jwks (it is the certificate id, as exposed there)
+    val header    = Json
+      .obj(
+        "typ" -> "JWT",
+        "alg" -> algorithm.getName
+      )
+      .applyOnWithOpt(jwtSettings.keyId)((h, id) => h ++ Json.obj("kid" -> id))
     val payload   = claim.payload
     val signed    = sign(algorithm, header, payload)
     if (logger.isDebugEnabled) logger.debug(s"signed: $signed")

@@ -1,6 +1,8 @@
 package plugins
 
-import functional.PluginsTestSpec
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import functional.PluginsTestSpecBase
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models.*
@@ -8,14 +10,92 @@ import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.*
 import otoroshi.security.IdGenerator
+import otoroshi.ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
 import play.api.libs.json.*
 
+import java.security.interfaces.RSAPublicKey
 import scala.concurrent.duration.DurationInt
 
-class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
+class OtoroshiInfoTokenTests(parent: PluginsTestSpecBase) {
   import parent.*
+
+  // the token is signed with the keypair of a certificate: its header must name that certificate in `kid`,
+  // which is also the key id otoroshi exposes in its jwks, so that a verifier can pick the right key
+  def withRsaKeyPair() = {
+    val cert = env.pki
+      .genSelfSignedCert(GenCsrQuery(hosts = Seq("info-token-signer.oto.tools"), subject = Some("CN=info-token-signer")))
+      .futureValue
+      .toOption
+      .get
+      .toCert
+      .copy(id = s"info-token-signer-${IdGenerator.token(8)}", name = "info-token-signer")
+      .enrich()
+    cert.save()(using env.otoroshiExecutionContext, env).futureValue
+
+    // the certificate store is fed from the proxy state, which syncs periodically
+    def certInStore: Boolean = DynamicSSLEngineProvider.certificates.contains(cert.id)
+    var waited               = 0
+    while (!certInStore && waited < 30) {
+      await(500.millis)
+      waited += 1
+    }
+    withClue(s"certificate ${cert.id} never showed up in the store ") {
+      certInStore mustBe true
+    }
+
+    val route = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OtoroshiInfos],
+          config = NgPluginInstanceConfig(
+            NgOtoroshiInfoConfig
+              .apply(
+                secComVersion = SecComInfoTokenVersionLatest,
+                secComTtl = 30.seconds,
+                headerName = Some("foo"),
+                addFields = None,
+                projection = Json.obj(),
+                algo = RSAKPAlgoSettings(256, cert.id)
+              )
+              .json
+              .as[JsObject]
+          )
+        )
+      ),
+      id = IdGenerator.uuid
+    ).futureValue
+
+    val resp = ws
+      .url(s"http://127.0.0.1:$port/api")
+      .withHttpHeaders(
+        "Host" -> route.frontend.domains.head.domain
+      )
+      .get()
+      .futureValue
+
+    resp.status mustBe Status.OK
+
+    val rawToken = getInHeader(resp, "foo").get
+    val header   = Json.parse(ApacheBase64.decodeBase64(rawToken.split("\\.")(0))).as[JsObject]
+    header.selectAsString("alg") mustBe "RS256"
+    header.selectAsString("kid") mustBe cert.id
+
+    // the kid designates the key that actually signed the token
+    val decoded = JWT
+      .require(Algorithm.RSA256(cert.cryptoKeyPair.getPublic.asInstanceOf[RSAPublicKey], null))
+      .build()
+      .verify(rawToken)
+    decoded.getKeyId mustBe cert.id
+
+    deleteOtoroshiRoute(route).futureValue
+    env.datastores.certificatesDataStore.delete(cert.id)(using env.otoroshiExecutionContext, env).futureValue
+  }
 
   def withUser() = {
     val authenticationModule = BasicAuthModuleConfig(
@@ -138,6 +218,10 @@ class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
     val tokenBody = getInHeader(resp, "foo").get.split("\\.")(1)
     Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "Otoroshi"
     Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("access_type") mustBe "public"
+
+    // a shared secret has no key id: the header stays as it was
+    val tokenHeader = Json.parse(ApacheBase64.decodeBase64(getInHeader(resp, "foo").get.split("\\.")(0))).as[JsObject]
+    tokenHeader.keys mustBe Set("typ", "alg")
 
     deleteOtoroshiRoute(route).futureValue
   }
