@@ -108,6 +108,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   KubernetesClientNotifications.startIfNeeded(env)
 
+  // a saved cert only reaches DynamicSSLEngineProvider.certificates with the next proxy state sync, but the jobs
+  // call the api server right after building their client, so the cert has to be usable right away
+  private def saveAndUseRightAway(cert: Cert): Unit = {
+    DynamicSSLEngineProvider.autogenCerts.put(cert.id, cert)
+    cert.save()(using ec, env)
+  }
+
   config.caCert.foreach { cert =>
     try {
       val decoded = {
@@ -126,8 +133,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         c.id == "kubernetes-ca-cert"
       } match {
         case Some((k, c)) if c.contentHash == caCert.contentHash => ()
-        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(using ec, env)
-        case _                                                   => caCert.enrich().save()(using ec, env)
+        case _                                                   => saveAndUseRightAway(caCert.enrich())
       }
     } catch {
       case e: Throwable => logger.error("error while reading ca-cert", e)
@@ -141,8 +147,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         c.id == "kubernetes-client-cert"
       } match {
         case Some((k, c)) if c.contentHash == caCert.contentHash => ()
-        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(using ec, env)
-        case _                                                   => caCert.enrich().save()(using ec, env)
+        case _                                                   => saveAndUseRightAway(caCert.enrich())
       }
     } catch {
       case e: Throwable => logger.error("error while reading kubernetes-client-cert", e)

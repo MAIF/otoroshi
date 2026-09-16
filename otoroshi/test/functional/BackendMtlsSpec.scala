@@ -6,7 +6,9 @@ import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, HttpReque
 import org.apache.pekko.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import otoroshi.env.Env
 import otoroshi.next.models.{NgTarget, NgTlsConfig}
+import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
 import otoroshi.security.IdGenerator
+import otoroshi.ssl.SSLImplicits.*
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
 import play.api.Configuration
 import play.api.libs.json.*
@@ -231,6 +233,35 @@ class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
     "L. a client cert shared with a non trustAll target does not inherit its context" in {
       call(domainH).status mustBe 502
       call(domainL).status mustBe 200
+    }
+
+    // the kubernetes jobs call the api server right after building their client, while the api server CA (read
+    // from the service account ca.crt and saved as the `kubernetes-ca-cert` certificate) is not yet in the proxy state
+    "M. the kubernetes client trusts the api server CA from its very first call" in {
+      implicit val e: Env = env
+      val ttl             = 3650.days
+      // a CA unknown to otoroshi, like the one of a real cluster
+      val kubeCa          = FakeKeyStore.createCA("CN=Otoroshi Test Kubernetes CA, O=Otoroshi Test", ttl, None, None)(using e)
+      val apiServerCert   = FakeKeyStore.createCertificateFromCA("localhost", ttl, None, None, kubeCa.cert, kubeCa.caChain, kubeCa.keyPair)(using e)
+      val apiServer       = new PlainTlsBackend(apiServerCert.key, Array(apiServerCert.cert))
+      try {
+        val endpoint = s"https://localhost:${apiServer.port}"
+        val config   = KubernetesConfig
+          .theConfig(Json.obj("endpoint" -> endpoint))(using e, e.otoroshiExecutionContext)
+          .copy(
+            endpoint = endpoint,
+            caCert = Some(kubeCa.cert.asPem),
+            trust = false,
+            token = Some("token"),
+            userPassword = None,
+            clientCert = None,
+            clientCertKey = None
+          )
+        val client   = new KubernetesClient(config, e)
+        client.fetchConfigMap("kube-system", "coredns").futureValue mustBe defined
+      } finally {
+        apiServer.stop()
+      }
     }
 
     "shutdown" in {
