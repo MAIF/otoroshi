@@ -2948,7 +2948,9 @@ class SwappableInMemoryDataStores(
     _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     redis.stop()
-    cancelRef.get().cancel()
+    // only scheduled when a backup file is configured
+    val cancellable = cancelRef.get()
+    if (cancellable != null) cancellable.cancel()
     dbPathOpt.foreach { dbPath =>
       // AWAIT: valid
       Await.result(writeStateToDisk(dbPath)(using actorSystem.dispatcher, materializer), 10.seconds)

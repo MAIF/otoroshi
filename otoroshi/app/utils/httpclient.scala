@@ -727,6 +727,19 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
     .maximumSize(1000)
     .build()
 
+  // the per-call SSLContext depends on the whole trust configuration, not only on the client certs: targets
+  // sharing the same client certs (or having none) but trusting different CAs, or not all of them trusting
+  // everything, must not share a context
+  private[utils] def singleSslContextCacheKey(
+      clientCerts: Seq[Cert],
+      trustedCerts: Seq[Cert],
+      trustAll: Boolean
+  ): String = {
+    val clientKey  = clientCerts.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
+    val trustedKey = trustedCerts.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
+    s"client=$clientKey|trusted=$trustedKey|trustAll=$trustAll"
+  }
+
   private[utils] def createSSLEngine(loose: Boolean, clientAuth: Boolean, sslContext: SSLContext): (String, Int) => SSLEngine =
     (host, port) => {
       val engine = sslContext.createSSLEngine(host, port)
@@ -756,7 +769,9 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
     // https://github.com/akka/akka/blob/master/akka-stream/src/main/scala/com/typesafe/sslconfig/akka/PekkoSSLConfig.scala#L83-L109
     // https://github.com/lightbend/ssl-config/blob/master/ssl-config-core/src/main/scala/com/typesafe/sslconfig/ssl/SSLContextBuilder.scala#L99-L127
     clientCerts match {
-      case certs if (clientCerts ++ trustedCerts).isEmpty  => {
+      // trustAll needs a dedicated context even without any cert, the global client context does not trust
+      // everything (ie. a cluster worker calling its leader with mtls.trustAll and no certs)
+      case certs if (clientCerts ++ trustedCerts).isEmpty && !trustAll => {
         val currentSslContext = DynamicSSLEngineProvider.currentClient
         if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
           lastSslContext.set(currentSslContext)
@@ -781,17 +796,17 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
           )
         }
       }
-      case certs if (clientCerts ++ trustedCerts).nonEmpty => {
+      case certs if (clientCerts ++ trustedCerts).nonEmpty || trustAll => {
         if (logger.isDebugEnabled)
           logger.debug(
-            s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates"
+            s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates (trustAll: $trustAll)"
           )
         // logger.info(s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates: ${Json.prettyPrint(Json.obj(
         //   "clientCerts" -> JsArray(clientCerts.map(c => JsString(c.name + " - " + c.enrich().certificates.head.getSubjectDN.getName))),
         //   "trustedCerts" -> JsArray(trustedCerts.map(c => JsString(c.name + " - " + c.enrich().certificates.head.getSubjectDN.getName))),
         // ))}")
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
-          val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
+          val cacheKey = singleSslContextCacheKey(certs, trustedCerts, trustAll)
           singleSslContextCache.getOrElse(
             cacheKey,
             DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, trustAll, client = true, env)
@@ -894,7 +909,8 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
           .filterNot(h => h.lowercaseName() == "content-type")
       )
     clientCerts match {
-      case certs if (clientCerts ++ trustedCerts).isEmpty  => {
+      // see executeRequest: trustAll needs a dedicated context even without any cert
+      case certs if (clientCerts ++ trustedCerts).isEmpty && !trustAll => {
         val currentSslContext = DynamicSSLEngineProvider.currentClient
         if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
           lastSslContext.set(currentSslContext)
@@ -914,11 +930,13 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
           settings = customizer(ClientConnectionSettings(system))
         )(using mat)
       }
-      case certs if (clientCerts ++ trustedCerts).nonEmpty => {
+      case certs if (clientCerts ++ trustedCerts).nonEmpty || trustAll => {
         if (logger.isDebugEnabled)
-          logger.debug(s"Calling ws ${request.uri} with mTLS context of ${certs.size} certificates")
+          logger.debug(
+            s"Calling ws ${request.uri} with mTLS context of ${certs.size} client certificates and ${trustedCerts.size} trusted certificates (trustAll: $trustAll)"
+          )
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
-          val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
+          val cacheKey = singleSslContextCacheKey(certs, trustedCerts, trustAll)
           singleSslContextCache.getOrElse(
             cacheKey,
             DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, trustAll, client = true, env)

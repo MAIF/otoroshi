@@ -35,8 +35,10 @@ import scala.util.Failure
  * boot a minimal in-memory Otoroshi once and drive the outgoing mТLS for real. Each lever is isolated as
  * a real accept(200)/reject(502) pair.
  *
- * Isolation note: Otoroshi caches the outgoing per-call SSLContext keyed ONLY by the client-cert id
- * (`app/utils/httpclient.scala`), so each distinct trust configuration uses its OWN client cert.
+ * Isolation note: Otoroshi caches the outgoing per-call SSLContext (`app/utils/httpclient.scala`). Its key
+ * used to be the client-cert ids only, hence one client cert per trust configuration in cases A to I.
+ * Cases K and L deliberately reuse the client certs of I and H with another trust configuration to check
+ * that the key now covers the whole trust configuration.
  */
 class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
 
@@ -61,6 +63,9 @@ class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
   private val domainG  = "mtls-plain-default.oto.tools" // untrusted server, default (non-mTLS)    -> 502
   private val domainH  = "mtls-plain-notrust.oto.tools" // untrusted server, mTLS, no trust config -> 502
   private val domainI  = "mtls-plain-trustall.oto.tools"// untrusted server, mTLS, trustAll        -> 200
+  private val domainJ  = "mtls-plain-trustall-nocert.oto.tools" // untrusted server, mTLS, no cert at all, trustAll -> 200
+  private val domainK  = "mtls-plain-notrust-cert-i.oto.tools"  // untrusted server, mTLS, client cert of I, no trustAll -> 502
+  private val domainL  = "mtls-plain-trustall-cert-h.oto.tools" // untrusted server, mTLS, client cert of H, trustAll -> 200
 
   private val clientAId  = "mtls-client-a"
   private val clientBId  = "mtls-client-b"
@@ -141,6 +146,9 @@ class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
     mkRoute(domainG, "localhost", pp, NgTlsConfig()) // default (mTLS disabled)
     mkRoute(domainH, "localhost", pp, NgTlsConfig(certs = Seq(clientHId), enabled = true))
     mkRoute(domainI, "localhost", pp, NgTlsConfig(certs = Seq(clientIId), enabled = true, trustAll = true))
+    mkRoute(domainJ, "localhost", pp, NgTlsConfig(certs = Seq.empty, enabled = true, trustAll = true))
+    mkRoute(domainK, "localhost", pp, NgTlsConfig(certs = Seq(clientIId), enabled = true))
+    mkRoute(domainL, "localhost", pp, NgTlsConfig(certs = Seq(clientHId), enabled = true, trustAll = true))
 
     await(1.second)
   }
@@ -207,6 +215,22 @@ class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
 
     "I. trustAll accepts an untrusted backend server cert on the mTLS path" in {
       call(domainI).status mustBe 200
+    }
+
+    // what a cluster worker does when calling its leader with the default helm values
+    // (mtls.enabled + mtls.trustAll, no cert): E already cached a context without any client cert
+    "J. trustAll accepts an untrusted backend server cert on the mTLS path without any cert" in {
+      call(domainJ).status mustBe 200
+    }
+
+    "K. a client cert shared with a trustAll target does not inherit its trustAll context" in {
+      call(domainI).status mustBe 200
+      call(domainK).status mustBe 502
+    }
+
+    "L. a client cert shared with a non trustAll target does not inherit its context" in {
+      call(domainH).status mustBe 502
+      call(domainL).status mustBe 200
     }
 
     "shutdown" in {
