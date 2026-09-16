@@ -1664,16 +1664,11 @@ object DynamicSSLEngineProvider {
     keyStore.load(null, null)
     certificates.foreach {
       case cert if cert.ca                      => {
-        cert.certificate.foreach { certificate =>
-          val id = "ca-" + certificate.getSerialNumber.toString(16)
-          if (!keyStore.containsAlias(id)) {
-            keyStore.setCertificateEntry(id, certificate)
-          }
-        }
+        // a CA certificate can be a bundle of several CAs to trust, like a kubernetes service account `ca.crt`
+        cert.certificates.foreach(certificate => addTrustedCertificateEntry(keyStore, "ca-", certificate))
       }
       case cert if cert.privateKey.trim.isEmpty => {
         cert.certificate.foreach { certificate =>
-          val id                                     = "trusted-" + certificate.getSerialNumber.toString(16)
           val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.cleanChain)
           val domain                                 = Try {
             certificateChain.head.maybeDomain.getOrElse(cert.domain)
@@ -1688,6 +1683,8 @@ object DynamicSSLEngineProvider {
             .foreach(name => {
               keyStore.setCertificateEntry(name, certificate)
             })
+          // every certificate of the pem is trusted, not only the first one (whose domain alias may also be taken)
+          certificateChain.foreach(c => addTrustedCertificateEntry(keyStore, "trusted-", c))
         }
       }
       case cert                                 => {
@@ -1725,12 +1722,7 @@ object DynamicSSLEngineProvider {
                     }
                 }
 
-                certificateChain.tail.foreach { cert =>
-                  val id = "ca-" + cert.getSerialNumber.toString(16)
-                  if (!keyStore.containsAlias(id)) {
-                    keyStore.setCertificateEntry(id, cert)
-                  }
-                }
+                certificateChain.tail.foreach(c => addTrustedCertificateEntry(keyStore, "ca-", c))
               }
             }
           } match {
@@ -1741,6 +1733,21 @@ object DynamicSSLEngineProvider {
       }
     }
     keyStore
+  }
+
+  // A serial number is only unique per issuer (older kubeadm versions even created every cluster CA with the serial
+  // number 0), so when another certificate already holds the serial based alias, its fingerprint is appended.
+  private def addTrustedCertificateEntry(keyStore: KeyStore, prefix: String, certificate: X509Certificate): Unit = {
+    val alias    = prefix + certificate.getSerialNumber.toString(16)
+    val existing = keyStore.getCertificate(alias)
+    if (existing == null) {
+      keyStore.setCertificateEntry(alias, certificate)
+    } else if (existing != certificate) {
+      val uniqueAlias = alias + "-" + DigestUtils.sha256Hex(certificate.getEncoded)
+      if (!keyStore.containsAlias(uniqueAlias)) {
+        keyStore.setCertificateEntry(uniqueAlias, certificate)
+      }
+    }
   }
 
   // Picks the strict (NewFakeTrustManager) vs legacy (FakeTrustManager) server-cert behaviour based on the
@@ -2979,18 +2986,28 @@ class NewFakeTrustManager(managers: Seq[X509TrustManager]) extends FakeTrustMana
   // configured trust manager validates it; otherwise the validation error is propagated. Combined with
   // the engine's setWantClientAuth / setNeedClientAuth, this gives standard mTLS semantics for the client
   // side: Want = cert optional but validated if presented, Need = cert mandatory and validated.
+  // When several managers reject the chain, every error is reported, in the managers order: the first manager is
+  // the otoroshi truststore, whose error usually explains the rejection (hostname, expiry, signature...) far better
+  // than the jdk one tried last ("No trusted certificate found").
   private def requireTrusted(what: String)(check: X509TrustManager => Unit): Unit = {
-    var lastError: Throwable = null
-    val trusted              = managers.exists { m =>
+    var errors: List[Throwable] = Nil
+    val trusted                 = managers.exists { m =>
       try { check(m); true }
-      catch { case e: Throwable => lastError = e; false }
+      catch { case e: Throwable => errors = e :: errors; false }
     }
     if (!trusted) {
-      lastError match {
-        case null                    =>
+      errors.reverse match {
+        case Nil                              =>
           throw new CertificateException(s"no configured trust manager could validate the $what certificate chain")
-        case e: CertificateException => throw e
-        case e                       => throw new CertificateException(s"$what certificate chain not trusted", e)
+        case (e: CertificateException) :: Nil => throw e
+        case all @ (first :: others)          =>
+          val messages = all.zipWithIndex.map { case (e, idx) => s"(${idx + 1}) ${e.getMessage}" }.mkString(" ")
+          val error    = new CertificateException(
+            s"$what certificate chain not trusted by any trust manager: $messages",
+            first
+          )
+          others.foreach(error.addSuppressed)
+          throw error
       }
     }
   }

@@ -9,16 +9,25 @@ import otoroshi.next.models.{NgTarget, NgTlsConfig}
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.SSLImplicits.*
-import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
+import otoroshi.ssl.pki.models.GenCertResponse
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore, NewFakeTrustManager}
 import play.api.Configuration
 import play.api.libs.json.*
 import play.api.libs.ws.WSResponse
 
+import java.io.FileInputStream
 import java.net.Socket
-import java.security.cert.X509Certificate
+import java.security.cert.{CertificateException, X509Certificate}
 import java.security.{KeyStore, PrivateKey, SecureRandom}
 import java.util.concurrent.ConcurrentHashMap
-import javax.net.ssl.{KeyManagerFactory, SSLContext, SSLEngine, TrustManagerFactory, X509ExtendedTrustManager}
+import javax.net.ssl.{
+  KeyManagerFactory,
+  SSLContext,
+  SSLEngine,
+  TrustManagerFactory,
+  X509ExtendedTrustManager,
+  X509TrustManager
+}
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters.*
@@ -41,6 +50,9 @@ import scala.util.Failure
  * used to be the client-cert ids only, hence one client cert per trust configuration in cases A to I.
  * Cases K and L deliberately reuse the client certs of I and H with another trust configuration to check
  * that the key now covers the whole trust configuration.
+ *
+ * Cases N to R trust the backend server through a PEM without private key used as `trustedCerts`, like the
+ * kubernetes client does with the service account `ca.crt`, which can hold several CAs.
  */
 class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
 
@@ -128,13 +140,6 @@ class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
     val plainResp = FakeKeyStore.createSelfSignedCertificate("localhost", ttl, None, None)(using e)
     plainBackend = new PlainTlsBackend(plainResp.key, Array(plainResp.cert))
 
-    def mkRoute(domain: String, hostname: String, backendPort: Int, tls: NgTlsConfig): Unit =
-      createLocalRoute(
-        rawDomain = Some(domain),
-        target = Some(NgTarget(id = "mtls-backend", hostname = hostname, port = backendPort, tls = true, tlsConfig = tls)),
-        id = IdGenerator.uuid
-      ).futureValue
-
     val bp = backend.port
     val pp = plainBackend.port
 
@@ -153,6 +158,41 @@ class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
     mkRoute(domainL, "localhost", pp, NgTlsConfig(certs = Seq(clientHId), enabled = true, trustAll = true))
 
     await(1.second)
+  }
+
+  private def mkRoute(domain: String, hostname: String, backendPort: Int, tls: NgTlsConfig): Unit =
+    createLocalRoute(
+      rawDomain = Some(domain),
+      target = Some(NgTarget(id = "mtls-backend", hostname = hostname, port = backendPort, tls = true, tlsConfig = tls)),
+      id = IdGenerator.uuid
+    ).futureValue
+
+  private def createCA(cn: String, serial: Option[Long] = None): GenCertResponse =
+    FakeKeyStore.createCA(s"CN=$cn, O=Otoroshi Test", 3650.days, None, serial)(using env)
+
+  private def createServerCert(host: String, ca: GenCertResponse): GenCertResponse =
+    FakeKeyStore.createCertificateFromCA(host, 3650.days, None, None, ca.cert, ca.caChain, ca.keyPair)(using env)
+
+  /**
+   * What the kubernetes client does with the service account `ca.crt`: the whole PEM content, without any private
+   * key, becomes ONE otoroshi certificate (`Cert(name, pem, "")`) used as `trustedCerts`. Calls a backend serving
+   * `server` (without its chain) through a route trusting that certificate only, and returns the response status.
+   */
+  private def callTrustingPem(name: String, pem: String, expectedCa: Boolean, server: GenCertResponse): Int = {
+    val trusted = Cert(name, pem, "").copy(id = name)
+    withClue(s"[$name] ca flag of the trusted certificate ") {
+      trusted.ca mustBe expectedCa
+    }
+    DynamicSSLEngineProvider.addCertificates(Seq(trusted), env)
+    val serverBackend = new PlainTlsBackend(server.key, Array(server.cert))
+    try {
+      val domain = s"$name.oto.tools"
+      mkRoute(domain, "localhost", serverBackend.port, NgTlsConfig(trustedCerts = Seq(name), enabled = true))
+      await(1.second)
+      call(domain).status
+    } finally {
+      serverBackend.stop()
+    }
   }
 
   private def call(domain: String): WSResponse =
@@ -261,6 +301,76 @@ class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         client.fetchConfigMap("kube-system", "coredns").futureValue mustBe defined
       } finally {
         apiServer.stop()
+      }
+    }
+
+    "N. trustedCerts trust a CA given as a PEM without private key" in {
+      val ca = createCA("Otoroshi Test Pem CA")
+      callTrustingPem("mtls-pem-single-ca", ca.cert.asPem, expectedCa = true, createServerCert("localhost", ca)) mustBe 200
+    }
+
+    // a service account `ca.crt` can hold several CAs, e.g. during a cluster CA rotation
+    "O. trustedCerts trust every CA of a PEM bundle without private key, not only the first one" in {
+      val first  = createCA("Otoroshi Test Pem Bundle First CA")
+      val second = createCA("Otoroshi Test Pem Bundle Second CA")
+      val pem    = first.cert.asPem + second.cert.asPem
+      callTrustingPem("mtls-pem-bundle-second-ca", pem, expectedCa = true, createServerCert("localhost", second)) mustBe 200
+    }
+
+    // older kubeadm / client-go versions created every cluster CA with the serial number 0
+    "P. trustedCerts trust every CA of a PEM bundle without private key, even when the CAs share a serial number" in {
+      val first  = createCA("Otoroshi Test Pem Bundle Same Serial First CA", serial = Some(0L))
+      val second = createCA("Otoroshi Test Pem Bundle Same Serial Second CA", serial = Some(0L))
+      first.cert.getSerialNumber mustBe second.cert.getSerialNumber
+      val pem    = first.cert.asPem + second.cert.asPem
+      callTrustingPem("mtls-pem-bundle-same-serial", pem, expectedCa = true, createServerCert("localhost", second)) mustBe 200
+    }
+
+    "Q. trustedCerts trust every certificate of a PEM without private key starting with a non CA certificate" in {
+      val leaf = createServerCert("pem-leaf.oto.tools", createCA("Otoroshi Test Pem Leaf Issuer CA"))
+      val ca   = createCA("Otoroshi Test Pem After Leaf CA")
+      val pem  = leaf.cert.asPem + ca.cert.asPem
+      callTrustingPem("mtls-pem-leaf-then-ca", pem, expectedCa = false, createServerCert("localhost", ca)) mustBe 200
+    }
+
+    "R. trustedCerts built from a PEM bundle without private key do not trust a CA outside the bundle" in {
+      val first   = createCA("Otoroshi Test Pem Bundle Outside First CA")
+      val second  = createCA("Otoroshi Test Pem Bundle Outside Second CA")
+      val outside = createCA("Otoroshi Test Pem Bundle Outside CA")
+      val pem     = first.cert.asPem + second.cert.asPem
+      callTrustingPem("mtls-pem-bundle-outside-ca", pem, expectedCa = true, createServerCert("localhost", outside)) mustBe 502
+    }
+
+    // the otoroshi truststore comes before the jdk one, whose error ("No trusted certificate found") used to be the
+    // only one reported, hiding why the truststore holding the expected CA rejected the chain
+    "S. a rejected server chain reports the error of every trust manager, the otoroshi truststore one first" in {
+      // same subject as the trusted CA but another key: the otoroshi truststore finds the issuer but rejects the signature
+      val trustedCa   = createCA("Otoroshi Test Rotated CA")
+      val rotatedCa   = createCA("Otoroshi Test Rotated CA")
+      val chain       = Array(createServerCert("localhost", rotatedCa).cert)
+      val keyStore    = DynamicSSLEngineProvider.createKeyStore(Seq(Cert("mtls-rotated-ca", trustedCa.cert.asPem, "")))
+      val cacertsPath = System.getProperty("java.home") + "/lib/security/cacerts"
+      val cacerts     = KeyStore.getInstance("JKS")
+      cacerts.load(new FileInputStream(cacertsPath), "changeit".toCharArray)
+
+      def errorOf(ks: KeyStore): String = {
+        val tmf = TrustManagerFactory.getInstance("SunX509")
+        tmf.init(ks)
+        val tm  = tmf.getTrustManagers.collectFirst { case m: X509TrustManager => m }.get
+        intercept[CertificateException](tm.checkServerTrusted(chain, "UNKNOWN")).getMessage
+      }
+      val truststoreError = errorOf(keyStore)
+      val jdkError        = errorOf(cacerts)
+      truststoreError must not be jdkError
+
+      val manager = DynamicSSLEngineProvider.createTrustStoreWithJdkCAs(keyStore, cacertsPath, "changeit").head
+      manager mustBe a[NewFakeTrustManager]
+      val error   = intercept[CertificateException](manager.asInstanceOf[X509TrustManager].checkServerTrusted(chain, "UNKNOWN"))
+      withClue(s"error: $error, cause: ${error.getCause}, suppressed: ${error.getSuppressed.toSeq} ") {
+        error.getCause must not be null
+        error.getCause.getMessage mustBe truststoreError
+        error.getSuppressed.toSeq.map(_.getMessage) mustBe Seq(jdkError)
+        error.getMessage must include(truststoreError)
       }
     }
 
