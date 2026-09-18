@@ -970,3 +970,15 @@ class PluginsTestSpec extends PluginsTestSpecBase {
     }
   }
 }
+
+// response compressors: sbt "testOnly functional.ResponseCompressorSpec"
+class ResponseCompressorSpec extends PluginsTestSpecBase {
+  s"response compressors" should {
+    "compress with gzip when the client accepts it" in {
+      new GzipResponseCompressorTests(this).gzipCompressesTheResponse()
+    }
+    "compress with brotli when the client accepts it" in {
+      new GzipResponseCompressorTests(this).brotliCompressesTheResponse()
+    }
+  }
+}
