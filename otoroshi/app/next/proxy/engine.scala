@@ -492,8 +492,14 @@ class ProxyEngine() extends RequestHandler {
           request
         )
       }
-      .applyOnWithOpt(attrs.get(Keys.ResultTransformerKey)) { case (future, transformer) =>
-        future.flatMap(transformer)
+      // the transformer is installed by a plugin while the request is being handled, so the
+      // lookup has to happen once the result is there. reading it while the chain is being
+      // assembled always finds nothing, and the transformer is silently skipped.
+      .flatMap { result =>
+        attrs.get(Keys.ResultTransformerKey) match {
+          case Some(transformer) => transformer(result)
+          case None              => result.vfuture
+        }
       }
       .andThen { case _ =>
         report.markOverheadOut()
