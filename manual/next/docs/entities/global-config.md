@@ -66,6 +66,13 @@ All global config changes are **hot-reloadable**: they take effect immediately w
 * `IP allowed list`: Only IP addresses that will be able to access Otoroshi exposed services
 * `IP blocklist`: IP addresses that will be refused to access Otoroshi exposed services
 * `Endless HTTP Responses`: IP addresses for which each request will return around 128 Gb of 0s
+* `Trusted proxies`: addresses, CIDR blocks or wildcards of the reverse proxies placed in front of Otoroshi
+
+When `Trusted proxies` is empty and `Use X-Forwarded-* headers for routing` is enabled, the client address is read from the first entry of the `X-Forwarded-For` header. That entry is the one the caller sent, so whenever the proxies in front keep caller supplied values rather than replacing them, the caller chooses it. Filling it makes Otoroshi read the header from the other end instead: it walks the entries from the last one, discards those matching the list, and keeps the first one that does not. The header is only taken into account when the peer that opened the connection matches the list as well.
+
+An instance can be seeded with `OTOROSHI_OPTIONS_TRUSTED_PROXIES`, which sets the value the same way `OTOROSHI_OPTIONS_TRUST_XFORWARDED` does for the setting above it. It is used when initializing an empty datastore and never overrides an existing global config, so it applies on a first start, on a reset, and on every start of a storage that keeps nothing.
+
+This address is what the settings above match against, and also what per-IP throttling counts, what `${req.ip}` returns and what the geolocation extractors resolve. Leaving the list empty keeps the previous behaviour, so that addresses are believed as announced.
 
 
 ### Quotas settings

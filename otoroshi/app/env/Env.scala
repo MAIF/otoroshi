@@ -513,6 +513,9 @@ class Env(
   lazy val initialTrustXForwarded: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
 
+  lazy val initialTrustedProxies: Seq[String] =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.options.trustedProxies").toSeq
+
   lazy val wasmCacheTtl: Int        =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.ttl").getOrElse(10000)
   lazy val wasmCacheSize: Int       =
@@ -1245,6 +1248,7 @@ class Env(
   lazy val defaultConfig = GlobalConfig(
     initWithNewEngine = true,
     trustXForwarded = initialTrustXForwarded,
+    trustedProxies = initialTrustedProxies,
     perIpThrottlingQuota = 500,
     throttlingQuota = 100000,
     maxLogsSize = configuration.getOptionalWithFileSupport[Int]("app.events.maxSize").getOrElse(100),

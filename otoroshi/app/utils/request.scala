@@ -97,17 +97,16 @@ object RequestImplicits {
     }
     @inline
     def theIpAddress(using env: Env): String = {
-      if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-        requestHeader.headers
-          .get("X-Forwarded-For")
-          .map { rawHeader =>
-            if (rawHeader.nonEmpty && rawHeader.contains(",")) {
-              rawHeader.split(",").map(_.trim).headOption.getOrElse(rawHeader)
-            } else {
-              rawHeader
-            }
-          }
-          .getOrElse(requestHeader.remoteAddress)
+      val config = env.datastores.globalConfigDataStore.latestSafe
+      if (config.exists(_.trustXForwarded)) {
+        val values = requestHeader.headers.getAll("X-Forwarded-For").toSeq
+        if (values.isEmpty) requestHeader.remoteAddress
+        else
+          otoroshi.utils.ForwardedFor.clientIp(
+            values,
+            config.map(_.resolvedTrustedProxies).getOrElse(Seq.empty),
+            requestHeader.remoteAddress
+          )
       } else {
         requestHeader.remoteAddress
       }

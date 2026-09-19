@@ -679,6 +679,7 @@ case class GlobalConfig(
     u2fLoginOnly: Boolean = false,
     maintenanceMode: Boolean = false,
     trustXForwarded: Boolean = true,
+    trustedProxies: Seq[String] = Seq.empty,
     ipFiltering: IpFiltering = IpFiltering(),
     throttlingQuota: Long = BaseQuotas.MaxValue,
     perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
@@ -716,6 +717,10 @@ case class GlobalConfig(
     env: JsObject = Json.obj(),
     extensions: Map[String, JsValue] = Map.empty
 ) extends Entity {
+
+  // an entry can hold a comma separated list, as a resolved vault reference does
+  lazy val resolvedTrustedProxies: Seq[String] =
+    otoroshi.utils.ForwardedFor.trustRules(trustedProxies.flatMap(_.split(",")).map(_.trim).filter(_.nonEmpty))
 
   def internalId: String = "global"
 
@@ -865,6 +870,7 @@ object GlobalConfig {
         "apiReadOnly"             -> o.apiReadOnly,
         "u2fLoginOnly"            -> o.u2fLoginOnly,
         "trustXForwarded"         -> o.trustXForwarded,
+        "trustedProxies"          -> o.trustedProxies,
         "ipFiltering"             -> o.ipFiltering.toJson,
         "throttlingQuota"         -> o.throttlingQuota,
         "perIpThrottlingQuota"    -> o.perIpThrottlingQuota,
@@ -911,6 +917,7 @@ object GlobalConfig {
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),
           trustXForwarded = (json \ "trustXForwarded").asOpt[Boolean].getOrElse(true),
+          trustedProxies = (json \ "trustedProxies").asOpt[Seq[String]].getOrElse(Seq.empty),
           limitConcurrentRequests = (json \ "limitConcurrentRequests")
             .asOpt[Boolean]
             .getOrElse(false), // TODO : true by default after prod monitoring

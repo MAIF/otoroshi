@@ -722,6 +722,14 @@ export class DangerZonePage extends Component {
         help: 'IP addresses that will be refused to access Otoroshi exposed services',
       },
     },
+    trustedProxies: {
+      type: 'array',
+      props: {
+        label: 'Trusted proxies',
+        placeholder: 'Address, CIDR block or wildcard of a reverse proxy',
+        help: 'Reverse proxies placed in front of Otoroshi. When set, the client address is read from the end of the X-Forwarded-For header instead of the entry the caller sent',
+      },
+    },
     throttlingQuota: {
       type: 'number',
       props: {
@@ -1405,6 +1413,7 @@ export class DangerZonePage extends Component {
     'ipFiltering.whitelist',
     'ipFiltering.blacklist',
     'endlessIpAddresses',
+    'trustedProxies',
     '>>>Quotas settings',
     'throttlingQuota',
     'perIpThrottlingQuota',
