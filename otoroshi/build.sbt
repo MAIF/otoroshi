@@ -79,6 +79,7 @@ lazy val reactorNettyVersion         = "1.3.6"
 lazy val nettyVersion                     = "4.2.17.Final"
 lazy val nettyIncubatorTransportVersion   = "0.0.26.Final"
 lazy val scramVersion                     = "3.4"
+lazy val brotli4jVersion                  = "1.23.0"
 
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
@@ -238,7 +239,21 @@ libraryDependencies ++= Seq(
   "org.apache.logging.log4j"         % "log4j-api"                            % "2.26.1",
   "org.sangria-graphql"             %% "sangria"                              % "4.2.19",
   "org.bigtesting"                   % "routd"                                % "1.0.7",
-  "com.nixxcode.jvmbrotli"           % "jvmbrotli"                            % "0.2.0",
+  // brotli4j picks its native library through maven os profiles, so a plain dependency only brings the
+  // one of the machine that resolves it: the ci runner for otoroshi.jar, and then the multi-arch docker
+  // image built from that jar. The native of each platform otoroshi ships to is listed, so the same jar
+  // loads brotli on all of them (elsewhere the brotli plugin sends responses uncompressed).
+  "com.aayushatharva.brotli4j"       % "brotli4j"                             % brotli4jVersion,
+  "com.aayushatharva.brotli4j"       % "native-linux-x86_64"                  % brotli4jVersion,
+  "com.aayushatharva.brotli4j"       % "native-linux-aarch64"                 % brotli4jVersion,
+  "com.aayushatharva.brotli4j"       % "native-linux-armv7"                   % brotli4jVersion,
+  //"com.aayushatharva.brotli4j"       % "native-linux-s390x"                   % brotli4jVersion,
+  //"com.aayushatharva.brotli4j"       % "native-linux-ppc64le"                 % brotli4jVersion,
+  "com.aayushatharva.brotli4j"       % "native-linux-riscv64"                 % brotli4jVersion,
+  "com.aayushatharva.brotli4j"       % "native-osx-x86_64"                    % brotli4jVersion,
+  "com.aayushatharva.brotli4j"       % "native-osx-aarch64"                   % brotli4jVersion,
+  //"com.aayushatharva.brotli4j"       % "native-windows-x86_64"                % brotli4jVersion,
+  //"com.aayushatharva.brotli4j"       % "native-windows-aarch64"               % brotli4jVersion,
   "io.azam.ulidj"                    % "ulidj"                                % "2.0.0",
   "fr.maif"                         %% "wasm4s"                               % "5.0.3" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                 % "1.23.0",

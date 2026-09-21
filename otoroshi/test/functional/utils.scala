@@ -846,6 +846,10 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
     }.getOrElse(8443)
   }
 
+  // opt-in: also serve https on httpsPort, with the certificates of the datastore (the auto-generated
+  // *.oto.tools wildcard shows up a few seconds after startup)
+  def serveHttps: Boolean = false
+
   def wsClient: WSClient             = wsClientInstance
   def ws: WSClient                   = wsClientInstance
   lazy implicit val wsImpl: WSClient = wsClientInstance
@@ -965,6 +969,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       ServerConfig(
         address = "0.0.0.0",
         port = Some(httpPort),
+        sslPort = if (serveHttps) Some(httpsPort) else None,
         rootDir = Files.createTempDirectory("otoroshi-test-helper").toFile
       ),
       getTestConfiguration(

@@ -982,3 +982,57 @@ class ResponseCompressorSpec extends PluginsTestSpecBase {
     }
   }
 }
+
+// brotli compression: sbt "testOnly functional.BrotliResponseCompressorSpec"
+// the browser part alone: sbt "testOnly functional.BrotliResponseCompressorSpec -- -n Browser"
+class BrotliResponseCompressorSpec extends PluginsTestSpecBase {
+  // browsers only ask for br over https
+  override def serveHttps: Boolean = true
+  s"brotli response compressor" should {
+    "ship the brotli native library of every platform" in {
+      new BrotliResponseCompressorTests(this).shipsEveryNative()
+    }
+    "compress a small body" in {
+      new BrotliResponseCompressorTests(this).compressesASmallBody()
+    }
+    "keep a large chunked body whole" in {
+      new BrotliResponseCompressorTests(this).keepsALargeChunkedBodyWhole()
+    }
+    "close the brotli stream of an empty body" in {
+      new BrotliResponseCompressorTests(this).closesTheStreamOfAnEmptyBody()
+    }
+    "only compress when the client accepts brotli" in {
+      new BrotliResponseCompressorTests(this).onlyCompressesWhenTheClientAcceptsBrotli()
+    }
+    "leave encoded, binary, blocked and empty responses alone" in {
+      new BrotliResponseCompressorTests(this).leavesSomeResponsesAlone()
+    }
+    "encode once what comes compressed from the backend" in {
+      new BrotliResponseCompressorTests(this).recompressesWhatComesCompressedFromTheBackend()
+    }
+    "pass responses through when the native library is unavailable" in {
+      new BrotliResponseCompressorTests(this).passesThroughWithoutTheNativeLibrary()
+    }
+    "never turn a backend failure into a valid body" in {
+      new BrotliResponseCompressorTests(this).neverTurnsABackendFailureIntoAValidBody()
+    }
+    "keep the actor system alive under load" in {
+      new BrotliResponseCompressorTests(this).keepsTheActorSystemAliveUnderLoad()
+    }
+    "flush every chunk" in {
+      new BrotliResponseCompressorTests(this).flushesEveryChunk()
+    }
+    "get a large page whole in a browser" taggedAs Browser in {
+      new BrotliResponseCompressorTests(this).browserGetsALargePageWhole()
+    }
+    "parse a large json in a browser" taggedAs Browser in {
+      new BrotliResponseCompressorTests(this).browserParsesALargeJson()
+    }
+    "run a large script in a browser" taggedAs Browser in {
+      new BrotliResponseCompressorTests(this).browserRunsALargeScript()
+    }
+    "receive server sent events as they come in a browser" taggedAs Browser in {
+      new BrotliResponseCompressorTests(this).browserReceivesServerSentEventsAsTheyCome()
+    }
+  }
+}

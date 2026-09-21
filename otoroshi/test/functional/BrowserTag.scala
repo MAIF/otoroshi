@@ -10,6 +10,7 @@ import org.scalatest.Tag
  * driver). They are therefore:
  *   - EXCLUDED from the fast server test run (`sbt testOnly ... -- -l Browser`),
  *   - run on their own in the dedicated "Server Browser Tests" workflow
- *     (`sbt testOnly functional.PluginsTestSpec -- -n Browser`).
+ *     (`sbt testOnly functional.PluginsTestSpec -- -n Browser`, same for
+ *     functional.BrotliResponseCompressorSpec).
  */
 object Browser extends Tag("Browser")

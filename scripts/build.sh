@@ -43,7 +43,9 @@ test_server () {
   # specs that cannot live in PluginsTestSpec: each needs its own otoroshi instance, and
   # ApikeyJwtPinnedKidSpec its own configuration. chained rather than grouped in a Suites so that
   # Test / testGrouping gives each one its own forked jvm.
-  TEST_STORE=inmemory sbt ';testOnly UnitTests;testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly ApiPlanMtlsTests;testOnly functional.Http3Spec;testOnly functional.ApikeyAuthModuleSpec;testOnly functional.OtoBearerAuthSpec;testOnly functional.ApikeyJwtKidSpec;testOnly functional.ApikeyJwtPinnedKidSpec;testOnly functional.OpenApiSchemasSpec;testOnly functional.PluginsTestSpec -- -l Browser'
+  # ResponseCompressorSpec and BrotliResponseCompressorSpec cover the gzip and brotli compressors, the
+  # browser part of the brotli one runs in test_server_with_browser.
+  TEST_STORE=inmemory sbt ';testOnly UnitTests;testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly ApiPlanMtlsTests;testOnly functional.Http3Spec;testOnly functional.ApikeyAuthModuleSpec;testOnly functional.OtoBearerAuthSpec;testOnly functional.ApikeyJwtKidSpec;testOnly functional.ApikeyJwtPinnedKidSpec;testOnly functional.OpenApiSchemasSpec;testOnly functional.ResponseCompressorSpec;testOnly functional.BrotliResponseCompressorSpec -- -l Browser;testOnly functional.PluginsTestSpec -- -l Browser'
   # TEST_STORE=inmemory sbt ';testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.Http3Spec;testOnly OtoroshiTests;test
   # Only functional.PluginsTestSpec -- -l Browser -l Docker'
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi
@@ -55,7 +57,7 @@ test_server () {
 
 test_server_with_browser () {
   cd $LOCATION/otoroshi
-  TEST_STORE=inmemory sbt ';testOnly functional.PluginsTestSpec -- -n Browser'
+  TEST_STORE=inmemory sbt ';testOnly functional.PluginsTestSpec -- -n Browser;testOnly functional.BrotliResponseCompressorSpec -- -n Browser'
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi
 }
 

@@ -1,20 +1,23 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.util.ByteString
-import com.nixxcode.jvmbrotli.common.BrotliLoader
-import com.nixxcode.jvmbrotli.enc.Encoder
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet}
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import org.apache.pekko.util.{ByteString, ByteStringBuilder}
+import com.aayushatharva.brotli4j.Brotli4jLoader
+import com.aayushatharva.brotli4j.encoder.{Encoder, EncoderJNI}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
-import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.*
-import play.api.http.HeaderNames.{ACCEPT_ENCODING, CONTENT_ENCODING, VARY}
+import play.api.Logger
+import play.api.http.HeaderNames.{ACCEPT_ENCODING, CONTENT_ENCODING, CONTENT_LENGTH, TRANSFER_ENCODING, VARY}
 import play.api.http.{MediaType, Status}
 import play.api.libs.json.*
 import play.api.mvc.{Headers, RequestHeader, Result}
 
+import java.io.IOException
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
@@ -55,6 +58,135 @@ object NgBrotliConfig {
   }
 }
 
+object BrotliSupport {
+
+  val logger = Logger("otoroshi-plugins-brotli")
+
+  val defaultBufferSize = 8192
+
+  /** Whether the brotli native library could be loaded for the current os and architecture.
+    *
+    * brotli4j tries to load it once, when its loader class is initialized. That never throws, but a missing
+    * or broken brotli4j jar would surface here as a LinkageError, that Try and NonFatal let through.
+    */
+  lazy val available: Boolean =
+    try {
+      if (Brotli4jLoader.isAvailable) true
+      else {
+        unavailable(Brotli4jLoader.getUnavailabilityCause)
+        false
+      }
+    } catch {
+      case t: Throwable =>
+        unavailable(t)
+        false
+    }
+
+  private def unavailable(cause: Throwable): Unit =
+    logger.warn(
+      s"the brotli native library cannot be loaded on ${sys.props("os.name")}/${sys.props("os.arch")}, the brotli compression plugin will send responses uncompressed",
+      cause
+    )
+
+  def compressor(quality: Int, bufferSize: Int): Flow[ByteString, ByteString, ?] =
+    Flow.fromGraph(
+      new BrotliCompressorStage(
+        quality = math.max(0, math.min(11, quality)),
+        bufferSize = if (bufferSize > 0) bufferSize else defaultBufferSize
+      )
+    )
+}
+
+/** Compresses a whole body into a single brotli stream.
+  *
+  * Brotli streams cannot be concatenated: compressing each chunk on its own gives a body that decoders
+  * reject, or silently cut after the first chunk as browsers do. Here every chunk goes through the same
+  * encoder and is flushed, so a streamed response (sse, long polling, ...) keeps flowing to the client,
+  * and the stream is only closed when the body completes.
+  */
+class BrotliCompressorStage(quality: Int, bufferSize: Int) extends GraphStage[FlowShape[ByteString, ByteString]] {
+
+  private val in  = Inlet[ByteString]("BrotliCompressor.in")
+  private val out = Outlet[ByteString]("BrotliCompressor.out")
+
+  override val shape: FlowShape[ByteString, ByteString] = FlowShape(in, out)
+
+  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+    new GraphStageLogic(shape) with InHandler with OutHandler {
+
+      private var encoder: EncoderJNI.Wrapper = null
+
+      override def preStart(): Unit =
+        encoder = native(new EncoderJNI.Wrapper(bufferSize, quality, -1, Encoder.Mode.GENERIC))
+
+      override def onPush(): Unit = {
+        val chunk = grab(in)
+        if (chunk.isEmpty) pull(in)
+        else {
+          val compressed = native(encode(chunk, EncoderJNI.Operation.FLUSH))
+          if (compressed.isEmpty) pull(in) else push(out, compressed)
+        }
+      }
+
+      override def onPull(): Unit = pull(in)
+
+      override def onUpstreamFinish(): Unit = {
+        val last = native(encode(ByteString.empty, EncoderJNI.Operation.FINISH))
+        release()
+        if (last.isEmpty) completeStage() else emit(out, last, () => completeStage())
+      }
+
+      // no end of stream marker here: the client has to see a broken body, not a shorter one that decodes fine
+      override def onUpstreamFailure(ex: Throwable): Unit = {
+        release()
+        failStage(ex)
+      }
+
+      // downstream cancellation or abrupt termination: the native encoder is never garbage collected
+      override def postStop(): Unit = release()
+
+      private def encode(data: ByteString, op: EncoderJNI.Operation): ByteString = {
+        val builder   = ByteString.newBuilder
+        var remaining = data
+        while (remaining.nonEmpty) {
+          val input  = encoder.getInputBuffer
+          input.clear()
+          val copied = remaining.copyToBuffer(input)
+          remaining = remaining.drop(copied)
+          run(EncoderJNI.Operation.PROCESS, copied, builder)
+        }
+        run(op, 0, builder)
+        builder.result()
+      }
+
+      // same loop as brotli4j's own Encoder: push once, then collect the output until the input is consumed
+      private def run(op: EncoderJNI.Operation, length: Int, builder: ByteStringBuilder): Unit = {
+        encoder.push(op, length)
+        while (encoder.hasMoreOutput || encoder.hasRemainingInput) {
+          if (encoder.hasMoreOutput) builder.append(ByteString(encoder.pull()))
+          else encoder.push(op, 0)
+        }
+      }
+
+      private def release(): Unit =
+        if (encoder != null) {
+          val current = encoder
+          encoder = null
+          native(current.destroy())
+        }
+
+      // a LinkageError is fatal for pekko: thrown from a stage it shuts the whole actor system down.
+      // As an IOException it only fails the response being compressed.
+      private def native[A](f: => A): A =
+        try f
+        catch {
+          case e: LinkageError => throw new IOException("brotli native call failed", e)
+        }
+
+      setHandlers(in, out, this)
+    }
+}
+
 class BrotliResponseCompressor extends NgRequestTransformer {
 
   private val configReads: Reads[NgBrotliConfig] = NgBrotliConfig.format
@@ -73,7 +205,11 @@ class BrotliResponseCompressor extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean           = false
   override def name: String                                = "Brotli compression"
   override def description: Option[String]                 = "This plugin can compress responses using brotli".some
-  override def defaultConfigObject: Option[NgPluginConfig] = NgGzipConfig().some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgBrotliConfig().some
+
+  // without the native library the response goes out untouched: the headers are sent before the body is
+  // compressed, so failing later would leave the client with a `Content-Encoding: br` it cannot decode
+  protected def brotliAvailable: Boolean = BrotliSupport.available
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
@@ -81,25 +217,25 @@ class BrotliResponseCompressor extends NgRequestTransformer {
     val config  = ctx.cachedConfig(internalName)(configReads).getOrElse(NgBrotliConfig())
     val request = ctx.request
     if (
-      mayCompress(request) && shouldCompress(ctx.otoroshiResponse) && shouldBrotli(
+      brotliAvailable && mayCompress(request) && shouldCompress(ctx.otoroshiResponse) && shouldBrotli(
         config,
         request,
         ctx.otoroshiResponse
       )
     ) {
-      BrotliLoader.isBrotliAvailable()
-      val params = new Encoder.Parameters().setQuality(config.compressionLevel)
-      val vary   = varyWith(ctx.otoroshiResponse.headers, ACCEPT_ENCODING)
+      val vary = varyWith(ctx.otoroshiResponse.headers, ACCEPT_ENCODING)
       ctx.otoroshiResponse
         .copy(
-          headers = ctx.otoroshiResponse.headers - "Content-Length" ++ Map(
-            "Content-Encoding"  -> "br",
-            "Transfer-Encoding" -> "chunked",
-            vary._1             -> vary._2
+          // header names come in any case from the backend, and the compressed length is not known upfront
+          headers = ctx.otoroshiResponse.headers.filterNot { case (name, _) =>
+            name.equalsIgnoreCase(CONTENT_LENGTH) || name.equalsIgnoreCase(TRANSFER_ENCODING) || name
+              .equalsIgnoreCase(VARY)
+          } ++ Map(
+            CONTENT_ENCODING  -> "br",
+            TRANSFER_ENCODING -> "chunked",
+            vary._1           -> vary._2
           ),
-          body = ctx.otoroshiResponse.body.map { bs =>
-            ByteString.apply(Encoder.compress(bs.toArray, params))
-          }
+          body = ctx.otoroshiResponse.body.via(BrotliSupport.compressor(config.compressionLevel, config.bufferSize))
         )
         .right
     } else {
@@ -161,7 +297,7 @@ class BrotliResponseCompressor extends NgRequestTransformer {
       case "*"                        => Some(MediaType("*", "*", Seq.empty))
       case MediaType.parse(mediaType) => Some(mediaType)
       case invalid                    =>
-        GzipConfig.logger.error(s"Failed to parse the configured MediaType mask '$invalid'")
+        BrotliSupport.logger.error(s"Failed to parse the configured MediaType mask '$invalid'")
         None
     }
     mediaTypes.foreach {

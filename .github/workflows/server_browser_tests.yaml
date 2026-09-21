@@ -1,7 +1,9 @@
 name: Server Browser Tests
 
 # Runs the browser-driven server tests (playwright-java specs tagged `Browser`
-# inside functional.PluginsTestSpec) in isolation from the main "Build & Test"
+# inside functional.PluginsTestSpec and functional.BrotliResponseCompressorSpec,
+# the latter checking what chromium makes of brotli responses over https)
+# in isolation from the main "Build & Test"
 # job, so a crashed/hung browser driver can never stall the whole server test
 # suite (see server_build_and_test.yaml + microsoft/playwright#35727).
 #
