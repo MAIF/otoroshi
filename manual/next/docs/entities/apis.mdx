@@ -555,11 +555,17 @@ End-users (developers, portals, machines) can subscribe to published plans. A su
 | `api_ref` | string | Reference to the parent API |
 | `plan_ref` | string | Reference to the plan |
 | `owner_ref` | string | Reference to the subscribing client |
-| `subscription_kind` | string | Kind of subscription: `apikey`, `mtls`, `keyless`, `oauth2-local`, `oauth2-remote`, `jwt` |
+| `subscription_kind` | string | Kind of subscription: `apikey`, `mtls`, `keyless`, `oauth2-local`, `oauth2-remote`, `jwt`. It has to be the access mode of the plan |
 | `token_refs` | array of string | References to generated credentials (API key IDs, certificate IDs, etc.) |
 | `dates` | object | Lifecycle timestamps (see below) |
 | `tags` | array of string | Tags |
 | `metadata` | object | Metadata |
+
+A subscription is refused with a `400` when its `subscription_kind` is not the access mode of its plan.
+A subscription to an `apikey` or an `oauth2-local` plan is given an API key built from the plan, and
+referenced in `token_refs` as `{"apikey": "<client id>"}`: the consumers of these plans call with an
+API key, and a subscription is the only way to get one. The other access modes build their consumer at call time, their subscriptions
+have nothing to generate.
 
 ### Subscription dates
 

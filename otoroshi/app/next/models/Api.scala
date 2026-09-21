@@ -1076,9 +1076,9 @@ object ApiSubscription {
   private def generateNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
                                                                                                 env: Env
   ) = {
-    val configPlan = plan.accessModeConfiguration
-      .map(_.asInstanceOf[ApikeyAccessModeConfiguration])
-      .getOrElse(ApikeyAccessModeConfiguration())
+    // never cast the configuration of the plan: an oauth2-local plan carries its own, and a plan whose
+    // kind changed still has subscriptions holding apikeys that have to be kept in sync
+    val configPlan = plan.apikeyTemplate
 
     val attrs = TypedMap(
       otoroshi.plugins.Keys.PlanKey -> plan,
@@ -1195,14 +1195,16 @@ object ApiSubscription {
   ): Future[Either[String, ApiSubscription]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
+    // the consumers of an apikey plan and of an oauth2-local plan both call with an apikey, and a
+    // subscription is the only way to get one: the other kinds build their consumer at call time
     if (action == WriteAction.Create) {
       subscription.subscriptionKind match {
-        case ApiKind.Apikey => createNewApikeyFromPlan(api, plan, subscription)
-        case _              => subscription.rightf
+        case ApiKind.Apikey | ApiKind.OAuth2Local => createNewApikeyFromPlan(api, plan, subscription)
+        case _                                    => subscription.rightf
       }
     } else if (action == Update) {
       subscription.subscriptionKind match {
-        case ApiKind.Apikey if plan.status == ApiPlanStatus.Closed =>
+        case ApiKind.Apikey | ApiKind.OAuth2Local if plan.status == ApiPlanStatus.Closed =>
           // Cascade-delete the subscription AND the apikeys it points at.
           // Otherwise the apikey lingers in the datastore unreachable from
           // its owning subscription.
@@ -1217,7 +1219,7 @@ object ApiSubscription {
             _ <- deleteApikeys
             _ <- deleteSubscription
           } yield subscription.right
-        case ApiKind.Apikey                                        =>
+        case ApiKind.Apikey | ApiKind.OAuth2Local                                        =>
           updateApikeyFromPlan(api, plan, subscription)
             .map(results =>
               results.collectFirst { case Left(err) => err } match {
@@ -1225,7 +1227,7 @@ object ApiSubscription {
                 case None      => subscription.right
               }
             )
-        case _                                                     => subscription.rightf
+        case _                                                                           => subscription.rightf
       }
     } else {
       subscription.rightf
@@ -1254,6 +1256,12 @@ object ApiSubscription {
         case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
           api.plans.find(_.id == entity.planRef) match {
             case None => "plan not found".leftf
+            // a subscription only gets what its plan hands over, so it has to be of the kind of the
+            // plan. Only checked on creation, so that the subscriptions of a plan whose kind changed
+            // afterwards can still be managed.
+            case Some(plan)
+                if action == WriteAction.Create && entity.subscriptionKind.name != plan.accessModeConfigurationType =>
+              s"subscription kind '${entity.subscriptionKind.name}' does not match the access mode '${plan.accessModeConfigurationType}' of plan '${plan.id}'".leftf
             // Active plans (Staging/Published): Create + Update both go.
             // Inactive plans (Deprecated/Closed): only Update goes — required
             // so existing subs on a deprecated plan can still be managed, and

@@ -70,6 +70,15 @@ class OtoBearerAuthSpec extends PluginsTestSpecBase {
   }
 }
 
+// api subscriptions against the kind of their plan: sbt "testOnly functional.ApiSubscriptionKindSpec"
+class ApiSubscriptionKindSpec extends PluginsTestSpecBase {
+  s"api subscriptions" should {
+    "be of the kind of their plan, and get an apikey from an apikey or an oauth2-local plan" in {
+      new ApiSubscriptionKindTests(this)
+    }
+  }
+}
+
 // the apikey auth module alone: sbt "testOnly functional.ApikeyAuthModuleSpec"
 class ApikeyAuthModuleSpec extends PluginsTestSpecBase {
   s"apikey auth module" should {

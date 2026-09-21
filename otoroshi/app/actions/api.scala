@@ -21,6 +21,7 @@ import otoroshi.utils.http.RequestImplicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
 
 object ApiActionContext {
   val forbidden  = Results.Forbidden(Json.obj("error" -> "You're not authorized here !"))
@@ -389,6 +390,25 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
     )
   }
 
+  // the caller is authenticated at this point: a failure of the controller is a server error, not an
+  // authentication one
+  def serverError(err: Throwable)(using request: Request[?]): Future[Result] = {
+    logger.error(s"error message: Server error : $err", err)
+    FastFuture.successful(
+      Results
+        .InternalServerError(Json.obj("error" -> s"Server error : $err"))
+        .withHeaders(
+          env.Headers.OtoroshiStateResp -> request.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+        )
+    )
+  }
+
+  // a controller throwing before it returns its future would otherwise end up in the recoverWith of
+  // the authentication, and be answered as an authentication failure
+  private def runBlock[A](ctx: ApiActionContext[A], block: ApiActionContext[A] => Future[Result]): Future[Result] =
+    try block(ctx)
+    catch { case NonFatal(e) => Future.failed(e) }
+
   override def invokeBlock[A](request: Request[A], block: ApiActionContext[A] => Future[Result]): Future[Result] = {
 
     implicit val req = request
@@ -412,7 +432,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
                       case Some(apikey)
                           if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
                             .authorizedOnService(env.backOfficeDescriptor.id) => {
-                        block(ApiActionContext(apikey, request)).foldM {
+                        runBlock(ApiActionContext(apikey, request), block).foldM {
                           case Success(res) =>
                             res
                               .withHeaders(
@@ -421,7 +441,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
                                   .getOrElse("--")
                               )
                               .asFuture
-                          case Failure(err) => error(s"Server error : $err", Some(err))
+                          case Failure(err) => serverError(err)
                         }
                       }
                       case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
@@ -440,7 +460,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
                       case Some(apikey)
                           if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
                             .authorizedOnService(env.backOfficeDescriptor.id) => {
-                        block(ApiActionContext(apikey, request)).foldM {
+                        runBlock(ApiActionContext(apikey, request), block).foldM {
                           case Success(res) =>
                             res
                               .withHeaders(
@@ -449,7 +469,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
                                   .getOrElse("--")
                               )
                               .asFuture
-                          case Failure(err) => error(s"Server error : $err", Some(err))
+                          case Failure(err) => serverError(err)
                         }
                       }
                       case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
