@@ -159,8 +159,10 @@ Three valid configurations, and you must pick the one matching your topology:
   (see below). This is the only configuration where a proxy chain is read without letting the client
   choose its own address.
 - **Behind a proxy that overwrites the headers**: keep `trustXForwarded` on.
-- **Directly exposed**: turn it off. Otoroshi then reads neither `Forwarded` nor `X-Forwarded-For`
-  and uses the real remote address, whatever the trusted proxies say.
+- **Directly exposed**: turn it off. The client address is then the connection address: neither
+  `Forwarded` nor `X-Forwarded-For` is used to resolve it, whatever the trusted proxies say. The
+  `${req.ip_from_xff}` expression remains available: it returns the first non-empty normalised
+  `X-Forwarded-For` value, or the connection address when none is available.
 
 There is no way for Otoroshi to tell those topologies apart on its own. This is the setting on this
 page most likely to be wrong without anyone noticing, because nothing misbehaves until someone tries.
@@ -173,17 +175,34 @@ Otoroshi resolves the client address on its own, the same way on every HTTP serv
 A trusted proxy is a reverse proxy allowed to tell Otoroshi who the client is, through the
 `Forwarded` (RFC 7239) or `X-Forwarded-For` header. When the connection comes from one of them,
 Otoroshi walks the proxy chain from the closest hop to the farthest and stops at the first address
-that is not a trusted proxy: addresses a client prepends to the chain are never reached. When the
-connection does not come from a trusted proxy, the headers are ignored and the connection address
-is used.
+that is not a trusted proxy. If every address of the chain is a trusted proxy, the leftmost one is
+used; if the chain is empty, the connection address is used. When the connection does not come from
+a trusted proxy, the headers are ignored and the connection address is used. The header family read
+this way must be one that your trusted proxies build or sanitise.
 
 The list accepts IP addresses, CIDR ranges and wildcard patterns. It is the combination of:
 
-- `otoroshi.options.trustedProxies`, a comma separated list read at startup from
-  `OTOROSHI_OPTIONS_TRUSTED_PROXIES`, or from `CC_REVERSE_PROXY_IPS` on Clever Cloud
+- `otoroshi.options.trustedProxies`, a comma separated list read once at startup
 - `trustedProxies` in the global config, editable at runtime from the danger zone. An entry can hold
   a comma separated list, so it can be a vault reference to an env var publishing the proxies of a
   platform, like `${vault://env/CC_REVERSE_PROXY_IPS}`
+
+With the shipped `application.conf` and no overriding configuration, the startup list comes from the
+first defined of `OTOROSHI_OPTIONS_TRUSTED_PROXIES`, `OTOROSHI_TRUSTED_PROXIES` and
+`CC_REVERSE_PROXY_IPS`, in that order. Defining one of them **replaces** the lower priority ones
+instead of extending them. If the highest priority defined variable is empty, it contributes no
+startup entries; the global list still applies. Changing it requires a restart.
+
+To add proxies to a list published by a platform, either add them to `trustedProxies` in the global
+config, which is combined with the startup list, or reference the platform variable from the one you
+define. The startup configuration goes through the vaults, and the shipped configuration enables the
+env vault, so the following value works as long as it stays enabled:
+
+```
+OTOROSHI_OPTIONS_TRUSTED_PROXIES='${vault://env/PROXY_IPS},203.0.113.0/24'
+```
+
+This assumes `PROXY_IPS` is defined with the desired proxy list and the env vault remains enabled.
 
 As soon as the list is not empty, the loopback (`127.0.0.1` and `::1`) is trusted too, as Play did by
 default: a last hop running on the same host as Otoroshi does not have to be declared. IPv6 entries
