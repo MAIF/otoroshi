@@ -43,7 +43,7 @@ test_server () {
   # specs that cannot live in PluginsTestSpec: each needs its own otoroshi instance, and
   # ApikeyJwtPinnedKidSpec its own configuration. chained rather than grouped in a Suites so that
   # Test / testGrouping gives each one its own forked jvm.
-  TEST_STORE=inmemory sbt ';testOnly UnitTests;testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly ApiPlanMtlsTests;testOnly functional.Http3Spec;testOnly functional.ApikeyAuthModuleSpec;testOnly functional.OtoBearerAuthSpec;testOnly functional.ApikeyJwtKidSpec;testOnly functional.ApikeyJwtPinnedKidSpec;testOnly functional.PluginsTestSpec -- -l Browser'
+  TEST_STORE=inmemory sbt ';testOnly UnitTests;testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly ApiPlanMtlsTests;testOnly functional.Http3Spec;testOnly functional.ApikeyAuthModuleSpec;testOnly functional.OtoBearerAuthSpec;testOnly functional.ApikeyJwtKidSpec;testOnly functional.ApikeyJwtPinnedKidSpec;testOnly functional.OpenApiSchemasSpec;testOnly functional.PluginsTestSpec -- -l Browser'
   # TEST_STORE=inmemory sbt ';testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.Http3Spec;testOnly OtoroshiTests;test
   # Only functional.PluginsTestSpec -- -l Browser -l Docker'
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi

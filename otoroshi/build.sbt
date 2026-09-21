@@ -245,7 +245,7 @@ libraryDependencies ++= Seq(
   "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.50.0",
   "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.54" excludeAll (excludeSlf4jAndJacksonAndPlayJson *),
   // swagger-scala-module dropped: no Scala 3 build and pulls Akka. We keep the Java swagger-core
-  // above; api.scala already has a fallback when the Scala converter is not registered.
+  // above; case classes are introspected through jackson-module-scala (see ResourceVersion.modelConverters).
   "org.scala-lang.modules"          %% "scala-java8-compat"                   % "1.0.2",
   // new http stack ;)
   "io.projectreactor.netty"          % "reactor-netty-core"                        % reactorNettyVersion,

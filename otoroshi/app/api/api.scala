@@ -70,6 +70,32 @@ object TweakedGlobalConfig {
   }
 }
 
+object ResourceVersion {
+
+  // swagger-scala-module has no scala 3 build, and swagger-core alone does not see the fields of a case class: it
+  // does not fail, it silently resolves the class to an (almost) empty schema. so schemas are resolved with a swagger
+  // model resolver backed by a copy of the swagger mapper that knows about scala (case class fields, Option,
+  // collections). working on a copy leaves the global swagger mapper untouched.
+  lazy val modelConverters: io.swagger.v3.core.converter.ModelConverters = {
+    val converters = new io.swagger.v3.core.converter.ModelConverters()
+    converters.addConverter(
+      new io.swagger.v3.core.jackson.ModelResolver(
+        io.swagger.v3.core.util.Json
+          .mapper()
+          .copy()
+          .registerModule(com.fasterxml.jackson.module.scala.DefaultScalaModule)
+          .addMixIn(classOf[scala.collection.IterableOnce[?]], classOf[IgnoredCollectionProperties])
+      )
+    )
+    converters
+  }
+
+  // scala collections expose isEmpty and isTraversableAgain, that jackson sees as bean properties. without this,
+  // swagger adds them next to the items of every array and map schema
+  @com.fasterxml.jackson.annotation.JsonIgnoreProperties(Array("empty", "traversableAgain"))
+  private abstract class IgnoredCollectionProperties
+}
+
 case class ResourceVersion(
     name: String,
     served: Boolean,
@@ -98,7 +124,7 @@ case class ResourceVersion(
       Try {
         env.metrics.withTimer("generate json schema") {
           if (env.logger.isDebugEnabled) env.logger.debug("gen schema for: " + kind + " " + clazz.getName)
-          val res = io.swagger.v3.core.converter.ModelConverters.getInstance().readAllAsResolvedSchema(clazz)
+          val res = ResourceVersion.modelConverters.readAllAsResolvedSchema(clazz)
           Json.parse(io.swagger.v3.core.util.Json.mapper().writeValueAsString(res))
         }
         //Json.parse(

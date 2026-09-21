@@ -1541,8 +1541,8 @@ class Env(
       }
 
     // swagger-scala-module has no Scala 3 build (and pulls Akka), so the Scala model converter is no
-    // longer registered. The Java swagger-core ModelConverters are still used in api.scala, which
-    // falls back to a generic object schema when Scala case-class introspection is unavailable.
+    // longer registered here. Scala case-class introspection for entity schemas now comes from
+    // jackson-module-scala, see ResourceVersion.modelConverters in api.scala.
 
     // Writes the randomly generated initial admin password to a file with owner-only (0600) permissions,
     // then logs where it can be read (à la GitLab '/etc/gitlab/initial_root_password').
