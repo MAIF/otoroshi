@@ -1060,6 +1060,8 @@ case class ApiSubscription(
   override def theDescription: String           = description
   override def theTags: Seq[String]             = tags
   override def theMetadata: Map[String, String] = metadata
+
+  def save()(using ec: ExecutionContext, env: Env) = env.datastores.apiSubscriptionDataStore.set(this)
 }
 
 object ApiSubscription {
@@ -1306,6 +1308,13 @@ object ApiSubscription {
 
     ().rightf
   }
+
+  def fromJsons(value: JsValue): ApiSubscription =
+    try {
+      format.reads(value).get
+    } catch {
+      case e: Throwable => throw e
+    }
 
   val format: Format[ApiSubscription] = new Format[ApiSubscription] {
     override def reads(json: JsValue): JsResult[ApiSubscription] = Try {
@@ -1658,6 +1667,8 @@ case class Api(
   override def theTags: Seq[String] = tags
 
   override def theMetadata: Map[String, String] = metadata
+
+  def save()(using ec: ExecutionContext, env: Env) = env.datastores.apiDataStore.set(this)
 
   // the plugin chain a plan contributes to a call never changes for a given api, but ApiKey.pluginFlow
   // needs it on every request that carries an apiRef. it is computed once per api instance here,

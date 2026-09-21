@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.events.*
-import otoroshi.next.models.{NgPlugins, NgRoute, NgRouteComposition, StoredNgBackend}
+import otoroshi.next.models.{NgPlugins, NgRoute, NgRouteComposition, StoredNgBackend, Api, ApiSubscription}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
@@ -1112,7 +1112,9 @@ case class OtoroshiExport(
     backends: Seq[StoredNgBackend] = Seq.empty,
     wasmPlugins: Seq[WasmPlugin] = Seq.empty,
     extensions: Map[String, Map[String, Seq[JsValue]]],
-    drafts: Seq[Draft] = Seq.empty
+    drafts: Seq[Draft] = Seq.empty,
+    apis: Seq[Api] = Seq.empty,
+    apiSubscriptions: Seq[ApiSubscription] = Seq.empty,
 ) {
 
   import otoroshi.utils.json.JsonImplicits.*
@@ -1266,6 +1268,20 @@ case class OtoroshiExport(
         _.select("id").asString,
         _.id
       ),
+      apis = customizeAndMergeArray[Api](
+        apis,
+        customization.select("apis").asOpt[JsArray].getOrElse(Json.arr()),
+        Api.format,
+        _.select("id").asString,
+        _.id
+      ),
+      apiSubscriptions = customizeAndMergeArray[ApiSubscription](
+        apiSubscriptions,
+        customization.select("apiSubscriptions").asOpt[JsArray].getOrElse(Json.arr()),
+        ApiSubscription.format,
+        _.select("id").asString,
+        _.id
+      ),
       routeCompositions = customizeAndMergeArray[NgRouteComposition](
         routeCompositions,
         customization.select("routeCompositions").asOpt[JsArray].getOrElse(Json.arr()),
@@ -1321,6 +1337,8 @@ case class OtoroshiExport(
       "backends"           -> JsArray(backends.map(_.json)),
       "wasmPlugins"        -> JsArray(wasmPlugins.map(_.json)),
       "drafts"             -> JsArray(drafts.map(_.json)),
+      "apis"               -> JsArray(apis.map(_.json)),
+      "apiSubscriptions"   -> JsArray(apiSubscriptions.map(_.json)),
       "extensions"         -> extensions
     )
   }

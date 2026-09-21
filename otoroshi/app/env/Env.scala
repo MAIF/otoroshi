@@ -1704,7 +1704,7 @@ class Env(
                   simpleAdmins = Seq(admin),
                   teams = Seq(defaultTeam),
                   tenants = Seq(defaultTenant),
-                  extensions = Map.empty
+                  extensions = Map.empty,
                 )
 
                 val initialCustomization = configuration

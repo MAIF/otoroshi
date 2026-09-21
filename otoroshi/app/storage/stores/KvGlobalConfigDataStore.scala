@@ -4,7 +4,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
 import otoroshi.models.*
-import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
+import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend, Api, ApiSubscription}
 import otoroshi.script.Script
 import otoroshi.security.Auth0Config
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
@@ -280,6 +280,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val backends           = (exportSource \ "backends").asOpt[JsArray].getOrElse(Json.arr())
     val wasmPlugins        = (exportSource \ "wasmPlugins").asOpt[JsArray].getOrElse(Json.arr())
     val drafts             = (exportSource \ "drafts").asOpt[JsArray].getOrElse(Json.arr())
+    val apis               = (exportSource \ "apis").asOpt[JsArray].getOrElse(Json.arr())
+    val apiSubscriptions   = (exportSource \ "apiSubscriptions").asOpt[JsArray].getOrElse(Json.arr())
     val extensions         = (exportSource \ "extensions").asOpt[JsObject].getOrElse(Json.obj())
 
     for {
@@ -314,6 +316,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(backends.value.map(StoredNgBackend.fromJsons).map(_.save()))
       _ <- Future.sequence(wasmPlugins.value.map(WasmPlugin.fromJsons).map(_.save()))
       _ <- Future.sequence(drafts.value.map(Draft.fromJsons).map(_.save()))
+      _ <- Future.sequence(apis.value.map(Api.fromJsons).map(_.save()))
+      _ <- Future.sequence(apiSubscriptions.value.map(ApiSubscription.fromJsons).map(_.save()))
       _ <- env.adminExtensions.importAllEntities(extensions)
     } yield { () }
   }
@@ -353,6 +357,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       backends          <- env.datastores.backendsDataStore.findAll()
       wasmPlugins       <- env.datastores.wasmPluginsDataStore.findAll()
       drafts            <- env.datastores.draftsDataStore.findAll()
+      apis              <- env.datastores.apiDataStore.findAll()
+      apiSubscriptions  <- env.datastores.apiSubscriptionDataStore.findAll()
       extensions        <- env.adminExtensions.exportAllEntities()
     } yield OtoroshiExport(
       config,
@@ -379,7 +385,9 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       backends,
       wasmPlugins,
       extensions,
-      drafts
+      drafts,
+      apis,
+      apiSubscriptions,
     ).json
   }
 
