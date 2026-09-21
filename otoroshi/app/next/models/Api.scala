@@ -2312,7 +2312,7 @@ object Api {
           }
           .getOrElse(ApiStaging),
         enabled = (json \ "enabled").asOptBoolean.getOrElse(true),
-        blueprint = (json \ " blueprint").asOptString
+        blueprint = (json \ "blueprint").asOptString
           .map {
             case "REST"      => ApiBlueprint.REST
             case "GraphQL"   => ApiBlueprint.GraphQL
