@@ -15,7 +15,7 @@ import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.*
-import play.api.mvc.{Result, Results}
+import play.api.mvc.{RequestHeader, Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -787,29 +787,73 @@ class ForwardedHeader extends NgRequestTransformer {
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val request           = ctx.request
-    val additionalHeaders = if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-      val xForwardedFor   = request.headers
-        .get("X-Forwarded-For")
-        .map(v => v + ", for: " + request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v"""" })
-        .getOrElse(request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v"""" })
-      val xForwardedBy    = request.headers
-        .get("X-Forwarded-By")
-        .getOrElse(request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v"""" })
-      val xForwardedProto = request.theProtocol
-      val xForwardedHost  = request.theHost
-      Seq(
-        "Forwarded" -> s"${xForwardedFor};proto: ${xForwardedProto};host: ${xForwardedHost};by: ${xForwardedBy}"
+    val request         = ctx.request
+    val trustXForwarded = env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)
+    val forwarded       = ForwardedHeader.value(request, request.theHost, request.theProtocol, trustXForwarded)
+    // the header sent by the client is still there, under whatever case it used, and is either
+    // already part of the new value or not to be trusted
+    Right(
+      ctx.otoroshiRequest.copy(
+        headers = ctx.otoroshiRequest.headers.filterNot(_._1.equalsIgnoreCase("Forwarded")) + ("Forwarded" -> forwarded)
       )
-    } else {
-      val xForwardedFor   = request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v"""" }
-      val xForwardedProto = request.theProtocol
-      val xForwardedHost  = request.theHost
-      Seq(
-        "Forwarded" -> s"for: ${xForwardedFor};proto: ${xForwardedProto};host: ${xForwardedHost};by: "
-      )
+    )
+  }
+}
+
+object ForwardedHeader {
+
+  private val tokenSymbols = "!#$%&'*+-.^_`|~"
+
+  // a value made of anything else than rfc 7230 token characters has to be sent as a quoted-string
+  def quoted(value: String): String = {
+    val isToken = value.nonEmpty && value.forall { c =>
+      (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || tokenSymbols.indexOf(c) >= 0
     }
-    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap))
+    if (isToken) value else "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+  }
+
+  // rfc 7239 section 6: an ipv6 node is enclosed in brackets, and like an ipv4 node carrying a port,
+  // the colons it holds make it a quoted-string. `unknown` and obfuscated identifiers stay tokens
+  def node(address: String): String = {
+    val trimmed = address.trim
+    if (!trimmed.startsWith("[") && trimmed.indexOf(':') != trimmed.lastIndexOf(':')) {
+      quoted(s"[$trimmed]")
+    } else {
+      quoted(trimmed)
+    }
+  }
+
+  // host and proto are left out when they are not known, rather than sent with an empty value. by
+  // is never sent: the play request does not say on which interface otoroshi accepted it
+  def element(forNode: String, host: String = "", proto: String = ""): String = {
+    val builder = new StringBuilder("for=").append(node(forNode))
+    if (host.nonEmpty) builder.append(";host=").append(quoted(host))
+    if (proto.nonEmpty) builder.append(";proto=").append(quoted(proto))
+    builder.toString
+  }
+
+  // the proxy chain as rfc 7239 elements, leftmost (closest to the client) first, ending with the
+  // peer of the connection otoroshi accepted. it carries what the X-Forwarded-* headers plugin sends,
+  // the host and the protocol of the original request going on the element of the client, which is
+  // the one backends read them from. when the forwarded headers are not trusted, the peer is the
+  // client. when they are, a Forwarded chain built by the proxies in front of otoroshi is kept as is,
+  // and a X-Forwarded-For one is rewritten element by element
+  def value(request: RequestHeader, host: String, proto: String, trustXForwarded: Boolean): String = {
+    val peer = request.remoteAddress
+    if (!trustXForwarded) {
+      element(peer, host, proto)
+    } else {
+      val forwarded = request.headers.getAll("Forwarded").map(_.trim).filter(_.nonEmpty)
+      if (forwarded.nonEmpty) {
+        (forwarded :+ element(peer)).mkString(", ")
+      } else {
+        request.headers.getAll("X-Forwarded-For").flatMap(_.split(',')).map(_.trim).filter(_.nonEmpty) match {
+          case Seq()             => element(peer, host, proto)
+          case client +: proxies =>
+            ((element(client, host, proto) +: proxies.map(proxy => element(proxy))) :+ element(peer)).mkString(", ")
+        }
+      }
+    }
   }
 }
 

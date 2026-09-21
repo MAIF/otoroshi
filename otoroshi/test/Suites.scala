@@ -128,6 +128,7 @@ class UnitTests
     extends Suites(
       new ApiBusinessRulesSpec(),
       new plugins.HttpSignatureRfc9421Spec(),
+      new plugins.ForwardedHeaderSpec(),
       new WebAuthnSpec(),
       new MapFilterSpec(),
       new JsonPathSpec(),

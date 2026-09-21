@@ -82,6 +82,15 @@ class ApikeyAuthModuleSpec extends PluginsTestSpecBase {
   }
 }
 
+// the rfc 7239 Forwarded header alone: sbt "testOnly functional.ForwardedHeaderPluginSpec"
+class ForwardedHeaderPluginSpec extends PluginsTestSpecBase {
+  s"Forwarded header" should {
+    "send the proxy chain to the backend as rfc 7239 elements" in {
+      new ForwardedHeadersTests(this)
+    }
+  }
+}
+
 // the otoroshi info. token alone: sbt "testOnly functional.OtoroshiInfoTokenSpec"
 class OtoroshiInfoTokenSpec extends PluginsTestSpecBase {
   s"Otoroshi info. token" should {
@@ -321,9 +330,6 @@ class PluginsTestSpec extends PluginsTestSpecBase {
     }
     "Force HTTPS traffic" in {
       new ForceHTTPsTrafficTests(this)
-    }
-    "Forwarded header" in {
-      new ForwardedHeadersTests(this)
     }
     "Mock responses" in {
       new MockReponsesTests(this)
