@@ -21,7 +21,7 @@ import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
 import otoroshi.models.*
 import otoroshi.next.models.*
-import otoroshi.next.workflow.Workflow
+import otoroshi.next.workflow.{Workflow, WorkflowAdminExtension}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.utils.syntax.implicits.*
@@ -1038,6 +1038,69 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
     p.future
   }
 
+  private val proxyStateSyncTimeout: FiniteDuration = 10.seconds
+
+  // Entities created through the admin api are only visible to the proxy once the proxy state loader job has
+  // picked them up. A fixed wait is not enough on a loaded machine, so poll the proxy state until the entity is there.
+  // Other otoroshi instances started by some tests are not reachable from here, for them we keep the fixed wait.
+  private def awaitProxyState(what: String, customPort: Option[Int], fallback: FiniteDuration)(
+      ready: Env => Boolean
+  ): Future[Unit] = {
+    if (customPort.exists(_ != port)) {
+      awaitF(fallback)(using actorSystem)
+    } else {
+      val env      = otoroshiComponents.env
+      val deadline = System.currentTimeMillis() + proxyStateSyncTimeout.toMillis
+      def poll(): Future[Unit] = {
+        if (ready(env)) {
+          FastFuture.successful(())
+        } else if (System.currentTimeMillis() > deadline) {
+          val message = s"$what is still not reflected in the proxy state after $proxyStateSyncTimeout"
+          logger.error(message)
+          FastFuture.failed(new RuntimeException(message))
+        } else {
+          awaitF(10.millis)(using actorSystem).flatMap(_ => poll())
+        }
+      }
+      poll()
+    }
+  }
+
+  // deletions wait too, so an entity re-created later with the same id is not mistaken for its stale previous version
+  private def awaitSynced(result: (JsValue, Int), what: String, customPort: Option[Int], fallback: FiniteDuration)(
+      ready: Env => Boolean
+  ): Future[(JsValue, Int)] = {
+    if (result._2 >= 200 && result._2 < 300) {
+      awaitProxyState(what, customPort, fallback)(ready).map(_ => result)
+    } else {
+      FastFuture.successful(result)
+    }
+  }
+
+  private def routeIsInRouter(route: NgRoute, env: Env): Boolean = {
+    route.frontend.domains.exists { d =>
+      env.proxyState.findRoutes(d.domainLowerCase, d.path).exists(_.exists(_.cacheableId == route.cacheableId))
+    }
+  }
+
+  // a route serves requests once it is in the domain/path tree of the router, which is the last thing published
+  // by a proxy state sync. disabled routes never reach the router, so for them we only wait for the raw route.
+  private def routeIsInProxyState(route: NgRoute)(env: Env): Boolean = {
+    if (!route.enabled) {
+      env.proxyState.rawRoute(route.cacheableId).isDefined
+    } else if (route.frontend.domains.isEmpty) {
+      env.proxyState.route(route.cacheableId).isDefined
+    } else {
+      routeIsInRouter(route, env)
+    }
+  }
+
+  private def routeIsGoneFromProxyState(route: NgRoute)(env: Env): Boolean = {
+    env.proxyState.rawRoute(route.cacheableId).isEmpty &&
+    env.proxyState.route(route.cacheableId).isEmpty &&
+    !routeIsInRouter(route, env)
+  }
+
   def otoroshiApiCall(
       method: String,
       path: String,
@@ -1372,7 +1435,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      .flatMap(r => awaitSynced(r, s"route ${route.id}", customPort, 1000.millis)(routeIsInProxyState(route)))
   }
 
   def createOtoroshiService(
@@ -1395,7 +1458,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(2000.millis)
+      .flatMap(r => awaitSynced(r, s"route ${route.id}", customPort, 2000.millis)(routeIsInProxyState(route)))
   }
 
   def createOtoroshiVerifier(
@@ -1413,7 +1476,11 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(2000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"jwt verifier ${verifier.id}", customPort, 2000.millis)(
+          _.proxyState.jwtVerifier(verifier.id).isDefined
+        )
+      )
   }
 
   def createAuthModule(
@@ -1431,7 +1498,9 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(2000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"auth module ${auth.id}", customPort, 2000.millis)(_.proxyState.authModule(auth.id).isDefined)
+      )
   }
 
   def createOtoroshiApiKey(
@@ -1449,7 +1518,11 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(2000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"apikey ${apiKey.clientId}", customPort, 2000.millis)(
+          _.proxyState.apikey(apiKey.clientId).isDefined
+        )
+      )
   }
 
   def createOtoroshiWorkflow(
@@ -1467,7 +1540,11 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(2000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"workflow ${workflow.id}", customPort, 2000.millis)(
+          _.adminExtensions.extension[WorkflowAdminExtension].flatMap(_.workflow(workflow.id)).isDefined
+        )
+      )
   }
 
   def createOtoroshiErrorTemplate(
@@ -1485,7 +1562,11 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(2000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"error template ${errorTemplate.serviceId}", customPort, 2000.millis)(
+          _.proxyState.errorTemplate(errorTemplate.serviceId).isDefined
+        )
+      )
   }
 
   def deleteOtoroshiVerifier(
@@ -1503,7 +1584,11 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"jwt verifier ${verifier.id} deletion", customPort, 1000.millis)(
+          _.proxyState.jwtVerifier(verifier.id).isEmpty
+        )
+      )
   }
 
   def deleteAuthModule(
@@ -1521,7 +1606,11 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"auth module ${auth.id} deletion", customPort, 1000.millis)(
+          _.proxyState.authModule(auth.id).isEmpty
+        )
+      )
   }
 
   def deleteOtoroshiErrorTemplate(
@@ -1539,7 +1628,11 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"error template ${errorTemplate.serviceId} deletion", customPort, 1000.millis)(
+          _.proxyState.errorTemplate(errorTemplate.serviceId).isEmpty
+        )
+      )
   }
 
   def deleteOtoroshiApiKey(
@@ -1557,7 +1650,11 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"apikey ${apiKey.clientId} deletion", customPort, 1000.millis)(
+          _.proxyState.apikey(apiKey.clientId).isEmpty
+        )
+      )
   }
 
   def updateOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
@@ -1622,7 +1719,9 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"route ${route.id} deletion", customPort, 1000.millis)(routeIsGoneFromProxyState(route))
+      )
   }
 
   def deleteOtoroshiWorkflow(workflow: Workflow, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
@@ -1636,7 +1735,11 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      .flatMap(r =>
+        awaitSynced(r, s"workflow ${workflow.id} deletion", customPort, 1000.millis)(
+          _.adminExtensions.extension[WorkflowAdminExtension].flatMap(_.workflow(workflow.id)).isEmpty
+        )
+      )
   }
 
   def deleteOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
@@ -1652,7 +1755,10 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(2000.millis)
+      .flatMap { r =>
+        val route = NgRoute.fromServiceDescriptor(service, debug = false)(using ec, otoroshiComponents.env)
+        awaitSynced(r, s"route ${route.id} deletion", customPort, 2000.millis)(routeIsGoneFromProxyState(route))
+      }
   }
 
   def createRouteWithExternalTarget(
