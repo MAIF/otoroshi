@@ -1109,7 +1109,11 @@ case class RevokedApiKeyUsageAlert(
   override def `@service`: String   = descriptor.map(_.name).getOrElse("--")
   override def `@serviceId`: String = descriptor.map(_.id).getOrElse("--")
 
-  override def fromOrigin: Option[String]    = Some(req.theIpAddress(using env))
+  // the client address, resolved the same way as for the gateway events. the peer of the connection
+  // can be a proxy standing in front of otoroshi
+  lazy val from: String = req.theIpAddress(using env)
+
+  override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(req.theUserAgent)
 
   override def toJson(using _env: Env): JsValue =
@@ -1122,7 +1126,7 @@ case class RevokedApiKeyUsageAlert(
       "@service"   -> `@service`,
       "@env"       -> `@env`,
       "alert"      -> "RevokedApiKeyUsageAlert",
-      "from"       -> req.remoteAddress,
+      "from"       -> from,
       "to"         -> req.theHost,
       "uri"        -> req.relativeUri,
       "apiKey"     -> apiKey.toJson

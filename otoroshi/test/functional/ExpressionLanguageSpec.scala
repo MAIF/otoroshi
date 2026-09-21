@@ -309,6 +309,22 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
       env.isTrustedProxy("192.168.7.2") mustBe false
     }
 
+    "report the resolved client address in the revoked apikey alert" in {
+      val alert = otoroshi.events.RevokedApiKeyUsageAlert(
+        "alert_test",
+        org.joda.time.DateTime.now(),
+        "test",
+        forwardedRequest,
+        sampleApiKey,
+        None,
+        env
+      )
+      // the geolocation and the exported event designate the same caller, not the trusted proxy the
+      // connection comes from
+      alert.fromOrigin.value mustBe "1.1.1.1"
+      (alert.toJson(using env) \ "from").as[String] mustBe "1.1.1.1"
+    }
+
     "resolve request expressions" in {
       el("${req.method}") mustBe "GET"
       el("${req.path}") mustBe "/api/foo"
