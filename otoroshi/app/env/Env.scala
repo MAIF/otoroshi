@@ -67,7 +67,7 @@ import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.io.Source
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 case class RoutingInfo(id: String, name: String)
 
@@ -513,36 +513,90 @@ class Env(
   lazy val initialTrustXForwarded: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
 
-  // the trusted proxies published by the infrastructure at boot time, as a comma separated list of
-  // ip addresses, cidr ranges or wildcard patterns
-  lazy val trustedProxiesFromConfig: Seq[String] =
-    configuration
-      .getOptionalWithFileSupport[String]("otoroshi.options.trustedProxies")
-      .map(_.split(",").toSeq.map(_.trim).filterNot(_.isEmpty))
-      .getOrElse(Seq.empty)
+  // an entry can hold a comma separated list, which is what a vault reference to the env var of a
+  // platform publishing its proxies resolves to
+  private def splitTrustedProxies(values: Seq[String]): Seq[String] = {
+    values.flatMap(_.split(",")).map(_.trim).filter(_.nonEmpty)
+  }
 
-  private val trustedProxiesMatcherRef = new AtomicReference[(Seq[String], IpAddressMatcher)](null)
+  // the trusted proxies published by the infrastructure at boot time, as comma separated lists of ip
+  // addresses, cidr ranges or wildcard patterns, by source. the sources are combined instead of
+  // hiding one another: a platform publishing its proxies must not lose them because an operator
+  // declared one of their own under another variable
+  lazy val trustedProxiesSources: Seq[(String, Seq[String])] = {
+    val main   = "otoroshi.options.trustedProxies" -> splitTrustedProxies(
+      configuration.getOptionalWithFileSupport[String]("otoroshi.options.trustedProxies").toSeq
+    )
+    val others = Try(configuration.getOptional[Configuration]("otoroshi.options.trustedProxiesSources")).toOption.flatten
+      .map { sources =>
+        sources.keys.toSeq.sorted.map { name =>
+          name -> splitTrustedProxies(sources.getOptionalWithFileSupport[String](name).toSeq)
+        }
+      }
+      .getOrElse(Seq.empty)
+    (main +: others).filter(_._2.nonEmpty)
+  }
+
+  lazy val trustedProxiesFromConfig: Seq[String] = trustedProxiesSources.flatMap(_._2).distinct
 
   // the trusted proxies known at boot time combined with the ones configured at runtime in the
   // global config, as both are legitimate sources: some platforms only publish them through env
-  // vars while operators need to add their own without restarting otoroshi. the compiled matcher
-  // is kept until the content of the dynamic part changes, as a platform can publish several
-  // hundred of them and the global config is reloaded every few seconds
+  // vars while operators need to add their own without restarting otoroshi
+  private def trustedProxiesWith(dynamic: Seq[String]): Seq[String] = {
+    val all = (trustedProxiesFromConfig ++ splitTrustedProxies(dynamic)).distinct
+    // as soon as proxies are declared, the loopback is trusted too, as play did by default: a last
+    // hop running on the same host would otherwise hide every client behind 127.0.0.1
+    if (all.isEmpty) all else (all ++ IpAddressMatcher.loopback).distinct
+  }
+
+  private val trustedProxiesMatcherRef = new AtomicReference[(Seq[String], IpAddressMatcher)](null)
+
+  // the compiled matcher is kept until the content of the dynamic part changes, as a platform can
+  // publish several hundred of them and the global config is reloaded every few seconds
   def trustedProxiesMatcher: IpAddressMatcher = {
     val dynamic = datastores.globalConfigDataStore.latestSafe.map(_.trustedProxies).getOrElse(Seq.empty)
     val current = trustedProxiesMatcherRef.get()
     if (current != null && ((current._1 eq dynamic) || current._1 == dynamic)) {
       current._2
     } else {
-      // an entry can hold a comma separated list, which is what a vault reference to the env var of
-      // a platform publishing its proxies resolves to
-      val all     = trustedProxiesFromConfig ++ dynamic.flatMap(_.split(",")).map(_.trim).filter(_.nonEmpty)
-      // as soon as proxies are declared, the loopback is trusted too, as play did by default: a last
-      // hop running on the same host would otherwise hide every client behind 127.0.0.1
-      val matcher = IpAddressMatcher(if (all.isEmpty) all else all ++ IpAddressMatcher.loopback)
+      val matcher = IpAddressMatcher(trustedProxiesWith(dynamic))
       trustedProxiesMatcherRef.set((dynamic, matcher))
       matcher
     }
+  }
+
+  // says once, at startup, how the client address is resolved, as a wrong list silently gives every
+  // client the address of the proxy in front of otoroshi. the later changes of the global config are
+  // traced by its audit events. the lists themselves are only logged at debug level, a platform can
+  // publish several hundred proxies
+  private def logTrustedProxies(): Future[Unit] = {
+    val sources =
+      if (trustedProxiesSources.isEmpty) "no source"
+      else trustedProxiesSources.map { case (name, entries) => s"$name: ${entries.size}" }.mkString(", ")
+    val startup = s"trusted proxies: ${trustedProxiesFromConfig.size} entries at startup ($sources)"
+    datastores.globalConfigDataStore
+      .singleton()(using otoroshiExecutionContext, this)
+      .map { config =>
+        val dynamic    = splitTrustedProxies(config.trustedProxies)
+        val effective  = trustedProxiesWith(config.trustedProxies)
+        val resolution =
+          if (!config.trustXForwarded) {
+            "trustXForwarded is disabled, the forwarded headers are ignored and the client address is the address of the connection"
+          } else if (useLegacyClientIpAddressFromConfig || config.useLegacyClientIpAddress) {
+            "the trusted proxies are ignored as useLegacyClientIpAddress is enabled"
+          } else if (effective.isEmpty) {
+            "trustXForwarded is enabled without any trusted proxy, the client address is the leftmost X-Forwarded-For entry, which the client can choose"
+          } else {
+            "trustXForwarded is enabled, the forwarded headers are read when the connection comes from a trusted proxy"
+          }
+        logger.info(
+          s"$startup, ${dynamic.size} in the global config, ${effective.size} in use including the loopback. $resolution"
+        )
+        if (logger.isDebugEnabled) logger.debug(s"trusted proxies in use: ${effective.mkString(", ")}")
+      }(using otoroshiExecutionContext)
+      .recover { case _ =>
+        logger.info(s"$startup, the global config is not loaded yet")
+      }(using otoroshiExecutionContext)
   }
 
   def trustedProxies: Seq[String] = trustedProxiesMatcher.patterns
@@ -1440,6 +1494,7 @@ class Env(
     timeout(300.millis).andThen { case _ =>
       tunnelAgent.start()
     }(using otoroshiExecutionContext)
+    logTrustedProxies()
     ().vfuture
   }
 

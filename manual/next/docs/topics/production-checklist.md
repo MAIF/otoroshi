@@ -25,7 +25,8 @@ Nothing here is a bug report. It is the list of things nobody else can decide fo
 - [ ] `otoroshi.ssl.trust.all` is off
 - [ ] `strictBackendServerValidation` is enabled in your global config, not just assumed
 - [ ] `trustXForwarded` matches your topology: on only if a trusted proxy rewrites those headers
-- [ ] Your reverse proxies are declared as trusted proxies, including the last hop in front of Otoroshi
+- [ ] Your reverse proxies are declared as trusted proxies, including the last hop in front of Otoroshi,
+      and the `trusted proxies:` line of the logs says so
 - [ ] `useLegacyClientIpAddress` is off
 - [ ] No route runs the apikey plugin with both *validate* and *mandatory* turned off
 - [ ] API keys authenticating with keypair-signed JWTs pin their keypair
@@ -182,31 +183,30 @@ this way must be one that your trusted proxies build or sanitise.
 
 The list accepts IP addresses, CIDR ranges and wildcard patterns. It is the combination of:
 
-- `otoroshi.options.trustedProxies`, a comma separated list read once at startup
+- the startup list, read once at startup, so changing it requires a restart. It is made of
+  `otoroshi.options.trustedProxies`, set by `OTOROSHI_OPTIONS_TRUSTED_PROXIES`, and of every entry of
+  `otoroshi.options.trustedProxiesSources`, which ships with `CC_REVERSE_PROXY_IPS` and
+  `OTOROSHI_TRUSTED_PROXIES`. Each source is a comma separated list
 - `trustedProxies` in the global config, editable at runtime from the danger zone. An entry can hold
   a comma separated list, so it can be a vault reference to an env var publishing the proxies of a
   platform, like `${vault://env/CC_REVERSE_PROXY_IPS}`
 
-With the shipped `application.conf` and no overriding configuration, the startup list comes from the
-first defined of `OTOROSHI_OPTIONS_TRUSTED_PROXIES`, `OTOROSHI_TRUSTED_PROXIES` and
-`CC_REVERSE_PROXY_IPS`, in that order. Defining one of them **replaces** the lower priority ones
-instead of extending them. If the highest priority defined variable is empty, it contributes no
-startup entries; the global list still applies. Changing it requires a restart.
-
-To add proxies to a list published by a platform, either add them to `trustedProxies` in the global
-config, which is combined with the startup list, or reference the platform variable from the one you
-define. The startup configuration goes through the vaults, and the shipped configuration enables the
-env vault, so the following value works as long as it stays enabled:
+Every source **adds** its entries to the others, and duplicates are dropped: declaring a proxy of your
+own never hides the ones a platform publishes. On Clever Cloud, setting
+`OTOROSHI_OPTIONS_TRUSTED_PROXIES` for a CDN in front of the platform keeps the proxies of
+`CC_REVERSE_PROXY_IPS` in the list. An empty or undefined source contributes nothing. Another
+variable can be declared as a source from your own configuration file:
 
 ```
-OTOROSHI_OPTIONS_TRUSTED_PROXIES='${vault://env/PROXY_IPS},203.0.113.0/24'
+otoroshi.options.trustedProxiesSources.MY_CDN_IPS = ${?MY_CDN_IPS}
 ```
-
-This assumes `PROXY_IPS` is defined with the desired proxy list and the env vault remains enabled.
 
 As soon as the list is not empty, the loopback (`127.0.0.1` and `::1`) is trusted too, as Play did by
 default: a last hop running on the same host as Otoroshi does not have to be declared. IPv6 entries
-are compared as addresses, not as text, so any spelling of the same address matches.
+are compared as addresses, not as text, so any spelling of the same address matches, and a wildcard
+matches both the compressed and the full spelling of an address. The IP allow and block lists, the IP
+filtering of the global config, the endless responses and the fail2ban rules, when the fail2ban
+identifier is the client address, match addresses the same way.
 
 The list only applies while `trustXForwarded` is on, which stays the master switch. As soon as the
 list is not empty, `X-Forwarded-For` is never trusted blindly anymore.
@@ -222,6 +222,21 @@ which means upgrading Otoroshi turns the trusted proxy resolution on by itself.
 
 The `${req.ip_safe}`, `${req.ip_from_trusted_proxy}`, `${req.ip_from_xff}` and
 `${req.ip_from_socket}` [expressions](./expression-language.mdx) expose each resolution separately.
+
+### Check the trusted proxies in use
+
+Otoroshi logs once, at startup, how it resolves the client address. The line gives the number of
+entries of each startup source, of the global config and of the list in use, loopback included, then
+what `trustXForwarded` and `useLegacyClientIpAddress` make of them:
+
+```
+trusted proxies: 12 entries at startup (CC_REVERSE_PROXY_IPS: 12), 0 in the global config, 14 in use including the loopback. trustXForwarded is enabled, the forwarded headers are read when the connection comes from a trusted proxy
+```
+
+The entries themselves are only logged at debug level on the `otoroshi-env` logger
+(`OTOROSHI_LOGGERS_OTOROSHI_ENV=DEBUG`), as a platform can publish several hundred proxies. Every node
+logs its own line: the startup list of a worker comes from the environment of that worker. The later
+changes of the global config are not logged there, they are traced by its audit events.
 
 ### `useLegacyClientIpAddress` is a way back, not a setting
 

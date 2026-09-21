@@ -43,6 +43,8 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
         .parseString("""
           |otoroshi.test.elMarker = "el-works"
           |otoroshi.options.trustedProxies = "10.0.0.0/8"
+          |otoroshi.options.trustedProxiesSources.PLATFORM_PROXY_IPS = "192.168.100.0/24, 10.0.0.0/8"
+          |otoroshi.options.trustedProxiesSources.EMPTY_PROXY_IPS = ""
           |""".stripMargin)
         .resolve()
     ).withFallback(configurationSpec).withFallback(configuration)
@@ -307,6 +309,18 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
         updateGlobalConfig(_.copy(trustedProxies = Seq.empty))(_.trustedProxies.isEmpty)
       }
       env.isTrustedProxy("192.168.7.2") mustBe false
+    }
+
+    "combine every startup source of trusted proxies" in {
+      // a source defined under another name adds its proxies instead of replacing the others
+      env.trustedProxiesSources mustBe Seq(
+        "otoroshi.options.trustedProxies" -> Seq("10.0.0.0/8"),
+        "PLATFORM_PROXY_IPS"              -> Seq("192.168.100.0/24", "10.0.0.0/8")
+      )
+      env.trustedProxiesFromConfig mustBe Seq("10.0.0.0/8", "192.168.100.0/24")
+      env.isTrustedProxy("192.168.100.7") mustBe true
+      env.isTrustedProxy("10.1.2.3") mustBe true
+      env.isTrustedProxy("192.168.101.7") mustBe false
     }
 
     "report the resolved client address in the revoked apikey alert" in {
