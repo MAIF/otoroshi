@@ -298,8 +298,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       createOtoroshiVerifier(jwtVerifier).futureValue
 
       val service = ServiceDescriptor(
-        id = "jwt-test",
-        name = "jwt-test",
+        id = "jwt-resign-test",
+        name = "jwt-resign-test",
         env = "prod",
         subdomain = "jwt",
         domain = "oto.tools",
@@ -476,8 +476,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       createOtoroshiVerifier(jwtVerifier).futureValue
 
       val service = ServiceDescriptor(
-        id = "jwt-test",
-        name = "jwt-test",
+        id = "jwt-transform-test",
+        name = "jwt-transform-test",
         env = "prod",
         subdomain = "jwt",
         domain = "oto.tools",

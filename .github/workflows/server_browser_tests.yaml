@@ -56,6 +56,9 @@ jobs:
 
       - name: install playwright dependencies
         run: |
+          # the package index shipped with the runner image goes stale: a package it points to can be
+          # gone from the mirrors (404), so it is refreshed first
+          sudo apt-get update
           sudo apt-get install libwoff1 \
             libvpx9 \
             libevent-2.1-7t64 \

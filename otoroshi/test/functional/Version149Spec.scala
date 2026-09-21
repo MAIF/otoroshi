@@ -693,8 +693,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         }
       )
       val service                    = ServiceDescriptor(
-        id = "service-disabled-info",
-        name = "service-disabled-info",
+        id = "service-latest-info",
+        name = "service-latest-info",
         env = "prod",
         subdomain = "service-disabled-info",
         domain = "oto.tools",
