@@ -8,19 +8,22 @@ const openSourceProjects = [
   {
     name: 'otoroshi-llm-extension',
     description: 'Turn Otoroshi into an AI Gateway. Connect, setup, secure and seamlessly manage AI models using a Universal/OpenAI compatible API.',
-    url: 'https://github.com/cloud-apim/otoroshi-llm-extension',
+    github_url: 'https://github.com/cloud-apim/otoroshi-llm-extension',
+    url: 'https://cloud-apim.github.io/otoroshi-llm-extension/',
     tags: ['AI', 'AI Gateway', 'LLM', 'Cloud APIM'],
   },
   {
-    name: 'otoroshi-waf-extension',
-    description: 'A Web Application Firewall (WAF) extension for Otoroshi with ModSecurity SecLang and OWASP CRS.',
-    url: 'https://github.com/cloud-apim/otoroshi-waf-extension',
-    tags: ['Security', 'WAF', 'Cloud APIM'],
+    name: 'Otoroshi Threat Protection Suite',
+    description: 'Every request judged before it reaches your backend. ModSecurity WAF, OWASP Core Rule Set, threat intelligence and bot defense, running natively inside Otoroshi. No third party in the request path',
+    github_url: 'https://github.com/cloud-apim/otoroshi-waf-extension',
+    url : 'https://cloud-apim.github.io/otoroshi-waf-extension/',
+    tags: ['Security', 'WAF', 'Bot protection', 'Threat intelligence', 'Cloud APIM'],
   },
   {
     name: 'otoroshi-biscuit-studio',
     description: 'Biscuit studio Extension for Otoroshi. Create, manage and validate Eclipse Biscuit authorization tokens.',
-    url: 'https://github.com/cloud-apim/otoroshi-biscuit-studio',
+    url: 'https://cloud-apim.github.io/otoroshi-biscuit-studio/',
+    github_url: 'https://github.com/cloud-apim/otoroshi-biscuit-studio',
     tags: ['Security', 'Authorization', 'authz', 'token', 'Cloud APIM'],
   },
   {
@@ -32,7 +35,8 @@ const openSourceProjects = [
   {
     name: 'otoroshictl',
     description: 'A CLI to manage your Otoroshi clusters with style. Import, export, sync and automate operations.',
-    url: 'https://github.com/cloud-apim/otoroshictl',
+    github_url: 'https://github.com/cloud-apim/otoroshictl',
+    url: 'https://cloud-apim.github.io/otoroshictl/',
     tags: ['CLI', 'Tools', 'Cloud APIM'],
   },
   {
@@ -118,6 +122,48 @@ function HeroSection() {
   );
 }
 
+function GithubIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  );
+}
+
+// The whole card links to `url` through a stretched title link (nested <a> elements are invalid HTML),
+// the GitHub icon sits above that overlay and links to `github_url` when there is one.
+function ProjectCard({ project }) {
+  return (
+    <div className={styles.projectCard}>
+      <div className={styles.projectCardHeader}>
+        <h3>
+          <a className={styles.projectCardLink} href={project.url} target="_blank" rel="noopener noreferrer">
+            {project.name}
+          </a>
+        </h3>
+        {project.github_url && (
+          <a
+            className={styles.githubLink}
+            href={project.github_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Sources on GitHub"
+            aria-label={`${project.name} sources on GitHub`}
+          >
+            <GithubIcon />
+          </a>
+        )}
+      </div>
+      <p>{project.description}</p>
+      <div className={styles.tags}>
+        {project.tags.map((tag, tidx) => (
+          <span key={tidx} className={styles.tag}>{tag}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function OpenSourceSection() {
   return (
     <section className={styles.section}>
@@ -130,23 +176,7 @@ function OpenSourceSection() {
         </div>
         <div className={styles.projectsGrid}>
           {openSourceProjects.map((project, idx) => (
-            <a
-              key={idx}
-              className={styles.projectCard}
-              href={project.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <div className={styles.projectCardHeader}>
-                <h3>{project.name}</h3>
-              </div>
-              <p>{project.description}</p>
-              <div className={styles.tags}>
-                {project.tags.map((tag, tidx) => (
-                  <span key={tidx} className={styles.tag}>{tag}</span>
-                ))}
-              </div>
-            </a>
+            <ProjectCard key={idx} project={project} />
           ))}
         </div>
       </div>
@@ -166,23 +196,7 @@ function DevPortalsSection() {
         </div>
         <div className={styles.providersGrid}>
           {devPortals.map((portal, idx) => (
-            <a
-              key={idx}
-              className={styles.projectCard}
-              href={portal.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <div className={styles.projectCardHeader}>
-                <h3>{portal.name}</h3>
-              </div>
-              <p>{portal.description}</p>
-              <div className={styles.tags}>
-                {portal.tags.map((tag, tidx) => (
-                  <span key={tidx} className={styles.tag}>{tag}</span>
-                ))}
-              </div>
-            </a>
+            <ProjectCard key={idx} project={portal} />
           ))}
         </div>
       </div>
