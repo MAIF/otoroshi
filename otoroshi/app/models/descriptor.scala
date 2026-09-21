@@ -839,7 +839,14 @@ object Target {
   }
 }
 
-case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Seq[String] = Seq.empty[String]) {
+case class IpFiltering(
+    whitelist: Seq[String] = Seq.empty[String],
+    blacklist: Seq[String] = Seq.empty[String],
+    // when enabled, a blocked address is looked for in the whole proxy chain, not only in the
+    // resolved client address. the client writes part of that chain, so it never applies to the
+    // whitelist
+    blacklistMatchesForwardedChain: Boolean = false
+) {
   // compiled once per instance, with the same address matching as the trusted proxies
   private lazy val whitelistMatcher = otoroshi.utils.IpAddressMatcher(whitelist)
   private lazy val blacklistMatcher = otoroshi.utils.IpAddressMatcher(blacklist)
@@ -867,7 +874,9 @@ class CidrOfString(cdr: String) {
 }
 
 object IpFiltering {
-  implicit val format: play.api.libs.json.OFormat[IpFiltering] = Json.format[IpFiltering]
+  // the default values are used for the fields a persisted filtering predates. without them, an
+  // existing one would fail to read and be replaced by an empty one, losing its lists
+  implicit val format: play.api.libs.json.OFormat[IpFiltering] = Json.using[Json.WithDefaultValues].format[IpFiltering]
   private val cidrCache           = Caches.bounded[String, CidrOfString](10000)
   private[models] val ipaddrCache = Caches.bounded[String, Option[IpAddress]](10000)
   def cidr(cdr: String): CidrOfString = {

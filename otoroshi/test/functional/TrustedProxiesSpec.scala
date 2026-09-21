@@ -1,7 +1,7 @@
 package functional
 
 import org.scalatest.OptionValues
-import otoroshi.utils.{IpAddressMatcher, IpAddresses}
+import otoroshi.utils.{ClientAddressHeader, ForwardedElement, IpAddressMatcher, IpAddresses}
 
 class TrustedProxiesSpec
     extends org.scalatest.wordspec.AnyWordSpec
@@ -63,31 +63,46 @@ class TrustedProxiesSpec
     }
   }
 
-  "IpAddresses.parseForwardedChain" should {
+  "IpAddresses.parseChain" should {
 
-    "read X-Forwarded-For when there is no Forwarded header" in {
-      IpAddresses.parseForwardedChain(Seq.empty, Seq("1.1.1.1, 10.0.0.1")) mustBe Seq("1.1.1.1", "10.0.0.1")
+    val xForwardedFor = ClientAddressHeader.default
+    val forwarded     = ClientAddressHeader("Forwarded")
+
+    "read X-Forwarded-For" in {
+      IpAddresses.parseChain(xForwardedFor, Seq("1.1.1.1, 10.0.0.1")) mustBe Seq("1.1.1.1", "10.0.0.1")
     }
 
     "concatenate every occurrence of X-Forwarded-For" in {
-      IpAddresses.parseForwardedChain(Seq.empty, Seq("1.1.1.1", "10.0.0.1, 10.0.0.2")) mustBe Seq(
+      IpAddresses.parseChain(xForwardedFor, Seq("1.1.1.1", "10.0.0.1, 10.0.0.2")) mustBe Seq(
         "1.1.1.1",
         "10.0.0.1",
         "10.0.0.2"
       )
     }
 
-    "prefer the Forwarded header when both are present" in {
-      IpAddresses.parseForwardedChain(Seq("for=1.1.1.1"), Seq("9.9.9.9")) mustBe Seq("1.1.1.1")
+    "read a header holding a single address" in {
+      IpAddresses.parseChain(ClientAddressHeader("X-Real-IP"), Seq("1.1.1.1")) mustBe Seq("1.1.1.1")
     }
 
     "read every parameter layout of the Forwarded header" in {
       val header = """for=1.1.1.1;proto=https, by=10.0.0.9;for="[2001:db8::1]:4711";proto=http, For=10.0.0.1:8080"""
-      IpAddresses.parseForwardedChain(Seq(header), Seq.empty) mustBe Seq("1.1.1.1", "2001:db8::1", "10.0.0.1")
+      IpAddresses.parseChain(forwarded, Seq(header)) mustBe Seq("1.1.1.1", "2001:db8::1", "10.0.0.1")
     }
 
-    "drop the obfuscated and unknown identifiers of the Forwarded header" in {
-      IpAddresses.parseForwardedChain(Seq("for=unknown, for=_hidden, for=1.1.1.1"), Seq.empty) mustBe Seq("1.1.1.1")
+    "keep the obfuscated and unknown identifiers of the Forwarded header, they are hops" in {
+      IpAddresses.parseChain(forwarded, Seq("for=unknown, for=_hidden, for=1.1.1.1")) mustBe Seq(
+        "unknown",
+        "_hidden",
+        "1.1.1.1"
+      )
+    }
+
+    "read the host and the protocol of each Forwarded element" in {
+      val header = """for=1.1.1.1;host="api.example.com:8443";proto=HTTPS, for=10.0.0.2, by=10.0.0.3;proto=http"""
+      IpAddresses.parseForwardedElements(Seq(header)) mustBe Seq(
+        ForwardedElement("1.1.1.1", Some("api.example.com:8443"), Some("https")),
+        ForwardedElement("10.0.0.2", None, None)
+      )
     }
   }
 
@@ -188,6 +203,7 @@ class TrustedProxiesSpec
           otoroshi.models.IpFiltering(whitelist = Seq(rule)).notMatchesWhitelist(address) mustBe false
           otoroshi.models.GlobalConfig(endlessIpAddresses = Seq(rule)).matchesEndlessIpAddresses(address) mustBe true
           otoroshi.next.plugins.NgIpAddressesConfig(Seq(rule)).matcher.matches(address) mustBe true
+          otoroshi.next.plugins.NgIpAddressBlockListConfig(Seq(rule)).matcher.matches(address) mustBe true
           otoroshi.next.plugins.NgEndlessHttpResponseConfig(addresses = Seq(rule)).matcher.matches(address) mustBe true
           // fail2ban with an identifier that is the client address, the rule being wrapped or not
           val wrapped = if (rule.contains("/")) s"Cidr($rule)" else s"Ip($rule)"
@@ -224,6 +240,25 @@ class TrustedProxiesSpec
       otoroshi.next.plugins.NgIpAddressesConfig().matcher.matches("10.0.0.1") mustBe false
     }
 
+    "read the ip filtering persisted before the proxy chain option existed" in {
+      val filtering = play.api.libs.json.Json
+        .obj("whitelist" -> Seq("10.0.0.0/8"), "blacklist" -> Seq("1.1.1.1"))
+        .as[otoroshi.models.IpFiltering]
+      filtering mustBe otoroshi.models.IpFiltering(whitelist = Seq("10.0.0.0/8"), blacklist = Seq("1.1.1.1"))
+      filtering.blacklistMatchesForwardedChain mustBe false
+    }
+
+    "read the proxy chain option of the ip block list plugin" in {
+      val config = otoroshi.next.plugins.NgIpAddressBlockListConfig.format
+        .reads(play.api.libs.json.Json.obj("addresses" -> Seq("1.1.1.1")))
+        .get
+      config.matchForwardedChain mustBe false
+      otoroshi.next.plugins.NgIpAddressBlockListConfig.format
+        .reads(play.api.libs.json.Json.obj("addresses" -> Seq("1.1.1.1"), "match_forwarded_chain" -> true))
+        .get
+        .matchForwardedChain mustBe true
+    }
+
     "turn away an address missing from a non empty whitelist" in {
       otoroshi.models.IpFiltering(whitelist = Seq("10.0.0.0/8")).notMatchesWhitelist("192.168.0.1") mustBe true
       otoroshi.models.IpFiltering(blacklist = Seq("10.0.0.0/8")).matchesBlacklist("192.168.0.1") mustBe false
@@ -258,6 +293,56 @@ class TrustedProxiesSpec
 
     "return the leftmost entry when every hop is a trusted proxy" in {
       IpAddresses.resolveFromChain("10.0.0.1", Seq("10.0.0.3", "10.0.0.2"), trusted).value mustBe "10.0.0.3"
+    }
+
+    "stop on a hop that is not an address instead of reading what the client wrote before it" in {
+      // the trusted proxy hid the client behind `unknown`, 9.9.9.9 is what the client wrote itself
+      IpAddresses.resolveFromChain("10.0.0.1", Seq("9.9.9.9", "unknown", "10.0.0.2"), trusted) mustBe None
+      IpAddresses.resolveFromChain("10.0.0.1", Seq("9.9.9.9", "_hidden"), trusted) mustBe None
+    }
+
+    "find the Forwarded element of the client" in {
+      val elements = IpAddresses.parseForwardedElements(
+        Seq("for=9.9.9.9;host=evil.example.com;proto=http, for=1.1.1.1;host=api.example.com;proto=https, for=10.0.0.2")
+      )
+      IpAddresses.resolveForwardedElement("10.0.0.1", elements, trusted).value mustBe ForwardedElement(
+        "1.1.1.1",
+        Some("api.example.com"),
+        Some("https")
+      )
+      // the chain proves nothing when the connection does not come from a trusted proxy
+      IpAddresses.resolveForwardedElement("192.168.0.1", elements, trusted) mustBe None
+      IpAddresses.resolveForwardedElement("10.0.0.1", Seq.empty, trusted) mustBe None
+    }
+  }
+
+  // a proxy that only builds X-Forwarded-For lets the client write Forwarded, and the other way
+  // around: the client address is only read from the header chosen as the client address header
+  "the client address header" should {
+
+    val trusted = IpAddressMatcher(Seq("10.0.0.0/8"))
+
+    "not let the client choose its address through another header" in {
+      val headers = Map(
+        "Forwarded"       -> Seq("for=6.6.6.6"),
+        "X-Forwarded-For" -> Seq("1.1.1.1, 10.0.0.2"),
+        "X-Real-IP"       -> Seq("7.7.7.7")
+      )
+      def resolve(header: ClientAddressHeader) = {
+        IpAddresses.resolveFromChain(
+          "10.0.0.1",
+          IpAddresses.parseChain(header, headers.getOrElse(header.name, Seq.empty)),
+          trusted
+        )
+      }
+      resolve(ClientAddressHeader.default).value mustBe "1.1.1.1"
+      resolve(ClientAddressHeader("Forwarded")).value mustBe "6.6.6.6"
+      resolve(ClientAddressHeader("X-Real-IP")).value mustBe "7.7.7.7"
+    }
+
+    "recognize Forwarded whatever its case" in {
+      ClientAddressHeader("forwarded").isForwarded mustBe true
+      ClientAddressHeader.default.isForwarded mustBe false
     }
   }
 }

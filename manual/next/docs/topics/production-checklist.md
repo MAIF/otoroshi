@@ -27,6 +27,7 @@ Nothing here is a bug report. It is the list of things nobody else can decide fo
 - [ ] `trustXForwarded` matches your topology: on only if a trusted proxy rewrites those headers
 - [ ] Your reverse proxies are declared as trusted proxies, including the last hop in front of Otoroshi,
       and the `trusted proxies:` line of the logs says so
+- [ ] The client address header is one every proxy in front of Otoroshi builds or overwrites
 - [ ] `useLegacyClientIpAddress` is off
 - [ ] No route runs the apikey plugin with both *validate* and *mandatory* turned off
 - [ ] API keys authenticating with keypair-signed JWTs pin their keypair
@@ -145,7 +146,7 @@ need to trust a private authority, add that authority to Otoroshi's certificate 
 ### `X-Forwarded-*` headers are trusted by default
 
 `trustXForwarded` defaults to `true`. When no trusted proxy is declared, the client IP address is then
-read from the first value of the `X-Forwarded-For` header.
+read from the first value of the client address header, `X-Forwarded-For` by default.
 
 That default assumes Otoroshi runs behind a load balancer that **overwrites** those headers. If a
 client can reach Otoroshi directly, it chooses its own identity, which means it can:
@@ -159,9 +160,10 @@ Three valid configurations, and you must pick the one matching your topology:
 - **Behind known reverse proxies**: keep `trustXForwarded` on and declare them as trusted proxies
   (see below). This is the only configuration where a proxy chain is read without letting the client
   choose its own address.
-- **Behind a proxy that overwrites the headers**: keep `trustXForwarded` on.
-- **Directly exposed**: turn it off. The client address is then the connection address: neither
-  `Forwarded` nor `X-Forwarded-For` is used to resolve it, whatever the trusted proxies say. The
+- **Behind a proxy that overwrites the headers**: keep `trustXForwarded` on, and pick the client
+  address header it overwrites (see below).
+- **Directly exposed**: turn it off. The client address is then the connection address: no forwarded
+  header is used to resolve it, whatever the trusted proxies say. The
   `${req.ip_from_xff}` expression remains available: it returns the first non-empty normalised
   `X-Forwarded-For` value, or the connection address when none is available.
 
@@ -173,13 +175,14 @@ Otoroshi resolves the client address on its own, the same way on every HTTP serv
 
 ### Declare your reverse proxies as trusted proxies
 
-A trusted proxy is a reverse proxy allowed to tell Otoroshi who the client is, through the
-`Forwarded` (RFC 7239) or `X-Forwarded-For` header. When the connection comes from one of them,
-Otoroshi walks the proxy chain from the closest hop to the farthest and stops at the first address
-that is not a trusted proxy. If every address of the chain is a trusted proxy, the leftmost one is
-used; if the chain is empty, the connection address is used. When the connection does not come from
-a trusted proxy, the headers are ignored and the connection address is used. The header family read
-this way must be one that your trusted proxies build or sanitise.
+A trusted proxy is a reverse proxy allowed to tell Otoroshi who the client is, through the client
+address header described in the next section. When the connection comes from one of them, Otoroshi
+walks the proxy chain of that header from the closest hop to the farthest and stops at the first
+address that is not a trusted proxy. If every address of the chain is a trusted proxy, the leftmost
+one is used; if the chain is empty, the connection address is used. When the connection does not
+come from a trusted proxy, the headers are ignored and the connection address is used. A hop that is
+not an address, like the `unknown` or obfuscated identifiers of `Forwarded`, also stops the walk and
+the connection address is used: going further would reach what the client wrote.
 
 The list accepts IP addresses, CIDR ranges and wildcard patterns. It is the combination of:
 
@@ -209,7 +212,7 @@ filtering of the global config, the endless responses and the fail2ban rules, wh
 identifier is the client address, match addresses the same way.
 
 The list only applies while `trustXForwarded` is on, which stays the master switch. As soon as the
-list is not empty, `X-Forwarded-For` is never trusted blindly anymore.
+list is not empty, the client address header is never trusted blindly anymore.
 
 :::warning Declare every hop with the address the next one sees
 Each proxy must be declared with the address the **next** hop sees, not with the one it receives
@@ -223,20 +226,56 @@ which means upgrading Otoroshi turns the trusted proxy resolution on by itself.
 The `${req.ip_safe}`, `${req.ip_from_trusted_proxy}`, `${req.ip_from_xff}` and
 `${req.ip_from_socket}` [expressions](./expression-language.mdx) expose each resolution separately.
 
+### Read the client address from the header your proxies build
+
+Otoroshi reads the client address from a single header, the client address header, `X-Forwarded-For`
+by default. It must be one that **every** proxy in front of Otoroshi builds or overwrites: a header a
+proxy lets through untouched is written by the client. A proxy that only appends to
+`X-Forwarded-For` passes a `Forwarded` header sent by the client along, which is why Otoroshi never
+falls back to another header.
+
+It is set by `clientAddressHeader` in the global config, from the danger zone, or by
+`OTOROSHI_OPTIONS_CLIENT_ADDRESS_HEADER`, which wins when it is set. It accepts:
+
+- `X-Forwarded-For`, built by nginx (`$proxy_add_x_forwarded_for`), HAProxy (`option forwardfor`),
+  AWS ALB, Traefik or Envoy
+- `Forwarded`, the RFC 7239 header, built by HAProxy with `option forwarded` for instance. Sozu, on
+  Clever Cloud, sends both
+- any header carrying the client address, like `X-Real-IP` (nginx) or `CF-Connecting-IP`
+  (Cloudflare), read as a single address or as a comma separated list
+
+The protocol and the host of the original request come from the same family of headers: from the
+element of the client in `Forwarded` when it is chosen, from `X-Forwarded-Proto` and
+`X-Forwarded-Host` otherwise. As soon as trusted proxies are declared, they are only read when the
+connection comes from one of them: a client reaching Otoroshi directly can no longer claim
+`X-Forwarded-Proto: https` or pick the host it is routed with. The `Forwarded header` and
+`X-Forwarded-* headers` plugins forward the chain of the client address header to the backend, and
+only when Otoroshi trusts it itself.
+
 ### Check the trusted proxies in use
 
 Otoroshi logs once, at startup, how it resolves the client address. The line gives the number of
 entries of each startup source, of the global config and of the list in use, loopback included, then
-what `trustXForwarded` and `useLegacyClientIpAddress` make of them:
+what `trustXForwarded`, `useLegacyClientIpAddress` and the client address header make of them:
 
 ```
-trusted proxies: 12 entries at startup (CC_REVERSE_PROXY_IPS: 12), 0 in the global config, 14 in use including the loopback. trustXForwarded is enabled, the forwarded headers are read when the connection comes from a trusted proxy
+trusted proxies: 12 entries at startup (CC_REVERSE_PROXY_IPS: 12), 0 in the global config, 14 in use including the loopback. trustXForwarded is enabled, the client address is read from X-Forwarded-For when the connection comes from a trusted proxy
 ```
 
 The entries themselves are only logged at debug level on the `otoroshi-env` logger
 (`OTOROSHI_LOGGERS_OTOROSHI_ENV=DEBUG`), as a platform can publish several hundred proxies. Every node
 logs its own line: the startup list of a worker comes from the environment of that worker. The later
 changes of the global config are not logged there, they are traced by its audit events.
+
+### Block lists can look at the whole proxy chain
+
+The IP block list plugin (`match_forwarded_chain`) and the IP blocklist of the global config
+(`ipFiltering.blacklistMatchesForwardedChain`) can also refuse a request when a blocked address
+appears anywhere in the chain of the client address header, not only when it is the resolved client
+address. It is off by default. The client writes part of that chain, so it only catches the
+intermediaries that disclose the address they forward, like an open proxy, never a client that hides
+its own: treat it as defense in depth. Allow lists only ever look at the resolved client address, as
+anything else would let the client pick an allowed one.
 
 ### `useLegacyClientIpAddress` is a way back, not a setting
 

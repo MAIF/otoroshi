@@ -722,6 +722,14 @@ export class DangerZonePage extends Component {
         help: 'IP addresses that will be refused to access Otoroshi exposed services',
       },
     },
+    'ipFiltering.blacklistMatchesForwardedChain': {
+      type: 'bool',
+      props: {
+        label: 'IP blocklist matches the proxy chain',
+        placeholder: '--',
+        help: 'Also refuse a request when a blocked address appears anywhere in the proxy chain of the client address header, not only when it is the resolved client address. The client writes part of that chain: this catches the intermediaries that disclose the address they forward, not a client hiding its own',
+      },
+    },
     throttlingQuota: {
       type: 'number',
       props: {
@@ -786,7 +794,15 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Trusted proxies',
         placeholder: 'IP address, CIDR range or pattern',
-        help: 'Reverse proxies allowed to rewrite the client address through the Forwarded or X-Forwarded-For headers, only used while X-Forwarded-* headers are trusted. An entry can hold a comma separated list, like a vault reference to an env var. Combined with the ones provided at startup through OTOROSHI_OPTIONS_TRUSTED_PROXIES or CC_REVERSE_PROXY_IPS. The loopback is trusted as soon as the list is not empty',
+        help: 'Reverse proxies allowed to rewrite the client address through the client address header, only used while X-Forwarded-* headers are trusted. An entry can hold a comma separated list, like a vault reference to an env var. Combined with the ones provided at startup through OTOROSHI_OPTIONS_TRUSTED_PROXIES, OTOROSHI_TRUSTED_PROXIES and CC_REVERSE_PROXY_IPS. The loopback is trusted as soon as the list is not empty',
+      },
+    },
+    clientAddressHeader: {
+      type: 'string',
+      props: {
+        label: 'Client address header',
+        placeholder: 'X-Forwarded-For',
+        help: 'The header the client address is read from when the connection comes from a trusted proxy: X-Forwarded-For, Forwarded, or any header carrying the address like X-Real-IP or CF-Connecting-IP. Only that header is read, so it must be one your reverse proxies build or overwrite: another one could be written by the client. The protocol and the host come from Forwarded when it is chosen, from X-Forwarded-Proto and X-Forwarded-Host otherwise. OTOROSHI_OPTIONS_CLIENT_ADDRESS_HEADER wins over this value when it is set',
       },
     },
     useLegacyClientIpAddress: {
@@ -1412,6 +1428,7 @@ export class DangerZonePage extends Component {
     'limitConcurrentRequests',
     'trustXForwarded',
     'trustedProxies',
+    'clientAddressHeader',
     'useLegacyClientIpAddress',
     'anonymousReporting',
     //[REMOVE SERVICEDESC] 'initWithNewEngine',
@@ -1422,6 +1439,7 @@ export class DangerZonePage extends Component {
     '>>>IP address filtering settings',
     'ipFiltering.whitelist',
     'ipFiltering.blacklist',
+    'ipFiltering.blacklistMatchesForwardedChain',
     'endlessIpAddresses',
     '>>>Quotas settings',
     'throttlingQuota',

@@ -10,7 +10,7 @@ import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, RemainingQuotas}
 import otoroshi.next.models.{NgDomainAndPath, NgRoute}
 import otoroshi.next.plugins.api.*
-import otoroshi.utils.RegexPool
+import otoroshi.utils.{ClientAddressHeader, IpAddresses, RegexPool}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
@@ -725,43 +725,29 @@ class XForwardedHeaders extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val request           = ctx.request
-    val additionalHeaders = if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-      val xForwardedFor   = request.headers
-        .get("X-Forwarded-For")
-        .map(v => v + ", " + request.remoteAddress)
-        .getOrElse(request.remoteAddress)
-      val xForwardedProto = request.theProtocol
-      val xForwardedHost  = request.theHost
-      Seq(
-        "X-Forwarded-For"   -> xForwardedFor,
-        "X-Forwarded-Host"  -> xForwardedHost,
-        "X-Forwarded-Proto" -> xForwardedProto
-      ).applyOnWithOpt(ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)) {
-        case (hdrs, route) if route.route.frontend.stripPath && !route.path.isBlank =>
-          hdrs ++ Seq(
-            "X-Forwarded-Prefix" -> route.path
-          )
-        case (hdrs, _)                                                              => hdrs
-      }
-    } else if (!env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-      val xForwardedFor   = request.remoteAddress
-      val xForwardedProto = request.theProtocol
-      val xForwardedHost  = request.theHost
-      Seq(
-        "X-Forwarded-For"   -> xForwardedFor,
-        "X-Forwarded-Host"  -> xForwardedHost,
-        "X-Forwarded-Proto" -> xForwardedProto
-      ).applyOnWithOpt(ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)) {
-        case (hdrs, route) if route.route.frontend.stripPath && !route.path.isBlank =>
-          hdrs ++ Seq(
-            "X-Forwarded-Prefix" -> route.path
-          )
-        case (hdrs, _)                                                              => hdrs
-      }
-    } else {
-      Seq.empty[(String, String)]
+    // the chain is forwarded when otoroshi trusts it for itself, read from the client address header:
+    // with Forwarded chosen, the X-Forwarded-For sent by the client is not kept
+    val chain             =
+      if (request.forwardedHeadersTrusted) ForwardedHeader.incomingChain(request, env.clientAddressHeader)
+      else Seq.empty
+    val additionalHeaders = Seq(
+      "X-Forwarded-For"   -> (chain :+ request.remoteAddress).mkString(", "),
+      "X-Forwarded-Host"  -> request.theHost,
+      "X-Forwarded-Proto" -> request.theProtocol
+    ).applyOnWithOpt(ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)) {
+      case (hdrs, route) if route.route.frontend.stripPath && !route.path.isBlank =>
+        hdrs ++ Seq(
+          "X-Forwarded-Prefix" -> route.path
+        )
+      case (hdrs, _)                                                              => hdrs
     }
-    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap))
+    // the headers sent by the client are still there, under whatever case they used
+    val names             = additionalHeaders.map(_._1.toLowerCase)
+    Right(
+      ctx.otoroshiRequest.copy(
+        headers = ctx.otoroshiRequest.headers.filterNot(h => names.contains(h._1.toLowerCase)) ++ additionalHeaders
+      )
+    )
   }
 }
 
@@ -787,9 +773,14 @@ class ForwardedHeader extends NgRequestTransformer {
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val request         = ctx.request
-    val trustXForwarded = env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)
-    val forwarded       = ForwardedHeader.value(request, request.theHost, request.theProtocol, trustXForwarded)
+    val request   = ctx.request
+    val forwarded = ForwardedHeader.value(
+      request,
+      request.theHost,
+      request.theProtocol,
+      request.forwardedHeadersTrusted,
+      env.clientAddressHeader
+    )
     // the header sent by the client is still there, under whatever case it used, and is either
     // already part of the new value or not to be trusted
     Right(
@@ -832,26 +823,41 @@ object ForwardedHeader {
     builder.toString
   }
 
+  // the entries of the chain written by the proxies in front of otoroshi, leftmost (closest to the
+  // client) first, read from the client address header only: the other headers can be written by
+  // the client
+  def incomingChain(request: RequestHeader, header: ClientAddressHeader): Seq[String] = {
+    if (header.isForwarded) {
+      IpAddresses.parseForwardedElements(request.headers.getAll("Forwarded").toSeq).map(_.address)
+    } else {
+      request.headers.getAll(header.name).toSeq.flatMap(_.split(',')).map(_.trim).filter(_.nonEmpty)
+    }
+  }
+
   // the proxy chain as rfc 7239 elements, leftmost (closest to the client) first, ending with the
   // peer of the connection otoroshi accepted. it carries what the X-Forwarded-* headers plugin sends,
   // the host and the protocol of the original request going on the element of the client, which is
-  // the one backends read them from. when the forwarded headers are not trusted, the peer is the
-  // client. when they are, a Forwarded chain built by the proxies in front of otoroshi is kept as is,
-  // and a X-Forwarded-For one is rewritten element by element
-  def value(request: RequestHeader, host: String, proto: String, trustXForwarded: Boolean): String = {
+  // the one backends read them from. when otoroshi does not trust the forwarded headers, the peer is
+  // the client. when it does, a Forwarded chain is kept as is when Forwarded is the client address
+  // header, and the chain of any other one is rewritten element by element
+  def value(
+      request: RequestHeader,
+      host: String,
+      proto: String,
+      trusted: Boolean,
+      header: ClientAddressHeader
+  ): String = {
     val peer = request.remoteAddress
-    if (!trustXForwarded) {
+    if (!trusted) {
       element(peer, host, proto)
-    } else {
+    } else if (header.isForwarded) {
       val forwarded = request.headers.getAll("Forwarded").map(_.trim).filter(_.nonEmpty)
-      if (forwarded.nonEmpty) {
-        (forwarded :+ element(peer)).mkString(", ")
-      } else {
-        request.headers.getAll("X-Forwarded-For").flatMap(_.split(',')).map(_.trim).filter(_.nonEmpty) match {
-          case Seq()             => element(peer, host, proto)
-          case client +: proxies =>
-            ((element(client, host, proto) +: proxies.map(proxy => element(proxy))) :+ element(peer)).mkString(", ")
-        }
+      if (forwarded.isEmpty) element(peer, host, proto) else (forwarded :+ element(peer)).mkString(", ")
+    } else {
+      incomingChain(request, header) match {
+        case Seq()             => element(peer, host, proto)
+        case client +: proxies =>
+          ((element(client, host, proto) +: proxies.map(proxy => element(proxy))) :+ element(peer)).mkString(", ")
       }
     }
   }

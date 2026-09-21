@@ -100,53 +100,91 @@ object IpAddresses {
     IpAddressMatcher(patterns, cached = true).matches(address)
   }
 
-  // builds the proxy chain, leftmost (closest to the client) first, from the rfc 7239 Forwarded
-  // header when it is present, from X-Forwarded-For otherwise. every occurrence of the header is
-  // taken into account, as a client can send its own before a proxy appends to it
-  def parseForwardedChain(forwardedValues: Seq[String], xForwardedForValues: Seq[String]): Seq[String] = {
-    if (forwardedValues.nonEmpty) {
-      forwardedValues
-        .flatMap(_.split(','))
-        .flatMap { element =>
-          element
-            .split(';')
-            .map(_.trim)
-            .find(_.toLowerCase.startsWith("for="))
-            .map(_.substring(4).trim)
-        }
-        .map(value =>
-          if (value.length > 1 && value.startsWith("\"") && value.endsWith("\"")) {
-            value.substring(1, value.length - 1)
-          } else {
-            value
-          }
-        )
-        .map(normalize)
-        // `unknown` and `_obfuscated` identifiers are valid rfc 7239 values but are not addresses
-        .filterNot(value => value.isEmpty || value == "unknown" || value.startsWith("_"))
-    } else {
-      xForwardedForValues
-        .flatMap(_.split(','))
-        .map(normalize)
-        .filterNot(_.isEmpty)
-    }
+  def isAddress(value: String): Boolean = IpAddress.fromString(value).isDefined
+
+  private def unquote(value: String): String = {
+    if (value.length > 1 && value.startsWith("\"") && value.endsWith("\"")) value.substring(1, value.length - 1)
+    else value
   }
 
-  // walks the proxy chain from the closest hop to the farthest and stops at the first address that
-  // is not a trusted proxy. returns None when no trusted proxy is configured, or when the
-  // connection itself does not come from one, as the chain proves nothing in that case
-  def resolveFromChain(socketAddress: String, chain: Seq[String], trustedProxies: IpAddressMatcher): Option[String] = {
-    if (trustedProxies.isEmpty) {
-      None
-    } else if (!trustedProxies.matches(socketAddress)) {
-      None
-    } else {
-      chain.reverseIterator.find(address => !trustedProxies.matches(address)) match {
-        // every hop is a trusted proxy, so the leftmost entry is the client itself. with an empty
-        // chain, the trusted proxy is the peer and there is nothing else to read
-        case None          => chain.headOption.orElse(Some(normalize(socketAddress)))
-        case Some(address) => Some(address)
+  // the elements of the rfc 7239 Forwarded header, leftmost (closest to the client) first. the host
+  // and the protocol of an element are the ones the proxy that wrote it received. an element without
+  // a node is not a hop and is left out. `unknown` and `_obfuscated` nodes are kept, they are hops
+  // otoroshi cannot tell anything about
+  def parseForwardedElements(values: Seq[String]): Seq[ForwardedElement] = {
+    values.flatMap(_.split(',')).flatMap { element =>
+      val pairs = element.split(';').toSeq.flatMap { pair =>
+        val idx = pair.indexOf('=')
+        if (idx > 0) Some(pair.substring(0, idx).trim.toLowerCase -> unquote(pair.substring(idx + 1).trim)) else None
+      }
+      pairs.collectFirst { case ("for", node) => normalize(node) }.filter(_.nonEmpty).map { address =>
+        ForwardedElement(
+          address = address,
+          host = pairs.collectFirst { case ("host", host) if host.nonEmpty => host },
+          proto = pairs.collectFirst { case ("proto", proto) if proto.nonEmpty => proto.toLowerCase }
+        )
       }
     }
   }
+
+  // the proxy chain read from the header the client address comes from, leftmost (closest to the
+  // client) first. only that header is read: a proxy that does not build or sanitize the others lets
+  // the client write them. every occurrence of the header is taken into account, as a client can
+  // send its own before a proxy appends to it. any header but Forwarded is a comma separated list of
+  // addresses, which X-Real-IP or CF-Connecting-IP holding a single one are too
+  def parseChain(header: ClientAddressHeader, values: Seq[String]): Seq[String] = {
+    if (header.isForwarded) {
+      parseForwardedElements(values).map(_.address)
+    } else {
+      values.flatMap(_.split(',')).map(normalize).filter(_.nonEmpty)
+    }
+  }
+
+  // walks the proxy chain from the closest hop to the farthest and stops at the first hop that is
+  // not a trusted proxy. returns None when no trusted proxy is configured, or when the connection
+  // itself does not come from one, as the chain proves nothing in that case, and when that hop is
+  // not an address, like an `unknown` one: going on would reach what the client wrote
+  def resolveFromChain(socketAddress: String, chain: Seq[String], trustedProxies: IpAddressMatcher): Option[String] = {
+    resolveIndex(socketAddress, chain, trustedProxies) match {
+      case None                              => None
+      // with an empty chain, the trusted proxy is the peer and there is nothing else to read
+      case Some(_) if chain.isEmpty          => Some(normalize(socketAddress))
+      case Some(idx) if isAddress(chain(idx)) => Some(chain(idx))
+      case Some(_)                           => None
+    }
+  }
+
+  // the Forwarded element written by the first trusted proxy the client went through, the one
+  // carrying the host and the protocol the client asked for
+  def resolveForwardedElement(
+      socketAddress: String,
+      elements: Seq[ForwardedElement],
+      trustedProxies: IpAddressMatcher
+  ): Option[ForwardedElement] = {
+    resolveIndex(socketAddress, elements.map(_.address), trustedProxies).filter(_ < elements.size).map(elements.apply)
+  }
+
+  // the index of the hop resolved in the chain, every hop being a trusted proxy making the leftmost
+  // one the client itself
+  private def resolveIndex(socketAddress: String, chain: Seq[String], trustedProxies: IpAddressMatcher): Option[Int] = {
+    if (trustedProxies.isEmpty || !trustedProxies.matches(socketAddress)) {
+      None
+    } else {
+      val idx = chain.lastIndexWhere(address => !trustedProxies.matches(address))
+      Some(if (idx < 0) 0 else idx)
+    }
+  }
+}
+
+case class ForwardedElement(address: String, host: Option[String], proto: Option[String])
+
+// the header the client address is read from when the connection comes from a reverse proxy. only
+// that one is read, and the protocol and the host of the original request come from the same
+// family: Forwarded, or X-Forwarded-Proto and X-Forwarded-Host for any other header
+case class ClientAddressHeader(name: String) {
+  val isForwarded: Boolean = name.equalsIgnoreCase("Forwarded")
+}
+
+object ClientAddressHeader {
+  val default: ClientAddressHeader = ClientAddressHeader("X-Forwarded-For")
 }

@@ -91,6 +91,15 @@ class ForwardedHeaderPluginSpec extends PluginsTestSpecBase {
   }
 }
 
+// the ip block lists looking at the whole proxy chain: sbt "testOnly functional.IpAddressBlockListChainSpec"
+class IpAddressBlockListChainSpec extends PluginsTestSpecBase {
+  s"IP block list" should {
+    "block the addresses of the proxy chain when asked to" in {
+      new IpAddressBlockListChainTests(this)
+    }
+  }
+}
+
 // the otoroshi info. token alone: sbt "testOnly functional.OtoroshiInfoTokenSpec"
 class OtoroshiInfoTokenSpec extends PluginsTestSpecBase {
   s"Otoroshi info. token" should {

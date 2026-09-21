@@ -37,6 +37,31 @@ object NgIpAddressesConfig {
   }
 }
 
+case class NgIpAddressBlockListConfig(addresses: Seq[String] = Seq.empty, matchForwardedChain: Boolean = false)
+    extends NgPluginConfig {
+  // compiled once per cached config, with the same address matching as the trusted proxies
+  lazy val matcher: IpAddressMatcher = IpAddressMatcher(addresses)
+  def json: JsValue = NgIpAddressBlockListConfig.format.writes(this)
+}
+
+object NgIpAddressBlockListConfig {
+  val format = new Format[NgIpAddressBlockListConfig] {
+    override def reads(json: JsValue): JsResult[NgIpAddressBlockListConfig] = Try {
+      NgIpAddressBlockListConfig(
+        addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        matchForwardedChain = json.select("match_forwarded_chain").asOpt[Boolean].getOrElse(false)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: NgIpAddressBlockListConfig): JsValue             = Json.obj(
+      "addresses"             -> o.addresses,
+      "match_forwarded_chain" -> o.matchForwardedChain
+    )
+  }
+}
+
 class IpAddressAllowedList extends NgAccessValidator {
 
   private val configReads: Reads[NgIpAddressesConfig] = NgIpAddressesConfig.format
@@ -80,7 +105,7 @@ class IpAddressAllowedList extends NgAccessValidator {
 
 class IpAddressBlockList extends NgAccessValidator {
 
-  private val configReads: Reads[NgIpAddressesConfig] = NgIpAddressesConfig.format
+  private val configReads: Reads[NgIpAddressBlockListConfig] = NgIpAddressBlockListConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
@@ -91,14 +116,16 @@ class IpAddressBlockList extends NgAccessValidator {
   override def name: String                                = "IP block list"
   override def description: Option[String]                 =
     "This plugin verifies the current request ip address is not in the blocked list".some
-  override def defaultConfigObject: Option[NgPluginConfig] = NgIpAddressesConfig().some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgIpAddressBlockListConfig().some
   override def isAccessAsync: Boolean                      = true
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val remoteAddress                  = ctx.request.theIpAddress
-    // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
-    val config                         = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
-    val shouldNotPass                  = config.matcher.matches(remoteAddress)
+    val config        = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressBlockListConfig())
+    // the whole chain is only looked at when asked: the client writes part of it, so it catches the
+    // intermediaries that disclose the address they forward, not a client hiding its own
+    val shouldNotPass =
+      if (config.matchForwardedChain) ctx.request.addressesSeen(ctx.attrs).exists(config.matcher.matches)
+      else config.matcher.matches(ctx.request.theIpAddress)
     if (!shouldNotPass) {
       NgAccess.NgAllowed.vfuture
     } else {

@@ -1,12 +1,15 @@
 package plugins
 
 import otoroshi.next.plugins.ForwardedHeader
-import otoroshi.utils.IpAddresses
+import otoroshi.utils.{ClientAddressHeader, IpAddresses}
 import play.api.mvc.{AnyContentAsEmpty, Headers}
 import play.api.test.FakeRequest
 
 // the rfc 7239 value built by the Forwarded header plugin, without any otoroshi instance involved
 class ForwardedHeaderSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers {
+
+  private val xForwardedFor = ClientAddressHeader.default
+  private val forwarded     = ClientAddressHeader("Forwarded")
 
   private def request(remoteAddress: String, headers: (String, String)*) = {
     FakeRequest("GET", "/api", Headers(headers*), AnyContentAsEmpty, remoteAddress = remoteAddress)
@@ -54,46 +57,63 @@ class ForwardedHeaderSpec extends org.scalatest.wordspec.AnyWordSpec with org.sc
         "X-Forwarded-For" -> "192.0.2.15",
         "Forwarded"       -> "for=192.0.2.15"
       )
-      ForwardedHeader.value(req, "api.example.com", "http", trustXForwarded = false) mustBe
+      ForwardedHeader.value(req, "api.example.com", "http", trusted = false, xForwardedFor) mustBe
       "for=198.51.100.2;host=api.example.com;proto=http"
     }
 
     "enclose an ipv6 peer in brackets and quotes" in {
-      ForwardedHeader.value(request("2001:db8::1"), "api.example.com", "https", trustXForwarded = false) mustBe
+      ForwardedHeader.value(request("2001:db8::1"), "api.example.com", "https", trusted = false, xForwardedFor) mustBe
       "for=\"[2001:db8::1]\";host=api.example.com;proto=https"
     }
 
     "leave out the parameters that are not known" in {
-      ForwardedHeader.value(request("198.51.100.2"), "", "http", trustXForwarded = false) mustBe
+      ForwardedHeader.value(request("198.51.100.2"), "", "http", trusted = false, xForwardedFor) mustBe
       "for=198.51.100.2;proto=http"
     }
 
     "describe the peer alone when there is no chain in front of otoroshi" in {
-      ForwardedHeader.value(request("198.51.100.2"), "api.example.com", "https", trustXForwarded = true) mustBe
+      ForwardedHeader.value(request("198.51.100.2"), "api.example.com", "https", trusted = true, xForwardedFor) mustBe
       "for=198.51.100.2;host=api.example.com;proto=https"
     }
 
     "rewrite a trusted X-Forwarded-For chain element by element" in {
       val req = request("198.51.100.2", "X-Forwarded-For" -> "192.0.2.15, 2001:db8::7", "X-Forwarded-For" -> "198.51.100.1")
-      ForwardedHeader.value(req, "api.example.com", "https", trustXForwarded = true) mustBe
+      ForwardedHeader.value(req, "api.example.com", "https", trusted = true, xForwardedFor) mustBe
       "for=192.0.2.15;host=api.example.com;proto=https, for=\"[2001:db8::7]\", for=198.51.100.1, for=198.51.100.2"
     }
 
-    "append the peer to a trusted Forwarded chain" in {
+    "append the peer to a trusted Forwarded chain when Forwarded is the client address header" in {
       val req = request(
         "198.51.100.2",
         "Forwarded"       -> "for=192.0.2.15;proto=https;host=api.example.com",
         "Forwarded"       -> "for=198.51.100.1",
         "X-Forwarded-For" -> "203.0.113.9"
       )
-      ForwardedHeader.value(req, "api.example.com", "https", trustXForwarded = true) mustBe
+      ForwardedHeader.value(req, "api.example.com", "https", trusted = true, forwarded) mustBe
       "for=192.0.2.15;proto=https;host=api.example.com, for=198.51.100.1, for=198.51.100.2"
+    }
+
+    "ignore the Forwarded header of the client when X-Forwarded-For is the client address header" in {
+      // a proxy that only builds X-Forwarded-For lets the client write Forwarded
+      val req = request(
+        "198.51.100.2",
+        "Forwarded"       -> "for=6.6.6.6",
+        "X-Forwarded-For" -> "192.0.2.15"
+      )
+      ForwardedHeader.value(req, "api.example.com", "https", trusted = true, xForwardedFor) mustBe
+      "for=192.0.2.15;host=api.example.com;proto=https, for=198.51.100.2"
+    }
+
+    "rewrite a header holding a single address" in {
+      val req = request("198.51.100.2", "X-Real-IP" -> "192.0.2.15", "X-Forwarded-For" -> "6.6.6.6")
+      ForwardedHeader.value(req, "api.example.com", "https", trusted = true, ClientAddressHeader("X-Real-IP")) mustBe
+      "for=192.0.2.15;host=api.example.com;proto=https, for=198.51.100.2"
     }
 
     "be read back by otoroshi as the same proxy chain" in {
       val req   = request("2001:db8::2", "X-Forwarded-For" -> "192.0.2.15, 198.51.100.1")
-      val value = ForwardedHeader.value(req, "api.example.com", "https", trustXForwarded = true)
-      IpAddresses.parseForwardedChain(Seq(value), Seq.empty) mustBe Seq("192.0.2.15", "198.51.100.1", "2001:db8::2")
+      val value = ForwardedHeader.value(req, "api.example.com", "https", trusted = true, xForwardedFor)
+      IpAddresses.parseChain(forwarded, Seq(value)) mustBe Seq("192.0.2.15", "198.51.100.1", "2001:db8::2")
     }
   }
 }

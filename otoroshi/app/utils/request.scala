@@ -4,7 +4,7 @@ import org.apache.pekko.http.scaladsl.model.Uri
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.ssl.PemHeaders
-import otoroshi.utils.{IpAddresses, TypedMap}
+import otoroshi.utils.{ClientAddressHeader, ForwardedElement, IpAddresses, TypedMap}
 import play.api.mvc.RequestHeader
 
 import java.util.Base64
@@ -30,14 +30,52 @@ object RequestImplicits {
     }
     @inline
     def theDomain(using env: Env): String = theHost.split(':').head
+
+    // whether the headers describing the original request can be read. trustXForwarded is the
+    // master switch and, once trusted proxies are declared, the connection has to come from one of
+    // them: a client reaching otoroshi directly must not choose the protocol or the host it is seen
+    // with, any more than its address
+    def forwardedHeadersTrusted(using env: Env): Boolean = {
+      env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded) && {
+        val trustedProxies = env.trustedProxiesMatcher
+        trustedProxies.isEmpty || env.useLegacyClientIpAddress || trustedProxies.matches(ipFromSocket)
+      }
+    }
+
+    // the Forwarded element of the client, written by the first trusted proxy it went through, or
+    // the leftmost one when no trusted proxy is declared
+    def forwardedElement(using env: Env): Option[ForwardedElement] = {
+      val elements       = IpAddresses.parseForwardedElements(requestHeader.headers.getAll("Forwarded").toSeq)
+      val trustedProxies = env.trustedProxiesMatcher
+      if (trustedProxies.isEmpty || env.useLegacyClientIpAddress) {
+        elements.headOption
+      } else {
+        IpAddresses.resolveForwardedElement(ipFromSocket, elements, trustedProxies)
+      }
+    }
+
+    // the protocol and the host of the original request come from the same header family as the
+    // client address, the other family being written by whoever sent the request
+    def forwardedProto(using env: Env): Option[String] = {
+      if (env.clientAddressHeader.isForwarded) {
+        forwardedElement.flatMap(_.proto)
+      } else {
+        requestHeader.headers.get("X-Forwarded-Proto").orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
+      }
+    }
+
+    def forwardedHost(using env: Env): Option[String] = {
+      if (env.clientAddressHeader.isForwarded) {
+        forwardedElement.flatMap(_.host)
+      } else {
+        requestHeader.headers.get("X-Forwarded-Host")
+      }
+    }
+
     @inline
     def theSecured(using env: Env): Boolean = {
-      if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-        requestHeader.headers
-          .get("X-Forwarded-Proto")
-          .orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
-          .map(_ == "https")
-          .getOrElse(requestHeader.secure)
+      if (forwardedHeadersTrusted) {
+        forwardedProto.map(_ == "https").getOrElse(requestHeader.secure)
       } else {
         requestHeader.secure
       }
@@ -56,42 +94,16 @@ object RequestImplicits {
     }
     @inline
     def theProtocol(using env: Env): String = {
-      if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-        requestHeader.headers
-          .get("X-Forwarded-Proto")
-          .orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
-          .map(_ == "https")
-          .orElse(Some(requestHeader.secure))
-          .map {
-            case true  => "https"
-            case false => "http"
-          }
-          .getOrElse("http")
-      } else {
-        if (requestHeader.secure) "https" else "http"
-      }
+      if (theSecured) "https" else "http"
     }
     @inline
     def theWsProtocol(using env: Env): String = {
-      if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-        requestHeader.headers
-          .get("X-Forwarded-Proto")
-          .orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
-          .map(_ == "https")
-          .orElse(Some(requestHeader.secure))
-          .map {
-            case true  => "wss"
-            case false => "ws"
-          }
-          .getOrElse("ws")
-      } else {
-        if (requestHeader.secure) "wss" else "ws"
-      }
+      if (theSecured) "wss" else "ws"
     }
     @inline
     def theHost(using env: Env): String = {
-      if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-        requestHeader.headers.get("X-Forwarded-Host").getOrElse(requestHeader.host)
+      if (forwardedHeadersTrusted) {
+        forwardedHost.getOrElse(requestHeader.host)
       } else {
         requestHeader.host
       }
@@ -134,12 +146,24 @@ object RequestImplicits {
     @inline
     def ipFromSocket: String = IpAddresses.normalize(requestHeader.remoteAddress)
 
-    // the addresses of the proxy chain, leftmost (closest to the client) first
-    def forwardedChain: Seq[String] = {
-      IpAddresses.parseForwardedChain(
-        requestHeader.headers.getAll("Forwarded").toSeq,
-        requestHeader.headers.getAll("X-Forwarded-For").toSeq
-      )
+    // the addresses of the proxy chain, leftmost (closest to the client) first, read from the header
+    // the client address comes from
+    def forwardedChain(using env: Env): Seq[String] = forwardedChain(env.clientAddressHeader)
+
+    def forwardedChain(header: ClientAddressHeader): Seq[String] = {
+      IpAddresses.parseChain(header, requestHeader.headers.getAll(header.name).toSeq)
+    }
+
+    // every address the request claims to come from as far as otoroshi can tell: the resolved client
+    // and each entry of the proxy chain. the chain is written by the client and by its proxies, so it
+    // can only ever serve to turn a request away, never to let it in
+    def addressesSeen(attrs: TypedMap)(using env: Env): Seq[String] = {
+      val resolved = theIpAddress(attrs)
+      if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
+        resolved +: forwardedChain.filter(IpAddresses.isAddress)
+      } else {
+        Seq(resolved)
+      }
     }
 
     // the address claimed by the leftmost entry of X-Forwarded-For. it is chosen by whoever sent
@@ -173,10 +197,11 @@ object RequestImplicits {
     def ipFromTrustedProxy(using env: Env): String = ipFromTrustedProxyOpt.getOrElse(ipFromSocket)
 
     // the address that can be trusted for security decisions. trustXForwarded is the master switch:
-    // when it is disabled neither Forwarded nor X-Forwarded-For is read, like for the protocol and
-    // the host. when it is enabled and trusted proxies are configured, they are the only accepted
-    // way to rewrite the client address: falling back to a blind X-Forwarded-For there would give
-    // back to the client the ability to choose its own
+    // when it is disabled no forwarded header is read, like for the protocol and the host. when it
+    // is enabled and trusted proxies are configured, they are the only accepted way to rewrite the
+    // client address: falling back to the blind leftmost entry there would give back to the client
+    // the ability to choose its own. without trusted proxies, the leftmost entry of the client
+    // address header is taken as is, which only holds behind a proxy that overwrites that header
     def ipSafe(using env: Env): String = {
       if (!env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         ipFromSocket
@@ -185,7 +210,7 @@ object RequestImplicits {
         if (trustedProxies.nonEmpty) {
           IpAddresses.resolveFromChain(ipFromSocket, forwardedChain, trustedProxies).getOrElse(ipFromSocket)
         } else {
-          ipFromXForwardedHeaderOpt.getOrElse(ipFromSocket)
+          forwardedChain.find(IpAddresses.isAddress).getOrElse(ipFromSocket)
         }
       }
     }

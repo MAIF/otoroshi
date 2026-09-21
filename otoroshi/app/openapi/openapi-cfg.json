@@ -1811,6 +1811,7 @@
     "otoroshi.models.GlobalConfig.throttlingQuota": "Authorized number of calls per window globally",
     "otoroshi.models.GlobalConfig.tlsSettings": "TLS settings",
     "otoroshi.models.GlobalConfig.trustXForwarded": "Use X-Forwarded-* headers for routing",
+    "otoroshi.models.GlobalConfig.clientAddressHeader": "Header the client address is read from when the connection comes from a trusted proxy: X-Forwarded-For, Forwarded, or any header carrying the address like X-Real-IP",
     "otoroshi.models.GlobalConfig.trustedProxies": "Addresses, CIDR blocks or wildcards of the reverse proxies allowed to rewrite the client address. An entry can hold a comma separated list",
     "otoroshi.models.GlobalConfig.u2fLoginOnly": "If enabled, login to backoffice through Auth0 will be disabled",
     "otoroshi.models.GlobalConfig.useAkkaHttpClient": "Globally use akka http client for everything",

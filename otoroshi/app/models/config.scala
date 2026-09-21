@@ -680,6 +680,7 @@ case class GlobalConfig(
     maintenanceMode: Boolean = false,
     trustXForwarded: Boolean = true,
     trustedProxies: Seq[String] = Seq.empty[String],
+    clientAddressHeader: String = "X-Forwarded-For",
     useLegacyClientIpAddress: Boolean = false,
     ipFiltering: IpFiltering = IpFiltering(),
     throttlingQuota: Long = BaseQuotas.MaxValue,
@@ -859,6 +860,7 @@ object GlobalConfig {
         "u2fLoginOnly"            -> o.u2fLoginOnly,
         "trustXForwarded"         -> o.trustXForwarded,
         "trustedProxies"          -> JsArray(o.trustedProxies.map(JsString.apply)),
+        "clientAddressHeader"     -> o.clientAddressHeader,
         "useLegacyClientIpAddress" -> o.useLegacyClientIpAddress,
         "ipFiltering"             -> o.ipFiltering.toJson,
         "throttlingQuota"         -> o.throttlingQuota,
@@ -907,6 +909,11 @@ object GlobalConfig {
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),
           trustXForwarded = (json \ "trustXForwarded").asOpt[Boolean].getOrElse(true),
           trustedProxies = (json \ "trustedProxies").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          clientAddressHeader = (json \ "clientAddressHeader")
+            .asOpt[String]
+            .map(_.trim)
+            .filter(_.nonEmpty)
+            .getOrElse("X-Forwarded-For"),
           // absent from every config persisted before it existed, so it must read as false for an
           // upgraded install to behave exactly like a fresh one
           useLegacyClientIpAddress = (json \ "useLegacyClientIpAddress").asOpt[Boolean].getOrElse(false),

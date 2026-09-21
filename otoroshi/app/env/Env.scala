@@ -40,7 +40,7 @@ import otoroshi.storage.drivers.lettuce.*
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala.*
 import otoroshi.tcp.TcpService
-import otoroshi.utils.{IpAddressMatcher, JsonPathValidator, JsonValidator}
+import otoroshi.utils.{ClientAddressHeader, IpAddressMatcher, JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
@@ -579,15 +579,16 @@ class Env(
       .map { config =>
         val dynamic    = splitTrustedProxies(config.trustedProxies)
         val effective  = trustedProxiesWith(config.trustedProxies)
+        val header     = clientAddressHeaderFromConfig.getOrElse(config.clientAddressHeader)
         val resolution =
           if (!config.trustXForwarded) {
             "trustXForwarded is disabled, the forwarded headers are ignored and the client address is the address of the connection"
           } else if (useLegacyClientIpAddressFromConfig || config.useLegacyClientIpAddress) {
             "the trusted proxies are ignored as useLegacyClientIpAddress is enabled"
           } else if (effective.isEmpty) {
-            "trustXForwarded is enabled without any trusted proxy, the client address is the leftmost X-Forwarded-For entry, which the client can choose"
+            s"trustXForwarded is enabled without any trusted proxy, the client address is the leftmost $header entry, which the client can choose"
           } else {
-            "trustXForwarded is enabled, the forwarded headers are read when the connection comes from a trusted proxy"
+            s"trustXForwarded is enabled, the client address is read from $header when the connection comes from a trusted proxy"
           }
         logger.info(
           s"$startup, ${dynamic.size} in the global config, ${effective.size} in use including the loopback. $resolution"
@@ -597,6 +598,28 @@ class Env(
       .recover { case _ =>
         logger.info(s"$startup, the global config is not loaded yet")
       }(using otoroshiExecutionContext)
+  }
+
+  lazy val clientAddressHeaderFromConfig: Option[String] =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.options.clientAddressHeader").map(_.trim).filter(_.nonEmpty)
+
+  private val clientAddressHeaderRef = new AtomicReference[ClientAddressHeader](ClientAddressHeader.default)
+
+  // the header the client address is read from, the one the proxies in front of otoroshi build or
+  // overwrite. the env var wins over the global config: the infrastructure is what knows its
+  // proxies, and a platform must be able to impose the header it builds
+  def clientAddressHeader: ClientAddressHeader = {
+    val name    = clientAddressHeaderFromConfig
+      .orElse(datastores.globalConfigDataStore.latestSafe.map(_.clientAddressHeader).filter(_.nonEmpty))
+      .getOrElse(ClientAddressHeader.default.name)
+    val current = clientAddressHeaderRef.get()
+    if (current.name == name) {
+      current
+    } else {
+      val header = ClientAddressHeader(name)
+      clientAddressHeaderRef.set(header)
+      header
+    }
   }
 
   def trustedProxies: Seq[String] = trustedProxiesMatcher.patterns

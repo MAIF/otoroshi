@@ -2204,7 +2204,13 @@ class ProxyEngine() extends RequestHandler {
               "Your IP address is not allowed",
               "errors.ip.address.not.allowed"
             ) // global whitelist
-          } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
+          } else if (
+            if (globalConfig.ipFiltering.blacklistMatchesForwardedChain) {
+              request.addressesSeen(attrs).exists(globalConfig.ipFiltering.matchesBlacklist)
+            } else {
+              globalConfig.ipFiltering.matchesBlacklist(remoteAddress)
+            }
+          ) {
             errorResult(
               Results.Forbidden,
               "Your IP address is not allowed",

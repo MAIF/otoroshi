@@ -323,6 +323,65 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
       env.isTrustedProxy("192.168.101.7") mustBe false
     }
 
+    "read the protocol and the host of the original request only from a trusted proxy" in {
+      import otoroshi.utils.http.RequestImplicits.*
+      given Env = env
+      def request(remoteAddress: String) = FakeRequest(
+        "GET",
+        "/api/foo",
+        Headers(
+          "Host"              -> "internal.example.com",
+          "X-Forwarded-Proto" -> "https",
+          "X-Forwarded-Host"  -> "api.example.com"
+        ),
+        AnyContentAsEmpty,
+        remoteAddress = remoteAddress
+      )
+      val fromProxy = request("10.0.0.1")
+      fromProxy.theProtocol mustBe "https"
+      fromProxy.theHost mustBe "api.example.com"
+      // a client reaching otoroshi directly once trusted proxies are declared
+      val direct    = request("203.0.113.7")
+      direct.theProtocol mustBe "http"
+      direct.theWsProtocol mustBe "ws"
+      direct.theHost mustBe "internal.example.com"
+    }
+
+    "read the client address, the protocol and the host from the client address header only" in {
+      import otoroshi.utils.http.RequestImplicits.*
+      given Env = env
+      val request = FakeRequest(
+        "GET",
+        "/api/foo",
+        Headers(
+          "Host"              -> "internal.example.com",
+          "Forwarded"         -> "for=6.6.6.6;host=evil.example.com;proto=http, for=1.1.1.1;host=api.example.com;proto=https",
+          "X-Forwarded-For"   -> "2.2.2.2",
+          "X-Forwarded-Proto" -> "http",
+          "X-Forwarded-Host"  -> "other.example.com",
+          "X-Real-IP"         -> "3.3.3.3"
+        ),
+        AnyContentAsEmpty,
+        remoteAddress = "10.0.0.1"
+      )
+      // X-Forwarded-For by default, whatever the other headers say
+      request.ipSafe mustBe "2.2.2.2"
+      request.theHost mustBe "other.example.com"
+      request.theProtocol mustBe "http"
+      try {
+        updateGlobalConfig(_.copy(clientAddressHeader = "Forwarded"))(_.clientAddressHeader == "Forwarded")
+        request.ipSafe mustBe "1.1.1.1"
+        // the element written by the trusted proxy, not the one the client prepended
+        request.theHost mustBe "api.example.com"
+        request.theProtocol mustBe "https"
+        updateGlobalConfig(_.copy(clientAddressHeader = "X-Real-IP"))(_.clientAddressHeader == "X-Real-IP")
+        request.ipSafe mustBe "3.3.3.3"
+        request.theHost mustBe "other.example.com"
+      } finally {
+        updateGlobalConfig(_.copy(clientAddressHeader = "X-Forwarded-For"))(_.clientAddressHeader == "X-Forwarded-For")
+      }
+    }
+
     "report the resolved client address in the revoked apikey alert" in {
       val alert = otoroshi.events.RevokedApiKeyUsageAlert(
         "alert_test",
