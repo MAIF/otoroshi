@@ -111,7 +111,9 @@ object JsonSchemaValidator {
         val schema = registry.getSchema(userSchema, InputFormat.JSON)
         val results = schema.validate(bodyStr, InputFormat.JSON)
         if (results.isEmpty) Right(())
-        else Left(results.asScala.toSeq.map(_.getMessage))
+        // since json-schema-validator 2.x the message no longer carries the instance location, so it is
+        // prepended again to keep pointing at the failing field (eg. '/user/email: ...', ': ...' at the root)
+        else Left(results.asScala.toSeq.map(e => s"${e.getInstanceLocation}: ${e.getMessage}"))
       } match {
         case Success(v) => v
         case Failure(t) => Left(Seq(s"validation error: ${t.getMessage}"))

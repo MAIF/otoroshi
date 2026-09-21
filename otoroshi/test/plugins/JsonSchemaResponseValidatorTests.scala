@@ -63,7 +63,9 @@ class JsonSchemaResponseValidatorTests(parent: PluginsTestSpec) {
     call.status mustBe Status.BAD_GATEWAY
     val body  = Json.parse(call.body[String])
     (body \ "error").asOpt[String] mustBe Some("response body does not match the json schema")
-    (body \ "validation_errors").asOpt[Seq[String]].exists(_.nonEmpty) mustBe true
+    // the error must point at the failing field ('' is the root). only the pointer is asserted as the
+    // messages themselves are localized with the default locale of the jvm
+    (body \ "validation_errors").asOpt[Seq[String]].map(_.map(_.split(": ", 2).head)) mustBe Some(Seq(""))
     deleteOtoroshiRoute(route).futureValue
   }
 

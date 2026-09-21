@@ -52,12 +52,16 @@ class JsonSchemaRequestValidatorTests(parent: PluginsTestSpec) {
     val call  = ws
       .url(s"http://127.0.0.1:$port/api/users")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain, "Content-Type" -> "application/json")
-      .post(Json.stringify(Json.obj("name" -> "Alice"))) // missing required "age"
+      .post(Json.stringify(Json.obj("name" -> 42))) // wrong type for "name", missing required "age"
       .futureValue
     call.status mustBe Status.UNPROCESSABLE_ENTITY
     val body  = Json.parse(call.body[String])
     (body \ "error").asOpt[String] mustBe Some("request body does not match the json schema")
-    (body \ "validation_errors").asOpt[Seq[String]].exists(_.nonEmpty) mustBe true
+    // each error must point at the failing field ('' is the root). only the pointer is asserted as the
+    // messages themselves are localized with the default locale of the jvm
+    (body \ "validation_errors").asOpt[Seq[String]].map(_.map(_.split(": ", 2).head).toSet) mustBe Some(
+      Set("/name", "")
+    )
     deleteOtoroshiRoute(route).futureValue
   }
 
