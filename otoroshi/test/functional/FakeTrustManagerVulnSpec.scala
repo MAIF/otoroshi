@@ -92,6 +92,9 @@ class FakeTrustManagerVulnSpec(configurationSpec: => Configuration) extends Otor
 
   private var currentStrictMode: String = "legacy"
 
+  // the instance is started here rather than by startOtoroshi, the helpers poll its proxy state
+  override def proxyStateEnv: Option[Env] = Option(otoEnv)
+
   override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(
       ConfigFactory

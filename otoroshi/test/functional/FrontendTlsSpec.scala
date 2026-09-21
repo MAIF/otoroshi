@@ -53,6 +53,9 @@ class FrontendTlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
   private var otherClient: (PrivateKey, Array[X509Certificate])    = scala.compiletime.uninitialized // signed by test CA, CN=fe-other (does not match)
   private var untrustedClient: (PrivateKey, Array[X509Certificate]) = scala.compiletime.uninitialized // signed by a DIFFERENT (untrusted) CA
 
+  // the instance is started here rather than by startOtoroshi, the helpers poll its proxy state
+  override def proxyStateEnv: Option[Env] = Option(otoEnv)
+
   override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(
       ConfigFactory

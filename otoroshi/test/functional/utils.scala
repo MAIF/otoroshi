@@ -1048,26 +1048,30 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
   // Entities created through the admin api are only visible to the proxy once the proxy state loader job has
   // picked them up. A fixed wait is not enough on a loaded machine, so poll the proxy state until the entity is there.
   // Other otoroshi instances started by some tests are not reachable from here, for them we keep the fixed wait.
+  // the env of the otoroshi instance listening on `port`, the one startOtoroshi starts. a spec starting
+  // its own instance on that port overrides it, otherwise there is no proxy state to poll and the
+  // helpers fall back to a fixed wait
+  def proxyStateEnv: Option[Env] = Option(otoroshiComponents).map(_.env)
+
   private def awaitProxyState(what: String, customPort: Option[Int], fallback: FiniteDuration)(
       ready: Env => Boolean
   ): Future[Unit] = {
-    if (customPort.exists(_ != port)) {
-      awaitF(fallback)(using actorSystem)
-    } else {
-      val env      = otoroshiComponents.env
-      val deadline = System.currentTimeMillis() + proxyStateSyncTimeout.toMillis
-      def poll(): Future[Unit] = {
-        if (ready(env)) {
-          FastFuture.successful(())
-        } else if (System.currentTimeMillis() > deadline) {
-          val message = s"$what is still not reflected in the proxy state after $proxyStateSyncTimeout"
-          logger.error(message)
-          FastFuture.failed(new RuntimeException(message))
-        } else {
-          awaitF(10.millis)(using actorSystem).flatMap(_ => poll())
+    (if (customPort.exists(_ != port)) None else proxyStateEnv) match {
+      case None      => awaitF(fallback)(using actorSystem)
+      case Some(env) =>
+        val deadline = System.currentTimeMillis() + proxyStateSyncTimeout.toMillis
+        def poll(): Future[Unit] = {
+          if (ready(env)) {
+            FastFuture.successful(())
+          } else if (System.currentTimeMillis() > deadline) {
+            val message = s"$what is still not reflected in the proxy state after $proxyStateSyncTimeout"
+            logger.error(message)
+            FastFuture.failed(new RuntimeException(message))
+          } else {
+            awaitF(10.millis)(using actorSystem).flatMap(_ => poll())
+          }
         }
-      }
-      poll()
+        poll()
     }
   }
 
