@@ -5,8 +5,8 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.IpFiltering
 import otoroshi.next.plugins.api.*
+import otoroshi.utils.IpAddressMatcher
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import play.api.http.HttpEntity
@@ -18,6 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class NgIpAddressesConfig(addresses: Seq[String] = Seq.empty) extends NgPluginConfig {
+  // compiled once per cached config, with the same address matching as the trusted proxies
+  lazy val matcher: IpAddressMatcher = IpAddressMatcher(addresses)
   def json: JsValue = NgIpAddressesConfig.format.writes(this)
 }
 
@@ -54,18 +56,8 @@ class IpAddressAllowedList extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress                  = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
-    val NgIpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
-    val shouldPass                     = if (addresses.nonEmpty) {
-      addresses.exists { ip =>
-        if (ip.contains("/")) {
-          IpFiltering.cidr(ip).contains(remoteAddress)
-        } else {
-          otoroshi.utils.RegexPool(ip).matches(remoteAddress)
-        }
-      }
-    } else {
-      false
-    }
+    val config                         = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
+    val shouldPass                     = config.matcher.matches(remoteAddress)
     if (shouldPass) {
       NgAccess.NgAllowed.vfuture
     } else {
@@ -105,18 +97,8 @@ class IpAddressBlockList extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress                  = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
-    val NgIpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
-    val shouldNotPass                  = if (addresses.nonEmpty) {
-      addresses.exists { ip =>
-        if (ip.contains("/")) {
-          IpFiltering.cidr(ip).contains(remoteAddress)
-        } else {
-          otoroshi.utils.RegexPool(ip).matches(remoteAddress)
-        }
-      }
-    } else {
-      false
-    }
+    val config                         = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
+    val shouldNotPass                  = config.matcher.matches(remoteAddress)
     if (!shouldNotPass) {
       NgAccess.NgAllowed.vfuture
     } else {
@@ -142,6 +124,8 @@ case class NgEndlessHttpResponseConfig(
     addresses: Seq[String] = Seq.empty,
     isDebug: Boolean = false
 ) extends NgPluginConfig {
+  // compiled once per cached config, with the same address matching as the trusted proxies
+  lazy val matcher: IpAddressMatcher = IpAddressMatcher(addresses)
   def json: JsValue = NgEndlessHttpResponseConfig.format.writes(this)
 }
 
@@ -189,16 +173,11 @@ class EndlessHttpResponse extends NgRequestTransformer {
     val remoteAddress                                           = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     // val finger = ctx.config.select("finger").asOpt[Boolean].getOrElse(false)
-    val NgEndlessHttpResponseConfig(finger, addresses, isDebug) =
+    val config                                                  =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgEndlessHttpResponseConfig())
+    val NgEndlessHttpResponseConfig(finger, addresses, isDebug) = config
     val shouldPass                                              = if (addresses.nonEmpty) {
-      addresses.exists { ip =>
-        if (ip.contains("/")) {
-          IpFiltering.cidr(ip).contains(remoteAddress)
-        } else {
-          otoroshi.utils.RegexPool(ip).matches(remoteAddress)
-        }
-      }
+      config.matcher.matches(remoteAddress)
     } else {
       isDebug
     }

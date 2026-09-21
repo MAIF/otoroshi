@@ -129,6 +129,7 @@ class UnitTests
       new ApiBusinessRulesSpec(),
       new plugins.HttpSignatureRfc9421Spec(),
       new plugins.ForwardedHeaderSpec(),
+      new TrustedProxiesSpec(),
       new WebAuthnSpec(),
       new MapFilterSpec(),
       new JsonPathSpec(),

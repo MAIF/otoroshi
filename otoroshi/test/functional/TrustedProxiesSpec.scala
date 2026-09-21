@@ -158,6 +158,76 @@ class TrustedProxiesSpec
       IpAddressMatcher(Seq.empty).isEmpty mustBe true
       IpAddressMatcher(Seq.empty).matches("10.0.0.1") mustBe false
     }
+
+    "match an ipv6 wildcard whatever the spelling it was written against" in {
+      // written against the compressed form, while java hands over the full one
+      IpAddressMatcher(Seq("2001:db8::*")).matches("2001:db8:0:0:0:0:0:1") mustBe true
+      // written against the full form, which is what otoroshi used to compare with
+      IpAddressMatcher(Seq("2001:db8:0:0:*")).matches("2001:db8:0:0:0:0:0:1") mustBe true
+      IpAddressMatcher(Seq("2001:db8::*")).matches("2001:db8::1") mustBe true
+      IpAddressMatcher(Seq("2001:db9::*")).matches("2001:db8:0:0:0:0:0:1") mustBe false
+    }
+  }
+
+  // the ip filters of the global config, the endless responses and the ip allowed/block list plugins
+  // match addresses the same way as the trusted proxies
+  "the ip address filters" should {
+
+    val cases = Seq(
+      ("2001:db8::1", "2001:db8:0:0:0:0:0:1"),
+      ("10.0.0.1", "::ffff:10.0.0.1"),
+      ("10.0.0.0/8", "::ffff:10.0.0.1"),
+      ("2001:db8::*", "2001:db8:0:0:0:0:0:1")
+    )
+
+    "match an address whatever its spelling" in {
+      cases.foreach { case (rule, address) =>
+        withClue(s"rule $rule, address $address: ") {
+          otoroshi.models.IpFiltering(blacklist = Seq(rule)).matchesBlacklist(address) mustBe true
+          otoroshi.models.IpFiltering(whitelist = Seq(rule)).matchesWhitelist(address) mustBe true
+          otoroshi.models.IpFiltering(whitelist = Seq(rule)).notMatchesWhitelist(address) mustBe false
+          otoroshi.models.GlobalConfig(endlessIpAddresses = Seq(rule)).matchesEndlessIpAddresses(address) mustBe true
+          otoroshi.next.plugins.NgIpAddressesConfig(Seq(rule)).matcher.matches(address) mustBe true
+          otoroshi.next.plugins.NgEndlessHttpResponseConfig(addresses = Seq(rule)).matcher.matches(address) mustBe true
+          // fail2ban with an identifier that is the client address, the rule being wrapped or not
+          val wrapped = if (rule.contains("/")) s"Cidr($rule)" else s"Ip($rule)"
+          otoroshi.next.plugins.Fail2BanConfig(blocked = Seq(wrapped)).isBlocked(address) mustBe true
+          otoroshi.next.plugins.Fail2BanConfig(ignored = Seq(wrapped)).isIgnored(address) mustBe true
+          otoroshi.next.plugins.Fail2BanConfig(blocked = Seq(rule)).isBlocked(address) mustBe true
+        }
+      }
+    }
+
+    "keep matching the fail2ban identifiers that are not addresses as regexes" in {
+      val config = otoroshi.next.plugins.Fail2BanConfig(
+        blocked = Seq("route_1-*", "Ip(route_2-*)", "Cidr(10.0.0.0/8)"),
+        ignored = Seq("apikey:*")
+      )
+      config.isBlocked("route_1-10.0.0.1") mustBe true
+      config.isBlocked("route_2-10.0.0.1") mustBe true
+      // a range never contains something that is not an address
+      config.isBlocked("route_3-10.0.0.1") mustBe false
+      // the colon of the identifier is not taken for the port of an address
+      config.isIgnored("apikey:client-id") mustBe true
+      config.isBlocked("apikey:client-id") mustBe false
+      otoroshi.next.plugins.Fail2BanConfig(blocked = Seq("Cidr(10.0.0.0/8)")).isBlocked("10.1.2.3") mustBe true
+      otoroshi.next.plugins.Fail2BanConfig(blocked = Seq("Cidr(10.0.0.0/8)")).isBlocked("192.168.0.1") mustBe false
+    }
+
+    "keep the meaning of empty lists" in {
+      val filtering = otoroshi.models.IpFiltering()
+      filtering.matchesWhitelist("10.0.0.1") mustBe false
+      // an empty whitelist lets everything through
+      filtering.notMatchesWhitelist("10.0.0.1") mustBe false
+      filtering.matchesBlacklist("10.0.0.1") mustBe false
+      otoroshi.models.GlobalConfig().matchesEndlessIpAddresses("10.0.0.1") mustBe false
+      otoroshi.next.plugins.NgIpAddressesConfig().matcher.matches("10.0.0.1") mustBe false
+    }
+
+    "turn away an address missing from a non empty whitelist" in {
+      otoroshi.models.IpFiltering(whitelist = Seq("10.0.0.0/8")).notMatchesWhitelist("192.168.0.1") mustBe true
+      otoroshi.models.IpFiltering(blacklist = Seq("10.0.0.0/8")).matchesBlacklist("192.168.0.1") mustBe false
+    }
   }
 
   "IpAddresses.resolveFromChain" should {

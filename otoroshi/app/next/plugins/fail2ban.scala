@@ -1,10 +1,10 @@
 package otoroshi.next.plugins
 
+import com.comcast.ip4s.IpAddress
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.models.IpFiltering
 import otoroshi.next.plugins.api.*
-import otoroshi.utils.RegexPool
+import otoroshi.utils.{IpAddressMatcher, IpAddresses, RegexPool}
 import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.*
@@ -69,29 +69,13 @@ case class Fail2BanConfig(
   def isFailedStatus(status: Int): Boolean =
     statusMatchers.exists { case StatusCodeRange(min, max) => status >= min && status <= max }
 
-  def isIgnored(remoteAddress: String): Boolean = {
-    ignored.exists {
-      case ip if ip.startsWith("Ip(") && ip.endsWith(")")         => {
-        otoroshi.utils.RegexPool(ip.substring(3).init).matches(remoteAddress)
-      }
-      case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => {
-        IpFiltering.cidr(cidr.substring(5).init).contains(remoteAddress)
-      }
-      case identifier                                             => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
-    }
-  }
+  // compiled once per cached config, with the same address matching as the other ip address filters
+  private lazy val ignoredAddresses = IpAddressMatcher(ignored.map(Fail2BanConfig.addressPattern))
+  private lazy val blockedAddresses = IpAddressMatcher(blocked.map(Fail2BanConfig.addressPattern))
 
-  def isBlocked(remoteAddress: String): Boolean = {
-    blocked.exists {
-      case ip if ip.startsWith("Ip(") && ip.endsWith(")")         => {
-        otoroshi.utils.RegexPool(ip.substring(3).init).matches(remoteAddress)
-      }
-      case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => {
-        IpFiltering.cidr(cidr.substring(5).init).contains(remoteAddress)
-      }
-      case identifier                                             => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
-    }
-  }
+  def isIgnored(identifier: String): Boolean = Fail2BanConfig.matches(ignored, ignoredAddresses, identifier)
+
+  def isBlocked(identifier: String): Boolean = Fail2BanConfig.matches(blocked, blockedAddresses, identifier)
 
   def json: JsValue = Fail2BanConfig.format.writes(this)
 }
@@ -158,6 +142,33 @@ object Fail2BanConfig {
   )
 
   def default: Fail2BanConfig = Fail2BanConfig()
+
+  // the address or the range of an `Ip(...)` or a `Cidr(...)` rule
+  private[plugins] def addressPattern(rule: String): String = {
+    if (rule.startsWith("Ip(") && rule.endsWith(")")) {
+      rule.substring(3).init
+    } else if (rule.startsWith("Cidr(") && rule.endsWith(")")) {
+      rule.substring(5).init
+    } else {
+      rule
+    }
+  }
+
+  // when the identifier is an ip address, as with `${req.ip}`, every rule is an address, a range or
+  // a wildcard, matched whatever the spelling of the address. any other identifier is matched
+  // against the rules as regexes, where a range never contains anything
+  private[plugins] def matches(rules: Seq[String], addresses: IpAddressMatcher, identifier: String): Boolean = {
+    if (rules.isEmpty) {
+      false
+    } else if (IpAddress.fromString(IpAddresses.normalize(identifier)).isDefined) {
+      addresses.matches(identifier)
+    } else {
+      rules.exists {
+        case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => false
+        case rule                                                   => RegexPool(addressPattern(rule)).matches(identifier)
+      }
+    }
+  }
 
   val format = new Format[Fail2BanConfig] {
 

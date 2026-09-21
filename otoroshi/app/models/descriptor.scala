@@ -840,46 +840,16 @@ object Target {
 }
 
 case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Seq[String] = Seq.empty[String]) {
+  // compiled once per instance, with the same address matching as the trusted proxies
+  private lazy val whitelistMatcher = otoroshi.utils.IpAddressMatcher(whitelist)
+  private lazy val blacklistMatcher = otoroshi.utils.IpAddressMatcher(blacklist)
   def toJson = IpFiltering.format.writes(this)
-  def matchesWhitelist(ipAddress: String): Boolean = {
-    if (whitelist.nonEmpty) {
-      whitelist.exists { ip =>
-        if (ip.contains("/")) {
-          IpFiltering.cidr(ip).contains(ipAddress)
-        } else {
-          otoroshi.utils.RegexPool(ip).matches(ipAddress)
-        }
-      }
-    } else {
-      false
-    }
-  }
+  def matchesWhitelist(ipAddress: String): Boolean = whitelistMatcher.matches(ipAddress)
+  // an empty whitelist lets everything through
   def notMatchesWhitelist(ipAddress: String): Boolean = {
-    if (whitelist.nonEmpty) {
-      !whitelist.exists { ip =>
-        if (ip.contains("/")) {
-          IpFiltering.cidr(ip).contains(ipAddress)
-        } else {
-          otoroshi.utils.RegexPool(ip).matches(ipAddress)
-        }
-      }
-    } else {
-      false
-    }
+    whitelist.nonEmpty && !whitelistMatcher.matches(ipAddress)
   }
-  def matchesBlacklist(ipAddress: String): Boolean = {
-    if (blacklist.nonEmpty) {
-      blacklist.exists { ip =>
-        if (ip.contains("/")) {
-          IpFiltering.cidr(ip).contains(ipAddress)
-        } else {
-          otoroshi.utils.RegexPool(ip).matches(ipAddress)
-        }
-      }
-    } else {
-      false
-    }
-  }
+  def matchesBlacklist(ipAddress: String): Boolean = blacklistMatcher.matches(ipAddress)
 }
 
 class CidrOfString(cdr: String) {

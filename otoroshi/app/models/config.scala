@@ -15,7 +15,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, ClientAuth, ClientCertificateValidator}
 import otoroshi.storage.BasicStore
 import otoroshi.tcp.TcpService
-import otoroshi.utils.RegexPool
+import otoroshi.utils.IpAddressMatcher
 import otoroshi.utils.clevercloud.CleverCloudClient
 import otoroshi.utils.clevercloud.CleverCloudClient.{CleverSettings, UserTokens}
 import otoroshi.utils.http.MtlsConfig
@@ -758,19 +758,10 @@ case class GlobalConfig(
       }
     }
 
-  def matchesEndlessIpAddresses(ipAddress: String): Boolean = {
-    if (endlessIpAddresses.nonEmpty) {
-      endlessIpAddresses.exists { ip =>
-        if (ip.contains("/")) {
-          IpFiltering.cidr(ip).contains(ipAddress)
-        } else {
-          RegexPool(ip).matches(ipAddress)
-        }
-      }
-    } else {
-      false
-    }
-  }
+  // compiled once per instance, with the same address matching as the trusted proxies
+  private lazy val endlessIpAddressesMatcher = IpAddressMatcher(endlessIpAddresses)
+
+  def matchesEndlessIpAddresses(ipAddress: String): Boolean = endlessIpAddressesMatcher.matches(ipAddress)
 
   lazy val incomingRequestValidators = NgPlugins.readFrom(plugins.config.select("incoming_request_validators"))
 }

@@ -23,9 +23,15 @@ case class IpAddressMatcher(patterns: Seq[String]) {
       false
     } else {
       val normalized = IpAddresses.normalize(address)
-      exact.contains(IpAddressMatcher.canonical(normalized)) ||
+      val canonical  = IpAddressMatcher.canonical(normalized)
+      exact.contains(canonical) ||
       cidrs.exists(_.contains(normalized)) ||
-      wildcards.exists(_.matches(normalized))
+      // a wildcard is written against one spelling of an ipv6 address, usually the compressed one,
+      // while the socket address java hands over is not. both are tried, so that no pattern
+      // written against the form otoroshi used to compare stops matching
+      wildcards.exists(wildcard =>
+        wildcard.matches(normalized) || (canonical != normalized && wildcard.matches(canonical))
+      )
     }
   }
 }
