@@ -27,6 +27,7 @@ object Keys {
   val ApiKeyRotationKey        = TypedKey[ApiKeyRotationInfo]("otoroshi.core.ApiKeyRotationInfo")
   val ApiKeyRemainingQuotasKey = TypedKey[RemainingQuotas]("otoroshi.core.RemainingQuotas")
   val UserKey                  = TypedKey[PrivateAppsUser]("otoroshi.core.UserKey")
+  val ClientIpAddressKey       = TypedKey[String]("otoroshi.core.ClientIpAddress")
   val GeolocationInfoKey       = TypedKey[JsValue]("otoroshi.plugins.GeolocationInfo")
   val UserAgentInfoKey         = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
   val ExtraAnalyticsDataKey    = TypedKey[JsObject]("otoroshi.plugins.ExtraAnalyticsData")

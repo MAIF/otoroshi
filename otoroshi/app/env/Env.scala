@@ -40,7 +40,7 @@ import otoroshi.storage.drivers.lettuce.*
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala.*
 import otoroshi.tcp.TcpService
-import otoroshi.utils.{JsonPathValidator, JsonValidator}
+import otoroshi.utils.{IpAddressMatcher, JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
@@ -60,7 +60,7 @@ import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermissions
 import java.rmi.registry.LocateRegistry
 import java.util.concurrent.{Executors, TimeUnit}
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
@@ -512,6 +512,69 @@ class Env(
 
   lazy val initialTrustXForwarded: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
+
+  // the trusted proxies published by the infrastructure at boot time, as a comma separated list of
+  // ip addresses, cidr ranges or wildcard patterns
+  lazy val trustedProxiesFromConfig: Seq[String] =
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.options.trustedProxies")
+      .map(_.split(",").toSeq.map(_.trim).filterNot(_.isEmpty))
+      .getOrElse(Seq.empty)
+
+  private val trustedProxiesMatcherRef = new AtomicReference[(Seq[String], IpAddressMatcher)](null)
+
+  // the trusted proxies known at boot time combined with the ones configured at runtime in the
+  // global config, as both are legitimate sources: some platforms only publish them through env
+  // vars while operators need to add their own without restarting otoroshi. the compiled matcher
+  // is kept until the content of the dynamic part changes, as a platform can publish several
+  // hundred of them and the global config is reloaded every few seconds
+  def trustedProxiesMatcher: IpAddressMatcher = {
+    val dynamic = datastores.globalConfigDataStore.latestSafe.map(_.trustedProxies).getOrElse(Seq.empty)
+    val current = trustedProxiesMatcherRef.get()
+    if (current != null && ((current._1 eq dynamic) || current._1 == dynamic)) {
+      current._2
+    } else {
+      // an entry can hold a comma separated list, which is what a vault reference to the env var of
+      // a platform publishing its proxies resolves to
+      val all     = trustedProxiesFromConfig ++ dynamic.flatMap(_.split(",")).map(_.trim).filter(_.nonEmpty)
+      // as soon as proxies are declared, the loopback is trusted too, as play did by default: a last
+      // hop running on the same host would otherwise hide every client behind 127.0.0.1
+      val matcher = IpAddressMatcher(if (all.isEmpty) all else all ++ IpAddressMatcher.loopback)
+      trustedProxiesMatcherRef.set((dynamic, matcher))
+      matcher
+    }
+  }
+
+  def trustedProxies: Seq[String] = trustedProxiesMatcher.patterns
+
+  def isTrustedProxy(ipAddress: String): Boolean = trustedProxiesMatcher.matches(ipAddress)
+
+  lazy val useLegacyClientIpAddressFromConfig: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.useLegacyClientIpAddress").getOrElse(false)
+
+  private val legacyClientIpAddressEnabled = new AtomicBoolean(false)
+
+  // a way back to the client address resolution otoroshi used before trusted proxies existed. it is
+  // enabled by the env var or by the global config, not seeded from one into the other: an operator
+  // rolling back an upgraded install must not depend on a value only read when the global config is
+  // created. meant to be removed once the migration is over, hence the warning on every activation
+  def useLegacyClientIpAddress: Boolean = {
+    val enabled = useLegacyClientIpAddressFromConfig ||
+      datastores.globalConfigDataStore.latestSafe.exists(_.useLegacyClientIpAddress)
+    if (enabled != legacyClientIpAddressEnabled.get() && legacyClientIpAddressEnabled.compareAndSet(!enabled, enabled)) {
+      if (enabled) {
+        logger.warn(
+          "the legacy client ip address resolution is enabled (useLegacyClientIpAddress): the client address is read " +
+          "from the leftmost X-Forwarded-For entry, whoever sent it, and the trusted proxies are ignored. a client " +
+          "reaching otoroshi directly can choose its own address. this option is only a way back during the migration " +
+          "and will be removed"
+        )
+      } else {
+        logger.info("the legacy client ip address resolution is disabled, the client address is resolved through ipSafe")
+      }
+    }
+    enabled
+  }
 
   lazy val wasmCacheTtl: Int        =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.ttl").getOrElse(10000)

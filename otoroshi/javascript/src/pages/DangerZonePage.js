@@ -781,6 +781,22 @@ export class DangerZonePage extends Component {
         help: 'When evaluating routing of a request X-Forwarded-* headers will be used if presents',
       },
     },
+    trustedProxies: {
+      type: 'array',
+      props: {
+        label: 'Trusted proxies',
+        placeholder: 'IP address, CIDR range or pattern',
+        help: 'Reverse proxies allowed to rewrite the client address through the Forwarded or X-Forwarded-For headers, only used while X-Forwarded-* headers are trusted. An entry can hold a comma separated list, like a vault reference to an env var. Combined with the ones provided at startup through OTOROSHI_OPTIONS_TRUSTED_PROXIES or CC_REVERSE_PROXY_IPS. The loopback is trusted as soon as the list is not empty',
+      },
+    },
+    useLegacyClientIpAddress: {
+      type: 'bool',
+      props: {
+        label: 'Legacy client IP address',
+        placeholder: '--',
+        help: 'Temporary way back to the client IP address resolution used before trusted proxies: the leftmost X-Forwarded-For entry, whoever sent it. A client reaching Otoroshi directly can then choose its own address. Also enabled, whatever this value, by OTOROSHI_OPTIONS_USE_LEGACY_CLIENT_IP_ADDRESS. Will be removed.',
+      },
+    },
     maintenanceMode: {
       type: 'bool',
       props: {
@@ -1395,6 +1411,8 @@ export class DangerZonePage extends Component {
     'middleFingers',
     'limitConcurrentRequests',
     'trustXForwarded',
+    'trustedProxies',
+    'useLegacyClientIpAddress',
     'anonymousReporting',
     //[REMOVE SERVICEDESC] 'initWithNewEngine',
     'maxConcurrentRequests',

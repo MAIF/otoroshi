@@ -349,8 +349,15 @@ object GlobalExpressionLanguage {
             case "req.domain" if req.isDefined                                              => req.get.theDomain(using env)
             case "req.method" if req.isDefined                                              => req.get.method
             case "req.protocol" if req.isDefined                                            => req.get.theProtocol(using env)
-            case "req.ip" if req.isDefined                                                  => req.get.theIpAddress(using env)
-            case "req.ip_address" if req.isDefined                                          => req.get.theIpAddress(using env)
+            case "req.ip" if req.isDefined                                                  => req.get.theIpAddress(attrs)(using env)
+            case "req.ip_address" if req.isDefined                                          => req.get.theIpAddress(attrs)(using env)
+            case "req.ip_safe" if req.isDefined                                             => req.get.ipSafe(attrs)(using env)
+            case "req.ip_from_socket" if req.isDefined                                      => req.get.ipFromSocket
+            case "req.ip_from_trusted_proxy" if req.isDefined                               =>
+              req.get.ipFromTrustedProxy(using env)
+            case "req.ip_from_xff" if req.isDefined                                         => req.get.ipFromXForwardedHeader
+            case "req.ip_from_xforwarded_header" if req.isDefined                           =>
+              req.get.ipFromXForwardedHeader
             case "req.secured" if req.isDefined                                             => req.get.theSecured(using env).toString
             case "req.version" if req.isDefined                                             => req.get.version
             case r"req.headers.$field@(.*):$defaultValue@(.*)"                              =>

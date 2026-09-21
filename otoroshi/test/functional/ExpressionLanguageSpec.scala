@@ -10,12 +10,12 @@ import otoroshi.el.{
   TargetExpressionLanguage
 }
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, EntityLocation, PrivateAppsUser, ServiceGroupIdentifier}
+import otoroshi.models.{ApiKey, EntityLocation, GlobalConfig, PrivateAppsUser, ServiceGroupIdentifier}
 import otoroshi.next.models.{NgDomainAndPath, NgMatchedRoute, NgRoute}
 import otoroshi.utils.TypedMap
 import play.api.Configuration
 import play.api.libs.json.*
-import play.api.mvc.{Cookie, RequestHeader}
+import play.api.mvc.{AnyContentAsEmpty, Cookie, Headers, RequestHeader}
 import play.api.test.FakeRequest
 
 import scala.collection.mutable
@@ -42,6 +42,7 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
       ConfigFactory
         .parseString("""
           |otoroshi.test.elMarker = "el-works"
+          |otoroshi.options.trustedProxies = "10.0.0.0/8"
           |""".stripMargin)
         .resolve()
     ).withFallback(configurationSpec).withFallback(configuration)
@@ -102,6 +103,30 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
   private lazy val sampleRequest: RequestHeader = FakeRequest("GET", "/api/foo?q=1&name=otoroshi")
     .withHeaders("Host" -> "api.example.com", "X-Custom" -> "custom-value")
     .withCookies(Cookie("session", "sess-123"))
+
+  // a request coming from a trusted proxy, carrying a chain the client tried to extend with an
+  // address of its own before the first proxy appended to it
+  private lazy val forwardedRequest: RequestHeader = FakeRequest(
+    "GET",
+    "/api/foo",
+    Headers("Host" -> "api.example.com", "X-Forwarded-For" -> "9.9.9.9, 1.1.1.1, 10.0.0.2"),
+    AnyContentAsEmpty,
+    remoteAddress = "10.0.0.1"
+  )
+
+  // writes the global config, then waits for the cached copy that is refreshed asynchronously after
+  // the write
+  private def updateGlobalConfig(update: GlobalConfig => GlobalConfig)(applied: GlobalConfig => Boolean): Unit = {
+    given Env                               = env
+    given scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    val current  = env.datastores.globalConfigDataStore.latest()
+    env.datastores.globalConfigDataStore.set(update(current)).futureValue
+    val deadline = System.currentTimeMillis() + 10000
+    while (!env.datastores.globalConfigDataStore.latestSafe.exists(applied) && System.currentTimeMillis() < deadline) {
+      Thread.sleep(50)
+    }
+    env.datastores.globalConfigDataStore.latestSafe.exists(applied) mustBe true
+  }
 
   private lazy val sampleContext: Map[String, String] = Map(
     "foo"         -> "bar",
@@ -189,6 +214,101 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
       el("${ctx.absent || ctx.stillabsent :: mydefault}") mustBe "mydefault"
     }
 
+    "resolve the ip address expressions of a forwarded request" in {
+      // a fresh attrs per evaluation: ip_safe memoizes its resolution there, which is only valid
+      // because attrs is built per request everywhere it matters
+      def fel(expression: String): String = el(expression, req = Some(forwardedRequest), attrs = TypedMap.empty)
+
+      fel("${req.ip_from_socket}") mustBe "10.0.0.1"
+      // the leftmost entry is the one the client picked for itself
+      fel("${req.ip_from_xff}") mustBe "9.9.9.9"
+      // walking the chain from the closest hop skips the trusted proxies and stops on the address
+      // the first of them actually saw
+      fel("${req.ip_from_trusted_proxy}") mustBe "1.1.1.1"
+      fel("${req.ip_safe}") mustBe "1.1.1.1"
+      // the default resolution is the safe one
+      fel("${req.ip}") mustBe "1.1.1.1"
+      fel("${req.ip_address}") mustBe "1.1.1.1"
+
+      val attrs = TypedMap.empty
+      el("${req.ip_safe}", req = Some(forwardedRequest), attrs = attrs) mustBe "1.1.1.1"
+      attrs.get(otoroshi.plugins.Keys.ClientIpAddressKey).value mustBe "1.1.1.1"
+    }
+
+    "restore the legacy client ip address resolution when asked to" in {
+      import otoroshi.utils.http.RequestImplicits.*
+      given Env = env
+      def fel(expression: String): String = el(expression, req = Some(forwardedRequest), attrs = TypedMap.empty)
+      def setLegacy(enabled: Boolean): Unit = {
+        updateGlobalConfig(_.copy(useLegacyClientIpAddress = enabled))(_.useLegacyClientIpAddress == enabled)
+        env.useLegacyClientIpAddress mustBe enabled
+      }
+
+      try {
+        setLegacy(true)
+        forwardedRequest.theIpAddress mustBe "9.9.9.9"
+        fel("${req.ip}") mustBe "9.9.9.9"
+        fel("${req.ip_address}") mustBe "9.9.9.9"
+        // the explicit sources keep their meaning whatever the flag says
+        fel("${req.ip_safe}") mustBe "1.1.1.1"
+        fel("${req.ip_from_trusted_proxy}") mustBe "1.1.1.1"
+      } finally {
+        setLegacy(false)
+      }
+      forwardedRequest.theIpAddress mustBe "1.1.1.1"
+      fel("${req.ip}") mustBe "1.1.1.1"
+    }
+
+    "read no forwarded header at all when trustXForwarded is disabled" in {
+      import otoroshi.utils.http.RequestImplicits.*
+      given Env = env
+      def fel(expression: String): String = el(expression, req = Some(forwardedRequest), attrs = TypedMap.empty)
+
+      try {
+        updateGlobalConfig(_.copy(trustXForwarded = false))(!_.trustXForwarded)
+        // the trusted proxies are configured and the peer is one of them, the connection still wins
+        forwardedRequest.theIpAddress mustBe "10.0.0.1"
+        fel("${req.ip}") mustBe "10.0.0.1"
+        fel("${req.ip_safe}") mustBe "10.0.0.1"
+        fel("${req.ip_from_trusted_proxy}") mustBe "10.0.0.1"
+        // the raw reading keeps saying what the header says
+        fel("${req.ip_from_xff}") mustBe "9.9.9.9"
+      } finally {
+        updateGlobalConfig(_.copy(trustXForwarded = true))(_.trustXForwarded)
+      }
+      fel("${req.ip_safe}") mustBe "1.1.1.1"
+    }
+
+    "trust the loopback once proxies are declared" in {
+      env.isTrustedProxy("127.0.0.1") mustBe true
+      // the form java gives to a socket connected over ipv6 loopback
+      env.isTrustedProxy("0:0:0:0:0:0:0:1") mustBe true
+      // a last hop on the same host does not hide the client
+      val throughLoopback = FakeRequest(
+        "GET",
+        "/api/foo",
+        Headers("Host" -> "api.example.com", "X-Forwarded-For" -> "9.9.9.9, 1.1.1.1, 10.0.0.2"),
+        AnyContentAsEmpty,
+        remoteAddress = "127.0.0.1"
+      )
+      el("${req.ip_safe}", req = Some(throughLoopback), attrs = TypedMap.empty) mustBe "1.1.1.1"
+    }
+
+    "split the comma separated entries of the global config" in {
+      env.isTrustedProxy("192.168.7.2") mustBe false
+      try {
+        // what a vault reference to an env var publishing a list of proxies resolves to
+        updateGlobalConfig(_.copy(trustedProxies = Seq("192.168.7.1, 192.168.7.2")))(_.trustedProxies.nonEmpty)
+        env.isTrustedProxy("192.168.7.1") mustBe true
+        env.isTrustedProxy("192.168.7.2") mustBe true
+        // the list published at startup is still there
+        env.isTrustedProxy("10.1.2.3") mustBe true
+      } finally {
+        updateGlobalConfig(_.copy(trustedProxies = Seq.empty))(_.trustedProxies.isEmpty)
+      }
+      env.isTrustedProxy("192.168.7.2") mustBe false
+    }
+
     "resolve request expressions" in {
       el("${req.method}") mustBe "GET"
       el("${req.path}") mustBe "/api/foo"
@@ -200,6 +320,13 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
       el("${req.fullUrl}") mustBe "http://api.example.com/api/foo?q=1&name=otoroshi"
       el("${req.ip_address}") mustBe "127.0.0.1"
       el("${req.listener}") mustBe "standard"
+
+      // the sample request is a direct connection, every source resolves to the socket address
+      el("${req.ip_from_socket}") mustBe "127.0.0.1"
+      el("${req.ip_from_xff}") mustBe "127.0.0.1"
+      el("${req.ip_from_xforwarded_header}") mustBe "127.0.0.1"
+      el("${req.ip_from_trusted_proxy}") mustBe "127.0.0.1"
+      el("${req.ip_safe}") mustBe "127.0.0.1"
 
       el("${req.headers.X-Custom}") mustBe "custom-value"
       el("${req.headers.Missing}") mustBe "no-header-Missing"

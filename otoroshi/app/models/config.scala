@@ -679,6 +679,8 @@ case class GlobalConfig(
     u2fLoginOnly: Boolean = false,
     maintenanceMode: Boolean = false,
     trustXForwarded: Boolean = true,
+    trustedProxies: Seq[String] = Seq.empty[String],
+    useLegacyClientIpAddress: Boolean = false,
     ipFiltering: IpFiltering = IpFiltering(),
     throttlingQuota: Long = BaseQuotas.MaxValue,
     perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
@@ -865,6 +867,8 @@ object GlobalConfig {
         "apiReadOnly"             -> o.apiReadOnly,
         "u2fLoginOnly"            -> o.u2fLoginOnly,
         "trustXForwarded"         -> o.trustXForwarded,
+        "trustedProxies"          -> JsArray(o.trustedProxies.map(JsString.apply)),
+        "useLegacyClientIpAddress" -> o.useLegacyClientIpAddress,
         "ipFiltering"             -> o.ipFiltering.toJson,
         "throttlingQuota"         -> o.throttlingQuota,
         "perIpThrottlingQuota"    -> o.perIpThrottlingQuota,
@@ -911,6 +915,10 @@ object GlobalConfig {
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),
           trustXForwarded = (json \ "trustXForwarded").asOpt[Boolean].getOrElse(true),
+          trustedProxies = (json \ "trustedProxies").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          // absent from every config persisted before it existed, so it must read as false for an
+          // upgraded install to behave exactly like a fresh one
+          useLegacyClientIpAddress = (json \ "useLegacyClientIpAddress").asOpt[Boolean].getOrElse(false),
           limitConcurrentRequests = (json \ "limitConcurrentRequests")
             .asOpt[Boolean]
             .getOrElse(false), // TODO : true by default after prod monitoring

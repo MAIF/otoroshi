@@ -25,6 +25,8 @@ Nothing here is a bug report. It is the list of things nobody else can decide fo
 - [ ] `otoroshi.ssl.trust.all` is off
 - [ ] `strictBackendServerValidation` is enabled in your global config, not just assumed
 - [ ] `trustXForwarded` matches your topology: on only if a trusted proxy rewrites those headers
+- [ ] Your reverse proxies are declared as trusted proxies, including the last hop in front of Otoroshi
+- [ ] `useLegacyClientIpAddress` is off
 - [ ] No route runs the apikey plugin with both *validate* and *mandatory* turned off
 - [ ] API keys authenticating with keypair-signed JWTs pin their keypair
 - [ ] Your event exporters are treated as secret material
@@ -141,8 +143,8 @@ need to trust a private authority, add that authority to Otoroshi's certificate 
 
 ### `X-Forwarded-*` headers are trusted by default
 
-`trustXForwarded` defaults to `true`, and the client IP address is read from the first value of the
-`X-Forwarded-For` header.
+`trustXForwarded` defaults to `true`. When no trusted proxy is declared, the client IP address is then
+read from the first value of the `X-Forwarded-For` header.
 
 That default assumes Otoroshi runs behind a load balancer that **overwrites** those headers. If a
 client can reach Otoroshi directly, it chooses its own identity, which means it can:
@@ -151,15 +153,73 @@ client can reach Otoroshi directly, it chooses its own identity, which means it 
 - claim `X-Forwarded-Proto: https` and satisfy the "force HTTPS" plugin over plain HTTP
 - set `X-Forwarded-Host` and influence domain-based routing
 
-Two valid configurations, and you must pick the one matching your topology:
+Three valid configurations, and you must pick the one matching your topology:
 
-- **Behind a trusted proxy that rewrites the headers**: keep `trustXForwarded` on.
-- **Directly exposed, or behind a proxy that merely appends**: turn it off, and Otoroshi will use the
-  real remote address.
+- **Behind known reverse proxies**: keep `trustXForwarded` on and declare them as trusted proxies
+  (see below). This is the only configuration where a proxy chain is read without letting the client
+  choose its own address.
+- **Behind a proxy that overwrites the headers**: keep `trustXForwarded` on.
+- **Directly exposed**: turn it off. Otoroshi then reads neither `Forwarded` nor `X-Forwarded-For`
+  and uses the real remote address, whatever the trusted proxies say.
 
-There is no way for Otoroshi to tell those two topologies apart on its own. This is the setting on
-this page most likely to be wrong without anyone noticing, because nothing misbehaves until someone
-tries.
+There is no way for Otoroshi to tell those topologies apart on its own. This is the setting on this
+page most likely to be wrong without anyone noticing, because nothing misbehaves until someone tries.
+
+The IP address rewriting of Play itself is disabled (`play.http.forwarded.trustedProxies = []`):
+Otoroshi resolves the client address on its own, the same way on every HTTP server it can run.
+
+### Declare your reverse proxies as trusted proxies
+
+A trusted proxy is a reverse proxy allowed to tell Otoroshi who the client is, through the
+`Forwarded` (RFC 7239) or `X-Forwarded-For` header. When the connection comes from one of them,
+Otoroshi walks the proxy chain from the closest hop to the farthest and stops at the first address
+that is not a trusted proxy: addresses a client prepends to the chain are never reached. When the
+connection does not come from a trusted proxy, the headers are ignored and the connection address
+is used.
+
+The list accepts IP addresses, CIDR ranges and wildcard patterns. It is the combination of:
+
+- `otoroshi.options.trustedProxies`, a comma separated list read at startup from
+  `OTOROSHI_OPTIONS_TRUSTED_PROXIES`, or from `CC_REVERSE_PROXY_IPS` on Clever Cloud
+- `trustedProxies` in the global config, editable at runtime from the danger zone. An entry can hold
+  a comma separated list, so it can be a vault reference to an env var publishing the proxies of a
+  platform, like `${vault://env/CC_REVERSE_PROXY_IPS}`
+
+As soon as the list is not empty, the loopback (`127.0.0.1` and `::1`) is trusted too, as Play did by
+default: a last hop running on the same host as Otoroshi does not have to be declared. IPv6 entries
+are compared as addresses, not as text, so any spelling of the same address matches.
+
+The list only applies while `trustXForwarded` is on, which stays the master switch. As soon as the
+list is not empty, `X-Forwarded-For` is never trusted blindly anymore.
+
+:::warning Declare every hop with the address the next one sees
+Each proxy must be declared with the address the **next** hop sees, not with the one it receives
+requests on: the `by=` parameter of a `Forwarded` element is not what belongs in the list. The
+address that matters most is the one of the peer actually connected to Otoroshi: when it is not
+trusted, the headers are ignored and every client resolves to that peer, sharing the same per-IP
+quotas, bans and allow lists. On Clever Cloud, `CC_REVERSE_PROXY_IPS` is filled by the platform,
+which means upgrading Otoroshi turns the trusted proxy resolution on by itself.
+:::
+
+The `${req.ip_safe}`, `${req.ip_from_trusted_proxy}`, `${req.ip_from_xff}` and
+`${req.ip_from_socket}` [expressions](./expression-language.mdx) expose each resolution separately.
+
+### `useLegacyClientIpAddress` is a way back, not a setting
+
+The client address used everywhere Otoroshi does not ask for a specific source, including
+`${req.ip}`, is the safe resolution described above. `useLegacyClientIpAddress` restores the
+previous one: the raw leftmost `X-Forwarded-For` entry, with the trusted proxies ignored. It exists
+only to roll back quickly if the new resolution misbehaves after an upgrade, and it will be removed.
+
+It is enabled either by `OTOROSHI_OPTIONS_USE_LEGACY_CLIENT_IP_ADDRESS=true` or by the
+`useLegacyClientIpAddress` field of the global config. The environment variable wins: while it is
+set to `true`, the danger zone cannot turn the option off. Otoroshi logs a warning every time it becomes
+active.
+
+It does not bring back the rewriting Play used to do for proxies connected through the loopback. A
+complete rollback of that part also needs
+`-Dplay.http.forwarded.trustedProxies=["127.0.0.1","::1"]`, which only takes effect with the default
+HTTP server and after a restart.
 
 ## API key plugin configuration
 
