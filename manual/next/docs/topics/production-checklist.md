@@ -277,6 +277,16 @@ intermediaries that disclose the address they forward, like an open proxy, never
 its own: treat it as defense in depth. Allow lists only ever look at the resolved client address, as
 anything else would let the client pick an allowed one.
 
+### A request keeps the address it came in with
+
+The client address is resolved once, when the request enters the proxy engine, against the global
+config the request is handled with. The IP filtering, the allow and block lists, the quotas, the load
+balancing on the client address, the expressions, the access logs, the events and the alerts of that
+request all read that address, and the proxy chain it was resolved from. A change of
+`trustXForwarded`, of the trusted proxies, of the client address header or of
+`useLegacyClientIpAddress` applies to the requests that come in after it, never halfway through one:
+an event always reports the address its request was handled with.
+
 ### `useLegacyClientIpAddress` is a way back, not a setting
 
 The client address used everywhere Otoroshi does not ask for a specific source, including

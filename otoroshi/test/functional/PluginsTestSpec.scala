@@ -109,6 +109,27 @@ class IpAddressBlockListChainSpec extends PluginsTestSpecBase {
   }
 }
 
+// the client address resolved once per request: sbt "testOnly functional.ClientIpAddressSpec"
+class ClientIpAddressSpec extends PluginsTestSpecBase {
+  override def configurationSpec: Configuration = Configuration(
+    ConfigFactory.parseString("otoroshi.options.trustedProxies = \"10.0.0.0/8\"").resolve()
+  )
+  s"the client address" should {
+    "be resolved against a single version of the global config" in {
+      new ClientIpAddressTests(this).resolveAgainstASingleGlobalConfig()
+    }
+    "stay the one attached to the request whatever the global config becomes" in {
+      new ClientIpAddressTests(this).keepTheAddressAttachedToTheRequest()
+    }
+    "be memoized in attrs for a request that did not go through the proxy engine" in {
+      new ClientIpAddressTests(this).memoizeTheAddressInAttrs()
+    }
+    "be the same for the decisions and the event of a request, even if the global config changes meanwhile" in {
+      new ClientIpAddressTests(this).agreeOnTheAddressThroughoutTheRequest()
+    }
+  }
+}
+
 // the otoroshi info. token alone: sbt "testOnly functional.OtoroshiInfoTokenSpec"
 class OtoroshiInfoTokenSpec extends PluginsTestSpecBase {
   s"Otoroshi info. token" should {

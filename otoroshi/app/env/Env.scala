@@ -553,8 +553,11 @@ class Env(
 
   // the compiled matcher is kept until the content of the dynamic part changes, as a platform can
   // publish several hundred of them and the global config is reloaded every few seconds
-  def trustedProxiesMatcher: IpAddressMatcher = {
-    val dynamic = datastores.globalConfigDataStore.latestSafe.map(_.trustedProxies).getOrElse(Seq.empty)
+  def trustedProxiesMatcher: IpAddressMatcher = trustedProxiesMatcherFor(datastores.globalConfigDataStore.latestSafe)
+
+  // the trusted proxies of a given version of the global config
+  def trustedProxiesMatcherFor(config: Option[GlobalConfig]): IpAddressMatcher = {
+    val dynamic = config.map(_.trustedProxies).getOrElse(Seq.empty)
     val current = trustedProxiesMatcherRef.get()
     if (current != null && ((current._1 eq dynamic) || current._1 == dynamic)) {
       current._2
@@ -608,9 +611,12 @@ class Env(
   // the header the client address is read from, the one the proxies in front of otoroshi build or
   // overwrite. the env var wins over the global config: the infrastructure is what knows its
   // proxies, and a platform must be able to impose the header it builds
-  def clientAddressHeader: ClientAddressHeader = {
+  def clientAddressHeader: ClientAddressHeader = clientAddressHeaderFor(datastores.globalConfigDataStore.latestSafe)
+
+  // the client address header of a given version of the global config
+  def clientAddressHeaderFor(config: Option[GlobalConfig]): ClientAddressHeader = {
     val name    = clientAddressHeaderFromConfig
-      .orElse(datastores.globalConfigDataStore.latestSafe.map(_.clientAddressHeader).filter(_.nonEmpty))
+      .orElse(config.map(_.clientAddressHeader).filter(_.nonEmpty))
       .getOrElse(ClientAddressHeader.default.name)
     val current = clientAddressHeaderRef.get()
     if (current.name == name) {
@@ -635,9 +641,11 @@ class Env(
   // enabled by the env var or by the global config, not seeded from one into the other: an operator
   // rolling back an upgraded install must not depend on a value only read when the global config is
   // created. meant to be removed once the migration is over, hence the warning on every activation
-  def useLegacyClientIpAddress: Boolean = {
-    val enabled = useLegacyClientIpAddressFromConfig ||
-      datastores.globalConfigDataStore.latestSafe.exists(_.useLegacyClientIpAddress)
+  def useLegacyClientIpAddress: Boolean = useLegacyClientIpAddressFor(datastores.globalConfigDataStore.latestSafe)
+
+  // the legacy client ip address resolution switch of a given version of the global config
+  def useLegacyClientIpAddressFor(config: Option[GlobalConfig]): Boolean = {
+    val enabled = useLegacyClientIpAddressFromConfig || config.exists(_.useLegacyClientIpAddress)
     if (enabled != legacyClientIpAddressEnabled.get() && legacyClientIpAddressEnabled.compareAndSet(!enabled, enabled)) {
       if (enabled) {
         logger.warn(

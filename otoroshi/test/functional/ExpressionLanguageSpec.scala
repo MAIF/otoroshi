@@ -234,7 +234,7 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
 
       val attrs = TypedMap.empty
       el("${req.ip_safe}", req = Some(forwardedRequest), attrs = attrs) mustBe "1.1.1.1"
-      attrs.get(otoroshi.plugins.Keys.ClientIpAddressKey).value mustBe "1.1.1.1"
+      attrs.get(otoroshi.plugins.Keys.ClientIpAddressKey).value.address mustBe "1.1.1.1"
     }
 
     "restore the legacy client ip address resolution when asked to" in {

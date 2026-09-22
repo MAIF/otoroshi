@@ -337,7 +337,7 @@ class ProxyEngine() extends RequestHandler {
 
   @inline
   def handleRequest(
-      request: Request[Source[ByteString, ?]],
+      incomingRequest: Request[Source[ByteString, ?]],
       _config: ProxyEngineConfig,
       forCurrentListenerOnly: Boolean
   )(using
@@ -345,6 +345,11 @@ class ProxyEngine() extends RequestHandler {
       env: Env,
       globalConfig: GlobalConfig
   ): Future[Result] = {
+    // the client address is resolved once, against the global config the request is handled with,
+    // and travels with the request: the checks, the plugins, the events and the alerts all read it
+    val clientIpAddress: otoroshi.utils.ClientIpAddress                                                      = incomingRequest.clientIpAddressFor(globalConfig)
+    val request: Request[Source[ByteString, ?]]                                                              =
+      incomingRequest.addAttr(otoroshi.plugins.Keys.ClientIpAddressKey, clientIpAddress)
     val start                                                                                                = System.currentTimeMillis()
     val tryItId                                                                                              = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                                                = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
@@ -375,7 +380,8 @@ class ProxyEngine() extends RequestHandler {
       otoroshi.plugins.Keys.RequestCounterOutKey      -> counterOut,
       otoroshi.plugins.Keys.ResponseEndPromiseKey     -> responseEndPromise,
       otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly,
-      otoroshi.plugins.Keys.CurrentListenerKey        -> currentListener
+      otoroshi.plugins.Keys.CurrentListenerKey        -> currentListener,
+      otoroshi.plugins.Keys.ClientIpAddressKey        -> clientIpAddress
     )
 
     val elCtx: Map[String, String] = Map(
@@ -572,11 +578,15 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(using
+  def handleWsRequest(incomingRequest: RequestHeader, _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(using
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
+    // see handleRequest: the client address is resolved once and travels with the request
+    val clientIpAddress: otoroshi.utils.ClientIpAddress                                       = incomingRequest.clientIpAddressFor(globalConfig)
+    val request: RequestHeader                                                                =
+      incomingRequest.addAttr(otoroshi.plugins.Keys.ClientIpAddressKey, clientIpAddress)
     val start                                                                                 = System.currentTimeMillis()
     val tryItId                                                                               = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                                 = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
@@ -604,7 +614,8 @@ class ProxyEngine() extends RequestHandler {
       otoroshi.plugins.Keys.RequestWebsocketKey       -> false,
       otoroshi.plugins.Keys.RequestCounterInKey       -> counterIn,
       otoroshi.plugins.Keys.RequestCounterOutKey      -> counterOut,
-      otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly
+      otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly,
+      otoroshi.plugins.Keys.ClientIpAddressKey        -> clientIpAddress
     )
 
     val elCtx: Map[String, String] = Map(

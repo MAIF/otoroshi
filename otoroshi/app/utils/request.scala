@@ -4,7 +4,8 @@ import org.apache.pekko.http.scaladsl.model.Uri
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.ssl.PemHeaders
-import otoroshi.utils.{ClientAddressHeader, ForwardedElement, IpAddresses, TypedMap}
+import otoroshi.models.GlobalConfig
+import otoroshi.utils.{ClientAddressHeader, ClientIpAddress, ForwardedElement, IpAddresses, TypedMap}
 import play.api.mvc.RequestHeader
 
 import java.util.Base64
@@ -111,20 +112,82 @@ object RequestImplicits {
     // the client address used everywhere otoroshi does not ask for a specific source. it is the safe
     // resolution unless useLegacyClientIpAddress is enabled
     @inline
-    def theIpAddress(using env: Env): String = {
-      if (env.useLegacyClientIpAddress) legacyIpAddress else ipSafe
-    }
+    def theIpAddress(using env: Env): String = clientIpAddress.address
 
     @inline
-    def theIpAddress(attrs: TypedMap)(using env: Env): String = {
-      if (env.useLegacyClientIpAddress) legacyIpAddress else ipSafe(attrs)
+    def theIpAddress(attrs: TypedMap)(using env: Env): String = clientIpAddress(attrs).address
+
+    // the client address of the request. the proxy engine resolves it once, when the request comes
+    // in, and attaches it to the request (see clientIpAddressFor): every consumer of a request it
+    // handles reads that same address, from the checks and the plugins taking a decision on it to the
+    // events and the alerts reporting it, whatever the global config becomes in the meantime. a
+    // request that did not go through the engine, like a call to the admin api, is resolved against
+    // the current global config on each call
+    def clientIpAddress(using env: Env): ClientIpAddress = {
+      requestHeader.attrs.get(otoroshi.plugins.Keys.ClientIpAddressKey) match {
+        case Some(resolved) => resolved
+        case None           => resolveClientIpAddress(env.datastores.globalConfigDataStore.latestSafe)
+      }
+    }
+
+    // same as above, the resolution of a request that did not go through the proxy engine being
+    // memoized in attrs, so that every consumer given the same attrs reads the same address
+    def clientIpAddress(attrs: TypedMap)(using env: Env): ClientIpAddress = {
+      requestHeader.attrs.get(otoroshi.plugins.Keys.ClientIpAddressKey) match {
+        case Some(resolved) => resolved
+        case None           =>
+          attrs.get(otoroshi.plugins.Keys.ClientIpAddressKey) match {
+            case Some(resolved) => resolved
+            case None           =>
+              val resolved = resolveClientIpAddress(env.datastores.globalConfigDataStore.latestSafe)
+              attrs.putIfAbsent(otoroshi.plugins.Keys.ClientIpAddressKey -> resolved)
+              attrs.get(otoroshi.plugins.Keys.ClientIpAddressKey).getOrElse(resolved)
+          }
+      }
+    }
+
+    // the client address to attach to the request when it enters the proxy engine: the one it already
+    // carries, or a resolution against the global config the engine handles the request with
+    def clientIpAddressFor(config: GlobalConfig)(using env: Env): ClientIpAddress = {
+      requestHeader.attrs.get(otoroshi.plugins.Keys.ClientIpAddressKey) match {
+        case Some(resolved) => resolved
+        case None           => resolveClientIpAddress(Some(config))
+      }
+    }
+
+    // resolves the client address against a single version of the global config: trustXForwarded, the
+    // trusted proxies, the client address header and the legacy switch are all read from it, so that a
+    // resolution never mixes two versions of the policy.
+    //
+    // trustXForwarded is the master switch: when it is disabled no forwarded header is read, like for
+    // the protocol and the host. when it is enabled and trusted proxies are configured, they are the
+    // only accepted way to rewrite the client address: falling back to the blind leftmost entry there
+    // would give back to the client the ability to choose its own. without trusted proxies, the
+    // leftmost entry of the client address header is taken as is, which only holds behind a proxy that
+    // overwrites that header
+    def resolveClientIpAddress(config: Option[GlobalConfig])(using env: Env): ClientIpAddress = {
+      val trustXForwarded = config.exists(_.trustXForwarded)
+      val socket          = ipFromSocket
+      val chain           = if (trustXForwarded) forwardedChain(env.clientAddressHeaderFor(config)) else Seq.empty
+      val safe            = if (!trustXForwarded) {
+        socket
+      } else {
+        val trustedProxies = env.trustedProxiesMatcherFor(config)
+        if (trustedProxies.nonEmpty) {
+          IpAddresses.resolveFromChain(socket, chain, trustedProxies).getOrElse(socket)
+        } else {
+          chain.find(IpAddresses.isAddress).getOrElse(socket)
+        }
+      }
+      val address         = if (env.useLegacyClientIpAddressFor(config)) legacyIpAddress(trustXForwarded) else safe
+      ClientIpAddress(address, safe, chain)
     }
 
     // the resolution otoroshi used before trusted proxies existed: the raw leftmost X-Forwarded-For
     // entry when trustXForwarded is enabled, the socket address otherwise. it is only reachable
     // through useLegacyClientIpAddress, as a way back during the migration, and will be removed
-    def legacyIpAddress(using env: Env): String = {
-      if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
+    def legacyIpAddress(trustXForwarded: Boolean): String = {
+      if (trustXForwarded) {
         requestHeader.headers
           .get("X-Forwarded-For")
           .map { rawHeader =>
@@ -155,15 +218,11 @@ object RequestImplicits {
     }
 
     // every address the request claims to come from as far as otoroshi can tell: the resolved client
-    // and each entry of the proxy chain. the chain is written by the client and by its proxies, so it
-    // can only ever serve to turn a request away, never to let it in
+    // and each entry of the proxy chain, both from the same resolution. the chain is written by the
+    // client and by its proxies, so it can only ever serve to turn a request away, never to let it in
     def addressesSeen(attrs: TypedMap)(using env: Env): Seq[String] = {
-      val resolved = theIpAddress(attrs)
-      if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-        resolved +: forwardedChain.filter(IpAddresses.isAddress)
-      } else {
-        Seq(resolved)
-      }
+      val resolved = clientIpAddress(attrs)
+      resolved.address +: resolved.forwardedChain.filter(IpAddresses.isAddress)
     }
 
     // the address claimed by the leftmost entry of X-Forwarded-For. it is chosen by whoever sent
@@ -196,37 +255,12 @@ object RequestImplicits {
     @inline
     def ipFromTrustedProxy(using env: Env): String = ipFromTrustedProxyOpt.getOrElse(ipFromSocket)
 
-    // the address that can be trusted for security decisions. trustXForwarded is the master switch:
-    // when it is disabled no forwarded header is read, like for the protocol and the host. when it
-    // is enabled and trusted proxies are configured, they are the only accepted way to rewrite the
-    // client address: falling back to the blind leftmost entry there would give back to the client
-    // the ability to choose its own. without trusted proxies, the leftmost entry of the client
-    // address header is taken as is, which only holds behind a proxy that overwrites that header
-    def ipSafe(using env: Env): String = {
-      if (!env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-        ipFromSocket
-      } else {
-        val trustedProxies = env.trustedProxiesMatcher
-        if (trustedProxies.nonEmpty) {
-          IpAddresses.resolveFromChain(ipFromSocket, forwardedChain, trustedProxies).getOrElse(ipFromSocket)
-        } else {
-          forwardedChain.find(IpAddresses.isAddress).getOrElse(ipFromSocket)
-        }
-      }
-    }
+    // the address that can be trusted for security decisions, resolved through the trusted proxies
+    // whatever useLegacyClientIpAddress says (see resolveClientIpAddress). it comes from the same
+    // resolution as theIpAddress
+    def ipSafe(using env: Env): String = clientIpAddress.safe
 
-    // resolves the address once for the whole request. the same value is read by the legacy
-    // checks, by every plugin taking a decision on the client address and by the event emitted at
-    // the end, and parsing the forwarded chain again for each of them is not free
-    def ipSafe(attrs: TypedMap)(using env: Env): String = {
-      attrs.get(otoroshi.plugins.Keys.ClientIpAddressKey) match {
-        case Some(address) => address
-        case None          =>
-          val address = ipSafe(using env)
-          attrs.put(otoroshi.plugins.Keys.ClientIpAddressKey -> address)
-          address
-      }
-    }
+    def ipSafe(attrs: TypedMap)(using env: Env): String = clientIpAddress(attrs).safe
 
     @inline
     def theUserAgent: String = {

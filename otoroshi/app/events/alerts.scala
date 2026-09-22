@@ -1110,8 +1110,10 @@ case class RevokedApiKeyUsageAlert(
   override def `@serviceId`: String = descriptor.map(_.id).getOrElse("--")
 
   // the client address, resolved the same way as for the gateway events. the peer of the connection
-  // can be a proxy standing in front of otoroshi
-  lazy val from: String = req.theIpAddress(using env)
+  // can be a proxy standing in front of otoroshi. read when the alert is created, not when it is
+  // exported: a request handled by the proxy engine carries the address it was handled with, any
+  // other one would otherwise be resolved against the global config of the export time
+  val from: String = req.theIpAddress(using env)
 
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(req.theUserAgent)

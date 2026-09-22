@@ -3,6 +3,8 @@ package otoroshi.utils
 import com.comcast.ip4s.IpAddress
 import otoroshi.models.{CidrOfString, IpFiltering}
 import otoroshi.utils.cache.Caches
+import otoroshi.utils.json.Jsonable
+import play.api.libs.json.{JsValue, Json}
 
 // a list of ip patterns compiled once, so that matching an address against it does not cost a
 // regex evaluation per entry. platforms publishing their reverse proxies through an env var can
@@ -187,4 +189,16 @@ case class ClientAddressHeader(name: String) {
 
 object ClientAddressHeader {
   val default: ClientAddressHeader = ClientAddressHeader("X-Forwarded-For")
+}
+
+// the client address of a request, resolved once against a single version of the global config.
+// `address` is the one the request is handled with, `safe` the one resolved through the trusted
+// proxies, which differ only when useLegacyClientIpAddress is enabled. `forwardedChain` is the proxy
+// chain read from the client address header, empty when the forwarded headers are not trusted
+case class ClientIpAddress(address: String, safe: String, forwardedChain: Seq[String]) extends Jsonable {
+  override def json: JsValue = Json.obj(
+    "address"         -> address,
+    "safe"            -> safe,
+    "forwarded_chain" -> forwardedChain
+  )
 }
