@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       {{- include "otoroshi.selectorLabels" . | nindent 6 }}
-  replicas: {{ .Values.replicaCount | default .Values.replicas }}
+  replicas: {{ include "otoroshi.replicaCount" .Values }}
   strategy:
   {{- with .Values.strategy }}
   {{- toYaml . | nindent 4 }}

@@ -51,6 +51,21 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Replica count of a Deployment, read from a values block exposing `replicaCount`.
+The deprecated `replicas` key is not part of the default values: when present it was
+set explicitly by the user, so it takes precedence. A nil check (instead of `default`)
+keeps an explicit 0 working.
+Usage: {{ include "otoroshi.replicaCount" .Values.cluster.leader }}
+*/}}
+{{- define "otoroshi.replicaCount" -}}
+{{- if not (kindIs "invalid" .replicas) -}}
+{{- .replicas -}}
+{{- else -}}
+{{- .replicaCount -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "otoroshi.serviceAccountName" -}}

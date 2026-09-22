@@ -136,8 +136,8 @@ Otoroshi will reconcile `GatewayClass` / `Gateway` / `HTTPRoute` / `GRPCRoute` r
 6. Cluster mode (Leader / Worker)
 ============================================================
 Otoroshi is running in cluster mode:
-- Leader deployment: {{ .Values.cluster.leader.name }} ({{ .Values.cluster.leader.replicas }} replicas)
-- Worker deployment: {{ .Values.cluster.worker.name }} ({{ .Values.cluster.worker.replicas }} replicas)
+- Leader deployment: {{ .Values.cluster.leader.name }} ({{ include "otoroshi.replicaCount" .Values.cluster.leader }} replicas)
+- Worker deployment: {{ .Values.cluster.worker.name }} ({{ include "otoroshi.replicaCount" .Values.cluster.worker }} replicas)
 
 Workers connect to the leader API service at:
     https://{{ .Values.cluster.leaderApiServiceName }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.https }}

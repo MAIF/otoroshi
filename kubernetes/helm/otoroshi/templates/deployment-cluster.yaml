@@ -15,7 +15,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cluster.leader.replicas }}
+  replicas: {{ include "otoroshi.replicaCount" .Values.cluster.leader }}
   selector:
     matchLabels:
       {{- include "otoroshi.selectorLabels" . | nindent 6 }}
@@ -319,7 +319,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cluster.worker.replicas }}
+  replicas: {{ include "otoroshi.replicaCount" .Values.cluster.worker }}
   selector:
     matchLabels:
       {{- include "otoroshi.selectorLabels" . | nindent 6 }}

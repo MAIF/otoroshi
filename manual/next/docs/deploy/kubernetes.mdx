@@ -81,8 +81,8 @@ helm install my-otoroshi otoroshi/otoroshi \
 # Otoroshi cluster (Leader + Worker)
 helm install my-otoroshi otoroshi/otoroshi \
   --set cluster.enabled=true \
-  --set cluster.leader.replicas=2 \
-  --set cluster.worker.replicas=3
+  --set cluster.leader.replicaCount=2 \
+  --set cluster.worker.replicaCount=3
 
 # Enable Kubernetes Gateway API support (install Gateway API CRDs separately)
 helm install my-otoroshi otoroshi/otoroshi --set gatewayApi.enabled=true
