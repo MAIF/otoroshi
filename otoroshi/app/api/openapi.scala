@@ -12,6 +12,8 @@ object OpenApi {
 
   private val cache = new TrieMap[String, String]()
 
+  private val logger = play.api.Logger("otoroshi-openapi")
+
   private def buildCount(resource: Resource): JsObject = {
     Json.obj(
       "get" -> Json.obj(
@@ -858,6 +860,22 @@ object OpenApi {
   private def cleanupSchemas(schemas: Map[String, JsValue]): Map[String, JsValue] = {
     var finalSchemas = Map.empty[String, JsValue]
     schemas.foreach {
+      // swagger resolves an entity to its own schema and the schemas it references, which its $refs point to at the
+      // root of components.schemas. they are moved there, the component keeping only the schema of the entity
+      case (key, resolved) if resolved.select("referencedSchemas").isDefined => {
+        resolved.select("referencedSchemas").asOpt[JsObject].foreach { referenced =>
+          referenced.value.foreach { case (rkey, rvalue) =>
+            finalSchemas.get(rkey) match {
+              case None                              => finalSchemas = finalSchemas.put(rkey, rvalue)
+              // swagger names a schema after the simple name of its class, two classes can share it
+              case Some(existing) if existing != rvalue =>
+                logger.warn(s"openapi: '$key' references another schema named '$rkey', only the first one is kept")
+              case Some(_)                           => ()
+            }
+          }
+        }
+        finalSchemas = finalSchemas.put(key, resolved.select("schema").asOpt[JsObject].getOrElse(resolved))
+      }
       case (key, schema) => {
         schema.select("definitions").asOpt[JsObject] match {
           case None              => ()

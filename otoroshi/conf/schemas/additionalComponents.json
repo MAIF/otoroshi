@@ -244,7 +244,7 @@
         "description" : "End of outage duration range"
       },
       "chaosConfig" : {
-        "$ref" : "#/components/schemas/otoroshi.models.ChaosConfig",
+        "$ref" : "#/components/schemas/ChaosConfig",
         "description" : "Chaos settings"
       },
       "timesPerDay" : {
@@ -280,7 +280,7 @@
         "description" : "Stop time of Snow Monkey each day"
       },
       "outageStrategy" : {
-        "$ref" : "#/components/schemas/otoroshi.models.OutageStrategy",
+        "$ref" : "#/components/schemas/OutageStrategy",
         "description" : ""
       }
     }
@@ -339,6 +339,11 @@
     "items" : {
       "$ref" : "#/components/schemas/otoroshi.models.Outage"
     }
+  },
+  "OutageStrategy" : {
+    "type" : "string",
+    "description" : "How services are picked for an outage. Replaces the schema generated from the sealed trait, written as a string",
+    "enum" : [ "OneServicePerGroup", "AllServicesPerGroup" ]
   },
   "otoroshi.models.Outage" : {
     "type" : "object",
