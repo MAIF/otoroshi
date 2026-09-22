@@ -35,7 +35,7 @@
     "highlight.js": "11.12.0",
     "lodash": "4.18.1",
     "moment": "2.30.1",
-    "query-string": "9.1.1",
+    "query-string": "9.5.1",
     "react": "17.0.2",
     "react-color": "^2.19.3",
     "react-dom": "17.0.2",
