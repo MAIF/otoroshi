@@ -784,9 +784,9 @@ export class DangerZonePage extends Component {
     trustXForwarded: {
       type: 'bool',
       props: {
-        label: 'Use X-Forwarded-* headers for routing',
+        label: 'Trust forwarded headers',
         placeholder: '--',
-        help: 'When evaluating routing of a request X-Forwarded-* headers will be used if presents',
+        help: 'Read the client address, the protocol and the host of the original request from the headers set by the reverse proxies in front of Otoroshi. When disabled, the connection address, protocol and host are used. When enabled without trusted proxies, the client address header is trusted from anyone',
       },
     },
     trustedProxies: {
@@ -802,7 +802,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Client address header',
         placeholder: 'X-Forwarded-For',
-        help: 'The header the client address is read from when the connection comes from a trusted proxy: X-Forwarded-For, Forwarded, or any header carrying the address like X-Real-IP or CF-Connecting-IP. Only that header is read, so it must be one your reverse proxies build or overwrite: another one could be written by the client. The protocol and the host come from Forwarded when it is chosen, from X-Forwarded-Proto and X-Forwarded-Host otherwise. OTOROSHI_OPTIONS_CLIENT_ADDRESS_HEADER wins over this value when it is set',
+        help: 'The header the client address is read from: from a trusted proxy when some are declared, from any connection otherwise. X-Forwarded-For, Forwarded, or any header carrying the address like X-Real-IP or CF-Connecting-IP. Only that header is read, so it must be one your reverse proxies build or overwrite: another one could be written by the client. The protocol and the host come from Forwarded when it is chosen, from X-Forwarded-Proto and X-Forwarded-Host otherwise. OTOROSHI_OPTIONS_CLIENT_ADDRESS_HEADER wins over this value when it is set',
       },
     },
     useLegacyClientIpAddress: {

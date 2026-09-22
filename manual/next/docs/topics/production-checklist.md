@@ -146,7 +146,7 @@ need to trust a private authority, add that authority to Otoroshi's certificate 
 ### `X-Forwarded-*` headers are trusted by default
 
 `trustXForwarded` defaults to `true`. When no trusted proxy is declared, the client IP address is then
-read from the first value of the client address header, `X-Forwarded-For` by default.
+read from the first address of the client address header, `X-Forwarded-For` by default.
 
 That default assumes Otoroshi runs behind a load balancer that **overwrites** those headers. If a
 client can reach Otoroshi directly, it chooses its own identity, which means it can:
@@ -272,10 +272,11 @@ changes of the global config are not logged there, they are traced by its audit 
 The IP block list plugin (`match_forwarded_chain`) and the IP blocklist of the global config
 (`ipFiltering.blacklistMatchesForwardedChain`) can also refuse a request when a blocked address
 appears anywhere in the chain of the client address header, not only when it is the resolved client
-address. It is off by default. The client writes part of that chain, so it only catches the
-intermediaries that disclose the address they forward, like an open proxy, never a client that hides
-its own: treat it as defense in depth. Allow lists only ever look at the resolved client address, as
-anything else would let the client pick an allowed one.
+address. It is off by default, and only looks at the chain while `trustXForwarded` is on. The client
+writes part of that chain, so it only catches the intermediaries that disclose the address they
+forward, like an open proxy, never a client that hides its own: treat it as defense in depth. Allow
+lists only ever look at the resolved client address, as anything else would let the client pick an
+allowed one.
 
 ### A request keeps the address it came in with
 
