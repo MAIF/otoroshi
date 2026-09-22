@@ -52,6 +52,8 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+// the json of the wrapper is the one of the global config, so is its schema
+@io.swagger.v3.oas.annotations.media.Schema(implementation = classOf[GlobalConfig])
 case class TweakedGlobalConfig(config: GlobalConfig) extends EntityLocationSupport {
   override def location: EntityLocation         = EntityLocation.default
   override def internalId: String               = config.internalId
