@@ -1187,10 +1187,9 @@ class UserAnalyticsCapturedEvents extends Component {
         <label className="col-sm-2 col-form-label">{this.props.label}</label>
         <div className="col-sm-10">
           <p style={{ color: '#aaa', marginTop: 6 }}>
-            Event families stored by this exporter, including the ones declared by admin
-            extensions. Excluding one saves space: its table is still created and pruned, but
-            nothing new is written to it, so the queries, widgets and alerts built on it stop
-            seeing new data.
+            Event families stored by this exporter, including the ones declared by admin extensions.
+            Excluding one saves space: its table is still created and pruned, but nothing new is
+            written to it, so the queries, widgets and alerts built on it stop seeing new data.
           </p>
           {error && <div className="alert alert-danger">{error}</div>}
           {!projections && !error && (
@@ -1235,7 +1234,10 @@ class UserAnalyticsCapturedEvents extends Component {
                       )}
                     </div>
                     {!captured && p.id === 'otoroshi.gateway-events' && (
-                      <div className="alert alert-warning" style={{ marginTop: 8, marginBottom: 0 }}>
+                      <div
+                        className="alert alert-warning"
+                        style={{ marginTop: 8, marginBottom: 0 }}
+                      >
                         Without gateway events, the core queries and the default dashboards will
                         stop showing new traffic.
                       </div>

@@ -38,10 +38,5 @@ export default {
       type: 'number',
     },
   },
-  config_flow: [
-    'blocked_list',
-    'allowed_list',
-    'buffer_size',
-    'compression_level',
-  ],
+  config_flow: ['blocked_list', 'allowed_list', 'buffer_size', 'compression_level'],
 };
