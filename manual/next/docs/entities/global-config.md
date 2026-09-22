@@ -55,7 +55,10 @@ All global config changes are **hot-reloadable**: they take effect immediately w
 * `Enable live metrics` : Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore
 * `Digitus medius` : Use middle finger emoji as a response character for endless HTTP responses (see [IP address filtering settings](#ip-address-filtering-settings)).
 * `Limit conc. req.` : Limit the number of concurrent request processed by Otoroshi to a certain amount. Highly recommended for resilience
-* `Use X-Forwarded-* headers for routing` : When evaluating routing of a request, X-Forwarded-* headers will be used if presents
+* `Trust forwarded headers` : Read the client address, the protocol and the host of the original request from the headers set by the reverse proxies in front of Otoroshi. When disabled, the connection address, protocol and host are used. See [the production checklist](../topics/production-checklist.md#x-forwarded--headers-are-trusted-by-default) before changing it
+* `Trusted proxies` : IP addresses, CIDR ranges or wildcard patterns of the reverse proxies allowed to tell Otoroshi who the client is. Combined with the lists provided at startup (`OTOROSHI_OPTIONS_TRUSTED_PROXIES`, `OTOROSHI_TRUSTED_PROXIES`, `CC_REVERSE_PROXY_IPS`). An entry can hold a comma separated list, like a vault reference to an env var. The loopback is trusted as soon as the list is not empty
+* `Client address header` : The header the client address is read from, `X-Forwarded-For` by default, `Forwarded`, or any header carrying the address like `X-Real-IP`. It must be one your reverse proxies build or overwrite. `OTOROSHI_OPTIONS_CLIENT_ADDRESS_HEADER` wins over this value when it is set
+* `Legacy client IP address` : Temporary way back to the resolution used before trusted proxies, the leftmost `X-Forwarded-For` entry whoever sent it when forwarded headers are trusted, the connection address otherwise. Also enabled by `OTOROSHI_OPTIONS_USE_LEGACY_CLIENT_IP_ADDRESS=true`. Will be removed
 * `Max conc. req.` : Maximum number of concurrent requests processed by otoroshi.
 * `Max HTTP/1.0 resp. size` : Maximum size of an HTTP/1.0 response in bytes. After this limit, response will be cut and sent as is. The best value here should satisfy (maxConcurrentRequests * maxHttp10ResponseSize) < process.memory for worst case scenario.
 * `Max local events` : Maximum number of events stored.
@@ -65,6 +68,7 @@ All global config changes are **hot-reloadable**: they take effect immediately w
 
 * `IP allowed list`: Only IP addresses that will be able to access Otoroshi exposed services
 * `IP blocklist`: IP addresses that will be refused to access Otoroshi exposed services
+* `IP blocklist matches the proxy chain`: Also refuse a request when a blocked address appears anywhere in the proxy chain of the client address header, not only when it is the resolved client address. Only while forwarded headers are trusted. The client writes part of that chain, so it never replaces the resolution through trusted proxies
 * `Endless HTTP Responses`: IP addresses for which each request will return around 128 Gb of 0s
 
 
