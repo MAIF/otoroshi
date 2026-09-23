@@ -42,16 +42,29 @@ use port-forwarding (see below).
 
 --- Data-plane traffic (routes) ---
 The worker external service "{{ $workerExternalSvc }}" (type {{ $lbType }}) fronts the WORKER
-instances, which proxy the actual traffic to your backends. Point the domains of your published
-routes at it (NOT at the admin domains above):
-{{- if eq $lbType "LoadBalancer" }}
+instances, which proxy the actual traffic to your backends.
+{{- if eq $lbType "LoadBalancer" }} Wait for an external IP:
 
     kubectl -n {{ .Release.Namespace }} get svc {{ $workerExternalSvc }} -w
+
+Once an EXTERNAL-IP appears, point the domains of your published routes at it (CNAME or A record),
+typically with a wildcard:
 {{- else if eq $lbType "NodePort" }}
 
     HTTP  → node:{{ .Values.loadbalancer.nodePort.http }}
     HTTPS → node:{{ .Values.loadbalancer.nodePort.https }}
+
+Point the domains of your published routes at the loadbalancer in front of the worker nodes,
+typically with a wildcard:
+{{- else }}
+Point your own Ingress / Gateway for the domains of your published routes at this service,
+typically with a wildcard:
 {{- end }}
+
+    *.{{ .Values.env.domain }}
+
+Explicit records win over a wildcard in DNS, so otoroshi / otoroshi-api / privateapps keep
+resolving to the leader external service above. Never point those three names at the workers.
 {{- end }}
 
 Or run a quick port-forward:
