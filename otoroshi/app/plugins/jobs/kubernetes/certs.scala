@@ -280,7 +280,10 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     val client = new KubernetesClient(conf, env)
     logger.info("Running kubernetes to otoroshi certs. sync ...")
     handleWatch(conf, ctx)
-    KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())
+    getNamespaces(client, conf).flatMap { namespaces =>
+      val nsClient = new KubernetesClient(conf.copy(namespaces = namespaces), env)
+      KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(nsClient, !stopCommand.get())
+    }
   }
 
   def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(using
@@ -312,19 +315,22 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
       val source       = Source
         .future(getNamespaces(client, conf))
         .flatMapConcat { nses =>
-          client.watchKubeResources(nses, Seq("secrets", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())
+          val nsClient = new KubernetesClient(conf.copy(namespaces = nses), env)
+          client
+            .watchKubeResources(nses, Seq("secrets", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())
+            .map(group => (nsClient, group))
         }
       source
         .takeWhile(_ => !watchCommand.get())
-        .filterNot(_.isEmpty)
+        .filterNot(_._2.isEmpty)
         .alsoTo(Sink.onComplete { case _ =>
           lastWatchStopped.set(true)
         })
-        .runWith(Sink.foreach { group =>
+        .runWith(Sink.foreach { case (nsClient, group) =>
           val now = System.currentTimeMillis()
           if ((lastWatchSync.get() + (conf.watchGracePeriodSeconds * 1000L)) < now) { // 10 sec
             if (logger.isDebugEnabled) logger.debug(s"sync triggered by a group of ${group.size} events")
-            KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())
+            KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(nsClient, !stopCommand.get())
           }
         })
     } else if (!config.watch) {
