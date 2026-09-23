@@ -1295,6 +1295,16 @@ class Env(
 
   lazy val confJwksIncludeAlgorithms                               =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jwks.include-algorithms").getOrElse(true)
+  lazy val confJwksCacheTtl: scala.concurrent.duration.FiniteDuration =
+    configuration
+      .getOptionalWithFileSupport[Long]("otoroshi.jwks.cache-ttl")
+      .map(ms => scala.concurrent.duration.FiniteDuration(ms, java.util.concurrent.TimeUnit.MILLISECONDS))
+      .getOrElse(scala.concurrent.duration.Duration.Zero)
+  lazy val confJwksWellKnownCacheTtl: scala.concurrent.duration.FiniteDuration =
+    configuration
+      .getOptionalWithFileSupport[Long]("otoroshi.jwks.well-known-cache-ttl")
+      .map(ms => scala.concurrent.duration.FiniteDuration(ms, java.util.concurrent.TimeUnit.MILLISECONDS))
+      .getOrElse(scala.concurrent.duration.FiniteDuration(10, java.util.concurrent.TimeUnit.MINUTES))
   lazy val confJwksRsaAlgorithms: Seq[com.nimbusds.jose.Algorithm] =
     configuration
       .getOptionalWithFileSupport[String]("otoroshi.jwks.rsa-algorithms")

@@ -492,7 +492,8 @@ case class PossibleCerts(
     certIds: Seq[String],
     includeAlgorithms: Boolean,
     rsaAlgorithms: Seq[com.nimbusds.jose.Algorithm],
-    esAlgorithms: Seq[com.nimbusds.jose.Algorithm]
+    esAlgorithms: Seq[com.nimbusds.jose.Algorithm],
+    cacheTtl: Option[FiniteDuration] = None
 ) extends NgPluginConfig {
   override def json: JsValue = PossibleCerts.format.writes(this)
 }
@@ -505,7 +506,7 @@ object PossibleCerts {
       "include_algorithms" -> o.includeAlgorithms,
       "rsa_algorithms"     -> JsArray(o.rsaAlgorithms.map(_.getName.json)),
       "es_algorithms"      -> JsArray(o.esAlgorithms.map(_.getName.json))
-    )
+    ) ++ o.cacheTtl.map(ttl => Json.obj("cache_ttl" -> ttl.toMillis)).getOrElse(Json.obj())
     override def reads(json: JsValue): JsResult[PossibleCerts] = Try {
       PossibleCerts(
         certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
@@ -519,19 +520,28 @@ object PossibleCerts {
           .select("es_algorithms")
           .asOpt[Seq[String]]
           .getOrElse(Seq.empty).toSeq
-          .map(str => com.nimbusds.jose.JWSAlgorithm.parse(str))
+          .map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)),
+        cacheTtl = json.select("cache_ttl").asOpt[Long].map(_.millis)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
   }
-  val configFlow: Seq[String]        = Seq("cert_ids", "include_algorithms", "rsa_algorithms", "es_algorithms")
+  val configFlow: Seq[String]        = Seq("cert_ids", "include_algorithms", "rsa_algorithms", "es_algorithms", "cache_ttl")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
       "include_algorithms" -> Json.obj(
         "type"  -> "boolean",
         "label" -> "Include algorithms"
+      ),
+      "cache_ttl"          -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Cache TTL",
+        "props" -> Json.obj(
+          "suffix" -> "millis.",
+          "help"   -> "How long computed keys are cached. Leave empty to use the global setting, 0 disables the cache"
+        )
       ),
       "es_algorithms"      -> Json.obj(
         "type"  -> "string",
@@ -666,7 +676,15 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
     JWKSHelper
-      .jwks(ctx.rawRequest, config.certIds, false, config.includeAlgorithms, config.rsaAlgorithms, config.esAlgorithms)
+      .jwks(
+        ctx.rawRequest,
+        config.certIds,
+        false,
+        config.includeAlgorithms,
+        config.rsaAlgorithms,
+        config.esAlgorithms,
+        config.cacheTtl
+      )
       .map {
         case Left(body)  => Results.NotFound(body)
         case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))

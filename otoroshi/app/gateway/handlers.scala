@@ -730,7 +730,8 @@ class GatewayRequestHandler(
             true,
             env.confJwksIncludeAlgorithms,
             env.confJwksRsaAlgorithms,
-            env.confJwksEsAlgorithms
+            env.confJwksEsAlgorithms,
+            env.confJwksWellKnownCacheTtl.some
           )
           .map {
             case Left(body) if extensionsPublicKeys.isEmpty => Results.NotFound(body)

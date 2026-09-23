@@ -17,6 +17,13 @@ export default {
       type: 'string',
       label: 'Secure',
     },
+    jwks_cache_ttl: {
+      type: 'number',
+      label: 'JWKS cache TTL (ms)',
+      props: {
+        help: 'How long the JWKS keys are cached. Leave empty to use the global setting, 0 disables the cache',
+      },
+    },
     'biscuit.privkey': {
       type: 'array',
       array: true,
@@ -47,6 +54,7 @@ export default {
     'expiration',
     'domain',
     'secure',
+    'jwks_cache_ttl',
     '<<<Biscuit',
     'biscuit.privkey',
     'biscuit.checks',

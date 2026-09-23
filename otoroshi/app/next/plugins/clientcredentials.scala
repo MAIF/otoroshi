@@ -64,14 +64,16 @@ case class NgClientCredentialsConfig(
     defaultKeyPair: String = Cert.OtoroshiJwtSigning,
     domain: String = "*",
     secure: Boolean = true,
-    biscuit: Option[BiscuitConf] = None
+    biscuit: Option[BiscuitConf] = None,
+    jwksCacheTtl: Option[FiniteDuration] = None
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
     "expiration"       -> expiration.toMillis,
     "default_key_pair" -> defaultKeyPair,
     "domain"           -> domain,
     "secure"           -> secure,
-    "biscuit"          -> biscuit.map(_.json).getOrElse(JsNull).asValue
+    "biscuit"          -> biscuit.map(_.json).getOrElse(JsNull).asValue,
+    "jwks_cache_ttl"   -> jwksCacheTtl.map(_.toMillis.json).getOrElse(JsNull).asValue
   )
 }
 
@@ -81,10 +83,11 @@ object NgClientCredentialsConfig {
     override def reads(json: JsValue): JsResult[NgClientCredentialsConfig] = Try {
       NgClientCredentialsConfig(
         expiration = json.select("expiration").asOpt[Long].getOrElse(1.hour.toMillis).millis,
-        defaultKeyPair = json.select("defaultKeyPair").asOpt[String].getOrElse(Cert.OtoroshiJwtSigning),
+        defaultKeyPair = json.select("default_key_pair").asOpt[String].getOrElse(Cert.OtoroshiJwtSigning),
         domain = json.select("domain").asOpt[String].getOrElse("*"),
         secure = json.select("secure").asOpt[Boolean].getOrElse(true),
-        biscuit = json.select("biscuit").asOpt(using BiscuitConf.format)
+        biscuit = json.select("biscuit").asOpt(using BiscuitConf.format),
+        jwksCacheTtl = json.select("jwks_cache_ttl").asOpt[Long].map(_.millis)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -174,7 +177,8 @@ class NgClientCredentials extends NgRequestSink {
         true,
         env.confJwksIncludeAlgorithms,
         env.confJwksRsaAlgorithms,
-        env.confJwksEsAlgorithms
+        env.confJwksEsAlgorithms,
+        conf.jwksCacheTtl
       )
       .map {
         case Left(body)  => Results.NotFound(body)
