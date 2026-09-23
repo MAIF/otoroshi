@@ -242,8 +242,10 @@ spec:
                   }
                 }
               }
+          {{- if .Values.javaOpts }}
           - name: JAVA_OPTS
             value: {{ .Values.javaOpts | quote }}
+          {{- end }}
           {{- with .Values.extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
