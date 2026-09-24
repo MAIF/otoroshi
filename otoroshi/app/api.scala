@@ -32,6 +32,7 @@ import otoroshi.next.tunnel.TunnelController
 import otoroshi.next.workflow.WorkflowsController
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
+import otoroshi.utils.OtoroshiPekkoHttpServer
 import otoroshi.utils.syntax.implicits.*
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
@@ -40,8 +41,8 @@ import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
 import play.api.routing.Router
-import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
-import play.core.server.{PekkoHttpServerComponents, ServerConfig}
+import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator, Play}
+import play.core.server.{PekkoHttpServer, PekkoHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
 
@@ -476,6 +477,12 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]
   override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
   override lazy val serverConfig                           = _serverConfig
+
+  // the same server ProdServerStart builds through play.server.provider, see OtoroshiPekkoHttpServer
+  override lazy val server: PekkoHttpServer = {
+    Play.start(application)
+    new OtoroshiPekkoHttpServer(PekkoHttpServer.Context.fromComponents(serverConfig, application, serverStopHook))
+  }
 
   lazy val handlerRef = new AtomicReference[HttpRequestHandler]()
 
