@@ -243,6 +243,15 @@ class Env(
       .map(_.trim.toLowerCase)
       .getOrElse("global")
 
+  // how long a handshake waits for an autoCert generation before giving up. Read here so it can be tuned
+  // per install: the wait happens on the thread driving the handshake, since the jdk key manager api is
+  // synchronous and has to answer with a certificate.
+  lazy val autoCertGenerationTimeout: FiniteDuration =
+    configuration
+      .getOptionalWithFileSupport[Long]("otoroshi.ssl.autoCertGenerationTimeout")
+      .map(_.millis)
+      .getOrElse(2.seconds)
+
   def strictBackendServerValidation: Boolean = strictBackendServerValidationMode match {
     case "strict" => true
     case "legacy" => false

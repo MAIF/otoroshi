@@ -1252,7 +1252,10 @@ trait CertificateDataStore extends BasicStore[Cert] {
       implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
       implicit val ev: otoroshi.env.Env = env
       // AWAIT: valid
-      Await.result(env.datastores.certificatesDataStore.autoGenerateCertificateForDomain(domain), 10.seconds)
+      Await.result(
+        env.datastores.certificatesDataStore.autoGenerateCertificateForDomain(domain),
+        env.autoCertGenerationTimeout
+      )
     } match {
       case Failure(e)   => None
       case Success(opt) => opt
