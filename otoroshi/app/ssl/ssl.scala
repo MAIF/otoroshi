@@ -11,7 +11,7 @@ import java.security.*
 import java.security.cert.*
 import java.security.spec.{KeySpec, PKCS8EncodedKeySpec}
 import java.util.concurrent.{Executors, TimeUnit}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
@@ -724,6 +724,12 @@ object CertificateDataStore {
   // domain -> generation in flight, so concurrent handshakes on a new autoCert domain share one generation
   private[ssl] val autoCertGenerationsInFlight =
     new java.util.concurrent.ConcurrentHashMap[String, Future[Option[Cert]]]()
+  // how many generations are running right now, to cap them: every one of them holds the thread driving a
+  // handshake, since the jdk key manager api is synchronous
+  private[ssl] val autoCertGenerationsRunning  = new AtomicInteger(0)
+  // the certificates of the replyNicely path are persisted nowhere, so they get a cache of their own
+  private[ssl] val notAllowedCerts             =
+    Scaffeine().maximumSize(1000).expireAfterWrite(5.minutes).build[String, Cert]()
 }
 
 trait CertificateDataStore extends BasicStore[Cert] {
@@ -1126,9 +1132,23 @@ trait CertificateDataStore extends BasicStore[Cert] {
     Option(CertificateDataStore.autoCertGenerationsInFlight.putIfAbsent(key, promise.future)) match {
       case Some(inFlight) => inFlight
       case None           =>
-        promise.completeWith(generateCertificateForDomain(domain))
-        promise.future.andThen { case _ =>
+        // capped, and refused rather than queued: the caller is a handshake blocked on this, so queueing
+        // would only make everyone wait past their timeout, cpu already burned. A burst of distinct new
+        // domains - a scan of random subdomains, or a deployment creating many routes at once - therefore
+        // cannot hold more than `autoCertMaxConcurrentGenerations` server threads at a time.
+        if (CertificateDataStore.autoCertGenerationsRunning.get() >= env.autoCertMaxConcurrentGenerations) {
           CertificateDataStore.autoCertGenerationsInFlight.remove(key, promise.future)
+          DynamicSSLEngineProvider.logger.warn(
+            s"too many certificate generations in flight, none started for '$domain' (otoroshi.ssl.autoCertMaxConcurrentGenerations)"
+          )
+          FastFuture.successful(None)
+        } else {
+          CertificateDataStore.autoCertGenerationsRunning.incrementAndGet()
+          promise.completeWith(generateCertificateForDomain(domain))
+          promise.future.andThen { case _ =>
+            CertificateDataStore.autoCertGenerationsRunning.decrementAndGet()
+            CertificateDataStore.autoCertGenerationsInFlight.remove(key, promise.future)
+          }
         }
     }
   }
@@ -1154,70 +1174,98 @@ trait CertificateDataStore extends BasicStore[Cert] {
     }
   }
 
+  private def withAutoCertCa[A](
+      ref: String,
+      domain: String
+  )(f: Cert => Future[Option[A]])(using env: Env, ec: ExecutionContext): Future[Option[A]] = {
+    env.datastores.certificatesDataStore.findById(ref).flatMap {
+      case None     =>
+        DynamicSSLEngineProvider.logger.error(s"CA cert not found to generate certificate for $domain")
+        FastFuture.successful(None)
+      case Some(ca) => f(ca)
+    }
+  }
+
   private def generateCertificateForDomain(
       domain: String
   )(using env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
+    val domainKey = domain.trim.toLowerCase
     env.datastores.globalConfigDataStore.latestSafe match {
       case None         => FastFuture.successful(None)
       case Some(config) => {
         config.autoCert match {
           case AutoCert(true, Some(ref), allowed, notAllowed, replyNicely) => {
-            env.datastores.certificatesDataStore.findById(ref).flatMap {
-              case None       =>
-                DynamicSSLEngineProvider.logger.error(s"CA cert not found to generate certificate for $domain")
+            // decided before any i/o, so a domain that will be refused costs nothing but two regexes
+            val isAllowed =
+              !notAllowed.exists(p => otoroshi.utils.RegexPool.apply(p).matches(domain)) &&
+              allowed.exists(p => RegexPool.apply(p).matches(domain))
+            if (isAllowed) {
+              if (env.autoCertOnlyForServedDomains && !env.proxyState.servesDomain(domain)) {
+                // an allowed pattern is usually a wildcard, so without this every sni matching it gets a
+                // certificate generated AND persisted, with autoRenew on: a scan of random subdomains
+                // would grow the fleet for good, and a bigger fleet slows every context rebuild down.
+                DynamicSSLEngineProvider.logger.warn(
+                  s"no route serves '$domain', no certificate generated for it (otoroshi.ssl.autoCertOnlyForServedDomains)"
+                )
                 FastFuture.successful(None)
-              case Some(cert) => {
-                !notAllowed.exists(p => otoroshi.utils.RegexPool.apply(p).matches(domain)) && allowed
-                  .exists(p => RegexPool.apply(p).matches(domain)) match {
-                  case true                 => {
-                    // from RAM rather than through a findAll(): this runs inside a handshake, where reading
-                    // the whole fleet from the datastore costs a read and a parse per certificate.
-                    // DynamicSSLEngineProvider.certificates is the proxy state merged with what has been
-                    // generated since, which is also what the key manager serves from.
-                    DynamicSSLEngineProvider.certificates.values.toSeq
-                      .find(c => (c.sans :+ c.domain).contains(domain)) match {
-                      case Some(_) => FastFuture.successful(None)
-                      case _       => {
-                        env.pki
-                          .genCert(
-                            GenCsrQuery(
-                              hosts = Seq(domain),
-                              subject = Some(
-                                s"CN=$domain,OU=Auto Generated Certificates, OU=Otoroshi Certificates, O=Otoroshi"
+              } else {
+                // from RAM rather than through a findAll(): this runs inside a handshake, where reading
+                // the whole fleet from the datastore costs a read and a parse per certificate.
+                // DynamicSSLEngineProvider.certificates is the proxy state merged with what has been
+                // generated since, which is also what the key manager serves from.
+                DynamicSSLEngineProvider.certificates.values.toSeq
+                  .find(c => (c.sans :+ c.domain).contains(domain)) match {
+                  case Some(_) => FastFuture.successful(None)
+                  case _       =>
+                    withAutoCertCa(ref, domain) { ca =>
+                      env.pki
+                        .genCert(
+                          GenCsrQuery(
+                            hosts = Seq(domain),
+                            subject = Some(
+                              s"CN=$domain,OU=Auto Generated Certificates, OU=Otoroshi Certificates, O=Otoroshi"
+                            )
+                          ),
+                          ca.certificate.get,
+                          ca.certificates.tail,
+                          ca.cryptoKeyPair.getPrivate
+                        )
+                        .flatMap {
+                          case Left(err)   =>
+                            DynamicSSLEngineProvider.logger
+                              .error(s"error while generating certificate for $domain: $err")
+                            FastFuture.successful(None)
+                          case Right(resp) => {
+                            val generated = resp.toCert
+                              .copy(
+                                name = s"Certificate for $domain",
+                                description = s"Auto Generated Certificate for $domain",
+                                autoRenew = true
                               )
-                            ),
-                            cert.certificate.get,
-                            cert.certificates.tail,
-                            cert.cryptoKeyPair.getPrivate
-                          )
-                          .flatMap {
-                            case Left(err)   =>
-                              DynamicSSLEngineProvider.logger
-                                .error(s"error while generating certificate for $domain: $err")
-                              FastFuture.successful(None)
-                            case Right(resp) => {
-                              val generated = resp.toCert
-                                .copy(
-                                  name = s"Certificate for $domain",
-                                  description = s"Auto Generated Certificate for $domain",
-                                  autoRenew = true
-                                )
-                              persistAutoGeneratedCert(generated).map(_ => Some(generated))
-                            }
+                            persistAutoGeneratedCert(generated).map(_ => Some(generated))
                           }
-                      }
+                        }
                     }
-                  }
-                  case false if replyNicely => {
+                }
+              }
+            } else if (replyNicely) {
+              // the certificate of this branch carries a NotAllowedCert subject, so the handshake succeeds
+              // and routeRequest answers a clean http error instead of a tls failure. It is persisted
+              // nowhere, hence a cache of its own: without it every connection on an unknown domain
+              // generates a key pair again, which is what a scan of random subdomains does.
+              CertificateDataStore.notAllowedCerts.getIfPresent(domainKey) match {
+                case Some(cached) => FastFuture.successful(Some(cached))
+                case None         =>
+                  withAutoCertCa(ref, domain) { ca =>
                     env.pki
                       .genCert(
                         GenCsrQuery(
                           hosts = Seq(domain),
                           subject = Some(SSLSessionJavaHelper.BadDN)
                         ),
-                        cert.certificate.get,
-                        cert.certificates.tail,
-                        cert.cryptoKeyPair.getPrivate
+                        ca.certificate.get,
+                        ca.certificates.tail,
+                        ca.cryptoKeyPair.getPrivate
                       )
                       .flatMap {
                         case Left(err)   =>
@@ -1230,13 +1278,14 @@ trait CertificateDataStore extends BasicStore[Cert] {
                               description = s"Auto Generated Certificate for $domain",
                               autoRenew = true
                             )
+                          CertificateDataStore.notAllowedCerts.put(domainKey, cert)
                           FastFuture.successful(Some(cert))
                         }
                       }
                   }
-                  case _                    => FastFuture.successful(None)
-                }
               }
+            } else {
+              FastFuture.successful(None)
             }
           }
           case _                                                           => FastFuture.successful(None)

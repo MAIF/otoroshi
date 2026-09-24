@@ -252,6 +252,21 @@ class Env(
       .map(_.millis)
       .getOrElse(2.seconds)
 
+  // only generate an autoCert certificate for a domain some route actually serves. Without it, an allowed
+  // pattern - usually a wildcard - has every matching sni generate and persist a certificate, so a scan of
+  // random subdomains grows the fleet for good.
+  lazy val autoCertOnlyForServedDomains: Boolean =
+    configuration
+      .getOptionalWithFileSupport[Boolean]("otoroshi.ssl.autoCertOnlyForServedDomains")
+      .getOrElse(true)
+
+  // how many autoCert generations may run at the same time. Each one holds the thread driving a handshake,
+  // so this is what bounds the damage of a burst of distinct new domains.
+  lazy val autoCertMaxConcurrentGenerations: Int =
+    configuration
+      .getOptionalWithFileSupport[Int]("otoroshi.ssl.autoCertMaxConcurrentGenerations")
+      .getOrElse(2)
+
   def strictBackendServerValidation: Boolean = strictBackendServerValidationMode match {
     case "strict" => true
     case "legacy" => false

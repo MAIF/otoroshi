@@ -148,6 +148,15 @@ case class NgTreeRouter(
       }
   }
 
+  /**
+   * Whether any route serves that domain, exactly or through one of the wildcard domains. Domain only, no
+   * path: unlike find / findWildcard, the answer does not depend on the path a route is mounted under.
+   */
+  def servesDomain(domain: String): Boolean = {
+    val lower = domain.trim.toLowerCase
+    tree.contains(lower) || wildcards.exists(route => RegexPool(route.domain).matches(lower))
+  }
+
   def find(domain: String, path: String, trailingSlashMeansExactSegments: Boolean): Option[NgMatchedRoutes] = {
     tree.get(domain) match {
       case Some(ptree) =>

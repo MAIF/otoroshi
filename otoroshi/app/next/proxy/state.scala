@@ -108,6 +108,8 @@ class NgProxyState(env: Env) {
   def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] =
     domainPathTreeRef.get().findRoute(request, attrs)(using env)
 
+  def servesDomain(domain: String): Boolean = domainPathTreeRef.get().servesDomain(domain)
+
   def getDomainRoutes(domain: String, path: String): Option[Seq[NgRoute]] = routesByDomain.get(domain) match {
     case s @ Some(_) => s
     case None        => domainPathTreeRef.get().findWildcard(domain, path, env.trailingSlashMeansExactSegments).map(_.routes)
