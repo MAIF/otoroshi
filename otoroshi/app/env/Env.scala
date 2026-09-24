@@ -275,6 +275,13 @@ class Env(
       .map(_.millis)
       .getOrElse(30.seconds)
 
+  // floor between two attempts at handing a generated certificate over to the leader
+  lazy val autoCertLeaderRetryEvery: FiniteDuration =
+    configuration
+      .getOptionalWithFileSupport[Long]("otoroshi.ssl.autoCertLeaderRetryEvery")
+      .map(_.millis)
+      .getOrElse(30.seconds)
+
   def strictBackendServerValidation: Boolean = strictBackendServerValidationMode match {
     case "strict" => true
     case "legacy" => false

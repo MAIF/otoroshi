@@ -625,6 +625,39 @@ case class CertRenewalFailedAlert(
     )
 }
 
+// Emitted when a worker cannot hand a certificate it generated over to the leader. A worker's datastore is
+// local and wiped at the next state sync, so such a certificate lives in memory only: it keeps serving the
+// domain, but it is known to that worker alone until the leader accepts it. Without an alert, that state is
+// a log line among thousands.
+case class CertLeaderSaveFailedAlert(
+    `@id`: String,
+    `@env`: String,
+    cert: Cert,
+    error: String,
+    `@timestamp`: DateTime = DateTime.now()
+) extends AlertEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(using _env: Env): JsValue =
+    Json.obj(
+      "@id"         -> `@id`,
+      "@timestamp"  -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"       -> `@type`,
+      "@product"    -> _env.eventsName,
+      "@serviceId"  -> `@serviceId`,
+      "@service"    -> `@service`,
+      "@env"        -> `@env`,
+      "alert"       -> "CertLeaderSaveFailedAlert",
+      "error"       -> error,
+      "certificate" -> cert.toJson
+    )
+}
+
 case class CertExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
 

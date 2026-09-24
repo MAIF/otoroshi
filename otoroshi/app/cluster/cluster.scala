@@ -32,7 +32,7 @@ import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.ClusterLeaderUpdateMessage.GlobalStatusUpdate
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.{Env, JavaVersion, OS}
-import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
+import otoroshi.events.{AlertDataStore, Alerts, AuditDataStore, CertLeaderSaveFailedAlert, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import otoroshi.jobs.updates.Version
 import otoroshi.models.*
@@ -1709,6 +1709,14 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 Cluster.logger.error(
                   s"error while saving certificate '${cert.id}' with a leader: ${resp.status} - ${resp.body}"
                 )
+                Alerts.send(
+                  CertLeaderSaveFailedAlert(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    cert,
+                    s"${resp.status} - ${resp.body}"
+                  )
+                )(using env)
                 None
               }
             }
@@ -1718,6 +1726,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             s"[${env.clusterConfig.mode.name}] Error while saving certificate '${cert.id}' with Otoroshi leader cluster",
             e
           )
+          Alerts.send(
+            CertLeaderSaveFailedAlert(env.snowflakeGenerator.nextIdStr(), env.env, cert, e.getMessage)
+          )(using env)
           None
         }
     } else {

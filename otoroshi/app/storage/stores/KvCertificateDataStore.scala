@@ -71,6 +71,8 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
               .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
               .getOrElse(Seq.empty).toSeq
         } yield {
+          // hand over to the leader what this worker generated and the leader has not acknowledged yet
+          DynamicSSLEngineProvider.syncPendingLeaderCerts(env)
           if (
             last != lastUpdatedRef.get()
             || lastIcaServer != includeJdkCaServerRef.get()
