@@ -730,6 +730,10 @@ object CertificateDataStore {
   // the certificates of the replyNicely path are persisted nowhere, so they get a cache of their own
   private[ssl] val notAllowedCerts             =
     Scaffeine().maximumSize(1000).expireAfterWrite(5.minutes).build[String, Cert]()
+  // domain -> when its last generation attempt came back empty. Entries are kept longer than the window
+  // they are read with, because the window itself is configurable (0 disables it).
+  private[ssl] val autoCertLastFailures        =
+    Scaffeine().maximumSize(1000).expireAfterWrite(1.hour).build[String, Long]()
 }
 
 trait CertificateDataStore extends BasicStore[Cert] {
@@ -1129,6 +1133,17 @@ trait CertificateDataStore extends BasicStore[Cert] {
   )(using env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
     val key     = domain.trim.toLowerCase
     val promise = Promise[Option[Cert]]()
+    // a generation that came back empty is remembered for a short while: an attempt that fails for a lasting
+    // reason (a caRef pointing nowhere, a pki error, an unreadable ca) fails the same way for every
+    // connection on that domain, and the expensive part - the key generation - may already have run. The
+    // window is short on purpose: a domain refused because no route served it must start working shortly
+    // after the route is created.
+    val failedRecently = CertificateDataStore.autoCertLastFailures
+      .getIfPresent(key)
+      .exists(at => (System.currentTimeMillis() - at) < env.autoCertFailureCacheDuration.toMillis)
+    if (failedRecently) {
+      FastFuture.successful(None)
+    } else
     Option(CertificateDataStore.autoCertGenerationsInFlight.putIfAbsent(key, promise.future)) match {
       case Some(inFlight) => inFlight
       case None           =>
@@ -1145,9 +1160,16 @@ trait CertificateDataStore extends BasicStore[Cert] {
         } else {
           CertificateDataStore.autoCertGenerationsRunning.incrementAndGet()
           promise.completeWith(generateCertificateForDomain(domain))
-          promise.future.andThen { case _ =>
+          promise.future.andThen { outcome =>
             CertificateDataStore.autoCertGenerationsRunning.decrementAndGet()
             CertificateDataStore.autoCertGenerationsInFlight.remove(key, promise.future)
+            // the cap is not recorded here: it is transient, and turning it into a lasting refusal would be
+            // worse than the burst it protects from
+            outcome match {
+              case Success(Some(_)) => CertificateDataStore.autoCertLastFailures.invalidate(key)
+              case _                =>
+                CertificateDataStore.autoCertLastFailures.put(key, System.currentTimeMillis())
+            }
           }
         }
     }

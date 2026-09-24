@@ -43,6 +43,7 @@ class AutoCertSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
   private val unservedDomain   = "ghost.autocert.oto.tools"   // allowed but no route serves it
   private val deniedDomain     = "nope.other.oto.tools"       // outside the allowed patterns
   private val replyNicelyDomain = "weird.other.oto.tools"     // outside them too, for the replyNicely path
+  private val brokenDomain     = "broken.autocert.oto.tools" // allowed and served, but generation will fail
   private val concurrency      = 20
 
   override def proxyStateEnv: Option[Env] = Option(otoEnv)
@@ -262,6 +263,24 @@ class AutoCertSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
       withClue("the same certificate must be served again: ") {
         servedCert(replyNicelyDomain).map(_.getSerialNumber) mustBe first.map(_.getSerialNumber)
       }
+    }
+
+    // last, since it points the autoCert CA reference at nothing: a generation that fails must fail cleanly
+    // and persist nothing, connection after connection. The failure cache saves the work of retrying it,
+    // which is not observable from here - what is asserted is the behaviour around it.
+    "fail cleanly, and persist nothing, when the generation cannot succeed" in {
+      createRouteFor(brokenDomain)
+      val gc = getOtoroshiConfig(customPort = Some(port)).futureValue
+      updateOtoroshiConfig(
+        gc.copy(autoCert = gc.autoCert.copy(caRef = Some("this-ca-does-not-exist"))),
+        customPort = Some(port)
+      ).futureValue
+      awaitCond(30.seconds)(
+        otoEnv.datastores.globalConfigDataStore.latestSafe.exists(_.autoCert.caRef.contains("this-ca-does-not-exist"))
+      )
+      servedSerial(brokenDomain) mustBe None
+      servedSerial(brokenDomain) mustBe None
+      certsForDomain(brokenDomain) mustBe empty
     }
 
     "shutdown" in {

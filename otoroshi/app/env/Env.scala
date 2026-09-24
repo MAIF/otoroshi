@@ -267,6 +267,14 @@ class Env(
       .getOptionalWithFileSupport[Int]("otoroshi.ssl.autoCertMaxConcurrentGenerations")
       .getOrElse(2)
 
+  // how long an autoCert generation that came back empty is remembered, so the next connections on that
+  // domain are refused without redoing the work. 0 disables it.
+  lazy val autoCertFailureCacheDuration: FiniteDuration =
+    configuration
+      .getOptionalWithFileSupport[Long]("otoroshi.ssl.autoCertFailureCacheDuration")
+      .map(_.millis)
+      .getOrElse(30.seconds)
+
   def strictBackendServerValidation: Boolean = strictBackendServerValidationMode match {
     case "strict" => true
     case "legacy" => false
