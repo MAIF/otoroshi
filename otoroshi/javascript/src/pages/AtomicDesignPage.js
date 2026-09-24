@@ -27,7 +27,7 @@ export class AtomicDesignPage extends Component {
   failedFeedbackCallback = () => {
     return new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error('an error occured'));
+        reject(new Error('an error occurred'));
       }, 1500);
     });
   };

@@ -79,7 +79,7 @@ window.fetch = function (...params) {
       }
     } else if (r.status > 404 && window.toast) {
       return r.text().then((text) => {
-        window.toast('Server error', 'An error occured server side: ' + text, 'error');
+        window.toast('Server error', 'An error occurred server side: ' + text, 'error');
         throw new Error(text);
       });
     } else {

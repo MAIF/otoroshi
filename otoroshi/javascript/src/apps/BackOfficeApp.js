@@ -1055,7 +1055,7 @@ class BackOfficeAppContainer extends Component {
                           marginTop: 20,
                         }}
                       >
-                        Ooops, an error occured
+                        Ooops, an error occurred
                       </div>
                       <p style={{ width: '50%' }}>{this.state.catchedError.message}</p>
                       <div style={{ marginTop: 20 }}>

@@ -811,7 +811,7 @@ export class NgForm extends Component {
 
   render() {
     if (this.state.err) {
-      console.log('an error occured', this.state.err);
+      console.log('an error occurred', this.state.err);
       return <p>error</p>;
     }
     const value = this.getValue();
