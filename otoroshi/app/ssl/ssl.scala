@@ -194,8 +194,13 @@ case class Cert(
   lazy val contentHash: String                      = Hashing.sha256().hashString(s"$chain:$privateKey", StandardCharsets.UTF_8).toString
   lazy val bundle: String                           = s"${privateKey}\n\n${chain}\n"
   lazy val allDomains: Seq[String] = {
-    val enriched = enrich()
-    (Seq(enriched.domain) ++ enriched.sans).filter(_.trim.nonEmpty).filterNot(_ == "--").distinct
+    // straight from the parsed metadata: enrich() would also compute isValid, which parses the private key
+    // and builds a keystore entry, and it returns a copy whose lazy vals all start empty again. This runs
+    // for every certificate when the key manager builds its index, so it stays on the metadata only.
+    val meta      = this.metadata
+    val theDomain = meta.flatMap(m => (m \ "domain").asOpt[String]).getOrElse(domain)
+    val theSans   = meta.flatMap(m => (m \ "subAltNames").asOpt[Seq[String]]).getOrElse(sans)
+    (Seq(theDomain) ++ theSans).filter(_.trim.nonEmpty).filterNot(_ == "--").distinct
   }
   def signature: Option[String]                     = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String]                  = this.metadata.map(v => (v \ "serialNumber").as[String])
@@ -1247,6 +1252,15 @@ object DynamicSSLEngineProvider {
 
   def certificates: TrieMap[String, Cert] = allUnrevokedCertMap // _certificates.filter(_._2.notRevoked)
 
+  // one dedicated daemon thread for every context rebuild: the work is CPU heavy (it re-parses the whole
+  // certificate fleet) and must never run on a thread that handles a handshake or a request
+  private lazy val rebuildExecutor           = Executors.newSingleThreadExecutor { (r: Runnable) =>
+    val thread = new Thread(r, "otoroshi-tls-context-rebuild")
+    thread.setDaemon(true)
+    thread
+  }
+  private val rebuildPending                 = new AtomicBoolean(false)
+  private val lastFingerprint                = new AtomicReference[String]("")
   private lazy val firstSetupDone            = new AtomicBoolean(false)
   private lazy val currentKeyManagerServer   = new AtomicReference[KeyManager](null)
   private lazy val currentTrustManagerServer = new AtomicReference[TrustManager](null)
@@ -1571,33 +1585,78 @@ object DynamicSSLEngineProvider {
     // _certificates.values.filter(_.notRevoked).map(_.domain).toSet.toSeq
   }
 
+  /** adds auto generated certificates (autoCert) and asks for a rebuild. Called from the handshake path, so
+    * the rebuild is asynchronous: the handshake in progress reads its certificate from
+    * `DynamicKeyManager.cache`, which the caller populates, and does not need the new contexts.
+    */
   def addCertificates(certs: Seq[Cert], env: Env): Unit = {
-    firstSetupDone.compareAndSet(false, true)
     certs.filter(_.notRevoked).foreach(crt => autogenCerts.put(crt.id, crt))
-    val ctxClient                                         = setupContext(
-      env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe
-        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty).toSeq
-    )
-    val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
-      env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe
-        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty).toSeq
-    )
-    currentContextClient.set(ctxClient)
-    currentContextServer.set(ctxServer)
-    currentKeyManagerServer.set(keyManagerServer)
-    currentTrustManagerServer.set(trustManagerServer)
+    requestRebuild(env, force = true, sync = false)
   }
 
-  def setCertificates(env: Env): Unit = {
-    firstSetupDone.compareAndSet(false, true)
-    //_certificates.clear()
-    //certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
+  /** the periodic entry point (state loader job, certificate datastore loop). Rebuilds only when the
+    * certificates or the tls settings actually changed, and never on the calling thread.
+    */
+  def setCertificates(env: Env): Unit = requestRebuild(env, force = false, sync = false)
+
+  /** rebuilds unconditionally and synchronously: for callers that expect the new contexts to be installed
+    * when this returns.
+    */
+  def forceUpdate(env: Env): Unit = requestRebuild(env, force = true, sync = true)
+
+  /**
+   * Everything the contexts are built from, hashed, so that a rebuild happens exactly when one of those
+   * inputs moved. `validNow` is part of it because the certificate index filters on validity: it is what
+   * makes a certificate that expires, or that becomes valid, trigger a rebuild on its own.
+   */
+  private def contextsFingerprint(env: Env): String = {
+    val now         = System.currentTimeMillis()
+    val tlsSettings = env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings)
+    val certs       = allUnrevokedCertMap.values.toSeq
+      .sortBy(_.id)
+      .map { c =>
+        val validNow = c.from.getMillis <= now && c.to.getMillis >= now
+        s"${c.id}|${c.contentHash}|${c.revoked}|${c.client}|${c.ca}|${c.keypair}|$validNow"
+      }
+    val settings    = Seq(
+      tlsSettings.map(_.includeJdkCaServer).getOrElse(true).toString,
+      tlsSettings.map(_.includeJdkCaClient).getOrElse(true).toString,
+      tlsSettings.map(_.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty).mkString(",")
+    )
+    Hashing.sha256().hashString((certs ++ settings).mkString("\n"), StandardCharsets.UTF_8).toString
+  }
+
+  /**
+   * Single funnel for every rebuild trigger. A rebuild re-parses every certificate and every private key,
+   * so it belongs on a thread that serves no traffic, and it is worth skipping altogether when the inputs
+   * are unchanged. One dedicated thread does the work and `rebuildPending` collapses the triggers that
+   * arrive while it runs, which also serializes the state loader job, the certificate datastore loop and
+   * the autoCert path, so that a rebuild cannot install an older state over a newer one.
+   */
+  private def requestRebuild(env: Env, force: Boolean, sync: Boolean): Unit = {
+    if (sync || !firstSetupDone.get()) {
+      // the first build must be in place before the listeners serve anything (isFirstSetupDone gates
+      // readiness), and forceUpdate is an explicit action whose caller waits for the result
+      Try(rebuildContexts(env, contextsFingerprint(env))) match {
+        case Failure(e) => logger.error("error while building the tls contexts", e)
+        case Success(_) => ()
+      }
+    } else if (rebuildPending.compareAndSet(false, true)) {
+      rebuildExecutor.execute(() => {
+        // released before the work: a change landing from now on queues exactly one more rebuild
+        rebuildPending.set(false)
+        Try {
+          val fingerprint = contextsFingerprint(env)
+          if (force || fingerprint != lastFingerprint.get()) rebuildContexts(env, fingerprint)
+        } match {
+          case Failure(e) => logger.error("error while rebuilding the tls contexts, keeping the previous ones", e)
+          case Success(_) => ()
+        }
+      })
+    }
+  }
+
+  private def rebuildContexts(env: Env, fingerprint: String): Unit = {
     allUnrevokedCertSeq
       .filter(r => r.serialNumberLng.isDefined && CertParentHelper.fromOtoroshiRootCa(r.certificate.get))
       .foreach(crt =>
@@ -1631,28 +1690,10 @@ object DynamicSSLEngineProvider {
     currentContextServer.set(ctxServer)
     currentKeyManagerServer.set(keyManagerServer)
     currentTrustManagerServer.set(trustManagerServer)
-  }
-
-  def forceUpdate(env: Env): Unit = {
+    // the per-domain cache holds certificates picked by the previous manager, drop them with it
+    DynamicKeyManager.cache.invalidateAll()
+    lastFingerprint.set(fingerprint)
     firstSetupDone.compareAndSet(false, true)
-    val ctxClient                                         = setupContext(
-      env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe
-        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty).toSeq
-    )
-    val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
-      env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe
-        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty).toSeq
-    )
-    currentContextClient.set(ctxClient)
-    currentContextServer.set(ctxServer)
-    currentKeyManagerServer.set(keyManagerServer)
-    currentTrustManagerServer.set(trustManagerServer)
   }
 
   def createKeyStore(certificates: Seq[Cert]): KeyStore = {

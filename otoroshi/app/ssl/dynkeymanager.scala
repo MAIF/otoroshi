@@ -141,9 +141,13 @@ object DynamicKeyManager {
 class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X509KeyManager, env: Env)
     extends X509ExtendedKeyManager {
 
-  private val logger                            = Logger("otoroshi-dyn-key-manager")
-  private lazy val allCertificates: Seq[Cert]   = allCerts()
-  private lazy val (validCerts, certsByDomains) = DynamicKeyManager.validCertificatesByDomains(allCertificates)
+  private val logger = Logger("otoroshi-dyn-key-manager")
+  // eager on purpose: indexing the certificates re-parses every chain and every private key, so it belongs
+  // where this manager is instantiated, next to the SSLContext build and off the request path. A lazy field
+  // here would instead move that cost into the first handshake served by the context, and have the
+  // concurrent ones wait on its initialization.
+  private val allCertificates: Seq[Cert]   = allCerts()
+  private val (validCerts, certsByDomains) = DynamicKeyManager.validCertificatesByDomains(allCertificates)
   // private lazy val validCerts                        = allCertificates
   //   .map(_.enrich())
   //   .filter(c => c.notRevoked && c.notExpired && !c.ca && !c.keypair)

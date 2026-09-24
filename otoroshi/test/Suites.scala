@@ -182,6 +182,14 @@ class FrontendTlsTests
       new FrontendTlsSpec(Configurations.InMemoryConfiguration)
     )
 
+// load probe for the frontend TLS handshake: 500 certificates, concurrent clients, one minute of traffic with
+// the state loader job running and one minute without it. Prints a latency report, takes a few minutes and
+// measures timings, so it is its own suite rather than part of the default run.
+class TlsAsyncRebuildTests
+    extends Suites(
+      new TlsAsyncRebuildSpec(Configurations.InMemoryConfiguration)
+    )
+
 class ApiPlanMtlsTests
     extends Suites(
       new ApiPlanMtlsSpec(Configurations.InMemoryConfiguration)
