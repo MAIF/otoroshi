@@ -1448,18 +1448,7 @@ object DynamicSSLEngineProvider {
           .flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.ssl.trust.all"))
           .getOrElse(false)
 
-      val cacertPath = optEnv
-        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.path"))
-        .map(path =>
-          path
-            .replace("${JAVA_HOME}", System.getProperty("java.home"))
-            .replace("$JAVA_HOME", System.getProperty("java.home"))
-        )
-        .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
-
-      val cacertPassword = optEnv
-        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.password"))
-        .getOrElse("changeit")
+      val (cacertPath, cacertPassword) = jdkCacertsLocation(optEnv)
 
       val dumpPath: Option[String] =
         optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[String]("play.server.https.keyStoreDumpPath"))
@@ -1645,18 +1634,7 @@ object DynamicSSLEngineProvider {
             .flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.ssl.trust.all"))
             .getOrElse(false)
 
-      val cacertPath = optEnv
-        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.path"))
-        .map(path =>
-          path
-            .replace("${JAVA_HOME}", System.getProperty("java.home"))
-            .replace("$JAVA_HOME", System.getProperty("java.home"))
-        )
-        .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
-
-      val cacertPassword = optEnv
-        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.password"))
-        .getOrElse("changeit")
+      val (cacertPath, cacertPassword) = jdkCacertsLocation(optEnv)
 
       if (logger.isDebugEnabled) logger.debug("Setting up SSL Context ")
       val sslContext: SSLContext               = SSLContext.getInstance("TLS")
@@ -1773,10 +1751,12 @@ object DynamicSSLEngineProvider {
         val validNow = c.from.getMillis <= now && c.to.getMillis >= now
         s"${c.id}|${c.contentHash}|${c.revoked}|${c.client}|${c.ca}|${c.keypair}|$validNow"
       }
-    val settings    = Seq(
+    val (cacertPath, _) = jdkCacertsLocation(Option(env))
+    val settings        = Seq(
       tlsSettings.map(_.includeJdkCaServer).getOrElse(true).toString,
       tlsSettings.map(_.includeJdkCaClient).getOrElse(true).toString,
-      tlsSettings.map(_.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty).mkString(",")
+      tlsSettings.map(_.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty).mkString(","),
+      jdkCacertsFingerprint(cacertPath)
     )
     Hashing.sha256().hashString((certs ++ settings).mkString("\n"), StandardCharsets.UTF_8).toString
   }
@@ -1953,21 +1933,87 @@ object DynamicSSLEngineProvider {
     else new FakeTrustManager(managers)
   }
 
+  /** where the jdk ca file lives, and the password to open it, resolved from the configuration */
+  private[ssl] def jdkCacertsLocation(optEnv: Option[Env]): (String, String) = {
+    val path     = optEnv
+      .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.path"))
+      .map(p =>
+        p.replace("${JAVA_HOME}", System.getProperty("java.home"))
+          .replace("$JAVA_HOME", System.getProperty("java.home"))
+      )
+      .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
+    val password = optEnv
+      .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.password"))
+      .getOrElse("changeit")
+    (path, password)
+  }
+
+  /**
+   * Size and last modification of the jdk ca file, cheap enough to be read on every fingerprint. It is part
+   * of `contextsFingerprint`, so replacing that file - a jdk patch, a remounted bundle - is picked up like
+   * any other input of the contexts: the next fingerprint differs and a rebuild is scheduled, on the rebuild
+   * thread, which reloads the file below.
+   */
+  private[ssl] def jdkCacertsFingerprint(path: String): String = {
+    val file = new File(path)
+    s"${file.length()}-${file.lastModified()}"
+  }
+
+  private case class JdkCaTrustManagers(
+      path: String,
+      password: String,
+      fingerprint: String,
+      managers: Seq[X509TrustManager]
+  )
+
+  private val jdkCaTrustManagersRef = new AtomicReference[JdkCaTrustManagers](null)
+
+  private def loadJdkCaTrustManagers(path: String, password: String): Seq[X509TrustManager] = {
+    val keyStore = KeyStore.getInstance("JKS")
+    val stream   = new FileInputStream(path)
+    try {
+      // KeyStore.load does not close the stream it is given, and JKS verifies a mac over the whole file on
+      // the way in: this is the part worth doing once rather than on every context build
+      keyStore.load(stream, password.toCharArray)
+    } finally {
+      Try(stream.close())
+    }
+    val factory = TrustManagerFactory.getInstance("SunX509")
+    factory.init(keyStore)
+    factory.getTrustManagers.map(_.asInstanceOf[X509TrustManager]).toSeq
+  }
+
+  /**
+   * The jdk certificate authorities, loaded once and reloaded when the file changed. The instances are
+   * immutable once built - the jdk shares its own between engines - so handing the same ones to several
+   * contexts is safe.
+   */
+  private[ssl] def jdkCaTrustManagers(path: String, password: String): Seq[X509TrustManager] = {
+    val current     = jdkCaTrustManagersRef.get()
+    val fingerprint = jdkCacertsFingerprint(path)
+    if (current != null && current.path == path && current.fingerprint == fingerprint) {
+      current.managers
+    } else {
+      if (current != null) logger.info(s"jdk ca file '$path' changed, reloading it")
+      val loaded = JdkCaTrustManagers(path, password, fingerprint, loadJdkCaTrustManagers(path, password))
+      jdkCaTrustManagersRef.set(loaded)
+      loaded.managers
+    }
+  }
+
   def createTrustStoreWithJdkCAs(
       keyStore: KeyStore,
       cacertPath: String,
       cacertPassword: String
   ): Array[TrustManager] = {
     if (logger.isDebugEnabled) logger.debug(s"Creating truststore ...")
-    val tmf    = TrustManagerFactory.getInstance("SunX509")
+    val tmf = TrustManagerFactory.getInstance("SunX509")
     tmf.init(keyStore)
-    val javaKs = KeyStore.getInstance("JKS")
-    // TODO: optimize here: avoid reading file all the time
-    javaKs.load(new FileInputStream(cacertPath), cacertPassword.toCharArray)
-    val tmf2   = TrustManagerFactory.getInstance("SunX509")
-    tmf2.init(javaKs)
     Array[TrustManager](
-      wrapTrustManagers((tmf.getTrustManagers ++ tmf2.getTrustManagers).map(_.asInstanceOf[X509TrustManager]).toSeq)
+      wrapTrustManagers(
+        tmf.getTrustManagers.map(_.asInstanceOf[X509TrustManager]).toSeq ++
+        jdkCaTrustManagers(cacertPath, cacertPassword)
+      )
     )
   }
 
