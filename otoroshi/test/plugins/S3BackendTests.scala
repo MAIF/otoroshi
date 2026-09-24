@@ -29,7 +29,7 @@ class S3BackendTests(parent: PluginsTestSpec) {
   import parent.*
 
   val s3Container = GenericContainer(
-    dockerImage = "quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z",
+    dockerImage = "ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z",
     exposedPorts = Seq(9000, 9001),
     env = Map(
       "MINIO_ROOT_USER"     -> "admin",
