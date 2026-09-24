@@ -185,6 +185,13 @@ class FrontendTlsTests
 // load probe for the frontend TLS handshake: 500 certificates, concurrent clients, one minute of traffic with
 // the state loader job running and one minute without it. Prints a latency report, takes a few minutes and
 // measures timings, so it is its own suite rather than part of the default run.
+// autoCert generation during the handshake: a burst of handshakes on a brand new domain must produce one
+// certificate, not one per handshake. Starts its own instance, so it is its own suite.
+class AutoCertTests
+    extends Suites(
+      new AutoCertSpec(Configurations.InMemoryConfiguration)
+    )
+
 class TlsAsyncRebuildTests
     extends Suites(
       new TlsAsyncRebuildSpec(Configurations.InMemoryConfiguration)

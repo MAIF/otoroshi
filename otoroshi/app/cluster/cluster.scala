@@ -1660,6 +1660,71 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
+  /**
+   * Hands an auto generated certificate to the leader, which owns persistence: a worker's datastore is a
+   * local in memory one, wiped at the next state sync, so a certificate saved there never survives and
+   * never reaches the other nodes. The call is an upsert on the certificate id, so a retry cannot create a
+   * duplicate.
+   */
+  def saveCertificate(cert: Cert): Future[Option[JsValue]] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Retry
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-save-certificate"
+        ) { tryCount =>
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(s"saving certificate '${cert.id}' with a leader")
+          env.MtlsWs
+            .url(
+              otoroshiUrl + s"/apis/pki.otoroshi.io/v1/certificates/${cert.id}",
+              config.mtlsConfig
+            )
+            .withHttpHeaders(
+              "Host"                                             -> config.leader.host,
+              "Content-Type"                                     -> "application/json",
+              ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
+              ClusterAgent.OtoroshiWorkerJavaVersionHeader       -> env.theJavaVersion.jsonStr,
+              ClusterAgent.OtoroshiWorkerOsHeader                -> env.os.jsonStr,
+              ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader         -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
+            .post(cert.json)
+            .map { resp =>
+              if (resp.status == 200 || resp.status == 201) {
+                if (Cluster.logger.isDebugEnabled)
+                  Cluster.logger.debug(s"certificate '${cert.id}' has been saved on the leader")
+                Try(Json.parse(resp.body)).toOption
+              } else {
+                Cluster.logger.error(
+                  s"error while saving certificate '${cert.id}' with a leader: ${resp.status} - ${resp.body}"
+                )
+                None
+              }
+            }
+        }
+        .recover { case e =>
+          Cluster.logger.error(
+            s"[${env.clusterConfig.mode.name}] Error while saving certificate '${cert.id}' with Otoroshi leader cluster",
+            e
+          )
+          None
+        }
+    } else {
+      FastFuture.successful(None)
+    }
+  }
+
   def isLoginTokenValid(token: String): Future[Boolean] = {
     if (env.clusterConfig.mode.isWorker) {
       Retry
