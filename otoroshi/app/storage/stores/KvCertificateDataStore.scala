@@ -116,14 +116,4 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
     super.set(value, pxMilliseconds).andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
-
-  override def exists(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
-    super.exists(id).andThen { case _ =>
-      redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
-    }
-
-  override def exists(value: Cert)(using ec: ExecutionContext, env: Env): Future[Boolean] =
-    super.exists(value).andThen { case _ =>
-      redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
-    }
 }
