@@ -11,7 +11,7 @@ import org.biscuitsec.biscuit.token.builder.parser.Parser
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import java.nio.charset.StandardCharsets
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
-import org.apache.commons.codec.binary.Base64
+import otoroshi.utils.Base64Codec
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
@@ -221,7 +221,7 @@ class CertificateAsApikey extends PreRouting {
         val conf         = context.configFor("CertificateAsApikey")
         val serialNumber = cert.getSerialNumber.toString
         val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
-        val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
+        val clientId     = Base64Codec.encodeToString((subjectDN + "-" + serialNumber).getBytes)
         // TODO: validate CA DN based on config array
         // TODO: validate CA serial based on config array
         env.datastores.apiKeyDataStore
@@ -416,7 +416,7 @@ class ClientCredentialFlow extends RequestTransformer {
                 .get("Authorization")
                 .filter(_.startsWith("Basic "))
                 .map(_.replace("Basic ", ""))
-                .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                .map(v => Base64Codec.decode(v))
                 .map(v => new String(v))
                 .filter(_.contains(":"))
                 .map(_.split(":").toSeq)
@@ -434,7 +434,7 @@ class ClientCredentialFlow extends RequestTransformer {
                 .get("Authorization")
                 .filter(_.startsWith("Basic "))
                 .map(_.replace("Basic ", ""))
-                .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                .map(v => Base64Codec.decode(v))
                 .map(v => new String(v))
                 .filter(_.contains(":"))
                 .map(_.split(":").toSeq)
@@ -769,7 +769,7 @@ class ClientCredentialFlow extends RequestTransformer {
                       .get("Authorization")
                       .filter(_.startsWith("Basic "))
                       .map(_.replace("Basic ", ""))
-                      .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                      .map(v => Base64Codec.decode(v))
                       .map(v => new String(v))
                       .filter(_.contains(":"))
                       .map(_.split(":").toSeq)
@@ -811,7 +811,7 @@ class ClientCredentialFlow extends RequestTransformer {
                       .get("Authorization")
                       .filter(_.startsWith("Basic "))
                       .map(_.replace("Basic ", ""))
-                      .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                      .map(v => Base64Codec.decode(v))
                       .map(v => new String(v))
                       .filter(_.contains(":"))
                       .map(_.split(":").toSeq)
@@ -1036,7 +1036,7 @@ class ClientCredentialService extends RequestSink {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => Base64Codec.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -1054,7 +1054,7 @@ class ClientCredentialService extends RequestSink {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => Base64Codec.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -1351,7 +1351,7 @@ class ClientCredentialService extends RequestSink {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => Base64Codec.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)

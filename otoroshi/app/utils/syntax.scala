@@ -7,14 +7,14 @@ import org.apache.pekko.util.ByteString
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
-import org.apache.commons.codec.binary.{Base64, Hex}
+import org.apache.commons.codec.binary.Hex
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.models.WSProxyServerJson
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.{AsyncUtils, JsonPathUtils, Regex, RegexPool, TypedMap}
+import otoroshi.utils.{AsyncUtils, Base64Codec, JsonPathUtils, Regex, RegexPool, TypedMap}
 import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSProxyServer}
 import play.api.mvc.Cookie
@@ -265,11 +265,11 @@ object implicits {
     def bytes: Array[Byte]                                     = obj.getBytes(StandardCharsets.UTF_8)
     def json: JsValue                                          = JsString(obj)
     def parseJson: JsValue                                     = Json.parse(obj)
-    def encodeBase64: String                                   = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
-    def base64: String                                         = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
-    def base64UrlSafe: String                                  = Base64.encodeBase64URLSafeString(obj.getBytes(StandardCharsets.UTF_8))
-    def fromBase64: String                                     = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
-    def decodeBase64: String                                   = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
+    def encodeBase64: String                                   = Base64Codec.encodeToString(obj.getBytes(StandardCharsets.UTF_8))
+    def base64: String                                         = Base64Codec.encodeToString(obj.getBytes(StandardCharsets.UTF_8))
+    def base64UrlSafe: String                                  = Base64Codec.encodeUrlSafeToString(obj.getBytes(StandardCharsets.UTF_8))
+    def fromBase64: String                                     = new String(Base64Codec.decode(obj), StandardCharsets.UTF_8)
+    def decodeBase64: String                                   = new String(Base64Codec.decode(obj), StandardCharsets.UTF_8)
     def sha256: String                                         =
       Hex.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.getBytes(StandardCharsets.UTF_8)))
     def sha512: String                                         =

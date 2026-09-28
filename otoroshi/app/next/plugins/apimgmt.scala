@@ -6,7 +6,7 @@ import otoroshi.models.{ApiIdentifier, ApiKey, InHeader, InQueryParam, JwtTokenL
 import otoroshi.next.models.{ApiRef, ApikeyAccessModeConfiguration}
 import otoroshi.next.plugins.api.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import org.apache.commons.codec.binary.Base64
+import otoroshi.utils.Base64Codec
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.events.{Alerts, RevokedApiKeyUsageAlert}
@@ -507,7 +507,7 @@ class NgClientCertApikeyExtractor extends ApikeyExtractorPlugin {
       case Some(field) =>
         subject.parts.find(_.name == field.trim.toLowerCase).map(_.value).filter(_.trim.nonEmpty)
       case None        =>
-        Base64.encodeBase64String((subject.stringify + "-" + serialNumber).getBytes).some
+        Base64Codec.encodeToString((subject.stringify + "-" + serialNumber).getBytes).some
     }
   }
 

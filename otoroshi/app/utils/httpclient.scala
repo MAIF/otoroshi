@@ -21,7 +21,7 @@ import com.typesafe.sslconfig.pekko.PekkoSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
-import org.apache.commons.codec.binary.Base64
+import otoroshi.utils.Base64Codec
 import otoroshi.gateway.{RequestTimeoutException, Timeout}
 import otoroshi.netty.{NettyClientConfig, NettyHttpClient}
 import otoroshi.next.models.NgOverflowStrategy
@@ -1627,7 +1627,7 @@ case class AkkaWsClientRequest(
     scheme match {
       case WSAuthScheme.BASIC =>
         addHttpHeaders(
-          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(StandardCharsets.UTF_8))}"
+          "Authorization" -> s"Basic ${Base64Codec.encodeToString(s"${username}:${password}".getBytes(StandardCharsets.UTF_8))}"
         )
       case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }

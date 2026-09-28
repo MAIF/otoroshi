@@ -5,6 +5,7 @@ import java.util.{Base64, Date}
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.env.Env
 import otoroshi.models.AlgoSettings
+import otoroshi.utils.Base64Codec
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.Logger
@@ -87,12 +88,12 @@ object OtoroshiClaim {
       logger.debug(s"signing following header: ${headerJson.prettify}")
       logger.debug(s"signing following payload: ${payloadJson.prettify}")
     }
-    val header: String              = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(headerJson))
-    val payload: String             = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(payloadJson))
+    val header: String              = Base64Codec.encodeUrlSafeToString(Json.toBytes(headerJson))
+    val payload: String             = Base64Codec.encodeUrlSafeToString(Json.toBytes(payloadJson))
     val signatureBytes: Array[Byte] =
       algorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
 
-    val signature: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(signatureBytes)
+    val signature: String = Base64Codec.encodeUrlSafeToString(signatureBytes)
     String.format("%s.%s.%s", header, payload, signature)
   }
 }

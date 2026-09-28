@@ -8,7 +8,7 @@ import com.auth0.jwt.exceptions.InvalidClaimException
 import com.auth0.jwt.interfaces.{Claim, DecodedJWT, Verification}
 import com.github.blemale.scaffeine.Scaffeine
 import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import otoroshi.utils.Base64Codec
 import otoroshi.actions.ApiActionContext
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}
@@ -247,9 +247,9 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
 
   override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     size match {
-      case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
-      case 384 if base64 => Some(Algorithm.HMAC384(ApacheBase64.decodeBase64(transformValue(secret))))
-      case 512 if base64 => Some(Algorithm.HMAC512(ApacheBase64.decodeBase64(transformValue(secret))))
+      case 256 if base64 => Some(Algorithm.HMAC256(Base64Codec.decode(transformValue(secret))))
+      case 384 if base64 => Some(Algorithm.HMAC384(Base64Codec.decode(transformValue(secret))))
+      case 512 if base64 => Some(Algorithm.HMAC512(Base64Codec.decode(transformValue(secret))))
       case 256           => Some(Algorithm.HMAC256(transformValue(secret)))
       case 384           => Some(Algorithm.HMAC384(transformValue(secret)))
       case 512           => Some(Algorithm.HMAC512(transformValue(secret)))
@@ -288,7 +288,7 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
   def isAsync: Boolean = false
 
   def getPublicKey(value: String): RSAPublicKey = {
-    val publicBytes = ApacheBase64.decodeBase64(
+    val publicBytes = Base64Codec.decode(
       value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim()
     )
     //val keySpec    = new X509EncodedKeySpec(publicBytes)
@@ -301,7 +301,7 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     if (value.trim.isEmpty) {
       null // Yeah, I know ...
     } else {
-      val privateBytes = ApacheBase64.decodeBase64(
+      val privateBytes = Base64Codec.decode(
         value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
       )
       // val keySpec    = new PKCS8EncodedKeySpec(privateBytes)
@@ -369,7 +369,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
   def isAsync: Boolean = false
 
   def getPublicKey(value: String): ECPublicKey = {
-    val publicBytes = ApacheBase64.decodeBase64(
+    val publicBytes = Base64Codec.decode(
       value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim()
     )
     //val keySpec    = new X509EncodedKeySpec(publicBytes)
@@ -382,7 +382,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     if (value.trim.isEmpty) {
       null // Yeah, I know ...
     } else {
-      val privateBytes = ApacheBase64.decodeBase64(
+      val privateBytes = Base64Codec.decode(
         value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
       )
       //val keySpec    = new PKCS8EncodedKeySpec(privateBytes)
@@ -869,7 +869,7 @@ object VerificationSettings extends FromJson[VerificationSettings] {
 case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFields: Map[String, String] = Map.empty)
     extends AsJson {
   def additionalVerification(jwt: DecodedJWT): DecodedJWT = {
-    val token: JsObject = Try(Json.parse(ApacheBase64.decodeBase64(jwt.getPayload)).as[JsObject]).getOrElse(Json.obj())
+    val token: JsObject = Try(Json.parse(Base64Codec.decode(jwt.getPayload)).as[JsObject]).getOrElse(Json.obj())
     arrayFields.foldLeft(jwt)((a, b) => {
       val values: Set[String]         = (token \ b._1)
         .as[JsArray]
@@ -1214,12 +1214,12 @@ sealed trait JwtVerifier extends AsJson {
     val headerJson     = Json
       .obj("alg" -> algorithm.getName, "typ" -> "JWT")
       .applyOnWithOpt(kid)((h, id) => h ++ Json.obj("kid" -> id))
-    val header         = ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
-    val payload        = ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
+    val header         = Base64Codec.encodeUrlSafeToString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
+    val payload        = Base64Codec.encodeUrlSafeToString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
     val content        = String.format("%s.%s", header, payload)
     val signatureBytes =
       algorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
-    val signature      = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
+    val signature      = Base64Codec.encodeUrlSafeToString(signatureBytes)
     s"$content.$signature"
   }
 
@@ -1401,7 +1401,7 @@ sealed trait JwtVerifier extends AsJson {
         val token       = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
         val tokenParts  = token.split("\\.")
         val signature   = tokenParts.last
-        val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(tokenParts(0)))).getOrElse(Json.obj())
+        val tokenHeader = Try(Json.parse(Base64Codec.decode(tokenParts(0)))).getOrElse(Json.obj())
         val kid         = (tokenHeader \ "kid").asOpt[String]
         val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
         algoSettings.asAlgorithm(InputMode(alg, kid)) match {
@@ -1454,7 +1454,7 @@ sealed trait JwtVerifier extends AsJson {
                       .left[JwtInjection]
                   }
                   case s @ DefaultToken(false, _, _)          =>
-                    val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                    val jsonToken = Json.parse(Base64Codec.decode(decodedToken.getPayload)).as[JsObject]
                     attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
                     attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
                     attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
@@ -1462,7 +1462,7 @@ sealed trait JwtVerifier extends AsJson {
                     attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                     JwtInjection(decodedToken.some).right[Result]
                   case s @ PassThrough(_)                     =>
-                    val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                    val jsonToken = Json.parse(Base64Codec.decode(decodedToken.getPayload)).as[JsObject]
                     attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
                     attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
                     attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
@@ -1484,7 +1484,7 @@ sealed trait JwtVerifier extends AsJson {
                           )
                           .left[JwtInjection]
                       case Some(outputAlgorithm) => {
-                        val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                        val jsonToken = Json.parse(Base64Codec.decode(decodedToken.getPayload)).as[JsObject]
                         val newToken  = sign(
                           jsonToken,
                           outputAlgorithm,
@@ -1513,7 +1513,7 @@ sealed trait JwtVerifier extends AsJson {
                           )
                           .left[JwtInjection]
                       case Some(outputAlgorithm) => {
-                        val jsonToken                    = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                        val jsonToken                    = Json.parse(Base64Codec.decode(decodedToken.getPayload)).as[JsObject]
                         val context: Map[String, String] = jsonToken.value.toSeq.collect {
                           case (key, JsString(str))     => (key, str)
                           case (key, JsBoolean(bool))   => (key, bool.toString)
@@ -1715,7 +1715,7 @@ sealed trait JwtVerifier extends AsJson {
         val token       = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
         val tokenParts  = token.split("\\.")
         val signature   = tokenParts.last
-        val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(tokenParts(0)))).getOrElse(Json.obj())
+        val tokenHeader = Try(Json.parse(Base64Codec.decode(tokenParts(0)))).getOrElse(Json.obj())
         val kid         = (tokenHeader \ "kid").asOpt[String]
         val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
         algoSettings.asAlgorithmF(InputMode(alg, kid)) flatMap {
@@ -1764,7 +1764,7 @@ sealed trait JwtVerifier extends AsJson {
                       .left[A]
                   }
                   case s @ DefaultToken(false, _, _)          =>
-                    val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                    val jsonToken = Json.parse(Base64Codec.decode(decodedToken.getPayload)).as[JsObject]
                     attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
                     attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
                     attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
@@ -1772,7 +1772,7 @@ sealed trait JwtVerifier extends AsJson {
                     attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                     f(JwtInjection(decodedToken.some)).right[Result]
                   case s @ PassThrough(_)                     =>
-                    val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                    val jsonToken = Json.parse(Base64Codec.decode(decodedToken.getPayload)).as[JsObject]
                     attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
                     attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
                     attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
@@ -1794,7 +1794,7 @@ sealed trait JwtVerifier extends AsJson {
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
-                        val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                        val jsonToken = Json.parse(Base64Codec.decode(decodedToken.getPayload)).as[JsObject]
                         val newToken  = sign(
                           jsonToken,
                           outputAlgorithm,
@@ -1823,7 +1823,7 @@ sealed trait JwtVerifier extends AsJson {
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
-                        val jsonToken                    = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                        val jsonToken                    = Json.parse(Base64Codec.decode(decodedToken.getPayload)).as[JsObject]
                         val context: Map[String, String] = jsonToken.value.toSeq.collect {
                           case (key, JsString(str))     => (key, str)
                           case (key, JsBoolean(bool))   => (key, bool.toString)

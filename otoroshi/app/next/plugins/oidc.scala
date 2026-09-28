@@ -10,6 +10,7 @@ import otoroshi.cluster.{Cluster, ClusterMode}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.*
+import otoroshi.utils.Base64Codec
 import otoroshi.next.plugins.api.*
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
 import otoroshi.security.IdGenerator
@@ -118,7 +119,7 @@ class OIDCHeaders extends NgRequestTransformer {
     (payload \ name).asOpt[String] match {
       case None               => "--"
       case Some(value) if jwt =>
-        Try(new String(org.apache.commons.codec.binary.Base64.decodeBase64(value.split("\\.")(1)))).getOrElse("--")
+        Try(new String(Base64Codec.decode(value.split("\\.")(1)))).getOrElse("--")
       case Some(value)        => value
     }
   }

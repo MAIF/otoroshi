@@ -8,6 +8,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2ModuleConfig
 import otoroshi.cluster.ClusterAgent
+import otoroshi.utils.Base64Codec
 import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -119,7 +120,7 @@ class OIDCHeaders extends RequestTransformer {
     (payload \ name).asOpt[String] match {
       case None               => "--"
       case Some(value) if jwt =>
-        Try(new String(org.apache.commons.codec.binary.Base64.decodeBase64(value.split("\\.")(1)))).getOrElse("--")
+        Try(new String(Base64Codec.decode(value.split("\\.")(1)))).getOrElse("--")
       case Some(value)        => value
     }
   }
@@ -442,8 +443,6 @@ case class OIDCThirdPartyApiKeyConfig(
 
   import otoroshi.utils.http.Implicits.*
 
-  import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
-
   def typ: ThirdPartyApiKeyConfigType = ThirdPartyApiKeyConfigType.OIDC
 
   def toJson: JsValue = OIDCThirdPartyApiKeyConfig.format.writes(this)
@@ -544,9 +543,9 @@ case class OIDCThirdPartyApiKeyConfig(
                       case Some(rawHeader) => {
                         val header      = rawHeader.replace("Bearer ", "").replace("bearer ", "").trim()
                         val tokenHeader =
-                          Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(0)))).getOrElse(Json.obj())
+                          Try(Json.parse(Base64Codec.decode(header.split("\\.")(0)))).getOrElse(Json.obj())
                         val tokenBody   =
-                          Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(1)))).getOrElse(Json.obj())
+                          Try(Json.parse(Base64Codec.decode(header.split("\\.")(1)))).getOrElse(Json.obj())
                         val kid         = (tokenHeader \ "kid").asOpt[String].filterNot(_.trim.isEmpty)
                         val alg         = (tokenHeader \ "alg").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("RS256")
                         jwtVerifier.asAlgorithmF(InputMode(alg, kid)) flatMap {

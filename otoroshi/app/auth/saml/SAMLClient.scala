@@ -57,6 +57,7 @@ import java.util
 import java.util.regex.Matcher
 import java.util.zip.{Inflater, InflaterInputStream}
 import java.util.{Base64, UUID}
+import otoroshi.utils.Base64Codec
 import javax.xml.namespace.QName
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.*
@@ -932,7 +933,7 @@ object SAMLModule {
     val body         = stringWriter.toString
     val deflatedBody = doDeflate(body.getBytes(StandardCharsets.UTF_8))
 
-    org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(deflatedBody)
+    Base64Codec.encodeUrlSafeToString(deflatedBody)
   }
 
   def decodeAndValidateSamlResponse(
@@ -1162,7 +1163,7 @@ object SAMLModule {
   }
 
   def decodeAndInflate(encodedResponse: String, method: String): Reader = {
-    val afterB64Decode = new ByteArrayInputStream(org.apache.commons.codec.binary.Base64.decodeBase64(encodedResponse))
+    val afterB64Decode = new ByteArrayInputStream(Base64Codec.decode(encodedResponse))
 
     if ("GET".equals(method)) {
       val afterInflate = new InflaterInputStream(afterB64Decode, new Inflater(true))

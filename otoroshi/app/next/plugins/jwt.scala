@@ -35,7 +35,7 @@ import otoroshi.utils.syntax.implicits.{
 import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.{RequestHeader, Result, Results}
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import otoroshi.utils.Base64Codec
 import org.joda.time.DateTime
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.el.JwtExpressionLanguage
@@ -431,16 +431,16 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                     .obj("alg" -> tokenSigningAlgorithm.getName, "typ" -> "JWT")
                     .applyOnWithOpt(globalVerifier.algoSettings.keyId)((h, id) => h ++ Json.obj("kid" -> id))
                   val header         =
-                    ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
+                    Base64Codec.encodeUrlSafeToString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
                   val payload        =
-                    ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
+                    Base64Codec.encodeUrlSafeToString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
                   val content        = String.format("%s.%s", header, payload)
                   val signatureBytes =
                     tokenSigningAlgorithm.sign(
                       header.getBytes(StandardCharsets.UTF_8),
                       payload.getBytes(StandardCharsets.UTF_8)
                     )
-                  val signature      = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
+                  val signature      = Base64Codec.encodeUrlSafeToString(signatureBytes)
 
                   val signedToken = s"$content.$signature"
 

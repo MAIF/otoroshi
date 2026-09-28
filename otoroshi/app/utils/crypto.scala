@@ -6,6 +6,7 @@ import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.utils.Base64Codec
 import otoroshi.utils.syntax.implicits.*
 
 object BCryptHelper {
@@ -52,14 +53,14 @@ object Signatures {
   }
 
   def hmacSha256Sign(what: String, secret: String): String = {
-    org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(hmacSha256SignBytes(what, secret))
+    Base64Codec.encodeUrlSafeToString(hmacSha256SignBytes(what, secret))
   }
 
   def hmacSha384Sign(what: String, secret: String): String = {
-    org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(hmacSha384SignBytes(what, secret))
+    Base64Codec.encodeUrlSafeToString(hmacSha384SignBytes(what, secret))
   }
 
   def hmacSha512Sign(what: String, secret: String): String = {
-    org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(hmacSha512SignBytes(what, secret))
+    Base64Codec.encodeUrlSafeToString(hmacSha512SignBytes(what, secret))
   }
 }

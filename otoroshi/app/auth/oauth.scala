@@ -3,7 +3,7 @@ package otoroshi.auth
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import play.api.libs.ws.WSBodyWritables.given
 import com.auth0.jwt.JWT
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import otoroshi.utils.Base64Codec
 import org.joda.time.DateTime
 import otoroshi.auth.implicits.{RequestHeaderWithPrivateAppSession, ResultWithPrivateAppSession}
 import otoroshi.controllers.routes
@@ -383,7 +383,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
     codeChallengeMethod match {
       case Some("S256") =>
-        (codeVerifier, org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(digest), "S256")
+        (codeVerifier, Base64Codec.encodeUrlSafeToString(digest), "S256")
       case _            => (codeVerifier, codeVerifier, "plain")
     }
   }
@@ -695,9 +695,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   def readProfileFromToken(accessToken: String)(using env: Env, ec: ExecutionContext): Future[JsValue] = {
     val algoSettings = authConfig.jwtVerifier.get
     val tokenHeader  =
-      Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+      Try(Json.parse(Base64Codec.decode(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
     val tokenBody    =
-      Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
+      Try(Json.parse(Base64Codec.decode(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
     val kid          = (tokenHeader \ "kid").asOpt[String]
     val alg          = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
     algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
@@ -882,7 +882,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     Try {
       val algoSettings = authConfig.jwtVerifier.get
       val tokenHeader  =
-        Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+        Try(Json.parse(Base64Codec.decode(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
       val kid          = (tokenHeader \ "kid").asOpt[String]
       val alg          = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
       algoSettings.asAlgorithmF(InputMode(alg, kid)).map {

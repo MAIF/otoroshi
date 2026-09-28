@@ -11,7 +11,7 @@ import io.netty.channel.ChannelOption
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl.{ClientAuth, SslContextBuilder}
-import org.apache.commons.codec.binary.Base64
+import otoroshi.utils.Base64Codec
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
@@ -144,7 +144,7 @@ case class NettyWsClientRequest(
     scheme match {
       case WSAuthScheme.BASIC =>
         addHttpHeaders(
-          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(StandardCharsets.UTF_8))}"
+          "Authorization" -> s"Basic ${Base64Codec.encodeToString(s"${username}:${password}".getBytes(StandardCharsets.UTF_8))}"
         )
       case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }

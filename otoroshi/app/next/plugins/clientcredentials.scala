@@ -14,6 +14,7 @@ import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.plugins.apikeys.ClientCredentialFlowBody
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.utils.Base64Codec
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.jwk.JWKSHelper
@@ -133,7 +134,7 @@ class NgClientCredentials extends NgRequestSink {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => Base64Codec.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -151,7 +152,7 @@ class NgClientCredentials extends NgRequestSink {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => Base64Codec.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -443,7 +444,7 @@ class NgClientCredentials extends NgRequestSink {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => Base64Codec.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -563,7 +564,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => Base64Codec.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -581,7 +582,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => Base64Codec.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -738,7 +739,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => Base64Codec.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)

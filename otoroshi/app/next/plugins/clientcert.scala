@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
-import org.apache.commons.codec.binary.Base64
+import otoroshi.utils.Base64Codec
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
@@ -388,7 +388,7 @@ class NgCertificateAsApikey extends NgPreRouting {
           ctx.cachedConfig(internalName)(NgCertificateAsApikeyConfig.format).getOrElse(NgCertificateAsApikeyConfig())
         val serialNumber = cert.getSerialNumber.toString
         val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
-        val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
+        val clientId     = Base64Codec.encodeToString((subjectDN + "-" + serialNumber).getBytes)
         env.datastores.apiKeyDataStore
           .findById(clientId)
           .flatMap {
