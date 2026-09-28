@@ -173,8 +173,8 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     val ref = lastData.get(name)
     if (ref != null) ref.set(value)
     else {
-      // the gauge reads the reference, so it is registered once, by the thread that stored it. registering on every
-      // mark made the registry throw, and build an exception with its stack trace, several times per request
+      // only the thread that stored the reference registers the gauge reading it: registering a name twice makes the
+      // registry throw, and building that exception with its stack trace costs microseconds on the request path
       val created = new AtomicReference[Any](value)
       val prev    = lastData.putIfAbsent(name, created)
       if (prev != null) prev.set(value)
