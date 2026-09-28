@@ -1212,6 +1212,20 @@ trait CertificateDataStore extends BasicStore[Cert] {
     }
   }
 
+  private def servesDomain(domain: String)(implicit env: Env): Boolean = {
+    val lower = domain.trim.toLowerCase
+    // lower == env.backOfficeHost.toLowerCase ||
+    // lower == env.privateAppsHost.toLowerCase ||
+    // lower == env.adminApiExposedHost.toLowerCase ||
+    // lower == env.adminApiHost.toLowerCase ||
+    env.proxyState.servesDomain(lower) ||
+      env.proxyState
+        .allTcpServices()
+        .exists(s =>
+          s.enabled && s.sni.enabled && s.rules.exists(r => otoroshi.tcp.TcpService.domainMatch(r.domain, lower))
+        )
+  }
+
   private def generateCertificateForDomain(
       domain: String
   )(using env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
@@ -1226,7 +1240,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
               !notAllowed.exists(p => otoroshi.utils.RegexPool.apply(p).matches(domain)) &&
               allowed.exists(p => RegexPool.apply(p).matches(domain))
             if (isAllowed) {
-              if (env.autoCertOnlyForServedDomains && !env.proxyState.servesDomain(domain)) {
+              if (env.autoCertOnlyForServedDomains && !servesDomain(domain)) {
                 // an allowed pattern is usually a wildcard, so without this every sni matching it gets a
                 // certificate generated AND persisted, with autoRenew on: a scan of random subdomains
                 // would grow the fleet for good, and a bigger fleet slows every context rebuild down.
