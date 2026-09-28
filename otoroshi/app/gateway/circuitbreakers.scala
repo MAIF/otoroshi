@@ -39,6 +39,25 @@ object Timeout {
     }
     p.future
   }
+
+  // completes like the future, or fails with `error` once `duration` has elapsed. the timer is cancelled when the
+  // future completes: left in the scheduler, it would keep its closure and promises alive until it fires, i.e. for the
+  // whole timeout of every request. the future is evaluated once the timer is scheduled, so the timeout covers it all.
+  // the completion callback only cancels and completes, so it runs on the thread that completes the future
+  def failAfter[A](duration: FiniteDuration, error: Throwable)(future: => Future[A])(using
+      ec: ExecutionContext,
+      scheduler: Scheduler
+  ): Future[A] = {
+    val promise = Promise[A]()
+    val timer   = scheduler.scheduleOnce(duration) {
+      promise.tryFailure(error)
+    }
+    future.onComplete { result =>
+      timer.cancel()
+      promise.tryComplete(result)
+    }(using ExecutionContext.parasitic)
+    promise.future
+  }
 }
 
 object Retry {
@@ -362,55 +381,53 @@ class ServiceDescriptorCircuitBreaker()(using ec: ExecutionContext, scheduler: S
       ClientConfig.logger.debug(
         s"[circuitbreaker] using globalTimeout: ${clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout)}"
       )
-    val failure      = Timeout
-      .timeout(Done, clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
-      .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    val maybeSuccess = Retry.retry(
-      clientConfig.retries,
-      clientConfig.retryInitialDelay,
-      clientConfig.backoffFactor,
-      descName + " : " + ctx,
-      counter
-    ) { attempts =>
-      if (bodyAlreadyConsumed.get) {
-        FastFuture.failed(BodyAlreadyConsumedException)
-      } else {
-        attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey).map { target =>
-          val alreadyFailed = new AtomicBoolean(false)
-          getCircuitBreakerNg(clientConfig, path).withCircuitBreaker {
-            if (logger.isDebugEnabled) logger.debug(s"Try to call target : $target")
-            f(target, attempts, alreadyFailed)
-          } andThen { case Failure(_: scala.concurrent.TimeoutException) =>
-            alreadyFailed.set(true)
-          }
-        } getOrElse {
-          chooseTargetNg(
-            descId,
-            descName,
-            targets,
-            targetsLoadBalancing,
-            clientConfig,
-            path,
-            reqId,
-            trackingId,
-            requestHeader,
-            attrs,
-            attempts
-          ) match {
-            case Some((target, breaker)) =>
-              val alreadyFailed = new AtomicBoolean(false)
-              breaker.withCircuitBreaker {
-                if (logger.isDebugEnabled) logger.debug(s"Try to call target : $target")
-                f(target, attempts, alreadyFailed)
-              } andThen { case Failure(_: scala.concurrent.TimeoutException) =>
-                alreadyFailed.set(true)
-              }
-            case None                    => FastFuture.failed(AllCircuitBreakersOpenException)
+    Timeout.failAfter(clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout), RequestTimeoutException) {
+      Retry.retry(
+        clientConfig.retries,
+        clientConfig.retryInitialDelay,
+        clientConfig.backoffFactor,
+        descName + " : " + ctx,
+        counter
+      ) { attempts =>
+        if (bodyAlreadyConsumed.get) {
+          FastFuture.failed(BodyAlreadyConsumedException)
+        } else {
+          attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey).map { target =>
+            val alreadyFailed = new AtomicBoolean(false)
+            getCircuitBreakerNg(clientConfig, path).withCircuitBreaker {
+              if (logger.isDebugEnabled) logger.debug(s"Try to call target : $target")
+              f(target, attempts, alreadyFailed)
+            } andThen { case Failure(_: scala.concurrent.TimeoutException) =>
+              alreadyFailed.set(true)
+            }
+          } getOrElse {
+            chooseTargetNg(
+              descId,
+              descName,
+              targets,
+              targetsLoadBalancing,
+              clientConfig,
+              path,
+              reqId,
+              trackingId,
+              requestHeader,
+              attrs,
+              attempts
+            ) match {
+              case Some((target, breaker)) =>
+                val alreadyFailed = new AtomicBoolean(false)
+                breaker.withCircuitBreaker {
+                  if (logger.isDebugEnabled) logger.debug(s"Try to call target : $target")
+                  f(target, attempts, alreadyFailed)
+                } andThen { case Failure(_: scala.concurrent.TimeoutException) =>
+                  alreadyFailed.set(true)
+                }
+              case None                    => FastFuture.failed(AllCircuitBreakersOpenException)
+            }
           }
         }
       }
     }
-    Future.firstCompletedOf(Seq(maybeSuccess, failure))
   }
 }
 

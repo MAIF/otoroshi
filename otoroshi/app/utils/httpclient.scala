@@ -1,6 +1,5 @@
 package otoroshi.utils.http
 
-import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Limitable, SizeLimit}
 import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
@@ -1322,44 +1321,42 @@ case class AkkaWsClientRequest(
     if (ClientConfig.logger.isDebugEnabled)
       ClientConfig.logger.debug(s"[httpclient] stream request with timeout to ${zeTimeout}")
     if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] start req")
-    val failure = Timeout
-      .timeout(Done, zeTimeout)(using client.ec, env.otoroshiScheduler)
-      .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    val start   = System.currentTimeMillis()
-    val reqExec = client
-      .executeRequest(
-        req,
-        targetOpt.exists(_.mtlsConfig.loose),
-        trustAll,
-        certs,
-        trustedCerts,
-        clientConfig,
-        customizer
-      )
-      .flatMap { resp =>
-        val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
-        if (alreadyFailed.get()) {
-          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] stream already failed")
-          resp.entity.discardBytes()
-          FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
-        } else if (remaining <= 0) {
-          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] got stream resp too late")
-          resp.entity.discardBytes()
-          FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
-        } else {
-          val remainingTimeout = remaining.millis
-          if (ClientConfig.logger.isDebugEnabled)
-            ClientConfig.logger.debug(s"[httpclient] got stream resp - ${remainingTimeout}")
-          AkkWsClientStreamedResponse(
-            resp,
-            rawUrl,
-            client.mat,
-            remainingTimeout,
-            env
-          ).future
+    val start = System.currentTimeMillis()
+    Timeout.failAfter(zeTimeout, RequestTimeoutException) {
+      client
+        .executeRequest(
+          req,
+          targetOpt.exists(_.mtlsConfig.loose),
+          trustAll,
+          certs,
+          trustedCerts,
+          clientConfig,
+          customizer
+        )
+        .flatMap { resp =>
+          val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
+          if (alreadyFailed.get()) {
+            if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] stream already failed")
+            resp.entity.discardBytes()
+            FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
+          } else if (remaining <= 0) {
+            if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] got stream resp too late")
+            resp.entity.discardBytes()
+            FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
+          } else {
+            val remainingTimeout = remaining.millis
+            if (ClientConfig.logger.isDebugEnabled)
+              ClientConfig.logger.debug(s"[httpclient] got stream resp - ${remainingTimeout}")
+            AkkWsClientStreamedResponse(
+              resp,
+              rawUrl,
+              client.mat,
+              remainingTimeout,
+              env
+            ).future
+          }
         }
-      }
-    Future.firstCompletedOf(Seq(reqExec, failure))
+    }(using client.ec, env.otoroshiScheduler)
   }
 
   override def execute(method: String): Future[WSResponse] = {
@@ -1383,44 +1380,42 @@ case class AkkaWsClientRequest(
     val zeTimeout               = requestTimeout
       .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
       .getOrElse(env.longRequestTimeout) // (FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
-    val failure = Timeout
-      .timeout(Done, zeTimeout)(using client.ec, env.otoroshiScheduler)
-      .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    val start   = System.currentTimeMillis()
-    val reqExec = client
-      .executeRequest(
-        buildRequest(),
-        targetOpt.exists(_.mtlsConfig.loose),
-        trustAll,
-        certs,
-        trustedCerts,
-        clientConfig,
-        customizer
-      )
-      .flatMap { (response: HttpResponse) =>
-        // FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2)
-        val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
-        if (alreadyFailed.get()) {
-          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] execute already failed")
-          response.entity.discardBytes()
-          FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
-        } else if (remaining <= 0) {
-          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] got resp too late")
-          response.entity.discardBytes()
-          FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
-        } else {
-          val remainingTimeout = remaining.millis
-          if (ClientConfig.logger.isDebugEnabled)
-            ClientConfig.logger.debug(s"[httpclient] got resp - ${remainingTimeout}")
-          response.entity
-            .toStrict(remainingTimeout)
-            .map(a => (response, a))
+    val start = System.currentTimeMillis()
+    Timeout.failAfter(zeTimeout, RequestTimeoutException) {
+      client
+        .executeRequest(
+          buildRequest(),
+          targetOpt.exists(_.mtlsConfig.loose),
+          trustAll,
+          certs,
+          trustedCerts,
+          clientConfig,
+          customizer
+        )
+        .flatMap { (response: HttpResponse) =>
+          // FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2)
+          val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
+          if (alreadyFailed.get()) {
+            if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] execute already failed")
+            response.entity.discardBytes()
+            FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
+          } else if (remaining <= 0) {
+            if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] got resp too late")
+            response.entity.discardBytes()
+            FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
+          } else {
+            val remainingTimeout = remaining.millis
+            if (ClientConfig.logger.isDebugEnabled)
+              ClientConfig.logger.debug(s"[httpclient] got resp - ${remainingTimeout}")
+            response.entity
+              .toStrict(remainingTimeout)
+              .map(a => (response, a))
+          }
         }
-      }
-      .map { case (response: HttpResponse, body: HttpEntity.Strict) =>
-        AkkWsClientRawResponse(response, rawUrl, body.data)
-      }
-    Future.firstCompletedOf(Seq(reqExec, failure))
+        .map { case (response: HttpResponse, body: HttpEntity.Strict) =>
+          AkkWsClientRawResponse(response, rawUrl, body.data)
+        }
+    }(using client.ec, env.otoroshiScheduler)
   }
 
   private def realContentType: Option[ContentType] = {
