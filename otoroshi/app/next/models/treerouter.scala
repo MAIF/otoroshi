@@ -79,8 +79,8 @@ object NgTreeRouter {
         ptree.addSubRoutes(dpath.path.split("/").toSeq.filterNot(_.trim.isEmpty), route)
       }
     }
-    root.wildcards.sortWith((r1, r2) => r1.domain.length.compareTo(r2.domain.length) > 0)
-    root
+    // the most specific wildcard domain first, findWildcard takes the first one that matches
+    root.copy(wildcards = root.wildcards.sortWith((r1, r2) => r1.domain.length.compareTo(r2.domain.length) > 0))
   }
 }
 
@@ -97,7 +97,8 @@ case class NgTreeRouter(
   )
 
   def findRoute(request: RequestHeader, attrs: TypedMap)(using env: Env): Option[NgMatchedRoute] = {
-    find(request.theDomain, request.thePath, env.trailingSlashMeansExactSegments)
+    // declared domains are lower cased when the tree is built, a forwarded host or another server may not be
+    find(request.theDomain.toLowerCase, request.thePath, env.trailingSlashMeansExactSegments)
       .flatMap { routes =>
         val forCurrentListenerOnly = request.attrs
           .get(NettyRequestKeys.ListenerExclusiveKey)
@@ -207,8 +208,10 @@ case class NgTreeNodePath(
 ) {
   lazy val wildcardCache                         =
     Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, Option[NgTreeNodePath]]()
+  // for a segment, the sub tree whose key it starts with and whether a plain key was tried. nothing that depends on
+  // the request goes in there: the matched path and the path params differ from one request to the next
   lazy val segmentStartsWithCache                =
-    Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, Option[NgMatchedRoutes]]()
+    Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, (Option[NgTreeNodePath], Boolean)]()
   lazy val isLeaf: Boolean                       = tree.isEmpty
   lazy val wildcardEntry: Option[NgTreeNodePath] =
     tree.get("*") // lazy should be good as once built the mutable map is never mutated again
@@ -268,8 +271,10 @@ case class NgTreeNodePath(
               .map(k => tree.get(k._1))
               .collect { case Some(ptree) => ptree }
               .fold(NgTreeNodePath.empty)((a, b) => a.copy(routes = a.routes ++ b.routes, tree = a.tree ++ b.tree))
-            // merge the tree
-            NgTreeNodePath.empty.copy(routes = nroute.routes ++ rroute.routes, tree = nroute.tree ++ rroute.tree).some
+            // merge the tree. a segment matching no regex param falls through, like on a node without param keys
+            if (namedKeys.isEmpty && matchingRegexKeys.isEmpty) None
+            else
+              NgTreeNodePath.empty.copy(routes = nroute.routes ++ rroute.routes, tree = nroute.tree ++ rroute.tree).some
           }
           .applyOnWithPredicate(opt => if (opt.isEmpty) hasWildcardKeys else false) { opt =>
             opt.orElse(wildcardEntriesMatching(head)).orElse(wildcardEntry)
@@ -278,7 +283,12 @@ case class NgTreeNodePath(
           case None if endsWithSlash && routes.isEmpty              => None
           case None if endsWithSlash && routes.nonEmpty             =>
             // NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
-            NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = segments.tail.isEmpty).some
+            // head is not part of the matched path, so at least one segment is left after it
+            NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = false).some
+          // no sub tree to choose from: what the prefix lookup below would find, without building its cache
+          case None if !endsWithSlash && isLeaf && routes.isEmpty   => None
+          case None if !endsWithSlash && isLeaf                     =>
+            NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = false).some
           case None if !endsWithSlash                               => {
             // here is one of the worst case scenario where the user wants to use '/api/999' to match calls on '/api/999-foo'
             segmentStartsWithCache.get(
@@ -294,6 +304,10 @@ case class NgTreeNodePath(
                       head.startsWith(key)
                   }
                   .flatMap(key => tree.get(key))
+                (mSubTree, sw)
+              }
+            ) match {
+              case (mSubTree, sw) =>
                 mSubTree match {
                   case None if routes.isEmpty => None
                   case None                   =>
@@ -323,16 +337,18 @@ case class NgTreeNodePath(
                         trailingSlashMeansExactSegments
                       ) match {
                       case None if routes.isEmpty => None
-                      case None                   => NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = false).some
+                      // the routes of this node take the request: their matched path stops before head
+                      case None                   => NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = false).some
+                      // head only starts with the key of that sub tree: the request never is the exact route path
+                      case Some(matched) if sw    => matched.copy(noMoreSegments = false).some
                       case s                      => s
                     }
                 }
-              }
-            )
+            }
           }
           case Some(ptree) if ptree.isEmpty && routes.isEmpty       => None
           case Some(ptree) if ptree.isEmpty && routes.nonEmpty      =>
-            NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
+            NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = false).some
           case Some(ptree) if ptree.isLeaf && ptree.routes.isEmpty  => None
           case Some(ptree) if ptree.isLeaf && ptree.routes.nonEmpty =>
             NgMatchedRoutes(ptree.routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
@@ -345,8 +361,9 @@ case class NgTreeNodePath(
               trailingSlashMeansExactSegments
             ) match {
               case None if routes.isEmpty => None
+              // nothing below head: the routes of this node take the request, with their own matched path
               case None                   =>
-                NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
+                NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = false).some
               case s                      => s
             }
           case other => throw new IllegalStateException(s"unreachable case: $other")
