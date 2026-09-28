@@ -988,7 +988,7 @@ class ProxyEngine() extends RequestHandler {
       mat: Materializer
   ): FEither[NgProxyEngineError, Done] = {
     val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()
-    env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", currentHandledRequests)
+    env.metrics.markConcurrentRequests(currentHandledRequests)
     if (currentHandledRequests > globalConfig.maxConcurrentRequests) {
       Audit.send(
         MaxConcurrentRequestReachedEvent(
@@ -1027,7 +1027,7 @@ class ProxyEngine() extends RequestHandler {
 
   def closeCurrentRequest(env: Env): Unit = {
     val requests = env.datastores.requestsDataStore.decrementHandledRequests()
-    env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
+    env.metrics.markConcurrentRequests(requests)
   }
 
   def handleTenantCheck(route: NgRoute, request: RequestHeader)(using

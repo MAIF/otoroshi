@@ -632,7 +632,7 @@ class ReverseProxyAction(env: Env) {
     val globalConfig           = env.datastores.globalConfigDataStore.latest()
 
     val finalResult: Future[Either[Result, A]] = {
-      env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", currentHandledRequests)
+      env.metrics.markConcurrentRequests(currentHandledRequests)
       if (currentHandledRequests > globalConfig.maxConcurrentRequests) {
         Audit.send(
           MaxConcurrentRequestReachedEvent(
@@ -1219,7 +1219,7 @@ class ReverseProxyAction(env: Env) {
       .withTimerAsync("otoroshi.core.proxy.handle-http-request")(finalResult) // TODO: ws name
       .andThen { case _ =>
         val requests = env.datastores.requestsDataStore.decrementHandledRequests()
-        env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
+        env.metrics.markConcurrentRequests(requests)
       }(using env.otoroshiExecutionContext)
   }
 }

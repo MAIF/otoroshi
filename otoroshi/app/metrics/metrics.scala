@@ -38,6 +38,7 @@ import javax.management.{Attribute, ObjectName}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.*
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 trait TimerMetrics {
@@ -169,18 +170,26 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   }
 
   private def mark[T](name: String, value: Any): Unit = {
-    lastData.computeIfAbsent(name, (t: String) => new AtomicReference[Any](value))
-    lastData.getOrDefault(name, new AtomicReference[Any](value)).set(value)
-
-    try {
-      register(
-        "otoroshi.internals." + name,
-        internalGauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get())
-      )
-    } catch {
-      case _: Throwable =>
+    val ref = lastData.get(name)
+    if (ref != null) ref.set(value)
+    else {
+      // the gauge reads the reference, so it is registered once, by the thread that stored it. registering on every
+      // mark made the registry throw, and build an exception with its stack trace, several times per request
+      val created = new AtomicReference[Any](value)
+      val prev    = lastData.putIfAbsent(name, created)
+      if (prev != null) prev.set(value)
+      else {
+        try {
+          register("otoroshi.internals." + name, internalGauge(created.get()))
+        } catch {
+          case NonFatal(_) =>
+        }
+      }
     }
   }
+
+  // marked twice per request, so the name is built once
+  private lazy val concurrentRequestsName = s"${env.snowflakeSeed}.concurrent-requests"
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -189,6 +198,8 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   def markLong(name: String, value: Long): Unit = mark(name, value)
 
   def markDouble(name: String, value: Double): Unit = mark(name, value)
+
+  def markConcurrentRequests(value: Long): Unit = mark(concurrentRequestsName, value)
 
   def counterInc(name: MetricId): Unit = {
     metricRegistry.counter(name).inc()
