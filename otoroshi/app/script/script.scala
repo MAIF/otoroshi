@@ -745,6 +745,9 @@ class ScriptManager(env: Env) {
   private val cache        = new UnboundedTrieMap[String, (String, PluginType, Any)]()
   private val cpCache      = new UnboundedTrieMap[String, (PluginType, Any)]()
   private val cpTryCache   = new UnboundedTrieMap[String, Unit]()
+  // read by getAnyScript without taking its lock: plugins loaded and started, classes that do not exist
+  private val cpStarted    = new UnboundedTrieMap[String, Either[String, Any]]()
+  private val cpMissing    = new UnboundedTrieMap[String, Unit]()
 
   private val listeningCpScripts = new AtomicReference[Seq[InternalEventListener]](Seq.empty)
 
@@ -1177,7 +1180,14 @@ class ScriptManager(env: Env) {
     } else {
       ref match {
         case r if r.startsWith("cp:")  =>
-          cpTryCache.synchronized {
+          // plugin lookups come here 20 to 55 times per request: the lock is only needed to load a plugin, a plugin
+          // already started, or a class known not to exist, is answered without it
+          val started = cpStarted.lookup(ref)
+          if (started != null) started.asInstanceOf[Either[String, A]]
+          else if (cpMissing.contains(ref)) {
+            logger.error(s"Classpath script `$ref` does not exists ...")
+            Left("not-in-cache")
+          } else cpTryCache.synchronized {
             if (!cpTryCache.contains(ref)) {
               Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
                 .map(clazz => clazz.getDeclaredConstructor().newInstance()) match {
@@ -1189,9 +1199,11 @@ class ScriptManager(env: Env) {
                     tr.asInstanceOf[StartableAndStoppable].startWithPluginId(r, env)
                     tr.asInstanceOf[InternalEventListener].startEvent(r, env)
                   }
+                  cpStarted.put(ref, Right(tr))
                 case Failure(e)  =>
                   e.printStackTrace()
                   logger.error(s"Classpath script `$ref` does not exists ...")
+                  if (e.isInstanceOf[ClassNotFoundException]) cpMissing.put(ref, ())
               }
             }
             cpCache.get(ref).flatMap(a => Option(a._2)) match {
