@@ -24,36 +24,51 @@ object IdGenerator {
   private val INIT_STRING           = for (i <- 0 to 15) yield Integer.toHexString(i)
 
   // apikey secrets and the like are drawn from here, so the generator must not be predictable from
-  // previously observed output. one instance per thread rather than a shared one: SecureRandom locks
-  // internally and uuid is called on every request
-  private val secureRandom: ThreadLocal[SecureRandom] = ThreadLocal.withInitial(() => new SecureRandom())
+  // previously observed output. one DRBG instance per thread: the default SecureRandom of linux and macos,
+  // NativePRNG, reads through a single lock shared by all its instances, and uuid is called on every request.
+  // a DRBG instance is seeded from the JDK's shared DRBG seeder, not from /dev/random
+  private val secureRandom: ThreadLocal[SecureRandom] =
+    ThreadLocal.withInitial(() => Try(SecureRandom.getInstance("DRBG")).getOrElse(new SecureRandom()))
 
   private val minus         = 1288834974657L
-  private val counter       = new AtomicLong(-1L)
-  private val lastTimestamp = new AtomicLong(-1L)
+  // timestamp and counter of the last id, packed as `timestamp << 12 | counter` and updated with a CAS instead of
+  // a lock taken at least twice per request. the clock is read inside the loop: when another thread moves the
+  // state first, the CAS fails and the clock is read again, so only a clock really running backward is seen as such
+  private val lastIdState   = new AtomicLong(-1L)
   private val duplicates    = new AtomicLong(-0L)
 
   def apply(generatorId: Long) = new IdGenerator(generatorId)
 
-  def nextId(generatorId: Long): Long =
-    synchronized {
-      if (generatorId > 1024L) throw new RuntimeException("Generator id can't be larger than 1024")
-      val timestamp = System.currentTimeMillis
-      if (timestamp < lastTimestamp.get()) throw new RuntimeException("Clock is running backward. Sorry :-(")
-      lastTimestamp.set(timestamp)
-      counter.compareAndSet(4095, -1L)
-      ((timestamp - minus) << 22L) | (generatorId << 10L) | counter.incrementAndGet()
+  def nextId(generatorId: Long): Long = {
+    if (generatorId > 1024L) throw new RuntimeException("Generator id can't be larger than 1024")
+    var timestamp = 0L
+    var next      = 0L
+    var done      = false
+    while (!done) {
+      val prev = lastIdState.get()
+      timestamp = System.currentTimeMillis
+      if (timestamp < (prev >> 12)) throw new RuntimeException("Clock is running backward. Sorry :-(")
+      next = (timestamp << 12) | (((prev & 4095L) + 1L) & 4095L)
+      done = lastIdState.compareAndSet(prev, next)
     }
+    ((timestamp - minus) << 22L) | (generatorId << 10L) | (next & 4095L)
+  }
 
-  def nextIdStr(generatorId: Long): String =
-    synchronized {
-      if (generatorId > 1024L) throw new RuntimeException("Generator id can't be larger than 1024")
-      val timestamp = System.currentTimeMillis
-      val append    = if (timestamp < lastTimestamp.get()) s"-${duplicates.incrementAndGet() + generatorId}" else ""
-      lastTimestamp.set(timestamp)
-      counter.compareAndSet(4095, -1L)
-      (((timestamp - minus) << 22L) | (generatorId << 10L) | counter.incrementAndGet()).toString + append
+  def nextIdStr(generatorId: Long): String = {
+    if (generatorId > 1024L) throw new RuntimeException("Generator id can't be larger than 1024")
+    var timestamp = 0L
+    var prev      = 0L
+    var next      = 0L
+    var done      = false
+    while (!done) {
+      prev = lastIdState.get()
+      timestamp = System.currentTimeMillis
+      next = (timestamp << 12) | (((prev & 4095L) + 1L) & 4095L)
+      done = lastIdState.compareAndSet(prev, next)
     }
+    val append = if (timestamp < (prev >> 12)) s"-${duplicates.incrementAndGet() + generatorId}" else ""
+    (((timestamp - minus) << 22L) | (generatorId << 10L) | (next & 4095L)).toString + append
+  }
 
   // the 32 non fixed characters are one nibble each, so a uuid costs a single draw of 16 bytes
   // instead of one draw per character. the previous `(nextDouble * 15).toInt` also never reached the
@@ -79,11 +94,29 @@ object IdGenerator {
     builder.toString
   }
 
+  // one draw for the whole token instead of one per character. a byte is used only below the largest multiple of
+  // the alphabet size, so every character stays equally likely, as with nextInt(characters.size)
   def token(characters: Array[String], size: Int): String = {
-    val random = secureRandom.get()
-    (for {
-      i <- 0 to size - 1
-    } yield characters(random.nextInt(characters.size))).mkString("")
+    val random  = secureRandom.get()
+    val length  = math.max(size, 0)
+    val builder = new java.lang.StringBuilder(length)
+    if (characters.isEmpty || characters.length > 256) {
+      while (builder.length < length) builder.append(characters(random.nextInt(characters.length)))
+    } else {
+      val limit = 256 - (256 % characters.length)
+      val bytes = new Array[Byte](length + length / 4 + 8)
+      var index = bytes.length
+      while (builder.length < length) {
+        if (index == bytes.length) {
+          random.nextBytes(bytes)
+          index = 0
+        }
+        val value = bytes(index) & 0xff
+        index += 1
+        if (value < limit) builder.append(characters(value % characters.length))
+      }
+    }
+    builder.toString
   }
 
   def token(size: Int): String                                = token(CHARACTERS, size)

@@ -3,6 +3,10 @@ package functional
 import org.scalatest.OptionValues
 import otoroshi.security.IdGenerator
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.*
+import scala.concurrent.{Await, Future}
+
 // pure logic. randomness quality itself cannot be asserted in a test, so what is pinned here is the
 // shape and alphabet contract of the generators, plus one measurable entropy defect
 class IdGeneratorSpec
@@ -11,6 +15,8 @@ class IdGeneratorSpec
     with OptionValues {
 
   val hexDigits = "0123456789abcdef".toSet
+
+  val extendedAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789*$%)([]!=+-_:/;.><&"
 
   "IdGenerator.token" should {
 
@@ -32,6 +38,65 @@ class IdGeneratorSpec
 
     "not repeat itself" in {
       (0 until 200).map(_ => IdGenerator.token(32)).toSet.size mustBe 200
+    }
+
+    "have the requested length around the size of its draw" in {
+      Seq(0, 1, 7, 8, 9, 63, 128, 1000).foreach(size => IdGenerator.token(size).length mustBe size)
+      IdGenerator.token(-1) mustBe ""
+    }
+
+    "keep extendedToken in its alphabet" in {
+      IdGenerator.extendedToken(4096).toSet.diff(extendedAlphabet.toSet) mustBe empty
+    }
+
+    // tokens come from a single draw of bytes, and a byte is only used below the largest multiple of the alphabet
+    // size: taking every byte modulo the size would make the first 256 % size characters 14 to 33% more likely
+    "keep every character equally likely" in {
+      Seq[(String, Int => String, Int)](
+        ("alphanumeric", size => IdGenerator.token(size), 62),
+        ("lower case", size => IdGenerator.lowerCaseToken(size), 36),
+        ("extended", size => IdGenerator.extendedToken(size), extendedAlphabet.length)
+      ).foreach { case (name, draw, alphabetSize) =>
+        val chars    = (0 until 300).map(_ => draw(1000)).mkString
+        val counts   = chars.groupBy(identity).view.mapValues(_.length).toMap
+        val expected = chars.length.toDouble / alphabetSize
+        withClue(s"$name: ") {
+          counts.size mustBe alphabetSize
+          counts.values.foreach(count => math.abs(count - expected) must be < expected * 0.1)
+        }
+      }
+    }
+  }
+
+  // an id is `(timestamp - 1288834974657) << 22 | generatorId << 10 | counter`, the counter taking 12 bits. with
+  // generator 0 the 22 low bits are the counter alone
+  "IdGenerator.nextId" should {
+
+    "give distinct ids in a row" in {
+      val generator = IdGenerator(0L)
+      (0 until 4000).map(_ => generator.nextId()).toSet.size mustBe 4000
+    }
+
+    // the state is updated with a CAS: a thread whose CAS fails reads the clock again, otherwise its older reading
+    // compared to the newer state would look like a clock running backward, i.e. an exception from nextId and a
+    // suffix from nextIdStr
+    "not see the clock running backward when many threads draw ids at once" in {
+      val generator = IdGenerator(0L)
+      val start     = System.currentTimeMillis()
+      val draws     = (0 until 8).map { _ =>
+        Future {
+          (0 until 25000).map(i => if (i % 2 == 0) generator.nextIdStr() else generator.nextId().toString)
+        }
+      }
+      val ids       = Await.result(Future.sequence(draws), 60.seconds).flatten
+      val end       = System.currentTimeMillis()
+      ids.size mustBe 200000
+      ids.filter(_.contains("-")) mustBe empty
+      ids.map(_.toLong).foreach { id =>
+        (id & 0x3fffffL) must be < 4096L
+        (id >> 22) + 1288834974657L must be >= start
+        (id >> 22) + 1288834974657L must be <= end
+      }
     }
   }
 
