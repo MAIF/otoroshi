@@ -5,7 +5,7 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 
 import java.util.regex.Pattern.CASE_INSENSITIVE
-import java.util.regex.{MatchResult, Matcher, Pattern}
+import java.util.regex.{Matcher, Pattern}
 import scala.concurrent.{ExecutionContext, Future}
 
 case class Regex(originalPattern: String, compiledPattern: Pattern) {
@@ -53,39 +53,46 @@ class ReplaceAllWith(regex: String) {
 
   val pattern: Pattern = Pattern.compile(regex, CASE_INSENSITIVE)
 
+  // one pass over the value: a replacement is inserted as is and never scanned again. it can hold data that does not
+  // come from the configuration, like a request header, and scanning it again would evaluate that data as well
   def replaceOn(value: String, beginIndex: Int = 2)(callback: String => String): String = {
-    var str: String      = value
-    val matcher: Matcher = pattern.matcher(str)
-    while (matcher.find()) {
-      val matchResult: MatchResult = matcher.toMatchResult
-      val expression: String       = matchResult.group().substring(beginIndex).init
-      val replacement: String      = callback(expression)
-      str = str.substring(0, matchResult.start) + replacement + str.substring(matchResult.end)
-      matcher.reset(str)
+    val matcher: Matcher = pattern.matcher(value)
+    if (!matcher.find()) value
+    else {
+      val builder = new java.lang.StringBuilder(value.length + 16)
+      var last    = 0
+      var found   = true
+      while (found) {
+        val expression: String = value.substring(matcher.start() + beginIndex, matcher.end() - 1)
+        builder.append(value, last, matcher.start()).append(callback(expression))
+        last = matcher.end()
+        found = matcher.find()
+      }
+      builder.append(value, last, value.length).toString
     }
-    str
   }
 
+  // same single pass as replaceOn, the callbacks run one after the other
   def replaceOnAsync(
       value: String,
       beginIndex: Int = 2
   )(callback: String => Future[String])(using ec: ExecutionContext): Future[String] = {
-    var str: String      = value
-    val matcher: Matcher = pattern.matcher(str)
-    def next(): Future[String] = {
+    val matcher: Matcher = pattern.matcher(value)
+    val builder          = new java.lang.StringBuilder(value.length + 16)
+    def next(last: Int): Future[String] = {
       if (matcher.find()) {
-        val matchResult: MatchResult = matcher.toMatchResult
-        val expression: String       = matchResult.group().substring(beginIndex).init
+        val start              = matcher.start()
+        val end                = matcher.end()
+        val expression: String = value.substring(start + beginIndex, end - 1)
         callback(expression).flatMap { replacement =>
-          str = str.substring(0, matchResult.start) + replacement + str.substring(matchResult.end)
-          matcher.reset(str)
-          next()
+          builder.append(value, last, start).append(replacement)
+          next(end)
         }
       } else {
-        str.vfuture
+        builder.append(value, last, value.length).toString.vfuture
       }
     }
-    next()
+    next(0)
   }
 }
 

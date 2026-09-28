@@ -365,7 +365,8 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
         .get
         .toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     )
-    val context           = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)
+    // no expression language here: these headers are the ones of the client plus values computed above, none of them
+    // is configuration. the headers a route configures go through AdditionalHeadersIn, which evaluates them
     val newHeaders        = ctx.otoroshiRequest.headers
       .removeAllArgs(
         env.Headers.OtoroshiProxiedHost,
@@ -374,19 +375,6 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
         env.Headers.OtoroshiGatewayParentRequest
       )
       .appendAll(additionalHeaders)
-      .view.mapValues(v =>
-        otoroshi.el.GlobalExpressionLanguage(
-          value = v,
-          req = ctx.request.some,
-          service = ctx.route.legacy.some,
-          route = ctx.route.some,
-          apiKey = ctx.apikey,
-          user = ctx.user,
-          context = context,
-          attrs = ctx.attrs,
-          env = env
-        )
-      ).toMap
     Right(ctx.otoroshiRequest.copy(headers = newHeaders))
   }
 }
