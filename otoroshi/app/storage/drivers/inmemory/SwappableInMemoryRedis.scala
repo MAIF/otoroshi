@@ -66,12 +66,17 @@ class ModernMemory(
   def putExpirations(all: Map[String, Long]): Unit                           = expirations.++=(all)
   def removeExpiration(key: String): Unit                                    = expirations.remove(key)
   def removeExpirations(keys: Seq[String]): Unit                             = expirations.--=(keys)
+  // keepLocal: the keys that belong to this instance only, never taken from the new state nor removed because it
+  // lacks them. on a cluster worker these are the Cluster.filteredKey ones (local stats, caches, sessions...)
   def swap(
       nstore: scala.collection.Map[String, Any],
-      nexpirations: scala.collection.Map[String, Long]
+      nexpirations: scala.collection.Map[String, Long],
+      keepLocal: String => Boolean = _ => false
   ): ModernMemory = {
-    store.++=(nstore).--=(store.keySet.diff(nstore.keySet))
-    expirations.++=(nexpirations).--=(expirations.keySet.diff(nexpirations.keySet))
+    store.++=(nstore.filterNot(t => keepLocal(t._1))).--=(store.keySet.diff(nstore.keySet).filterNot(keepLocal))
+    expirations
+      .++=(nexpirations.filterNot(t => keepLocal(t._1)))
+      .--=(expirations.keySet.diff(nexpirations.keySet).filterNot(keepLocal))
     this
   }
 }
@@ -484,7 +489,12 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   def rawSwap(nstore: scala.collection.Map[String, Any], nexpirations: scala.collection.Map[String, Long]): Unit = {
     env.metrics.withTimer(s"memory-swap-modern") {
       val oldSize = memory.size
-      memory.swap(nstore, nexpirations)
+      // like the merge of the legacy store: a worker keeps the keys that are not synced from the leader
+      memory.swap(
+        nstore,
+        nexpirations,
+        if (env.clusterConfig.mode.isWorker) key => Cluster.filteredKey(key, env) else _ => false
+      )
       val newSize = memory.size
       if (SwappableInMemoryRedis.logger.isDebugEnabled)
         SwappableInMemoryRedis.logger.debug(
