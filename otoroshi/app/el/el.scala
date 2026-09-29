@@ -30,6 +30,9 @@ object GlobalExpressionLanguage {
 
   val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
+  // what a part of the match below returns for an expression it has no case for, told apart by identity
+  private val NoCase: String = new String("no-case")
+
   def applyOutsideContext(
       value: String,
       env: Env,
@@ -105,7 +108,10 @@ object GlobalExpressionLanguage {
         val matchedRawOutputToken                  = attrs.get(otoroshi.plugins.Keys.MatchedRawOutputTokenKey)
         lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
-          expressionReplacer.replaceOn(value) {
+          // the cases are split in contiguous parts, each one small enough to be compiled by the JIT: HotSpot does
+          // not compile a method of more than 8000 bytes of bytecode, and the single match of every case was more than
+          // twice that. A part hands an expression it has no case for to the next one, so the cases keep their order
+          def part1(expr: String): String = expr match {
             case expr if expr.contains("||")      =>
               env.metrics.withTimer(s"el.apply.chain") {
                 val _parts                  = expr.split("\\|\\|").toList
@@ -160,6 +166,9 @@ object GlobalExpressionLanguage {
                 case r"date\($date@(.*)\).epoch_sec"                                        =>
                   TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).getMillis).toString
               }
+            case _ => NoCase
+          }
+          def part2(expr: String): String = expr match {
             // date from EL notation
             case str if str.startsWith("date_el(") =>
               str match {
@@ -311,6 +320,9 @@ object GlobalExpressionLanguage {
 
             case "now" => DateTime.now().toString()
 
+            case _ => NoCase
+          }
+          def part3(expr: String): String = expr match {
             case "service.domain" if service.isDefined                              => service.get._domain
             case "service.subdomain" if service.isDefined                           => service.get.subdomain
             case "service.tld" if service.isDefined                                 => service.get.domain
@@ -378,6 +390,9 @@ object GlobalExpressionLanguage {
             case r"req.pathparams.$field@(.*)" if matchedRoute.isDefined                    =>
               matchedRoute.get.pathParams.get(field).getOrElse(s"no-path-param-$field")
 
+            case _ => NoCase
+          }
+          def part4(expr: String): String = expr match {
             case "apikey.name" if apiKey.isDefined                                  => apiKey.get.clientName
             case "apikey.id" if apiKey.isDefined                                    => apiKey.get.clientId
             case "apikey.clientId" if apiKey.isDefined                              => apiKey.get.clientId
@@ -517,6 +532,9 @@ object GlobalExpressionLanguage {
                 )
                 .getOrElse(s"no-config-$field")
 
+            case _ => NoCase
+          }
+          def part5(expr: String): String = expr match {
             case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"                              =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
             case r"ctx.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"                               =>
@@ -711,6 +729,14 @@ object GlobalExpressionLanguage {
             case "req.client_cert.issuer_dn" if req.isDefined && headCert.isDefined                                  =>
               DN(headCert.get.getIssuerX500Principal.getName).stringify
             case expr                                                                                                => "bad-expr" //s"$${$expr}"
+          }
+          expressionReplacer.replaceOn(value) { expr =>
+            var result = part1(expr)
+            if (result eq NoCase) result = part2(expr)
+            if (result eq NoCase) result = part3(expr)
+            if (result eq NoCase) result = part4(expr)
+            if (result eq NoCase) result = part5(expr)
+            result
           }
         } recover { case e =>
           logger.error(s"Error while parsing expression, returning raw value: $value", e)
