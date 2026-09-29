@@ -1111,6 +1111,10 @@ object CaseInsensitiveOrdered extends Ordering[String] {
 
 object WSProxyServerUtils {
 
+  // the proxy to use to reach that host: the configured one, unless the host is one of its non proxy hosts
+  def proxyFor(proxy: Option[WSProxyServer], hostname: String): Option[WSProxyServer] =
+    proxy.filterNot(p => isIgnoredForHost(hostname, p.nonProxyHosts.getOrElse(Seq.empty).toSeq))
+
   def isIgnoredForHost(hostname: String, nonProxyHosts: Seq[String]): Boolean = {
     Assertions.assertNotNull(hostname, "hostname")
     if (nonProxyHosts.nonEmpty) {
@@ -1208,10 +1212,8 @@ case class AkkaWsClientRequest(
     val relUri            = _uri.toRelative.toString()
     val idleTimeout       = clientConfig.extractTimeout(relUri, _.idleTimeout, _.idleTimeout)
     val connectionTimeout = clientConfig.extractTimeout(relUri, _.connectionTimeout, _.connectionTimeout)
-    proxy
-      .filter(p =>
-        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty).toSeq)
-      )
+    WSProxyServerUtils
+      .proxyFor(proxy, Uri(rawUrl).authority.host.toString())
       .map { proxySettings =>
         val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
         val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {

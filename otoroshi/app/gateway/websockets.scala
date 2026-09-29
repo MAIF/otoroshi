@@ -712,11 +712,10 @@ object WebSocketProxyActor {
       mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
       clientFlow = flow,
       customizer = {
-        descriptor.clientConfig.proxy
-          .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
-          .filter(p =>
-            WSProxyServerUtils
-              .isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty).toSeq)
+        WSProxyServerUtils
+          .proxyFor(
+            descriptor.clientConfig.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services)),
+            Uri(url).authority.host.toString()
           )
           .map { proxySettings =>
             val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
