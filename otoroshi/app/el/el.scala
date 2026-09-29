@@ -50,11 +50,12 @@ object GlobalExpressionLanguage {
     )
   }
 
+  // a string without any expression is returned as is, without even reading the attributes or timing anything
   def apply(
       value: String,
       attrs: TypedMap,
       env: Env
-  ): String = {
+  ): String = if (!value.contains("${")) value else {
     apply(
       value = value,
       req = attrs.get(otoroshi.plugins.Keys.RequestKey),
@@ -91,7 +92,7 @@ object GlobalExpressionLanguage {
              env: Env,
              plan: Option[ApiPlan] = None,
              api: Option[Api] = None
-  ): String = env.metrics.withTimer(s"el.apply") {
+  ): String = if (!value.contains("${")) value else env.metrics.withTimer(s"el.apply") {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
       case v if v.contains("${") =>

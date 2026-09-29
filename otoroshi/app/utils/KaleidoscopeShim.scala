@@ -17,23 +17,55 @@ package otoroshi.utils
  *   - regex special characters (notably `\`) do not need to be escaped inside the interpolator;
  *     only `$` must be written `$$`.
  *
- * Implementation note: the `r` extension returns an extractor whose `unapplySeq` reads the raw
- * `StringContext.parts` at runtime to build a standard `scala.util.matching.Regex`. Each hole is
+ * Implementation note: the `r` extension returns an extractor whose regex is built from the raw
+ * `StringContext.parts` at runtime, a standard `scala.util.matching.Regex`. Each hole is
  * followed, in the next literal part, by `@(...)`; that group becomes a capturing group and the
  * hole binds to it positionally. No macro is required.
+ *
+ * A `case r"..."` is evaluated each time the match tries it, so the extractor of a pattern is
+ * built once and kept: compiling the regex at each try made an expression language match that
+ * succeeds late compile dozens of patterns. The patterns are literals of the code, so the cache
+ * holds one extractor per pattern.
  */
 object KaleidoscopeShim {
 
   extension (sc: StringContext) {
-    def r: RegexExtractor = new RegexExtractor(sc)
+    def r: RegexExtractor = extractorOf(sc.parts)
   }
 
-  final class RegexExtractor(sc: StringContext) {
-    private val regex: scala.util.matching.Regex                             = KaleidoscopeShim.buildRegex(sc.parts)
-    def unapplySeq(input: String): Option[Seq[String]]  = regex.unapplySeq(input)
+  final class RegexExtractor private[KaleidoscopeShim] (regex: scala.util.matching.Regex, head: String) {
+    // the regex has to match the whole input, so an input that does not start with its literal head cannot match
+    def unapplySeq(input: String): Option[Seq[String]] = if (input.startsWith(head)) regex.unapplySeq(input) else None
   }
 
-  private def buildRegex(parts: Seq[String]): scala.util.matching.Regex = {
+  private val extractors = new java.util.concurrent.ConcurrentHashMap[Seq[String], RegexExtractor]()
+
+  private def extractorOf(parts: Seq[String]): RegexExtractor = {
+    val existing = extractors.get(parts)
+    if (existing ne null) existing
+    else
+      extractors.computeIfAbsent(
+        parts,
+        _ => {
+          val source = buildSource(parts)
+          new RegexExtractor(source.r, literalHead(parts.head, source))
+        }
+      )
+  }
+
+  // the chars a pattern starts with, which every input it matches starts with too: none when the pattern has an
+  // alternation, and not the char a quantifier makes optional
+  private def literalHead(firstPart: String, source: String): String = {
+    if (source.indexOf('|') >= 0) ""
+    else {
+      val end = firstPart.indexWhere(c => "\\.[](){}*+?^$|".indexOf(c) >= 0)
+      if (end < 0) firstPart
+      else if ("*?{".indexOf(firstPart.charAt(end)) >= 0) firstPart.substring(0, math.max(0, end - 1))
+      else firstPart.substring(0, end)
+    }
+  }
+
+  private def buildSource(parts: Seq[String]): String = {
     val it = parts.iterator
     val sb = new StringBuilder
     sb.append(it.next()) // first literal part (raw, may contain unescaped backslashes)
@@ -51,7 +83,7 @@ object KaleidoscopeShim {
         sb.append(part)
       }
     }
-    sb.toString.r
+    sb.toString
   }
 
   // Splits a string starting with '(' into its balanced-paren group (parens included) and the rest,

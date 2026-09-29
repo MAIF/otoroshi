@@ -187,6 +187,21 @@ class ExpressionLanguageSpec(configurationSpec: => Configuration) extends Otoros
       el("100% done, price is $5") mustBe "100% done, price is $5"
     }
 
+    "only time the strings that hold an expression" in {
+      // a metric is exported under its key followed by its tags, "el.apply {}"
+      def timed(): Long = (env.metrics.jsonRawExport() \ "timers")
+        .asOpt[JsObject]
+        .flatMap(_.value.collectFirst {
+          case (name, timer) if name.takeWhile(_ != ' ') == "el.apply" => (timer \ "count").as[Long]
+        })
+        .getOrElse(0L)
+      val before = timed()
+      (1 to 10).foreach(_ => el("hello world"))
+      val plain  = timed()
+      (1 to 10).foreach(_ => el("${req.method}"))
+      (plain - before, timed() - plain) mustBe (0L, 10L)
+    }
+
     "resolve ctx / token / item / params expressions" in {
       el("${ctx.foo}") mustBe "bar"
       el("${ctx.missing}") mustBe "no-ctx-missing"
