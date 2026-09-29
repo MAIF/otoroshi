@@ -30,7 +30,7 @@ case class TrafficCaptureEvent(
 
   override def `@service`: String            = route.name
   override def `@serviceId`: String          = route.id
-  def `@id`: String                          = IdGenerator.uuid
+  val `@id`: String                          = IdGenerator.uuid
   def `@timestamp`: org.joda.time.DateTime   = timestamp
   def `@type`: String                        = "TrafficCaptureEvent"
   override def fromOrigin: Option[String]    = None

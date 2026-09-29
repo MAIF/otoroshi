@@ -351,7 +351,7 @@ case class RequestFlowReport(report: NgExecutionReport, route: NgRoute) extends 
 
   override def `@service`: String            = route.name
   override def `@serviceId`: String          = route.id
-  def `@id`: String                          = IdGenerator.uuid
+  val `@id`: String                          = IdGenerator.uuid
   def `@timestamp`: org.joda.time.DateTime   = timestamp
   def `@type`: String                        = "RequestFlowReport"
   override def fromOrigin: Option[String]    = None

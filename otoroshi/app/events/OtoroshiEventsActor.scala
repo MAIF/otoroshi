@@ -238,8 +238,8 @@ object DataExporter {
   }
 
   case class RetryEvent(val raw: JsValue) extends OtoroshiEvent {
-    override def `@id`: String                       = raw.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
-    override def `@timestamp`: DateTime              =
+    override lazy val `@id`: String                  = raw.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
+    override lazy val `@timestamp`: DateTime         =
       raw.select("@timestamp").asOpt[String].map(DateTime.parse).getOrElse(DateTime.now())
     override def toJson(using _env: Env): JsValue = raw
   }
