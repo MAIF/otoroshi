@@ -2766,7 +2766,10 @@ class ProxyEngine() extends RequestHandler {
               // WARNING: this one can cause issue as here path segments can be stripped for the bad reasons
               val mpath = mroute.path.substring(1)
               attrs.put(otoroshi.plugins.Keys.StrippedPathKey -> mroute.path)
-              rawUri.replaceFirst(mpath, "") // handles wildcard
+              // the matched path holds the segments of the request (wildcards and params are resolved by the router):
+              // it is removed as text, a regex built from it would fail or strip something else on ( [ + $ * | ...
+              val index = rawUri.indexOf(mpath)
+              if (index < 0) rawUri else rawUri.substring(0, index) + rawUri.substring(index + mpath.length)
             }
           } else {
             rawUri
@@ -2781,9 +2784,9 @@ class ProxyEngine() extends RequestHandler {
           rootMatched
             .filter(m => route.frontend.stripPath && root.startsWith(m))
             .map { m =>
-              val replaced = m.replace(".", "\\.")
-              attrs.put(otoroshi.plugins.Keys.StrippedPathKey -> replaced)
-              root.replaceFirst(replaced, "")
+              // root starts with m: it is removed as text, not read as a regex
+              attrs.put(otoroshi.plugins.Keys.StrippedPathKey -> m)
+              root.substring(m.length)
             }
             .getOrElse(rawUri)
         }
