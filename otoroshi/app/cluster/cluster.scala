@@ -68,7 +68,7 @@ import java.lang.management.ManagementFactory
 import java.net.InetSocketAddress
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference, LongAdder}
 import javax.management.{Attribute, ObjectName}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -1534,7 +1534,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     .maximumSize(1000L)
     .expireAfterWrite(env.clusterConfig.worker.state.pollEvery.millis * 3)
     .build[String, PrivateAppsUser]()
-  private[cluster] val counters   = new UnboundedTrieMap[String, AtomicLong]()
+  private[cluster] val counters   = new UnboundedTrieMap[String, LongAdder]()
   /////////////
 
   private def putQuotaIfAbsent[A <: ClusterLeaderUpdateMessage](key: String, f: => A): Unit = {
@@ -2161,11 +2161,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def incrementCounter(counter: String, increment: Long): Unit = {
     if (Cluster.logger.isTraceEnabled)
       Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment counter ${counter} of ${increment}")
-    if (!counters.contains(counter)) {
-      counters.putIfAbsent(counter, new AtomicLong(0L))
-    }
-    counters.get(counter).foreach(_.addAndGet(increment))
+    this.counter(counter).add(increment)
   }
+
+  // a counter of the status sent to the leader, registered on its first use. The request handler holds the ones it
+  // updates on every request, and a LongAdder takes the increments of all the request threads without contention
+  def counter(name: String): LongAdder = counters.getOrElseUpdate(name, new LongAdder())
 
   def incrementApi(id: String, increment: Long): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
@@ -3594,7 +3595,7 @@ object ClusterLeaderUpdateMessage       {
           liveThreads = ManagementFactory.getThreadMXBean.getThreadCount,
           livePeakThreads = ManagementFactory.getThreadMXBean.getPeakThreadCount,
           daemonThreads = ManagementFactory.getThreadMXBean.getDaemonThreadCount,
-          counters = env.clusterAgent.counters.toSeq.map(t => Json.obj(t._1 -> t._2.get())).fold(Json.obj())(_ ++ _),
+          counters = env.clusterAgent.counters.toSeq.map(t => Json.obj(t._1 -> t._2.sum())).fold(Json.obj())(_ ++ _),
           rate = BigDecimal(
             Option(rate)
               .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)

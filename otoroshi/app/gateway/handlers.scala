@@ -161,6 +161,36 @@ object GatewayRequestHandler {
 
   lazy val logger = Logger("otoroshi-http-handler")
 
+  // the limits of otoroshi.requests.* count bytes of UTF-8. A char takes at most three of them, so a value that fits
+  // at three bytes per char fits for sure: only a longer one is encoded to be measured
+  def fitsInUtf8(value: String, limit: Long): Boolean =
+    value.length * 3L <= limit || ByteString(value).size <= limit
+
+  def urlFits(protocol: String, host: String, relativeUri: String, limit: Long): Boolean =
+    (protocol.length + 3 + host.length + relativeUri.length) * 3L <= limit ||
+    ByteString(s"$protocol://$host$relativeUri").size <= limit
+
+  def cookiesFit(request: RequestHeader, limit: Long): Boolean =
+    request.cookies.forall(cookie => fitsInUtf8(cookie.value, limit))
+
+  // the first value of each header, like the headers the proxy forwards
+  def headersFit(request: RequestHeader, nameLimit: Long, valueLimit: Long): Boolean =
+    request.headers.toSimpleMap.forall { case (name, value) =>
+      fitsInUtf8(name, nameLimit) && fitsInUtf8(value, valueLimit)
+    }
+
+  // both servers report an http/2 request as "HTTP/2.0", and the http/2 codec of netty adds x-http2-stream-id
+  def isHttp2(request: RequestHeader): Boolean = {
+    val version = request.version
+    version.equalsIgnoreCase("HTTP/2.0") || version.equalsIgnoreCase("HTTP/2") ||
+    request.headers.get("x-http2-stream-id").isDefined
+  }
+
+  def isHttp3(request: RequestHeader): Boolean = {
+    val version = request.version
+    version.equalsIgnoreCase("HTTP/3.0") || version.equalsIgnoreCase("HTTP/3")
+  }
+
   def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(using
       env: Env,
       ec: ExecutionContext
@@ -384,28 +414,40 @@ class GatewayRequestHandler(
       )
     }
 
+  // looked up once, and each one registered by its first request, as before
+  private lazy val requestsCounter = env.clusterAgent.counter("requests")
+  private lazy val wssCounter      = env.clusterAgent.counter("wss")
+  private lazy val wsCounter       = env.clusterAgent.counter("ws")
+  private lazy val grpcsCounter    = env.clusterAgent.counter("grpcs")
+  private lazy val grpcCounter     = env.clusterAgent.counter("grpc")
+  private lazy val httpsCounter    = env.clusterAgent.counter("https")
+  private lazy val h2Counter       = env.clusterAgent.counter("h2")
+  private lazy val h3Counter       = env.clusterAgent.counter("h3")
+  private lazy val httpCounter     = env.clusterAgent.counter("http")
+  private lazy val h2cCounter      = env.clusterAgent.counter("h2c")
+
   def incrementCounters(request: RequestHeader): Unit = {
     val ws    = request.headers.get("Sec-WebSocket-Version").isDefined
     val tls   = request.theSecured
-    val http2 = request.version.toLowerCase == "http/2" || request.headers.get("x-http2-stream-id").isDefined
-    val http3 = request.version.toLowerCase == "http/3"
+    val http2 = GatewayRequestHandler.isHttp2(request)
+    val http3 = GatewayRequestHandler.isHttp3(request)
     val http1 = !http2 && !http3
     val grpc  = request.headers.get("Content-Type").exists(_.contains("application/grpc"))
-    env.clusterAgent.incrementCounter("requests", 1)
+    requestsCounter.increment()
     if (ws) {
-      if (tls) env.clusterAgent.incrementCounter("wss", 1)
-      if (!tls) env.clusterAgent.incrementCounter("ws", 1)
+      if (tls) wssCounter.increment()
+      if (!tls) wsCounter.increment()
     } else if (grpc) {
-      if (tls) env.clusterAgent.incrementCounter("grpcs", 1)
-      if (!tls) env.clusterAgent.incrementCounter("grpc", 1)
+      if (tls) grpcsCounter.increment()
+      if (!tls) grpcCounter.increment()
     } else {
       if (tls) {
-        if (http1) env.clusterAgent.incrementCounter("https", 1)
-        if (http2) env.clusterAgent.incrementCounter("h2", 1)
-        if (http3) env.clusterAgent.incrementCounter("h3", 1)
+        if (http1) httpsCounter.increment()
+        if (http2) h2Counter.increment()
+        if (http3) h3Counter.increment()
       } else {
-        if (http1) env.clusterAgent.incrementCounter("http", 1)
-        if (http2) env.clusterAgent.incrementCounter("h2c", 1)
+        if (http1) httpCounter.increment()
+        if (http2) h2cCounter.increment()
       }
     }
   }
@@ -440,19 +482,19 @@ class GatewayRequestHandler(
     } else {
       val isSecured    = request.theSecured
       val protocol     = request.theProtocol
-      lazy val url     = ByteString(s"$protocol://${request.theHost}${request.relativeUri}")
-      lazy val cookies = request.cookies.map(_.value).map(ByteString.apply)
-      lazy val headers = request.headers.toSimpleMap.map(t => (ByteString.apply(t._1), ByteString.apply(t._2)))
-      // logger.trace(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
+      // the cookies and the simple map of the headers are cached by the request, and the proxy engine reads both
       if (env.clusterConfig.mode == otoroshi.cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
         Some(clusterError("Waiting for first Otoroshi leader sync."))
-      } else if (env.validateRequests && url.size > env.maxUrlLength) {
+      } else if (
+        env.validateRequests &&
+        !GatewayRequestHandler.urlFits(protocol, request.theHost, request.relativeUri, env.maxUrlLength)
+      ) {
         Some(tooBig("URL should be smaller", UriTooLong))
-      } else if (env.validateRequests && cookies.exists(_.size > env.maxCookieLength)) {
+      } else if (env.validateRequests && !GatewayRequestHandler.cookiesFit(request, env.maxCookieLength)) {
         Some(tooBig("Cookies should be smaller"))
       } else if (
-        env.validateRequests && headers
-          .exists(t => t._1.size > env.maxHeaderNameLength || t._2.size > env.maxHeaderValueLength)
+        env.validateRequests &&
+        !GatewayRequestHandler.headersFit(request, env.maxHeaderNameLength, env.maxHeaderValueLength)
       ) {
         Some(tooBig(s"Headers should be smaller"))
       } else {
@@ -543,7 +585,7 @@ class GatewayRequestHandler(
           case _ if relativeUri.startsWith("/.well-known/acme-challenge/")                              =>
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(letsEncrypt()) }
 
-          case _ if ipRegex.matches(request.theHost) && monitoring => super.routeRequest(request)
+          case _ if monitoring && ipRegex.matches(request.theHost) => super.routeRequest(request)
           case str if matchRedirection(str)                        => Some(redirectToMainDomain())
 
           case env.backOfficeHost if !isSecured && toHttps  => Some(redirectToHttps())
