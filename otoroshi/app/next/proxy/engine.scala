@@ -507,23 +507,31 @@ class ProxyEngine() extends RequestHandler {
           case None              => result.vfuture
         }
       }
+      // what has to be done before the response goes: the debug headers below read the overhead, a plugin that releases
+      // in afterRequest what it took in beforeRequest, like the count of the requests in flight, has released it by the
+      // time the client gets the response, and the try it console reads the report as soon as it gets it
       .andThen { case _ =>
         report.markOverheadOut()
-        report.markDurations()
         closeCurrentRequest(env)
         attrs.get(Keys.RouteKey).foreach { route =>
           attrs
             .get(Keys.ContextualPluginsKey)
             .foreach(ctxplgs => callPluginsAfterRequestCallback(snowflake, request, route, ctxplgs))
-          handleHighOverhead(request, route.some)
           if (tryIt) {
             tryItId.foreach(id => env.proxyState.addReport(id, report))
           }
+        }
+      }
+      // the rest of the accounting, which the response used to wait for, runs aside
+      .seffectOn(_.onComplete { _ =>
+        report.markDurations()
+        attrs.get(Keys.RouteKey).foreach { route =>
+          handleHighOverhead(request, route.some)
           if (exportReporting || route.exportReporting) {
             RequestFlowReport(report, route).toAnalytics()
           }
         }
-      }
+      }(using env.analyticsExecutionContext))
       .applyOnIf( /*env.isDev && */ (debug || debugHeaders))(_.map { res =>
         val addHeaders =
           if (reporting && debugHeaders)
@@ -718,21 +726,26 @@ class ProxyEngine() extends RequestHandler {
           case r @ Right(_) => r.vfuture
         }
       }
+      // see handleRequest: what has to be done before the result goes, and the rest aside
       .andThen { case _ =>
         report.markOverheadOut()
-        report.markDurations()
         closeCurrentRequest(env)
         attrs.get(Keys.RouteKey).foreach { route =>
           callPluginsAfterRequestCallback(snowflake, request, route, attrs.get(Keys.ContextualPluginsKey).get)
-          handleHighOverhead(request, route.some)
           if (tryIt) {
             tryItId.foreach(id => env.proxyState.addReport(id, report))
           }
+        }
+      }
+      .seffectOn(_.onComplete { _ =>
+        report.markDurations()
+        attrs.get(Keys.RouteKey).foreach { route =>
+          handleHighOverhead(request, route.some)
           if (exportReporting || route.exportReporting) {
             RequestFlowReport(report, route).toAnalytics()
           }
         }
-      }
+      }(using env.analyticsExecutionContext))
   }
 
   def handleRelayTraffic(route: NgRoute, req: RequestHeader, body: Source[ByteString, ?])(using
