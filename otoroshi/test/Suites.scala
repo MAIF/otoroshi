@@ -152,6 +152,7 @@ class UnitTests
       new DurationHelperSpec(),
       new EventIdsSpec(),
       new WSProxyServerUtilsSpec(),
+      new EventMaskingSpec(),
       // the three deterministic tree router specs. the two others of NgTreeRouterTests stay out: one
       // is a benchmark over a million routes with no assertion, the other downloads the openapi spec
       // of master from github before matching against it

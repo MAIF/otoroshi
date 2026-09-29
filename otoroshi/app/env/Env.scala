@@ -732,6 +732,9 @@ class Env(
   lazy val throttlingWindow: Int                    = configuration.getOptionalWithFileSupport[Int]("app.throttlingWindow").getOrElse(10)
   lazy val analyticsWindow: Int                     = configuration.getOptionalWithFileSupport[Int]("app.analyticsWindow").getOrElse(30)
   lazy val eventsName: String                       = configuration.getOptionalWithFileSupport[String]("app.eventsName").getOrElse("otoroshi")
+  // exported gateway events carry masked values for credential headers and configuration secrets, unless disabled
+  lazy val maskSecretsInEvents: Boolean             =
+    configuration.getOptionalWithFileSupport[Boolean]("app.events.maskSecrets").getOrElse(true)
   lazy val storageRoot: String                      =
     configuration.getOptionalWithFileSupport[String]("app.storageRoot").getOrElse("otoroshi")
   lazy val hideInitialAdminPassword: Boolean        =

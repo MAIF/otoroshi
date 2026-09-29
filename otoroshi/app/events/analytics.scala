@@ -409,7 +409,57 @@ case class GatewayEvent(
 }
 
 object GatewayEvent {
-  def writes(o: GatewayEvent, env: Env): JsValue =
+
+  // an exported event carries no secret: the values of the headers holding credentials are masked, and so are the
+  // fields holding a secret in the configurations the event embeds (route, legacy descriptor, jwt verifier). the
+  // fields are recognised by their name, which catches the settings of otoroshi, not a secret stored under any key
+  val masked: String       = "********"
+  private val secretFields = Set(
+    "secret",
+    "clientsecret",
+    "client_secret",
+    "password",
+    "privatekey",
+    "private_key",
+    "authorization",
+    "token",
+    "access_token",
+    "apikey",
+    "api_key"
+  )
+
+  def credentialHeaders(env: Env): Set[String] =
+    Set(
+      "authorization",
+      "proxy-authorization",
+      "cookie",
+      "set-cookie",
+      env.Headers.OtoroshiClientSecret,
+      env.Headers.OtoroshiAuthorization,
+      env.Headers.OtoroshiBearer,
+      env.Headers.OtoroshiJWTAuthorization,
+      env.Headers.OtoroshiBasicAuthorization
+    ).map(_.toLowerCase)
+
+  def maskHeaders(headers: Seq[Header], credentials: Set[String]): Seq[Header] =
+    if (credentials.isEmpty) headers
+    else headers.map(h => if (credentials.contains(h.key.toLowerCase)) h.copy(value = masked) else h)
+
+  def maskSecrets(value: JsValue): JsValue = value match {
+    case JsObject(fields) =>
+      JsObject(fields.map {
+        case (key, JsString(s)) if s.nonEmpty && secretFields.contains(key.toLowerCase) => (key, JsString(masked))
+        case (key, v)                                                                    => (key, maskSecrets(v))
+      })
+    case JsArray(values)  => JsArray(values.map(maskSecrets))
+    case other            => other
+  }
+
+  def writes(o: GatewayEvent, env: Env): JsValue = {
+    // app.events.maskSecrets (OTOROSHI_EVENTS_MASK_SECRETS) turns the masking off
+    val mask                            = env.maskSecretsInEvents
+    val credentials                     = if (mask) credentialHeaders(env) else Set.empty[String]
+    def secrets(json: JsValue): JsValue = if (mask) maskSecrets(json) else json
     Json.obj(
       "@type"                            -> o.`@type`,
       "@id"                              -> o.`@id`,
@@ -433,16 +483,16 @@ object GatewayEvent {
       "data"                             -> DataInOut.fmt.writes(o.data),
       "status"                           -> o.status,
       "responseChunked"                  -> o.responseChunked,
-      "headers"                          -> o.headers.map(Header.format.writes),
-      "headersOut"                       -> o.headersOut.map(Header.format.writes),
+      "headers"                          -> maskHeaders(o.headers, credentials).map(Header.format.writes),
+      "headersOut"                       -> maskHeaders(o.headersOut, credentials).map(Header.format.writes),
       "identity"                         -> o.identity.map(Identity.format.writes).getOrElse(JsNull).as[JsValue],
       "gwError"                          -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "err"                              -> o.err,
       "@serviceId"                       -> o.`@serviceId`,
       "@service"                         -> o.`@service`,
-      "descriptor"                       -> o.descriptor.map(d => ServiceDescriptor.toJson(d)).getOrElse(JsNull).as[JsValue],
-      "route"                            -> o.route.map(_.json).getOrElse(JsNull).as[JsValue],
-      "matcheJwtVerifier"                -> o.matchedJwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
+      "descriptor"                       -> o.descriptor.map(d => secrets(ServiceDescriptor.toJson(d))).getOrElse(JsNull).as[JsValue],
+      "route"                            -> o.route.map(r => secrets(r.json)).getOrElse(JsNull).as[JsValue],
+      "matcheJwtVerifier"                -> o.matchedJwtVerifier.map(v => secrets(v.asJson)).getOrElse(JsNull).as[JsValue],
       "@product"                         -> o.`@product`,
       "remainingQuotas"                  -> o.remainingQuotas,
       "viz"                              -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue],
@@ -453,10 +503,11 @@ object GatewayEvent {
       "userAgentInfo"                    -> o.userAgentInfo.getOrElse(JsNull).as[JsValue],
       "geolocationInfo"                  -> o.geolocationInfo.getOrElse(JsNull).as[JsValue],
       "extrasData"                       -> o.extraAnalyticsData.getOrElse(JsNull).as[JsValue],
-      "otoroshiHeadersIn"                -> o.otoroshiHeadersIn.map(Header.format.writes),
-      "otoroshiHeadersOut"               -> o.otoroshiHeadersOut.map(Header.format.writes),
+      "otoroshiHeadersIn"                -> maskHeaders(o.otoroshiHeadersIn, credentials).map(Header.format.writes),
+      "otoroshiHeadersOut"               -> maskHeaders(o.otoroshiHeadersOut, credentials).map(Header.format.writes),
       "extraInfos"                       -> o.extraInfos.getOrElse(JsNull).as[JsValue]
     )
+  }
 }
 
 case class TcpEvent(
