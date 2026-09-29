@@ -147,6 +147,7 @@ class UnitTests
       new StripPathSpec(),
       new GzipFlowSpec(),
       new LoadBalancingSpec(),
+      new InMemoryListsSpec(),
       new DurationHelperSpec(),
       new EventIdsSpec(),
       // the three deterministic tree router specs. the two others of NgTreeRouterTests stay out: one

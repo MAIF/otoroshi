@@ -93,6 +93,14 @@ trait SwappableRedis {
 
 object SwappableInMemoryRedis {
   lazy val logger = Logger("otoroshi-atomic-in-memory-datastore")
+
+  // the slice of a list of that size designated by LRANGE / LTRIM arguments: stop is inclusive, and a negative index
+  // counts from the end (-1 is the last element)
+  def listRange(size: Int, start: Long, stop: Long): (Int, Int) = {
+    val from  = math.max(if (start < 0) size + start else start, 0L)
+    val until = math.min(if (stop < 0) size + stop + 1 else stop + 1, size.toLong)
+    (math.min(from, size.toLong).toInt, math.max(until, from).toInt)
+  }
 }
 
 class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSystem)
@@ -332,13 +340,15 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
       store.putIfAbsent(key, emptySeq())
     }
     val seq = store.get(key).asInstanceOf[java.util.List[ByteString]]
-    seq.addAll(0, values.asJava)
+    // like LPUSH, each value goes to the head in turn, so the last one ends up first
+    seq.addAll(0, values.reverse.asJava)
     FastFuture.successful(values.size.toLong)
   }
 
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
-    val seq    = Option(store.get(key)).map(_.asInstanceOf[java.util.List[ByteString]]).getOrElse(emptySeq())
-    val result = seq.asScala.slice(start.toInt, stop.toInt - start.toInt)
+    val seq           = Option(store.get(key)).map(_.asInstanceOf[java.util.List[ByteString]]).getOrElse(emptySeq())
+    val (from, until) = SwappableInMemoryRedis.listRange(seq.size(), start, stop)
+    val result        = seq.asScala.slice(from, until)
     FastFuture.successful(result.toSeq)
   }
 
@@ -346,8 +356,9 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     if (!store.containsKey(key)) {
       store.putIfAbsent(key, emptySeq())
     }
-    val seq    = store.get(key).asInstanceOf[java.util.List[ByteString]]
-    val result = seq.asScala.slice(start.toInt, stop.toInt - start.toInt).asJava
+    val seq           = store.get(key).asInstanceOf[java.util.List[ByteString]]
+    val (from, until) = SwappableInMemoryRedis.listRange(seq.size(), start, stop)
+    val result        = seq.asScala.slice(from, until).asJava
     store.put(key, new java.util.concurrent.CopyOnWriteArrayList[ByteString](result))
     FastFuture.successful(true)
   }
@@ -635,18 +646,21 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
     val seq: MutableSeq[ByteString] = memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq())
-    seq.++=(values)
+    // like LPUSH, each value goes to the head in turn, so the last one ends up first
+    seq.prependAll(values.reverse)
     values.size.toLong.future
   }
 
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     val seq: MutableSeq[ByteString] = memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq())
-    seq.slice(start.toInt, stop.toInt - start.toInt).toSeq.future
+    val (from, until)               = SwappableInMemoryRedis.listRange(seq.size, start, stop)
+    seq.slice(from, until).toSeq.future
   }
 
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {
     val seq: MutableSeq[ByteString] = memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq())
-    val result                      = seq.slice(start.toInt, stop.toInt - start.toInt)
+    val (from, until)               = SwappableInMemoryRedis.listRange(seq.size, start, stop)
+    val result                      = seq.slice(from, until)
     memory.put(key, result)
     true.future
   }
