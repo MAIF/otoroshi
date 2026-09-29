@@ -1783,7 +1783,12 @@ object DynamicSSLEngineProvider {
    * the autoCert path, so that a rebuild cannot install an older state over a newer one.
    */
   private def requestRebuild(env: Env, force: Boolean, sync: Boolean): Unit = {
-    if (sync || !firstSetupDone.get()) {
+    if (currentEnv.get() == null) {
+      // the certificates are read through the env that the Env registers a moment after boot (setCurrentEnv),
+      // and the certificate datastore loop can fire before that: there is nothing to build from yet. The state
+      // loader job only starts after the registration, and its first sync does the first build
+      ()
+    } else if (sync || !firstSetupDone.get()) {
       // the first build must be in place before the listeners serve anything (isFirstSetupDone gates
       // readiness), and forceUpdate is an explicit action whose caller waits for the result
       Try(rebuildContexts(env, contextsFingerprint(env))) match {
