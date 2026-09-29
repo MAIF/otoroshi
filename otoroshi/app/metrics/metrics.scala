@@ -67,6 +67,9 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private val metricRegistry: SemanticMetricRegistry = new SemanticMetricRegistry
   private val jmxRegistry: MetricRegistry            = new MetricRegistry
+  // a timer per name, created once and registered as the same instance in both registries: an update is applied once,
+  // the jmx registry only shows it, and the timer is not looked up in each of them at every update
+  private val timers                                 = new UnboundedConcurrentHashMap[String, Timer]()
   private lazy val openTelemetryRegistry             = initOpenTelemetryMetrics()
 
   private val tmbs = Try(ManagementFactory.getPlatformMBeanServer)
@@ -243,15 +246,28 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     openTelemetryRegistry.foreach(_.withTimer(name.getKey).record(Math.abs(FiniteDuration(duration, unit).toNanos)))
   }
 
+  private def timer(name: String): Timer = {
+    val existing = timers.get(name)
+    if (existing ne null) existing
+    else
+      timers.computeIfAbsent(
+        name,
+        _ => {
+          val created = metricRegistry.timer(MetricId.build(name))
+          // a name the jmx registry already has for another kind of metric only keeps the timer out of jmx
+          Try(jmxRegistry.register(name, created))
+          created
+        }
+      )
+  }
+
   def timerUpdate(name: String, duration: Long, unit: TimeUnit): Unit = {
-    metricRegistry.timer(MetricId.build(name)).update(duration, unit)
-    jmxRegistry.timer(name).update(duration, unit)
+    timer(name).update(duration, unit)
     openTelemetryRegistry.foreach(_.withTimer(name).record(Math.abs(FiniteDuration(duration, unit).toNanos)))
   }
 
   override def withTimer[T](name: String, display: Boolean = false)(f: => T): T = {
-    val jmxCtx = jmxRegistry.timer(name).time()
-    val ctx    = metricRegistry.timer(MetricId.build(name)).time()
+    val ctx = timer(name).time()
     try {
       val res     = f
       val elapsed = ctx.stop()
@@ -260,13 +276,11 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
           s"elapsed time for $name: ${elapsed} nanoseconds / ${FiniteDuration(elapsed, TimeUnit.NANOSECONDS).toMillis} milliseconds."
         )
       }
-      jmxCtx.close()
       openTelemetryRegistry.foreach(_.withTimer(name).record(Math.abs(elapsed)))
       res
     } catch {
       case e: Throwable =>
         ctx.close()
-        jmxCtx.close()
         metricRegistry.counter(MetricId.build(name + ".errors")).inc()
         jmxRegistry.counter(name + ".errors").inc()
         throw e
@@ -276,20 +290,19 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   override def withTimerAsync[T](name: String, display: Boolean = false)(
       f: => Future[T]
   )(using ec: ExecutionContext): Future[T] = {
-    val jmxCtx = jmxRegistry.timer(name).time()
-    val ctx    = metricRegistry.timer(MetricId.build(name)).time()
+    val ctx = timer(name).time()
+    // the callback only stops the timer: it runs where the future completes, and adds no hop to its caller
     f.andThen { case r =>
       val elapsed = ctx.stop()
       if (display) {
         logger.info(s"elapsed time for $name: ${elapsed} nanoseconds.")
       }
       openTelemetryRegistry.foreach(_.withTimer(name).record(Math.abs(elapsed)))
-      jmxCtx.close()
       if (r.isFailure) {
         metricRegistry.counter(MetricId.build(name + ".errors")).inc()
         jmxRegistry.counter(name + ".errors").inc()
       }
-    }
+    }(using ExecutionContext.parasitic)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

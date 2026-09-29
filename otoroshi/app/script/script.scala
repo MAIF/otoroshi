@@ -1242,12 +1242,10 @@ class ScriptManager(env: Env) {
 
   def dispatchEvent(evt: OtoroshiEvent)(using ec: ExecutionContext): Unit = {
     if (env.useEventStreamForScriptEvents) {
-      env.metrics.withTimer("otoroshi.core.proxy.event-dispatch") {
-        env.analyticsActorSystem.eventStream.publish(evt)
-      }
+      env.analyticsActorSystem.eventStream.publish(evt)
     } else {
       Future {
-        env.metrics.withTimer("otoroshi.core.proxy.event-dispatch") {
+        {
           val pluginListeners = listeningCpScripts.get()
           if (pluginListeners.nonEmpty) {
             pluginListeners.foreach(l => l.onEvent(evt)(using env))

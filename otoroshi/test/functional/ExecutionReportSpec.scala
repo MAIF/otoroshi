@@ -95,6 +95,15 @@ class ExecutionReportSpec extends org.scalatest.wordspec.AnyWordSpec with org.sc
       )
     }
 
+    "build the names of the timers of its steps and of its plugins once" in {
+      NgExecutionReport.stepTimerName("call-backend") mustBe "ng-report-request-step-call-backend"
+      NgExecutionReport.pluginTimerName("transform-request", "cp:functional.Probe") mustBe
+      "ng-report-transform-request-cp:functional.Probe"
+      (NgExecutionReport.stepTimerName("call-backend") eq NgExecutionReport.stepTimerName("call-backend")) mustBe true
+      (NgExecutionReport.pluginTimerName("transform-request", "cp:functional.Probe") eq
+      NgExecutionReport.pluginTimerName("transform-request", "cp:functional.Probe")) mustBe true
+    }
+
     "count the time spent building a context in the step it describes" in {
       val report = NgExecutionReport("report-timing", reporting = true)
       report.start("described")

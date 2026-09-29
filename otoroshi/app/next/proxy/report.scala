@@ -10,7 +10,7 @@ import play.api.libs.json.*
 
 import otoroshi.utils.syntax.implicits.*
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import scala.concurrent.duration.*
 
 object DurationHelper {
@@ -99,6 +99,24 @@ case class NgReportPluginSequence(
 
 object NgExecutionReport {
   def apply(id: String, reporting: Boolean): NgExecutionReport = new NgExecutionReport(id, DateTime.now(), reporting)
+
+  // the names of the timers of the steps and of the plugins of each phase, built once instead of at every request
+  private val stepTimerNames   = new ConcurrentHashMap[String, String]()
+  private val pluginTimerNames = new ConcurrentHashMap[String, ConcurrentHashMap[String, String]]()
+
+  def stepTimerName(task: String): String = {
+    val existing = stepTimerNames.get(task)
+    if (existing ne null) existing else stepTimerNames.computeIfAbsent(task, t => "ng-report-request-step-" + t)
+  }
+
+  def pluginTimerName(phase: String, plugin: String): String = {
+    val phaseNames = pluginTimerNames.get(phase)
+    val names      =
+      if (phaseNames ne null) phaseNames
+      else pluginTimerNames.computeIfAbsent(phase, _ => new ConcurrentHashMap[String, String]())
+    val existing   = names.get(plugin)
+    if (existing ne null) existing else names.computeIfAbsent(plugin, p => s"ng-report-$phase-$p")
+  }
 }
 
 sealed trait NgExecutionReportState {
@@ -136,7 +154,7 @@ case class NgExecutionReportStep(
   def duration: Long      = duration_ns.nanos.toMillis
   def durationStr: String = DurationHelper.nanoDurationToString(duration_ns)
   def markDuration()(using env: Env): Unit = {
-    env.metrics.timerUpdate("ng-report-request-step-" + task, duration_ns, TimeUnit.NANOSECONDS)
+    env.metrics.timerUpdate(NgExecutionReport.stepTimerName(task), duration_ns, TimeUnit.NANOSECONDS)
   }
 }
 
@@ -166,7 +184,8 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   def markPluginSeq(name: String, env: Env): Unit = {
     getStep(name).flatMap(_.sequence).foreach { sequence =>
       sequence.plugins.foreach { plugin =>
-        env.metrics.timerUpdate(s"ng-report-${name}-${plugin.plugin}", plugin.stop_ns - plugin.start_ns, TimeUnit.NANOSECONDS)
+        val timer = NgExecutionReport.pluginTimerName(name, plugin.plugin)
+        env.metrics.timerUpdate(timer, plugin.stop_ns - plugin.start_ns, TimeUnit.NANOSECONDS)
       }
     }
   }
@@ -176,13 +195,16 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
     env.metrics.timerUpdate("ng-report-request-overhead", overheadIn_ns + overheadOut_ns, TimeUnit.NANOSECONDS)
     env.metrics.timerUpdate("ng-report-request-overhead-in", overheadIn_ns, TimeUnit.NANOSECONDS)
     env.metrics.timerUpdate("ng-report-request-overhead-out", overheadOut_ns, TimeUnit.NANOSECONDS)
-    markPluginSeq("call-before-request-callbacks", env)
-    markPluginSeq("call-pre-route-plugins", env)
-    markPluginSeq("call-access-validator-plugins", env)
-    markPluginSeq("transform-request", env)
-    markPluginSeq("transform-response", env)
-    markPluginSeq("call-after-request-callbacks", env)
-    steps.foreach(_.markDuration())
+    // a timer per step and per plugin, most of the timers of a request, unless otoroshi.metrics.detailed is off
+    if (env.metricsDetailed) {
+      markPluginSeq("call-before-request-callbacks", env)
+      markPluginSeq("call-pre-route-plugins", env)
+      markPluginSeq("call-access-validator-plugins", env)
+      markPluginSeq("transform-request", env)
+      markPluginSeq("transform-response", env)
+      markPluginSeq("call-after-request-callbacks", env)
+      steps.foreach(_.markDuration())
+    }
   }
 
   def getStep(task: String): Option[NgExecutionReportStep] = {

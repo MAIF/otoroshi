@@ -408,6 +408,9 @@ class Env(
   lazy val metricsEnabled: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.metrics.enabled").getOrElse(true)
 
+  lazy val metricsDetailed: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.metrics.detailed").getOrElse(true)
+
   lazy val staticExposedDomain: Option[String] =
     configuration.getOptionalWithFileSupport[String]("otoroshi.options.staticExposedDomain")
 

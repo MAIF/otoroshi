@@ -161,7 +161,7 @@ case class Plugins(
   private def getHandlersMap(
       request: RequestHeader
   )(using ec: ExecutionContext, env: Env): (Boolean, Map[String, RequestHandler]) =
-    env.metrics.withTimer("otoroshi.plugins.req-handlers.handlers-map-compute") {
+    {
       request_handlers_cache.get(
         request_handlers_cache_name,
         _ => {
@@ -181,7 +181,7 @@ case class Plugins(
     }
 
   def canHandleRequest(request: RequestHeader)(using ec: ExecutionContext, env: Env): Boolean =
-    env.metrics.withTimer("otoroshi.plugins.req-handlers.can-handle-request") {
+    {
       if (enabled) {
         val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
         if (handlersMap.nonEmpty) {
@@ -207,7 +207,7 @@ case class Plugins(
   def handleRequest(
       request: Request[Source[ByteString, ?]],
       defaultRouting: Request[Source[ByteString, ?]] => Future[Result]
-  )(using ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimer("handle-ng-dispatch") {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     if (enabled) {
       val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
       val maybeHandler                          =
@@ -231,7 +231,7 @@ case class Plugins(
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, ?]]] =
-    env.metrics.withTimer("handle-ng-ws-dispatch") {
+    {
       if (enabled) {
         val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
         val maybeHandler                          =
