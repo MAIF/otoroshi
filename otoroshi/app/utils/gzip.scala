@@ -11,6 +11,7 @@ import play.api.http.*
 import play.api.libs.json.*
 import play.api.mvc.*
 
+import java.util.zip.Deflater
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -259,8 +260,11 @@ case class GzipConfig(
 
 object GzipFlow {
 
+  // the level of the configuration, kept within what Deflater accepts (0 to 9, -1 for its default): the configuration
+  // does not check it, and a level out of range would make every compressed response fail
   def gzip(bufferSize: Int = 512, compressionLevel: Int = 5): Flow[ByteString, ByteString, ?] = {
-    Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gzip)
+    val level = math.max(Deflater.DEFAULT_COMPRESSION, math.min(Deflater.BEST_COMPRESSION, compressionLevel))
+    Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gzip(level))
   }
 
   def gunzip(bufferSize: Int = 512, max: Int = 64 * 1024): Flow[ByteString, ByteString, ?] = {
