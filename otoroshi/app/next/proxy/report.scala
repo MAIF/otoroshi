@@ -15,18 +15,20 @@ import scala.concurrent.duration.*
 
 object DurationHelper {
 
-  private lazy val df = {
+  // one format per thread: a DecimalFormat is not meant to be shared, and the jdk serialises its format calls on a
+  // lock that every thread writing debug headers would contend on
+  private val df = ThreadLocal.withInitial { () =>
     val dff = new java.text.DecimalFormat("#.###")
     dff.setRoundingMode(java.math.RoundingMode.CEILING)
     dff
   }
 
   def formatMillis(value: Long): String = {
-    df.format(value.toDouble / 1000000.0).replace(",", ".")
+    df.get().format(value.toDouble / 1000000.0).replace(",", ".")
   }
 
   def formatMicros(value: Long): String = {
-    df.format(value.toDouble / 1000.0).replace(",", ".")
+    df.get().format(value.toDouble / 1000.0).replace(",", ".")
   }
 
   def nanoDurationToString(d_ns: Long): String = {
