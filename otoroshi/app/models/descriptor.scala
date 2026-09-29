@@ -200,6 +200,10 @@ trait LoadBalancing {
 }
 
 object LoadBalancing {
+  // the index of the next target from a counter shared by the requests. floorMod keeps it among the targets once the
+  // counter has gone past Int.MaxValue, where % gives a negative index and every selection fails
+  def nextIndex(counter: AtomicInteger, size: Int): Int =
+    Math.floorMod(counter.incrementAndGet(), if (size > 0) size else 1)
   def fromString(name: String): LoadBalancing = {
     format.reads(Json.obj("type" -> name)).getOrElse(RoundRobin)
   }
@@ -260,7 +264,7 @@ object LeastConnections extends LoadBalancing {
       case (t, load) if load == minLoad => t
     }
     val leastLoadedTargetsSize = if (leastLoadedTargets.nonEmpty) leastLoadedTargets.size else 1
-    leastLoadedTargets(reqCounter.incrementAndGet() % leastLoadedTargetsSize)
+    leastLoadedTargets(LoadBalancing.nextIndex(reqCounter, leastLoadedTargetsSize))
   }
 }
 
@@ -283,7 +287,7 @@ object PowerOfTwoRandomChoices extends LoadBalancing {
       targetIndex2 = (targetIndex2 + 1) % targets.length
     }
     val target1               = targets.apply(targetIndex1)
-    val target2               = targets.apply(targetIndex1)
+    val target2               = targets.apply(targetIndex2)
     val inflightTarget1: Long = LocalTargetsInflightRequestMonitor.inflightFor(target1)
     val inflightTarget2: Long = LocalTargetsInflightRequestMonitor.inflightFor(target2)
     if (inflightTarget1 < inflightTarget2) {
@@ -306,7 +310,7 @@ object RoundRobin extends LoadBalancing {
       descId: String,
       attempts: Int
   )(using env: Env): Target = {
-    val index: Int = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+    val index: Int = LoadBalancing.nextIndex(reqCounter, targets.size)
     targets.apply(index)
   }
 }
@@ -379,7 +383,7 @@ class CookieHash(cookieName: String) extends LoadBalancing {
   )(using env: Env): Target = {
     req.cookies.get(cookieName).map(_.value) match {
       case None             => {
-        val index: Int = CookieHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+        val index: Int = LoadBalancing.nextIndex(CookieHash.reqCounter, targets.size)
         targets.apply(index)
       }
       case Some(trackingId) => {
@@ -408,7 +412,7 @@ class QueryHash(queryName: String) extends LoadBalancing {
   )(using env: Env): Target = {
     req.getQueryString(queryName) match {
       case None             => {
-        val index: Int = QueryHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+        val index: Int = LoadBalancing.nextIndex(QueryHash.reqCounter, targets.size)
         targets.apply(index)
       }
       case Some(trackingId) => {
@@ -437,7 +441,7 @@ class HeaderHash(headerName: String) extends LoadBalancing {
   )(using env: Env): Target = {
     req.headers.get(headerName) match {
       case None             => {
-        val index: Int = HeaderHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+        val index: Int = LoadBalancing.nextIndex(HeaderHash.reqCounter, targets.size)
         targets.apply(index)
       }
       case Some(trackingId) => {
