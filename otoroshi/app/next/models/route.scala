@@ -618,7 +618,8 @@ case class NgRoute(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
-            out = Json
+            out = if (!report.keepContexts) JsNull
+            else Json
               .obj(
                 "not_triggered" -> nottrig,
                 "result"        -> result
@@ -648,7 +649,7 @@ case class NgRoute(
         wrapper.plugin.transformError(ctx).transform {
           case Failure(exception) =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(
               otoroshiJsonError(
                 Json
@@ -663,7 +664,7 @@ case class NgRoute(
             )
           case Success(resp_next) =>
             markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(resp_next.asResult)
         }
       } else {
@@ -696,7 +697,7 @@ case class NgRoute(
                     debug,
                     Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
@@ -717,7 +718,7 @@ case class NgRoute(
                   )
                 case Success(resp_next) if plugins.size == 1 =>
                   markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Right(resp_next))
                 case Success(resp_next)                      =>
                   markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))

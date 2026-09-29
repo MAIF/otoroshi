@@ -1195,7 +1195,7 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
                 debug,
                 Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
               )
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               Left(
                 Results.InternalServerError(
                   Json.obj(
@@ -1216,11 +1216,11 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
                   "headers" -> result.header.headers
                 )
               )
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               Left(result).vfuture
             case Success(Right(req_next)) if plugins.size == 1 =>
               ctx.markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               Right(req_next).vfuture
             case Success(Right(req_next))                      =>
               ctx.markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
@@ -1280,7 +1280,7 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
                 debug,
                 Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
               )
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               Left(
                 Results.InternalServerError(
                   Json.obj(
@@ -1301,11 +1301,11 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
                   "headers" -> result.header.headers
                 )
               )
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               Left(result).vfuture
             case Success(Right(resp_next)) if plugins.size == 1 =>
               ctx.markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               Right(resp_next).vfuture
             case Success(Right(resp_next))                      =>
               ctx.markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
@@ -1358,7 +1358,7 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
                 debug,
                 Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
               )
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               Left(
                 NgPreRoutingErrorWithResult(
                   Results.InternalServerError(
@@ -1382,11 +1382,11 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
                   "headers" -> result.header.headers
                 )
               )
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               Left(NgPreRoutingErrorWithResult(result)).vfuture
             case Success(Right(_)) if plugins.size == 1 =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               Right(Done).vfuture
             case Success(Right(_))                      =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
@@ -1438,7 +1438,7 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
                 debug,
                 Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
               )
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               NgAccess
                 .NgDenied(
                   Results.InternalServerError(
@@ -1452,11 +1452,11 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
                 .vfuture
             case Success(NgAccess.NgDenied(result))               =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               NgAccess.NgDenied(result).vfuture
             case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
-              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              ctx.report.setSequence(ctx.sequence.stopSequence())
               NgAccess.NgAllowed.vfuture
             case Success(NgAccess.NgAllowed)                      =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))

@@ -1,7 +1,7 @@
 package functional
 
-import otoroshi.next.proxy.NgExecutionReport
-import play.api.libs.json.{JsNull, JsValue, Json}
+import otoroshi.next.proxy.{NgExecutionReport, NgReportPluginSequence, NgReportPluginSequenceItem}
+import play.api.libs.json.{JsDefined, JsNull, JsValue, Json}
 
 // the execution report of a request: the contexts of its steps are only built when it reports, and the time spent
 // building one stays in the step it describes
@@ -33,6 +33,65 @@ class ExecutionReportSpec extends org.scalatest.wordspec.AnyWordSpec with org.sc
         ("second", Json.obj("at" -> "set")),
         ("third", JsNull),
         ("request-success", JsNull)
+      )
+    }
+
+    "keep the plugin sequence of a step typed, and render it as the context of the step" in {
+      val report   = NgExecutionReport("report-sequence", reporting = true)
+      val sequence = NgReportPluginSequence(
+        size = 1,
+        kind = "request-transformer-plugins",
+        start = 1000L,
+        start_ns = 10L,
+        stop = 1002L,
+        stop_ns = 2000010L,
+        plugins = Seq(NgReportPluginSequenceItem("cp:functional.Probe", "Probe", 1000L, 10L, 1001L, 1000010L, JsNull, JsNull))
+      )
+      report.start("transform-request")
+      report.setSequence(sequence)
+      report.markSuccess()
+      val step     = report.steps.head
+      step.sequence mustBe Some(sequence)
+      (step.json \ "ctx") mustBe JsDefined(sequence.json)
+      (sequence.json \ "plugins" \ 0 \ "duration_ns").as[Long] mustBe 1000000L
+    }
+
+    "only build the contexts of the steps for a report that something reads, and keep the sequences anyway" in {
+      val report   = NgExecutionReport("report-unread", reporting = true)
+      report.keepContexts = false
+      var built    = 0
+      def context(): JsValue = { built += 1; Json.obj("built" -> true) }
+      val sequence = NgReportPluginSequence(1, "access-validator-plugins", 0L, 0L, 0L, 0L, Seq.empty)
+      report.start("start", context())
+      report.setContext(context())
+      report.markDoneAndStart("phase", Some(context()))
+      report.setSequence(sequence)
+      report.markSuccess()
+      built mustBe 0
+      report.steps.map(step => (step.task, step.ctx, step.sequence)) mustBe Seq(
+        ("start", JsNull, None),
+        ("phase", JsNull, Some(sequence)),
+        ("request-success", JsNull, None)
+      )
+    }
+
+    "let the last of a context and a sequence set in a step describe it" in {
+      val report   = NgExecutionReport("report-last", reporting = true)
+      val sequence = NgReportPluginSequence(1, "pre-route-plugins", 0L, 0L, 0L, 0L, Seq.empty)
+      report.start("first")
+      report.setSequence(sequence)
+      report.setContext(Json.obj("then" -> "context"))
+      report.markDoneAndStart("second")
+      report.setContext(Json.obj("then" -> "sequence"))
+      report.setSequence(sequence)
+      report.markDoneAndStart("third")
+      report.setSequence(sequence)
+      report.markDoneAndStart("fourth", Some(Json.obj("given" -> "on close")))
+      report.markSuccess()
+      report.steps.take(3).map(step => (step.task, step.ctx, step.sequence)) mustBe Seq(
+        ("first", Json.obj("then" -> "context"), None),
+        ("second", JsNull, Some(sequence)),
+        ("third", Json.obj("given" -> "on close"), None)
       )
     }
 

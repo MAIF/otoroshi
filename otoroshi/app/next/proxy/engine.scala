@@ -358,6 +358,8 @@ class ProxyEngine() extends RequestHandler {
     val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _, _, _) = _config
     val useTree                                                                                              = _config.useTree
     implicit val report                                                                                      = NgExecutionReport(snowflake, reporting)
+    // the contexts of the steps are only built when something reads the report, see findRoute for the route side
+    report.keepContexts = tryIt || exportReporting || env.isDev
     report.start("start-handling")
 
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
@@ -603,6 +605,7 @@ class ProxyEngine() extends RequestHandler {
     val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _, _, _) = _config
     val useTree                                                                               = _config.useTree
     implicit val report                                                                       = NgExecutionReport(snowflake, reporting)
+    report.keepContexts = tryIt || exportReporting || env.isDev
 
     report.start("start-handling")
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
@@ -848,7 +851,8 @@ class ProxyEngine() extends RequestHandler {
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
-            out = Json
+            out = if (!report.keepContexts) JsNull
+            else Json
               .obj(
                 "result" -> result
               )
@@ -887,7 +891,7 @@ class ProxyEngine() extends RequestHandler {
         FEither(wrapper.plugin.access(ctx).transform {
           case Failure(exception)                 =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(
               Left(
                 NgResultProxyEngineError(
@@ -908,11 +912,11 @@ class ProxyEngine() extends RequestHandler {
             )
           case Success(NgAccess.NgDenied(result)) =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(Left(NgResultProxyEngineError(result)))
           case Success(NgAccess.NgAllowed)        =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(Right(Done))
         })
       } else {
@@ -948,7 +952,7 @@ class ProxyEngine() extends RequestHandler {
                     debug,
                     Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
@@ -971,11 +975,11 @@ class ProxyEngine() extends RequestHandler {
                   )
                 case Success(NgAccess.NgDenied(result))               =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Left(NgResultProxyEngineError(result)))
                 case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Right(Done))
                 case Success(NgAccess.NgAllowed)                      =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
@@ -1132,6 +1136,7 @@ class ProxyEngine() extends RequestHandler {
         }
         attrs.put(Keys.RouteKey -> route.route)
         attrs.put(Keys.MatchedRouteKey -> route)
+        if (route.route.exportReporting || route.route.debugFlow) report.keepContexts = true
         val rts: Seq[String] = attrs.get(Keys.MatchedRoutesKey).getOrElse(Seq.empty[String]).toSeq
         report.setContext(
           Json.obj(
@@ -1325,7 +1330,8 @@ class ProxyEngine() extends RequestHandler {
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
-            out = Json
+            out = if (!report.keepContexts) JsNull
+            else Json
               .obj(
                 "not_triggered" -> plugins.tpwoCallbacks.map(_.instance.plugin),
                 "result"        -> result
@@ -1358,7 +1364,7 @@ class ProxyEngine() extends RequestHandler {
             .beforeRequest(ctx)
             .map { _ =>
               markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-              report.setContext(sequence.stopSequence().json)
+              report.setSequence(sequence.stopSequence())
               Right(Done)
             }
             .recover { case exception: Throwable =>
@@ -1368,7 +1374,7 @@ class ProxyEngine() extends RequestHandler {
                 debug,
                 Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
               )
-              report.setContext(sequence.stopSequence().json)
+              report.setSequence(sequence.stopSequence())
               Left(
                 NgResultProxyEngineError(
                   otoroshiJsonError(
@@ -1418,7 +1424,7 @@ class ProxyEngine() extends RequestHandler {
                     debug,
                     Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
@@ -1441,7 +1447,7 @@ class ProxyEngine() extends RequestHandler {
                   )
                 case Success(_) if plugins.size == 1 =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Right(Done))
                 case Success(_)                      =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
@@ -1503,7 +1509,8 @@ class ProxyEngine() extends RequestHandler {
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
-            out = Json
+            out = if (!report.keepContexts) JsNull
+            else Json
               .obj(
                 "not_triggered" -> plugins.tpwoCallbacks.map(_.instance.plugin),
                 "result"        -> result
@@ -1535,7 +1542,7 @@ class ProxyEngine() extends RequestHandler {
             .afterRequest(ctx)
             .map { _ =>
               markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-              report.setContext(sequence.stopSequence().json)
+              report.setSequence(sequence.stopSequence())
               Right(Done)
             }
             .recover { case exception: Throwable =>
@@ -1545,7 +1552,7 @@ class ProxyEngine() extends RequestHandler {
                 debug,
                 Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
               )
-              report.setContext(sequence.stopSequence().json)
+              report.setSequence(sequence.stopSequence())
               Left(
                 NgResultProxyEngineError(
                   otoroshiJsonError(
@@ -1594,7 +1601,7 @@ class ProxyEngine() extends RequestHandler {
                     debug,
                     Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
@@ -1617,7 +1624,7 @@ class ProxyEngine() extends RequestHandler {
                   )
                 case Success(_) if plugins.size == 1 =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Right(Done))
                 case Success(_)                      =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
@@ -1669,7 +1676,8 @@ class ProxyEngine() extends RequestHandler {
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
-            out = Json
+            out = if (!report.keepContexts) JsNull
+            else Json
               .obj(
                 "result" -> result
               )
@@ -1718,7 +1726,7 @@ class ProxyEngine() extends RequestHandler {
                   debug,
                   Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
                 )
-                report.setContext(sequence.stopSequence().json)
+                report.setSequence(sequence.stopSequence())
                 Success(
                   Left(
                     NgResultProxyEngineError(
@@ -1751,11 +1759,11 @@ class ProxyEngine() extends RequestHandler {
                     "headers" -> result.header.headers
                   )
                 )
-                report.setContext(sequence.stopSequence().json)
+                report.setSequence(sequence.stopSequence())
                 Success(Left(NgResultProxyEngineError(result)))
               case Success(Right(_))  =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-                report.setContext(sequence.stopSequence().json)
+                report.setSequence(sequence.stopSequence())
                 Success(Right(Done))
             }
         )
@@ -1789,7 +1797,7 @@ class ProxyEngine() extends RequestHandler {
                     debug,
                     Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
@@ -1822,11 +1830,11 @@ class ProxyEngine() extends RequestHandler {
                       "headers" -> result.header.headers
                     )
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Left(NgResultProxyEngineError(result)))
                 case Success(Right(_)) if plugins.size == 1 =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Right(Done))
                 case Success(Right(_))                      =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
@@ -1878,7 +1886,8 @@ class ProxyEngine() extends RequestHandler {
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
-            out = Json
+            out = if (!report.keepContexts) JsNull
+            else Json
               .obj(
                 "result" -> result
               )
@@ -1921,7 +1930,7 @@ class ProxyEngine() extends RequestHandler {
         FEither(wrapper.plugin.access(ctx).transform {
           case Failure(exception)                 =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(
               Left(
                 NgResultProxyEngineError(
@@ -1942,11 +1951,11 @@ class ProxyEngine() extends RequestHandler {
             )
           case Success(NgAccess.NgDenied(result)) =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(Left(NgResultProxyEngineError(result)))
           case Success(NgAccess.NgAllowed)        =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(Right(Done))
         })
       } else {
@@ -1984,7 +1993,7 @@ class ProxyEngine() extends RequestHandler {
                     debug,
                     Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
@@ -2007,11 +2016,11 @@ class ProxyEngine() extends RequestHandler {
                   )
                 case Success(NgAccess.NgDenied(result))               =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Left(NgResultProxyEngineError(result)))
                 case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Right(Done))
                 case Success(NgAccess.NgAllowed)                      =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
@@ -2925,7 +2934,8 @@ class ProxyEngine() extends RequestHandler {
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
-            out = Json
+            out = if (!report.keepContexts) JsNull
+            else Json
               .obj(
                 "not_triggered" -> plugins.tpwoRequest.map(_.instance.plugin),
                 "result"        -> result
@@ -2972,7 +2982,7 @@ class ProxyEngine() extends RequestHandler {
         FEither(wrapper.plugin.transformRequest(ctx).transform {
           case Failure(exception)       =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(
               Left(
                 NgResultProxyEngineError(
@@ -2998,11 +3008,11 @@ class ProxyEngine() extends RequestHandler {
               debug,
               Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers)
             )
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(Left(NgResultProxyEngineError(result)))
           case Success(Right(req_next)) =>
             markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(Right(req_next))
         })
       } else {
@@ -3040,7 +3050,7 @@ class ProxyEngine() extends RequestHandler {
                     debug,
                     Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
@@ -3072,11 +3082,11 @@ class ProxyEngine() extends RequestHandler {
                       "headers" -> result.header.headers
                     )
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Left(NgResultProxyEngineError(result)))
                 case Success(Right(req_next)) if plugins.size == 1 =>
                   markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Right(req_next))
                 case Success(Right(req_next))                      =>
                   markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
@@ -3526,7 +3536,8 @@ class ProxyEngine() extends RequestHandler {
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
-            out = Json
+            out = if (!report.keepContexts) JsNull
+            else Json
               .obj(
                 "not_triggered" -> plugins.tpwoResponse.map(_.instance.plugin),
                 "result"        -> result
@@ -3573,7 +3584,7 @@ class ProxyEngine() extends RequestHandler {
         FEither(wrapper.plugin.transformResponse(ctx).transform {
           case Failure(exception)        =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(
               Left(
                 NgResultProxyEngineError(
@@ -3599,11 +3610,11 @@ class ProxyEngine() extends RequestHandler {
               debug,
               Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers)
             )
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(Left(NgResultProxyEngineError(result)))
           case Success(Right(resp_next)) =>
             markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-            report.setContext(sequence.stopSequence().json)
+            report.setSequence(sequence.stopSequence())
             Success(Right(resp_next))
         })
       } else {
@@ -3641,7 +3652,7 @@ class ProxyEngine() extends RequestHandler {
                     debug,
                     Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
@@ -3673,11 +3684,11 @@ class ProxyEngine() extends RequestHandler {
                       "headers" -> result.header.headers
                     )
                   )
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Left(NgResultProxyEngineError(result)))
                 case Success(Right(resp_next)) if plugins.size == 1 =>
                   markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-                  report.setContext(sequence.stopSequence().json)
+                  report.setSequence(sequence.stopSequence())
                   promise.trySuccess(Right(resp_next))
                 case Success(Right(resp_next))                      =>
                   markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))

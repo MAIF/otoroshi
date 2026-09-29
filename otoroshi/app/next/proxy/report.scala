@@ -113,7 +113,16 @@ object NgExecutionReportState {
   case object Failed     extends NgExecutionReportState { def name: String = "Failed"     }
 }
 
-case class NgExecutionReportStep(task: String, start: Long, stop: Long, duration_ns: Long, ctx: JsValue = JsNull) {
+// the plugins of a phase are kept typed in `sequence`: the timers of the report read them as they are, and they only
+// become json, the context of their step, when the report is rendered
+case class NgExecutionReportStep(
+    task: String,
+    start: Long,
+    stop: Long,
+    duration_ns: Long,
+    ctx: JsValue = JsNull,
+    sequence: Option[NgReportPluginSequence] = None
+) {
   def json: JsValue       = Json.obj(
     "task"        -> task,
     "start"       -> start,
@@ -122,7 +131,7 @@ case class NgExecutionReportStep(task: String, start: Long, stop: Long, duration
     "stop_fmt"    -> new DateTime(stop).toString(),
     "duration"    -> duration_ns.nano.toMillis,
     "duration_ns" -> duration_ns,
-    "ctx"         -> ctx
+    "ctx"         -> sequence.map(_.json).getOrElse(ctx)
   )
   def duration: Long      = duration_ns.nanos.toMillis
   def durationStr: String = DurationHelper.nanoDurationToString(duration_ns)
@@ -136,11 +145,11 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   // IDEA: move into one big case class with mutable ref if issues are declared ?
   // I know mutability is bad etc but here, i know for sure that concurrency is not an issue
   var currentTask: String               = ""
-  var lastStart: Long                   = creation.toDate.getTime
+  var lastStart: Long                   = creation.getMillis
   val start_ns: Long                    = System.nanoTime()
   var lastStart_ns: Long                = start_ns
   var state: NgExecutionReportState     = NgExecutionReportState.Created
-  var steps: Seq[NgExecutionReportStep] = Seq.empty
+  var steps: Seq[NgExecutionReportStep] = Vector.empty
   // var gduration = -1L
   var gduration_ns                      = -1L
   var overheadIn_ns                     = -1L
@@ -148,15 +157,18 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   var overheadOutStart_ns               = -1L //start_ns // creation.toDate.getTime
   var termination                       = creation
   var ctx: JsValue                      = JsNull
+  var sequence: Option[NgReportPluginSequence] = None
+  // whether something reads the contexts of the steps: the export of the report, the try it console, the debug flow
+  // of a route, the error page in dev. When nothing does, they are not built: the timers of the report only need the
+  // durations and the plugin sequences, which are kept anyway
+  var keepContexts: Boolean             = true
 
   def markPluginSeq(name: String, env: Env): Unit = {
-    getStep(name)
-      .flatMap(_.ctx.select("plugins").asOpt[JsArray])
-      .map(_.value.map { plugin =>
-        val pluginId = plugin.select("plugin").asString
-        val duration = plugin.select("duration_ns").asLong
-        env.metrics.timerUpdate(s"ng-report-${name}-${pluginId}", duration, TimeUnit.NANOSECONDS)
-      })
+    getStep(name).flatMap(_.sequence).foreach { sequence =>
+      sequence.plugins.foreach { plugin =>
+        env.metrics.timerUpdate(s"ng-report-${name}-${plugin.plugin}", plugin.stop_ns - plugin.start_ns, TimeUnit.NANOSECONDS)
+      }
+    }
   }
 
   def markDurations()(using env: Env): Unit = {
@@ -221,10 +233,20 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
     this
   }
 
-  // the contexts are by-name, so that a report that does not report builds none of them
+  // the contexts are by-name, so that a report that does not report, or that nothing reads, builds none of them. The
+  // last of a context and a sequence set in a step describes it
   def setContext(context: => JsValue): NgExecutionReport = {
     if (reporting) {
-      ctx = context
+      ctx = if (keepContexts) context else JsNull
+      sequence = None
+    }
+    this
+  }
+
+  def setSequence(pluginSequence: => NgReportPluginSequence): NgExecutionReport = {
+    if (reporting) {
+      sequence = Some(pluginSequence)
+      ctx = JsNull
     }
     this
   }
@@ -267,7 +289,7 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
       val stop        = System.currentTimeMillis()
       val stop_ns     = System.nanoTime()
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx) :+ NgExecutionReportStep(
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx, sequence) :+ NgExecutionReportStep(
         "request-failure",
         stop,
         stop,
@@ -288,7 +310,7 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
       val stop        = System.currentTimeMillis()
       val stop_ns     = System.nanoTime()
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx) :+ NgExecutionReportStep(
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx, sequence) :+ NgExecutionReportStep(
         "request-failure",
         stop,
         stop,
@@ -309,7 +331,7 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
       val stop        = System.currentTimeMillis()
       val stop_ns     = System.nanoTime()
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx) :+ NgExecutionReportStep(
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx, sequence) :+ NgExecutionReportStep(
         s"request-success",
         stop,
         stop,
@@ -325,17 +347,22 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
 
   def markDoneAndStart(task: String, previousCtx: => Option[JsValue] = None): NgExecutionReport = {
     if (reporting) {
-      // built before the step stops, as when it was a strict argument: the time it takes stays in the step it describes
-      val context     = previousCtx
+      // built before the step stops, as when it was a strict argument: the time it takes stays in the step it describes.
+      // A context given here describes the step, instead of what was set during it
+      val context     = if (keepContexts) previousCtx else None
       state = NgExecutionReportState.Running
       val stop        = System.currentTimeMillis()
       val stop_ns     = System.nanoTime()
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, context.getOrElse(ctx))
+      steps = steps :+ (context match {
+        case Some(closing) => NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, closing)
+        case None          => NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx, sequence)
+      })
       lastStart = stop
       lastStart_ns = stop_ns
       currentTask = task
       ctx = JsNull
+      sequence = None
     }
     this
   }
@@ -343,12 +370,13 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   def start(task: String, context: => JsValue = JsNull): NgExecutionReport = {
     if (reporting) {
       // built before the task starts, as when it was a strict argument
-      val startContext = context
+      val startContext = if (keepContexts) context else JsNull
       state = NgExecutionReportState.Running
       lastStart = System.currentTimeMillis()
       lastStart_ns = System.nanoTime()
       currentTask = task
       ctx = startContext
+      sequence = None
     }
     this
   }
