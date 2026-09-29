@@ -221,7 +221,8 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
     this
   }
 
-  def setContext(context: JsValue): NgExecutionReport = {
+  // the contexts are by-name, so that a report that does not report builds none of them
+  def setContext(context: => JsValue): NgExecutionReport = {
     if (reporting) {
       ctx = context
     }
@@ -322,13 +323,15 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
     this
   }
 
-  def markDoneAndStart(task: String, previousCtx: Option[JsValue] = None): NgExecutionReport = {
+  def markDoneAndStart(task: String, previousCtx: => Option[JsValue] = None): NgExecutionReport = {
     if (reporting) {
+      // built before the step stops, as when it was a strict argument: the time it takes stays in the step it describes
+      val context     = previousCtx
       state = NgExecutionReportState.Running
       val stop        = System.currentTimeMillis()
       val stop_ns     = System.nanoTime()
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, previousCtx.getOrElse(ctx))
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, context.getOrElse(ctx))
       lastStart = stop
       lastStart_ns = stop_ns
       currentTask = task
@@ -337,13 +340,15 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
     this
   }
 
-  def start(task: String, context: JsValue = JsNull): NgExecutionReport = {
+  def start(task: String, context: => JsValue = JsNull): NgExecutionReport = {
     if (reporting) {
+      // built before the task starts, as when it was a strict argument
+      val startContext = context
       state = NgExecutionReportState.Running
       lastStart = System.currentTimeMillis()
       lastStart_ns = System.nanoTime()
       currentTask = task
-      ctx = context
+      ctx = startContext
     }
     this
   }
