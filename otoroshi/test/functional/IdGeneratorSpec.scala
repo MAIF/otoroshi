@@ -68,13 +68,24 @@ class IdGeneratorSpec
     }
   }
 
-  // an id is `(timestamp - 1288834974657) << 22 | generatorId << 10 | counter`, the counter taking 12 bits. with
-  // generator 0 the 22 low bits are the counter alone
+  // an id is `(timestamp - 1288834974657) << 22 | generatorId << 10 | counter`, the counter taking the 10 bits below
+  // the generator id. with generator 0 the 22 low bits are the counter alone
   "IdGenerator.nextId" should {
 
     "give distinct ids in a row" in {
       val generator = IdGenerator(0L)
-      (0 until 4000).map(_ => generator.nextId()).toSet.size mustBe 4000
+      (0 until 1000).map(_ => generator.nextId()).toSet.size mustBe 1000
+    }
+
+    // the generator id tells the ids of two instances apart: the counter must never reach its bits, or two instances
+    // could produce the same id in the same millisecond
+    "keep the generator id out of reach of the counter" in {
+      Seq(1L, 2L, 3L, 5L, 1023L).foreach { generatorId =>
+        val generator = IdGenerator(generatorId)
+        val ids       = (0 until 5000).map(i => if (i % 2 == 0) generator.nextId() else generator.nextIdStr().toLong)
+        ids.filterNot(id => ((id >> 10) & 0xfffL) == generatorId) mustBe empty
+        ids.map(_ & 0x3ffL).distinct.size mustBe 1024
+      }
     }
 
     // the state is updated with a CAS: a thread whose CAS fails reads the clock again, otherwise its older reading
@@ -93,7 +104,7 @@ class IdGeneratorSpec
       ids.size mustBe 200000
       ids.filter(_.contains("-")) mustBe empty
       ids.map(_.toLong).foreach { id =>
-        (id & 0x3fffffL) must be < 4096L
+        (id & 0x3fffffL) must be < 1024L
         (id >> 22) + 1288834974657L must be >= start
         (id >> 22) + 1288834974657L must be <= end
       }

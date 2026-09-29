@@ -35,6 +35,10 @@ object IdGenerator {
   // a lock taken at least twice per request. the clock is read inside the loop: when another thread moves the
   // state first, the CAS fails and the clock is read again, so only a clock really running backward is seen as such
   private val lastIdState   = new AtomicLong(-1L)
+  // an id is `(timestamp - minus) << 22 | generatorId << 10 | counter`, so the counter has the 10 bits below the
+  // generator id. a wider counter would share bits 10 and 11 with the generator id, and two instances whose
+  // generator ids differ in their two low bits could produce the same id in the same millisecond
+  private val counterMask   = 1023L
   private val duplicates    = new AtomicLong(-0L)
 
   def apply(generatorId: Long) = new IdGenerator(generatorId)
@@ -48,10 +52,10 @@ object IdGenerator {
       val prev = lastIdState.get()
       timestamp = System.currentTimeMillis
       if (timestamp < (prev >> 12)) throw new RuntimeException("Clock is running backward. Sorry :-(")
-      next = (timestamp << 12) | (((prev & 4095L) + 1L) & 4095L)
+      next = (timestamp << 12) | (((prev & counterMask) + 1L) & counterMask)
       done = lastIdState.compareAndSet(prev, next)
     }
-    ((timestamp - minus) << 22L) | (generatorId << 10L) | (next & 4095L)
+    ((timestamp - minus) << 22L) | (generatorId << 10L) | (next & counterMask)
   }
 
   def nextIdStr(generatorId: Long): String = {
@@ -63,11 +67,11 @@ object IdGenerator {
     while (!done) {
       prev = lastIdState.get()
       timestamp = System.currentTimeMillis
-      next = (timestamp << 12) | (((prev & 4095L) + 1L) & 4095L)
+      next = (timestamp << 12) | (((prev & counterMask) + 1L) & counterMask)
       done = lastIdState.compareAndSet(prev, next)
     }
     val append = if (timestamp < (prev >> 12)) s"-${duplicates.incrementAndGet() + generatorId}" else ""
-    (((timestamp - minus) << 22L) | (generatorId << 10L) | (next & 4095L)).toString + append
+    (((timestamp - minus) << 22L) | (generatorId << 10L) | (next & counterMask)).toString + append
   }
 
   // the 32 non fixed characters are one nibble each, so a uuid costs a single draw of 16 bytes

@@ -353,14 +353,14 @@ class ProxyEngine() extends RequestHandler {
     val start                                                                                                = System.currentTimeMillis()
     val tryItId                                                                                              = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                                                = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
-    val requestId                                                                                            = IdGenerator.uuid
+    // the snowflake of the request is also the id of its execution report: a report can be tied to its request
+    val snowflake                                                                                            = env.snowflakeGenerator.nextIdStr()
     val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _, _, _) = _config
     val useTree                                                                                              = _config.useTree
-    implicit val report                                                                                      = NgExecutionReport(requestId, reporting)
+    implicit val report                                                                                      = NgExecutionReport(snowflake, reporting)
     report.start("start-handling")
 
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
-    val snowflake          = env.snowflakeGenerator.nextIdStr()
     val callDate           = DateTime.now()
     val requestTimestamp   = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber          = reqCounter.incrementAndGet()
@@ -590,15 +590,15 @@ class ProxyEngine() extends RequestHandler {
     val start                                                                                 = System.currentTimeMillis()
     val tryItId                                                                               = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                                 = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
-    val requestId                                                                             = IdGenerator.uuid
+    // the snowflake of the request is also the id of its execution report: a report can be tied to its request
+    val snowflake                                                                             = env.snowflakeGenerator.nextIdStr()
     val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _, _, _) = _config
     val useTree                                                                               = _config.useTree
-    implicit val report                                                                       = NgExecutionReport(requestId, reporting)
+    implicit val report                                                                       = NgExecutionReport(snowflake, reporting)
 
     report.start("start-handling")
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
-    val snowflake        = env.snowflakeGenerator.nextIdStr()
     val callDate         = DateTime.now()
     val requestTimestamp = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber        = reqCounter.incrementAndGet()
@@ -2284,7 +2284,11 @@ class ProxyEngine() extends RequestHandler {
     val route                 =
       attrs.get(otoroshi.next.plugins.Keys.PossibleBackendsKey).map(b => _route.copy(backend = b)).getOrElse(_route)
     val needsInflightRequests = route.backend.loadBalancing.needsInflightRequests
-    val trackingId            = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
+    // only Sticky reads it, and finds it in the attributes where extractTrackingId puts it: for the other strategies
+    // the value is ignored, so no uuid is drawn for them
+    val trackingId            = attrs
+      .get(otoroshi.plugins.Keys.RequestTrackingIdKey)
+      .getOrElse(if (route.backend.loadBalancing.needTrackingCookie) IdGenerator.uuid else "")
     val bodyAlreadyConsumed   = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
 
@@ -2523,7 +2527,11 @@ class ProxyEngine() extends RequestHandler {
     val route                 =
       attrs.get(otoroshi.next.plugins.Keys.PossibleBackendsKey).map(b => _route.copy(backend = b)).getOrElse(_route)
     val needsInflightRequests = route.backend.loadBalancing.needsInflightRequests
-    val trackingId            = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
+    // only Sticky reads it, and finds it in the attributes where extractTrackingId puts it: for the other strategies
+    // the value is ignored, so no uuid is drawn for them
+    val trackingId            = attrs
+      .get(otoroshi.plugins.Keys.RequestTrackingIdKey)
+      .getOrElse(if (route.backend.loadBalancing.needTrackingCookie) IdGenerator.uuid else "")
     val bodyAlreadyConsumed   = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
     if (globalConfig.useCircuitBreakers) {
