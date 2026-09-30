@@ -348,8 +348,13 @@ class ProxyEngine() extends RequestHandler {
     // the client address is resolved once, against the global config the request is handled with,
     // and travels with the request: the checks, the plugins, the events and the alerts all read it
     val clientIpAddress: otoroshi.utils.ClientIpAddress                                                      = incomingRequest.clientIpAddressFor(globalConfig)
+    // the location of the request comes from the request handler, and is resolved here for a request handed to the
+    // engine directly: a listener of its own, a relayed or a tunneled request
+    val located: Request[Source[ByteString, ?]]                                                              =
+      if (incomingRequest.attrs.contains(otoroshi.plugins.Keys.RequestLocationKey)) incomingRequest
+      else otoroshi.utils.http.RequestLocation.attachTo(incomingRequest)
     val request: Request[Source[ByteString, ?]]                                                              =
-      incomingRequest.addAttr(otoroshi.plugins.Keys.ClientIpAddressKey, clientIpAddress)
+      located.addAttr(otoroshi.plugins.Keys.ClientIpAddressKey, clientIpAddress)
     val start                                                                                                = System.currentTimeMillis()
     val tryItId                                                                                              = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                                                = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
@@ -593,10 +598,13 @@ class ProxyEngine() extends RequestHandler {
       env: Env,
       globalConfig: GlobalConfig
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
-    // see handleRequest: the client address is resolved once and travels with the request
+    // see handleRequest: the client address is resolved once and travels with the request, so does its location
     val clientIpAddress: otoroshi.utils.ClientIpAddress                                       = incomingRequest.clientIpAddressFor(globalConfig)
+    val located: RequestHeader                                                                =
+      if (incomingRequest.attrs.contains(otoroshi.plugins.Keys.RequestLocationKey)) incomingRequest
+      else otoroshi.utils.http.RequestLocation.attachTo(incomingRequest)
     val request: RequestHeader                                                                =
-      incomingRequest.addAttr(otoroshi.plugins.Keys.ClientIpAddressKey, clientIpAddress)
+      located.addAttr(otoroshi.plugins.Keys.ClientIpAddressKey, clientIpAddress)
     val start                                                                                 = System.currentTimeMillis()
     val tryItId                                                                               = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                                 = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))

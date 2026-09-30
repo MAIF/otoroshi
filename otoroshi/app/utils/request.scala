@@ -1,36 +1,86 @@
 package otoroshi.utils.http
 
 import org.apache.pekko.http.scaladsl.model.Uri
-import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.ssl.PemHeaders
 import otoroshi.models.GlobalConfig
 import otoroshi.utils.{ClientAddressHeader, ClientIpAddress, ForwardedElement, IpAddresses, TypedMap}
-import play.api.mvc.RequestHeader
+import play.api.mvc.{Request, RequestHeader}
 
 import java.util.Base64
-import scala.util.Try
+import scala.util.control.NonFatal
+
+// where a request goes, as otoroshi reads it: its path, its uri relative to the host, its host, its domain and whether
+// it is secured, the last three from the forwarded headers when they are trusted. it is resolved once, when the request
+// comes in (see GatewayRequestHandler.handlerForRequest, and the proxy engine for a request handed to it directly), and
+// attached to the request: thePath, relativeUri, theHost, theDomain and theSecured read it instead of parsing the uri
+// and reading the forwarded headers again on each call. a request built from another one keeps its attributes, so it
+// has to be given its own location when its uri or its headers are not the same
+final case class RequestLocation(path: String, relativeUri: String, host: String, domain: String, secured: Boolean)
+
+object RequestLocation {
+
+  import RequestImplicits.*
+
+  // the location of a request, as the helpers resolve it without one. fails when the uri of the request does not parse
+  def of(request: RequestHeader)(using env: Env): RequestLocation = {
+    val uri         = Uri(request.uri)
+    val relativeUri =
+      try {
+        uri.toRelative.toString()
+      } catch {
+        case NonFatal(_) => request.uri
+      }
+    val host        = request.resolveHost
+    RequestLocation(uri.path.toString(), relativeUri, host, host.split(':').head, request.resolveSecured)
+  }
+
+  // the request with its location, replacing the one it may carry. a request whose uri does not parse is left as it
+  // is: the helpers then resolve each value on each call, thePath failing and relativeUri keeping the raw uri, as
+  // they always did
+  def attachTo(request: RequestHeader)(using env: Env): RequestHeader = {
+    try {
+      request.addAttr(otoroshi.plugins.Keys.RequestLocationKey, of(request))
+    } catch {
+      case NonFatal(_) => request
+    }
+  }
+
+  def attachTo[A](request: Request[A])(using env: Env): Request[A] = {
+    try {
+      request.addAttr(otoroshi.plugins.Keys.RequestLocationKey, of(request))
+    } catch {
+      case NonFatal(_) => request
+    }
+  }
+}
 
 object RequestImplicits {
-
-  private val uriCache = Scaffeine().maximumSize(9999).build[String, String]()
 
   implicit class EnhancedRequestHeader(val requestHeader: RequestHeader) extends AnyVal {
     def contentLengthStr: Option[String]     = requestHeader.headers.get("Content-Length")
     def theUri: Uri                          = Uri(requestHeader.uri)
-    def thePath: String                      = theUri.path.toString()
-    def relativeUri: String = {
-      val uri = requestHeader.uri
-      uriCache.get(
-        uri,
-        _ => {
-          // println(s"computing uri for $uri")
-          Try(Uri(uri).toRelative.toString()).getOrElse(uri)
+    // the path, the relative uri, the host, the domain and whether the request is secured come from the location of
+    // the request when it carries one, see RequestLocation
+    def thePath: String                      = requestHeader.attrs.get(otoroshi.plugins.Keys.RequestLocationKey) match {
+      case Some(location) => location.path
+      case None           => theUri.path.toString()
+    }
+    def relativeUri: String = requestHeader.attrs.get(otoroshi.plugins.Keys.RequestLocationKey) match {
+      case Some(location) => location.relativeUri
+      case None           =>
+        val uri = requestHeader.uri
+        try {
+          Uri(uri).toRelative.toString()
+        } catch {
+          case NonFatal(_) => uri
         }
-      )
     }
     @inline
-    def theDomain(using env: Env): String = theHost.split(':').head
+    def theDomain(using env: Env): String = requestHeader.attrs.get(otoroshi.plugins.Keys.RequestLocationKey) match {
+      case Some(location) => location.domain
+      case None           => theHost.split(':').head
+    }
 
     // whether the headers describing the original request can be read. trustXForwarded is the
     // master switch and, once trusted proxies are declared, the connection has to come from one of
@@ -74,7 +124,12 @@ object RequestImplicits {
     }
 
     @inline
-    def theSecured(using env: Env): Boolean = {
+    def theSecured(using env: Env): Boolean = requestHeader.attrs.get(otoroshi.plugins.Keys.RequestLocationKey) match {
+      case Some(location) => location.secured
+      case None           => resolveSecured
+    }
+    // whether the request is secured, from the forwarded headers when they are trusted
+    def resolveSecured(using env: Env): Boolean = {
       if (forwardedHeadersTrusted) {
         forwardedProto.map(_ == "https").getOrElse(requestHeader.secure)
       } else {
@@ -102,7 +157,12 @@ object RequestImplicits {
       if (theSecured) "wss" else "ws"
     }
     @inline
-    def theHost(using env: Env): String = {
+    def theHost(using env: Env): String = requestHeader.attrs.get(otoroshi.plugins.Keys.RequestLocationKey) match {
+      case Some(location) => location.host
+      case None           => resolveHost
+    }
+    // the host of the request, from the forwarded headers when they are trusted
+    def resolveHost(using env: Env): String = {
       if (forwardedHeadersTrusted) {
         forwardedHost.getOrElse(requestHeader.host)
       } else {

@@ -30,6 +30,9 @@ object Keys {
   // the client address of the request, resolved once. the proxy engine attaches it to the request it
   // handles and puts it in its attrs, see RequestImplicits.clientIpAddress
   val ClientIpAddressKey       = TypedKey[otoroshi.utils.ClientIpAddress]("otoroshi.core.ClientIpAddress")
+  // the path, the relative uri, the host, the domain and the secured flag of the request, resolved once when the
+  // request comes in, see otoroshi.utils.http.RequestLocation
+  val RequestLocationKey       = TypedKey[otoroshi.utils.http.RequestLocation]("otoroshi.core.RequestLocation")
   val GeolocationInfoKey       = TypedKey[JsValue]("otoroshi.plugins.GeolocationInfo")
   val UserAgentInfoKey         = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
   val ExtraAnalyticsDataKey    = TypedKey[JsObject]("otoroshi.plugins.ExtraAnalyticsData")

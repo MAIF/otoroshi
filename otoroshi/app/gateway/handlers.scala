@@ -452,6 +452,12 @@ class GatewayRequestHandler(
     }
   }
 
+  // every request comes in here, whatever the server: its location is resolved once, and the request handed to the
+  // handler carries it, see RequestLocation
+  override def handlerForRequest(request: RequestHeader): (RequestHeader, Handler) = {
+    super.handlerForRequest(otoroshi.utils.http.RequestLocation.attachTo(request))
+  }
+
   override def routeRequest(request: RequestHeader): Option[Handler] = {
     incrementCounters(request)
     val config = env.datastores.globalConfigDataStore.latestSafe
