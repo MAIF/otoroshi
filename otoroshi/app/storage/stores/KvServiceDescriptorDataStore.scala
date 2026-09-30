@@ -1,6 +1,7 @@
 package otoroshi.storage.stores
 
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.{AtomicReference, LongAdder}
 import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.http.scaladsl.util.FastFuture.*
@@ -16,7 +17,30 @@ import otoroshi.utils.{RegexPool, SchedulerHelper}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.*
-import scala.util.Success
+import scala.jdk.CollectionConverters.*
+import scala.util.{Success, Try}
+
+object KvServiceDescriptorDataStore {
+
+  // a rate over the samples of a list, newest first: each sample is an amount and the time it was written
+  // ("amount:time"), or the time alone of a single call, as the calls were written before they were gathered per
+  // second. The amount of the oldest sample was counted before the span the samples cover, so it is left out; a single
+  // sample is taken as the amount of a second
+  def ratePerSecond(samples: Seq[String]): Double = {
+    if (samples.isEmpty) 0.0
+    else {
+      val parsed = samples.map { sample =>
+        val separator = sample.indexOf(':')
+        if (separator < 0) (1L, sample.toDouble.toLong)
+        else (sample.substring(0, separator).toLong, sample.substring(separator + 1).toLong)
+      }
+      val oldest = parsed.minBy(_._2)
+      val span   = (parsed.map(_._2).max - oldest._2) / 1000.0
+      val total  = parsed.foldLeft(0L)(_ + _._1)
+      if (span <= 0.0) total.toDouble else (total - oldest._1) / span
+    }
+  }
+}
 
 class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env: Env)
     extends ServiceDescriptorDataStore
@@ -25,6 +49,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
   lazy val logger = Logger("otoroshi-service-datatstore")
 
   private val updateRef = new AtomicReference[Cancellable]()
+  private val flushRef  = new AtomicReference[Cancellable]()
 
   override def redisLike(using env: Env): RedisLike = redisCli
 
@@ -84,10 +109,16 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
         )
       )(using env.otoroshiExecutionContext)
     )
+    flushRef.set(
+      env.otoroshiScheduler.scheduleAtFixedRate(1.second, 1.second)(
+        SchedulerHelper.runnable(Try(flushMetrics()(using env.analyticsExecutionContext, env)))
+      )(using env.analyticsExecutionContext)
+    )
   }
 
   def stopCleanup(): Unit = {
     Option(updateRef.get()).foreach(_.cancel())
+    Option(flushRef.get()).foreach(_.cancel())
   }
 
   override def cleanupFastLookups()(using ec: ExecutionContext, mat: Materializer, env: Env): Future[Long] = {
@@ -140,26 +171,56 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       r <- redisCli.srem(query.asKey, services.map(_.id)*)
     } yield r > 0L
 
+  // the embedded metrics are gathered in memory, per route and for all of them ("global"), and written once per second
+  // by flushMetrics: a request used to cost about thirty datastore commands, through a single actor that did not keep
+  // up with the traffic. Each list gets one sample per second and per instance: an amount and its time for the calls
+  // and the data, which ratePerSecond reads, and the average of the second for the durations and the overheads
+  private final class PendingMetrics {
+    val calls    = new LongAdder()
+    // the calls with a duration, which the errors counted by updateMetricsOnError do not have
+    val timed    = new LongAdder()
+    val duration = new LongAdder()
+    val overhead = new LongAdder()
+    val upstream = new LongAdder()
+    val dataIn   = new LongAdder()
+    val dataOut  = new LongAdder()
+  }
+
+  private val pendingMetrics = new ConcurrentHashMap[String, PendingMetrics]()
+
+  private def pending(id: String): PendingMetrics = {
+    val existing = pendingMetrics.get(id)
+    if (existing ne null) existing else pendingMetrics.computeIfAbsent(id, _ => new PendingMetrics())
+  }
+
+  private def record(
+      id: String,
+      timed: Boolean,
+      duration: Long,
+      overhead: Long,
+      upstream: Long,
+      dataIn: Long,
+      dataOut: Long
+  ): Unit = {
+    val metrics = pending(id)
+    metrics.calls.increment()
+    if (timed) {
+      metrics.timed.increment()
+      metrics.duration.add(duration)
+      metrics.overhead.add(overhead)
+      metrics.upstream.add(upstream)
+    }
+    metrics.dataIn.add(dataIn)
+    metrics.dataOut.add(dataOut)
+  }
+
   override def updateMetricsOnError(
       config: otoroshi.models.GlobalConfig
   )(using ec: ExecutionContext, env: Env): Future[Unit] = {
     if (config.enableEmbeddedMetrics) {
-      val time                      = System.currentTimeMillis()
-      val callsShiftGlobalTime      = redisCli.lpushLong(serviceCallStatsKey("global"), time).flatMap { _ =>
-        redisCli.ltrim(serviceCallStatsKey("global"), 0, maxQueueSize)
-        redisCli.expire(serviceCallStatsKey("global"), 10)
-      }
-      val callsIncrementGlobalCalls = redisCli.incr(serviceCallKey("global"))
-      for {
-        _           <- callsShiftGlobalTime
-        globalCalls <- callsIncrementGlobalCalls
-      } yield {
-        env.metrics.markLong(s"global.calls", globalCalls)
-        ()
-      }
-    } else {
-      FastFuture.successful(())
+      record("global", timed = false, 0L, 0L, 0L, 0L, 0L)
     }
+    FastFuture.successful(())
   }
 
   override def updateMetrics(
@@ -175,61 +236,8 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       env: Env
   ): Future[Unit] = {
     if (config.enableEmbeddedMetrics) {
-      val time                             = System.currentTimeMillis()
-      val slugDataIn                       = s"$dataIn:$time"
-      val slugDataOut                      = s"$dataOut:$time"
-      // Call everything in parallel
-      // incrementCalls
-      val callsShiftGlobalTime             = redisCli.lpushLong(serviceCallStatsKey("global"), time).flatMap { _ =>
-        redisCli.ltrim(serviceCallStatsKey("global"), 0, maxQueueSize)
-        redisCli.expire(serviceCallStatsKey("global"), 10)
-      }
-      val callsShiftServiceTime            = redisCli.lpushLong(serviceCallStatsKey(id), time).flatMap { _ =>
-        redisCli.ltrim(serviceCallStatsKey(id), 0, maxQueueSize)
-        redisCli.expire(serviceCallStatsKey(id), 10)
-      }
-      val callsIncrementGlobalCalls        = redisCli.incr(serviceCallKey("global"))
-      val callsIncrementServiceCalls       = redisCli.incr(serviceCallKey(id))
-      // incrementCallsDuration
-      val callDurationShiftGlobalDuration  =
-        redisCli.lpushLong(serviceCallDurationStatsKey("global"), callDuration).flatMap { _ =>
-          redisCli.ltrim(serviceCallDurationStatsKey("global"), 0, maxQueueSize)
-        }
-      val callDurationShiftServiceDuration =
-        redisCli.lpushLong(serviceCallDurationStatsKey(id), callDuration).flatMap { _ =>
-          redisCli.ltrim(serviceCallDurationStatsKey(id), 0, maxQueueSize)
-        }
-      // incrementCallsOverhead
-      val callOverheadShiftGlobalDuration  =
-        redisCli.lpushLong(serviceCallOverheadStatsKey("global"), callOverhead).flatMap { _ =>
-          redisCli.ltrim(serviceCallOverheadStatsKey("global"), 0, maxQueueSize)
-        }
-      val callOverheadShiftServiceDuration =
-        redisCli.lpushLong(serviceCallOverheadStatsKey(id), callOverhead).flatMap { _ =>
-          redisCli.ltrim(serviceCallOverheadStatsKey(id), 0, maxQueueSize)
-        }
-      // incrementDataIn
-      val dataInIncrementGlobal            = redisCli.incrby(dataInGlobalKey(), dataIn).map(_ => ())
-      val dataInIncrementService           = redisCli.incrby(dataInForServiceKey(id), dataIn).map(_ => ())
-      val dataInShiftService               = redisCli.lpush(dataInForServiceStatsKey(id), slugDataIn).flatMap { _ =>
-        redisCli.ltrim(dataInForServiceStatsKey(id), 0, maxQueueSize)
-        redisCli.expire(dataInForServiceStatsKey(id), 10)
-      }
-      val dataInShiftGlobal                = redisCli.lpush(dataInForServiceStatsKey("global"), slugDataIn).flatMap { _ =>
-        redisCli.ltrim(dataInForServiceStatsKey("global"), 0, maxQueueSize)
-        redisCli.expire(dataInForServiceStatsKey("global"), 10)
-      }
-      // incrementDataOut
-      val dataOutIncrementGlobal           = redisCli.incrby(dataOutGlobalKey(), dataOut).map(_ => ())
-      val dataOutIncrementService          = redisCli.incrby(dataOutForServiceKey(id), dataOut).map(_ => ())
-      val dataOutShiftService              = redisCli.lpush(dataOutForServiceStatsKey(id), slugDataOut).flatMap { _ =>
-        redisCli.ltrim(dataOutForServiceStatsKey(id), 0, maxQueueSize)
-        redisCli.expire(dataOutForServiceStatsKey(id), 10)
-      }
-      val dataOutShiftGlobal               = redisCli.lpush(dataOutForServiceStatsKey("global"), slugDataOut).flatMap { _ =>
-        redisCli.ltrim(dataOutForServiceStatsKey("global"), 0, maxQueueSize)
-        redisCli.expire(dataOutForServiceStatsKey("global"), 10)
-      }
+      record(id, timed = true, callDuration, callOverhead, upstreamLatency, dataIn, dataOut)
+      record("global", timed = true, callDuration, callOverhead, upstreamLatency, dataIn, dataOut)
       env.clusterAgent.incrementService(
         id,
         1L,
@@ -241,52 +249,66 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
         0L,
         0L
       )
-      // now wait for all
+    }
+    FastFuture.successful(())
+  }
+
+  private def flushMetrics()(using ec: ExecutionContext, env: Env): Future[Unit] = {
+    val statsd = env.datastores.globalConfigDataStore.latestSafe.exists(_.statsdConfig.isDefined)
+    val now    = System.currentTimeMillis()
+    Future
+      .sequence(pendingMetrics.asScala.toSeq.map { case (id, metrics) => flushMetricsOf(id, metrics, now, statsd) })
+      .map(_ => ())
+  }
+
+  private def flushMetricsOf(id: String, metrics: PendingMetrics, now: Long, statsd: Boolean)(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Unit] = {
+    val calls    = metrics.calls.sumThenReset()
+    val timed    = metrics.timed.sumThenReset()
+    val duration = metrics.duration.sumThenReset()
+    val overhead = metrics.overhead.sumThenReset()
+    val upstream = metrics.upstream.sumThenReset()
+    val dataIn   = metrics.dataIn.sumThenReset()
+    val dataOut  = metrics.dataOut.sumThenReset()
+    if (calls == 0L && dataIn == 0L && dataOut == 0L) FastFuture.successful(())
+    else {
+      def sample(key: String, value: String, ttl: Boolean): Future[Unit] =
+        redisCli.lpush(key, value).flatMap { _ =>
+          val trimmed = redisCli.ltrim(key, 0, maxQueueSize)
+          val expired = if (ttl) redisCli.expire(key, 10) else FastFuture.successful(true)
+          trimmed.flatMap(_ => expired).map(_ => ())
+        }
+      val totalCalls = redisCli.incrby(serviceCallKey(id), calls)
+      val writes     = Seq(
+        redisCli.incrby(dataInForServiceKey(id), dataIn).map(_ => ()),
+        redisCli.incrby(dataOutForServiceKey(id), dataOut).map(_ => ()),
+        sample(serviceCallStatsKey(id), s"$calls:$now", ttl = true),
+        sample(dataInForServiceStatsKey(id), s"$dataIn:$now", ttl = true),
+        sample(dataOutForServiceStatsKey(id), s"$dataOut:$now", ttl = true)
+      ) ++ (if (timed > 0L)
+              Seq(
+                sample(serviceCallDurationStatsKey(id), (duration / timed).toString, ttl = false),
+                sample(serviceCallOverheadStatsKey(id), (overhead / timed).toString, ttl = false)
+              )
+            else Seq.empty)
       for {
-        // incrementCalls
-        _            <- callsShiftGlobalTime
-        _            <- callsShiftServiceTime
-        globalCalls  <- callsIncrementGlobalCalls
-        serviceCalls <- callsIncrementServiceCalls
-        // incrementCallsDuration
-        _            <- callDurationShiftGlobalDuration
-        _            <- callDurationShiftServiceDuration
-        // incrementCallsOverhead
-        _            <- callOverheadShiftGlobalDuration
-        _            <- callOverheadShiftServiceDuration
-        // incrementDataIn
-        _            <- dataInIncrementGlobal
-        _            <- dataInIncrementService
-        _            <- dataInShiftService
-        _            <- dataInShiftGlobal
-        // incrementDataOut
-        _            <- dataOutIncrementGlobal
-        _            <- dataOutIncrementService
-        _            <- dataOutShiftService
-        _            <- dataOutShiftGlobal
-        _            <- config.statsdConfig
-                          .map(_ =>
-                            FastFuture.successful(
-                              (
-                                env.metrics.markLong(s"global.calls", globalCalls),
-                                env.metrics.markLong(s"services.${id}.calls", serviceCalls),
-                                env.metrics.markLong(s"global.duration", callDuration),
-                                env.metrics.markLong(s"global.overhead", callOverhead),
-                                env.metrics.markLong(s"global.data-in", dataIn),
-                                env.metrics.markLong(s"global.data-out", dataOut),
-                                env.metrics.markLong(s"global.upstream-latency", upstreamLatency),
-                                env.metrics.markLong(s"services.${id}.duration", callDuration),
-                                env.metrics.markLong(s"services.${id}.overhead", callOverhead),
-                                env.metrics.markLong(s"services.${id}.data-in", dataIn),
-                                env.metrics.markLong(s"services.${id}.data-out", dataOut),
-                                env.metrics.markLong(s"services.${id}.upstream-latency", upstreamLatency)
-                              )
-                            )
-                          )
-                          .getOrElse(FastFuture.successful(()))
-      } yield ()
-    } else {
-      FastFuture.successful(())
+        total <- totalCalls
+        _     <- Future.sequence(writes)
+      } yield {
+        if (statsd) {
+          val prefix = if (id == "global") "global" else s"services.$id"
+          env.metrics.markLong(s"$prefix.calls", total)
+          env.metrics.markLong(s"$prefix.data-in", dataIn)
+          env.metrics.markLong(s"$prefix.data-out", dataOut)
+          if (timed > 0L) {
+            env.metrics.markLong(s"$prefix.duration", duration / timed)
+            env.metrics.markLong(s"$prefix.overhead", overhead / timed)
+            env.metrics.markLong(s"$prefix.upstream-latency", upstream / timed)
+          }
+        }
+      }
     }
   }
 
@@ -345,36 +367,10 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
   }
 
   override def dataInPerSecFor(id: String)(using ec: ExecutionContext, env: Env): Future[Double] =
-    redisCli.lrange(dataInForServiceStatsKey(id), 0, maxQueueSize).map { values =>
-      if (values.isEmpty) 0.0
-      else {
-        val items   = values.map { v =>
-          val parts = v.utf8String.split(":")
-          (parts(0).toLong, parts(1).toLong)
-        }
-        val total   = items.map(_._1).foldLeft(0L)(_ + _).toDouble
-        val minTime = if (items.isEmpty) 0L else items.map(_._2).min[Long]
-        val maxTime = if (items.isEmpty) 0L else items.map(_._2).max[Long]
-        val seconds = (maxTime - minTime) / 1000.0
-        total / seconds
-      }
-    }
+    redisCli.lrange(dataInForServiceStatsKey(id), 0, maxQueueSize).map(values => KvServiceDescriptorDataStore.ratePerSecond(values.map(_.utf8String)))
 
   override def dataOutPerSecFor(id: String)(using ec: ExecutionContext, env: Env): Future[Double] =
-    redisCli.lrange(dataOutForServiceStatsKey(id), 0, maxQueueSize).map { values =>
-      if (values.isEmpty) 0.0
-      else {
-        val items   = values.map { v =>
-          val parts = v.utf8String.split(":")
-          (parts(0).toLong, parts(1).toLong)
-        }
-        val total   = items.map(_._1).foldLeft(0L)(_ + _).toDouble
-        val minTime = if (items.isEmpty) 0L else items.map(_._2).min[Long]
-        val maxTime = if (items.isEmpty) 0L else items.map(_._2).max[Long]
-        val seconds = (maxTime - minTime) / 1000.0
-        total / seconds
-      }
-    }
+    redisCli.lrange(dataOutForServiceStatsKey(id), 0, maxQueueSize).map(values => KvServiceDescriptorDataStore.ratePerSecond(values.map(_.utf8String)))
 
   override def globalCalls()(using ec: ExecutionContext, env: Env): Future[Long] = calls("global")
 
@@ -388,16 +384,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
     redisCli.get(serviceCallKey(id)).map(_.map(_.utf8String.toLong).getOrElse(0L))
 
   override def callsPerSec(id: String)(using ec: ExecutionContext, env: Env): Future[Double] =
-    redisCli.lrange(serviceCallStatsKey(id), 0, maxQueueSize).map { values =>
-      if (values.isEmpty) 0.0
-      else {
-        val times   = values.map(_.utf8String.toDouble)
-        val minTime = if (times.isEmpty) 0.0 else times.min[Double]
-        val maxTime = if (times.isEmpty) 0.0 else times.max[Double]
-        val seconds = (maxTime - minTime) / 1000.0
-        times.size.toDouble / seconds
-      }
-    }
+    redisCli.lrange(serviceCallStatsKey(id), 0, maxQueueSize).map(values => KvServiceDescriptorDataStore.ratePerSecond(values.map(_.utf8String)))
 
   override def callsDuration(id: String)(using ec: ExecutionContext, env: Env): Future[Double] =
     redisCli.lrange(serviceCallDurationStatsKey(id), 0, maxQueueSize).map { values =>

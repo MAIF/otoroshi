@@ -130,16 +130,29 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     } yield (within, secCalls, maybeQuota)
   }
 
+  private val throttlingTtlCheckedAt = new java.util.concurrent.atomic.AtomicLong(0L)
+
+  // one command per call: the window starts with its first call, instead of a ttl read (and an exception for a counter
+  // without one) before every increment. The ttl is still checked once per second, so that a counter left without one,
+  // by a crash between the two commands, cannot throttle every call forever
   override def updateQuotas(
       config: otoroshi.models.GlobalConfig
   )(using ec: ExecutionContext, env: Env): Future[Unit] =
-    for {
-      _        <- redisCli.pttl(throttlingKey()).filter(_ > -1).recoverWith { case _ =>
-                    redisCli.expire(throttlingKey(), env.throttlingWindow)
-                  }
-      secCalls <- redisCli.incrby(throttlingKey(), 1L)
-      fu        = env.metrics.markLong(s"global.throttling-quotas", secCalls)
-    } yield ()
+    redisCli.incrby(throttlingKey(), 1L).flatMap { secCalls =>
+      env.metrics.markLong(s"global.throttling-quotas", secCalls)
+      val now     = System.currentTimeMillis()
+      val checked = throttlingTtlCheckedAt.get()
+      if (secCalls == 1L) {
+        redisCli.expire(throttlingKey(), env.throttlingWindow).map(_ => ())
+      } else if (now - checked > 1000L && throttlingTtlCheckedAt.compareAndSet(checked, now)) {
+        redisCli.pttl(throttlingKey()).flatMap { ttl =>
+          if (ttl == -1L) redisCli.expire(throttlingKey(), env.throttlingWindow).map(_ => ())
+          else FastFuture.successful(())
+        }
+      } else {
+        FastFuture.successful(())
+      }
+    }
 
   override def allEnv()(using ec: ExecutionContext, env: Env): Future[Set[String]] = singleton().map(_.lines.toSet)
 

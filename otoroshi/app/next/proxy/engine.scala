@@ -3995,16 +3995,10 @@ class ProxyEngine() extends RequestHandler {
           300L
         else actualDuration
       }
-      // increments calls for service and globally
-      env.analyticsQueue ! AnalyticsQueueEvent(
-        route.serviceDescriptor,
-        duration,
-        overhead,
-        counterIn.get(),
-        counterOut.get(),
-        upstreamLatency,
-        globalConfig
-      )
+      // increments calls for service and globally: gathered in memory by the datastore, which writes them once per
+      // second, and the global throttling counter, which has to stay exact
+      route.serviceDescriptor.updateMetrics(duration, overhead, counterIn.get(), counterOut.get(), upstreamLatency, globalConfig)
+      env.datastores.globalConfigDataStore.updateQuotas(globalConfig)
       route.backend.loadBalancing match {
         case BestResponseTime            =>
           BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
@@ -4166,16 +4160,9 @@ class ProxyEngine() extends RequestHandler {
             300L
           else actualDuration
         }
-        // increments calls for service and globally
-        env.analyticsQueue ! AnalyticsQueueEvent(
-          route.serviceDescriptor,
-          duration,
-          overhead,
-          counterIn.get(),
-          counterOut.get(),
-          upstreamLatency,
-          globalConfig
-        )
+        // increments calls for service and globally, see above
+        route.serviceDescriptor.updateMetrics(duration, overhead, counterIn.get(), counterOut.get(), upstreamLatency, globalConfig)
+        env.datastores.globalConfigDataStore.updateQuotas(globalConfig)
         route.backend.loadBalancing match {
           case BestResponseTime            =>
             BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)

@@ -157,6 +157,7 @@ class UnitTests
       new KaleidoscopeShimSpec(),
       new ExpressionLanguageMatchSpec(),
       new ExecutionReportSpec(),
+      new EmbeddedMetricsRateSpec(),
       // the three deterministic tree router specs. the two others of NgTreeRouterTests stay out: one
       // is a benchmark over a million routes with no assertion, the other downloads the openapi spec
       // of master from github before matching against it
