@@ -13,16 +13,12 @@ spec:
     # second HPA for `otoroshi-leader-deployment` if you want both autoscaled).
   minReplicas: 2
   maxReplicas: 10
+  # CPU only. The memory of a JVM does not follow the traffic: the heap fills up to its maximum and stays
+  # there, so a memory target would be reached for good and keep the deployment at maxReplicas.
   metrics:
     - type: Resource
       resource:
         name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 80
-    - type: Resource
-      resource:
-        name: memory
         target:
           type: Utilization
           averageUtilization: 80

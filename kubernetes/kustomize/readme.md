@@ -137,7 +137,7 @@ components:
 |---|---|---|
 | [`webhooks`](components/webhooks/readme.md) | Validating + Mutating admission webhooks | Validate CRs server-side + inject otoroshi-sidecar via pod label |
 | [`redis`](components/redis/readme.md) | Bundled Redis StatefulSets (leader+follower) with AUTH | Dev / small self-managed clusters; prefer managed Redis in prod |
-| [`hpa`](components/hpa/readme.md) | HorizontalPodAutoscaler (autoscaling/v2) | Autoscale Otoroshi on CPU/memory (needs metrics-server) |
+| [`hpa`](components/hpa/readme.md) | HorizontalPodAutoscaler (autoscaling/v2) | Autoscale Otoroshi on CPU (needs metrics-server) |
 | [`coredns`](components/coredns/readme.md) | In-cluster CoreDNS resolving `*.otoroshi.mesh` | Service mesh mode / otoroshi-sidecar; isolation from the cluster's main CoreDNS |
 | [`gateway-api`](components/gateway-api/readme.md) | RBAC patch for `gateway.networking.k8s.io` | Use Otoroshi as a Gateway API controller (CRDs must be installed separately from upstream) |
 | [`pdb-single`](components/pdb-single/readme.md) / [`pdb-cluster`](components/pdb-cluster/readme.md) | PodDisruptionBudget | Survive node drains / cluster upgrades without losing all replicas |
@@ -241,6 +241,37 @@ patches:
 
 For `topologySpreadConstraints`, `dnsConfig`, `hostAliases`, etc., same
 pattern — the Deployment is the canvas.
+
+### Resources and JVM options
+
+Every Otoroshi container requests 2 CPUs and 2Gi and is limited to 4 CPUs
+and 4Gi, like the Helm chart. The image sizes the JVM from these limits:
+the heap gets 60% of the memory limit (less under 1280Mi, so that 512Mi stay
+out of the heap) and the thread pools follow the cpu limit. Change the
+limits, and the JVM follows:
+
+```yaml
+patches:
+  - target:
+      kind: Deployment
+      name: otoroshi-deployment              # or otoroshi-{leader,worker}-deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "1"
+            memory: 2Gi
+          limits:
+            cpu: "2"
+            memory: 2Gi
+```
+
+To override what the image picks, add a `JAVA_OPTS` env var with the same
+`env/-` patch as above: its options come after the ones of the image, and
+win (`-XX:MaxRAMPercentage=70.0`, `-XX:+UseZGC`, …). If you remove the cpu
+limit, set `-XX:ActiveProcessorCount=<n>` there, otherwise the JVM sizes
+its thread pools and its collector for every cpu of the node.
 
 ## Kustomize CLI cheat-sheet
 

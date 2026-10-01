@@ -172,11 +172,19 @@ securityContext: {}
 imagePullSecrets: []
 # - name: my-registry-creds
 
-# Extra JVM options. The container memory limit caps the heap via MaxRAMPercentage —
-# do not set -Xms/-Xmx unless you know what you're doing.
-# Set it to "" to skip the JAVA_OPTS env var entirely (e.g. to provide it yourself via
-# extraEnv, from a secret).
-javaOpts: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+# Extra JVM options, given to the container as JAVA_OPTS. Empty by default: the image sizes the JVM
+# from `resources.limits` below. The heap gets 60% of the memory limit (less under 1280Mi, so that
+# 512Mi stay out of the heap), G1 collects it, the thread pools follow the cpu limit, and the JVM
+# exits when it runs out of memory, for the pod to be restarted. The options set here come after the
+# ones of the image, and win: -XX:MaxRAMPercentage=70.0, -XX:+UseZGC, …
+# Otoroshi uses 300 to 550Mi out of the heap, more with the number of cpus and of plugins: check the
+# memory of the pods before raising the share of the heap, and do not set -Xms/-Xmx unless you know
+# what you're doing.
+# The JVM only knows the cpu limit. If you remove `resources.limits.cpu`, it sizes its thread pools
+# and its collector for every cpu of the node: add -XX:ActiveProcessorCount=<n> here.
+# When empty, the chart sets no JAVA_OPTS env var at all, so you can also provide it yourself via
+# extraEnv (e.g. from a secret).
+javaOpts: ""
 
 resources:
   requests:
@@ -211,7 +219,9 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 10
   targetCPUUtilizationPercentage: 80
-  targetMemoryUtilizationPercentage: 80
+  # No memory target by default. The memory of a JVM does not follow the traffic: the heap fills up to its
+  # maximum and stays there, so a memory target would be reached for good and keep the deployment at maxReplicas.
+  targetMemoryUtilizationPercentage: ""
   # Additional v2 HPA metrics (External / Pods / Object), appended verbatim.
   extraMetrics: []
   # HPA scaling behavior (v2). Empty means use Kubernetes defaults.

@@ -3,7 +3,9 @@
 `HorizontalPodAutoscaler` (autoscaling/v2) for the Otoroshi Deployment.
 
 - Targets `otoroshi-deployment` (the name used by the `simple*` overlays).
-- 2 ↔ 10 replicas, scales on CPU + memory (80% utilization).
+- 2 ↔ 10 replicas, scales on CPU (80% of the cpu request of the pods).
+- No memory target: the heap of a JVM fills up to its maximum whatever the traffic and stays there, so a memory
+  target would be reached for good and keep the deployment at `maxReplicas`.
 - Conservative scale-down (5-minute stabilization), aggressive scale-up.
 - Requires the **metrics-server** in your cluster — without it the HPA reports `<unknown>` metrics and never scales.
 

@@ -67,8 +67,6 @@ spec:
             value: Want
           - name: HTTPS_WANT_CLIENT_AUTH
             value: "true"
-          - name: JAVA_OPTS
-            value: '-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0'
           - name: APP_DOMAIN
             valueFrom:
               configMapKeyRef:
@@ -129,6 +127,17 @@ spec:
           - name: initial-customization
             mountPath: /etc/otoroshi
             readOnly: true
+        # The image sizes the JVM from these limits: the heap gets 60% of the memory limit (less under
+        # 1280Mi, so that 512Mi stay out of the heap), and the thread pools follow the cpu limit. Without
+        # limits, the JVM would size itself for the memory and the cpus of the whole node.
+        # Set a JAVA_OPTS env var to override, its options win over the ones of the image.
+        resources:
+          requests:
+            cpu: "2"
+            memory: "2Gi"
+          limits:
+            cpu: "4"
+            memory: "4Gi"
         readinessProbe:
           httpGet:
             path: /ready
@@ -221,8 +230,6 @@ spec:
             value: Want
           - name: HTTPS_WANT_CLIENT_AUTH
             value: "true"
-          - name: JAVA_OPTS
-            value: '-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0'
           - name: APP_DOMAIN
             valueFrom:
               configMapKeyRef:
@@ -272,6 +279,17 @@ spec:
             value: otoroshi-leader-api-service.$(POD_NAMESPACE).svc.cluster.local
           - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
             value: otoroshi-leader-api-service.$(POD_NAMESPACE).svc.cluster.local
+        # The image sizes the JVM from these limits: the heap gets 60% of the memory limit (less under
+        # 1280Mi, so that 512Mi stay out of the heap), and the thread pools follow the cpu limit. Without
+        # limits, the JVM would size itself for the memory and the cpus of the whole node.
+        # Set a JAVA_OPTS env var to override, its options win over the ones of the image.
+        resources:
+          requests:
+            cpu: "2"
+            memory: "2Gi"
+          limits:
+            cpu: "4"
+            memory: "4Gi"
         readinessProbe:
           httpGet:
             path: /ready

@@ -75,6 +75,39 @@ You can also use a volume if you choose to use exports files :
 docker run -p "8080:8080" -v "$(pwd):/usr/app/otoroshi/imports" maif/otoroshi -Dotoroshi.importFrom=/usr/app/otoroshi/imports/export.json
 ```
 
+### Memory and JVM options
+
+The image sizes the JVM from the limits of the container, so most of the time there is nothing to set:
+
+- **heap**: with a memory limit (`docker run --memory=2g`, `resources.limits.memory` on Kubernetes), the heap gets 60% of it. Otoroshi also uses 300 to 550 MB out of the heap, for its classes, the compiled code, the threads, the garbage collector and the buffers, so under 1280 MB the heap only gets what is left once 512 MB are set aside: half of a 1 GB container. Without a memory limit, the JVM keeps its own default, 25% of the memory of the machine ;
+- **garbage collector**: G1, whatever the size of the container. By itself, the JVM picks the serial collector, which stops every thread at each collection, under 2 CPUs or 1792 MB ;
+- **CPUs**: the JVM sizes its thread pools and its garbage collector for the CPU limit of the container (`--cpus`, `resources.limits.cpu`). Without one it sizes them for every CPU of the machine: on a large host, give the container a CPU limit or set `-XX:ActiveProcessorCount=<n>` ;
+- **native memory**: `MALLOC_ARENA_MAX` is set to `2`, which keeps 100 to 150 MB of native memory from being held for nothing ;
+- **out of memory**: the JVM exits (`-XX:+ExitOnOutOfMemoryError`), for the container to be restarted. Otoroshi does not recover from an exhausted heap: its HTTP server stops while the process stays up, which leaves a container that looks alive and serves nothing.
+
+Use the `JAVA_OPTS` environment variable to change any of it. Its options come after the ones of the image on the command line, so they win:
+
+```sh
+# a larger share of the memory for the heap
+docker run -p "8080:8080" --memory=4g -e JAVA_OPTS="-XX:MaxRAMPercentage=70.0" maif/otoroshi
+# a fixed heap
+docker run -p "8080:8080" --memory=4g -e JAVA_OPTS="-Xms2g -Xmx2g" maif/otoroshi
+# another garbage collector
+docker run -p "8080:8080" --memory=8g -e JAVA_OPTS="-XX:+UseZGC" maif/otoroshi
+# keep the JVM up when it runs out of memory
+docker run -p "8080:8080" --memory=4g -e JAVA_OPTS="-XX:-ExitOnOutOfMemoryError" maif/otoroshi
+```
+
+The options the JVM is started with are printed when the container starts (`JAVA_OPTS: ...`).
+
+:::warning
+An option the JVM does not know stops the container from starting, with the name of the option in its logs. Before 18.0.0 the image told the JVM to ignore such options, so a mistyped `-XX:MaxRamPercentage=70` was silently dropped: check your `JAVA_OPTS` when upgrading.
+:::
+
+:::tip
+Give a production instance at least 2 CPUs and 2 GB of memory: Otoroshi starts from 768 MB, not under. An instance reaches its full speed once the JVM has compiled the code that handles the requests: from half a minute of traffic on a large instance to several minutes with a single CPU, where the compiler shares it with the requests.
+:::
+
 ## Run examples
 
 ```sh

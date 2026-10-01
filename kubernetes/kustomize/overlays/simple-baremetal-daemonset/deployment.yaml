@@ -59,8 +59,6 @@ spec:
             value: "80"
           - name: OTOROSHI_EXPOSED_PORTS_HTTPS
             value: "443"
-          - name: JAVA_OPTS
-            value: '-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0'
           - name: APP_DOMAIN
             valueFrom:
               configMapKeyRef:
@@ -107,6 +105,17 @@ spec:
           - name: initial-customization
             mountPath: /etc/otoroshi
             readOnly: true
+        # The image sizes the JVM from these limits: the heap gets 60% of the memory limit (less under
+        # 1280Mi, so that 512Mi stay out of the heap), and the thread pools follow the cpu limit. Without
+        # limits, the JVM would size itself for the memory and the cpus of the whole node.
+        # Set a JAVA_OPTS env var to override, its options win over the ones of the image.
+        resources:
+          requests:
+            cpu: "2"
+            memory: "2Gi"
+          limits:
+            cpu: "4"
+            memory: "4Gi"
         readinessProbe:
           httpGet:
             path: /ready
