@@ -50,6 +50,7 @@ class SwaggerUIPluginTests(parent: PluginsTestSpecBase) {
   def run() = {
     defaults()
     customOptions()
+    darkTheme()
     specUrls()
     escaping()
     untrustedValues()
@@ -68,6 +69,9 @@ class SwaggerUIPluginTests(parent: PluginsTestSpecBase) {
     html must include(s"""src="${bundled("swagger-ui-bundle.js")}"""")
     html must include(s"""src="${bundled("swagger-ui-standalone-preset.js")}"""")
     html must not include "unpkg.com"
+    html must include("""<html lang="en">""")
+    html must not include "DarkModeToggle"
+    html must not include "prefers-color-scheme"
     val opts = options(html)
     (opts \ "url").as[String] mustBe "https://example.com/openapi.json"
     (opts \ "layout").as[String] mustBe "BaseLayout"
@@ -94,6 +98,8 @@ class SwaggerUIPluginTests(parent: PluginsTestSpecBase) {
     )
   ) { route =>
     val html = call(route).body[String]
+    html must include("""<html lang="en">""")
+    html must include("DarkModeToggle")
     html must include("<title>My API</title>")
     html must include("""href="https://unpkg.com/swagger-ui-dist@5.30.2/swagger-ui.css"""")
     html must include("""src="https://unpkg.com/swagger-ui-dist@5.30.2/swagger-ui-bundle.js"""")
@@ -106,6 +112,14 @@ class SwaggerUIPluginTests(parent: PluginsTestSpecBase) {
     (opts \ "displayOperationId").as[Boolean] mustBe true
     (opts \ "operationsSorter").toOption mustBe None
     (opts \ "tagsSorter").toOption mustBe None
+  }
+
+  // the dark theme is the dark mode of swagger ui: with the bundled version, nothing is loaded from a cdn
+  def darkTheme() = withRoute(config("theme" -> "dark", "layout" -> "StandaloneLayout")) { route =>
+    val html = call(route).body[String]
+    html must include("""<html lang="en" class="dark-mode">""")
+    html must include("DarkModeToggle")
+    html must not include "unpkg.com"
   }
 
   def specUrls() = {

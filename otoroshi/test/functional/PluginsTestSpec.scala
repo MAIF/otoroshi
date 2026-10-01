@@ -157,6 +157,9 @@ class SwaggerUIPluginSpec extends PluginsTestSpecBase {
     "apply the configured options" in {
       new SwaggerUIPluginTests(this).customOptions()
     }
+    "use the dark mode of swagger ui as dark theme" in {
+      new SwaggerUIPluginTests(this).darkTheme()
+    }
     "accept http(s) and relative spec urls only" in {
       new SwaggerUIPluginTests(this).specUrls()
     }

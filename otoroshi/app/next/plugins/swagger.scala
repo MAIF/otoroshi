@@ -38,11 +38,11 @@ object SwaggerUIConfig {
   val DefaultTitle            = "API Docs"
   val SwaggerUIThemesVersion  = "3.0.1"
 
-  val Layouts: Seq[String]  = Seq("BaseLayout", "StandaloneLayout")
-  val TagsSorts: Seq[String] = Seq("alpha", "none")
-  val OpsSorts: Seq[String]  = Seq("alpha", "method", "none")
-  val Themes: Seq[String]    =
-    Seq("default", "feeling-blue", "flattop", "material", "monokai", "muted", "newspaper", "outline")
+  val Layouts: Seq[String]      = Seq("BaseLayout", "StandaloneLayout")
+  val TagsSorts: Seq[String]    = Seq("alpha", "none")
+  val OpsSorts: Seq[String]     = Seq("alpha", "method", "none")
+  val Themes: Seq[String]       =
+    Seq("default", "dark", "feeling-blue", "flattop", "material", "monokai", "muted", "newspaper", "outline")
 
   // only a plain version may be appended to the cdn url: anything else could point the page to another package
   private val VersionPattern = """^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$""".r
@@ -176,9 +176,10 @@ object SwaggerUIConfig {
       "theme"                -> Json.obj(
         "type"  -> "select",
         "label" -> "Theme",
-        "help"  -> s"Themes from swagger-ui-themes $SwaggerUIThemesVersion, loaded from the unpkg.com CDN. Designed for Swagger UI 3.x, some styles may not apply to recent versions",
+        "help"  -> "Colors and style of the page: Default is the standard look of Swagger UI, Dark its dark mode, the other themes restyle it",
         "props" -> options(
           "Default"      -> "default",
+          "Dark"         -> "dark",
           "Feeling Blue" -> "feeling-blue",
           "Flattop"      -> "flattop",
           "Material"     -> "material",
@@ -365,14 +366,27 @@ class SwaggerUIPlugin extends NgBackendCall {
     val safeTitle                    = StringEscapeUtils.escapeHtml4(config.title)
     def asset(file: String): String = StringEscapeUtils.escapeHtml4(assetUrl(config, pageQuery, file))
 
-    val themeLink = if (config.theme != "default") {
+    // the dark theme is the dark mode of swagger ui, set on the whole document through a class on the html element
+    val htmlClass            = if (config.theme == "dark") """ class="dark-mode"""" else ""
+    // the standalone layout has its own dark mode toggle, that would override any theme but the default one
+    val darkModeTogglePlugin = if (config.theme != "default") {
+      """
+            options.plugins.push(function() {
+                return { components: { DarkModeToggle: function() { return null; } } };
+            });"""
+    } else {
+      ""
+    }
+
+    // the other themes come from swagger-ui-themes
+    val themeLink = if (config.theme != "default" && config.theme != "dark") {
       s"""    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-themes@$SwaggerUIThemesVersion/themes/3.x/theme-${config.theme}.css">"""
     } else {
       ""
     }
 
     s"""<!DOCTYPE html>
-<html lang="en">
+<html lang="en"$htmlClass>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -409,7 +423,7 @@ $themeLink
             ];
             options.plugins = [
                 SwaggerUIBundle.plugins.DownloadUrl
-            ];
+            ];$darkModeTogglePlugin
             window.ui = SwaggerUIBundle(options);
         };
     </script>
