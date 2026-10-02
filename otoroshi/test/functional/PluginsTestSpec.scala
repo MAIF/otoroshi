@@ -148,6 +148,39 @@ class OtoroshiInfoTokenSpec extends PluginsTestSpecBase {
   }
 }
 
+// the swagger ui page alone: sbt "testOnly functional.SwaggerUIPluginSpec"
+class SwaggerUIPluginSpec extends PluginsTestSpecBase {
+  s"Swagger UI" should {
+    "serve the page with the default options" in {
+      new SwaggerUIPluginTests(this).defaults()
+    }
+    "apply the configured options" in {
+      new SwaggerUIPluginTests(this).customOptions()
+    }
+    "use the dark mode of swagger ui as dark theme" in {
+      new SwaggerUIPluginTests(this).darkTheme()
+    }
+    "accept http(s) and relative spec urls only" in {
+      new SwaggerUIPluginTests(this).specUrls()
+    }
+    "escape the configured values" in {
+      new SwaggerUIPluginTests(this).escaping()
+    }
+    "ignore unknown versions, themes, layouts and sorts" in {
+      new SwaggerUIPluginTests(this).untrustedValues()
+    }
+    "serve the bundled swagger ui on the path of the page" in {
+      new SwaggerUIPluginTests(this).bundledAssets()
+    }
+    "serve the bundled swagger ui on a route that requires a query parameter" in {
+      new SwaggerUIPluginTests(this).routeQueryConstraint()
+    }
+    "not serve the bundled swagger ui with a cdn version" in {
+      new SwaggerUIPluginTests(this).cdnAssets()
+    }
+  }
+}
+
 class PluginsTestSpec extends PluginsTestSpecBase {
 
   s"plugins" should {
