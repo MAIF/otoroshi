@@ -532,7 +532,24 @@ export class NgStringRenderer extends Component {
     // avoid to have both value and defaultValue props
     const { defaultValue, ...inputProps } = props;
 
-    const { className, ...rest } = inputProps;
+    const { className, suffix, suffixCb, suffixStyle, ...rest } = inputProps;
+
+    const input = (
+      <input
+        type="text"
+        className={`form-control ${className || ''}`}
+        placeholder={props.placeholder}
+        title={props.help}
+        autoFocus={props.autoFocus}
+        value={this.state.touched ? this.props.value || '' : this.props.value || defaultValue || ''}
+        onChange={(e) => {
+          this.props.onChange(e.target.value);
+
+          if (!this.state.touched) this.setState({ touched: true });
+        }}
+        {...rest}
+      />
+    );
 
     return (
       <LabelAndInput {...this.props}>
@@ -540,22 +557,20 @@ export class NgStringRenderer extends Component {
           <ReadOnlyField value={this.props.value ?? defaultValue} />
         ) : (
           <>
-            <input
-              type="text"
-              className={`form-control ${className || ''}`}
-              placeholder={props.placeholder}
-              title={props.help}
-              autoFocus={props.autoFocus}
-              value={
-                this.state.touched ? this.props.value || '' : this.props.value || defaultValue || ''
-              }
-              onChange={(e) => {
-                this.props.onChange(e.target.value);
-
-                if (!this.state.touched) this.setState({ touched: true });
-              }}
-              {...rest}
-            />
+            {suffix ? (
+              <div style={{ display: 'flex' }}>
+                {input}
+                <span
+                  className="input-group-text"
+                  onClick={suffixCb ? () => suffixCb(this.props.value) : undefined}
+                  style={suffixStyle || {}}
+                >
+                  {suffix}
+                </span>
+              </div>
+            ) : (
+              input
+            )}
             {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
           </>
         )}

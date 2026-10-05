@@ -293,14 +293,18 @@ object BandwidthThrottlingConfig {
   val configSchema = Some(
     Json.obj(
       "window_millis"    -> Json.obj(
-        "type"   -> "string",
-        "suffix" -> "millis.",
-        "label"  -> "Time window"
+        "type"  -> "string",
+        "label" -> "Time window",
+        "props" -> Json.obj(
+          "suffix" -> "millis."
+        )
       ),
       "throttling_quota" -> Json.obj(
-        "type"   -> "string",
-        "suffix" -> "tokens",
-        "label"  -> "Max consumption"
+        "type"  -> "string",
+        "label" -> "Max consumption",
+        "props" -> Json.obj(
+          "suffix" -> "bytes"
+        )
       ),
       "group_expr"       -> Json.obj(
         "type"  -> "string",
