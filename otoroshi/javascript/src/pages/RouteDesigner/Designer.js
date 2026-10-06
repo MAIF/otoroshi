@@ -30,7 +30,6 @@ const CodeInput = React.lazy(() => import('../../components/inputs/CodeInput'));
 import snakeCase from 'lodash/snakeCase';
 import camelCase from 'lodash/camelCase';
 import isFunction from 'lodash/isFunction';
-import _ from 'lodash';
 
 import { getPluginsPatterns, getOwnTemplates } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
@@ -654,17 +653,14 @@ class Designer extends React.Component {
           if (existingPlugin) {
             return {
               ...ref,
-              plugin_index: Object.fromEntries(
-                Object.entries(ref.plugin_index || {}).map(([key, v]) => [
-                  firstLetterUppercase(camelCase(key)),
-                  v,
-                ])
-              ),
               ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
             };
           } else {
+            // an unknown plugin is listed apart, outside of the steps, whatever its plugin_index. The
+            // route keeps the index on save
             return {
               ...ref,
+              plugin_index: {},
               id: ref.plugin
                 ?.split('.')
                 .slice(-1)[0]
@@ -687,9 +683,7 @@ class Designer extends React.Component {
 
         this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
 
-        const nodes = pluginsWithNodeId.some((p) => Object.keys(p.plugin_index || {}).length > 0)
-          ? pluginsWithNodeId
-          : this.generatedPluginIndex(pluginsWithNodeId);
+        const nodes = this.withPluginIndexes(pluginsWithNodeId);
 
         if (
           routeWithNodeId.backend_ref &&
@@ -774,60 +768,42 @@ class Designer extends React.Component {
   generateNewInternalNodeId = (nodeId) =>
     `${nodeId}-${this.state.nodes.reduce((a, c) => a + (c.id?.startsWith(nodeId) ? 1 : 0), 0)}`;
 
-  generatedPluginIndex = (plugins) => {
-    const getStep = (step, elements, element, pluginSteps) =>
-      [...elements[step], pluginSteps.includes(step) ? element : undefined].filter((f) => f);
+  // plugin_index is optional: like the engine, a plugin without an index for one of its steps runs
+  // after the indexed ones, in declaration order. Every node leaves with a CamelCase plugin_index
+  withPluginIndexes = (nodes) => {
+    const steps = [...REQUEST_STEPS_FLOW, 'TransformResponse'];
 
-    const pluginsIndexes = plugins.reduce(
-      (acc, curr) => {
-        const pluginSteps = curr.plugin_steps || [];
-        return {
-          MatchRoute: getStep('MatchRoute', acc, curr, pluginSteps),
-          PreRoute: getStep('PreRoute', acc, curr, pluginSteps),
-          ValidateAccess: getStep('ValidateAccess', acc, curr, pluginSteps),
-          TransformRequest: getStep('TransformRequest', acc, curr, pluginSteps),
-          TransformResponse: getStep('TransformResponse', acc, curr, pluginSteps),
-        };
-      },
-      {
-        MatchRoute: [],
-        PreRoute: [],
-        ValidateAccess: [],
-        TransformRequest: [],
-        TransformResponse: [],
-      }
+    const indexedNodes = nodes.map((node) => ({
+      ...node,
+      plugin_index: Object.fromEntries(
+        Object.entries(node.plugin_index || {}).map(([key, v]) => [
+          firstLetterUppercase(camelCase(key)),
+          v,
+        ])
+      ),
+    }));
+
+    const lastIndexes = Object.fromEntries(
+      steps.map((step) => [
+        step,
+        Math.max(
+          -1,
+          ...indexedNodes.map((n) => n.plugin_index[step]).filter((idx) => idx !== undefined)
+        ),
+      ])
     );
 
-    const pluginsWithIndex = Object.values(
-      Object.fromEntries(
-        Object.entries(pluginsIndexes).map(([step, plugins]) => {
-          return [
-            step,
-            plugins.map((plugin, idx) => ({
-              ...plugin,
-              plugin_index: {
-                ...(plugin.plugin_index || {}),
-                [step]: idx,
-              },
-            })),
-          ];
-        })
-      )
-    ).flatMap((f) => f);
-
-    return _.chain(pluginsWithIndex)
-      .groupBy('nodeId')
-      .map((values, nodeId) => ({
-        nodeId,
-        ...values.reduce((acc, curr) => ({
-          ...acc,
-          plugin_index: {
-            ...acc.plugin_index,
-            ...curr.plugin_index,
-          },
-        })),
-      }))
-      .value();
+    return indexedNodes.map((node) => ({
+      ...node,
+      plugin_index: steps
+        .filter(
+          (step) => (node.plugin_steps || []).includes(step) && node.plugin_index[step] === undefined
+        )
+        .reduce(
+          (pluginIndex, step) => ({ ...pluginIndex, [step]: ++lastIndexes[step] }),
+          node.plugin_index
+        ),
+    }));
   };
 
   calculateIndexFor = (node) => {
@@ -997,8 +973,7 @@ class Designer extends React.Component {
     let newNodes = [];
     let newRoute = { ...route, plugins: [] };
 
-    new_nodes
-      .filter((node) => !!node)
+    this.withPluginIndexes(new_nodes.filter((node) => !!node))
       .map((node) => {
         const nodeId = this.generateNewInternalNodeId(node.id);
         const newNode = {
@@ -1053,8 +1028,7 @@ class Designer extends React.Component {
     const newPlugins = [...plugins];
     let newNodes = [];
     let newRoute = { ...route, plugins: [] };
-    new_nodes
-      .filter((node) => !!node)
+    this.withPluginIndexes(new_nodes.filter((node) => !!node))
       .map((node) => {
         const nodeId = this.generateNewInternalNodeId(node.id);
         const newNode = {
@@ -1279,76 +1253,13 @@ class Designer extends React.Component {
 
     const { selectedNode, nodes, hiddenSteps } = this.state;
 
-    const matchRoute = nodes
-      .filter(
-        (n) =>
-          n.plugin_index.MatchRoute !== undefined ||
-          this.state.plugins.find((p) => p.id === n.plugin)?.plugin_steps.indexOf('MatchRoute') > -1
-      )
-      .map((n, idx) => {
-        if (!n.plugin_index) {
-          n.plugin_index = {};
-        }
-        if (n.plugin_index.MatchRoute === undefined) {
-          n.plugin_index.MatchRoute = idx;
-        }
-        return n;
-      })
-      .sort((a, b) => a.plugin_index.MatchRoute - b.plugin_index.MatchRoute);
-    const preRoute = nodes
-      .filter(
-        (n) =>
-          n.plugin_index.PreRoute !== undefined ||
-          this.state.plugins.find((p) => p.id === n.plugin)?.plugin_steps.indexOf('PreRoute') > -1
-      )
-      .map((n, idx) => {
-        if (!n.plugin_index) {
-          n.plugin_index = {};
-        }
-        if (n.plugin_index.PreRoute === undefined) {
-          n.plugin_index.PreRoute = idx;
-        }
-        return n;
-      })
-      .sort((a, b) => a.plugin_index.PreRoute - b.plugin_index.PreRoute);
-    const validateAccess = nodes
-      .filter(
-        (n) =>
-          n.plugin_index.ValidateAccess !== undefined ||
-          this.state.plugins
-            .find((p) => p.id === n.plugin)
-            ?.plugin_steps.indexOf('ValidateAccess') > -1
-      )
-      .map((n, idx) => {
-        if (!n.plugin_index) {
-          n.plugin_index = {};
-        }
-        if (n.plugin_index.ValidateAccess === undefined) {
-          n.plugin_index.ValidateAccess = idx;
-        }
-        return n;
-      })
-      .sort((a, b) => a.plugin_index.ValidateAccess - b.plugin_index.ValidateAccess);
-    const transformRequest = nodes
-      .filter(
-        (n) =>
-          n.plugin_index.TransformRequest !== undefined ||
-          this.state.plugins
-            .find((p) => p.id === n.plugin)
-            ?.plugin_steps.indexOf('TransformRequest') > -1
-      )
-      .map((n, idx) => {
-        if (!n.plugin_index) {
-          n.plugin_index = {};
-        }
-        if (n.plugin_index.TransformRequest === undefined) {
-          n.plugin_index.TransformRequest = idx;
-        }
-        return n;
-      })
-      .sort((a, b) => a.plugin_index.TransformRequest - b.plugin_index.TransformRequest);
+    const stepsNodes = steps.map((step) =>
+      nodes
+        .filter((n) => n.plugin_index[step] !== undefined)
+        .sort((a, b) => a.plugin_index[step] - b.plugin_index[step])
+    );
 
-    return [matchRoute, preRoute, validateAccess, transformRequest].map((nodes, i) => {
+    return stepsNodes.map((nodes, i) => {
       if (nodes.length === 0) return null;
 
       return (
@@ -1401,22 +1312,7 @@ class Designer extends React.Component {
 
   renderOutBound = () => {
     const responseNodes = this.state.nodes
-      .filter(
-        (n) =>
-          n.plugin_index.TransformResponse !== undefined ||
-          this.state.plugins
-            .find((p) => p.id === n.plugin)
-            ?.plugin_steps.indexOf('TransformResponse') > -1
-      )
-      .map((n, idx) => {
-        if (!n.plugin_index) {
-          n.plugin_index = {};
-        }
-        if (n.plugin_index.TransformResponse === undefined) {
-          n.plugin_index.TransformResponse = idx;
-        }
-        return n;
-      })
+      .filter((n) => n.plugin_index.TransformResponse !== undefined)
       .sort((a, b) => b.plugin_index.TransformResponse - a.plugin_index.TransformResponse);
     return (
       this.state.hiddenSteps.TransformResponse &&
