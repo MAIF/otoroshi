@@ -207,6 +207,27 @@ GET /api/analytics/_schema
 
 This returns a typed catalogue of queries — id, human name, expected shape, default widget, parameters, whether it supports a "compare period" overlay.
 
+### Read the data through the admin API
+
+The dashboards get their data from the admin API, so anything they show can be fetched by your own tools. Run a query from the catalogue with `POST /api/analytics/_query`:
+
+```sh
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/analytics/_query' \
+  -H "Content-type: application/json" \
+  -H "Otoroshi-Tenant: default" \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  -d '{
+  "query": "requests_by_route",
+  "params": { "top_n": 5 },
+  "filters": { "from": "now-24h", "to": "now" },
+  "compare": false
+}'
+```
+
+`filters` takes the same values as the dashboard filters (`route_id`, `api_id`, `apikey_id`, `group_id`, `err`), times are either relative (`now-1h`, `now-7d`) or ISO-8601 instants, and `bucket` (`1m`, `5m`, `1h`, `6h`, `1d`) sets the resolution of timeseries. The result is always restricted to the tenant of the `Otoroshi-Tenant` header. To rebuild a dashboard, read it from `/apis/analytics.otoroshi.io/v1/user-dashboards/{id}` and run the `query` and `params` of each of its widgets.
+
+The fired events of an alert are available at `GET /api/analytics/alerts/{alertId}/events`. Every endpoint, with its parameters and the layout of each result shape, is described under the `user-analytics` tag of the [OpenAPI descriptor](../api.md).
+
 ### Add your own queries from an admin extension
 
 If you ship a custom Otoroshi extension (WAF, MCP, billing, anything), you can register your own analytics queries that show up in the dashboard widget picker AND can be referenced by alerts:

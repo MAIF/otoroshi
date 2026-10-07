@@ -374,5 +374,661 @@
   "GlobalConfigImportBody" : {
     "type" : "object",
     "description" : ""
+  },
+  "UserAnalyticsQueryFilters" : {
+    "type" : "object",
+    "description" : "The data a query runs on. The tenant is not a filter: it always comes from the `Otoroshi-Tenant` header",
+    "properties" : {
+      "from" : {
+        "type" : "string",
+        "description" : "The start of the time range (inclusive): `now`, `now-<n><unit>` with a unit among `s`, `m`, `h` and `d` (like `now-30m` or `now-7d`), or an ISO-8601 instant (like `2026-10-01T00:00:00Z`). `now-1h` when missing or invalid",
+        "default" : "now-1h"
+      },
+      "to" : {
+        "type" : "string",
+        "description" : "The end of the time range (exclusive): `now`, `now-<n><unit>` with a unit among `s`, `m`, `h` and `d` (like `now-30m` or `now-7d`), or an ISO-8601 instant (like `2026-10-01T00:00:00Z`). `now` when missing or invalid",
+        "default" : "now"
+      },
+      "route_id" : {
+        "type" : "string",
+        "description" : "Only keep the requests handled by this route"
+      },
+      "api_id" : {
+        "type" : "string",
+        "description" : "Only keep the requests handled by this API"
+      },
+      "apikey_id" : {
+        "type" : "string",
+        "description" : "Only keep the requests made with this API key (client id)"
+      },
+      "group_id" : {
+        "type" : "string",
+        "description" : "Only keep the requests handled by a route of this group"
+      },
+      "err" : {
+        "type" : "boolean",
+        "description" : "Only keep the requests in error (`true`) or the successful ones (`false`)"
+      }
+    }
+  },
+  "UserAnalyticsQueryRequest" : {
+    "type" : "object",
+    "description" : "A user analytics query to run",
+    "required" : [ "query" ],
+    "properties" : {
+      "query" : {
+        "type" : "string",
+        "description" : "The id of the query, as listed by `GET /api/analytics/_schema`"
+      },
+      "params" : {
+        "type" : "object",
+        "description" : "The parameters of the query, as listed in its `params`, like `{\"top_n\": 10}` for the top N queries",
+        "additionalProperties" : true
+      },
+      "filters" : {
+        "$ref" : "#/components/schemas/UserAnalyticsQueryFilters"
+      },
+      "bucket" : {
+        "type" : "string",
+        "description" : "The time bucket size of timeseries and heatmaps: `1m`, `5m`, `1h`, `6h` or `1d`. When missing or unknown, it depends on the time range: up to 1 hour `1m`, up to 24 hours `1h`, up to 7 days `6h`, `1d` beyond",
+        "nullable" : true
+      },
+      "compare" : {
+        "type" : "boolean",
+        "description" : "Also run the query on the previous period of the same length and return it in `compare`. Ignored by the queries that do not support it (`supports_compare` in the catalog)",
+        "default" : false
+      },
+      "nocache" : {
+        "type" : "boolean",
+        "description" : "Run the query even if its result is in the cache, and do not cache the new one",
+        "default" : false
+      }
+    }
+  },
+  "UserAnalyticsQueryData" : {
+    "type" : "object",
+    "description" : "The result of a query. Its fields depend on `shape`: `scalar` has `value` and `label`, `pie` has `label` and `items` (with `key` and `value`), `topN` has `items` (with `key`, `label` and `value`), `timeseries` has `bucket` and either `points` (one series) or `series` (several named series), `heatmap` has `bucket`, `xBuckets`, `yBuckets` and `values`. The layout of `metric` and `table` results is up to the admin extension providing the query",
+    "properties" : {
+      "value" : {
+        "type" : "number",
+        "description" : "The value of a `scalar` result"
+      },
+      "label" : {
+        "type" : "string",
+        "description" : "The label of a `scalar` or `pie` result"
+      },
+      "items" : {
+        "type" : "array",
+        "description" : "The items of a `pie` or `topN` result, biggest first",
+        "items" : {
+          "$ref" : "#/components/schemas/UserAnalyticsQueryItem"
+        }
+      },
+      "bucket" : {
+        "type" : "string",
+        "description" : "The time bucket size of a `timeseries` or `heatmap` result"
+      },
+      "points" : {
+        "type" : "array",
+        "description" : "The points of a single series `timeseries` result, one per bucket",
+        "items" : {
+          "$ref" : "#/components/schemas/UserAnalyticsTimeseriesPoint"
+        }
+      },
+      "series" : {
+        "type" : "array",
+        "description" : "The series of a multi-series `timeseries` result",
+        "items" : {
+          "$ref" : "#/components/schemas/UserAnalyticsTimeseriesSeries"
+        }
+      },
+      "xBuckets" : {
+        "type" : "array",
+        "description" : "The time buckets of a `heatmap` result (X axis), as unix timestamps in milliseconds",
+        "items" : {
+          "type" : "integer",
+          "format" : "int64"
+        }
+      },
+      "yBuckets" : {
+        "type" : "array",
+        "description" : "The response time ranges of a `heatmap` result (Y axis), from `<50ms` to `>=3s`",
+        "items" : {
+          "type" : "string"
+        }
+      },
+      "values" : {
+        "type" : "array",
+        "description" : "The request counts of a `heatmap` result, one row per `yBuckets` entry and one column per `xBuckets` entry",
+        "items" : {
+          "type" : "array",
+          "items" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      }
+    }
+  },
+  "UserAnalyticsQueryItem" : {
+    "type" : "object",
+    "description" : "An item of a `pie` or `topN` result",
+    "properties" : {
+      "key" : {
+        "type" : "string",
+        "description" : "What is counted: a status code, a method, a route id, an API key client id, ..."
+      },
+      "label" : {
+        "type" : "string",
+        "description" : "A readable name for `key` (the route name for routes, `key` otherwise). `topN` only"
+      },
+      "value" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "The number of requests"
+      }
+    }
+  },
+  "UserAnalyticsTimeseriesPoint" : {
+    "type" : "object",
+    "description" : "A point of a timeseries",
+    "properties" : {
+      "ts" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "The start of the time bucket, as a unix timestamp in milliseconds"
+      },
+      "value" : {
+        "type" : "number",
+        "description" : "The value for this time bucket (0 when there is no data)"
+      }
+    }
+  },
+  "UserAnalyticsTimeseriesSeries" : {
+    "type" : "object",
+    "description" : "A named series of a multi-series timeseries",
+    "properties" : {
+      "name" : {
+        "type" : "string",
+        "description" : "The name of the series, like `p95`, `data_in` or `5xx`"
+      },
+      "points" : {
+        "type" : "array",
+        "description" : "The points of the series, one per bucket",
+        "items" : {
+          "$ref" : "#/components/schemas/UserAnalyticsTimeseriesPoint"
+        }
+      }
+    }
+  },
+  "UserAnalyticsQueryResult" : {
+    "type" : "object",
+    "description" : "The result of a user analytics query",
+    "properties" : {
+      "shape" : {
+        "type" : "string",
+        "description" : "The shape of `data`",
+        "enum" : [ "timeseries", "topN", "pie", "scalar", "metric", "table", "heatmap" ]
+      },
+      "data" : {
+        "$ref" : "#/components/schemas/UserAnalyticsQueryData"
+      },
+      "raw" : {
+        "type" : "array",
+        "description" : "The rows behind `data`, when the query provides them. Empty for multi-series timeseries and heatmaps",
+        "items" : {
+          "type" : "object"
+        }
+      },
+      "meta" : {
+        "type" : "object",
+        "description" : "Execution details",
+        "properties" : {
+          "execution_ms" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The time it took to run the query, in milliseconds. Missing when the result comes from the cache"
+          },
+          "from_cache" : {
+            "type" : "boolean",
+            "description" : "Whether the result comes from the 30 seconds result cache"
+          },
+          "bucket" : {
+            "type" : "string",
+            "description" : "The time bucket size used by the query"
+          }
+        }
+      }
+    }
+  },
+  "UserAnalyticsQueryResponse" : {
+    "type" : "object",
+    "description" : "The result of a user analytics query",
+    "properties" : {
+      "shape" : {
+        "type" : "string",
+        "description" : "The shape of `data`",
+        "enum" : [ "timeseries", "topN", "pie", "scalar", "metric", "table", "heatmap" ]
+      },
+      "data" : {
+        "$ref" : "#/components/schemas/UserAnalyticsQueryData"
+      },
+      "raw" : {
+        "type" : "array",
+        "description" : "The rows behind `data`, when the query provides them. Empty for multi-series timeseries and heatmaps",
+        "items" : {
+          "type" : "object"
+        }
+      },
+      "meta" : {
+        "type" : "object",
+        "description" : "Execution details",
+        "properties" : {
+          "execution_ms" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The time it took to run the query, in milliseconds. Missing when the result comes from the cache"
+          },
+          "from_cache" : {
+            "type" : "boolean",
+            "description" : "Whether the result comes from the 30 seconds result cache"
+          },
+          "bucket" : {
+            "type" : "string",
+            "description" : "The time bucket size used by the query"
+          }
+        }
+      },
+      "compare" : {
+        "description" : "The result of the same query on the previous period of the same length. Only present when `compare` was requested and the query supports it",
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/UserAnalyticsQueryResult"
+        } ]
+      }
+    }
+  },
+  "UserAnalyticsQueryCatalog" : {
+    "type" : "object",
+    "description" : "The queries user analytics can run",
+    "properties" : {
+      "queries" : {
+        "type" : "array",
+        "description" : "The available queries",
+        "items" : {
+          "$ref" : "#/components/schemas/UserAnalyticsQueryDefinition"
+        }
+      },
+      "widget_types" : {
+        "type" : "array",
+        "description" : "The widget types a dashboard widget can use",
+        "items" : {
+          "type" : "string"
+        }
+      }
+    }
+  },
+  "UserAnalyticsQueryDefinition" : {
+    "type" : "object",
+    "description" : "A query user analytics can run",
+    "properties" : {
+      "id" : {
+        "type" : "string",
+        "description" : "The id to use in `POST /api/analytics/_query` and in dashboard widgets"
+      },
+      "name" : {
+        "type" : "string",
+        "description" : "The name of the query"
+      },
+      "description" : {
+        "type" : "string",
+        "description" : "What the query computes"
+      },
+      "shape" : {
+        "type" : "string",
+        "description" : "The shape of the result of the query",
+        "enum" : [ "timeseries", "topN", "pie", "scalar", "metric", "table", "heatmap" ]
+      },
+      "default_widget" : {
+        "type" : "string",
+        "description" : "The widget type that displays the query by default"
+      },
+      "params" : {
+        "type" : "array",
+        "description" : "The parameters of the query",
+        "items" : {
+          "$ref" : "#/components/schemas/UserAnalyticsQueryParam"
+        }
+      },
+      "supports_compare" : {
+        "type" : "boolean",
+        "description" : "Whether the query can be compared with the previous period"
+      }
+    }
+  },
+  "UserAnalyticsQueryParam" : {
+    "type" : "object",
+    "description" : "A parameter of a user analytics query",
+    "properties" : {
+      "name" : {
+        "type" : "string",
+        "description" : "The name of the parameter in `params`"
+      },
+      "kind" : {
+        "type" : "string",
+        "description" : "The type of the parameter, like `int`"
+      },
+      "default" : {
+        "description" : "The value used when the parameter is missing"
+      },
+      "description" : {
+        "type" : "string",
+        "description" : "What the parameter does"
+      }
+    }
+  },
+  "UserAnalyticsProjection" : {
+    "type" : "object",
+    "description" : "A family of events user analytics can store",
+    "properties" : {
+      "id" : {
+        "type" : "string",
+        "description" : "The id of the projection, to use in `excluded_projections`"
+      },
+      "name" : {
+        "type" : "string",
+        "description" : "The name of the projection"
+      },
+      "description" : {
+        "type" : "string",
+        "description" : "The events stored by the projection"
+      },
+      "core" : {
+        "type" : "boolean",
+        "description" : "Whether the projection is built into Otoroshi (`false` when an admin extension provides it)"
+      },
+      "table" : {
+        "type" : "string",
+        "description" : "The table the events are written to",
+        "nullable" : true
+      }
+    }
+  },
+  "UserAnalyticsExporterSettings" : {
+    "type" : "object",
+    "description" : "The settings of a user-analytics data exporter (its `config`)",
+    "properties" : {
+      "uri" : {
+        "type" : "string",
+        "description" : "A PostgreSQL connection URI, like `postgresql://user:password@host:5432/database`. Used instead of the other connection settings when present",
+        "nullable" : true
+      },
+      "host" : {
+        "type" : "string",
+        "description" : "The host of the database",
+        "default" : "localhost"
+      },
+      "port" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "The port of the database",
+        "default" : 5432
+      },
+      "database" : {
+        "type" : "string",
+        "description" : "The name of the database",
+        "default" : "otoroshi"
+      },
+      "user" : {
+        "type" : "string",
+        "description" : "The user connecting to the database",
+        "default" : "otoroshi"
+      },
+      "password" : {
+        "type" : "string",
+        "description" : "The password of the user",
+        "default" : "otoroshi"
+      },
+      "schema" : {
+        "type" : "string",
+        "description" : "The schema holding the tables",
+        "default" : "public"
+      },
+      "table_prefix" : {
+        "type" : "string",
+        "description" : "The prefix of the table names",
+        "default" : "otoroshi_analytics_events"
+      },
+      "pool_size" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "The maximum number of connections to the database",
+        "default" : 10
+      },
+      "ssl" : {
+        "type" : "boolean",
+        "description" : "Require a TLS connection",
+        "default" : false
+      },
+      "retention_days" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "How long events are kept, in days",
+        "default" : 30
+      },
+      "statement_timeout_ms" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "The maximum duration of a query, in milliseconds",
+        "default" : 30000
+      },
+      "rollup_enabled" : {
+        "type" : "boolean",
+        "description" : "Reserved, not used yet",
+        "default" : false
+      },
+      "excluded_projections" : {
+        "type" : "array",
+        "description" : "The ids of the projections that are not stored (see `GET /api/analytics/_projections`)",
+        "items" : {
+          "type" : "string"
+        }
+      }
+    }
+  },
+  "UserAnalyticsOkResponse" : {
+    "type" : "object",
+    "description" : "The outcome of an operation",
+    "properties" : {
+      "ok" : {
+        "type" : "boolean",
+        "description" : "Whether the operation succeeded"
+      },
+      "error" : {
+        "type" : "string",
+        "description" : "Why the operation failed"
+      }
+    }
+  },
+  "UserAnalyticsSetActiveExporterResponse" : {
+    "type" : "object",
+    "description" : "The outcome of the activation of a user-analytics data exporter",
+    "properties" : {
+      "ok" : {
+        "type" : "boolean",
+        "description" : "Always `true`"
+      },
+      "active" : {
+        "type" : "string",
+        "description" : "The id of the active exporter"
+      },
+      "demoted_count" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "The number of exporters that were active before"
+      },
+      "seeded_default" : {
+        "type" : "array",
+        "description" : "The default dashboards that were created",
+        "items" : {
+          "type" : "string"
+        }
+      }
+    }
+  },
+  "UserAnalyticsRestoreDefaultsResponse" : {
+    "type" : "object",
+    "description" : "The default dashboards that were created",
+    "properties" : {
+      "created" : {
+        "type" : "array",
+        "description" : "The default ids of the dashboards that were created",
+        "items" : {
+          "type" : "string"
+        }
+      },
+      "count" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "The number of dashboards that were created"
+      }
+    }
+  },
+  "UserAnalyticsAlertEventsPage" : {
+    "type" : "object",
+    "description" : "A page of fired events of a user alert",
+    "properties" : {
+      "items" : {
+        "type" : "array",
+        "description" : "The fired events, newest first",
+        "items" : {
+          "$ref" : "#/components/schemas/UserAnalyticsAlertEvent"
+        }
+      },
+      "limit" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "The maximum number of events of the page"
+      },
+      "offset" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "The number of events skipped"
+      }
+    }
+  },
+  "UserAnalyticsAlertEvent" : {
+    "type" : "object",
+    "description" : "A time a user alert fired",
+    "properties" : {
+      "id" : {
+        "type" : "string",
+        "description" : "The id of the event"
+      },
+      "ts" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "When the alert fired, as a unix timestamp in milliseconds",
+        "nullable" : true
+      },
+      "tenant" : {
+        "type" : "string",
+        "description" : "The tenant of the alert"
+      },
+      "alert_id" : {
+        "type" : "string",
+        "description" : "The id of the user alert"
+      },
+      "alert_name" : {
+        "type" : "string",
+        "description" : "The name of the user alert when it fired",
+        "nullable" : true
+      },
+      "severity" : {
+        "type" : "string",
+        "description" : "The severity of the user alert, like `info`, `warning` or `critical`",
+        "nullable" : true
+      },
+      "message" : {
+        "type" : "string",
+        "description" : "The message of the user alert",
+        "nullable" : true
+      },
+      "combine" : {
+        "type" : "string",
+        "description" : "How the conditions were combined: `AND` or `OR`",
+        "nullable" : true
+      },
+      "windowSeconds" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "The time window the conditions were evaluated on, in seconds",
+        "nullable" : true
+      },
+      "conditions" : {
+        "type" : "array",
+        "description" : "The evaluation of each condition of the alert",
+        "items" : {
+          "$ref" : "#/components/schemas/UserAnalyticsAlertConditionEval"
+        }
+      },
+      "seen_at" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "When the event was acknowledged, as a unix timestamp in milliseconds",
+        "nullable" : true
+      },
+      "seen_by" : {
+        "type" : "string",
+        "description" : "Who acknowledged the event",
+        "nullable" : true
+      }
+    }
+  },
+  "UserAnalyticsAlertConditionEval" : {
+    "type" : "object",
+    "description" : "The evaluation of a condition of a user alert",
+    "properties" : {
+      "query" : {
+        "type" : "string",
+        "description" : "The id of the query of the condition"
+      },
+      "reducer" : {
+        "type" : "string",
+        "description" : "How the query result was reduced to a single value: `avg`, `max`, `min`, `sum` or `last`"
+      },
+      "operator" : {
+        "type" : "string",
+        "description" : "How the value was compared to the threshold: `>`, `>=`, `<`, `<=`, `==` or `!=`"
+      },
+      "threshold" : {
+        "type" : "number",
+        "description" : "The threshold"
+      },
+      "value" : {
+        "type" : "number",
+        "description" : "The reduced value",
+        "nullable" : true
+      },
+      "matched" : {
+        "type" : "boolean",
+        "description" : "Whether the condition was met"
+      },
+      "error" : {
+        "type" : "string",
+        "description" : "Why the condition could not be evaluated",
+        "nullable" : true
+      }
+    }
+  },
+  "UserAnalyticsUpdatedResponse" : {
+    "type" : "object",
+    "description" : "The number of updated events",
+    "properties" : {
+      "updated" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "The number of events that were acknowledged"
+      }
+    }
   }
 }

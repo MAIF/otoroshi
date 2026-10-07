@@ -904,7 +904,12 @@ object OpenApi {
     finalSchemas
   }
 
-  def generate(env: Env, version: Option[String], extensionGroup: Option[String] = None): String = {
+  /**
+   * With `coreOnly`, the document only describes otoroshi itself: the resources of every admin extension are left
+   * out, the ones shipped with otoroshi (workflows, remote catalogs, coraza waf, ...) included.
+   */
+  def generate(env: Env, version: Option[String], extensionGroup: Option[String] = None, coreOnly: Boolean = false): String = {
+    println(s"generate: version=${version}, extensionGroup=${extensionGroup}, coreOnly=${coreOnly}")
     // TODO: missing live metrics api
     // TODO: missing analytics api
     val additionalPathsFile = env.environment.resourceAsStream("/schemas/additionalPaths.json").get
@@ -915,9 +920,14 @@ object OpenApi {
     val additionalComponentsRaw  = new String(additionalComponentsFile.readAllBytes(), StandardCharsets.UTF_8)
     val additionalComponentsJson = Json.parse(additionalComponentsRaw).asObject
 
+    // the core document and the complete one are cached separately
+    val cacheSuffix = if (coreOnly) ":core" else ""
+
     val finalDoc = cache.getOrElseUpdate(
-      "singleton", {
-        val resources                      = env.allResources.resources.filter(_.version.served).filterNot(_.version.deprecated)
+      s"singleton$cacheSuffix", {
+        val resources                      = (if (coreOnly) env.allResources.coreResources else env.allResources.resources)
+          .filter(_.version.served)
+          .filterNot(_.version.deprecated)
         val _schemas: Map[String, JsValue] = resources
           .map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz)(using env)))
           .toMap
@@ -970,7 +980,8 @@ object OpenApi {
                 "snowmonkey",
                 "import-export",
                 "events",
-                "tunnels"
+                "tunnels",
+                "user-analytics"
               ).map(res => Json.obj("name" -> res, "description" -> s"all the operations in the ${res} api"))
             ),
             "paths"        -> (JsObject(paths) ++ additionalPathsJson),
@@ -992,7 +1003,7 @@ object OpenApi {
       case None        => finalDoc
       case Some(group) => {
         cache.getOrElseUpdate(
-          group, {
+          s"$group$cacheSuffix", {
 
             env.logger.info(s"Compute sub openapi.json document for group: '${group}'")
 

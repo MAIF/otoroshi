@@ -57,6 +57,59 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
         }
       }
     }
+    "document every user analytics endpoint" in {
+      val spec   = Json.parse(otoroshi.api.OpenApi.generate(otoroshiComponents.env, None))
+      val paths  = (spec \ "paths").as[JsObject]
+      // the user analytics endpoints are not generic resources, they are described in conf/schemas/additionalPaths.json.
+      // the legacy events migration is left out as it only answers in dev mode
+      val source = scala.io.Source.fromInputStream(otoroshiComponents.env.environment.resourceAsStream("/routes").get)
+      val routes =
+        try {
+          source
+            .getLines()
+            .map(_.trim.split("\\s+").toList)
+            .collect {
+              case method :: path :: _ if path.startsWith("/api/analytics/") && !path.endsWith("/_migrate") =>
+                (method.toLowerCase, path.replaceAll(":([A-Za-z]+)", "{$1}"))
+            }
+            .toList
+        } finally {
+          source.close()
+        }
+      routes must not be empty
+      routes.foreach { case (method, path) =>
+        withClue(s"documentation of $method $path") {
+          (paths \ path \ method).isDefined mustBe true
+        }
+      }
+    }
+    "leave the admin extensions out of the core document" in {
+      val env                             = otoroshiComponents.env
+      def paths(doc: String): Set[String] = (Json.parse(doc) \ "paths").as[JsObject].keys.toSet
+
+      def collections(resources: Seq[otoroshi.api.Resource]): Seq[String] = resources
+        .filter(_.version.served)
+        .filterNot(_.version.deprecated)
+        .map(res => s"/apis/${res.group}/${res.version.name}/${res.pluralName}")
+
+      val complete   = paths(otoroshi.api.OpenApi.generate(env, None))
+      val core       = paths(otoroshi.api.OpenApi.generate(env, None, coreOnly = true))
+      val extensions = collections(env.adminExtensions.resources())
+      extensions must not be empty
+      extensions.foreach { path =>
+        withClue(s"extension resource $path") {
+          complete must contain(path)
+          core must not contain (path)
+        }
+      }
+      collections(env.allResources.coreResources).foreach { path =>
+        withClue(s"core resource $path") {
+          core must contain(path)
+        }
+      }
+      // the endpoints described by hand belong to the core
+      core must contain("/api/analytics/_query")
+    }
     "shutdown" in {
       stopAll()
     }

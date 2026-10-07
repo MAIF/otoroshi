@@ -2690,5 +2690,928 @@
         }
       }
     }
+  },
+  "/api/analytics/_query": {
+    "post": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "Run a user analytics query",
+      "description": "Runs a query of the user analytics catalog (see `GET /api/analytics/_schema`) on the PostgreSQL database of the active user-analytics data exporter and returns its result.\n\nThis is how the user analytics dashboards get their data: read a dashboard with `GET /apis/analytics.otoroshi.io/v1/user-dashboards/{id}`, then run one query per widget with its `query` and `params`.\n\nThe result is always restricted to the tenant given by the `Otoroshi-Tenant` header, and is cached for 30 seconds unless `nocache` is `true`. Only leader instances serve this endpoint.\n\nBuilt-in queries (admin extensions can add more):\n\n| id | shape | params | compare |\n|---|---|---|---|\n| `requests_total` | `scalar` | | yes |\n| `errors_total` | `scalar` | | yes |\n| `requests_by_status` | `pie` | | no |\n| `requests_by_method` | `pie` | | no |\n| `requests_by_route` | `topN` | `top_n` | no |\n| `requests_by_api` | `topN` | `top_n` | no |\n| `requests_by_apikey` | `topN` | `top_n` | no |\n| `requests_by_user` | `topN` | `top_n` | no |\n| `requests_by_domain` | `topN` | `top_n` | no |\n| `requests_by_country` | `topN` | `top_n` | no |\n| `top_error_routes` | `topN` | `top_n` | no |\n| `requests_per_second` | `timeseries` (`points`) | | yes |\n| `error_rate_ts` | `timeseries` (`points`) | | yes |\n| `duration_avg_ts` | `timeseries` (`points`) | | yes |\n| `overhead_avg_ts` | `timeseries` (`points`) | | yes |\n| `duration_percentiles_ts` | `timeseries` (`series`: `p50`, `p75`, `p95`, `p99`) | | yes |\n| `traffic_in_out_ts` | `timeseries` (`series`: `data_in`, `data_out`) | | yes |\n| `requests_by_status_class_ts` | `timeseries` (`series`: `2xx`, `3xx`, `4xx`, `5xx`) | | yes |\n| `response_time_heatmap` | `heatmap` | | no |",
+      "operationId": "otoroshi.next.analytics.controllers.AnalyticsController.runQuery",
+      "parameters": [
+        {
+          "name": "Otoroshi-Tenant",
+          "in": "header",
+          "required": false,
+          "description": "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema": {
+            "type": "string",
+            "default": "default"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "the query to run",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UserAnalyticsQueryRequest"
+            },
+            "example": {
+              "query": "requests_per_second",
+              "params": {},
+              "filters": {
+                "from": "now-24h",
+                "to": "now",
+                "route_id": "route_d74ea8b27-b8be-4177-82d9-c50722416c50"
+              },
+              "bucket": "1h",
+              "compare": false,
+              "nocache": false
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsQueryResponse"
+              },
+              "example": {
+                "shape": "timeseries",
+                "data": {
+                  "bucket": "1h",
+                  "points": [
+                    {
+                      "ts": 1791320400000,
+                      "value": 12.5
+                    },
+                    {
+                      "ts": 1791324000000,
+                      "value": 14.25
+                    }
+                  ]
+                },
+                "raw": [
+                  {
+                    "ts": 1791320400000,
+                    "value": 12.5
+                  },
+                  {
+                    "ts": 1791324000000,
+                    "value": 14.25
+                  }
+                ],
+                "meta": {
+                  "execution_ms": 12,
+                  "from_cache": false,
+                  "bucket": "1h"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Malformed body, or the query failed on the database",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Unknown query id, or the instance is not a leader",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "412": {
+          "description": "No user-analytics data exporter is active",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The analytics runtime is not initialized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/analytics/_schema": {
+    "get": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "Get the catalog of user analytics queries",
+      "description": "Lists every query `POST /api/analytics/_query` can run, admin extensions included, with the shape of its result, the widget that displays it by default, its parameters and whether it supports period comparison. Also lists the widget types a dashboard widget can use.",
+      "operationId": "otoroshi.next.analytics.controllers.AnalyticsController.schema",
+      "parameters": [
+        {
+          "name": "Otoroshi-Tenant",
+          "in": "header",
+          "required": false,
+          "description": "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema": {
+            "type": "string",
+            "default": "default"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsQueryCatalog"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The analytics runtime is not initialized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/analytics/_projections": {
+    "get": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "List the event families user analytics can store",
+      "description": "Lists the event families (projections) the user-analytics data exporter can store, admin extensions included, and the table each one is written to. Any of them can be left out with the `excluded_projections` setting of the exporter.",
+      "operationId": "otoroshi.next.analytics.controllers.AnalyticsController.projections",
+      "parameters": [
+        {
+          "name": "schema",
+          "in": "query",
+          "required": false,
+          "description": "The PostgreSQL schema used to compute the `table` of each projection",
+          "schema": {
+            "type": "string",
+            "default": "public"
+          }
+        },
+        {
+          "name": "table_prefix",
+          "in": "query",
+          "required": false,
+          "description": "The table prefix used to compute the `table` of each projection",
+          "schema": {
+            "type": "string",
+            "default": "otoroshi_analytics_events"
+          }
+        },
+        {
+          "name": "Otoroshi-Tenant",
+          "in": "header",
+          "required": false,
+          "description": "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema": {
+            "type": "string",
+            "default": "default"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/UserAnalyticsProjection"
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/analytics/_test-connection": {
+    "post": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "Test the connection to a user analytics database",
+      "description": "Opens a single connection to the PostgreSQL database described by the body (the `config` of a user-analytics data exporter) and runs `SELECT 1` on it. Super admin only.",
+      "operationId": "otoroshi.next.analytics.controllers.AnalyticsController.testConnection",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "the settings of the database to test",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UserAnalyticsExporterSettings"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsOkResponse"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid settings, or the connection failed (`ok` is `false` and `error` tells why)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsOkResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is not a super admin",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/analytics/_set-active-exporter/{id}": {
+    "post": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "Make a user-analytics data exporter the active one",
+      "description": "Makes the user-analytics data exporter `id` the one user analytics reads from (flagged by its `otoroshi:user-analytics:active` metadata), removes the flag from the other ones, then creates the default dashboards that are missing. Super admin only.",
+      "operationId": "otoroshi.next.analytics.controllers.AnalyticsController.setActiveExporter",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "The id of the user-analytics data exporter",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsSetActiveExporterResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is not a super admin",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No user-analytics data exporter with this id",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/analytics/dashboards/_restore-defaults": {
+    "post": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "Restore the default user dashboards",
+      "description": "Creates again the default dashboards that are missing. Existing dashboards are never modified. Super admin only.",
+      "operationId": "otoroshi.next.analytics.controllers.UserDashboardController.restoreDefaults",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsRestoreDefaultsResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is not a super admin",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The default dashboards could not be created",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/analytics/alerts/{alertId}/events": {
+    "get": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "List the fired events of a user alert",
+      "description": "Returns the times the user alert fired, newest first, read from the database of the active user-analytics data exporter and restricted to the tenant given by the `Otoroshi-Tenant` header.",
+      "operationId": "otoroshi.next.analytics.controllers.AlertEventsController.listEvents",
+      "parameters": [
+        {
+          "name": "alertId",
+          "in": "path",
+          "required": true,
+          "description": "The id of the user alert",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "description": "The maximum number of events returned",
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "default": 200,
+            "minimum": 1,
+            "maximum": 2000
+          }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "required": false,
+          "description": "The number of events skipped",
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0,
+            "minimum": 0
+          }
+        },
+        {
+          "name": "seen",
+          "in": "query",
+          "required": false,
+          "description": "Only return the acknowledged events (`true`) or the not yet acknowledged ones (`false`). All of them when missing",
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "Otoroshi-Tenant",
+          "in": "header",
+          "required": false,
+          "description": "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema": {
+            "type": "string",
+            "default": "default"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsAlertEventsPage"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "412": {
+          "description": "No user-analytics data exporter is active",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The database of the active user-analytics data exporter could not be queried",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/analytics/alerts/{alertId}/events/_seen-all": {
+    "post": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "Acknowledge all the fired events of a user alert",
+      "description": "Marks every not yet acknowledged event of the user alert as seen by the caller.",
+      "operationId": "otoroshi.next.analytics.controllers.AlertEventsController.markAllSeen",
+      "parameters": [
+        {
+          "name": "alertId",
+          "in": "path",
+          "required": true,
+          "description": "The id of the user alert",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "Otoroshi-Tenant",
+          "in": "header",
+          "required": false,
+          "description": "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema": {
+            "type": "string",
+            "default": "default"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsUpdatedResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "412": {
+          "description": "No user-analytics data exporter is active",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The database of the active user-analytics data exporter could not be queried",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/analytics/alerts/{alertId}/events/{eventId}/seen": {
+    "post": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "Acknowledge a fired event of a user alert",
+      "description": "Marks the event as seen by the caller.",
+      "operationId": "otoroshi.next.analytics.controllers.AlertEventsController.markSeen",
+      "parameters": [
+        {
+          "name": "alertId",
+          "in": "path",
+          "required": true,
+          "description": "The id of the user alert",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "eventId",
+          "in": "path",
+          "required": true,
+          "description": "The id of the fired event",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "Otoroshi-Tenant",
+          "in": "header",
+          "required": false,
+          "description": "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema": {
+            "type": "string",
+            "default": "default"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsOkResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No such event for this alert in this tenant",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "412": {
+          "description": "No user-analytics data exporter is active",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The database of the active user-analytics data exporter could not be queried",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/analytics/alerts/{alertId}/events/{eventId}/unseen": {
+    "post": {
+      "tags": [
+        "user-analytics"
+      ],
+      "summary": "Remove the acknowledgement of a fired event of a user alert",
+      "description": "Marks the event as not seen anymore.",
+      "operationId": "otoroshi.next.analytics.controllers.AlertEventsController.markUnseen",
+      "parameters": [
+        {
+          "name": "alertId",
+          "in": "path",
+          "required": true,
+          "description": "The id of the user alert",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "eventId",
+          "in": "path",
+          "required": true,
+          "description": "The id of the fired event",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "Otoroshi-Tenant",
+          "in": "header",
+          "required": false,
+          "description": "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema": {
+            "type": "string",
+            "default": "default"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAnalyticsOkResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No such event for this alert in this tenant",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "412": {
+          "description": "No user-analytics data exporter is active",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The database of the active user-analytics data exporter could not be queried",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }

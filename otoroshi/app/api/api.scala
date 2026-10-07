@@ -566,7 +566,7 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
 }
 
 class OtoroshiResources(env: Env) {
-  lazy val resources = Seq(
+  lazy val coreResources = Seq(
     ///////
     Resource(
       "Route",
@@ -1134,7 +1134,9 @@ class OtoroshiResources(env: Env) {
         stateUpdate = seq => env.proxyState.updateUserAlerts(seq)
       )
     )
-  ) ++ env.adminExtensions.resources()
+  )
+
+  lazy val resources = coreResources ++ env.adminExtensions.resources()
 
 }
 
@@ -2646,7 +2648,8 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     val body     = otoroshi.api.OpenApi.generate(
       env,
       ctx.request.getQueryString("version"),
-      ctx.request.getQueryString("extension_group")
+      ctx.request.getQueryString("extension_group"),
+      ctx.request.getQueryString("core").contains("true")
     )
     val accepted = ctx.request.acceptedTypes
       .map(v => (s"${v.mediaType}/${v.mediaSubType}", v.qValue.getOrElse(BigDecimal(1.0))))
@@ -2729,7 +2732,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   def openapiUi = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     Ok(
       otoroshi.views.html.oto.openapiFrame(
-        s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json?doc_secret=${ctx.sec}"
+        s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi?core=${ctx.request.getQueryString("core").getOrElse("false")}&doc_secret=${ctx.sec}"
       )
     )
   }
