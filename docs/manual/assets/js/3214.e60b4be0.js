@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunkotoroshi_documentation=globalThis.webpackChunkotoroshi_documentation||[]).push([[3214],{53214(o,e,t){t.d(e,{createPacketServices:()=>a.$});var a=t(75893);t(72519)}}]);
