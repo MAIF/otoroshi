@@ -83,7 +83,7 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
         }
       }
     }
-    "leave the admin extensions out of the core document" in {
+    "leave the third party admin extensions out of the core document" in {
       val env                             = otoroshiComponents.env
       def paths(doc: String): Set[String] = (Json.parse(doc) \ "paths").as[JsObject].keys.toSet
 
@@ -94,10 +94,19 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
 
       val complete   = paths(otoroshi.api.OpenApi.generate(env, None))
       val core       = paths(otoroshi.api.OpenApi.generate(env, None, coreOnly = true))
-      val extensions = collections(env.adminExtensions.resources())
-      extensions must not be empty
-      extensions.foreach { path =>
-        withClue(s"extension resource $path") {
+      val shipped    = collections(env.adminExtensions.coreResources())
+      // the third party extensions come from the vendored jars of lib/
+      val thirdParty = collections(env.adminExtensions.resources()).filterNot(shipped.contains)
+      shipped must not be empty
+      thirdParty must not be empty
+      shipped.foreach { path =>
+        withClue(s"resource of an extension shipped with otoroshi $path") {
+          complete must contain(path)
+          core must contain(path)
+        }
+      }
+      thirdParty.foreach { path =>
+        withClue(s"resource of a third party extension $path") {
           complete must contain(path)
           core must not contain (path)
         }
@@ -107,6 +116,7 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
           core must contain(path)
         }
       }
+      core must contain("/apis/plugins.otoroshi.io/v1/workflows")
       // the endpoints described by hand belong to the core
       core must contain("/api/analytics/_query")
     }

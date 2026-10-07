@@ -20,7 +20,8 @@ class GenericOpenApiSpec extends OtoroshiSpec {
       startOtoroshi()
     }
     "generate" in {
-      val spec = otoroshi.api.OpenApi.generate(otoroshiComponents.env, None)
+      // the published document describes otoroshi, not the third party extensions found on the classpath (lib/)
+      val spec = otoroshi.api.OpenApi.generate(otoroshiComponents.env, None, coreOnly = true)
       files.foreach { file =>
         val f = new File(file)
         f.delete()

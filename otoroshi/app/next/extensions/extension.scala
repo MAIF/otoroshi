@@ -192,6 +192,13 @@ trait AdminExtension {
     .getOrElse(Configuration.empty)
 }
 
+/**
+ * Marks the admin extensions shipped with otoroshi, as opposed to the third party ones. Their resources are part of
+ * the core of otoroshi, for instance in the openapi document generated with `coreOnly`. Third party extensions must
+ * not use it.
+ */
+trait CoreAdminExtension extends AdminExtension
+
 object AdminExtensions {
   def current(env: Env, config: AdminExtensionConfig): AdminExtensions = {
     if (config.enabled) {
@@ -545,6 +552,17 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   def resources(): Seq[Resource] = {
     if (hasExtensions) {
       entities.map(_.resource)
+    } else {
+      Seq.empty
+    }
+  }
+
+  // the resources of the extensions shipped with otoroshi
+  def coreResources(): Seq[Resource] = {
+    if (hasExtensions) {
+      extensions.collect { case ext: CoreAdminExtension =>
+        entitiesMap.getOrElse(ext.id.cleanup, Seq.empty).map(_.resource)
+      }.flatten
     } else {
       Seq.empty
     }

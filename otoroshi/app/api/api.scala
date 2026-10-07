@@ -566,7 +566,8 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
 }
 
 class OtoroshiResources(env: Env) {
-  lazy val coreResources = Seq(
+  // the resources of otoroshi itself, without any admin extension
+  private lazy val nativeResources = Seq(
     ///////
     Resource(
       "Route",
@@ -1136,7 +1137,10 @@ class OtoroshiResources(env: Env) {
     )
   )
 
-  lazy val resources = coreResources ++ env.adminExtensions.resources()
+  lazy val resources = nativeResources ++ env.adminExtensions.resources()
+
+  // the resources of otoroshi and of the admin extensions shipped with it, leaving out the third party extensions
+  lazy val coreResources = nativeResources ++ env.adminExtensions.coreResources()
 
 }
 

@@ -214,7 +214,7 @@ class HttpListenerAdminExtensionState(env: Env) {
   }
 }
 
-class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
+class HttpListenerAdminExtension(val env: Env) extends CoreAdminExtension {
 
   private lazy val datastores = new HttpListenerAdminExtensionDatastores(env, id)
   private lazy val states     = new HttpListenerAdminExtensionState(env)

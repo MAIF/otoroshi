@@ -377,7 +377,7 @@ class CorazaWafConfigAdminExtensionState(env: Env) {
   }
 }
 
-class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
+class CorazaWafAdminExtension(val env: Env) extends CoreAdminExtension {
 
   private[proxywasm] lazy val datastores = new CorazaWafConfigAdminExtensionDatastores(env, id)
   private[proxywasm] lazy val states     = new CorazaWafConfigAdminExtensionState(env)

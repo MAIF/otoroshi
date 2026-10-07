@@ -8,7 +8,7 @@ import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
 import otoroshi.env.Env
 import otoroshi.events.{AnalyticsReadsServiceImpl, GatewayEvent, OtoroshiEvent}
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
-import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId}
+import otoroshi.next.extensions.{AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId, CoreAdminExtension}
 import otoroshi.next.utils.FOption
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -160,7 +160,7 @@ class GreenScoreAdminExtensionState(env: Env) {
   }
 }
 
-class GreenScoreExtension(val env: Env) extends AdminExtension {
+class GreenScoreExtension(val env: Env) extends CoreAdminExtension {
 
   private[greenscore] val logger          = Logger("otoroshi-extension-green-score")
   private[greenscore] val ecoMetrics      = new EcoMetrics()

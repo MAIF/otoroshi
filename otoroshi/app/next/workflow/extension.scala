@@ -253,7 +253,7 @@ object WorkflowAdminExtension {
   val workflowDebuggerKey  = TypedKey[WorkflowDebugger]("otoroshi.extensions.workflows.WorkflowDebuggerKey")
 }
 
-class WorkflowAdminExtension(val env: Env) extends AdminExtension {
+class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
 
   private[workflow] lazy val datastores = new WorkflowConfigAdminExtensionDatastores(env, id)
   private[workflow] lazy val states     = new WorkflowConfigAdminExtensionState(env)

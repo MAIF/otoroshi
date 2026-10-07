@@ -905,8 +905,8 @@ object OpenApi {
   }
 
   /**
-   * With `coreOnly`, the document only describes otoroshi itself: the resources of every admin extension are left
-   * out, the ones shipped with otoroshi (workflows, remote catalogs, coraza waf, ...) included.
+   * With `coreOnly`, the document only describes otoroshi and the admin extensions shipped with it (workflows, remote
+   * catalogs, coraza waf, ...): the resources of the third party extensions are left out.
    */
   def generate(env: Env, version: Option[String], extensionGroup: Option[String] = None, coreOnly: Boolean = false): String = {
     // TODO: missing live metrics api

@@ -167,7 +167,7 @@ class RemoteCatalogAdminExtensionState(env: Env) {
   }
 }
 
-class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
+class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
 
   private lazy val logger = Logger("otoroshi-remote-catalogs-extension")
 
