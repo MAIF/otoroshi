@@ -797,7 +797,8 @@ class Designer extends React.Component {
       ...node,
       plugin_index: steps
         .filter(
-          (step) => (node.plugin_steps || []).includes(step) && node.plugin_index[step] === undefined
+          (step) =>
+            (node.plugin_steps || []).includes(step) && node.plugin_index[step] === undefined
         )
         .reduce(
           (pluginIndex, step) => ({ ...pluginIndex, [step]: ++lastIndexes[step] }),
@@ -973,36 +974,35 @@ class Designer extends React.Component {
     let newNodes = [];
     let newRoute = { ...route, plugins: [] };
 
-    this.withPluginIndexes(new_nodes.filter((node) => !!node))
-      .map((node) => {
-        const nodeId = this.generateNewInternalNodeId(node.id);
-        const newNode = {
-          ...node,
-          nodeId,
-          plugin_index: node.plugin_index,
-        };
-        newNodes = [...newNodes, newNode];
-        newRoute = {
-          ...newRoute,
-          plugins: [
-            ...newRoute.plugins,
-            {
-              plugin_index: newNode.plugin_index,
-              nodeId: newNode.nodeId,
-              plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
-              enabled: node.enabled === false ? false : true,
-              debug: node.debug || false,
-              include: node.include || [],
-              exclude: node.exclude || [],
-              bound_listeners: node.bound_listeners || [],
-              config: {
-                ...newNode.config,
-                plugin: newNode.legacy ? newNode.id : undefined,
-              },
+    this.withPluginIndexes(new_nodes.filter((node) => !!node)).map((node) => {
+      const nodeId = this.generateNewInternalNodeId(node.id);
+      const newNode = {
+        ...node,
+        nodeId,
+        plugin_index: node.plugin_index,
+      };
+      newNodes = [...newNodes, newNode];
+      newRoute = {
+        ...newRoute,
+        plugins: [
+          ...newRoute.plugins,
+          {
+            plugin_index: newNode.plugin_index,
+            nodeId: newNode.nodeId,
+            plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
+            enabled: node.enabled === false ? false : true,
+            debug: node.debug || false,
+            include: node.include || [],
+            exclude: node.exclude || [],
+            bound_listeners: node.bound_listeners || [],
+            config: {
+              ...newNode.config,
+              plugin: newNode.legacy ? newNode.id : undefined,
             },
-          ],
-        };
-      });
+          },
+        ],
+      };
+    });
     this.setState(
       {
         selectedNode: null,
@@ -1028,36 +1028,35 @@ class Designer extends React.Component {
     const newPlugins = [...plugins];
     let newNodes = [];
     let newRoute = { ...route, plugins: [] };
-    this.withPluginIndexes(new_nodes.filter((node) => !!node))
-      .map((node) => {
-        const nodeId = this.generateNewInternalNodeId(node.id);
-        const newNode = {
-          ...node,
-          nodeId,
-          plugin_index: node.plugin_index,
-        };
-        newNodes = [...newNodes, newNode];
-        newRoute = {
-          ...newRoute,
-          plugins: [
-            ...newRoute.plugins,
-            {
-              plugin_index: newNode.plugin_index,
-              nodeId: newNode.nodeId,
-              plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
-              enabled: node.enabled === false ? false : true,
-              debug: node.debug || false,
-              include: node.include || [],
-              exclude: node.exclude || [],
-              bound_listeners: node.bound_listeners || [],
-              config: {
-                ...newNode.config,
-                plugin: newNode.legacy ? newNode.id : undefined,
-              },
+    this.withPluginIndexes(new_nodes.filter((node) => !!node)).map((node) => {
+      const nodeId = this.generateNewInternalNodeId(node.id);
+      const newNode = {
+        ...node,
+        nodeId,
+        plugin_index: node.plugin_index,
+      };
+      newNodes = [...newNodes, newNode];
+      newRoute = {
+        ...newRoute,
+        plugins: [
+          ...newRoute.plugins,
+          {
+            plugin_index: newNode.plugin_index,
+            nodeId: newNode.nodeId,
+            plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
+            enabled: node.enabled === false ? false : true,
+            debug: node.debug || false,
+            include: node.include || [],
+            exclude: node.exclude || [],
+            bound_listeners: node.bound_listeners || [],
+            config: {
+              ...newNode.config,
+              plugin: newNode.legacy ? newNode.id : undefined,
             },
-          ],
-        };
-      });
+          },
+        ],
+      };
+    });
     this.setState(
       {
         selectedNode: null,
