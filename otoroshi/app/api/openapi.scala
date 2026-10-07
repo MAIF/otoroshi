@@ -910,7 +910,6 @@ object OpenApi {
    */
   def generate(env: Env, version: Option[String], extensionGroup: Option[String] = None, coreOnly: Boolean = false): String = {
     // TODO: missing live metrics api
-    // TODO: missing analytics api
     val additionalPathsFile = env.environment.resourceAsStream("/schemas/additionalPaths.json").get
     val additionalPathsRaw  = new String(additionalPathsFile.readAllBytes(), StandardCharsets.UTF_8)
     val additionalPathsJson = Json.parse(additionalPathsRaw).asObject

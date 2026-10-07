@@ -591,7 +591,7 @@
           },
           "from_cache" : {
             "type" : "boolean",
-            "description" : "Whether the result comes from the 30 seconds result cache"
+            "description" : "Whether the result, and its comparison when there is one, comes from the 30 seconds result cache"
           },
           "bucket" : {
             "type" : "string",
@@ -631,7 +631,7 @@
           },
           "from_cache" : {
             "type" : "boolean",
-            "description" : "Whether the result comes from the 30 seconds result cache"
+            "description" : "Whether the result, and its comparison when there is one, comes from the 30 seconds result cache"
           },
           "bucket" : {
             "type" : "string",

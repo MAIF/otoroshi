@@ -337,55 +337,80 @@ class QueryExecutor(registry: AnalyticsQueryRegistry, cache: QueryCache) {
               .flatMap(Bucket.parse)
               .getOrElse(Bucketing.autoBucket(filters.from, filters.to))
 
-            val cacheKey = makeKey(queryId, filters, params, bucket)
-            val cached   = if (nocache) None else cache.get(cacheKey)
-
-            cached match {
-              case Some(r) =>
-                val js = r.toJson.deepMerge(
-                  Json.obj("meta" -> Json.obj("from_cache" -> true, "bucket" -> bucket.name))
-                )
-                Future.successful(Right(js))
-
-              case None =>
-                val started = System.currentTimeMillis()
-                val mainFu  = query.execute(filters, params, bucket, settings, pool)
-
-                val withCompare: Future[(JsObject, QueryResult)] =
-                  if (compare && query.supportsCompare) {
-                    val durationSec = math.max(1L, java.time.Duration.between(filters.from, filters.to).getSeconds)
-                    val previous    = filters.copy(
-                      from = filters.from.minusSeconds(durationSec),
-                      to = filters.from
-                    )
-                    for {
-                      main <- mainFu
-                      prev <- query.execute(previous, params, bucket, settings, pool)
-                    } yield (main.toJson + ("compare" -> prev.toJson), main)
-                  } else {
-                    mainFu.map(r => (r.toJson, r))
-                  }
-
-                withCompare
-                  .map { case (js, original) =>
-                    val withMeta = js.deepMerge(
-                      Json.obj(
-                        "meta" -> Json.obj(
-                          "execution_ms" -> (System.currentTimeMillis() - started),
-                          "from_cache"   -> false,
-                          "bucket"       -> bucket.name
-                        )
-                      )
-                    )
-                    if (!nocache) cache.put(cacheKey, original)
-                    Right(withMeta): Either[String, JsObject]
-                  }
-                  .recover { case e: Throwable =>
-                    logger.error(s"query '$queryId' failed", e)
-                    Left(s"query '$queryId' failed: ${e.getMessage}")
-                  }
-            }
+            QueryExecutor
+              .runPeriods(cache, queryId, filters, params, bucket, compare && query.supportsCompare, nocache) {
+                periodFilters => query.execute(periodFilters, params, bucket, settings, pool)
+              }
+              .map(js => Right(js): Either[String, JsObject])
+              .recover { case e: Throwable =>
+                logger.error(s"query '$queryId' failed", e)
+                Left(s"query '$queryId' failed: ${e.getMessage}")
+              }
         }
+    }
+  }
+}
+
+object QueryExecutor {
+
+  /**
+   * Runs a query on the selected period and, with `compare`, on the previous period of the same length, then adds
+   *  the execution details to the result.
+   *
+   * Each period is cached on its own. Caching the response as a whole lost the comparison when a compared result
+   *  came back from the cache, and served the comparison to requests that did not ask for one.
+   */
+  def runPeriods(
+      cache: QueryCache,
+      queryId: String,
+      filters: Filters,
+      params: JsObject,
+      bucket: Bucket,
+      compare: Boolean,
+      nocache: Boolean
+  )(execute: Filters => Future[QueryResult])(using ec: ExecutionContext): Future[JsObject] = {
+    val started = System.currentTimeMillis()
+
+    // the result of a period, and whether it comes from the cache
+    def resultOf(periodFilters: Filters): Future[(QueryResult, Boolean)] = {
+      val cacheKey = makeKey(queryId, periodFilters, params, bucket)
+      val cached   = if (nocache) None else cache.get(cacheKey)
+      cached match {
+        case Some(r) => Future.successful((r, true))
+        case None    =>
+          execute(periodFilters).map { r =>
+            if (!nocache) cache.put(cacheKey, r)
+            (r, false)
+          }
+      }
+    }
+
+    val withCompare: Future[(JsObject, Boolean)] =
+      if (compare) {
+        val durationSec = math.max(1L, java.time.Duration.between(filters.from, filters.to).getSeconds)
+        val previous    = filters.copy(
+          from = filters.from.minusSeconds(durationSec),
+          to = filters.from
+        )
+        resultOf(filters).flatMap { case (main, mainFromCache) =>
+          resultOf(previous).map { case (prev, prevFromCache) =>
+            (main.toJson + ("compare" -> prev.toJson), mainFromCache && prevFromCache)
+          }
+        }
+      } else {
+        resultOf(filters).map { case (main, fromCache) => (main.toJson, fromCache) }
+      }
+
+    withCompare.map { case (js, fromCache) =>
+      val meta =
+        if (fromCache) Json.obj("from_cache" -> true, "bucket" -> bucket.name)
+        else
+          Json.obj(
+            "execution_ms" -> (System.currentTimeMillis() - started),
+            "from_cache"   -> false,
+            "bucket"       -> bucket.name
+          )
+      js.deepMerge(Json.obj("meta" -> meta))
     }
   }
 

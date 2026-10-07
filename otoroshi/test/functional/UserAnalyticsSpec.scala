@@ -8,6 +8,9 @@ import otoroshi.next.analytics.queries.*
 import play.api.libs.json.*
 
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.duration.*
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 /**
  * Pure-logic tests for the user-analytics feature: no PG, no Env, no
@@ -17,6 +20,7 @@ import java.time.Instant
  *   - Bucketing rules + SQL fragments
  *   - FilterSql clause + parameter binding (incl. tenant injection)
  *   - AlertEvaluator reducers and operator comparison
+ *   - QueryExecutor result cache, period comparison included
  *   - JSON round-trips for entity case classes
  */
 class UserAnalyticsSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers with OptionValues {
@@ -493,6 +497,79 @@ class UserAnalyticsSpec extends org.scalatest.wordspec.AnyWordSpec with org.scal
       parsed.widgets.size mustBe 1
       val again    = UserDashboard.format.reads(parsed.json).asOpt.value
       again mustBe parsed
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // QueryExecutor.runPeriods
+  // ---------------------------------------------------------------------------
+
+  "QueryExecutor.runPeriods" should {
+
+    given ExecutionContext = ExecutionContext.global
+
+    val from    = Instant.parse("2026-10-01T10:00:00Z")
+    val to      = Instant.parse("2026-10-01T12:00:00Z")
+    val filters = Filters(from = from, to = to)
+
+    // a query answering with the start of the period it runs on, counting how many times it really runs
+    class Fixture {
+      val cache      = new QueryCache()
+      val executions = new AtomicInteger(0)
+
+      def run(compare: Boolean, nocache: Boolean = false): JsObject = Await.result(
+        QueryExecutor.runPeriods(cache, "fake", filters, Json.obj(), Bucket.OneHour, compare, nocache) { f =>
+          executions.incrementAndGet()
+          Future.successful(QueryResult(AnalyticsShape.Scalar, Json.obj("value" -> f.from.toEpochMilli)))
+        },
+        10.seconds
+      )
+    }
+
+    def fromCache(res: JsObject): Boolean = (res \ "meta" \ "from_cache").as[Boolean]
+
+    "compare with the previous period of the same length" in {
+      val res = new Fixture().run(compare = true)
+      (res \ "data" \ "value").as[Long] mustBe from.toEpochMilli
+      (res \ "compare" \ "data" \ "value").as[Long] mustBe from.minusSeconds(7200).toEpochMilli
+    }
+
+    "keep the comparison when the result comes from the cache" in {
+      val fixture = new Fixture()
+      val first   = fixture.run(compare = true)
+      val second  = fixture.run(compare = true)
+      fixture.executions.get() mustBe 2
+      fromCache(first) mustBe false
+      fromCache(second) mustBe true
+      (second \ "compare").toOption mustBe (first \ "compare").toOption
+      (second \ "meta" \ "execution_ms").toOption mustBe None
+    }
+
+    "not answer with a comparison that was not requested" in {
+      val fixture = new Fixture()
+      fixture.run(compare = true)
+      val res     = fixture.run(compare = false)
+      fixture.executions.get() mustBe 2
+      fromCache(res) mustBe true
+      (res \ "compare").toOption mustBe None
+    }
+
+    "only run the missing period when the other one is cached" in {
+      val fixture = new Fixture()
+      fixture.run(compare = false)
+      val res     = fixture.run(compare = true)
+      fixture.executions.get() mustBe 2
+      fromCache(res) mustBe false
+      (res \ "compare" \ "data" \ "value").as[Long] mustBe from.minusSeconds(7200).toEpochMilli
+    }
+
+    "neither read nor fill the cache with nocache" in {
+      val fixture = new Fixture()
+      fixture.run(compare = true, nocache = true)
+      val res     = fixture.run(compare = true, nocache = true)
+      fixture.executions.get() mustBe 4
+      fromCache(res) mustBe false
+      fixture.cache.size() mustBe 0
     }
   }
 }
