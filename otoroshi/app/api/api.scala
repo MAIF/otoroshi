@@ -2630,31 +2630,26 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // Documentation resources
 
+  // every format of the openapi document is generated from the same query parameters
+  private def openapiDocument(request: play.api.mvc.RequestHeader): String = otoroshi.api.OpenApi.generate(
+    env,
+    request.getQueryString("version"),
+    request.getQueryString("extension_group"),
+    request.getQueryString("core").contains("true")
+  )
+
   def openapiJson() = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
-    val body = otoroshi.api.OpenApi.generate(
-      env,
-      ctx.request.getQueryString("version"),
-      ctx.request.getQueryString("extension_group")
-    )
+    val body = openapiDocument(ctx.request)
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
   def openapiYaml() = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
-    val body = otoroshi.api.OpenApi.generate(
-      env,
-      ctx.request.getQueryString("version"),
-      ctx.request.getQueryString("extension_group")
-    )
+    val body = openapiDocument(ctx.request)
     Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
   def openapi() = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
-    val body     = otoroshi.api.OpenApi.generate(
-      env,
-      ctx.request.getQueryString("version"),
-      ctx.request.getQueryString("extension_group"),
-      ctx.request.getQueryString("core").contains("true")
-    )
+    val body     = openapiDocument(ctx.request)
     val accepted = ctx.request.acceptedTypes
       .map(v => (s"${v.mediaType}/${v.mediaSubType}", v.qValue.getOrElse(BigDecimal(1.0))))
       .filter {
