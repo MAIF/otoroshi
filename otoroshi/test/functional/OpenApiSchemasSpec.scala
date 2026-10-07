@@ -1,6 +1,10 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
+import otoroshi.api.Resource
+import otoroshi.env.Env
+import otoroshi.models.EntityLocationSupport
+import otoroshi.next.extensions.{AdminExtension, AdminExtensionEntity, AdminExtensionId, AdminExtensions, CoreAdminExtension}
 import play.api.Configuration
 import play.api.libs.json.*
 
@@ -95,10 +99,10 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
       val complete   = paths(otoroshi.api.OpenApi.generate(env, None))
       val core       = paths(otoroshi.api.OpenApi.generate(env, None, coreOnly = true))
       val shipped    = collections(env.adminExtensions.coreResources())
-      // the third party extensions come from the vendored jars of lib/
+      // only there when the vendored jars of lib/ are, which are not in git. the selection itself is checked below with
+      // extensions of its own
       val thirdParty = collections(env.adminExtensions.resources()).filterNot(shipped.contains)
       shipped must not be empty
-      thirdParty must not be empty
       shipped.foreach { path =>
         withClue(s"resource of an extension shipped with otoroshi $path") {
           complete must contain(path)
@@ -120,6 +124,18 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
       // the endpoints described by hand belong to the core
       core must contain("/api/analytics/_query")
     }
+    "only count the extensions shipped with otoroshi as core" in {
+      val env        = otoroshiComponents.env
+      val route      = env.allResources.resources.head
+      val shipped    = route.copy(kind = "Shipped", pluralName = "shippeds", singularName = "shipped", group = "shipped.test")
+      val thirdParty = route.copy(kind = "Other", pluralName = "others", singularName = "other", group = "other.test")
+      val extensions = new AdminExtensions(
+        env,
+        Seq(new ShippedTestExtension(env, shipped), new ThirdPartyTestExtension(env, thirdParty))
+      )
+      extensions.resources().map(_.group) must contain theSameElementsAs Seq(shipped.group, thirdParty.group)
+      extensions.coreResources().map(_.group) mustBe Seq(shipped.group)
+    }
     "describe the requested version even when the document is cached" in {
       val env                          = otoroshiComponents.env
       def version(doc: String): String = (Json.parse(doc) \ "info" \ "version").as[String]
@@ -133,6 +149,20 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
       stopAll()
     }
   }
+
+  // an extension holding a single entity, the way a third party writes one. the test packages are not scanned for
+  // extensions, so it only exists where it is instantiated
+  private class ThirdPartyTestExtension(val env: Env, resource: Resource) extends AdminExtension {
+    override def id: AdminExtensionId                                          = AdminExtensionId(s"test.extensions.${resource.kind}")
+    override def enabled: Boolean                                              = true
+    override def name: String                                                  = resource.kind
+    override def description: Option[String]                                  = None
+    override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] =
+      Seq(AdminExtensionEntity[EntityLocationSupport](resource))
+  }
+
+  // the same, as shipped with otoroshi
+  private class ShippedTestExtension(e: Env, r: Resource) extends ThirdPartyTestExtension(e, r) with CoreAdminExtension
 
   // every $ref of the document that points to nothing. only local pointers going through objects are resolved,
   // which is what the generated documents use
