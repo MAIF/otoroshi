@@ -32,7 +32,7 @@ spec:
                   matchLabels:
                     run: otoroshi-leader-deployment
       containers:
-      - image: maif/otoroshi:18.0.0-dev
+      - image: maif/otoroshi:18.0.0-rc1
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -197,7 +197,7 @@ spec:
                   matchLabels:
                     run: otoroshi-worker-deployment
       containers:
-      - image: maif/otoroshi:18.0.0-dev
+      - image: maif/otoroshi:18.0.0-rc1
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
