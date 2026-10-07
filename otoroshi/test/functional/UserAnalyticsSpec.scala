@@ -70,6 +70,7 @@ class UserAnalyticsSpec extends org.scalatest.wordspec.AnyWordSpec with org.scal
       |    "_loc": { "tenant": "acme", "teams": ["red", "blue"] },
       |    "groups": ["g1"],
       |    "metadata": { "Otoroshi-Api-Ref": "api_42", "extra": "x" },
+      |    "api_ref": "api_42",
       |    "tags": ["t1"],
       |    "description": "desc",
       |    "frontend": { "domains": ["example.com"], "exact": false },
@@ -133,6 +134,22 @@ class UserAnalyticsSpec extends org.scalatest.wordspec.AnyWordSpec with org.scal
       row.tenant mustBe "acme"
       row.teams.toSeq mustBe Seq("red", "blue")
       row.groupIds.toSeq mustBe Seq("g1")
+    }
+    // routes serialize their api ref as a plain string, and the ones generated from an api also mirror it in their
+    // metadata
+    def apiIdOf(route: JsObject => JsObject): Option[String] = {
+      val ev = sampleEvent ++ Json.obj("route" -> route((sampleEvent \ "route").as[JsObject]))
+      EventDenormalizer.extractColumns(EventStripper.stripGatewayEvent(ev)).apiId
+    }
+
+    "read the api ref of the route" in {
+      apiIdOf(_ ++ Json.obj("metadata" -> Json.obj("extra" -> "x"))) mustBe Some("api_42")
+    }
+    "fall back to the Otoroshi-Api-Ref metadata of older routes" in {
+      apiIdOf(_ ++ Json.obj("api_ref" -> JsNull)) mustBe Some("api_42")
+    }
+    "leave api_id empty for routes outside of an api" in {
+      apiIdOf(_ ++ Json.obj("api_ref" -> JsNull, "metadata" -> Json.obj("extra" -> "x"))) mustBe None
     }
     "split identity by type" in {
       row.identityType.value mustBe "APIKEY"

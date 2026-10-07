@@ -9,6 +9,7 @@ import otoroshi.env.Env
 import otoroshi.events.ExportResult
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.models.{DataExporterConfig, Exporter}
+import otoroshi.next.models.RouteApiRef
 import otoroshi.security.IdGenerator
 import otoroshi.storage.drivers.reactivepg.pgimplicits.*
 import otoroshi.utils.syntax.implicits.*
@@ -376,7 +377,13 @@ object EventDenormalizer {
     val teams    = stripped.select("route").select("_loc").select("teams").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val routeId  = stripped.select("route").select("id").asOptString
     val routeNm  = stripped.select("route").select("name").asOptString
-    val apiId    = stripped.select("route").select("api_ref").select("id").asOptString
+    // the api ref of a route is a plain string, older routes only had it in their metadata
+    val apiId    = stripped
+      .select("route")
+      .select("api_ref")
+      .asOptString
+      .orElse(stripped.select("route").select("metadata").select(RouteApiRef.metadataKey).asOptString)
+      .filter(_.nonEmpty)
     val groupIds = stripped.select("route").select("groups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
     val identityType          = stripped.select("identity").select("identityType").asOptString
