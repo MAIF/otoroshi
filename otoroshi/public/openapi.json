@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "18.0.0-preview9",
+    "version" : "18.0.0-dev",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:37167",
+    "url" : "http://otoroshi-api.oto.tools:62709",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -94,20 +94,20 @@
     "name" : "user-alert",
     "description" : "all the operations about the user-alert entity"
   }, {
+    "name" : "green-score",
+    "description" : "all the operations about the green-score entity"
+  }, {
     "name" : "remote-catalog",
     "description" : "all the operations about the remote-catalog entity"
+  }, {
+    "name" : "http-listener",
+    "description" : "all the operations about the http-listener entity"
   }, {
     "name" : "workflow",
     "description" : "all the operations about the workflow entity"
   }, {
     "name" : "coraza-config",
     "description" : "all the operations about the coraza-config entity"
-  }, {
-    "name" : "http-listener",
-    "description" : "all the operations about the http-listener entity"
-  }, {
-    "name" : "green-score",
-    "description" : "all the operations about the green-score entity"
   }, {
     "name" : "proxy.otoroshi.io",
     "description" : "all the operations in the proxy.otoroshi.io group"
@@ -136,20 +136,20 @@
     "name" : "analytics.otoroshi.io",
     "description" : "all the operations in the analytics.otoroshi.io group"
   }, {
+    "name" : "green-score.extensions.otoroshi.io",
+    "description" : "all the operations in the green-score.extensions.otoroshi.io group"
+  }, {
     "name" : "catalogs.otoroshi.io",
     "description" : "all the operations in the catalogs.otoroshi.io group"
+  }, {
+    "name" : "http-listeners.proxy.otoroshi.io",
+    "description" : "all the operations in the http-listeners.proxy.otoroshi.io group"
   }, {
     "name" : "plugins.otoroshi.io",
     "description" : "all the operations in the plugins.otoroshi.io group"
   }, {
     "name" : "coraza-waf.extensions.otoroshi.io",
     "description" : "all the operations in the coraza-waf.extensions.otoroshi.io group"
-  }, {
-    "name" : "http-listeners.proxy.otoroshi.io",
-    "description" : "all the operations in the http-listeners.proxy.otoroshi.io group"
-  }, {
-    "name" : "green-score.extensions.otoroshi.io",
-    "description" : "all the operations in the green-score.extensions.otoroshi.io group"
   }, {
     "name" : "pki",
     "description" : "all the operations in the pki api"
@@ -168,8 +168,110 @@
   }, {
     "name" : "tunnels",
     "description" : "all the operations in the tunnels api"
+  }, {
+    "name" : "user-analytics",
+    "description" : "all the operations in the user-analytics api"
   } ],
   "paths" : {
+    "/api/analytics/alerts/{alertId}/events/{eventId}/seen" : {
+      "post" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "Acknowledge a fired event of a user alert",
+        "description" : "Marks the event as seen by the caller.",
+        "operationId" : "otoroshi.next.analytics.controllers.AlertEventsController.markSeen",
+        "parameters" : [ {
+          "name" : "alertId",
+          "in" : "path",
+          "required" : true,
+          "description" : "The id of the user alert",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "description" : "The id of the fired event",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "Otoroshi-Tenant",
+          "in" : "header",
+          "required" : false,
+          "description" : "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema" : {
+            "type" : "string",
+            "default" : "default"
+          }
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsOkResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No such event for this alert in this tenant",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "412" : {
+            "description" : "No user-analytics data exporter is active",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "The database of the active user-analytics data exporter could not be queried",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pki/certs/_p12" : {
       "post" : {
         "tags" : [ "pki" ],
@@ -1249,6 +1351,80 @@
         }
       }
     },
+    "/api/analytics/_projections" : {
+      "get" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "List the event families user analytics can store",
+        "description" : "Lists the event families (projections) the user-analytics data exporter can store, admin extensions included, and the table each one is written to. Any of them can be left out with the `excluded_projections` setting of the exporter.",
+        "operationId" : "otoroshi.next.analytics.controllers.AnalyticsController.projections",
+        "parameters" : [ {
+          "name" : "schema",
+          "in" : "query",
+          "required" : false,
+          "description" : "The PostgreSQL schema used to compute the `table` of each projection",
+          "schema" : {
+            "type" : "string",
+            "default" : "public"
+          }
+        }, {
+          "name" : "table_prefix",
+          "in" : "query",
+          "required" : false,
+          "description" : "The table prefix used to compute the `table` of each projection",
+          "schema" : {
+            "type" : "string",
+            "default" : "otoroshi_analytics_events"
+          }
+        }, {
+          "name" : "Otoroshi-Tenant",
+          "in" : "header",
+          "required" : false,
+          "description" : "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema" : {
+            "type" : "string",
+            "default" : "default"
+          }
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserAnalyticsProjection"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/catalogs.otoroshi.io/v1/remote-catalogs/_bulk" : {
       "post" : {
         "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
@@ -1552,6 +1728,87 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/LetsEncryptCertBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analytics/alerts/{alertId}/events/_seen-all" : {
+      "post" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "Acknowledge all the fired events of a user alert",
+        "description" : "Marks every not yet acknowledged event of the user alert as seen by the caller.",
+        "operationId" : "otoroshi.next.analytics.controllers.AlertEventsController.markAllSeen",
+        "parameters" : [ {
+          "name" : "alertId",
+          "in" : "path",
+          "required" : true,
+          "description" : "The id of the user alert",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "Otoroshi-Tenant",
+          "in" : "header",
+          "required" : false,
+          "description" : "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema" : {
+            "type" : "string",
+            "default" : "default"
+          }
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsUpdatedResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "412" : {
+            "description" : "No user-analytics data exporter is active",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "The database of the active user-analytics data exporter could not be queried",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -2424,60 +2681,6 @@
         }
       }
     },
-    "/apis/organize.otoroshi.io/v1/teams/_template" : {
-      "get" : {
-        "tags" : [ "team", "organize.otoroshi.io" ],
-        "summary" : "Return a template of a resource of kind Team",
-        "operationId" : "organize.otoroshi.io.Team.template",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "Resource of kind Team",
-                  "$ref" : "#/components/schemas/organize.otoroshi.io.Team"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/apis/http-listeners.proxy.otoroshi.io/v1/http-listeners/_count" : {
       "get" : {
         "tags" : [ "http-listener", "http-listeners.proxy.otoroshi.io" ],
@@ -2585,6 +2788,114 @@
                 "schema" : {
                   "description" : "Resource of kind Draft",
                   "$ref" : "#/components/schemas/proxy.otoroshi.io.Draft"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analytics/dashboards/_restore-defaults" : {
+      "post" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "Restore the default user dashboards",
+        "description" : "Creates again the default dashboards that are missing. Existing dashboards are never modified. Super admin only.",
+        "operationId" : "otoroshi.next.analytics.controllers.UserDashboardController.restoreDefaults",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsRestoreDefaultsResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is not a super admin",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "The default dashboards could not be created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/organize.otoroshi.io/v1/teams/_template" : {
+      "get" : {
+        "tags" : [ "team", "organize.otoroshi.io" ],
+        "summary" : "Return a template of a resource of kind Team",
+        "operationId" : "organize.otoroshi.io.Team.template",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resource of kind Team",
+                  "$ref" : "#/components/schemas/organize.otoroshi.io.Team"
                 }
               }
             }
@@ -8052,6 +8363,147 @@
         }
       }
     },
+    "/api/analytics/_query" : {
+      "post" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "Run a user analytics query",
+        "description" : "Runs a query of the user analytics catalog (see `GET /api/analytics/_schema`) on the PostgreSQL database of the active user-analytics data exporter and returns its result.\n\nThis is how the user analytics dashboards get their data: read a dashboard with `GET /apis/analytics.otoroshi.io/v1/user-dashboards/{id}`, then run one query per widget with its `query` and `params`.\n\nThe result is always restricted to the tenant given by the `Otoroshi-Tenant` header, and is cached for 30 seconds unless `nocache` is `true`. Only leader instances serve this endpoint.\n\nBuilt-in queries (admin extensions can add more):\n\n| id | shape | params | compare |\n|---|---|---|---|\n| `requests_total` | `scalar` | | yes |\n| `errors_total` | `scalar` | | yes |\n| `requests_by_status` | `pie` | | no |\n| `requests_by_method` | `pie` | | no |\n| `requests_by_route` | `topN` | `top_n` | no |\n| `requests_by_api` | `topN` | `top_n` | no |\n| `requests_by_apikey` | `topN` | `top_n` | no |\n| `requests_by_user` | `topN` | `top_n` | no |\n| `requests_by_domain` | `topN` | `top_n` | no |\n| `requests_by_country` | `topN` | `top_n` | no |\n| `top_error_routes` | `topN` | `top_n` | no |\n| `requests_per_second` | `timeseries` (`points`) | | yes |\n| `error_rate_ts` | `timeseries` (`points`) | | yes |\n| `duration_avg_ts` | `timeseries` (`points`) | | yes |\n| `overhead_avg_ts` | `timeseries` (`points`) | | yes |\n| `duration_percentiles_ts` | `timeseries` (`series`: `p50`, `p75`, `p95`, `p99`) | | yes |\n| `traffic_in_out_ts` | `timeseries` (`series`: `data_in`, `data_out`) | | yes |\n| `requests_by_status_class_ts` | `timeseries` (`series`: `2xx`, `3xx`, `4xx`, `5xx`) | | yes |\n| `response_time_heatmap` | `heatmap` | | no |",
+        "operationId" : "otoroshi.next.analytics.controllers.AnalyticsController.runQuery",
+        "parameters" : [ {
+          "name" : "Otoroshi-Tenant",
+          "in" : "header",
+          "required" : false,
+          "description" : "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema" : {
+            "type" : "string",
+            "default" : "default"
+          }
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "requestBody" : {
+          "description" : "the query to run",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserAnalyticsQueryRequest"
+              },
+              "example" : {
+                "query" : "requests_per_second",
+                "params" : { },
+                "filters" : {
+                  "from" : "now-24h",
+                  "to" : "now",
+                  "route_id" : "route_d74ea8b27-b8be-4177-82d9-c50722416c50"
+                },
+                "bucket" : "1h",
+                "compare" : false,
+                "nocache" : false
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsQueryResponse"
+                },
+                "example" : {
+                  "shape" : "timeseries",
+                  "data" : {
+                    "bucket" : "1h",
+                    "points" : [ {
+                      "ts" : 1791320400000,
+                      "value" : 12.5
+                    }, {
+                      "ts" : 1791324000000,
+                      "value" : 14.25
+                    } ]
+                  },
+                  "raw" : [ {
+                    "ts" : 1791320400000,
+                    "value" : 12.5
+                  }, {
+                    "ts" : 1791324000000,
+                    "value" : 14.25
+                  } ],
+                  "meta" : {
+                    "execution_ms" : 12,
+                    "from_cache" : false,
+                    "bucket" : "1h"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Malformed body, or the query failed on the database",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Unknown query id, or the instance is not a leader",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "412" : {
+            "description" : "No user-analytics data exporter is active",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "The analytics runtime is not initialized",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/proxy.otoroshi.io/v1/routes" : {
       "get" : {
         "tags" : [ "route", "proxy.otoroshi.io" ],
@@ -9039,6 +9491,68 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/proxy.otoroshi.io.TcpService"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analytics/_set-active-exporter/{id}" : {
+      "post" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "Make a user-analytics data exporter the active one",
+        "description" : "Makes the user-analytics data exporter `id` the one user analytics reads from (flagged by its `otoroshi:user-analytics:active` metadata), removes the flag from the other ones, then creates the default dashboards that are missing. Super admin only.",
+        "operationId" : "otoroshi.next.analytics.controllers.AnalyticsController.setActiveExporter",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "description" : "The id of the user-analytics data exporter",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsSetActiveExporterResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is not a super admin",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No user-analytics data exporter with this id",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -14688,6 +15202,118 @@
         }
       }
     },
+    "/api/analytics/alerts/{alertId}/events" : {
+      "get" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "List the fired events of a user alert",
+        "description" : "Returns the times the user alert fired, newest first, read from the database of the active user-analytics data exporter and restricted to the tenant given by the `Otoroshi-Tenant` header.",
+        "operationId" : "otoroshi.next.analytics.controllers.AlertEventsController.listEvents",
+        "parameters" : [ {
+          "name" : "alertId",
+          "in" : "path",
+          "required" : true,
+          "description" : "The id of the user alert",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "required" : false,
+          "description" : "The maximum number of events returned",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 200,
+            "minimum" : 1,
+            "maximum" : 2000
+          }
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "required" : false,
+          "description" : "The number of events skipped",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0,
+            "minimum" : 0
+          }
+        }, {
+          "name" : "seen",
+          "in" : "query",
+          "required" : false,
+          "description" : "Only return the acknowledged events (`true`) or the not yet acknowledged ones (`false`). All of them when missing",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "Otoroshi-Tenant",
+          "in" : "header",
+          "required" : false,
+          "description" : "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema" : {
+            "type" : "string",
+            "default" : "default"
+          }
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsAlertEventsPage"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "412" : {
+            "description" : "No user-analytics data exporter is active",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "The database of the active user-analytics data exporter could not be queried",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/organize.otoroshi.io/v1/service-groups" : {
       "get" : {
         "tags" : [ "service-group", "organize.otoroshi.io" ],
@@ -16365,6 +16991,105 @@
         }
       }
     },
+    "/api/analytics/alerts/{alertId}/events/{eventId}/unseen" : {
+      "post" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "Remove the acknowledgement of a fired event of a user alert",
+        "description" : "Marks the event as not seen anymore.",
+        "operationId" : "otoroshi.next.analytics.controllers.AlertEventsController.markUnseen",
+        "parameters" : [ {
+          "name" : "alertId",
+          "in" : "path",
+          "required" : true,
+          "description" : "The id of the user alert",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "description" : "The id of the fired event",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "Otoroshi-Tenant",
+          "in" : "header",
+          "required" : false,
+          "description" : "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema" : {
+            "type" : "string",
+            "default" : "default"
+          }
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsOkResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No such event for this alert in this tenant",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "412" : {
+            "description" : "No user-analytics data exporter is active",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "The database of the active user-analytics data exporter could not be queried",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs/{id}" : {
       "get" : {
         "tags" : [ "coraza-config", "coraza-waf.extensions.otoroshi.io" ],
@@ -17596,6 +18321,71 @@
         }
       }
     },
+    "/api/analytics/_test-connection" : {
+      "post" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "Test the connection to a user analytics database",
+        "description" : "Opens a single connection to the PostgreSQL database described by the body (the `config` of a user-analytics data exporter) and runs `SELECT 1` on it. Super admin only.",
+        "operationId" : "otoroshi.next.analytics.controllers.AnalyticsController.testConnection",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "requestBody" : {
+          "description" : "the settings of the database to test",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserAnalyticsExporterSettings"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsOkResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Invalid settings, or the connection failed (`ok` is `false` and `error` tells why)",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsOkResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is not a super admin",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/analytics.otoroshi.io/v1/user-alerts/_bulk" : {
       "post" : {
         "tags" : [ "user-alert", "analytics.otoroshi.io" ],
@@ -18695,6 +19485,69 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/organize.otoroshi.io.Team"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analytics/_schema" : {
+      "get" : {
+        "tags" : [ "user-analytics" ],
+        "summary" : "Get the catalog of user analytics queries",
+        "description" : "Lists every query `POST /api/analytics/_query` can run, admin extensions included, with the shape of its result, the widget that displays it by default, its parameters and whether it supports period comparison. Also lists the widget types a dashboard widget can use.",
+        "operationId" : "otoroshi.next.analytics.controllers.AnalyticsController.schema",
+        "parameters" : [ {
+          "name" : "Otoroshi-Tenant",
+          "in" : "header",
+          "required" : false,
+          "description" : "The tenant whose data is read. Results are always restricted to this tenant",
+          "schema" : {
+            "type" : "string",
+            "default" : "default"
+          }
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAnalyticsQueryCatalog"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "The caller is neither a super admin nor allowed to read the tenant given by the `Otoroshi-Tenant` header",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "The analytics runtime is not initialized",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -22664,6 +23517,74 @@
   },
   "components" : {
     "schemas" : {
+      "UserAnalyticsAlertEvent" : {
+        "type" : "object",
+        "description" : "A time a user alert fired",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "description" : "The id of the event"
+          },
+          "ts" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "When the alert fired, as a unix timestamp in milliseconds",
+            "nullable" : true
+          },
+          "tenant" : {
+            "type" : "string",
+            "description" : "The tenant of the alert"
+          },
+          "alert_id" : {
+            "type" : "string",
+            "description" : "The id of the user alert"
+          },
+          "alert_name" : {
+            "type" : "string",
+            "description" : "The name of the user alert when it fired",
+            "nullable" : true
+          },
+          "severity" : {
+            "type" : "string",
+            "description" : "The severity of the user alert, like `info`, `warning` or `critical`",
+            "nullable" : true
+          },
+          "message" : {
+            "type" : "string",
+            "description" : "The message of the user alert",
+            "nullable" : true
+          },
+          "combine" : {
+            "type" : "string",
+            "description" : "How the conditions were combined: `AND` or `OR`",
+            "nullable" : true
+          },
+          "windowSeconds" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The time window the conditions were evaluated on, in seconds",
+            "nullable" : true
+          },
+          "conditions" : {
+            "type" : "array",
+            "description" : "The evaluation of each condition of the alert",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAnalyticsAlertConditionEval"
+            }
+          },
+          "seen_at" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "When the event was acknowledged, as a unix timestamp in milliseconds",
+            "nullable" : true
+          },
+          "seen_by" : {
+            "type" : "string",
+            "description" : "Who acknowledged the event",
+            "nullable" : true
+          }
+        }
+      },
       "TargetPredicate" : {
         "type" : "object"
       },
@@ -22992,6 +23913,44 @@
           }
         }
       },
+      "UserAnalyticsQueryDefinition" : {
+        "type" : "object",
+        "description" : "A query user analytics can run",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "description" : "The id to use in `POST /api/analytics/_query` and in dashboard widgets"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "The name of the query"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "What the query computes"
+          },
+          "shape" : {
+            "type" : "string",
+            "description" : "The shape of the result of the query",
+            "enum" : [ "timeseries", "topN", "pie", "scalar", "metric", "table", "heatmap" ]
+          },
+          "default_widget" : {
+            "type" : "string",
+            "description" : "The widget type that displays the query by default"
+          },
+          "params" : {
+            "type" : "array",
+            "description" : "The parameters of the query",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAnalyticsQueryParam"
+            }
+          },
+          "supports_compare" : {
+            "type" : "boolean",
+            "description" : "Whether the query can be compared with the previous period"
+          }
+        }
+      },
       "ApiKeyConstraints" : {
         "type" : "object",
         "properties" : {
@@ -23196,10 +24155,11 @@
           "port" : {
             "type" : "object"
           },
-          "primary" : {
-            "type" : "boolean"
+          "thePort" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "secondary" : {
+          "primary" : {
             "type" : "boolean"
           },
           "lkey" : {
@@ -23208,9 +24168,8 @@
           "theHost" : {
             "type" : "string"
           },
-          "thePort" : {
-            "type" : "integer",
-            "format" : "int32"
+          "secondary" : {
+            "type" : "boolean"
           }
         }
       },
@@ -23311,10 +24270,10 @@
       "JwtVerifier" : {
         "type" : "object",
         "properties" : {
-          "async" : {
+          "ref" : {
             "type" : "boolean"
           },
-          "ref" : {
+          "async" : {
             "type" : "boolean"
           }
         }
@@ -23647,8 +24606,11 @@
           "location" : {
             "$ref" : "#/components/schemas/EntityLocation"
           },
-          "_domain" : {
-            "type" : "string"
+          "allHosts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           },
           "allPaths" : {
             "type" : "array",
@@ -23656,11 +24618,8 @@
               "type" : "string"
             }
           },
-          "allHosts" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
+          "_domain" : {
+            "type" : "string"
           },
           "private" : {
             "type" : "boolean"
@@ -23769,16 +24728,16 @@
           "raw" : {
             "$ref" : "#/components/schemas/JsObject"
           },
-          "path" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
           "items" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ApiDocumentationSidebarItem"
+            }
+          },
+          "path" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
             }
           }
         }
@@ -23891,6 +24850,32 @@
           },
           "stateResponseName" : {
             "type" : "string"
+          }
+        }
+      },
+      "UserAnalyticsSetActiveExporterResponse" : {
+        "type" : "object",
+        "description" : "The outcome of the activation of a user-analytics data exporter",
+        "properties" : {
+          "ok" : {
+            "type" : "boolean",
+            "description" : "Always `true`"
+          },
+          "active" : {
+            "type" : "string",
+            "description" : "The id of the active exporter"
+          },
+          "demoted_count" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The number of exporters that were active before"
+          },
+          "seeded_default" : {
+            "type" : "array",
+            "description" : "The default dashboards that were created",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -24166,16 +25151,33 @@
           "$ref" : "#/components/schemas/Target"
         }
       },
+      "UserAnalyticsTimeseriesSeries" : {
+        "type" : "object",
+        "description" : "A named series of a multi-series timeseries",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "The name of the series, like `p95`, `data_in` or `5xx`"
+          },
+          "points" : {
+            "type" : "array",
+            "description" : "The points of the series, one per bucket",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAnalyticsTimeseriesPoint"
+            }
+          }
+        }
+      },
       "DateTimeField" : {
         "type" : "object",
         "properties" : {
           "rangeDurationField" : {
             "$ref" : "#/components/schemas/DurationField"
           },
-          "durationField" : {
+          "leapDurationField" : {
             "$ref" : "#/components/schemas/DurationField"
           },
-          "leapDurationField" : {
+          "durationField" : {
             "$ref" : "#/components/schemas/DurationField"
           },
           "minimumValue" : {
@@ -24229,12 +25231,6 @@
         "type" : "array",
         "items" : {
           "$ref" : "#/components/schemas/Widget"
-        }
-      },
-      "SeqApiDocumentationResource" : {
-        "type" : "array",
-        "items" : {
-          "$ref" : "#/components/schemas/ApiDocumentationResource"
         }
       },
       "SeqUserRight" : {
@@ -24384,30 +25380,208 @@
           "location" : {
             "$ref" : "#/components/schemas/EntityLocation"
           },
-          "cleanChain" : {
-            "type" : "string"
-          },
-          "notExpired" : {
-            "type" : "boolean"
-          },
-          "notExpiredSoon" : {
-            "type" : "boolean"
-          },
-          "certificatesRaw" : {
+          "allDomains" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             }
           },
-          "metadata" : {
-            "$ref" : "#/components/schemas/JsValue"
+          "cleanChain" : {
+            "type" : "string"
+          },
+          "isUsable" : {
+            "type" : "boolean"
+          },
+          "notExpired" : {
+            "type" : "boolean"
           },
           "notRevoked" : {
             "type" : "boolean"
           },
+          "metadata" : {
+            "$ref" : "#/components/schemas/JsValue"
+          },
+          "certificates" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "type" : {
+                  "type" : "string"
+                },
+                "serialNumber" : {
+                  "type" : "integer"
+                },
+                "issuerDN" : {
+                  "type" : "object",
+                  "properties" : {
+                    "name" : {
+                      "type" : "string"
+                    }
+                  }
+                },
+                "tbscertificate" : {
+                  "type" : "string",
+                  "format" : "byte"
+                },
+                "extendedKeyUsage" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                },
+                "subjectAlternativeNames" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "object"
+                    }
+                  }
+                },
+                "issuerAlternativeNames" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "object"
+                    }
+                  }
+                },
+                "sigAlgName" : {
+                  "type" : "string"
+                },
+                "sigAlgParams" : {
+                  "type" : "string",
+                  "format" : "byte"
+                },
+                "subjectDN" : {
+                  "type" : "object",
+                  "properties" : {
+                    "name" : {
+                      "type" : "string"
+                    }
+                  }
+                },
+                "notBefore" : {
+                  "type" : "string",
+                  "format" : "date-time"
+                },
+                "notAfter" : {
+                  "type" : "string",
+                  "format" : "date-time"
+                },
+                "sigAlgOID" : {
+                  "type" : "string"
+                },
+                "issuerUniqueID" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "boolean"
+                  }
+                },
+                "subjectUniqueID" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "boolean"
+                  }
+                },
+                "keyUsage" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "boolean"
+                  }
+                },
+                "signature" : {
+                  "type" : "string",
+                  "format" : "byte"
+                },
+                "basicConstraints" : {
+                  "type" : "integer",
+                  "format" : "int32"
+                },
+                "issuerX500Principal" : {
+                  "type" : "object",
+                  "properties" : {
+                    "name" : {
+                      "type" : "string"
+                    },
+                    "encoded" : {
+                      "type" : "string",
+                      "format" : "byte"
+                    }
+                  }
+                },
+                "subjectX500Principal" : {
+                  "type" : "object",
+                  "properties" : {
+                    "name" : {
+                      "type" : "string"
+                    },
+                    "encoded" : {
+                      "type" : "string",
+                      "format" : "byte"
+                    }
+                  }
+                },
+                "version" : {
+                  "type" : "integer",
+                  "format" : "int32"
+                },
+                "criticalExtensionOIDs" : {
+                  "uniqueItems" : true,
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                },
+                "nonCriticalExtensionOIDs" : {
+                  "uniqueItems" : true,
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                },
+                "encoded" : {
+                  "type" : "string",
+                  "format" : "byte"
+                },
+                "publicKey" : {
+                  "type" : "object",
+                  "properties" : {
+                    "encoded" : {
+                      "type" : "string",
+                      "format" : "byte"
+                    },
+                    "format" : {
+                      "type" : "string"
+                    },
+                    "algorithm" : {
+                      "type" : "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "cryptoKeyPair" : {
             "type" : "object",
             "properties" : {
+              "public" : {
+                "type" : "object",
+                "properties" : {
+                  "encoded" : {
+                    "type" : "string",
+                    "format" : "byte"
+                  },
+                  "format" : {
+                    "type" : "string"
+                  },
+                  "algorithm" : {
+                    "type" : "string"
+                  }
+                }
+              },
               "private" : {
                 "type" : "object",
                 "properties" : {
@@ -24425,21 +25599,6 @@
                     "type" : "boolean"
                   }
                 }
-              },
-              "public" : {
-                "type" : "object",
-                "properties" : {
-                  "encoded" : {
-                    "type" : "string",
-                    "format" : "byte"
-                  },
-                  "format" : {
-                    "type" : "string"
-                  },
-                  "algorithm" : {
-                    "type" : "string"
-                  }
-                }
               }
             }
           },
@@ -24448,6 +25607,27 @@
             "properties" : {
               "type" : {
                 "type" : "string"
+              },
+              "serialNumber" : {
+                "type" : "integer"
+              },
+              "issuerDN" : {
+                "type" : "object",
+                "properties" : {
+                  "name" : {
+                    "type" : "string"
+                  }
+                }
+              },
+              "tbscertificate" : {
+                "type" : "string",
+                "format" : "byte"
+              },
+              "extendedKeyUsage" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
               },
               "subjectAlternativeNames" : {
                 "type" : "array",
@@ -24511,27 +25691,6 @@
                   "type" : "boolean"
                 }
               },
-              "serialNumber" : {
-                "type" : "integer"
-              },
-              "issuerDN" : {
-                "type" : "object",
-                "properties" : {
-                  "name" : {
-                    "type" : "string"
-                  }
-                }
-              },
-              "tbscertificate" : {
-                "type" : "string",
-                "format" : "byte"
-              },
-              "extendedKeyUsage" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              },
               "signature" : {
                 "type" : "string",
                 "format" : "byte"
@@ -24568,14 +25727,14 @@
                 "type" : "integer",
                 "format" : "int32"
               },
-              "nonCriticalExtensionOIDs" : {
+              "criticalExtensionOIDs" : {
                 "uniqueItems" : true,
                 "type" : "array",
                 "items" : {
                   "type" : "string"
                 }
               },
-              "criticalExtensionOIDs" : {
+              "nonCriticalExtensionOIDs" : {
                 "uniqueItems" : true,
                 "type" : "array",
                 "items" : {
@@ -24611,68 +25770,6 @@
                 "type" : {
                   "type" : "string"
                 },
-                "subjectAlternativeNames" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "array",
-                    "items" : {
-                      "type" : "object"
-                    }
-                  }
-                },
-                "issuerAlternativeNames" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "array",
-                    "items" : {
-                      "type" : "object"
-                    }
-                  }
-                },
-                "sigAlgName" : {
-                  "type" : "string"
-                },
-                "sigAlgParams" : {
-                  "type" : "string",
-                  "format" : "byte"
-                },
-                "subjectDN" : {
-                  "type" : "object",
-                  "properties" : {
-                    "name" : {
-                      "type" : "string"
-                    }
-                  }
-                },
-                "notBefore" : {
-                  "type" : "string",
-                  "format" : "date-time"
-                },
-                "notAfter" : {
-                  "type" : "string",
-                  "format" : "date-time"
-                },
-                "sigAlgOID" : {
-                  "type" : "string"
-                },
-                "issuerUniqueID" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "boolean"
-                  }
-                },
-                "subjectUniqueID" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "boolean"
-                  }
-                },
-                "keyUsage" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "boolean"
-                  }
-                },
                 "serialNumber" : {
                   "type" : "integer"
                 },
@@ -24693,98 +25790,6 @@
                   "items" : {
                     "type" : "string"
                   }
-                },
-                "signature" : {
-                  "type" : "string",
-                  "format" : "byte"
-                },
-                "basicConstraints" : {
-                  "type" : "integer",
-                  "format" : "int32"
-                },
-                "issuerX500Principal" : {
-                  "type" : "object",
-                  "properties" : {
-                    "name" : {
-                      "type" : "string"
-                    },
-                    "encoded" : {
-                      "type" : "string",
-                      "format" : "byte"
-                    }
-                  }
-                },
-                "subjectX500Principal" : {
-                  "type" : "object",
-                  "properties" : {
-                    "name" : {
-                      "type" : "string"
-                    },
-                    "encoded" : {
-                      "type" : "string",
-                      "format" : "byte"
-                    }
-                  }
-                },
-                "version" : {
-                  "type" : "integer",
-                  "format" : "int32"
-                },
-                "nonCriticalExtensionOIDs" : {
-                  "uniqueItems" : true,
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  }
-                },
-                "criticalExtensionOIDs" : {
-                  "uniqueItems" : true,
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  }
-                },
-                "encoded" : {
-                  "type" : "string",
-                  "format" : "byte"
-                },
-                "publicKey" : {
-                  "type" : "object",
-                  "properties" : {
-                    "encoded" : {
-                      "type" : "string",
-                      "format" : "byte"
-                    },
-                    "format" : {
-                      "type" : "string"
-                    },
-                    "algorithm" : {
-                      "type" : "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "contentHash" : {
-            "type" : "string"
-          },
-          "allDomains" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "isUsable" : {
-            "type" : "boolean"
-          },
-          "certificates" : {
-            "type" : "array",
-            "items" : {
-              "type" : "object",
-              "properties" : {
-                "type" : {
-                  "type" : "string"
                 },
                 "subjectAlternativeNames" : {
                   "type" : "array",
@@ -24848,27 +25853,6 @@
                     "type" : "boolean"
                   }
                 },
-                "serialNumber" : {
-                  "type" : "integer"
-                },
-                "issuerDN" : {
-                  "type" : "object",
-                  "properties" : {
-                    "name" : {
-                      "type" : "string"
-                    }
-                  }
-                },
-                "tbscertificate" : {
-                  "type" : "string",
-                  "format" : "byte"
-                },
-                "extendedKeyUsage" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  }
-                },
                 "signature" : {
                   "type" : "string",
                   "format" : "byte"
@@ -24905,14 +25889,14 @@
                   "type" : "integer",
                   "format" : "int32"
                 },
-                "nonCriticalExtensionOIDs" : {
+                "criticalExtensionOIDs" : {
                   "uniqueItems" : true,
                   "type" : "array",
                   "items" : {
                     "type" : "string"
                   }
                 },
-                "criticalExtensionOIDs" : {
+                "nonCriticalExtensionOIDs" : {
                   "uniqueItems" : true,
                   "type" : "array",
                   "items" : {
@@ -24940,27 +25924,33 @@
                 }
               }
             }
-          },
-          "bundle" : {
-            "type" : "string"
-          },
-          "certType" : {
-            "type" : "string"
-          },
-          "isValid" : {
-            "type" : "boolean"
-          },
-          "expired" : {
-            "type" : "boolean"
-          },
-          "cacheKey" : {
-            "type" : "string"
           },
           "certificate" : {
             "type" : "object",
             "properties" : {
               "type" : {
                 "type" : "string"
+              },
+              "serialNumber" : {
+                "type" : "integer"
+              },
+              "issuerDN" : {
+                "type" : "object",
+                "properties" : {
+                  "name" : {
+                    "type" : "string"
+                  }
+                }
+              },
+              "tbscertificate" : {
+                "type" : "string",
+                "format" : "byte"
+              },
+              "extendedKeyUsage" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
               },
               "subjectAlternativeNames" : {
                 "type" : "array",
@@ -25024,27 +26014,6 @@
                   "type" : "boolean"
                 }
               },
-              "serialNumber" : {
-                "type" : "integer"
-              },
-              "issuerDN" : {
-                "type" : "object",
-                "properties" : {
-                  "name" : {
-                    "type" : "string"
-                  }
-                }
-              },
-              "tbscertificate" : {
-                "type" : "string",
-                "format" : "byte"
-              },
-              "extendedKeyUsage" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              },
               "signature" : {
                 "type" : "string",
                 "format" : "byte"
@@ -25081,14 +26050,14 @@
                 "type" : "integer",
                 "format" : "int32"
               },
-              "nonCriticalExtensionOIDs" : {
+              "criticalExtensionOIDs" : {
                 "uniqueItems" : true,
                 "type" : "array",
                 "items" : {
                   "type" : "string"
                 }
               },
-              "criticalExtensionOIDs" : {
+              "nonCriticalExtensionOIDs" : {
                 "uniqueItems" : true,
                 "type" : "array",
                 "items" : {
@@ -25115,6 +26084,33 @@
                 }
               }
             }
+          },
+          "contentHash" : {
+            "type" : "string"
+          },
+          "notExpiredSoon" : {
+            "type" : "boolean"
+          },
+          "certificatesRaw" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "bundle" : {
+            "type" : "string"
+          },
+          "certType" : {
+            "type" : "string"
+          },
+          "isValid" : {
+            "type" : "boolean"
+          },
+          "expired" : {
+            "type" : "boolean"
+          },
+          "cacheKey" : {
+            "type" : "string"
           }
         }
       },
@@ -25128,6 +26124,77 @@
         "type" : "object",
         "additionalProperties" : {
           "$ref" : "#/components/schemas/NgPluginsWithOverride"
+        }
+      },
+      "UserAnalyticsQueryData" : {
+        "type" : "object",
+        "description" : "The result of a query. Its fields depend on `shape`: `scalar` has `value` and `label`, `pie` has `label` and `items` (with `key` and `value`), `topN` has `items` (with `key`, `label` and `value`), `timeseries` has `bucket` and either `points` (one series) or `series` (several named series), `heatmap` has `bucket`, `xBuckets`, `yBuckets` and `values`. The layout of `metric` and `table` results is up to the admin extension providing the query",
+        "properties" : {
+          "value" : {
+            "type" : "number",
+            "description" : "The value of a `scalar` result"
+          },
+          "label" : {
+            "type" : "string",
+            "description" : "The label of a `scalar` or `pie` result"
+          },
+          "items" : {
+            "type" : "array",
+            "description" : "The items of a `pie` or `topN` result, biggest first",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAnalyticsQueryItem"
+            }
+          },
+          "bucket" : {
+            "type" : "string",
+            "description" : "The time bucket size of a `timeseries` or `heatmap` result"
+          },
+          "points" : {
+            "type" : "array",
+            "description" : "The points of a single series `timeseries` result, one per bucket",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAnalyticsTimeseriesPoint"
+            }
+          },
+          "series" : {
+            "type" : "array",
+            "description" : "The series of a multi-series `timeseries` result",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAnalyticsTimeseriesSeries"
+            }
+          },
+          "xBuckets" : {
+            "type" : "array",
+            "description" : "The time buckets of a `heatmap` result (X axis), as unix timestamps in milliseconds",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          },
+          "yBuckets" : {
+            "type" : "array",
+            "description" : "The response time ranges of a `heatmap` result (Y axis), from `<50ms` to `>=3s`",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "values" : {
+            "type" : "array",
+            "description" : "The request counts of a `heatmap` result, one row per `yBuckets` entry and one column per `xBuckets` entry",
+            "items" : {
+              "type" : "array",
+              "items" : {
+                "type" : "integer",
+                "format" : "int64"
+              }
+            }
+          }
+        }
+      },
+      "SeqApiDocumentationResource" : {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/ApiDocumentationResource"
         }
       },
       "analytics.otoroshi.io.UserDashboard" : {
@@ -25174,20 +26241,41 @@
       "EntityIdentifier" : {
         "type" : "object",
         "properties" : {
+          "group" : {
+            "type" : "boolean"
+          },
           "service" : {
             "type" : "boolean"
           },
           "api" : {
             "type" : "boolean"
           },
-          "routeComposition" : {
-            "type" : "boolean"
-          },
           "route" : {
             "type" : "boolean"
           },
-          "group" : {
+          "routeComposition" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "UserAnalyticsQueryParam" : {
+        "type" : "object",
+        "description" : "A parameter of a user analytics query",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "The name of the parameter in `params`"
+          },
+          "kind" : {
+            "type" : "string",
+            "description" : "The type of the parameter, like `int`"
+          },
+          "default" : {
+            "description" : "The value used when the parameter is missing"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "What the parameter does"
           }
         }
       },
@@ -25446,10 +26534,31 @@
               "type" : "object"
             }
           },
+          "userFacing" : {
+            "type" : "boolean"
+          },
+          "issueLetsEncryptCertificate" : {
+            "type" : "boolean"
+          },
+          "openapiUrl" : {
+            "type" : "string"
+          },
+          "legacy" : {
+            "$ref" : "#/components/schemas/ServiceDescriptor"
+          },
           "originalRouteId" : {
             "type" : "string"
           },
+          "cacheableId" : {
+            "type" : "string"
+          },
           "notBoundToListener" : {
+            "type" : "boolean"
+          },
+          "serviceDescriptor" : {
+            "$ref" : "#/components/schemas/ServiceDescriptor"
+          },
+          "useAkkaHttpClient" : {
             "type" : "boolean"
           },
           "useAhcClient" : {
@@ -25461,16 +26570,10 @@
           "useAkkaHttpWsClient" : {
             "type" : "boolean"
           },
-          "issueLetsEncryptCertificate" : {
-            "type" : "boolean"
-          },
           "issueCertificate" : {
             "type" : "boolean"
           },
           "issueCertificateCA" : {
-            "type" : "string"
-          },
-          "openapiUrl" : {
             "type" : "string"
           },
           "deploymentProviders" : {
@@ -25517,21 +26620,6 @@
           },
           "hasDeploymentRacks" : {
             "type" : "boolean"
-          },
-          "serviceDescriptor" : {
-            "$ref" : "#/components/schemas/ServiceDescriptor"
-          },
-          "userFacing" : {
-            "type" : "boolean"
-          },
-          "useAkkaHttpClient" : {
-            "type" : "boolean"
-          },
-          "cacheableId" : {
-            "type" : "string"
-          },
-          "legacy" : {
-            "$ref" : "#/components/schemas/ServiceDescriptor"
           }
         }
       },
@@ -25795,6 +26883,88 @@
           }
         }
       },
+      "UserAnalyticsExporterSettings" : {
+        "type" : "object",
+        "description" : "The settings of a user-analytics data exporter (its `config`)",
+        "properties" : {
+          "uri" : {
+            "type" : "string",
+            "description" : "A PostgreSQL connection URI, like `postgresql://user:password@host:5432/database`. Used instead of the other connection settings when present",
+            "nullable" : true
+          },
+          "host" : {
+            "type" : "string",
+            "description" : "The host of the database",
+            "default" : "localhost"
+          },
+          "port" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "The port of the database",
+            "default" : 5432
+          },
+          "database" : {
+            "type" : "string",
+            "description" : "The name of the database",
+            "default" : "otoroshi"
+          },
+          "user" : {
+            "type" : "string",
+            "description" : "The user connecting to the database",
+            "default" : "otoroshi"
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "The password of the user",
+            "default" : "otoroshi"
+          },
+          "schema" : {
+            "type" : "string",
+            "description" : "The schema holding the tables",
+            "default" : "public"
+          },
+          "table_prefix" : {
+            "type" : "string",
+            "description" : "The prefix of the table names",
+            "default" : "otoroshi_analytics_events"
+          },
+          "pool_size" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "The maximum number of connections to the database",
+            "default" : 10
+          },
+          "ssl" : {
+            "type" : "boolean",
+            "description" : "Require a TLS connection",
+            "default" : false
+          },
+          "retention_days" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "How long events are kept, in days",
+            "default" : 30
+          },
+          "statement_timeout_ms" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "The maximum duration of a query, in milliseconds",
+            "default" : 30000
+          },
+          "rollup_enabled" : {
+            "type" : "boolean",
+            "description" : "Reserved, not used yet",
+            "default" : false
+          },
+          "excluded_projections" : {
+            "type" : "array",
+            "description" : "The ids of the projections that are not stored (see `GET /api/analytics/_projections`)",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
       "SecComInfoTokenVersion" : {
         "type" : "object"
       },
@@ -25915,6 +27085,9 @@
           "raw" : {
             "type" : "string"
           },
+          "domainLowerCase" : {
+            "type" : "string"
+          },
           "pathEndsWithSlash" : {
             "type" : "boolean"
           },
@@ -25922,9 +27095,6 @@
             "type" : "string"
           },
           "path" : {
-            "type" : "string"
-          },
-          "domainLowerCase" : {
             "type" : "string"
           }
         }
@@ -25959,14 +27129,11 @@
           "accessModeConfigurationType" : {
             "type" : "string"
           },
-          "accessModeConfiguration" : {
-            "$ref" : "#/components/schemas/ApiAccessModeConfiguration"
+          "hasPlugins" : {
+            "type" : "boolean"
           },
-          "rateLimiting" : {
-            "$ref" : "#/components/schemas/ThrottlingStrategyConfig"
-          },
-          "apikeyTemplate" : {
-            "$ref" : "#/components/schemas/ApikeyAccessModeConfiguration"
+          "pricing" : {
+            "$ref" : "#/components/schemas/ApiPricing"
           },
           "visibility" : {
             "$ref" : "#/components/schemas/ApiPlanVisibility"
@@ -25977,14 +27144,20 @@
               "type" : "string"
             }
           },
-          "pricing" : {
-            "$ref" : "#/components/schemas/ApiPricing"
-          },
-          "hasPlugins" : {
-            "type" : "boolean"
+          "plugins" : {
+            "$ref" : "#/components/schemas/ApiPlanPlugins"
           },
           "validation" : {
             "$ref" : "#/components/schemas/ApiPlanValidation"
+          },
+          "accessModeConfiguration" : {
+            "$ref" : "#/components/schemas/ApiAccessModeConfiguration"
+          },
+          "rateLimiting" : {
+            "$ref" : "#/components/schemas/ThrottlingStrategyConfig"
+          },
+          "apikeyTemplate" : {
+            "$ref" : "#/components/schemas/ApikeyAccessModeConfiguration"
           },
           "name" : {
             "type" : "string"
@@ -26000,9 +27173,6 @@
             "items" : {
               "type" : "string"
             }
-          },
-          "plugins" : {
-            "$ref" : "#/components/schemas/ApiPlanPlugins"
           }
         }
       },
@@ -26032,6 +27202,46 @@
           },
           "legit" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "UserAnalyticsQueryResult" : {
+        "type" : "object",
+        "description" : "The result of a user analytics query",
+        "properties" : {
+          "shape" : {
+            "type" : "string",
+            "description" : "The shape of `data`",
+            "enum" : [ "timeseries", "topN", "pie", "scalar", "metric", "table", "heatmap" ]
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/UserAnalyticsQueryData"
+          },
+          "raw" : {
+            "type" : "array",
+            "description" : "The rows behind `data`, when the query provides them. Empty for multi-series timeseries and heatmaps",
+            "items" : {
+              "type" : "object"
+            }
+          },
+          "meta" : {
+            "type" : "object",
+            "description" : "Execution details",
+            "properties" : {
+              "execution_ms" : {
+                "type" : "integer",
+                "format" : "int64",
+                "description" : "The time it took to run the query, in milliseconds. Missing when the result comes from the cache"
+              },
+              "from_cache" : {
+                "type" : "boolean",
+                "description" : "Whether the result, and its comparison when there is one, comes from the 30 seconds result cache"
+              },
+              "bucket" : {
+                "type" : "string",
+                "description" : "The time bucket size used by the query"
+              }
+            }
           }
         }
       },
@@ -26281,6 +27491,17 @@
       "Node" : {
         "type" : "object"
       },
+      "UserAnalyticsUpdatedResponse" : {
+        "type" : "object",
+        "description" : "The number of updated events",
+        "properties" : {
+          "updated" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The number of events that were acknowledged"
+          }
+        }
+      },
       "SeqRestrictionPath" : {
         "type" : "array",
         "items" : {
@@ -26405,6 +27626,27 @@
             "type" : {
               "type" : "string"
             },
+            "serialNumber" : {
+              "type" : "integer"
+            },
+            "issuerDN" : {
+              "type" : "object",
+              "properties" : {
+                "name" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "tbscertificate" : {
+              "type" : "string",
+              "format" : "byte"
+            },
+            "extendedKeyUsage" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            },
             "subjectAlternativeNames" : {
               "type" : "array",
               "items" : {
@@ -26467,27 +27709,6 @@
                 "type" : "boolean"
               }
             },
-            "serialNumber" : {
-              "type" : "integer"
-            },
-            "issuerDN" : {
-              "type" : "object",
-              "properties" : {
-                "name" : {
-                  "type" : "string"
-                }
-              }
-            },
-            "tbscertificate" : {
-              "type" : "string",
-              "format" : "byte"
-            },
-            "extendedKeyUsage" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string"
-              }
-            },
             "signature" : {
               "type" : "string",
               "format" : "byte"
@@ -26524,14 +27745,14 @@
               "type" : "integer",
               "format" : "int32"
             },
-            "nonCriticalExtensionOIDs" : {
+            "criticalExtensionOIDs" : {
               "uniqueItems" : true,
               "type" : "array",
               "items" : {
                 "type" : "string"
               }
             },
-            "criticalExtensionOIDs" : {
+            "nonCriticalExtensionOIDs" : {
               "uniqueItems" : true,
               "type" : "array",
               "items" : {
@@ -26885,10 +28106,10 @@
           "location" : {
             "$ref" : "#/components/schemas/EntityLocation"
           },
-          "async" : {
+          "ref" : {
             "type" : "boolean"
           },
-          "ref" : {
+          "async" : {
             "type" : "boolean"
           }
         }
@@ -27168,17 +28389,17 @@
               "$ref" : "#/components/schemas/ApiStateHook"
             }
           },
-          "PluginWithConfig" : {
-            "$ref" : "#/components/schemas/PluginWithConfig$"
-          },
-          "RouteWithApi" : {
-            "$ref" : "#/components/schemas/RouteWithApi$"
-          },
           "computedPluginsByPlan" : {
             "type" : "object",
             "additionalProperties" : {
               "$ref" : "#/components/schemas/NgPluginsWithOverride"
             }
+          },
+          "PluginWithConfig" : {
+            "$ref" : "#/components/schemas/PluginWithConfig$"
+          },
+          "RouteWithApi" : {
+            "$ref" : "#/components/schemas/RouteWithApi$"
           }
         }
       },
@@ -27490,6 +28711,62 @@
       },
       "ClientAuth" : {
         "type" : "object"
+      },
+      "UserAnalyticsQueryCatalog" : {
+        "type" : "object",
+        "description" : "The queries user analytics can run",
+        "properties" : {
+          "queries" : {
+            "type" : "array",
+            "description" : "The available queries",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAnalyticsQueryDefinition"
+            }
+          },
+          "widget_types" : {
+            "type" : "array",
+            "description" : "The widget types a dashboard widget can use",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "UserAnalyticsAlertConditionEval" : {
+        "type" : "object",
+        "description" : "The evaluation of a condition of a user alert",
+        "properties" : {
+          "query" : {
+            "type" : "string",
+            "description" : "The id of the query of the condition"
+          },
+          "reducer" : {
+            "type" : "string",
+            "description" : "How the query result was reduced to a single value: `avg`, `max`, `min`, `sum` or `last`"
+          },
+          "operator" : {
+            "type" : "string",
+            "description" : "How the value was compared to the threshold: `>`, `>=`, `<`, `<=`, `==` or `!=`"
+          },
+          "threshold" : {
+            "type" : "number",
+            "description" : "The threshold"
+          },
+          "value" : {
+            "type" : "number",
+            "description" : "The reduced value",
+            "nullable" : true
+          },
+          "matched" : {
+            "type" : "boolean",
+            "description" : "Whether the condition was met"
+          },
+          "error" : {
+            "type" : "string",
+            "description" : "Why the condition could not be evaluated",
+            "nullable" : true
+          }
+        }
       },
       "QuotasAlmostExceededSettings" : {
         "type" : "object",
@@ -28003,51 +29280,6 @@
       "ApiState" : {
         "type" : "object"
       },
-      "GzipConfig" : {
-        "type" : "object",
-        "properties" : {
-          "enabled" : {
-            "type" : "boolean"
-          },
-          "excludedPatterns" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "whiteList" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "blackList" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "bufferSize" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "chunkedThreshold" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "compressionLevel" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "upHeader" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "writeOnly" : true
-          }
-        }
-      },
       "ApiClient" : {
         "type" : "object",
         "properties" : {
@@ -28142,6 +29374,70 @@
         "type" : "array",
         "items" : {
           "$ref" : "#/components/schemas/Node"
+        }
+      },
+      "UserAnalyticsQueryItem" : {
+        "type" : "object",
+        "description" : "An item of a `pie` or `topN` result",
+        "properties" : {
+          "key" : {
+            "type" : "string",
+            "description" : "What is counted: a status code, a method, a route id, an API key client id, ..."
+          },
+          "label" : {
+            "type" : "string",
+            "description" : "A readable name for `key` (the route name for routes, `key` otherwise). `topN` only"
+          },
+          "value" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The number of requests"
+          }
+        }
+      },
+      "GzipConfig" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "excludedPatterns" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "whiteList" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "blackList" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "bufferSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "chunkedThreshold" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "compressionLevel" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "upHeader" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "writeOnly" : true
+          }
         }
       },
       "RuleStateRecord" : {
@@ -28285,10 +29581,31 @@
               "type" : "object"
             }
           },
+          "userFacing" : {
+            "type" : "boolean"
+          },
+          "issueLetsEncryptCertificate" : {
+            "type" : "boolean"
+          },
+          "openapiUrl" : {
+            "type" : "string"
+          },
+          "legacy" : {
+            "$ref" : "#/components/schemas/ServiceDescriptor"
+          },
           "originalRouteId" : {
             "type" : "string"
           },
+          "cacheableId" : {
+            "type" : "string"
+          },
           "notBoundToListener" : {
+            "type" : "boolean"
+          },
+          "serviceDescriptor" : {
+            "$ref" : "#/components/schemas/ServiceDescriptor"
+          },
+          "useAkkaHttpClient" : {
             "type" : "boolean"
           },
           "useAhcClient" : {
@@ -28300,16 +29617,10 @@
           "useAkkaHttpWsClient" : {
             "type" : "boolean"
           },
-          "issueLetsEncryptCertificate" : {
-            "type" : "boolean"
-          },
           "issueCertificate" : {
             "type" : "boolean"
           },
           "issueCertificateCA" : {
-            "type" : "string"
-          },
-          "openapiUrl" : {
             "type" : "string"
           },
           "deploymentProviders" : {
@@ -28356,21 +29667,6 @@
           },
           "hasDeploymentRacks" : {
             "type" : "boolean"
-          },
-          "serviceDescriptor" : {
-            "$ref" : "#/components/schemas/ServiceDescriptor"
-          },
-          "userFacing" : {
-            "type" : "boolean"
-          },
-          "useAkkaHttpClient" : {
-            "type" : "boolean"
-          },
-          "cacheableId" : {
-            "type" : "string"
-          },
-          "legacy" : {
-            "$ref" : "#/components/schemas/ServiceDescriptor"
           }
         }
       },
@@ -28556,59 +29852,6 @@
           }
         }
       },
-      "plugins.otoroshi.io.Workflow" : {
-        "type" : "object",
-        "properties" : {
-          "location" : {
-            "$ref" : "#/components/schemas/EntityLocation"
-          },
-          "id" : {
-            "type" : "string"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "description" : {
-            "type" : "string"
-          },
-          "tags" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "metadata" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            }
-          },
-          "config" : {
-            "$ref" : "#/components/schemas/JsObject"
-          },
-          "job" : {
-            "$ref" : "#/components/schemas/WorkflowJobConfig"
-          },
-          "functions" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/JsObject"
-            }
-          },
-          "testPayload" : {
-            "$ref" : "#/components/schemas/JsObject"
-          },
-          "orphans" : {
-            "$ref" : "#/components/schemas/Orphans"
-          },
-          "notes" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/Note"
-            }
-          }
-        }
-      },
       "SeqApiBackendClient" : {
         "type" : "array",
         "items" : {
@@ -28744,6 +29987,86 @@
           }
         }
       },
+      "UserAnalyticsProjection" : {
+        "type" : "object",
+        "description" : "A family of events user analytics can store",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "description" : "The id of the projection, to use in `excluded_projections`"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "The name of the projection"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "The events stored by the projection"
+          },
+          "core" : {
+            "type" : "boolean",
+            "description" : "Whether the projection is built into Otoroshi (`false` when an admin extension provides it)"
+          },
+          "table" : {
+            "type" : "string",
+            "description" : "The table the events are written to",
+            "nullable" : true
+          }
+        }
+      },
+      "plugins.otoroshi.io.Workflow" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/EntityLocation"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
+          "config" : {
+            "$ref" : "#/components/schemas/JsObject"
+          },
+          "job" : {
+            "$ref" : "#/components/schemas/WorkflowJobConfig"
+          },
+          "functions" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/JsObject"
+            }
+          },
+          "testPayload" : {
+            "$ref" : "#/components/schemas/JsObject"
+          },
+          "orphans" : {
+            "$ref" : "#/components/schemas/Orphans"
+          },
+          "notes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Note"
+            }
+          }
+        }
+      },
       "ApiAccessModeConfiguration" : {
         "type" : "object"
       },
@@ -28843,17 +30166,14 @@
           "raw" : {
             "$ref" : "#/components/schemas/JsObject"
           },
+          "site_page" : {
+            "type" : "boolean"
+          },
           "title" : {
             "type" : "string"
           },
-          "text_content" : {
+          "contentType" : {
             "type" : "string"
-          },
-          "css_icon_class" : {
-            "type" : "string"
-          },
-          "json_content" : {
-            "$ref" : "#/components/schemas/JsValue"
           },
           "base64_content" : {
             "type" : "array",
@@ -28869,12 +30189,6 @@
               "type" : "object"
             }
           },
-          "site_page" : {
-            "type" : "boolean"
-          },
-          "transform_wrapper" : {
-            "type" : "string"
-          },
           "httpHeaders" : {
             "type" : "object",
             "additionalProperties" : {
@@ -28887,6 +30201,18 @@
           "httpFollowRedirects" : {
             "type" : "boolean"
           },
+          "transform_wrapper" : {
+            "type" : "string"
+          },
+          "json_content" : {
+            "$ref" : "#/components/schemas/JsValue"
+          },
+          "css_icon_class" : {
+            "type" : "string"
+          },
+          "text_content" : {
+            "type" : "string"
+          },
           "transform" : {
             "type" : "string"
           },
@@ -28894,9 +30220,6 @@
             "type" : "string"
           },
           "description" : {
-            "type" : "string"
-          },
-          "contentType" : {
             "type" : "string"
           }
         }
@@ -28989,6 +30312,42 @@
       },
       "ApiDocumentationPlanVisibilityKind" : {
         "type" : "object"
+      },
+      "UserAnalyticsQueryFilters" : {
+        "type" : "object",
+        "description" : "The data a query runs on. The tenant is not a filter: it always comes from the `Otoroshi-Tenant` header",
+        "properties" : {
+          "from" : {
+            "type" : "string",
+            "description" : "The start of the time range (inclusive): `now`, `now-<n><unit>` with a unit among `s`, `m`, `h` and `d` (like `now-30m` or `now-7d`), or an ISO-8601 instant (like `2026-10-01T00:00:00Z`). `now-1h` when missing or invalid",
+            "default" : "now-1h"
+          },
+          "to" : {
+            "type" : "string",
+            "description" : "The end of the time range (exclusive): `now`, `now-<n><unit>` with a unit among `s`, `m`, `h` and `d` (like `now-30m` or `now-7d`), or an ISO-8601 instant (like `2026-10-01T00:00:00Z`). `now` when missing or invalid",
+            "default" : "now"
+          },
+          "route_id" : {
+            "type" : "string",
+            "description" : "Only keep the requests handled by this route"
+          },
+          "api_id" : {
+            "type" : "string",
+            "description" : "Only keep the requests handled by this API"
+          },
+          "apikey_id" : {
+            "type" : "string",
+            "description" : "Only keep the requests made with this API key (client id)"
+          },
+          "group_id" : {
+            "type" : "string",
+            "description" : "Only keep the requests handled by a route of this group"
+          },
+          "err" : {
+            "type" : "boolean",
+            "description" : "Only keep the requests in error (`true`) or the successful ones (`false`)"
+          }
+        }
       },
       "SeqWebhook" : {
         "type" : "array",
@@ -29144,30 +30503,208 @@
           "location" : {
             "$ref" : "#/components/schemas/EntityLocation"
           },
-          "cleanChain" : {
-            "type" : "string"
-          },
-          "notExpired" : {
-            "type" : "boolean"
-          },
-          "notExpiredSoon" : {
-            "type" : "boolean"
-          },
-          "certificatesRaw" : {
+          "allDomains" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             }
           },
-          "metadata" : {
-            "$ref" : "#/components/schemas/JsValue"
+          "cleanChain" : {
+            "type" : "string"
+          },
+          "isUsable" : {
+            "type" : "boolean"
+          },
+          "notExpired" : {
+            "type" : "boolean"
           },
           "notRevoked" : {
             "type" : "boolean"
           },
+          "metadata" : {
+            "$ref" : "#/components/schemas/JsValue"
+          },
+          "certificates" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "type" : {
+                  "type" : "string"
+                },
+                "serialNumber" : {
+                  "type" : "integer"
+                },
+                "issuerDN" : {
+                  "type" : "object",
+                  "properties" : {
+                    "name" : {
+                      "type" : "string"
+                    }
+                  }
+                },
+                "tbscertificate" : {
+                  "type" : "string",
+                  "format" : "byte"
+                },
+                "extendedKeyUsage" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                },
+                "subjectAlternativeNames" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "object"
+                    }
+                  }
+                },
+                "issuerAlternativeNames" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "object"
+                    }
+                  }
+                },
+                "sigAlgName" : {
+                  "type" : "string"
+                },
+                "sigAlgParams" : {
+                  "type" : "string",
+                  "format" : "byte"
+                },
+                "subjectDN" : {
+                  "type" : "object",
+                  "properties" : {
+                    "name" : {
+                      "type" : "string"
+                    }
+                  }
+                },
+                "notBefore" : {
+                  "type" : "string",
+                  "format" : "date-time"
+                },
+                "notAfter" : {
+                  "type" : "string",
+                  "format" : "date-time"
+                },
+                "sigAlgOID" : {
+                  "type" : "string"
+                },
+                "issuerUniqueID" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "boolean"
+                  }
+                },
+                "subjectUniqueID" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "boolean"
+                  }
+                },
+                "keyUsage" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "boolean"
+                  }
+                },
+                "signature" : {
+                  "type" : "string",
+                  "format" : "byte"
+                },
+                "basicConstraints" : {
+                  "type" : "integer",
+                  "format" : "int32"
+                },
+                "issuerX500Principal" : {
+                  "type" : "object",
+                  "properties" : {
+                    "name" : {
+                      "type" : "string"
+                    },
+                    "encoded" : {
+                      "type" : "string",
+                      "format" : "byte"
+                    }
+                  }
+                },
+                "subjectX500Principal" : {
+                  "type" : "object",
+                  "properties" : {
+                    "name" : {
+                      "type" : "string"
+                    },
+                    "encoded" : {
+                      "type" : "string",
+                      "format" : "byte"
+                    }
+                  }
+                },
+                "version" : {
+                  "type" : "integer",
+                  "format" : "int32"
+                },
+                "criticalExtensionOIDs" : {
+                  "uniqueItems" : true,
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                },
+                "nonCriticalExtensionOIDs" : {
+                  "uniqueItems" : true,
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                },
+                "encoded" : {
+                  "type" : "string",
+                  "format" : "byte"
+                },
+                "publicKey" : {
+                  "type" : "object",
+                  "properties" : {
+                    "encoded" : {
+                      "type" : "string",
+                      "format" : "byte"
+                    },
+                    "format" : {
+                      "type" : "string"
+                    },
+                    "algorithm" : {
+                      "type" : "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "cryptoKeyPair" : {
             "type" : "object",
             "properties" : {
+              "public" : {
+                "type" : "object",
+                "properties" : {
+                  "encoded" : {
+                    "type" : "string",
+                    "format" : "byte"
+                  },
+                  "format" : {
+                    "type" : "string"
+                  },
+                  "algorithm" : {
+                    "type" : "string"
+                  }
+                }
+              },
               "private" : {
                 "type" : "object",
                 "properties" : {
@@ -29185,21 +30722,6 @@
                     "type" : "boolean"
                   }
                 }
-              },
-              "public" : {
-                "type" : "object",
-                "properties" : {
-                  "encoded" : {
-                    "type" : "string",
-                    "format" : "byte"
-                  },
-                  "format" : {
-                    "type" : "string"
-                  },
-                  "algorithm" : {
-                    "type" : "string"
-                  }
-                }
               }
             }
           },
@@ -29208,6 +30730,27 @@
             "properties" : {
               "type" : {
                 "type" : "string"
+              },
+              "serialNumber" : {
+                "type" : "integer"
+              },
+              "issuerDN" : {
+                "type" : "object",
+                "properties" : {
+                  "name" : {
+                    "type" : "string"
+                  }
+                }
+              },
+              "tbscertificate" : {
+                "type" : "string",
+                "format" : "byte"
+              },
+              "extendedKeyUsage" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
               },
               "subjectAlternativeNames" : {
                 "type" : "array",
@@ -29271,27 +30814,6 @@
                   "type" : "boolean"
                 }
               },
-              "serialNumber" : {
-                "type" : "integer"
-              },
-              "issuerDN" : {
-                "type" : "object",
-                "properties" : {
-                  "name" : {
-                    "type" : "string"
-                  }
-                }
-              },
-              "tbscertificate" : {
-                "type" : "string",
-                "format" : "byte"
-              },
-              "extendedKeyUsage" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              },
               "signature" : {
                 "type" : "string",
                 "format" : "byte"
@@ -29328,14 +30850,14 @@
                 "type" : "integer",
                 "format" : "int32"
               },
-              "nonCriticalExtensionOIDs" : {
+              "criticalExtensionOIDs" : {
                 "uniqueItems" : true,
                 "type" : "array",
                 "items" : {
                   "type" : "string"
                 }
               },
-              "criticalExtensionOIDs" : {
+              "nonCriticalExtensionOIDs" : {
                 "uniqueItems" : true,
                 "type" : "array",
                 "items" : {
@@ -29371,68 +30893,6 @@
                 "type" : {
                   "type" : "string"
                 },
-                "subjectAlternativeNames" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "array",
-                    "items" : {
-                      "type" : "object"
-                    }
-                  }
-                },
-                "issuerAlternativeNames" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "array",
-                    "items" : {
-                      "type" : "object"
-                    }
-                  }
-                },
-                "sigAlgName" : {
-                  "type" : "string"
-                },
-                "sigAlgParams" : {
-                  "type" : "string",
-                  "format" : "byte"
-                },
-                "subjectDN" : {
-                  "type" : "object",
-                  "properties" : {
-                    "name" : {
-                      "type" : "string"
-                    }
-                  }
-                },
-                "notBefore" : {
-                  "type" : "string",
-                  "format" : "date-time"
-                },
-                "notAfter" : {
-                  "type" : "string",
-                  "format" : "date-time"
-                },
-                "sigAlgOID" : {
-                  "type" : "string"
-                },
-                "issuerUniqueID" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "boolean"
-                  }
-                },
-                "subjectUniqueID" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "boolean"
-                  }
-                },
-                "keyUsage" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "boolean"
-                  }
-                },
                 "serialNumber" : {
                   "type" : "integer"
                 },
@@ -29453,98 +30913,6 @@
                   "items" : {
                     "type" : "string"
                   }
-                },
-                "signature" : {
-                  "type" : "string",
-                  "format" : "byte"
-                },
-                "basicConstraints" : {
-                  "type" : "integer",
-                  "format" : "int32"
-                },
-                "issuerX500Principal" : {
-                  "type" : "object",
-                  "properties" : {
-                    "name" : {
-                      "type" : "string"
-                    },
-                    "encoded" : {
-                      "type" : "string",
-                      "format" : "byte"
-                    }
-                  }
-                },
-                "subjectX500Principal" : {
-                  "type" : "object",
-                  "properties" : {
-                    "name" : {
-                      "type" : "string"
-                    },
-                    "encoded" : {
-                      "type" : "string",
-                      "format" : "byte"
-                    }
-                  }
-                },
-                "version" : {
-                  "type" : "integer",
-                  "format" : "int32"
-                },
-                "nonCriticalExtensionOIDs" : {
-                  "uniqueItems" : true,
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  }
-                },
-                "criticalExtensionOIDs" : {
-                  "uniqueItems" : true,
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  }
-                },
-                "encoded" : {
-                  "type" : "string",
-                  "format" : "byte"
-                },
-                "publicKey" : {
-                  "type" : "object",
-                  "properties" : {
-                    "encoded" : {
-                      "type" : "string",
-                      "format" : "byte"
-                    },
-                    "format" : {
-                      "type" : "string"
-                    },
-                    "algorithm" : {
-                      "type" : "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "contentHash" : {
-            "type" : "string"
-          },
-          "allDomains" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "isUsable" : {
-            "type" : "boolean"
-          },
-          "certificates" : {
-            "type" : "array",
-            "items" : {
-              "type" : "object",
-              "properties" : {
-                "type" : {
-                  "type" : "string"
                 },
                 "subjectAlternativeNames" : {
                   "type" : "array",
@@ -29608,27 +30976,6 @@
                     "type" : "boolean"
                   }
                 },
-                "serialNumber" : {
-                  "type" : "integer"
-                },
-                "issuerDN" : {
-                  "type" : "object",
-                  "properties" : {
-                    "name" : {
-                      "type" : "string"
-                    }
-                  }
-                },
-                "tbscertificate" : {
-                  "type" : "string",
-                  "format" : "byte"
-                },
-                "extendedKeyUsage" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  }
-                },
                 "signature" : {
                   "type" : "string",
                   "format" : "byte"
@@ -29665,14 +31012,14 @@
                   "type" : "integer",
                   "format" : "int32"
                 },
-                "nonCriticalExtensionOIDs" : {
+                "criticalExtensionOIDs" : {
                   "uniqueItems" : true,
                   "type" : "array",
                   "items" : {
                     "type" : "string"
                   }
                 },
-                "criticalExtensionOIDs" : {
+                "nonCriticalExtensionOIDs" : {
                   "uniqueItems" : true,
                   "type" : "array",
                   "items" : {
@@ -29700,27 +31047,33 @@
                 }
               }
             }
-          },
-          "bundle" : {
-            "type" : "string"
-          },
-          "certType" : {
-            "type" : "string"
-          },
-          "isValid" : {
-            "type" : "boolean"
-          },
-          "expired" : {
-            "type" : "boolean"
-          },
-          "cacheKey" : {
-            "type" : "string"
           },
           "certificate" : {
             "type" : "object",
             "properties" : {
               "type" : {
                 "type" : "string"
+              },
+              "serialNumber" : {
+                "type" : "integer"
+              },
+              "issuerDN" : {
+                "type" : "object",
+                "properties" : {
+                  "name" : {
+                    "type" : "string"
+                  }
+                }
+              },
+              "tbscertificate" : {
+                "type" : "string",
+                "format" : "byte"
+              },
+              "extendedKeyUsage" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
               },
               "subjectAlternativeNames" : {
                 "type" : "array",
@@ -29784,27 +31137,6 @@
                   "type" : "boolean"
                 }
               },
-              "serialNumber" : {
-                "type" : "integer"
-              },
-              "issuerDN" : {
-                "type" : "object",
-                "properties" : {
-                  "name" : {
-                    "type" : "string"
-                  }
-                }
-              },
-              "tbscertificate" : {
-                "type" : "string",
-                "format" : "byte"
-              },
-              "extendedKeyUsage" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              },
               "signature" : {
                 "type" : "string",
                 "format" : "byte"
@@ -29841,14 +31173,14 @@
                 "type" : "integer",
                 "format" : "int32"
               },
-              "nonCriticalExtensionOIDs" : {
+              "criticalExtensionOIDs" : {
                 "uniqueItems" : true,
                 "type" : "array",
                 "items" : {
                   "type" : "string"
                 }
               },
-              "criticalExtensionOIDs" : {
+              "nonCriticalExtensionOIDs" : {
                 "uniqueItems" : true,
                 "type" : "array",
                 "items" : {
@@ -29875,6 +31207,33 @@
                 }
               }
             }
+          },
+          "contentHash" : {
+            "type" : "string"
+          },
+          "notExpiredSoon" : {
+            "type" : "boolean"
+          },
+          "certificatesRaw" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "bundle" : {
+            "type" : "string"
+          },
+          "certType" : {
+            "type" : "string"
+          },
+          "isValid" : {
+            "type" : "boolean"
+          },
+          "expired" : {
+            "type" : "boolean"
+          },
+          "cacheKey" : {
+            "type" : "string"
           }
         }
       },
@@ -29934,6 +31293,29 @@
         "type" : "array",
         "items" : {
           "$ref" : "#/components/schemas/ApiPlan"
+        }
+      },
+      "UserAnalyticsAlertEventsPage" : {
+        "type" : "object",
+        "description" : "A page of fired events of a user alert",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "description" : "The fired events, newest first",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAnalyticsAlertEvent"
+            }
+          },
+          "limit" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The maximum number of events of the page"
+          },
+          "offset" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The number of events skipped"
+          }
         }
       },
       "ApiDocumentationResourceRef" : {
@@ -30098,6 +31480,21 @@
           }
         }
       },
+      "UserAnalyticsTimeseriesPoint" : {
+        "type" : "object",
+        "description" : "A point of a timeseries",
+        "properties" : {
+          "ts" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The start of the time bucket, as a unix timestamp in milliseconds"
+          },
+          "value" : {
+            "type" : "number",
+            "description" : "The value for this time bucket (0 when there is no data)"
+          }
+        }
+      },
       "NgBackend" : {
         "type" : "object",
         "properties" : {
@@ -30130,6 +31527,52 @@
           },
           "minimalBackend" : {
             "$ref" : "#/components/schemas/NgMinimalBackend"
+          }
+        }
+      },
+      "UserAnalyticsQueryResponse" : {
+        "type" : "object",
+        "description" : "The result of a user analytics query",
+        "properties" : {
+          "shape" : {
+            "type" : "string",
+            "description" : "The shape of `data`",
+            "enum" : [ "timeseries", "topN", "pie", "scalar", "metric", "table", "heatmap" ]
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/UserAnalyticsQueryData"
+          },
+          "raw" : {
+            "type" : "array",
+            "description" : "The rows behind `data`, when the query provides them. Empty for multi-series timeseries and heatmaps",
+            "items" : {
+              "type" : "object"
+            }
+          },
+          "meta" : {
+            "type" : "object",
+            "description" : "Execution details",
+            "properties" : {
+              "execution_ms" : {
+                "type" : "integer",
+                "format" : "int64",
+                "description" : "The time it took to run the query, in milliseconds. Missing when the result comes from the cache"
+              },
+              "from_cache" : {
+                "type" : "boolean",
+                "description" : "Whether the result, and its comparison when there is one, comes from the 30 seconds result cache"
+              },
+              "bucket" : {
+                "type" : "string",
+                "description" : "The time bucket size used by the query"
+              }
+            }
+          },
+          "compare" : {
+            "description" : "The result of the same query on the previous period of the same length. Only present when `compare` was requested and the query supports it",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/UserAnalyticsQueryResult"
+            } ]
           }
         }
       },
@@ -30271,14 +31714,48 @@
           "http1" : {
             "type" : "boolean"
           },
-          "http2OrHttp3" : {
-            "type" : "boolean"
-          },
           "http2" : {
             "type" : "boolean"
           },
           "http3" : {
             "type" : "boolean"
+          },
+          "http2OrHttp3" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "UserAnalyticsQueryRequest" : {
+        "type" : "object",
+        "description" : "A user analytics query to run",
+        "required" : [ "query" ],
+        "properties" : {
+          "query" : {
+            "type" : "string",
+            "description" : "The id of the query, as listed by `GET /api/analytics/_schema`"
+          },
+          "params" : {
+            "type" : "object",
+            "description" : "The parameters of the query, as listed in its `params`, like `{\"top_n\": 10}` for the top N queries",
+            "additionalProperties" : true
+          },
+          "filters" : {
+            "$ref" : "#/components/schemas/UserAnalyticsQueryFilters"
+          },
+          "bucket" : {
+            "type" : "string",
+            "description" : "The time bucket size of timeseries and heatmaps: `1m`, `5m`, `1h`, `6h` or `1d`. When missing or unknown, it depends on the time range: up to 1 hour `1m`, up to 24 hours `1h`, up to 7 days `6h`, `1d` beyond",
+            "nullable" : true
+          },
+          "compare" : {
+            "type" : "boolean",
+            "description" : "Also run the query on the previous period of the same length and return it in `compare`. Ignored by the queries that do not support it (`supports_compare` in the catalog)",
+            "default" : false
+          },
+          "nocache" : {
+            "type" : "boolean",
+            "description" : "Run the query even if its result is in the cache, and do not cache the new one",
+            "default" : false
           }
         }
       },
@@ -30733,17 +32210,17 @@
               "$ref" : "#/components/schemas/ApiStateHook"
             }
           },
-          "PluginWithConfig" : {
-            "$ref" : "#/components/schemas/PluginWithConfig$"
-          },
-          "RouteWithApi" : {
-            "$ref" : "#/components/schemas/RouteWithApi$"
-          },
           "computedPluginsByPlan" : {
             "type" : "object",
             "additionalProperties" : {
               "$ref" : "#/components/schemas/NgPluginsWithOverride"
             }
+          },
+          "PluginWithConfig" : {
+            "$ref" : "#/components/schemas/PluginWithConfig$"
+          },
+          "RouteWithApi" : {
+            "$ref" : "#/components/schemas/RouteWithApi$"
           }
         }
       },
@@ -31031,20 +32508,20 @@
           "backup" : {
             "type" : "boolean"
           },
+          "toTarget" : {
+            "$ref" : "#/components/schemas/Target"
+          },
           "primary" : {
             "type" : "boolean"
+          },
+          "baseUrl" : {
+            "type" : "string"
           },
           "secondary" : {
             "type" : "boolean"
           },
           "defaultPortString" : {
             "type" : "string"
-          },
-          "baseUrl" : {
-            "type" : "string"
-          },
-          "toTarget" : {
-            "$ref" : "#/components/schemas/Target"
           }
         }
       },
@@ -31199,17 +32676,17 @@
           "chronology" : {
             "$ref" : "#/components/schemas/Chronology"
           },
-          "fieldTypes" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/DateTimeFieldType"
-            }
-          },
           "values" : {
             "type" : "array",
             "items" : {
               "type" : "integer",
               "format" : "int32"
+            }
+          },
+          "fieldTypes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DateTimeFieldType"
             }
           },
           "fields" : {
@@ -31374,12 +32851,12 @@
       "DurationField" : {
         "type" : "object",
         "properties" : {
+          "precise" : {
+            "type" : "boolean"
+          },
           "unitMillis" : {
             "type" : "integer",
             "format" : "int64"
-          },
-          "precise" : {
-            "type" : "boolean"
           },
           "name" : {
             "type" : "string"
@@ -31466,6 +32943,20 @@
           }
         }
       },
+      "UserAnalyticsOkResponse" : {
+        "type" : "object",
+        "description" : "The outcome of an operation",
+        "properties" : {
+          "ok" : {
+            "type" : "boolean",
+            "description" : "Whether the operation succeeded"
+          },
+          "error" : {
+            "type" : "string",
+            "description" : "Why the operation failed"
+          }
+        }
+      },
       "AlgoSettings" : {
         "type" : "object",
         "properties" : {
@@ -31513,10 +33004,10 @@
           "location" : {
             "$ref" : "#/components/schemas/EntityLocation"
           },
-          "async" : {
+          "ref" : {
             "type" : "boolean"
           },
-          "ref" : {
+          "async" : {
             "type" : "boolean"
           }
         }
@@ -31725,6 +33216,24 @@
           }
         }
       },
+      "UserAnalyticsRestoreDefaultsResponse" : {
+        "type" : "object",
+        "description" : "The default dashboards that were created",
+        "properties" : {
+          "created" : {
+            "type" : "array",
+            "description" : "The default ids of the dashboards that were created",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "count" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The number of dashboards that were created"
+          }
+        }
+      },
       "ApikeyAccessModeConfiguration" : {
         "type" : "object",
         "properties" : {
@@ -31788,17 +33297,17 @@
           "canWrite" : {
             "type" : "boolean"
           },
-          "plain" : {
-            "type" : "boolean"
+          "asTeamId" : {
+            "$ref" : "#/components/schemas/TeamId"
           },
-          "containsWildcard" : {
+          "plain" : {
             "type" : "boolean"
           },
           "canReadWrite" : {
             "type" : "boolean"
           },
-          "asTeamId" : {
-            "$ref" : "#/components/schemas/TeamId"
+          "containsWildcard" : {
+            "type" : "boolean"
           },
           "wildcard" : {
             "type" : "boolean"
