@@ -909,7 +909,6 @@ object OpenApi {
    * out, the ones shipped with otoroshi (workflows, remote catalogs, coraza waf, ...) included.
    */
   def generate(env: Env, version: Option[String], extensionGroup: Option[String] = None, coreOnly: Boolean = false): String = {
-    println(s"generate: version=${version}, extensionGroup=${extensionGroup}, coreOnly=${coreOnly}")
     // TODO: missing live metrics api
     // TODO: missing analytics api
     val additionalPathsFile = env.environment.resourceAsStream("/schemas/additionalPaths.json").get
@@ -939,7 +938,7 @@ object OpenApi {
             "info"         -> Json.obj(
               "title"       -> "Otoroshi Admin API",
               "description" -> "Admin API of the Otoroshi reverse proxy",
-              "version"     -> version.getOrElse(env.otoroshiVersion).json,
+              "version"     -> env.otoroshiVersion.json,
               "contact"     -> Json.obj(
                 "name"  -> "Otoroshi Team",
                 "email" -> "oss@maif.fr"
@@ -999,7 +998,7 @@ object OpenApi {
       }
     )
 
-    extensionGroup match {
+    val doc = extensionGroup match {
       case None        => finalDoc
       case Some(group) => {
         cache.getOrElseUpdate(
@@ -1056,6 +1055,15 @@ object OpenApi {
           }
         )
       }
+    }
+
+    // the cached documents describe the running version. a requested version is only written in the returned document,
+    // keeping it out of the cache keys so that the cache cannot grow with every version callers ask for
+    version match {
+      case Some(v) if v != env.otoroshiVersion =>
+        val json = Json.parse(doc).asObject
+        (json ++ Json.obj("info" -> (json.select("info").asObject ++ Json.obj("version" -> v)))).prettify
+      case _                                   => doc
     }
   }
 }

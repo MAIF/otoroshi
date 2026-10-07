@@ -110,6 +110,15 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
       // the endpoints described by hand belong to the core
       core must contain("/api/analytics/_query")
     }
+    "describe the requested version even when the document is cached" in {
+      val env                          = otoroshiComponents.env
+      def version(doc: String): String = (Json.parse(doc) \ "info" \ "version").as[String]
+      version(otoroshi.api.OpenApi.generate(env, None)) mustBe env.otoroshiVersion
+      version(otoroshi.api.OpenApi.generate(env, Some("1.2.3"))) mustBe "1.2.3"
+      version(otoroshi.api.OpenApi.generate(env, Some("1.2.3"), Some("proxy.otoroshi.io"))) mustBe "1.2.3"
+      version(otoroshi.api.OpenApi.generate(env, Some("4.5.6"), coreOnly = true)) mustBe "4.5.6"
+      version(otoroshi.api.OpenApi.generate(env, None)) mustBe env.otoroshiVersion
+    }
     "shutdown" in {
       stopAll()
     }
