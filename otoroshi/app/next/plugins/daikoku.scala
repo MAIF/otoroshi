@@ -90,7 +90,7 @@ class DaikokuProxyPlugin extends NgPresetPlugin {
             headerName = Some("Authorization"),
             addFields = None,
             projection = Json.obj(),
-            algo = HSAlgoSettings(512, "secret")
+            algo = config.algo
           ).json.asObject
         ),
         pluginIndex = Some(
