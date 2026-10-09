@@ -886,6 +886,7 @@ object OIDCJwtVerifierConfig {
     }
     override def writes(o: OIDCJwtVerifierConfig): JsValue             = Json.obj(
       "mandatory"               -> o.mandatory,
+      "user"                    -> o.user,
       "ref"                     -> o.ref.map(_.json).getOrElse(JsNull).asValue,
       "source"                  -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
       "custom_response"         -> o.customResponse,
