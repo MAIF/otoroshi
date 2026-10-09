@@ -122,7 +122,7 @@ case class SidecarConfig(
     strict: Boolean = true
 )
 
-case class ElSettings(allowEnvAccess: Boolean, allowConfigAccess: Boolean)
+case class ElSettings(allowEnvAccess: Boolean, allowConfigAccess: Boolean, allowGlobalConfigAccess: Boolean)
 
 class Env(
     val _configuration: Configuration,
@@ -230,7 +230,9 @@ class Env(
     allowEnvAccess =
       configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowEnvAccess").getOrElse(true),
     allowConfigAccess =
-      configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowConfigAccess").getOrElse(true)
+      configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowConfigAccess").getOrElse(true),
+    allowGlobalConfigAccess =
+      configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowGlobalConfigAccess").getOrElse(true),
   )
 
   // Controls strict validation of backend server certs on outgoing mTLS calls (NewFakeTrustManager +
