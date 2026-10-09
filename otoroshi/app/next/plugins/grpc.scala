@@ -25,7 +25,7 @@ object GrpcWebConfig {
   val fmt = new Format[GrpcWebConfig] {
     override def writes(o: GrpcWebConfig): JsValue             =
       Json.obj(
-        "allowed_services" -> o.allowServices,
+        "allow_services" -> o.allowServices,
         "allow_methods"    -> o.allowMethods,
         "blocked_methods"  -> o.blockedMethods
       )
