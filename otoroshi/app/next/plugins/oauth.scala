@@ -598,7 +598,7 @@ class OAuth2Caller extends NgRequestTransformer {
 
   def computeKey(env: Env, config: OAuth2CallerConfig, route: NgRoute): String =
     s"${env.storageRoot}:plugins:oauth-caller-plugin:${config.kind.name}:${config.url}:${config.clientId}:${config.user
-      .getOrElse("--")}:${config.password.getOrElse("--")}:${route.id}"
+      .getOrElse("--")}:${config.password.map(_.sha256).getOrElse("--")}:${route.id}"
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
