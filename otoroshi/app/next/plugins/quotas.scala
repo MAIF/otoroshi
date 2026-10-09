@@ -382,7 +382,7 @@ object NgCustomQuotas {
     for {
       dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaId, increment)
       dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaId).flatMap {
-                        case -1 => env.datastores.rawDataStore.expire(dailyQuotaId, env.throttlingWindow)
+                        case -1 => env.datastores.rawDataStore.expire(dailyQuotaId, (toDayEnd / 1000).toInt)
                         case _  => Future.successful(())
                       }
       monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyQuotaId, increment)
