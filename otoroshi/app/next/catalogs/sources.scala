@@ -29,9 +29,22 @@ object SourceUtils {
 
   private val logger = Logger("otoroshi-remote-catalog-source-utils")
 
-  def parseEntityContent(rawContent: String, sourceName: String, allResources: Seq[Resource]): Seq[RemoteEntity] = {
+  def parseEntityContent(
+      rawContent: String,
+      sourceName: String,
+      allResources: Seq[Resource]
+  ): Either[JsValue, Seq[RemoteEntity]] = {
     RemoteContentParser.parseRawContent(rawContent, sourceName, allResources)
   }
+
+  // a catalog is fetched entirely or not at all: a missing part would look like deleted entities to the deploy
+  def sequence(results: Seq[Either[JsValue, Seq[RemoteEntity]]]): Either[JsValue, Seq[RemoteEntity]] = {
+    val (errors, entities) = results.partitionMap(identity)
+    if (errors.nonEmpty) Left(errors.head) else Right(entities.flatten)
+  }
+
+  // when scanning an organization, a repository without the catalog path is skipped
+  def isNotFound(error: JsValue): Boolean = error.select("status").asOpt[Int].contains(404)
 
   private def isStringArray(value: JsValue): Option[JsArray] = value match {
     case arr: JsArray if arr.value.nonEmpty && arr.value.toSeq.forall(_.isInstanceOf[JsString]) => Some(arr)
@@ -72,33 +85,23 @@ object SourceUtils {
       .mapAsync { path =>
         if (isGlobPattern(path) && resolveGlob.isDefined) {
           resolveGlob.get(path).flatMap {
-            case Left(err)            =>
-              logger.warn(s"Error resolving glob $path from $sourceName: ${err.toString}")
-              Seq.empty[RemoteEntity].vfuture
+            case Left(err)            => err.leftf
             case Right(resolvedPaths) =>
               resolvedPaths
                 .mapAsync { relativePath =>
-                  fetchRelativePath(relativePath).map {
-                    case Left(err)         =>
-                      logger.warn(s"Error fetching $relativePath from $sourceName: ${err.toString}")
-                      Seq.empty[RemoteEntity]
-                    case Right(rawContent) =>
-                      parseEntityContent(rawContent, s"$sourceName/$relativePath", allResources)
-                  }
+                  fetchRelativePath(relativePath).map(
+                    _.flatMap(rawContent => parseEntityContent(rawContent, s"$sourceName/$relativePath", allResources))
+                  )
                 }
-                .map(_.flatten)
+                .map(sequence)
           }
         } else {
-          fetchRelativePath(path).map {
-            case Left(err)         =>
-              logger.warn(s"Error fetching $path from $sourceName: ${err.toString}")
-              Seq.empty[RemoteEntity]
-            case Right(rawContent) =>
-              parseEntityContent(rawContent, s"$sourceName/$path", allResources)
-          }
+          fetchRelativePath(path).map(
+            _.flatMap(rawContent => parseEntityContent(rawContent, s"$sourceName/$path", allResources))
+          )
         }
       }
-      .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+      .map(sequence)
   }
 
   def isGlobPattern(path: String): Boolean = {
@@ -225,11 +228,12 @@ class CatalogSourceFile extends CatalogSource {
           val allRes = env.allResources.resources ++ env.adminExtensions.resources()
           if (file.isDirectory) {
             val entityFiles = file.listFiles().filter(f => f.isFile && SourceUtils.isEntityFile(f.getName)).toSeq
-            val entities    = entityFiles.flatMap { f =>
-              val rawContent = new String(Files.readAllBytes(f.toPath), StandardCharsets.UTF_8)
-              SourceUtils.parseEntityContent(rawContent, s"file://${f.getAbsolutePath}", allRes)
-            }
-            (Right(entities): Either[JsValue, Seq[RemoteEntity]]).vfuture
+            SourceUtils
+              .sequence(entityFiles.map { f =>
+                val rawContent = new String(Files.readAllBytes(f.toPath), StandardCharsets.UTF_8)
+                SourceUtils.parseEntityContent(rawContent, s"file://${f.getAbsolutePath}", allRes)
+              })
+              .vfuture
           } else {
             val rawContent = new String(Files.readAllBytes(file.toPath), StandardCharsets.UTF_8)
             SourceUtils.isDeployListing(rawContent) match {
@@ -256,9 +260,7 @@ class CatalogSourceFile extends CatalogSource {
                   )
                 )
               case None      =>
-                (Right(SourceUtils.parseEntityContent(rawContent, s"file://$path", allRes)): Either[JsValue, Seq[
-                  RemoteEntity
-                ]]).vfuture
+                SourceUtils.parseEntityContent(rawContent, s"file://$path", allRes).vfuture
             }
           }
         }.recover { case e: Throwable =>
@@ -316,9 +318,7 @@ class CatalogSourceHttp extends CatalogSource {
                 allRes
               )
             case None      =>
-              (Right(SourceUtils.parseEntityContent(rawContent, s"http://$url", allRes)): Either[JsValue, Seq[
-                RemoteEntity
-              ]]).vfuture
+              SourceUtils.parseEntityContent(rawContent, s"http://$url", allRes).vfuture
           }
       }
     }
@@ -399,7 +399,10 @@ class CatalogSourceGithub extends CatalogSource {
         if (resp.status == 200) {
           Right(resp.body[String]): Either[JsValue, String]
         } else {
-          Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for $filePath")): Either[JsValue, String]
+          Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for $filePath", "status" -> resp.status)): Either[
+            JsValue,
+            String
+          ]
         }
       }
       .recover { case e: Throwable =>
@@ -479,9 +482,9 @@ class CatalogSourceGithub extends CatalogSource {
               ]
           }
         } else {
-          Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for directory listing")): Either[JsValue, Seq[
-            String
-          ]]
+          Left(
+            Json.obj("error" -> s"GitHub API returned ${resp.status} for directory listing", "status" -> resp.status)
+          ): Either[JsValue, Seq[String]]
         }
       }
       .recover { case e: Throwable =>
@@ -568,12 +571,14 @@ class CatalogSourceGithub extends CatalogSource {
       path: String,
       token: String,
       allRes: Seq[Resource],
-      env: Env
+      env: Env,
+      skipIfMissing: Boolean = false
   )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(apiBase, owner, repo, path, branch, token, env).flatMap {
-        case Left(err)         => err.leftf
-        case Right(rawContent) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(rawContent)                                         =>
           SourceUtils.isDeployListing(rawContent) match {
             case Some(arr) =>
               val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
@@ -593,26 +598,23 @@ class CatalogSourceGithub extends CatalogSource {
                 )
               )
             case None      =>
-              (Right(
-                SourceUtils.parseEntityContent(rawContent, s"github://$owner/$repo/$path@$branch", allRes)
-              ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+              SourceUtils.parseEntityContent(rawContent, s"github://$owner/$repo/$path@$branch", allRes).vfuture
           }
       }
     } else {
       listDirectory(apiBase, owner, repo, path, branch, token, env).flatMap {
-        case Left(err)    => err.leftf
-        case Right(files) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(files)                                              =>
           files
             .mapAsync { filePath =>
-              fetchFileContent(apiBase, owner, repo, filePath, branch, token, env).map {
-                case Left(err)         =>
-                  logger.warn(s"Error fetching $filePath: ${err.toString}")
-                  Seq.empty[RemoteEntity]
-                case Right(rawContent) =>
+              fetchFileContent(apiBase, owner, repo, filePath, branch, token, env).map(
+                _.flatMap(rawContent =>
                   SourceUtils.parseEntityContent(rawContent, s"github://$owner/$repo/$filePath@$branch", allRes)
-              }
+                )
+              )
             }
-            .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+            .map(SourceUtils.sequence)
       }
     }
   }
@@ -647,12 +649,9 @@ class CatalogSourceGithub extends CatalogSource {
                 logger.info(s"Scanning ${filtered.size} repos in org '$org' for path '$path'")
                 filtered
                   .mapAsync { repoName =>
-                    fetchFromSingleRepo(apiBase, org, repoName, branch, path, token, allRes, env).map {
-                      case Left(_)         => Seq.empty[RemoteEntity]
-                      case Right(entities) => entities
-                    }
+                    fetchFromSingleRepo(apiBase, org, repoName, branch, path, token, allRes, env, skipIfMissing = true)
                   }
-                  .map(all => Right(all.flatten): Either[JsValue, Seq[RemoteEntity]])
+                  .map(SourceUtils.sequence)
             }
           case None      =>
             Json.obj("error" -> s"Cannot parse GitHub repo or organization from: $repoUrl").leftf
@@ -701,7 +700,10 @@ class CatalogSourceGitlab extends CatalogSource {
         if (resp.status == 200) {
           Right(resp.body[String]): Either[JsValue, String]
         } else {
-          Left(Json.obj("error" -> s"GitLab API returned ${resp.status} for $filePath")): Either[JsValue, String]
+          Left(Json.obj("error" -> s"GitLab API returned ${resp.status} for $filePath", "status" -> resp.status)): Either[
+            JsValue,
+            String
+          ]
         }
       }
       .recover { case e: Throwable =>
@@ -783,9 +785,9 @@ class CatalogSourceGitlab extends CatalogSource {
               ]]
           }
         } else {
-          Left(Json.obj("error" -> s"GitLab API returned ${resp.status} for tree listing")): Either[JsValue, Seq[
-            String
-          ]]
+          Left(
+            Json.obj("error" -> s"GitLab API returned ${resp.status} for tree listing", "status" -> resp.status)
+          ): Either[JsValue, Seq[String]]
         }
       }
       .recover { case e: Throwable =>
@@ -862,13 +864,15 @@ class CatalogSourceGitlab extends CatalogSource {
       path: String,
       token: String,
       allRes: Seq[Resource],
-      env: Env
+      env: Env,
+      skipIfMissing: Boolean = false
   )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     val encodedProject = java.net.URLEncoder.encode(projectPath, "UTF-8")
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(baseUrl, encodedProject, path, branch, token, env).flatMap {
-        case Left(err)         => err.leftf
-        case Right(rawContent) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(rawContent)                                         =>
           SourceUtils.isDeployListing(rawContent) match {
             case Some(arr) =>
               val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
@@ -888,26 +892,23 @@ class CatalogSourceGitlab extends CatalogSource {
                 )
               )
             case None      =>
-              (Right(
-                SourceUtils.parseEntityContent(rawContent, s"gitlab://$projectPath/$path@$branch", allRes)
-              ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+              SourceUtils.parseEntityContent(rawContent, s"gitlab://$projectPath/$path@$branch", allRes).vfuture
           }
       }
     } else {
       listDirectory(baseUrl, encodedProject, path, branch, token, env).flatMap {
-        case Left(err)    => err.leftf
-        case Right(files) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(files)                                              =>
           files
             .mapAsync { filePath =>
-              fetchFileContent(baseUrl, encodedProject, filePath, branch, token, env).map {
-                case Left(err)         =>
-                  logger.warn(s"Error fetching $filePath: ${err.toString}")
-                  Seq.empty[RemoteEntity]
-                case Right(rawContent) =>
+              fetchFileContent(baseUrl, encodedProject, filePath, branch, token, env).map(
+                _.flatMap(rawContent =>
                   SourceUtils.parseEntityContent(rawContent, s"gitlab://$projectPath/$filePath@$branch", allRes)
-              }
+                )
+              )
             }
-            .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+            .map(SourceUtils.sequence)
       }
     }
   }
@@ -938,12 +939,9 @@ class CatalogSourceGitlab extends CatalogSource {
           logger.info(s"Scanning ${filtered.size} projects in group '$repoUrl' for path '$path'")
           filtered
             .mapAsync { projectPath =>
-              fetchFromSingleProject(baseUrl, projectPath, branch, path, token, allRes, env).map {
-                case Left(_)         => Seq.empty[RemoteEntity]
-                case Right(entities) => entities
-              }
+              fetchFromSingleProject(baseUrl, projectPath, branch, path, token, allRes, env, skipIfMissing = true)
             }
-            .map(all => Right(all.flatten): Either[JsValue, Seq[RemoteEntity]])
+            .map(SourceUtils.sequence)
       }
     } else {
       parseProjectPath(repoUrl) match {
@@ -1077,9 +1075,7 @@ class CatalogSourceS3 extends CatalogSource {
                 )
               )
             case None      =>
-              (Right(SourceUtils.parseEntityContent(rawContent, s"s3://$bucket/$key", allRes)): Either[JsValue, Seq[
-                RemoteEntity
-              ]]).vfuture
+              SourceUtils.parseEntityContent(rawContent, s"s3://$bucket/$key", allRes).vfuture
           }
       }
     }
@@ -1241,10 +1237,7 @@ class CatalogSourceConsulKv extends CatalogSource {
                   )
                 )
               case None      =>
-                (Right(SourceUtils.parseEntityContent(rawContent, s"consul://$endpoint/$prefix", allRes)): Either[
-                  JsValue,
-                  Seq[RemoteEntity]
-                ]).vfuture
+                SourceUtils.parseEntityContent(rawContent, s"consul://$endpoint/$prefix", allRes).vfuture
             }
         }
       } else {
@@ -1253,15 +1246,11 @@ class CatalogSourceConsulKv extends CatalogSource {
           case Right(keys) =>
             keys
               .mapAsync { key =>
-                fetchRawKey(endpoint, key, token, dc, env).map {
-                  case Left(err)         =>
-                    logger.warn(s"Error fetching key $key: ${err.toString}")
-                    Seq.empty[RemoteEntity]
-                  case Right(rawContent) =>
-                    SourceUtils.parseEntityContent(rawContent, s"consul://$endpoint/$key", allRes)
-                }
+                fetchRawKey(endpoint, key, token, dc, env).map(
+                  _.flatMap(rawContent => SourceUtils.parseEntityContent(rawContent, s"consul://$endpoint/$key", allRes))
+                )
               }
-              .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+              .map(SourceUtils.sequence)
         }
       }
     }
@@ -1319,7 +1308,9 @@ class CatalogSourceBitbucket extends CatalogSource {
         if (resp.status == 200) {
           Right(resp.body[String]): Either[JsValue, String]
         } else {
-          Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for $filePath")): Either[JsValue, String]
+          Left(
+            Json.obj("error" -> s"Bitbucket API returned ${resp.status} for $filePath", "status" -> resp.status)
+          ): Either[JsValue, String]
         }
       }
       .recover { case e: Throwable =>
@@ -1356,10 +1347,9 @@ class CatalogSourceBitbucket extends CatalogSource {
           }
           Right(files.toSeq): Either[JsValue, Seq[String]]
         } else {
-          Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for directory listing")): Either[
-            JsValue,
-            Seq[String]
-          ]
+          Left(
+            Json.obj("error" -> s"Bitbucket API returned ${resp.status} for directory listing", "status" -> resp.status)
+          ): Either[JsValue, Seq[String]]
         }
       }
       .recover { case e: Throwable =>
@@ -1442,12 +1432,14 @@ class CatalogSourceBitbucket extends CatalogSource {
       token: String,
       username: String,
       allRes: Seq[Resource],
-      env: Env
+      env: Env,
+      skipIfMissing: Boolean = false
   )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(apiBase, workspace, repo, path, branch, token, username, env).flatMap {
-        case Left(err)         => err.leftf
-        case Right(rawContent) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(rawContent)                                         =>
           SourceUtils.isDeployListing(rawContent) match {
             case Some(arr) =>
               val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
@@ -1461,30 +1453,29 @@ class CatalogSourceBitbucket extends CatalogSource {
                 allRes
               )
             case None      =>
-              (Right(
-                SourceUtils.parseEntityContent(rawContent, s"bitbucket://$workspace/$repo/$path@$branch", allRes)
-              ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+              SourceUtils
+                .parseEntityContent(rawContent, s"bitbucket://$workspace/$repo/$path@$branch", allRes)
+                .vfuture
           }
       }
     } else {
       listDirectory(apiBase, workspace, repo, path, branch, token, username, env).flatMap {
-        case Left(err)    => err.leftf
-        case Right(files) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(files)                                              =>
           files
             .mapAsync { filePath =>
-              fetchFileContent(apiBase, workspace, repo, filePath, branch, token, username, env).map {
-                case Left(err)         =>
-                  logger.warn(s"Error fetching $filePath: ${err.toString}")
-                  Seq.empty[RemoteEntity]
-                case Right(rawContent) =>
+              fetchFileContent(apiBase, workspace, repo, filePath, branch, token, username, env).map(
+                _.flatMap(rawContent =>
                   SourceUtils.parseEntityContent(
                     rawContent,
                     s"bitbucket://$workspace/$repo/$filePath@$branch",
                     allRes
                   )
-              }
+                )
+              )
             }
-            .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+            .map(SourceUtils.sequence)
       }
     }
   }
@@ -1520,12 +1511,20 @@ class CatalogSourceBitbucket extends CatalogSource {
                 logger.info(s"Scanning ${filtered.size} repos in workspace '$workspace' for path '$path'")
                 filtered
                   .mapAsync { repoName =>
-                    fetchFromSingleRepo(apiBase, workspace, repoName, branch, path, token, username, allRes, env).map {
-                      case Left(_)         => Seq.empty[RemoteEntity]
-                      case Right(entities) => entities
-                    }
+                    fetchFromSingleRepo(
+                      apiBase,
+                      workspace,
+                      repoName,
+                      branch,
+                      path,
+                      token,
+                      username,
+                      allRes,
+                      env,
+                      skipIfMissing = true
+                    )
                   }
-                  .map(all => Right(all.flatten): Either[JsValue, Seq[RemoteEntity]])
+                  .map(SourceUtils.sequence)
             }
           case None            =>
             Json.obj("error" -> s"Cannot parse Bitbucket repo or workspace from: $repoUrl").leftf
@@ -1616,7 +1615,7 @@ class CatalogSourceBitbucketServer extends CatalogSource {
             }
           } else {
             (Left(
-              Json.obj("error" -> s"Bitbucket Server API returned ${resp.status} for $context")
+              Json.obj("error" -> s"Bitbucket Server API returned ${resp.status} for $context", "status" -> resp.status)
             ): Either[JsValue, Seq[String]]).vfuture
           }
         }
@@ -1651,10 +1650,9 @@ class CatalogSourceBitbucketServer extends CatalogSource {
         if (resp.status == 200) {
           Right(resp.body[String]): Either[JsValue, String]
         } else {
-          Left(Json.obj("error" -> s"Bitbucket Server API returned ${resp.status} for $filePath")): Either[
-            JsValue,
-            String
-          ]
+          Left(
+            Json.obj("error" -> s"Bitbucket Server API returned ${resp.status} for $filePath", "status" -> resp.status)
+          ): Either[JsValue, String]
         }
       }
       .recover { case e: Throwable =>
@@ -1780,12 +1778,14 @@ class CatalogSourceBitbucketServer extends CatalogSource {
       token: String,
       username: String,
       allRes: Seq[Resource],
-      env: Env
+      env: Env,
+      skipIfMissing: Boolean = false
   )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(apiBase, project, repo, path, branch, token, username, env).flatMap {
-        case Left(err)         => err.leftf
-        case Right(rawContent) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(rawContent)                                         =>
           SourceUtils.isDeployListing(rawContent) match {
             case Some(arr) =>
               val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
@@ -1805,30 +1805,29 @@ class CatalogSourceBitbucketServer extends CatalogSource {
                 )
               )
             case None      =>
-              (Right(
-                SourceUtils.parseEntityContent(rawContent, s"bitbucketserver://$project/$repo/$path@$branch", allRes)
-              ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+              SourceUtils
+                .parseEntityContent(rawContent, s"bitbucketserver://$project/$repo/$path@$branch", allRes)
+                .vfuture
           }
       }
     } else {
       listDirectory(apiBase, project, repo, path, branch, token, username, env).flatMap {
-        case Left(err)    => err.leftf
-        case Right(files) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(files)                                              =>
           files
             .mapAsync { filePath =>
-              fetchFileContent(apiBase, project, repo, filePath, branch, token, username, env).map {
-                case Left(err)         =>
-                  logger.warn(s"Error fetching $filePath: ${err.toString}")
-                  Seq.empty[RemoteEntity]
-                case Right(rawContent) =>
+              fetchFileContent(apiBase, project, repo, filePath, branch, token, username, env).map(
+                _.flatMap(rawContent =>
                   SourceUtils.parseEntityContent(
                     rawContent,
                     s"bitbucketserver://$project/$repo/$filePath@$branch",
                     allRes
                   )
-              }
+                )
+              )
             }
-            .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+            .map(SourceUtils.sequence)
       }
     }
   }
@@ -1861,12 +1860,20 @@ class CatalogSourceBitbucketServer extends CatalogSource {
             logger.info(s"Scanning ${filtered.size} repos in project '$project' for path '$path'")
             filtered
               .mapAsync { repoName =>
-                fetchFromSingleRepo(apiBase, project, repoName, branch, path, token, username, allRes, env).map {
-                  case Left(_)         => Seq.empty[RemoteEntity]
-                  case Right(entities) => entities
-                }
+                fetchFromSingleRepo(
+                  apiBase,
+                  project,
+                  repoName,
+                  branch,
+                  path,
+                  token,
+                  username,
+                  allRes,
+                  env,
+                  skipIfMissing = true
+                )
               }
-              .map(all => Right(all.flatten): Either[JsValue, Seq[RemoteEntity]])
+              .map(SourceUtils.sequence)
         }
       case None          =>
         parseRepo(repoUrl) match {
@@ -1932,7 +1939,9 @@ class CatalogSourceGiteaCompat(
         if (resp.status == 200) {
           Right(resp.body[String]): Either[JsValue, String]
         } else {
-          Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for $filePath")): Either[JsValue, String]
+          Left(
+            Json.obj("error" -> s"$sourceKind API returned ${resp.status} for $filePath", "status" -> resp.status)
+          ): Either[JsValue, String]
         }
       }
       .recover { case e: Throwable =>
@@ -2014,10 +2023,9 @@ class CatalogSourceGiteaCompat(
               ]
           }
         } else {
-          Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for directory listing")): Either[
-            JsValue,
-            Seq[String]
-          ]
+          Left(
+            Json.obj("error" -> s"$sourceKind API returned ${resp.status} for directory listing", "status" -> resp.status)
+          ): Either[JsValue, Seq[String]]
         }
       }
       .recover { case e: Throwable =>
@@ -2098,12 +2106,14 @@ class CatalogSourceGiteaCompat(
       path: String,
       token: String,
       allRes: Seq[Resource],
-      env: Env
+      env: Env,
+      skipIfMissing: Boolean = false
   )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(baseUrl, owner, repo, path, branch, token, env).flatMap {
-        case Left(err)         => err.leftf
-        case Right(rawContent) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(rawContent)                                         =>
           SourceUtils.isDeployListing(rawContent) match {
             case Some(arr) =>
               val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
@@ -2123,26 +2133,23 @@ class CatalogSourceGiteaCompat(
                 )
               )
             case None      =>
-              (Right(
-                SourceUtils.parseEntityContent(rawContent, s"$sourceKind://$owner/$repo/$path@$branch", allRes)
-              ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+              SourceUtils.parseEntityContent(rawContent, s"$sourceKind://$owner/$repo/$path@$branch", allRes).vfuture
           }
       }
     } else {
       listDirectory(baseUrl, owner, repo, path, branch, token, env).flatMap {
-        case Left(err)    => err.leftf
-        case Right(files) =>
+        case Left(err) if skipIfMissing && SourceUtils.isNotFound(err) => Seq.empty[RemoteEntity].rightf
+        case Left(err)                                                 => err.leftf
+        case Right(files)                                              =>
           files
             .mapAsync { filePath =>
-              fetchFileContent(baseUrl, owner, repo, filePath, branch, token, env).map {
-                case Left(err)         =>
-                  logger.warn(s"Error fetching $filePath: ${err.toString}")
-                  Seq.empty[RemoteEntity]
-                case Right(rawContent) =>
+              fetchFileContent(baseUrl, owner, repo, filePath, branch, token, env).map(
+                _.flatMap(rawContent =>
                   SourceUtils.parseEntityContent(rawContent, s"$sourceKind://$owner/$repo/$filePath@$branch", allRes)
-              }
+                )
+              )
             }
-            .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+            .map(SourceUtils.sequence)
       }
     }
   }
@@ -2177,12 +2184,9 @@ class CatalogSourceGiteaCompat(
                 logger.info(s"Scanning ${filtered.size} repos in org '$org' on $sourceKind for path '$path'")
                 filtered
                   .mapAsync { repoName =>
-                    fetchFromSingleRepo(baseUrl, org, repoName, branch, path, token, allRes, env).map {
-                      case Left(_)         => Seq.empty[RemoteEntity]
-                      case Right(entities) => entities
-                    }
+                    fetchFromSingleRepo(baseUrl, org, repoName, branch, path, token, allRes, env, skipIfMissing = true)
                   }
-                  .map(all => Right(all.flatten): Either[JsValue, Seq[RemoteEntity]])
+                  .map(SourceUtils.sequence)
             }
           case None      =>
             Json.obj("error" -> s"Cannot parse $sourceKind repo or organization from: $repoUrl").leftf
@@ -2297,11 +2301,10 @@ class CatalogSourceGit extends CatalogSource {
       val target = if (path.isEmpty || path == "/" || path == ".") baseDir else new File(baseDir, path)
       if (target.isDirectory) {
         val entityFiles = target.listFiles().filter(f => f.isFile && SourceUtils.isEntityFile(f.getName)).toSeq
-        val entities    = entityFiles.flatMap { f =>
+        SourceUtils.sequence(entityFiles.map { f =>
           val rawContent = new String(Files.readAllBytes(f.toPath), StandardCharsets.UTF_8)
           SourceUtils.parseEntityContent(rawContent, s"git://${f.getPath}", allRes)
-        }
-        Right(entities): Either[JsValue, Seq[RemoteEntity]]
+        })
       } else if (target.isFile) {
         val rawContent = new String(Files.readAllBytes(target.toPath), StandardCharsets.UTF_8)
         SourceUtils.isDeployListing(rawContent) match {
@@ -2316,21 +2319,17 @@ class CatalogSourceGit extends CatalogSource {
                 Seq(relativePath)
               }
             }
-            val entities: Seq[RemoteEntity] = resolved.toSeq.flatMap { relativePath =>
+            SourceUtils.sequence(resolved.toSeq.map { relativePath =>
               Try {
                 val relFile    = new File(basePath, relativePath)
                 val relContent = new String(Files.readAllBytes(relFile.toPath), StandardCharsets.UTF_8)
                 SourceUtils.parseEntityContent(relContent, s"git://${relFile.getPath}", allRes)
               }.getOrElse {
-                logger.warn(s"Cannot read file $relativePath from git repo")
-                Seq.empty[RemoteEntity]
+                Left(Json.obj("error" -> s"Cannot read file $relativePath from git repo"))
               }
-            }
-            Right(entities): Either[JsValue, Seq[RemoteEntity]]
+            })
           case None      =>
-            Right(SourceUtils.parseEntityContent(rawContent, s"git://${target.getPath}", allRes)): Either[JsValue, Seq[
-              RemoteEntity
-            ]]
+            SourceUtils.parseEntityContent(rawContent, s"git://${target.getPath}", allRes)
         }
       } else {
         Left(Json.obj("error" -> s"Path not found in repo: $path")): Either[JsValue, Seq[RemoteEntity]]

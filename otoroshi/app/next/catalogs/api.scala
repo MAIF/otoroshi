@@ -120,30 +120,34 @@ object CatalogSources {
 
 object RemoteContentParser {
 
-  private val logger = Logger("otoroshi-remote-catalog-parser")
-
-  def parse(content: JsValue, sourceName: String, allResources: Seq[Resource]): Seq[RemoteEntity] = {
+  // content that cannot be parsed is an error, not an empty catalog: the deploy would delete what it holds
+  def parse(content: JsValue, sourceName: String, allResources: Seq[Resource]): Either[JsValue, Seq[RemoteEntity]] = {
     content match {
-      case obj: JsObject => parseObject(obj, sourceName, allResources)
-      case arr: JsArray  => parseArray(arr, sourceName)
-      case _             =>
-        logger.warn(s"Unsupported content format from source $sourceName")
-        Seq.empty
+      case obj: JsObject => Right(parseObject(obj, sourceName, allResources))
+      case arr: JsArray  => Right(parseArray(arr, sourceName))
+      case JsNull        => Right(Seq.empty)
+      case _             => Left(Json.obj("error" -> s"Unsupported content format from source $sourceName"))
     }
   }
 
-  def parseRawContent(rawContent: String, sourceName: String, allResources: Seq[Resource]): Seq[RemoteEntity] = {
+  def parseRawContent(
+      rawContent: String,
+      sourceName: String,
+      allResources: Seq[Resource]
+  ): Either[JsValue, Seq[RemoteEntity]] = {
     Try(Json.parse(rawContent)).toOption match {
       case Some(json) => parse(json, sourceName, allResources)
       case None       =>
-        splitContent(rawContent).filter(_.trim.nonEmpty).flatMap { doc =>
-          Yaml.parse(doc) match {
-            case Some(json) => parse(json, sourceName, allResources)
-            case None       =>
-              logger.warn(s"Cannot parse content from $sourceName as JSON or YAML")
-              Seq.empty
-          }
-        }
+        SourceUtils.sequence(
+          splitContent(rawContent)
+            .filter(_.linesIterator.exists(line => line.trim.nonEmpty && !line.trim.startsWith("#")))
+            .map { doc =>
+              Yaml.parse(doc) match {
+                case Some(json) => parse(json, sourceName, allResources)
+                case None       => Left(Json.obj("error" -> s"Cannot parse content from $sourceName as JSON or YAML"))
+              }
+            }
+        )
     }
   }
 
