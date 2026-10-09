@@ -747,7 +747,7 @@ object OAuth2AuthModuleCallerConfig {
         headerName = json.select("headerName").asOpt[String].getOrElse("Authorization"),
         headerValueFormat = json.select("headerValueFormat").asOpt[String].getOrElse("Bearer %s"),
         jsonPayload = json.select("jsonPayload").asOpt[Boolean].getOrElse(false),
-        cacheTokenSeconds = json.select("cacheTokenSeconds").asOpt[Long].getOrElse(10L * 60L).seconds
+        cacheTokenSeconds = json.select("cacheTokenSeconds").asOpt[Long].getOrElse(10L * 60000L).millis
       )
     } match {
       case Failure(e) => JsError(e.getMessage())
