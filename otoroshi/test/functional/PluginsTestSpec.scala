@@ -79,6 +79,15 @@ class ApiSubscriptionKindSpec extends PluginsTestSpecBase {
   }
 }
 
+// the write checks of the remote catalogs: sbt "testOnly functional.RemoteCatalogsChecksSpec"
+class RemoteCatalogsChecksSpec extends PluginsTestSpecBase {
+  s"remote catalogs" should {
+    "run the write checks of the resources in a dry run, without their side effects" in {
+      new RemoteCatalogsChecksTests(this)
+    }
+  }
+}
+
 // the apikey auth module alone: sbt "testOnly functional.ApikeyAuthModuleSpec"
 class ApikeyAuthModuleSpec extends PluginsTestSpecBase {
   s"apikey auth module" should {

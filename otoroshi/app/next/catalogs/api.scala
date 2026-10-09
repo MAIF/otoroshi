@@ -354,48 +354,20 @@ class RemoteCatalogEngine(env: Env) {
             ().vfuture
           case JsSuccess(body, _) => {
             val enrichedJson = enrichWithMetadata(body.asObject, metadataKey)
-            (resource.access.oneJson(entityId) match {
-              case None      =>
-                if (!dryRun) {
-                  resource.access
-                    .create(
-                      resource.version.name,
-                      resource.singularName,
-                      entityId.some,
-                      enrichedJson,
-                      WriteAction.Create,
-                      None
-                    )
-                    .map {
-                      case Left(err) =>
-                        errors = errors :+ s"Error upserting entity $entityId of kind $kind: ${err.stringify}"
-                      case Right(_)  => created += 1
-                    }
-                } else {
-                  created += 1
-                  ().vfuture
-                }
-              case Some(old) =>
-                if (!dryRun) {
-                  resource.access
-                    .create(
-                      resource.version.name,
-                      resource.singularName,
-                      entityId.some,
-                      enrichedJson,
-                      WriteAction.Update,
-                      old.some
-                    )
-                    .map {
-                      case Left(err) =>
-                        errors = errors :+ s"Error upserting entity $entityId of kind $kind: ${err.stringify}"
-                      case Right(_)  => updated += 1
-                    }
-                } else {
-                  updated += 1
-                  ().vfuture
-                }
-            }).recover { case e: Throwable =>
+            val oldEntity    = resource.access.oneJson(entityId)
+            val action       = if (oldEntity.isDefined) WriteAction.Update else WriteAction.Create
+            val version      = resource.version.name
+            // a dry run goes through the same checks as a deploy, without writing anything
+            val result       =
+              if (dryRun)
+                resource.access.checkCreate(version, resource.singularName, entityId.some, enrichedJson, action, oldEntity)
+              else resource.access.create(version, resource.singularName, entityId.some, enrichedJson, action, oldEntity)
+            result.map {
+              case Left(err)                       =>
+                errors = errors :+ s"Error upserting entity $entityId of kind $kind: ${err.stringify}"
+              case Right(_) if oldEntity.isDefined => updated += 1
+              case Right(_)                        => created += 1
+            }.recover { case e: Throwable =>
               errors = errors :+ s"Error upserting entity $entityId of kind $kind: ${e.getMessage}"
             }
           }

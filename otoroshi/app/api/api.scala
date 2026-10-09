@@ -221,6 +221,17 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       env: Env
   ): Future[Either[JsValue, T]] = entity.rightf
 
+  // the checks of writeValidation without its side effects, for the callers that write nothing (dry runs)
+  def writeCheck(
+      entity: T,
+      body: JsValue,
+      oldEntity: Option[(T, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: WriteAction,
+      env: Env
+  ): Future[Either[JsValue, T]] = entity.rightf
+
   def deleteValidation(
       entity: T,
       body: JsValue,
@@ -311,6 +322,33 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           }
         }
       }
+    }
+  }
+
+  // what create would refuse, without writing anything
+  def checkCreate(
+      version: String,
+      singularName: String,
+      id: Option[String],
+      body: JsValue,
+      action: WriteAction,
+      oldEntity: Option[JsValue]
+  )(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, JsValue]] = {
+    format.reads(body) match {
+      case err @ JsError(_)     => Left[JsValue, JsValue](JsError.toJson(err)).vfuture
+      case JsSuccess(_value, _) =>
+        writeCheck(
+          _value,
+          body,
+          oldEntity.flatMap(oe => format.reads(oe).asOpt.map(v => (v, oe))),
+          singularName,
+          id,
+          action,
+          env
+        ).map(_.map(value => format.writes(value)))
     }
   }
 
@@ -528,7 +566,12 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
     ]] = (ent: T, _: JsValue, _: Option[(T, JsValue)], _: String, _: Option[String], _: WriteAction, _: Env) =>
       ent.rightf,
     deleteValidator: Function6[T, JsValue, String, String, DeleteAction, Env, Future[Either[JsValue, Unit]]] =
-      (ent: T, _: JsValue, _: String, _: String, _: DeleteAction, _: Env) => ().rightf
+      (ent: T, _: JsValue, _: String, _: String, _: DeleteAction, _: Env) => ().rightf,
+    // the checks of writeValidator without its side effects, nothing is checked when it is not given
+    writeChecker: Function7[T, JsValue, Option[(T, JsValue)], String, Option[String], WriteAction, Env, Future[
+      Either[JsValue, T]
+    ]] = (ent: T, _: JsValue, _: Option[(T, JsValue)], _: String, _: Option[String], _: WriteAction, _: Env) =>
+      ent.rightf
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String               = keyf.apply(id)
   override def extractId(value: T): String           = value.theId
@@ -552,6 +595,17 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
       env: Env
   ): Future[Either[JsValue, T]] = {
     writeValidator.apply(entity, body, oldEntity, singularName, id, action, env)
+  }
+  override def writeCheck(
+      entity: T,
+      body: JsValue,
+      oldEntity: Option[(T, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: WriteAction,
+      env: Env
+  ): Future[Either[JsValue, T]] = {
+    writeChecker.apply(entity, body, oldEntity, singularName, id, action, env)
   }
   override def deleteValidation(
       entity: T,
@@ -1031,7 +1085,8 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allDrafts(),
         stateOne = id => env.proxyState.draft(id),
         stateUpdate = seq => env.proxyState.updateDrafts(seq),
-        writeValidator = Draft.writeValidator
+        writeValidator = Draft.writeValidator,
+        writeChecker = Draft.writeChecker
       )
     ),
     //////
@@ -1052,7 +1107,8 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
         stateUpdate = seq => env.proxyState.updateApis(seq),
-        writeValidator = Api.writeValidator
+        writeValidator = Api.writeValidator,
+        writeChecker = Api.writeChecker
       )
     ),
     //////
@@ -1074,7 +1130,8 @@ class OtoroshiResources(env: Env) {
         stateOne = id => env.proxyState.apiSubscription(id),
         stateUpdate = seq => env.proxyState.updateApiSubscriptions(seq),
         writeValidator = ApiSubscription.writeValidator,
-        deleteValidator = ApiSubscription.deleteValidator
+        deleteValidator = ApiSubscription.deleteValidator,
+        writeChecker = ApiSubscription.writeChecker
       )
     ),
     //////

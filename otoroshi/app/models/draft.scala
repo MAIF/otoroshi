@@ -77,6 +77,29 @@ object Draft {
       action: WriteAction,
       env: Env
   ): Future[Either[JsValue, Draft]] = {
+    validateSubscriptionDraft(entity, env) { subscription =>
+      ApiSubscription.validate(subscription.apiRef, subscription, action, isDraft = true)(using env)
+    }
+  }
+
+  // the checks of writeValidator, without the changes it applies to the apikeys
+  def writeChecker(
+      entity: Draft,
+      body: JsValue,
+      oldEntity: Option[(Draft, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: WriteAction,
+      env: Env
+  ): Future[Either[JsValue, Draft]] = {
+    validateSubscriptionDraft(entity, env) { subscription =>
+      ApiSubscription.check(subscription.apiRef, subscription, action, isDraft = true)(using env)
+    }
+  }
+
+  private def validateSubscriptionDraft(entity: Draft, env: Env)(
+      validate: ApiSubscription => Future[Either[String, ?]]
+  ): Future[Either[JsValue, Draft]] = {
 
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
@@ -87,9 +110,9 @@ object Draft {
         case "api-subscription" =>
           ApiSubscription.format.reads(entity.content) match {
             case JsSuccess(value, _) =>
-              ApiSubscription.validate(value.apiRef, value, action, isDraft = true)(using env).map {
+              validate(value).map {
                 case Left(r)  => JsString(r).left
-                case Right(r) => entity.right
+                case Right(_) => entity.right
               }
             case JsError(errors)     => JsString(errors.toString()).leftf
           }

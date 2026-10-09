@@ -1251,17 +1251,31 @@ object ApiSubscription {
   ): Future[Either[String, ApiSubscription]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
+    check(apiRef, entity, action, isDraft).flatMap {
+      case Left(error)        => error.leftf
+      case Right((api, plan)) => handleSubscriptionChanged(api, plan, entity, action, isDraft)
+    }
+  }
+
+  // the checks of validate, without the changes handleSubscriptionChanged applies to the apikeys
+  def check(apiRef: String, entity: ApiSubscription, action: WriteAction, isDraft: Boolean)(using
+      env: Env
+  ): Future[Either[String, (Api, ApiPlan)]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+
     findApi(apiRef, isDraft)
-      .flatMap {
+      .map {
         case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
           api.plans.find(_.id == entity.planRef) match {
-            case None => "plan not found".leftf
+            case None => Left("plan not found")
             // a subscription only gets what its plan hands over, so it has to be of the kind of the
             // plan. Only checked on creation, so that the subscriptions of a plan whose kind changed
             // afterwards can still be managed.
             case Some(plan)
                 if action == WriteAction.Create && entity.subscriptionKind.name != plan.accessModeConfigurationType =>
-              s"subscription kind '${entity.subscriptionKind.name}' does not match the access mode '${plan.accessModeConfigurationType}' of plan '${plan.id}'".leftf
+              Left(
+                s"subscription kind '${entity.subscriptionKind.name}' does not match the access mode '${plan.accessModeConfigurationType}' of plan '${plan.id}'"
+              )
             // Active plans (Staging/Published): Create + Update both go.
             // Inactive plans (Deprecated/Closed): only Update goes — required
             // so existing subs on a deprecated plan can still be managed, and
@@ -1270,10 +1284,10 @@ object ApiSubscription {
                 if plan.status == ApiPlanStatus.Staging ||
                   plan.status == ApiPlanStatus.Published ||
                   action == WriteAction.Update =>
-              handleSubscriptionChanged(api, plan, entity, action, isDraft)
-            case _    => "wrong status plan".leftf
+              Right((api, plan))
+            case _    => Left("wrong status plan")
           }
-        case _                                                                 => "wrong status api".leftf
+        case _                                                                 => Left("wrong status api")
       }
   }
 
@@ -1300,6 +1314,26 @@ object ApiSubscription {
       .map {
         case Left(error) => onError(error)
         case Right(r)    => Right(r)
+      }
+  }
+
+  def writeChecker(
+      entity: ApiSubscription,
+      body: JsValue,
+      oldEntity: Option[(ApiSubscription, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: WriteAction,
+      env: Env
+  ): Future[Either[JsValue, ApiSubscription]] = {
+
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val e: otoroshi.env.Env = env
+
+    check(entity.apiRef, entity, action, isDraft = false)
+      .map {
+        case Left(error) => Json.obj("error" -> error, "http_status_code" -> 400).left
+        case Right(_)    => Right(entity)
       }
   }
 
@@ -2114,6 +2148,26 @@ object Api {
 
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val e: otoroshi.env.Env = env
+    writeChecker(entity, body, oldEntity, singularName, id, action, env).flatMap {
+      case Right(api) =>
+        oldEntity match {
+          case Some(old) => ApiConsistencyService.applyApiChanges(old._1, api, isDraft = false).map(_.right)
+          case None      => api.rightf
+        }
+      case left       => left.vfuture
+    }
+  }
+
+  // the checks of writeValidator, without the changes it applies to the subscriptions
+  def writeChecker(
+      entity: Api,
+      body: JsValue,
+      oldEntity: Option[(Api, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: WriteAction,
+      env: Env
+  ): Future[Either[JsValue, Api]] = {
     oldEntity match {
       case None      =>
         // Create path: API must start in staging.
@@ -2146,7 +2200,7 @@ object Api {
             )
             .leftf
         } else {
-          ApiConsistencyService.applyApiChanges(oldApi, entity, isDraft = false).flatMap(_.rightf)
+          entity.rightf
         }
     }
   }

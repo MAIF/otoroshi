@@ -40,9 +40,7 @@ object ApiConsistencyService {
       for {
         _ <- Future.sequence(deletedPlans.map(plan => deleteSubscriptionsByPlan(newApi, plan, isDraft)))
         _ <- Future.sequence(updatedPlans.map(plan => updateSubscriptionsByPlan(newApi, plan, isDraft)))
-      } yield ()
-
-      newApi.vfuture
+      } yield newApi
     } else {
       newApi.vfuture
     }
