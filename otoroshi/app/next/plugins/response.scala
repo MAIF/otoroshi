@@ -99,7 +99,7 @@ class StaticResponse extends NgBackendCall {
       config.headers.applyOnIf(config.applyEl)(
         _.view.mapValues(str =>
           GlobalExpressionLanguage.apply(
-            value = str.debugPrintln,
+            value = str,
             req = ctx.rawRequest.some,
             service = None,
             route = ctx.route.some,
