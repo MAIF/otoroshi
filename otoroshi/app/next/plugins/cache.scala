@@ -165,7 +165,13 @@ object NgResponseCacheFilterConfig {
         notMethods = json
           .select("notMethods")
           .asOpt[Seq[String]]
-          .getOrElse(Seq.empty).toSeq
+          .orElse((json \ "not" \ "methods").asOpt[Seq[String]])
+          .getOrElse(Seq.empty),
+        notPaths = json
+          .select("notPaths")
+          .asOpt[Seq[String]]
+          .orElse((json \ "not" \ "paths").asOpt[Seq[String]])
+          .getOrElse(Seq.empty)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
