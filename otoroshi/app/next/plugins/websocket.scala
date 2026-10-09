@@ -787,7 +787,7 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
     val config = ctx
       .cachedConfig(internalName)(WorkflowWebsocketConfig.format)
       .getOrElse(WorkflowWebsocketConfig())
-    config.incomingWorkflow match {
+    config.outgoingWorkflow match {
       case None             => message.rightf
       case Some(workflowId) => onMessage(ctx, message, workflowId, "outgoing_message")
     }
