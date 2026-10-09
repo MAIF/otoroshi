@@ -377,7 +377,6 @@ class RemoteCatalogEngine(env: Env) {
             val enrichedJson = enrichWithMetadata(body.asObject, metadataKey)
             (resource.access.oneJson(entityId) match {
               case None      =>
-                created += 1
                 if (!dryRun) {
                   resource.access
                     .create(
@@ -388,12 +387,16 @@ class RemoteCatalogEngine(env: Env) {
                       WriteAction.Create,
                       None
                     )
-                    .map(_ => ())
+                    .map {
+                      case Left(err) =>
+                        errors = errors :+ s"Error upserting entity $entityId of kind $kind: ${err.stringify}"
+                      case Right(_)  => created += 1
+                    }
                 } else {
+                  created += 1
                   ().vfuture
                 }
               case Some(old) =>
-                updated += 1
                 if (!dryRun) {
                   resource.access
                     .create(
@@ -404,8 +407,13 @@ class RemoteCatalogEngine(env: Env) {
                       WriteAction.Update,
                       old.some
                     )
-                    .map(_ => ())
+                    .map {
+                      case Left(err) =>
+                        errors = errors :+ s"Error upserting entity $entityId of kind $kind: ${err.stringify}"
+                      case Right(_)  => updated += 1
+                    }
                 } else {
+                  updated += 1
                   ().vfuture
                 }
             }).recover { case e: Throwable =>
