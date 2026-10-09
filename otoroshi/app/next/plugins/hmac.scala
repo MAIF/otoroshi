@@ -196,7 +196,6 @@ class HMACCaller extends NgRequestTransformer {
 
         if (logger.isDebugEnabled) {
           logger.debug(s"""
-               |Secret used : $secret
                |Signature send : $signature
                |Algorithm used : $algo
                |Date generated : $signingString

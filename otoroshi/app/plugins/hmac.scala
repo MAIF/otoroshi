@@ -117,7 +117,6 @@ class HMACCallerPlugin extends RequestTransformer {
         val signature     =
           Base64.getEncoder.encodeToString(Signatures.hmac(HMACUtils.Algo(algorithm), signingString, secret))
 
-        if (logger.isDebugEnabled) logger.debug(s"Secret used : $secret")
         if (logger.isDebugEnabled) logger.debug(s"Signature send : $signature")
         if (logger.isDebugEnabled) logger.debug(s"Algorithm used : $algorithm")
         if (logger.isDebugEnabled) logger.debug(s"Date generated : $signingString")
@@ -202,9 +201,6 @@ class HMACValidator extends AccessValidator {
     val signingValues        = context.request.headers.headers.filter(p => headers.contains(p._1)).map(_._2)
     val signingString        = signingValues.mkString(" ")
 
-    if (logger.isDebugEnabled) logger.debug(s"Secret used : $secret")
-    if (logger.isDebugEnabled) logger.debug(s"Signature generated : ${Base64.getEncoder
-      .encodeToString(Signatures.hmac(HMACUtils.Algo(algorithm.toUpperCase), signingString, secret))}")
     if (logger.isDebugEnabled) logger.debug(s"Signature received : $signature")
     if (logger.isDebugEnabled) logger.debug(s"Algorithm used : $algorithm")
 
