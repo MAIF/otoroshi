@@ -318,19 +318,22 @@ class RemoteCatalogEngine(env: Env) {
       ec: ExecutionContext,
       ev: Env
   ): Future[DeployReport] = {
+    // kinds without any entity in the source are reconciled too, so the entities the catalog created
+    // earlier for those kinds are deleted
     val grouped = env.allResources.resources
       .map(resource =>
         (resource, remoteEntities.filter(re => re.kind == resource.groupKind || re.kind == resource.kind))
       )
-      .filter(_._2.nonEmpty)
     grouped
       .mapAsync { case (resource, entities) =>
-        reconcileResource(catalog, resource.groupKind, resource, entities, dryRun)
+        reconcileResource(catalog, resource.groupKind, resource, entities, dryRun).map(result => (entities, result))
       }
       .map { results =>
         DeployReport(
           catalogId = catalog.id,
-          results = results,
+          results = results.collect {
+            case (entities, result) if entities.nonEmpty || result.deleted > 0 || result.errors.nonEmpty => result
+          },
           timestamp = DateTime.now()
         )
       }
