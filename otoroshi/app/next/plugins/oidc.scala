@@ -436,7 +436,8 @@ object OIDCAuthToken {
       oauth2Config.authModule(env.datastores.globalConfigDataStore.latest()).asInstanceOf[GenericOauth2Module]
     val token      =
       maybeToken.orElse(ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption)).getOrElse("")
-    val tokenHash  = token.sha256
+    // the session of a token is bound to the auth. module that checked it
+    val tokenHash  = s"${oauth2Config.id}:$token".sha256
 
     def createSession(): Future[Either[Result, NgAccess]] = {
       if (config.fetchUserProfile) {
@@ -579,7 +580,7 @@ object OIDCAuthToken {
     env.datastores.privateAppsUserDataStore
       .findById(tokenHash)
       .flatMap {
-        case Some(user)                                           =>
+        case Some(user) if user.authConfigId == oauth2Config.id   =>
           ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
           if (env.clusterConfig.mode == ClusterMode.Worker) {
             env.clusterAgent.createSession(user)
@@ -589,16 +590,16 @@ object OIDCAuthToken {
           if (Cluster.logger.isDebugEnabled)
             Cluster.logger.debug(s"private apps session $tokenHash not found locally - from helper")
           env.clusterAgent.isSessionValid(tokenHash, Some(ctx.request)).flatMap {
-            case Some(user) =>
+            case Some(user) if user.authConfigId == oauth2Config.id =>
               user.save(
                 Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
               )
               ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
               Right(NgAccess.NgAllowed).vfuture
-            case None       => createSession()
+            case _                                                  => createSession()
           }
         }
-        case None                                                 => createSession()
+        case _                                                    => createSession()
       }
       .flatMap { r =>
         if (config.validateAudience) {
