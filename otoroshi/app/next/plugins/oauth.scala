@@ -328,7 +328,7 @@ object OAuth2CallerConfig {
         resource = json.select("resource").asOpt[String].filter(_.nonEmpty),
         user = json.select("user").asOpt[String].filter(_.nonEmpty),
         password = json.select("password").asOpt[String].filter(_.nonEmpty),
-        cacheTokenSeconds = json.select("cacheTokenSeconds").asOpt[Long].getOrElse(10L * 60L).seconds,
+        cacheTokenSeconds = json.select("cacheTokenSeconds").asOpt[Long].getOrElse(10L * 60000L).toMillis,
         tlsConfig = MtlsConfig.read(json.select("tlsConfig").asOpt[JsValue])
       )
     } match {
