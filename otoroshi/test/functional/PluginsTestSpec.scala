@@ -106,6 +106,15 @@ class PrivateSessionSignatureSpec extends PluginsTestSpecBase {
   }
 }
 
+// private apps sessions and their auth. module: sbt "testOnly functional.PrivateSessionModuleSpec"
+class PrivateSessionModuleSpec extends PluginsTestSpecBase {
+  s"private apps sessions" should {
+    "only be valid for the auth. module that created them" in {
+      new PrivateSessionModuleTests(this)
+    }
+  }
+}
+
 // the apikey auth module alone: sbt "testOnly functional.ApikeyAuthModuleSpec"
 class ApikeyAuthModuleSpec extends PluginsTestSpecBase {
   s"apikey auth module" should {
