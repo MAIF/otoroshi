@@ -18,7 +18,11 @@ case class Http3SwitchConfig(ma: Int = 3600, domain: Option[String] = None, prot
 }
 object Http3SwitchConfig   {
   val format = new Format[Http3SwitchConfig] {
-    override def writes(o: Http3SwitchConfig): JsValue             = Json.obj("ma" -> o.ma)
+    override def writes(o: Http3SwitchConfig): JsValue             = Json.obj(
+      "ma" -> o.ma,
+      "domain" -> o.domain.map(_.json).getOrElse(JsNull).asValue,
+      "protocols" -> JsArray(o.protocols.map(_.json)),
+    )
     override def reads(json: JsValue): JsResult[Http3SwitchConfig] = Try {
       Http3SwitchConfig(
         domain = json.select("domain").asOpt[String],
