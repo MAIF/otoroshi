@@ -50,6 +50,21 @@ class HMACAccessValidatorTests(parent: PluginsTestSpec) {
 
     resp.status mustBe Status.OK
 
+    // a signature of the same length that differs in one character is refused, so is a shorter or an empty one
+    val forged = (if (signature.head == 'A') "B" else "A") + signature.tail
+    Seq(forged, signature.dropRight(1), "").foreach { wrong =>
+      ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "base" -> base,
+          "foo"  -> s"""hmac algorithm="HMAC-SHA512", headers="base", signature="$wrong""""
+        )
+        .get()
+        .futureValue
+        .status mustBe Status.BAD_REQUEST
+    }
+
     deleteOtoroshiRoute(route).futureValue
   }
 

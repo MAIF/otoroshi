@@ -211,9 +211,12 @@ class HMACValidator extends AccessValidator {
     if (signingValues.size != headers.size)
       FastFuture.successful(false)
     else if (
-      Base64.getEncoder.encodeToString(
-        Signatures.hmac(HMACUtils.Algo(algorithm.toUpperCase), signingString, secret)
-      ) == signature
+      Signatures.constantTimeEquals(
+        Base64.getEncoder.encodeToString(
+          Signatures.hmac(HMACUtils.Algo(algorithm.toUpperCase), signingString, secret)
+        ),
+        signature
+      )
     )
       FastFuture.successful(true)
     else

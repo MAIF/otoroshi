@@ -81,9 +81,12 @@ class HMACValidator extends NgAccessValidator {
     if (signingValues.size != headers.size)
       NgAccess.NgDenied(BadRequest)
     else if (
-      Base64.getEncoder.encodeToString(
-        Signatures.hmac(HMACUtils.Algo(algorithm.toUpperCase), signingString, secret)
-      ) == signature
+      Signatures.constantTimeEquals(
+        Base64.getEncoder.encodeToString(
+          Signatures.hmac(HMACUtils.Algo(algorithm.toUpperCase), signingString, secret)
+        ),
+        signature
+      )
     )
       NgAccess.NgAllowed
     else
