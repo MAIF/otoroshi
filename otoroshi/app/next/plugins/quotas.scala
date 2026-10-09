@@ -504,7 +504,11 @@ object NgCustomThrottlingConfig {
     )
     override def reads(json: JsValue): JsResult[NgCustomThrottlingConfig] = Try {
       NgCustomThrottlingConfig(
-        perRoute = json.select("per_route").asOpt[Boolean].getOrElse(true),
+        perRoute = json
+          .select("per_route")
+          .asOpt[Boolean]
+          .orElse(json.select("perRoute").asOpt[Boolean])
+          .getOrElse(true),
         global = json.select("global").asOpt[Boolean].getOrElse(false),
         group = json.select("group").asOpt[String],
         expression = json.select("expression").asOpt[String].getOrElse("${req.ip}"),
