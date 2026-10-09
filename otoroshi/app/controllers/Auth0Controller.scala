@@ -592,7 +592,10 @@ class AuthController(
       def saveUser(user: PrivateAppsUser, auth: AuthModuleConfig, descriptor: ServiceDescriptor, webauthn: Boolean)(
           using req: RequestHeader
       ): Future[Result] = {
+        // the session is only valid for the module that logged the user in, whatever the user says
+        // (a wasm or a workflow auth. module builds it from its own response)
         user
+          .copy(authConfigId = auth.id)
           .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
           .map { paUser =>
             val sec    = computeSec(paUser)
