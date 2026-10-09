@@ -570,13 +570,13 @@ object GlobalExpressionLanguage {
                 env.vaults.fillSecretsAsync("el-exp", s"vault://$path")(using env.otoroshiExecutionContext),
                 5.seconds
               )
-            case r"global_config.metadata.$name@(.*)"                                            =>
+            case r"global_config.metadata.$name@(.*)" if env.elSettings.allowGlobalConfigAccess  =>
               env.datastores.globalConfigDataStore
                 .latest()(using env.otoroshiExecutionContext, env)
                 .metadata
                 .get(name)
                 .getOrElse(s"no-metadata-${name}")
-            case r"global_config.env.$path@(.*)"                                                 =>
+            case r"global_config.env.$path@(.*)" if env.elSettings.allowGlobalConfigAccess       =>
               env.datastores.globalConfigDataStore
                 .latest()(using env.otoroshiExecutionContext, env)
                 .env
