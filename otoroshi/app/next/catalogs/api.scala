@@ -207,18 +207,6 @@ class RemoteCatalogEngine(env: Env) {
     env.allResources.resources ++ env.adminExtensions.resources()
   }
 
-  private def findResource(kind: String): Option[Resource] = {
-    val resources = findAllResources()
-    if (kind.contains("/")) {
-      val parts = kind.split("/")
-      val group = parts(0)
-      val kd    = parts(1)
-      resources.find(r => r.kind == kd && r.group == group)
-    } else {
-      resources.find(r => r.kind == kind)
-    }
-  }
-
   def deploy(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       ev: Env
@@ -322,12 +310,13 @@ class RemoteCatalogEngine(env: Env) {
       ec: ExecutionContext,
       ev: Env
   ): Future[DeployReport] = {
+    def matches(entity: RemoteEntity, resource: Resource): Boolean =
+      entity.kind == resource.groupKind || entity.kind == resource.kind
+    val resources    = findAllResources()
     // kinds without any entity in the source are reconciled too, so the entities the catalog created
     // earlier for those kinds are deleted
-    val grouped = env.allResources.resources
-      .map(resource =>
-        (resource, remoteEntities.filter(re => re.kind == resource.groupKind || re.kind == resource.kind))
-      )
+    val grouped      = resources.map(resource => (resource, remoteEntities.filter(re => matches(re, resource))))
+    val unknownKinds = remoteEntities.filterNot(re => resources.exists(r => matches(re, r))).map(_.kind).distinct
     grouped
       .mapAsync { case (resource, entities) =>
         reconcileResource(catalog, resource.groupKind, resource, entities, dryRun).map(result => (entities, result))
@@ -337,24 +326,10 @@ class RemoteCatalogEngine(env: Env) {
           catalogId = catalog.id,
           results = results.collect {
             case (entities, result) if entities.nonEmpty || result.deleted > 0 || result.errors.nonEmpty => result
-          },
+          } ++ unknownKinds.map(kind => ReconcileResult(kind, 0, 0, 0, Seq(s"Unknown resource kind: $kind"))),
           timestamp = DateTime.now()
         )
       }
-  }
-
-  private def reconcileKind(
-      catalog: RemoteCatalog,
-      kind: String,
-      entities: Seq[RemoteEntity],
-      dryRun: Boolean
-  )(using ec: ExecutionContext, ev: Env): Future[ReconcileResult] = {
-    findResource(kind) match {
-      case None           =>
-        ReconcileResult(kind, 0, 0, 0, Seq(s"Unknown resource kind: $kind")).vfuture
-      case Some(resource) =>
-        reconcileResource(catalog, kind, resource, entities, dryRun)
-    }
   }
 
   private def reconcileResource(
