@@ -88,6 +88,15 @@ class RemoteCatalogsChecksSpec extends PluginsTestSpecBase {
   }
 }
 
+// the static backend stays under its root path: sbt "testOnly functional.StaticBackendTraversalSpec"
+class StaticBackendTraversalSpec extends PluginsTestSpecBase {
+  s"static backend" should {
+    "only serve the files under its root path" in {
+      new StaticBackendTraversalTests(this)
+    }
+  }
+}
+
 // the apikey auth module alone: sbt "testOnly functional.ApikeyAuthModuleSpec"
 class ApikeyAuthModuleSpec extends PluginsTestSpecBase {
   s"apikey auth module" should {

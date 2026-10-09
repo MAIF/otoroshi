@@ -52,6 +52,11 @@ class FileUtils(env: Env) {
     }
   }
 
+  // whole path elements are compared, so a sibling like /var/www2 is not under /var/www
+  def isUnderRoot(filePath: String, rootPath: String): Boolean = {
+    Path.of(filePath).toAbsolutePath.normalize().startsWith(Path.of(rootPath).toAbsolutePath.normalize())
+  }
+
   def contentType(file: String): String = {
     val filepath = Path.of(file).normalize().toString
     Option(com.google.common.io.Files.getFileExtension(filepath)).map(_.trim).filter(_.nonEmpty) match {
@@ -116,7 +121,10 @@ class StaticBackend extends NgBackendCall {
       val askedFilePath = ctx.request.path.replace("//", "")
       val filePath      = fileUtils.normalize(askedFilePath, config.rootPath)
 
-      fileCache.getIfPresent(filePath) match {
+      // checked before the cache, which is shared by the routes of every root path
+      if (!fileUtils.isUnderRoot(filePath, config.rootPath)) {
+        inMemoryBodyResponse(404, Map("Content-Type" -> "text/plain"), "resource not found".byteString).vfuture
+      } else fileCache.getIfPresent(filePath) match {
         case Some((contentType, content)) =>
           inMemoryBodyResponse(200, Map("Content-Type" -> contentType), content).vfuture
         case None                         => {
