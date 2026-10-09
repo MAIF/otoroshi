@@ -97,6 +97,15 @@ class StaticBackendTraversalSpec extends PluginsTestSpecBase {
   }
 }
 
+// the signature of the private apps sessions: sbt "testOnly functional.PrivateSessionSignatureSpec"
+class PrivateSessionSignatureSpec extends PluginsTestSpecBase {
+  s"private apps sessions" should {
+    "only be accepted with the signature otoroshi gave them" in {
+      new PrivateSessionSignatureTests(this)
+    }
+  }
+}
+
 // the apikey auth module alone: sbt "testOnly functional.ApikeyAuthModuleSpec"
 class ApikeyAuthModuleSpec extends PluginsTestSpecBase {
   s"apikey auth module" should {

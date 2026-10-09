@@ -41,6 +41,7 @@ import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala.*
 import otoroshi.tcp.TcpService
 import otoroshi.utils.{ClientAddressHeader, IpAddressMatcher, JsonPathValidator, JsonValidator}
+import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
@@ -2001,16 +2002,13 @@ class Env(
     }
 
   def extractPrivateSessionId(cookie: play.api.mvc.Cookie): Option[String] = {
-    cookie.value.split("::").toList match {
-      case signature :: value :: Nil if sign(value) == signature => Some(value)
-      case _                                                     => None
-    }
+    extractPrivateSessionIdFromString(cookie.value)
   }
 
   def extractPrivateSessionIdFromString(value: String): Option[String] = {
     value.split("::").toList match {
-      case signature :: value :: Nil if sign(value) == signature => Some(value)
-      case _                                                     => None
+      case signature :: value :: Nil if Signatures.constantTimeEquals(sign(value), signature) => Some(value)
+      case _                                                                                  => None
     }
   }
 
