@@ -578,6 +578,17 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/api/extensions/remote-catalogs/
 
 You can deploy multiple catalogs in a single request by adding more entries to the array.
 
+### APIs
+
+An API (`apis.otoroshi.io/Api`) written by a catalog does not go through a draft: the source plays the role of the draft, and each deploy of the catalog is a deploy of the API.
+
+- The API is created in the `state` of the source: a source can hold a `published` API, and its routes are served after the deploy.
+- The fields locked in production (`domain`, `contextPath`, `routes`, `backends`, `flows`, `documentation`, `testing`) take the content of the source. A deploy that changes what is live adds an entry, owned by `remote_catalog=<catalog_id>`, to the deployment history of the API. An unchanged source adds none.
+- The state transitions are the ones of a deploy: a `published` API cannot go back to `staging`, and a `removed` API has to be reopened in `staging` first.
+- The deployment history and the secret of the testing header stay the ones of the live API, whatever the source holds.
+- An edit of the API from the backoffice is replaced by the source at the next deploy of the catalog.
+- An API removed from the source is deleted with its routes. The subscriptions that are not in the source, their apikeys and the draft of the API are not deleted.
+
 ### Dry-run (test)
 
 A dry-run performs the same fetch and reconciliation logic but without actually writing any changes. It returns a report showing what would be created, updated, or deleted.

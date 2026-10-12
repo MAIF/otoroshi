@@ -85,6 +85,9 @@ class RemoteCatalogsChecksSpec extends PluginsTestSpecBase {
     "run the write checks of the resources in a dry run, without their side effects" in {
       new RemoteCatalogsChecksTests(this)
     }
+    "deploy, update and remove an api written as code" in {
+      new RemoteCatalogsApisTests(this)
+    }
   }
 }
 

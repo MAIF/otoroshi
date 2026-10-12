@@ -7,7 +7,7 @@ import otoroshi.api.WriteAction.{Create, Update}
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.events.{AdminApiEvent, Alerts, Audit}
+import otoroshi.events.{AdminApiEvent, Alerts, ApiDeploymentEvent, Audit}
 import otoroshi.models.*
 import otoroshi.next.models.*
 import otoroshi.next.plugins.{ApikeyQuotas, *}
@@ -2136,6 +2136,56 @@ object Api {
     diffs.toSeq
   }
 
+  // the design a deploy puts in production: only the fields locked in production are useful for rollback
+  // and audit, so the subscriptions, clients, plans, testing and metadata are left out
+  def deploymentDefinition(api: Api): JsValue = Json.obj(
+    "routes"        -> JsArray(api.routes.map(ApiRoute._fmt.writes)),
+    "backends"      -> JsArray(api.backends.map(ApiBackend._fmt.writes)),
+    "flows"         -> JsArray(api.flows.map(ApiFlows._fmt.writes)),
+    "documentation" -> api.documentation.map(ApiDocumentation._fmt.writes).getOrElse[JsValue](JsNull)
+  )
+
+  // a remote catalog marks what it writes with its id in `created_by`
+  def isWrittenByCatalog(api: Api): Boolean =
+    api.metadata.get("created_by").exists(_.startsWith("remote_catalog="))
+
+  private def isLive(state: ApiState): Boolean = state == ApiPublished || state == ApiDeprecated
+
+  // A remote catalog writes the api as code: its source plays the role of the draft, so each of its writes
+  // is a deploy. The api takes the state and the fields locked in production from the source, and a write
+  // that changes what is live is recorded in the deployment history. This opens nothing to the other
+  // writers: whoever can read an api can already publish it with `_start` or a deployment.
+  private def catalogDeploy(entity: Api, oldApi: Option[Api], env: Env): Future[Either[JsValue, Api]] = oldApi match {
+    case None                                                                            =>
+      // created in the state of the source: created live, it is its first deploy
+      val api = entity.copy(deployments = Seq.empty)
+      (if (isLive(api.state)) withDeployment(api, env) else api).rightf
+    case Some(old) if !isValidStateTransition(old.state, entity.state, viaDeploy = true) =>
+      transitionError(old.state, entity.state).leftf
+    case Some(old)                                                                       =>
+      // the source carries neither the deployment history nor the testing secret. The secret cannot be
+      // told apart from the one generated when the source was read, so the one of the live api stays
+      val api      = entity.copy(
+        deployments = old.deployments,
+        testing = entity.testing.copy(headerValue = old.testing.headerValue)
+      )
+      val deployed = isLive(api.state) && (!isLive(old.state) || diffProtectedFields(old, api).nonEmpty)
+      (if (deployed) withDeployment(api, env) else api).rightf
+  }
+
+  // records the design of the api as its last deployment, the last five are kept as for a deploy
+  private def withDeployment(api: Api, env: Env): Api = {
+    val deployment = ApiDeployment(
+      id = IdGenerator.namedId("api_deployment", env),
+      apiRef = api.id,
+      owner = api.metadata.getOrElse("created_by", ""),
+      at = DateTime.now(),
+      apiDefinition = deploymentDefinition(api),
+      version = api.version
+    )
+    api.copy(deployments = (deployment +: api.deployments).slice(0, 5))
+  }
+
   def writeValidator(
       entity: Api,
       body: JsValue,
@@ -2150,6 +2200,24 @@ object Api {
     implicit val e: otoroshi.env.Env = env
     writeChecker(entity, body, oldEntity, singularName, id, action, env).flatMap {
       case Right(api) =>
+        // the deploy of a remote catalog is audited as the ones of the backoffice
+        if (
+          isWrittenByCatalog(api) && api.deployments.nonEmpty &&
+          !oldEntity.exists(old => old._1.deployments.nonEmpty && old._1.deployments.head.id == api.deployments.head.id)
+        ) {
+          val deployment = api.deployments.head
+          ApiDeploymentEvent(
+            `@id` = env.snowflakeGenerator.nextIdStr(),
+            `@timestamp` = DateTime.now(),
+            apiRef = deployment.apiRef,
+            owner = deployment.owner,
+            at = deployment.at,
+            apiDefinition = deployment.apiDefinition,
+            version = api.version,
+            `@service` = api.name,
+            `@serviceId` = api.id
+          ).toAnalytics()
+        }
         oldEntity match {
           case Some(old) => ApiConsistencyService.applyApiChanges(old._1, api, isDraft = false).map(_.right)
           case None      => api.rightf
@@ -2169,6 +2237,7 @@ object Api {
       env: Env
   ): Future[Either[JsValue, Api]] = {
     oldEntity match {
+      case _ if isWrittenByCatalog(entity) => catalogDeploy(entity, oldEntity.map(_._1), env)
       case None      =>
         // Create path: API must start in staging.
         if (entity.state != ApiStaging) {

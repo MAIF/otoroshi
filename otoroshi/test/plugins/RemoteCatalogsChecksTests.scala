@@ -59,13 +59,23 @@ class RemoteCatalogsChecksTests(parent: PluginsTestSpecBase) {
   private val stagingApi = api(s"api_${IdGenerator.uuid}", ApiStaging)
   otoroshiApiCall("POST", apisPath, Some(stagingApi.json)).futureValue._2 mustBe 201
 
-  // an api cannot be created published, and a subscription to an apikey plan mints an apikey
+  // a removed api cannot be published again, not even by a deploy
+  private val removedApi = api(s"api_${IdGenerator.uuid}", ApiRemoved)
+  env.datastores.apiDataStore.set(removedApi).futureValue
+  // the catalog finds the api it updates in the proxy state
+  env.proxyState.sync().futureValue
+
+  // a catalog deploys a published api, and a subscription to an apikey plan mints an apikey
   private val publishedApiId = s"api_${IdGenerator.uuid}"
   private val subscriptionId = s"api-subscription_${IdGenerator.uuid}"
   private val tempRoot: Path = Files.createTempDirectory("remoteCatalogChecksTest")
   Files.write(
     tempRoot.resolve("api.json"),
     (api(publishedApiId, ApiPublished).json.as[JsObject] ++ Json.obj("kind" -> "apis.otoroshi.io/Api")).stringify.getBytes
+  )
+  Files.write(
+    tempRoot.resolve("removed-api.json"),
+    (api(removedApi.id, ApiPublished).json.as[JsObject] ++ Json.obj("kind" -> "apis.otoroshi.io/Api")).stringify.getBytes
   )
   Files.write(
     tempRoot.resolve("subscription.json"),
@@ -96,27 +106,31 @@ class RemoteCatalogsChecksTests(parent: PluginsTestSpecBase) {
     .get
   private val engine  = env.adminExtensions.extension[RemoteCatalogAdminExtension].get.engine
 
-  // the dry run reports the refusal of the published api, and accepts the subscription without minting anything
+  // the dry run reports the refusal of the removed api, and accepts the published api and the subscription
+  // without writing or minting anything
   private val dryRun = engine.dryRun(catalog, Json.obj()).futureValue.toOption.get
-  resultOf(dryRun, "apis.otoroshi.io/Api").created mustBe 0
-  resultOf(dryRun, "apis.otoroshi.io/Api").errors.mkString must include("cannot_create_in_state")
+  resultOf(dryRun, "apis.otoroshi.io/Api").created mustBe 1
+  resultOf(dryRun, "apis.otoroshi.io/Api").errors.mkString must include("invalid_state_transition")
   resultOf(dryRun, "apis.otoroshi.io/ApiSubscription").created mustBe 1
   resultOf(dryRun, "apis.otoroshi.io/ApiSubscription").errors mustBe empty
+  otoroshiApiCall("GET", s"$apisPath/$publishedApiId").futureValue._2 mustBe 404
   otoroshiApiCall("GET", s"$subscriptionsPath/$subscriptionId").futureValue._2 mustBe 404
   apikeysOf(subscriptionId) mustBe empty
 
-  // the deploy gives the same results, and does write the subscription with its apikey
+  // the deploy gives the same results, and does write the api and the subscription with its apikey
   private val deploy = engine.deploy(catalog, Json.obj()).futureValue.toOption.get
-  resultOf(deploy, "apis.otoroshi.io/Api").created mustBe 0
-  resultOf(deploy, "apis.otoroshi.io/Api").errors.mkString must include("cannot_create_in_state")
+  resultOf(deploy, "apis.otoroshi.io/Api").created mustBe 1
+  resultOf(deploy, "apis.otoroshi.io/Api").errors.mkString must include("invalid_state_transition")
   resultOf(deploy, "apis.otoroshi.io/ApiSubscription").created mustBe 1
   resultOf(deploy, "apis.otoroshi.io/ApiSubscription").errors mustBe empty
-  otoroshiApiCall("GET", s"$apisPath/$publishedApiId").futureValue._2 mustBe 404
+  otoroshiApiCall("GET", s"$apisPath/$publishedApiId").futureValue._2 mustBe 200
+  env.datastores.apiDataStore.findById(removedApi.id).futureValue.map(_.state) mustBe Some(ApiRemoved)
   otoroshiApiCall("GET", s"$subscriptionsPath/$subscriptionId").futureValue._2 mustBe 200
   apikeysOf(subscriptionId) must have size 1
 
   apikeysOf(subscriptionId).foreach(key => otoroshiApiCall("DELETE", s"/api/apikeys/${key.clientId}").futureValue)
   engine.undeploy(catalog).futureValue
   otoroshiApiCall("DELETE", s"$apisPath/${stagingApi.id}").futureValue
+  env.datastores.apiDataStore.delete(removedApi).futureValue
   Files.walk(tempRoot).sorted(java.util.Comparator.reverseOrder()).forEach(Files.delete)
 }

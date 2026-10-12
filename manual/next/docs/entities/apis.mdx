@@ -133,6 +133,8 @@ staging --> published --> deprecated --> removed
 | `deprecated` | The API is still serving traffic but is marked for removal. No new subscriptions should be created. |
 | `removed` | The API is deactivated. No traffic is served. |
 
+An API written by a [remote catalog](../topics/remote-catalogs.md#apis) takes its state from the source of the catalog: each deploy of the catalog is a deploy of the API, without a draft.
+
 ## API blueprints
 
 The `blueprint` field indicates the type of API being managed:

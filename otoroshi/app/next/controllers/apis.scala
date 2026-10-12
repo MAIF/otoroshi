@@ -4,16 +4,12 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import otoroshi.next.models.{
   Api,
-  ApiBackend,
   ApiDeployment,
   ApiDeprecated,
-  ApiDocumentation,
   ApiPlan,
-  ApiFlows,
   ApiPlanStatus,
   ApiPublished,
   ApiRemoved,
-  ApiRoute,
   ApiStaging,
   ApiSubscription,
   ApiSubscriptionDisabled,
@@ -31,7 +27,7 @@ import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsError, JsNull, JsObject, JsSuccess, JsValue, Json, Reads}
+import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json, Reads}
 import play.api.mvc.*
 
 import java.util.concurrent.TimeUnit
@@ -692,18 +688,10 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                             )
                             .future
                         } else {
-                          // Slim "design" snapshot of the deployed draft: only the production-locked
-                          // fields (routes, backends, flows, documentation) are useful for rollback/audit.
-                          // Trims subscriptions/clients/plans/testing/metadata noise out of the stored payload.
-                          val slimApiDefinition: JsValue = Json.obj(
-                            "routes"        -> JsArray(apiDraft.routes.map(ApiRoute._fmt.writes)),
-                            "backends"      -> JsArray(apiDraft.backends.map(ApiBackend._fmt.writes)),
-                            "flows"         -> JsArray(apiDraft.flows.map(ApiFlows._fmt.writes)),
-                            "documentation" -> apiDraft.documentation
-                              .map(ApiDocumentation._fmt.writes)
-                              .getOrElse[JsValue](JsNull)
-                          )
-                          val slimDeployment             = deployment.copy(apiDefinition = slimApiDefinition)
+                          // Slim "design" snapshot of the deployed draft, shared with the deploys of the
+                          // remote catalogs
+                          val slimApiDefinition: JsValue = Api.deploymentDefinition(apiDraft)
+                          val slimDeployment            = deployment.copy(apiDefinition = slimApiDefinition)
                           val updatedApi                 = apiDraft.copy(
                             deployments = (Seq(slimDeployment) ++ api.deployments).slice(0, 5),
                             id = api.id,
