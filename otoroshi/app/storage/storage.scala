@@ -522,6 +522,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
           .collect { case JsSuccess(i, _) => i }
       }
       .mapConcat(_.toList)
+      .filter(predicate)
       .drop(position)
       .take(pageSize)
   }

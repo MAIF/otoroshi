@@ -76,6 +76,9 @@ class ApiSubscriptionKindSpec extends PluginsTestSpecBase {
     "be of the kind of their plan, and get an apikey from an apikey or an oauth2-local plan" in {
       new ApiSubscriptionKindTests(this)
     }
+    "be deleted with their plan, and only with it" in {
+      new ApiPlanRemovalTests(this)
+    }
   }
 }
 

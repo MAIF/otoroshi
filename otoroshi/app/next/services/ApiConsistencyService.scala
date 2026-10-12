@@ -63,7 +63,7 @@ object ApiConsistencyService {
          plan,
          api,
          fnDraft = None,
-         Some(subs => env.datastores.apiDataStore.deleteByIds(subs.map(_.id)))
+         Some(subs => env.datastores.apiSubscriptionDataStore.deleteByIds(subs.map(_.id)))
        ))
       .map(_ => api)
   }
@@ -80,9 +80,12 @@ object ApiConsistencyService {
 
     store
       .streamedFindAndMat(
+        // two apis can give the same id to their plans
         {
-          case draft: Draft         => draft.content.selectAsOptString("path_ref").getOrElse("") == plan.id
-          case sub: ApiSubscription => sub.planRef == plan.id
+          case draft: Draft         =>
+            draft.content.selectAsOptString("plan_ref").getOrElse("") == plan.id &&
+            draft.content.selectAsOptString("api_ref").getOrElse("") == api.id
+          case sub: ApiSubscription => sub.planRef == plan.id && sub.apiRef == api.id
         },
         fetchSize = pageSize,
         page = page
