@@ -59,7 +59,8 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
     }
   }
 
-  def checkRights(rc: RightsChecker)(f: Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
+  // by name, like ApiActionContext.checkRights: a by value block would run before the rights are checked
+  def checkRights(rc: RightsChecker)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     if (env.bypassUserRightsCheck) {
       f
     } else {

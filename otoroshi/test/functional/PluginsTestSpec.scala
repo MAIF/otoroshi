@@ -41,6 +41,15 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// rights of a team scoped backoffice user: sbt "testOnly functional.BackofficeRightsSpec"
+class BackofficeRightsSpec extends PluginsTestSpecBase {
+  s"backoffice" should {
+    "not let a team scoped user act outside of its team" in {
+      new BackofficeRightsTests(this)
+    }
+  }
+}
+
 // authentication of the tunnel websockets: sbt "testOnly functional.TunnelAuthSpec"
 class TunnelAuthSpec extends PluginsTestSpecBase {
   override def configurationSpec: Configuration = Configuration(
