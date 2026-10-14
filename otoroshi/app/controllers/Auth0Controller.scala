@@ -225,8 +225,11 @@ class AuthController(
 
   def confidentialAppMultiLoginPage() =
     multiLoginPage()((auths: JsObject, route: NgRoute, redirect: Option[String], hash: Option[String]) => {
+      // the json is embedded in a single quoted javascript string of the page: a quote or a closing script tag in a
+      // module name must not end it
+      val authsJs = Json.stringify(auths).replace("\\", "\\\\").replace("'", "\\'").replace("<", "\\u003c")
       Results
-        .Ok(otoroshi.views.html.privateapps.multilogin(env, Json.stringify(auths), redirect, route.id, hash))
+        .Ok(otoroshi.views.html.privateapps.multilogin(env, authsJs, redirect, route.id, hash))
         .vfuture
     })
 
