@@ -147,6 +147,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env:
         env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
           env.datastores.authConfigsDataStore.findById(id).flatMap {
             case None    => Results.NotFound(Json.obj("error" -> "auth module not found")).future
+            case Some(authModule) if !ctx.canUserWrite(authModule) => ctx.fforbidden
             case Some(_) =>
               env.datastores.privateAppsUserDataStore
                 .findAll()

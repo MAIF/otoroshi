@@ -794,6 +794,50 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       openapi.stop()
     }
 
+    "not let a tenant admin discard the private apps sessions of another tenant's auth module" in {
+      val otoEnv = otoroshiComponents.env
+      def authModuleWithSession(id: String, tenantId: String): Unit = {
+        val location = EntityLocation(TenantId(tenantId), Seq(team))
+        val module   = otoroshi.auth.BasicAuthModuleConfig(
+          id = id,
+          name = id,
+          desc = id,
+          clientSideSessionEnabled = true,
+          tags = Seq.empty,
+          metadata = Map.empty,
+          sessionCookieValues = otoroshi.auth.SessionCookieValues(),
+          location = location
+        )
+        val (body, status) = otoroshiApiCall("POST", "/api/auths", module.asJson.some).futureValue
+        withClue(s"create auth module $id: ${Json.stringify(body)} ") {
+          status mustBe 201
+        }
+        PrivateAppsUser(
+          randomId = s"$id-session",
+          name = id,
+          email = s"$id@oto.tools",
+          profile = Json.obj(),
+          realm = id,
+          authConfigId = id,
+          otoroshiData = None,
+          tags = Seq.empty,
+          metadata = Map.empty,
+          location = location
+        ).save(5.minutes)(using otoEnv.otoroshiExecutionContext, otoEnv).futureValue
+      }
+      def sessionExists(id: String): Boolean =
+        otoEnv.datastores.privateAppsUserDataStore.findById(s"$id-session")(using otoEnv.otoroshiExecutionContext, otoEnv).futureValue.isDefined
+
+      authModuleWithSession("other-tenant-auth-module", "default")
+      authModuleWithSession("own-tenant-auth-module", tenant.value)
+
+      call("DELETE", "/api/apps-sessions-module/other-tenant-auth-module", tenantAdminUser)._2 mustBe 403
+      call("DELETE", "/api/apps-sessions-module/own-tenant-auth-module", tenantAdminUser)._2 mustBe 200
+      await(1.second)
+      sessionExists("other-tenant-auth-module") mustBe true
+      sessionExists("own-tenant-auth-module") mustBe false
+    }
+
     "only list the drafts of the caller's own scope" in {
       createDraft("rights-draft-own", tenant.value)
       createDraft("rights-draft-other", "other-tenant")
