@@ -248,9 +248,16 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       case e: JsError             => e
       case JsSuccess(value, path) => JsSuccess(value.json, path)
     }
+    // an otoroshi admin carries the rights of its holder: a user cannot write one with more than it already has,
+    // like UsersController.checkNewUserRights
+    def grantsMoreThan(user: BackOfficeUser): Boolean = format.reads(json) match {
+      case JsSuccess(admin: OtoroshiAdmin, _) => !user.rights.covers(admin.rights)
+      case _                                  => false
+    }
     f match {
       case Left(err)         => JsError(err)
       case Right(None)       => readEntity()
+      case Right(Some(user)) if grantsMoreThan(user) => JsError("you can't grant rights you don't have yourself")
       case Right(Some(user)) => {
         val envValidators: Seq[JsonValidator]  =
           env.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ env.adminEntityValidators
