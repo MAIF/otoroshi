@@ -600,7 +600,8 @@ POST    /api/analytics/alerts/:alertId/events/_seen-all       otoroshi.next.anal
 POST    /api/analytics/alerts/:alertId/events/:eventId/seen   otoroshi.next.analytics.controllers.AlertEventsController.markSeen(alertId, eventId)
 POST    /api/analytics/alerts/:alertId/events/:eventId/unseen otoroshi.next.analytics.controllers.AlertEventsController.markUnseen(alertId, eventId)
 
-GET     /api/experimental/certificates/_by_domain             otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
+# disabled: returned every certificate with its private key, used to delegate tls termination to an external server
+# GET     /api/experimental/certificates/_by_domain             otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
 GET     /api/entities/:entity/:id                             otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph(entity: String, id: String)
 
 GET     /api/admin-sessions                                   otoroshi.controllers.adminapi.UsersController.sessions()
