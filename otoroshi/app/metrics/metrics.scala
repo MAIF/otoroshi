@@ -20,7 +20,6 @@ import otoroshi.cluster.{ClusterMode, StatsView}
 import otoroshi.env.Env
 import otoroshi.events.StatsDReporter
 import otoroshi.metrics.opentelemetry.*
-import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 import otoroshi.utils.prometheus.CustomCollector
 import otoroshi.utils.syntax.implicits.*
@@ -327,6 +326,16 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     meter.getOneMinuteRate
   }
 
+  // the filter comes from the query string of the metrics endpoints: a wildcard pattern whose other characters are
+  // literal, compiled for one export and never pooled. compiled as a regex and kept in the regex pool, any filter was
+  // a catastrophic backtracking candidate and an entry that stayed forever
+  private def wildcardFilter(pattern: String): String => Boolean = {
+    val compiled = java.util.regex.Pattern.compile(
+      pattern.split("\\*", -1).map(part => java.util.regex.Pattern.quote(part)).mkString(".*")
+    )
+    (value: String) => compiled.matcher(value).matches()
+  }
+
   def prometheusExport(filter: Option[String] = None): String = {
     val prometheus = new CustomCollector(metricRegistry, jmxRegistry)
     filter match {
@@ -339,7 +348,8 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
         val processedPath = path.replace(".", "_")
         val writer        = new StringWriter()
         TextFormat.write004(writer, new SimpleEnum(prometheus.collect()))
-        writer.toString.split("\n").toSeq.filter(line => RegexPool(processedPath).matches(line)).mkString("\n")
+        val matches       = wildcardFilter(processedPath)
+        writer.toString.split("\n").toSeq.filter(line => matches(line)).mkString("\n")
       }
     }
   }
@@ -352,6 +362,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     filter match {
       case None       => Json.parse(objectMapper.writeValueAsString(metricRegistry))
       case Some(path) => {
+        val matches = wildcardFilter(path)
         val jsonRaw = objectMapper.writeValueAsString(metricRegistry)
         val json    = Json.parse(jsonRaw)
         JsArray(
@@ -359,31 +370,31 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
             .as[JsObject]
             .value
             .toSeq
-            .filter(t => RegexPool(path).matches(t._1))
+            .filter(t => matches(t._1))
             .map(tuple => Json.obj("type" -> "gauge", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
           (json \ "counters")
             .as[JsObject]
             .value
             .toSeq
-            .filter(t => RegexPool(path).matches(t._1))
+            .filter(t => matches(t._1))
             .map(tuple => Json.obj("type" -> "counter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
           (json \ "histograms")
             .as[JsObject]
             .value
             .toSeq
-            .filter(t => RegexPool(path).matches(t._1))
+            .filter(t => matches(t._1))
             .map(tuple => Json.obj("type" -> "histogram", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
           (json \ "meters")
             .as[JsObject]
             .value
             .toSeq
-            .filter(t => RegexPool(path).matches(t._1))
+            .filter(t => matches(t._1))
             .map(tuple => Json.obj("type" -> "meter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
           (json \ "timers")
             .as[JsObject]
             .value
             .toSeq
-            .filter(t => RegexPool(path).matches(t._1))
+            .filter(t => matches(t._1))
             .map(tuple => Json.obj("type" -> "timer", "name" -> tuple._1) ++ tuple._2.as[JsObject])
         )
       }
