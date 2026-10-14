@@ -2695,17 +2695,31 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     request.getQueryString("core").contains("true")
   )
 
-  def openapiJson() = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
+  // an extension group that no path of the document can match gets a 404 without computing anything: the
+  // documentation is public unless its secret is set
+  private lazy val OpenApiDocAction = DocAction.andThen(new ActionFilter[DocActionCtx] {
+    override protected def executionContext: ExecutionContext = env.otoroshiExecutionContext
+    override protected def filter[A](ctx: DocActionCtx[A]): Future[Option[Result]] = {
+      val unknownGroup = ctx.request.getQueryString("extension_group").exists { group =>
+        !otoroshi.api.OpenApi.mayKnowExtensionGroup(env, group, ctx.request.getQueryString("core").contains("true"))
+      }
+      if (unknownGroup)
+        Some(NotFound(Json.obj("error" -> "unknown extension group")).withHeaders("Access-Control-Allow-Origin" -> "*")).vfuture
+      else None.vfuture
+    }
+  })
+
+  def openapiJson() = OpenApiDocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     val body = openapiDocument(ctx.request)
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapiYaml() = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
+  def openapiYaml() = OpenApiDocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     val body = openapiDocument(ctx.request)
     Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapi() = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
+  def openapi() = OpenApiDocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     val body     = openapiDocument(ctx.request)
     val accepted = ctx.request.acceptedTypes
       .map(v => (s"${v.mediaType}/${v.mediaSubType}", v.qValue.getOrElse(BigDecimal(1.0))))

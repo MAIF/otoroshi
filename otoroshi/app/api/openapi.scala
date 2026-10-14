@@ -12,6 +12,21 @@ object OpenApi {
 
   private val cache = new TrieMap[String, String]()
 
+  // the paths of the complete and of the core documents, computed once like the documents themselves
+  private val pathsCache = new TrieMap[Boolean, Seq[String]]()
+
+  /**
+   * false when no path of the document can match the group, i.e. its sub document would be empty: the caller can
+   * answer with a 404 without computing it.
+   */
+  def mayKnowExtensionGroup(env: Env, group: String, coreOnly: Boolean = false): Boolean = {
+    val paths = pathsCache.getOrElseUpdate(
+      coreOnly,
+      Json.parse(generate(env, None, coreOnly = coreOnly)).select("paths").asObject.keys.toSeq
+    )
+    paths.exists(_.startsWith(s"/apis/$group"))
+  }
+
   private val logger = play.api.Logger("otoroshi-openapi")
 
   private def buildCount(resource: Resource): JsObject = {

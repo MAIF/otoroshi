@@ -161,6 +161,20 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
       }
       cachedDocuments mustBe before
     }
+    "answer a 404 for an extension group that no path can match" in {
+      val env = otoroshiComponents.env
+      otoroshi.api.OpenApi.mayKnowExtensionGroup(env, "proxy.otoroshi.io") mustBe true
+      otoroshi.api.OpenApi.mayKnowExtensionGroup(env, "proxy") mustBe true
+      otoroshi.api.OpenApi.mayKnowExtensionGroup(env, "unknown.oto.tools") mustBe false
+      def status(group: String): Int = otoroshiComponents.ws
+        .url(s"http://127.0.0.1:$port/apis/openapi.json?extension_group=$group")
+        .withHttpHeaders("Host" -> env.backOfficeHost) // public documentation, not the admin api
+        .get()
+        .futureValue
+        .status
+      status("unknown.oto.tools") mustBe 404
+      status("proxy.otoroshi.io") mustBe 200
+    }
     "shutdown" in {
       stopAll()
     }
