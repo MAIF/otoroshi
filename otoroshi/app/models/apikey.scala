@@ -858,6 +858,14 @@ case class ApikeyTuple(
     "oto_bearer"    -> otoBearer.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "location"      -> location.map(_.json).getOrElse(JsNull).as[JsValue]
   )
+  // for the messages that end up in the events: no credential, only which ones were sent
+  def redactedJson: JsValue = Json.obj(
+    "client_id"     -> clientId,
+    "client_secret" -> clientSecret.isDefined,
+    "jwt_token"     -> jwtToken.isDefined,
+    "oto_bearer"    -> otoBearer.isDefined,
+    "location"      -> location.map(_.json).getOrElse(JsNull).as[JsValue]
+  )
 }
 
 object ApikeyTuple {
@@ -2308,7 +2316,7 @@ object ApiKeyHelper {
                   case None            => (apikey.some, "JWT alg does not match supported ones".some).left
                 }
               }
-              case _                                                                                                => (apikey.some, s"unmatched ApikeyTuple(${apikeyTuple.json.stringify})".some).left
+              case _                                                                                                => (apikey.some, s"unmatched ApikeyTuple(${apikeyTuple.redactedJson.stringify})".some).left
             }
         }
       }
