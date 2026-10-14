@@ -759,11 +759,13 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
     "not let a read only user start, stop, duplicate or deploy an api" in {
       createScopedApi("read-only-scoped-api")
       val base = "/apis/apis.otoroshi.io/v1/apis/read-only-scoped-api"
-      call("GET", s"$base/_stop", readOnlyUser)._2 mustBe 403
-      call("GET", s"$base/_start", readOnlyUser)._2 mustBe 403
+      call("POST", s"$base/_stop", readOnlyUser)._2 mustBe 403
+      call("POST", s"$base/_start", readOnlyUser)._2 mustBe 403
       call("POST", s"$base/duplicate", readOnlyUser, Json.obj().some)._2 mustBe 403
       call("POST", s"$base/deployments", readOnlyUser, Json.obj().some)._2 mustBe 403
-      call("GET", s"$base/_stop", scopedUser)._2 mustBe 200
+      call("POST", s"$base/_stop", scopedUser)._2 mustBe 200
+      // state changing, so never on a GET: a GET goes through the backoffice proxy without any origin check
+      call("GET", s"$base/_stop", scopedUser)._2 must not be 200
     }
 
     "not let a caller have an openapi document fetched for an entity it cannot create" in {
