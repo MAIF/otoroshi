@@ -19,7 +19,7 @@
     <body>
         <div id="swagger-ui"></div>
         <script type="application/json" id="swagger-config">{
-          "url": @Html(Json.stringify(JsString(url)))
+          "url": @Html(Json.stringify(JsString(url)).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026"))
         }</script>
         <script defer src="@routes.Assets.versioned("swagger-ui/swagger-ui-bundle.js")"></script>
         <script defer src="@routes.Assets.versioned("swagger-ui/swagger-ui-standalone-preset.js")"></script>

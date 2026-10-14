@@ -2788,7 +2788,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   def openapiUi = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     Ok(
       otoroshi.views.html.oto.openapiFrame(
-        s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi?core=${ctx.request.getQueryString("core").getOrElse("false")}&doc_secret=${ctx.sec}"
+        s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi?core=${ctx.request.getQueryString("core").contains("true")}&doc_secret=${ctx.sec}"
       )
     )
   }
