@@ -90,7 +90,11 @@ class TryItController(
       val _headers                 = jsonBody.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
       val cookies                  =
         jsonBody.select("cookies").asOpt[Seq[JsObject]].map(_.map(JsonHelpers.cookieFromJson)).getOrElse(Seq.empty).toSeq
-      val clientCert               = jsonBody.select("client_cert").asOpt[String]
+      // only a certificate the user can read is used as client certificate
+      val clientCert               = jsonBody
+        .select("client_cert")
+        .asOpt[String]
+        .filter(id => env.proxyState.certificate(id).exists(c => ctx.canUserRead(c)))
       val bodyBase64               = jsonBody.select("base_64").asOpt[Boolean].getOrElse(false)
       val body: Option[ByteString] = jsonBody.select("body").asOpt[String].filter(_.nonEmpty).map { rb =>
         if (bodyBase64) {
@@ -107,9 +111,9 @@ class TryItController(
         .asOpt[String]
         .flatMap(id =>
           if (isServiceTryIt) {
-            env.proxyState.allNgServices().find(_.id == id).map(e => Left(e))
+            env.proxyState.allNgServices().find(_.id == id).filter(e => ctx.canUserRead(e)).map(e => Left(e))
           } else {
-            env.proxyState.route(id).map(e => Right(e))
+            env.proxyState.route(id).filter(e => ctx.canUserRead(e)).map(e => Right(e))
           }
         )
       val routeFromJsonOpt: Option[Either[NgRouteComposition, NgRoute]] =
@@ -179,7 +183,16 @@ class TryItController(
           val curl =
             s"curl -X $method $url ${headers.map { case (key, value) => s"""-H "$key: $value"""" }.mkString(" ")}"
           respF.flatMap { resp =>
-            val report: JsValue = env.proxyState.report(requestId).map(_.json).getOrElse(JsNull)
+            // the report carries the full json of the route that handled the call: only for a route the user can read
+            val report: JsValue = env.proxyState
+              .report(requestId)
+              .map(_.json)
+              .filter(r =>
+                (r \\ "found_route").flatMap(_.select("id").asOpt[String]).forall { id =>
+                  env.proxyState.route(id).forall(route => ctx.canUserRead(route))
+                }
+              )
+              .getOrElse(JsNull)
             val status          = resp.status
             val headers         = resp.headers.view.mapValues(_.last).toMap
             resp.bodyAsSource.runFold(ByteString.empty)(_ ++ _).map { respBodyRaw =>
