@@ -852,7 +852,7 @@ class GatewayRequestHandler(
             .getOrElse("--")}', expecting: ${env.sign(redirection)}")
       }
       (hashOpt.map(h => env.sign(req.theUrl.replace(s"&hash=$h", ""))), hashOpt) match {
-        case (Some(hashedUrl), Some(hash)) if hashedUrl == hash =>
+        case (Some(hashedUrl), Some(hash)) if otoroshi.utils.crypto.Signatures.constantTimeEquals(hashedUrl, hash) =>
           (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt, httpOnlyOpt, secureOpt) match {
             case (Some("urn:ietf:wg:oauth:2.0:oob"), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>
               FastFuture.successful(
