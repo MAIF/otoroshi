@@ -712,6 +712,9 @@ class SimpleBasicAuth extends NgAccessValidator {
   override def configFlow: Seq[String]        = SimpleBasicAuthConfig.configFlow
   override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
 
+  private def isBcryptHash(value: String): Boolean =
+    value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$")
+
   private def safeCheckPassword(password: String, hashed: String): Boolean = {
     try {
       BCryptHelper.checkpw(password, hashed)
@@ -740,7 +743,8 @@ class SimpleBasicAuth extends NgAccessValidator {
       val username = parts.head
       val password = parts.tail.mkString(":")
       (config.users ++ globalUsers).get(username) match {
-        case Some(pwd) if password == pwd                  => NgAccess.NgAllowed.vfuture
+        // a stored bcrypt hash is only checked as a hash: compared as plain text, the hash itself was a valid password
+        case Some(pwd) if !isBcryptHash(pwd) && Signatures.constantTimeEquals(password, pwd) => NgAccess.NgAllowed.vfuture
         case Some(pwd) if safeCheckPassword(password, pwd) => NgAccess.NgAllowed.vfuture
         case _                                             => {
           NgAccess
