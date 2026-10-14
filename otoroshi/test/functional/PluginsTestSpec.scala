@@ -41,6 +41,19 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// access control plugins letting requests through: sbt "testOnly functional.PluginsHardeningSpec"
+class PluginsHardeningSpec extends PluginsTestSpecBase {
+  lazy val hardening = new PluginsHardeningTests(this)
+  s"access control plugins" should {
+    "apply negative json path matchers" in { hardening.negativeMatchers() }
+    "not accept a stored bcrypt hash as a simple basic auth password" in { hardening.simpleBasicAuthHash() }
+    "keep the config of each apikey plugin instance" in { hardening.apikeyInstances() }
+    "not reuse the verdict of a jwt for another payload" in { hardening.jwtVerifierCache() }
+    "not use a pem key as an http signature hmac secret" in { hardening.httpSignaturePemAsHmac() }
+    "stop" in { hardening.stop() }
+  }
+}
+
 // rights of a team scoped backoffice user: sbt "testOnly functional.BackofficeRightsSpec"
 class BackofficeRightsSpec extends PluginsTestSpecBase {
   s"backoffice" should {

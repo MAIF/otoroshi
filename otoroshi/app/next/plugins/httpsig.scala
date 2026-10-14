@@ -701,7 +701,10 @@ object HttpSigKeyResolver {
               }
         }
       case HttpSigKeyInline(secretOrPem, _, _) =>
-        if (HttpSigAlgorithms.isHmac(alg)) {
+        // a pem public key is public: used as an hmac secret, anybody could sign with it
+        if (HttpSigAlgorithms.isHmac(alg) && secretOrPem.contains("-----BEGIN")) {
+          Future.successful(Left("HMAC requires an inline secret, not a pem key"))
+        } else if (HttpSigAlgorithms.isHmac(alg)) {
           Future.successful(Right(Left(decodeSecret(secretOrPem))))
         } else {
           parsePemPublic(secretOrPem) match {
