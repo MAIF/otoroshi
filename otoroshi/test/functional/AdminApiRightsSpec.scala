@@ -840,6 +840,38 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       sessionExists("own-tenant-auth-module") mustBe false
     }
 
+    "not let a scoped user replace an entity of another tenant through typed bulk writes or templates" in {
+      val (_, created) = otoroshiApiCall(
+        "POST",
+        "/api/groups",
+        Json
+          .obj(
+            "id"          -> "other-tenant-group",
+            "name"        -> "other-tenant-group",
+            "description" -> "other-tenant-group",
+            "_loc"        -> Json.obj("tenant" -> "default", "teams" -> Json.arr("default"))
+          )
+          .some
+      ).futureValue
+      created mustBe 201
+      def groupTenant(): String =
+        (otoroshiApiCall("GET", "/api/groups/other-tenant-group").futureValue._1 \ "_loc" \ "tenant").as[String]
+      val replacement = Json
+        .obj(
+          "id"          -> "other-tenant-group",
+          "name"        -> "replaced",
+          "description" -> "replaced",
+          "_loc"        -> Json.obj("tenant" -> tenant.value, "teams" -> Json.arr(team.value))
+        )
+        .stringify
+      ndjsonCall("POST", "/api/groups/_bulk", scopedUser, replacement)
+      groupTenant() mustBe "default"
+      ndjsonCall("PUT", "/api/groups/_bulk", scopedUser, replacement)
+      groupTenant() mustBe "default"
+      call("POST", "/api/groups/_template", scopedUser, Json.parse(replacement).some)._2 mustBe 403
+      groupTenant() mustBe "default"
+    }
+
     "not let a caller send profile links for an auth module it cannot write" in {
       val module = otoroshi.auth.BasicAuthModuleConfig(
         id = "profile-link-other-module",

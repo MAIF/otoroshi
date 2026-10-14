@@ -279,13 +279,26 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
 
   // the caller controls the whole body here, location included, so the merged entity is the only thing
   // worth checking: exactly what the standard crud create path does before writing anything
+  // the patch may also carry the id of an existing entity: the stored one has to be writable too, otherwise the
+  // template replaces an entity the caller has no rights on
   private def patchTemplate[T <: EntityLocationSupport](
       entity: => JsValue,
       patch: JsValue,
       format: Format[T],
-      save: T => Future[Boolean]
+      save: T => Future[Boolean],
+      find: String => Future[Option[T]]
   )(using ctx: ApiActionContext[JsValue]): Future[Result] = {
-    saveFromTemplate[T](entity, patch, format, save, ctx.canUserWrite)
+    format.reads(entity.as[JsObject].deepMerge(patch.as[JsObject])) match {
+      case JsSuccess(merged, _) =>
+        find(merged.internalId).flatMap {
+          case Some(stored) if !ctx.canUserWrite(stored) =>
+            FastFuture.successful(
+              Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !"))
+            )
+          case _                                         => saveFromTemplate[T](entity, patch, format, save, ctx.canUserWrite)
+        }
+      case _                    => saveFromTemplate[T](entity, patch, format, save, ctx.canUserWrite)
+    }
   }
 
   def createFromTemplate(entity: String) =
@@ -320,7 +333,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                 .toJson,
               patch,
               ServiceGroup._fmt,
-              _.save()
+              _.save(),
+              id => env.datastores.serviceGroupDataStore.findById(id)
             )
           case "apikeys"      =>
             patchTemplate[ApiKey](
@@ -332,21 +346,24 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                 .toJson,
               patch,
               ApiKey._fmt,
-              _.save()
+              _.save(),
+              id => env.datastores.apiKeyDataStore.findById(id)
             )
           case "tenants"      =>
             patchTemplate[Tenant](
               env.datastores.tenantDataStore.template(env).json,
               patch,
               Tenant.format,
-              _.save()
+              _.save(),
+              id => env.datastores.tenantDataStore.findById(id)
             )
           case "teams"        =>
             patchTemplate[Team](
               env.datastores.teamDataStore.template(ctx.currentTenant).json,
               patch,
               Team.format,
-              _.save()
+              _.save(),
+              id => env.datastores.teamDataStore.findById(id)
             )
           case "certificates" =>
             env.datastores.certificatesDataStore
@@ -360,7 +377,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                     .toJson,
                   patch,
                   Cert._fmt,
-                  _.save()
+                  _.save(),
+                  id => env.datastores.certificatesDataStore.findById(id)
                 )
               )
           case "globalconfig" =>
@@ -383,7 +401,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                 .asJson,
               patch,
               GlobalJwtVerifier._fmt,
-              _.save()
+              _.save(),
+              id => env.datastores.globalJwtVerifierDataStore.findById(id)
             )
           case "auths"        =>
             patchTemplate[AuthModuleConfig](
@@ -395,7 +414,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                 .asJson,
               patch,
               AuthModuleConfig._fmt(env),
-              _.save()
+              _.save(),
+              id => env.datastores.authConfigsDataStore.findById(id)
             )
           case "scripts"      =>
             patchTemplate[Script](
@@ -407,7 +427,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                 .toJson,
               patch,
               Script._fmt,
-              _.save()
+              _.save(),
+              id => env.datastores.scriptDataStore.findById(id)
             )
           case "tcp/services" =>
             patchTemplate[TcpService](
@@ -419,7 +440,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                 .json,
               patch,
               TcpService.fmt,
-              _.save()
+              _.save(),
+              id => env.datastores.tcpServiceDataStore.findById(id)
             )
           case _              => FastFuture.successful(NotFound(Json.obj("error" -> "entity not found")))
         }
