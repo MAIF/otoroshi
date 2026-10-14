@@ -634,8 +634,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
               case Left(err)   => FastFuture.successful(Left(err))
               case Right(user) => {
                 WebAuthnSupport.loginFinish(users, body).map {
-                  case Left(err) => Left(ErrorReason(err))
-                  case Right(_)  => Right(user)
+                  case Left(err)                                       => Left(ErrorReason(err))
+                  // the assertion has to come from a key of the user whose password was checked
+                  case Right(result) if result.getUsername != username => Left(ErrorReason("Not Authorized"))
+                  case Right(_)                                        => Right(user)
                 }
               }
             }
@@ -662,8 +664,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
               case Left(err)   => FastFuture.successful(Left(err))
               case Right(user) => {
                 WebAuthnSupport.loginFinish(users, body).map {
-                  case Left(err) => Left(ErrorReason(err))
-                  case Right(_)  => Right(user)
+                  case Left(err)                                       => Left(ErrorReason(err))
+                  // the assertion has to come from a key of the user whose password was checked
+                  case Right(result) if result.getUsername != username => Left(ErrorReason("Not Authorized"))
+                  case Right(_)                                        => Right(user)
                 }
               }
             }

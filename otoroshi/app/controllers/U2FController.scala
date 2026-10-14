@@ -323,6 +323,9 @@ class U2FController(
               case Some(user)                                               => {
                 WebAuthnSupport.loginFinish(users, ctx.request.body).flatMap {
                   case Left(err)     => BadRequest(Json.obj("error" -> err)).future
+                  // the assertion has to come from a key of the user whose password was checked
+                  case Right(result) if result.getUsername != username =>
+                    Unauthorized(Json.obj("error" -> "Not Authorized")).future
                   case Right(result) => {
                     if (logger.isDebugEnabled) logger.debug(s"Login successful for user '$username'")
                     WebAuthnSupport.updateSignatureCount(user, result).flatMap { _ =>
