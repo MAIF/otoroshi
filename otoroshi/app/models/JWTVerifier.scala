@@ -1423,8 +1423,10 @@ sealed trait JwtVerifier extends AsJson {
               case v: GlobalJwtVerifier => v.id
               case v: LocalJwtVerifier  => descOpt.map(_.id).getOrElse(request.id.toString)
             }
-            val key                = s"${id}-${signature}"
-            val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
+            val key                = JwtVerifier.verificationCacheKey(id, token)
+            val verificationResult = JwtVerifier.cachedVerification(key, strategy.verificationSettings) {
+              Try(verification.build().verify(token))
+            }
             verificationResult match {
               case Failure(e)            =>
                 Errors
@@ -1732,8 +1734,15 @@ sealed trait JwtVerifier extends AsJson {
               .left[A]
           case Some(algorithm) => {
             val verification       = strategy.verificationSettings.asVerification(algorithm, attrs)
-            val key                = s"${this.asInstanceOf[GlobalJwtVerifier].id}-${signature}"
-            val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
+            val id: String         = this match {
+              case v: RefJwtVerifier    => v.ids.mkString("-")
+              case v: GlobalJwtVerifier => v.id
+              case v: LocalJwtVerifier  => descOpt.map(_.id).getOrElse(request.id.toString)
+            }
+            val key                = JwtVerifier.verificationCacheKey(id, token)
+            val verificationResult = JwtVerifier.cachedVerification(key, strategy.verificationSettings) {
+              Try(verification.build().verify(token))
+            }
             verificationResult match {
               case Failure(e)            =>
                 // logger.error("Bad JWT token 2", e)
@@ -2415,6 +2424,16 @@ object JwtVerifier extends FromJson[JwtVerifier] {
     .expireAfterWrite(5.seconds)
     .maximumSize(500)
     .build[String, Try[DecodedJWT]]()
+
+  // the verdict is cached under the whole token: under its signature alone, a token with another payload and the same
+  // signature got the verdict of the first one
+  def verificationCacheKey(id: String, token: String): String = s"$id-${token.sha256}"
+
+  // claim checks written with the expression language depend on the request: their verdict is never cached
+  def cachedVerification(key: String, settings: VerificationSettings)(verify: => Try[DecodedJWT]): Try[DecodedJWT] = {
+    if (settings.asJson.stringify.contains("${")) verify
+    else signatureCache.get(key, _ => verify)
+  }
 
   val fmt = new Format[JwtVerifier] {
     override def writes(o: JwtVerifier): JsValue             = o.asJson
