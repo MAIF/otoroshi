@@ -226,6 +226,8 @@ object GatewayRequestHandler {
                   env.datastores.privateAppsUserDataStore.findById(id).map { user =>
                     user.foreach(_.delete())
                   }
+                  // a worker would get the session back from the leader on the next call
+                  if (env.clusterConfig.mode.isWorker) env.clusterAgent.invalidateSession(id)
                 }
                 val finalRedirect =
                   req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
@@ -242,6 +244,8 @@ object GatewayRequestHandler {
                   request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                   env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                  // a worker would get the session back from the leader on the next call
+                  if (env.clusterConfig.mode.isWorker) env.clusterAgent.invalidateSession(id)
                 }
                 val finalRedirect     =
                   req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
