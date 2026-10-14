@@ -997,11 +997,19 @@ object OpenApi {
       }
     )
 
+    // the group comes from the query string of a public endpoint: only the groups of the served resources are cached,
+    // caching any value let anybody grow the cache without bound
+    val knownGroups: Set[String] =
+      (if (coreOnly) env.allResources.coreResources else env.allResources.resources).map(_.group).toSet
+    def cachedGroupDoc(group: String, compute: => String): String = {
+      if (knownGroups.contains(group)) cache.getOrElseUpdate(s"$group$cacheSuffix", compute) else compute
+    }
+
     val doc = extensionGroup match {
       case None        => finalDoc
       case Some(group) => {
-        cache.getOrElseUpdate(
-          s"$group$cacheSuffix", {
+        cachedGroupDoc(
+          group, {
 
             env.logger.info(s"Compute sub openapi.json document for group: '${group}'")
 

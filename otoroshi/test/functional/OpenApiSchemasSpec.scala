@@ -145,6 +145,22 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
       version(otoroshi.api.OpenApi.generate(env, Some("4.5.6"), coreOnly = true)) mustBe "4.5.6"
       version(otoroshi.api.OpenApi.generate(env, None)) mustBe env.otoroshiVersion
     }
+    "not cache a document for every extension group callers ask for" in {
+      val env                                     = otoroshiComponents.env
+      // the cache is private, the test reads its size by reflection rather than widening it
+      def cachedDocuments: Int = {
+        val field = otoroshi.api.OpenApi.getClass.getDeclaredField("cache")
+        field.setAccessible(true)
+        field.get(otoroshi.api.OpenApi).asInstanceOf[scala.collection.concurrent.TrieMap[String, String]].size
+      }
+      def paths(doc: String): Seq[String]         = (Json.parse(doc) \ "paths").as[JsObject].keys.toSeq
+      paths(otoroshi.api.OpenApi.generate(env, None, Some("proxy.otoroshi.io"))) must not be empty
+      val before                                  = cachedDocuments
+      (1 to 20).foreach { idx =>
+        paths(otoroshi.api.OpenApi.generate(env, None, Some(s"unknown-$idx.oto.tools"))) mustBe empty
+      }
+      cachedDocuments mustBe before
+    }
     "shutdown" in {
       stopAll()
     }
