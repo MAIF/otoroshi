@@ -130,8 +130,11 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def selfRegistrationStart() =
     Action.async { req =>
-      withShortSession(req) { case (bam, _, _) =>
-        bam.webAuthnRegistrationStart(req.body.asJson.get).map {
+      withShortSession(req) { case (bam, user, _) =>
+        val body = req.body.asJson.get
+        // a profile link only registers keys for the user it was sent to
+        if (!(body \ "username").asOpt[String].contains(user.email)) Forbidden(Json.obj("error" -> "forbidden")).future
+        else bam.webAuthnRegistrationStart(body).map {
           case Left(err)  => BadRequest(err)
           case Right(reg) => Ok(reg)
         }
@@ -140,8 +143,12 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def selfRegistrationFinish() =
     Action.async { req =>
-      withShortSession(req) { case (bam, _, _) =>
-        bam.webAuthnRegistrationFinish(req.body.asJson.get).map {
+      withShortSession(req) { case (bam, user, _) =>
+        val body = req.body.asJson.get
+        // a profile link only registers keys for the user it was sent to
+        if (!(body \ "otoroshi" \ "username").asOpt[String].contains(user.email))
+          Forbidden(Json.obj("error" -> "forbidden")).future
+        else bam.webAuthnRegistrationFinish(body).map {
           case Left(err)  => BadRequest(err)
           case Right(reg) => Ok(reg)
         }
