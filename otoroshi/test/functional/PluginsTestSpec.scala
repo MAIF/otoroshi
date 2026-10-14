@@ -41,6 +41,15 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// names of the authorized entities of an apikey in the backoffice: sbt "testOnly functional.AuthorizedEntitiesRightsSpec"
+class AuthorizedEntitiesRightsSpec extends PluginsTestSpecBase {
+  s"authorized entities of an apikey" should {
+    "only name the entities the backoffice user can read" in {
+      new AuthorizedEntitiesRightsTests(this)
+    }
+  }
+}
+
 // client certificate bound to an apikey, new and legacy plugins: sbt "testOnly functional.ClientCertApikeyMatchingSpec"
 class ClientCertApikeyMatchingSpec extends PluginsTestSpecBase {
   s"client certificate + apikey" should {

@@ -2344,6 +2344,7 @@ class BackOfficeController(
             case JsString(str)   => EntityIdentifier.apply(str)
             case _               => None
           }
+        // the ids come from the request: only the entities the user can read are named, the others stay as `--`
         val entities: Seq[JsValue] = ctx.request.getQueryString("kind") match {
           case Some("route") =>
             authorizedEntities.collect {
@@ -2352,7 +2353,7 @@ class BackOfficeController(
                   Json.obj(
                     "kind"  -> "route",
                     "value" -> id,
-                    "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
+                    "label" -> env.proxyState.route(id).filter(r => ctx.canUserRead(r)).map(_.name).getOrElse("--").json
                   )
                 )
               //[REMOVE SERVICEDESC] case ServiceDescriptorIdentifier(id) =>
@@ -2366,7 +2367,7 @@ class BackOfficeController(
               case ServiceGroupIdentifier(id)      =>
                 env.proxyState
                   .allRoutes()
-                  .filter(r => r.groups.contains(id))
+                  .filter(r => r.groups.contains(id) && ctx.canUserRead(r))
                   .map(r => Json.obj("kind" -> "route", "value" -> r.id, "label" -> r.name))
             }.flatten
           case Some("api")   =>
@@ -2374,7 +2375,7 @@ class BackOfficeController(
               Json.obj(
                 "kind"  -> "api",
                 "value" -> id,
-                "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
+                "label" -> env.proxyState.api(id).filter(a => ctx.canUserRead(a)).map(_.name).getOrElse("--").json
               )
             }
           case Some("group") =>
@@ -2382,7 +2383,7 @@ class BackOfficeController(
               Json.obj(
                 "kind"  -> "group",
                 "value" -> id,
-                "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
+                "label" -> env.proxyState.serviceGroup(id).filter(g => ctx.canUserRead(g)).map(_.name).getOrElse("--").json
               )
             }
           case _             => Seq.empty
