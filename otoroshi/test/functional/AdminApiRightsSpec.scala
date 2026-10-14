@@ -840,6 +840,40 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       sessionExists("own-tenant-auth-module") mustBe false
     }
 
+    "require the role of the typed controllers on the privileged generic resources" in {
+      def admin(username: String, rights: Option[JsArray]): JsValue = Json.obj(
+        "username" -> username,
+        "password" -> "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
+        "label"    -> username,
+        "_loc"     -> Json.obj("tenant" -> tenant.value, "teams" -> Json.arr(team.value))
+      ) ++ rights.map(r => Json.obj("rights" -> r)).getOrElse(Json.obj())
+      val admins = "/apis/security.otoroshi.io/v1/admins"
+      // not a tenant admin
+      call("POST", admins, scopedUser, admin("generic-scoped@otoroshi.io", None).some)._2 mustBe 403
+      call("GET", "/apis/security.otoroshi.io/v1/admin-sessions", scopedUser)._2 mustBe 403
+      call("GET", "/apis/security.otoroshi.io/v1/auth-module-users", scopedUser)._2 mustBe 403
+      call("GET", "/apis/config.otoroshi.io/v1/global-configs", scopedUser)._2 mustBe 403
+      // a tenant admin, but no rights field means super admin rights
+      val (_, superStatus) = call("POST", admins, tenantAdminUser, admin("generic-super@otoroshi.io", None).some)
+      withClue(s"super admin created by a tenant admin: $superStatus ") {
+        superStatus must (be >= 400 and be < 500)
+      }
+      otoroshiApiCall("GET", s"$admins/generic-super@otoroshi.io").futureValue._2 mustBe 404
+      // a tenant admin granting rights inside its own tenant
+      val (body, ownStatus) = call(
+        "POST",
+        admins,
+        tenantAdminUser,
+        admin(
+          "generic-own@otoroshi.io",
+          Json.arr(Json.obj("tenant" -> s"${tenant.value}:rw", "teams" -> Json.arr(s"${team.value}:rw"))).some
+        ).some
+      )
+      withClue(s"admin created by a tenant admin inside its tenant: $body ") {
+        ownStatus must (be >= 200 and be < 300)
+      }
+    }
+
     "only let a caller with rights on the workflow manage its paused sessions" in {
       val otoEnv   = otoroshiComponents.env
       val wf       = otoroshi.next.workflow.Workflow

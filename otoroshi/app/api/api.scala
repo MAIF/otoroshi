@@ -1757,13 +1757,22 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     }
   }
 
+  // resources whose typed controllers require a role on top of the location rights: the generic api requires the same
+  private val resourcesRole: Map[(String, String), RightsChecker] = Map(
+    ("security.otoroshi.io", "admins")            -> RightsChecker.TenantAdminOnly,
+    ("security.otoroshi.io", "admin-sessions")    -> RightsChecker.TenantAdminOnly,
+    ("security.otoroshi.io", "auth-module-users") -> RightsChecker.TenantAdminOnly,
+    ("config.otoroshi.io", "global-configs")      -> RightsChecker.SuperAdminOnly
+  )
+
   private def withResource(
       group: String,
       version: String,
       entity: String,
-      request: RequestHeader,
+      ctx: ApiActionContext[?],
       bulk: Boolean = false
   )(f: Resource => Future[Result]): Future[Result] = {
+    val request = ctx.request
     env.allResources.resources
       .filter(_.version.served)
       .find(r =>
@@ -1811,7 +1820,10 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
             resource.some
           )
         } else {
-          f(resource)
+          resourcesRole.get((resource.group, resource.pluralName)) match {
+            case Some(role) => ctx.checkRights(role)(f(resource))
+            case None       => f(resource)
+          }
         }
       }
     }
@@ -1863,7 +1875,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
-          withResource(group, version, entity, ctx.request, bulk = true) { resource =>
+          withResource(group, version, entity, ctx, bulk = true) { resource =>
             val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
             val src      = ctx.request.body
               .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
@@ -1973,7 +1985,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
-          withResource(group, version, entity, ctx.request, bulk = true) { resource =>
+          withResource(group, version, entity, ctx, bulk = true) { resource =>
             val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
             val src      = ctx.request.body
               .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
@@ -2078,7 +2090,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
-          withResource(group, version, entity, ctx.request, bulk = true) { resource =>
+          withResource(group, version, entity, ctx, bulk = true) { resource =>
             val grouping                   = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
             val src: Source[ByteString, ?] = ctx.request.body
               .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
@@ -2201,7 +2213,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
-          withResource(group, version, entity, ctx.request, bulk = true) { resource =>
+          withResource(group, version, entity, ctx, bulk = true) { resource =>
             val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
             val src      = ctx.request.body
               .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
@@ -2279,7 +2291,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // GET /apis/:group/:version/:entity/_count
   def countAll(group: String, version: String, entity: String) = ApiAction.async { ctx =>
-    withResource(group, version, entity, ctx.request) { resource =>
+    withResource(group, version, entity, ctx) { resource =>
       val fuEntities = if (ctx.request.getQueryString("in_mem").contains("true")) {
         resource.access.allJson().vfuture
       } else {
@@ -2300,7 +2312,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // GET /apis/:group/:version/:entity
   def findAll(group: String, version: String, entity: String) = ApiAction.async { ctx =>
-    withResource(group, version, entity, ctx.request) { resource =>
+    withResource(group, version, entity, ctx) { resource =>
       val fuEntities = if (ctx.request.getQueryString("in_mem").contains("true")) {
         resource.access.allJson().vfuture
       } else {
@@ -2336,7 +2348,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // POST /apis/:group/:version/:entity
   def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
     (ctx: ApiActionContext[Source[ByteString, ?]]) =>
-      withResource(group, version, entity, ctx.request) { resource =>
+      withResource(group, version, entity, ctx) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
           case Right(body) if !ctx.canUserWriteJson(body) =>
@@ -2396,7 +2408,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // DELETE /apis/:group/:version/:entity
   def deleteAll(group: String, version: String, entity: String) = ApiAction.async { ctx =>
-    withResource(group, version, entity, ctx.request) { resource =>
+    withResource(group, version, entity, ctx) { resource =>
       resource.access.deleteAll(version, resource.singularName, e => ctx.canUserWriteJson(e)).flatMap {
         case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
         case Right(_)  => {
@@ -2415,7 +2427,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // GET /apis/:group/:version/:entity/_template
   def template(group: String, version: String, entity: String) = ApiAction.async { ctx =>
-    withResource(group, version, entity, ctx.request) { resource =>
+    withResource(group, version, entity, ctx) { resource =>
       val templ = resource.access.template(version, ctx.request.queryString.view.mapValues(_.last).toMap, ctx.some)
       if (templ == Json.obj()) {
         NotFound(Json.obj("error" -> "template not found !")).vfuture
@@ -2427,7 +2439,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // GET /apis/:group/:version/:entity/:id/_template
   def schema(group: String, version: String, entity: String) = ApiAction.async { ctx =>
-    withResource(group, version, entity, ctx.request) { resource =>
+    withResource(group, version, entity, ctx) { resource =>
       val schema = resource.version.finalSchema(resource.kind, resource.access.clazz)
       Ok(schema).vfuture
     }
@@ -2435,7 +2447,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // GET /apis/:group/:version/:entity/:id
   def findOne(group: String, version: String, entity: String, id: String) = ApiAction.async { ctx =>
-    withResource(group, version, entity, ctx.request) { resource =>
+    withResource(group, version, entity, ctx) { resource =>
       val fuOptEntity = if (ctx.request.getQueryString("in_mem").contains("true")) {
         resource.access.oneJson(id).vfuture
       } else {
@@ -2465,7 +2477,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // DELETE /apis/:group/:version/:entity/:id
   def delete(group: String, version: String, entity: String, id: String) = ApiAction.async { ctx =>
-    withResource(group, version, entity, ctx.request) { resource =>
+    withResource(group, version, entity, ctx) { resource =>
       resource.access.findOne(version, id).flatMap {
         case None                                          => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
         case Some(entity) if !ctx.canUserWriteJson(entity) =>
@@ -2494,7 +2506,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // POST /apis/:group/:version/:entity/:id
   def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
     (ctx: ApiActionContext[Source[ByteString, ?]]) =>
-      withResource(group, version, entity, ctx.request) { resource =>
+      withResource(group, version, entity, ctx) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
           case Right(__body) => {
@@ -2568,7 +2580,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // PUT /apis/:group/:version/:entity/:id
   def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
     (ctx: ApiActionContext[Source[ByteString, ?]]) =>
-      withResource(group, version, entity, ctx.request) { resource =>
+      withResource(group, version, entity, ctx) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
           case Right(__body) => {
@@ -2631,7 +2643,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   def patch(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
     (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
-      withResource(group, version, entity, ctx.request) { resource =>
+      withResource(group, version, entity, ctx) { resource =>
         resource.access.findOne(version, id).flatMap {
           case None                                            => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
           case Some(current) if !ctx.canUserWriteJson(current) =>
