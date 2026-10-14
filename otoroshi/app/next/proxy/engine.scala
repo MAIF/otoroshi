@@ -883,7 +883,7 @@ class ProxyEngine() extends RequestHandler {
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig
           .map(dc => dc ++ wrapper.instance.config.raw)
           .getOrElse(wrapper.instance.config.raw)
-        val ctx                   = _ctx.copy(config = pluginConfig)
+        val ctx                   = _ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
         val debug                 = wrapper.instance.debug
         val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
         val item                  = NgReportPluginSequenceItem(
@@ -1353,7 +1353,7 @@ class ProxyEngine() extends RequestHandler {
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig
           .map(dc => dc ++ wrapper.instance.config.raw)
           .getOrElse(wrapper.instance.config.raw)
-        val ctx                   = _ctx.copy(config = pluginConfig)
+        val ctx                   = _ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
         val debug                 = route.debugFlow || wrapper.instance.debug
         val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
         val item                  = NgReportPluginSequenceItem(
@@ -1532,7 +1532,7 @@ class ProxyEngine() extends RequestHandler {
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig
           .map(dc => dc ++ wrapper.instance.config.raw)
           .getOrElse(wrapper.instance.config.raw)
-        val ctx                   = _ctx.copy(config = pluginConfig)
+        val ctx                   = _ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
         val debug                 = route.debugFlow || wrapper.instance.debug
         val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
         val item                  = NgReportPluginSequenceItem(
@@ -1710,7 +1710,7 @@ class ProxyEngine() extends RequestHandler {
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig
           .map(dc => dc ++ wrapper.instance.config.raw)
           .getOrElse(wrapper.instance.config.raw)
-        val ctx                   = _ctx.copy(config = pluginConfig)
+        val ctx                   = _ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
         val debug                 = route.debugFlow || wrapper.instance.debug
         val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
         val item                  = NgReportPluginSequenceItem(
@@ -1784,7 +1784,7 @@ class ProxyEngine() extends RequestHandler {
               val pluginConfig: JsValue = wrapper.plugin.defaultConfig
                 .map(dc => dc ++ wrapper.instance.config.raw)
                 .getOrElse(wrapper.instance.config.raw)
-              val ctx                   = _ctx.copy(config = pluginConfig)
+              val ctx                   = _ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
@@ -1922,7 +1922,7 @@ class ProxyEngine() extends RequestHandler {
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig
           .map(dc => dc ++ wrapper.instance.config.raw)
           .getOrElse(wrapper.instance.config.raw)
-        val ctx                   = _ctx.copy(config = pluginConfig)
+        val ctx                   = _ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
         val debug                 = route.debugFlow || wrapper.instance.debug
         val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
         val item                  = NgReportPluginSequenceItem(
@@ -2974,7 +2974,7 @@ class ProxyEngine() extends RequestHandler {
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig
           .map(dc => dc ++ wrapper.instance.config.raw)
           .getOrElse(wrapper.instance.config.raw)
-        val ctx                   = __ctx.copy(config = pluginConfig)
+        val ctx                   = __ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
         val debug                 = route.debugFlow || wrapper.instance.debug
         val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
         val item                  = NgReportPluginSequenceItem(
@@ -3576,7 +3576,7 @@ class ProxyEngine() extends RequestHandler {
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig
           .map(dc => dc ++ wrapper.instance.config.raw)
           .getOrElse(wrapper.instance.config.raw)
-        val ctx                   = __ctx.copy(config = pluginConfig)
+        val ctx                   = __ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
         val debug                 = route.debugFlow || wrapper.instance.debug
         val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
         val item                  = NgReportPluginSequenceItem(

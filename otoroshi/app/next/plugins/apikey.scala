@@ -2,7 +2,6 @@ package otoroshi.next.plugins
 
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
-import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import java.nio.charset.StandardCharsets
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -48,10 +47,6 @@ object NgLegacyApikeyCallConfig {
 
 class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer with NgRouteMatcher {
 
-  private val configCache: Cache[String, NgLegacyApikeyCallConfig] = Scaffeine()
-    .expireAfterWrite(5.seconds)
-    .maximumSize(1000)
-    .build()
 
   private val configReads: Reads[NgLegacyApikeyCallConfig] = NgLegacyApikeyCallConfig.format
 
@@ -94,10 +89,8 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
       .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
       .toOption
       .get
-    val config     = configCache.get(
-      ctx.route.cacheableId,
-      _ => configReads.reads(ctx.config).getOrElse(NgLegacyApikeyCallConfig.default)
-    )
+    // cached per plugin instance: keyed on the route alone, two instances of the route shared one config
+    val config     = ctx.cachedConfig(internalName)(configReads).getOrElse(NgLegacyApikeyCallConfig.default)
     val descriptor =
       ctx.route.legacy.copy(publicPatterns = config.publicPatterns, privatePatterns = config.privatePatterns)
     val req        = ctx.request
@@ -120,10 +113,8 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
 
 class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRouteMatcher {
 
-  private val configCache: Cache[String, NgApikeyCallsConfig] = Scaffeine()
-    .expireAfterWrite(5.seconds)
-    .maximumSize(1000)
-    .build()
+  // the config is cached per plugin instance (ctx.cachedConfig): keyed on the route alone, two instances of the same
+  // route, a public and a mandatory one for instance, shared the config of the first one read
 
   private val configReads: Reads[NgApikeyCallsConfig] = NgApikeyCallsConfig.format
 
@@ -146,7 +137,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
 
   override def matches(ctx: NgRouteMatcherContext)(using env: Env): Boolean = {
     val config =
-      configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgApikeyCallsConfig())
     if (config.routing.enabled) {
       if (config.routing.hasNoRoutingConstraints) {
         true
@@ -172,7 +163,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config    =
-      configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgApikeyCallsConfig())
     val maybeUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
     (config.passWithUser match {
       case true  =>
@@ -267,7 +258,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config =
-      configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgApikeyCallsConfig())
     if (config.wipeBackendRequest) {
       ctx.attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey) match {
         case Some(ApikeyTuple(_, _, _, Some(location), _)) => {
