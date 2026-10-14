@@ -353,11 +353,13 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       .get(name)
   }
 
+  // an overrides router only takes a request when one of its routes matches it: an extension that declares overrides
+  // must not hide the routers that come after it (the lookup runs twice for the overridden requests only)
   def getAssetsCallHandler(
       request: RequestHeader,
       actionBuilder: ActionBuilder[Request, AnyContent]
   ): Option[AdminExtensionRouterContext[AdminExtensionAssetRoute]] = {
-    if (hasExtensions && assetsOverrides.nonEmpty) {
+    if (hasExtensions && assetsOverrides.nonEmpty && assetsOverridesRouter.find(request).isDefined) {
       assetsOverridesRouter.find(request)
     } else if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
       assetsRouter.find(request)
@@ -368,7 +370,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       request: RequestHeader,
       actionBuilder: ActionBuilder[Request, AnyContent]
   )(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && assetsOverrides.nonEmpty) {
+    if (hasExtensions && assetsOverrides.nonEmpty && assetsOverridesRouter.find(request).isDefined) {
       assetsOverridesRouter.find(request) match {
         case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
         case None        => f
@@ -386,7 +388,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       actionBuilder: ActionBuilder[Request, AnyContent],
       sourceBodyParser: BodyParser[Source[ByteString, ?]]
   )(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && wellKnownOverridesRoutes.nonEmpty) {
+    if (hasExtensions && wellKnownOverridesRoutes.nonEmpty && wellKnownOverridesRouter.find(request).isDefined) {
       wellKnownOverridesRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
@@ -413,7 +415,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       ApiAction: ApiAction,
       sourceBodyParser: BodyParser[Source[ByteString, ?]]
   )(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && adminApiOverridesRoutes.nonEmpty) {
+    if (hasExtensions && adminApiOverridesRoutes.nonEmpty && adminApiOverridesRouter.find(request).isDefined) {
       adminApiOverridesRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(ApiAction.async(sourceBodyParser) { ctx =>
@@ -445,12 +447,14 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       BackOfficeActionAuth: BackOfficeActionAuth,
       sourceBodyParser: BodyParser[Source[ByteString, ?]]
   )(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && assetsOverrides.nonEmpty) {
+    if (hasExtensions && assetsOverrides.nonEmpty && assetsOverridesRouter.find(request).isDefined) {
       assetsOverridesRouter.find(request) match {
         case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
         case None        => f
       }
-    } else if (hasExtensions && backofficePublicOverridesRoutes.nonEmpty) {
+    } else if (
+      hasExtensions && backofficePublicOverridesRoutes.nonEmpty && backofficePublicOverridesRouter.find(request).isDefined
+    ) {
       backofficePublicOverridesRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
@@ -458,7 +462,9 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
         case _                                       => f
       }
-    } else if (hasExtensions && backofficeAuthOverridesRoutes.nonEmpty) {
+    } else if (
+      hasExtensions && backofficeAuthOverridesRoutes.nonEmpty && backofficeAuthOverridesRouter.find(request).isDefined
+    ) {
       backofficeAuthOverridesRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
@@ -500,12 +506,14 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       PrivateAppsAction: PrivateAppsAction,
       sourceBodyParser: BodyParser[Source[ByteString, ?]]
   )(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && assetsOverrides.nonEmpty) {
+    if (hasExtensions && assetsOverrides.nonEmpty && assetsOverridesRouter.find(request).isDefined) {
       assetsOverridesRouter.find(request) match {
         case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
         case None        => f
       }
-    } else if (hasExtensions && privateAppPublicOverridesRoutes.nonEmpty) {
+    } else if (
+      hasExtensions && privateAppPublicOverridesRoutes.nonEmpty && privateAppPublicOverridesRouter.find(request).isDefined
+    ) {
       privateAppPublicOverridesRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
@@ -513,7 +521,9 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
         case _                                       => f
       }
-    } else if (hasExtensions && privateAppAuthOverridesRoutes.nonEmpty) {
+    } else if (
+      hasExtensions && privateAppAuthOverridesRoutes.nonEmpty && privateAppAuthOverridesRouter.find(request).isDefined
+    ) {
       privateAppAuthOverridesRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(PrivateAppsAction.async(sourceBodyParser) { ctx =>

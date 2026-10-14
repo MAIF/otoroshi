@@ -41,6 +41,15 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// routing of the admin extensions routes: sbt "testOnly functional.AdminExtensionsRoutingSpec"
+class AdminExtensionsRoutingSpec extends PluginsTestSpecBase {
+  s"admin extensions routing" should {
+    "still reach the regular routes of the extensions when overrides are declared" in {
+      new AdminExtensionsRoutingTests(this)
+    }
+  }
+}
+
 // names of the authorized entities of an apikey in the backoffice: sbt "testOnly functional.AuthorizedEntitiesRightsSpec"
 class AuthorizedEntitiesRightsSpec extends PluginsTestSpecBase {
   s"authorized entities of an apikey" should {
