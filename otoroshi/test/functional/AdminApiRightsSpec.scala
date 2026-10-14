@@ -81,6 +81,14 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
     rights = UserRights(Seq(UserRight(TenantAccess(tenant.value), Seq(TeamAccess("*")))))
   )
 
+  // reads its own tenant and team, writes nothing
+  val readOnlyUser = scopedUser.copy(
+    randomId = "readonly@otoroshi.io",
+    name = "readonly@otoroshi.io",
+    email = "readonly@otoroshi.io",
+    rights = UserRights(Seq(UserRight(TenantAccess(s"${tenant.value}:r"), Seq(TeamAccess(s"${team.value}:r")))))
+  )
+
   startOtoroshi()
 
   def backOfficeUserToken(user: BackOfficeUser, expiresInSeconds: Option[Long] = Some(30L)): String = {
@@ -256,6 +264,40 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
         .some
     ).futureValue
     withClue(s"create group $id: ${Json.stringify(body)} ") {
+      status mustBe 201
+    }
+  }
+
+  def scopedLocation(tenantId: String = tenant.value): JsObject =
+    Json.obj("tenant" -> tenantId, "teams" -> Json.arr(team.value))
+
+  def createScopedApi(id: String): Unit = {
+    val (template, _)  = otoroshiApiCall("GET", "/apis/apis.otoroshi.io/v1/apis/_template").futureValue
+    val (body, status) = otoroshiApiCall(
+      "POST",
+      "/apis/apis.otoroshi.io/v1/apis",
+      (template.as[JsObject] ++ Json.obj("id" -> id, "_loc" -> scopedLocation())).some
+    ).futureValue
+    withClue(s"create api $id: ${Json.stringify(body)} ") {
+      status mustBe 201
+    }
+  }
+
+  def createDraft(id: String, tenantId: String): Unit = {
+    val (body, status) = otoroshiApiCall(
+      "POST",
+      "/apis/proxy.otoroshi.io/v1/drafts",
+      Json
+        .obj(
+          "id"          -> id,
+          "kind"        -> "apis",
+          "name"        -> id,
+          "description" -> id,
+          "content"     -> Json.obj("id" -> id, "_loc" -> scopedLocation(tenantId))
+        )
+        .some
+    ).futureValue
+    withClue(s"create draft $id: ${Json.stringify(body)} ") {
       status mustBe 201
     }
   }
@@ -712,6 +754,56 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
           .stringify
       )
       (route("bulk-owned-route") \ "name").as[String] mustBe "bulk renamed"
+    }
+
+    "not let a read only user start, stop, duplicate or deploy an api" in {
+      createScopedApi("read-only-scoped-api")
+      val base = "/apis/apis.otoroshi.io/v1/apis/read-only-scoped-api"
+      call("GET", s"$base/_stop", readOnlyUser)._2 mustBe 403
+      call("GET", s"$base/_start", readOnlyUser)._2 mustBe 403
+      call("POST", s"$base/duplicate", readOnlyUser, Json.obj().some)._2 mustBe 403
+      call("POST", s"$base/deployments", readOnlyUser, Json.obj().some)._2 mustBe 403
+      call("GET", s"$base/_stop", scopedUser)._2 mustBe 200
+    }
+
+    "not let a caller have an openapi document fetched for an entity it cannot create" in {
+      val hits    = new java.util.concurrent.atomic.AtomicInteger(0)
+      val doc     = Json.stringify(Json.obj("openapi" -> "3.0.0", "info" -> Json.obj("title" -> "t", "version" -> "1")))
+      val openapi = TargetService
+        .full(None, "/openapi.json", "application/json", _ => { hits.incrementAndGet(); (200, doc, List.empty) })
+        .await()
+      val url     = s"http://127.0.0.1:${openapi.port}/openapi.json"
+      val apiBody = Json.obj(
+        "domain"          -> "openapi.oto.tools",
+        "openapi"         -> url,
+        "contextPath"     -> "/openapi",
+        "backendHostname" -> "127.0.0.1",
+        "backendPath"     -> "/",
+        "_loc"            -> scopedLocation()
+      )
+      call("POST", "/apis/apis.otoroshi.io/v1/apis/_openapi", readOnlyUser, apiBody.some)._2 mustBe 403
+      call(
+        "POST",
+        "/api/route-compositions/_openapi",
+        readOnlyUser,
+        Json.obj("domain" -> "openapi.oto.tools", "openapi" -> url, "_loc" -> scopedLocation()).some
+      )._2 mustBe 403
+      hits.get() mustBe 0
+      call("POST", "/apis/apis.otoroshi.io/v1/apis/_openapi", scopedUser, apiBody.some)
+      hits.get() mustBe 1
+      openapi.stop()
+    }
+
+    "only list the drafts of the caller's own scope" in {
+      createDraft("rights-draft-own", tenant.value)
+      createDraft("rights-draft-other", "other-tenant")
+      val (body, status) = call("GET", "/apis/proxy.otoroshi.io/v1/drafts/rights-draft", scopedUser)
+      status mustBe 200
+      val ids = body.as[Seq[JsObject]].map(d => (d \ "id").as[String])
+      withClue(s"drafts: $ids ") {
+        ids must contain("rights-draft-own")
+        ids must not contain "rights-draft-other"
+      }
     }
 
     "shutdown" in {

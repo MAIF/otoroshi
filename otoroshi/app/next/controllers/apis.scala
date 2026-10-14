@@ -116,7 +116,8 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
   def findAllByKind(kind: String) =
     ApiAction.async { ctx =>
       env.datastores.draftsDataStore.findAll().map { drafts =>
-        Results.Ok(JsArray(drafts.filter(_.id.startsWith(kind)).map(_.json)))
+        // a draft carries the whole entity it drafts, it is only visible to whoever can read that entity
+        Results.Ok(JsArray(drafts.filter(d => d.id.startsWith(kind) && ctx.canUserReadJson(d.content)).map(_.json)))
       }
     }
 
@@ -195,7 +196,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
   def start(id: String) = {
     ApiAction.async { ctx =>
-      ctx.canReadService(id) {
+      ctx.canWriteService(id) {
         Audit.send(
           AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
@@ -227,7 +228,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
   def stop(id: String) = {
     ApiAction.async { ctx =>
-      ctx.canReadService(id) {
+      ctx.canWriteService(id) {
         Audit.send(
           AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
@@ -603,7 +604,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
   def duplicate(apiId: String) = {
     ApiAction.async(parse.json) { ctx =>
-      ctx.canReadService(apiId) {
+      ctx.canWriteService(apiId) {
         Audit.send(
           AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
@@ -644,7 +645,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
   def createNewVersion(apiId: String) = {
     ApiAction.async(parse.json) { ctx =>
-      ctx.canReadService(apiId) {
+      ctx.canWriteService(apiId) {
         Audit.send(
           AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
@@ -733,8 +734,11 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
+  // the openapi document is fetched by otoroshi from a url chosen by the caller: only for someone who could create the api
   def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
-    {
+    if (!ctx.canUserWriteJson(ctx.request.body)) {
+      ctx.fforbidden
+    } else {
       val body = ctx.request.body
       (
         body.selectAsOptString("domain"),
