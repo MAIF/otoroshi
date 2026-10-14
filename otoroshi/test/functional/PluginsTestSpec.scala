@@ -41,6 +41,16 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// denial of service and leaks: sbt "testOnly functional.DosAndLeaksSpec"
+class DosAndLeaksSpec extends PluginsTestSpecBase {
+  lazy val dos = new DosAndLeaksTests(this)
+  s"public endpoints and plugins" should {
+    "parse nested unclosed log4shell expressions in linear time" in { dos.log4ShellParser() }
+    "use the metrics filter as a literal wildcard pattern" in { dos.metricsFilter() }
+    "not forward the backoffice cookies through the graphql proxy" in { dos.graphqlProxyCookies() }
+  }
+}
+
 // access control plugins letting requests through: sbt "testOnly functional.PluginsHardeningSpec"
 class PluginsHardeningSpec extends PluginsTestSpecBase {
   lazy val hardening = new PluginsHardeningTests(this)

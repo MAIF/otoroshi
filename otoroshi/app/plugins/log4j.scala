@@ -55,7 +55,7 @@ object Log4jExpressionParser {
     var buffer = ""
     while (i < value.length) {
       value.apply(i) match {
-        case '$' if value.apply(i + 1) == '{' => {
+        case '$' if i + 1 < value.length && value.apply(i + 1) == '{' => {
           if (buffer.nonEmpty) {
             val texp = Log4jExpressionText(buffer)
             parts = parts :+ texp
@@ -63,7 +63,9 @@ object Log4jExpressionParser {
           }
           val (exp, size) = parseExpression(value.substring(i + 2))
           parts = parts :+ exp
-          i = i + size + 1
+          // an unclosed expression (size 0) runs to the end of the value: parsing the rest again from here made the
+          // cost exponential in the number of nested unclosed expressions
+          i = if (size == 0) value.length else i + size + 1
         }
         case '}'                              =>
           size = i + 1
@@ -90,10 +92,10 @@ object Log4jExpressionParser {
     var i           = 0
     while (i < value.length) {
       value.apply(i) match {
-        case '$' if value.apply(i + 1) == '{' => {
+        case '$' if i + 1 < value.length && value.apply(i + 1) == '{' => {
           val (exp, size) = parseExpression(value.substring(i + 2))
           expressions = expressions :+ exp
-          i = i + size + 1
+          i = if (size == 0) value.length else i + size + 1
         }
         case c                                => // nothing to do here
       }
