@@ -1993,7 +1993,8 @@ class BackOfficeController(
   def graphqlProxy() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     val url     = ctx.request.queryString.get("url").map(_.last).get
     val host    = Uri(url).authority.host.toString()
-    val headers = (ctx.request.headers.toSimpleMap ++ Map("Host" -> host)).toSeq
+    // the cookies of the backoffice (the admin session) must never leave otoroshi
+    val headers = (ctx.request.headers.toSimpleMap.filterNot(_._1.equalsIgnoreCase("Cookie")) ++ Map("Host" -> host)).toSeq
 
     val builder = env.Ws
       .url(url)
