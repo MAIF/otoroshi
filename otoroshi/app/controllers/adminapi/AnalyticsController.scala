@@ -165,6 +165,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         findServiceById(serviceId).flatMap {
           case None       => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).future
+          case Some(desc) if !ctx.canUserRead(desc) => ctx.fforbidden
           case Some(desc) => {
 
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -465,6 +466,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         findServiceById(serviceId).flatMap {
           case None       => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).future
+          case Some(desc) if !ctx.canUserRead(desc) => ctx.fforbidden
           case Some(desc) => {
 
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
