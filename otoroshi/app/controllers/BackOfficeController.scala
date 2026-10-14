@@ -683,12 +683,12 @@ class BackOfficeController(
     }
 
   def eurekaServers() =
-    BackOfficeActionAuth.async { _ =>
+    BackOfficeActionAuth.async { ctx =>
       env.datastores.routeDataStore.findAll().map { routes =>
         Ok(
           JsArray(
             routes
-              .filter(r => r.plugins.hasPlugin[EurekaServerSink])
+              .filter(r => r.plugins.hasPlugin[EurekaServerSink] && ctx.canUserRead(r))
               .map(_.json)
           )
         )
@@ -987,7 +987,13 @@ class BackOfficeController(
       val trust_all     = ctx.request.body.select("trust_all").asOptBoolean.getOrElse(false)
       val loose         = ctx.request.body.select("loose").asOptBoolean.getOrElse(false)
       val trusted_certs = ctx.request.body.select("trusted_certs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
-      val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+      // only certificates the user can read are used as client certificates
+      val client_certs  = ctx.request.body
+        .select("client_certs")
+        .asOpt[Seq[String]]
+        .getOrElse(Seq.empty)
+        .toSeq
+        .filter(id => env.proxyState.certificate(id).exists(c => ctx.canUserRead(c)))
 
       val sessionCookieValues =
         (ctx.request.body \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues())
@@ -1189,8 +1195,12 @@ class BackOfficeController(
 
   def resetCircuitBreakers(id: String) =
     BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
-      env.circuitBeakersHolder.resetCircuitBreakersFor(id)
-      Ok(Json.obj("done" -> true))
+      if (env.proxyState.route(id).exists(route => !ctx.canUserWrite(route))) {
+        ApiActionContext.forbidden
+      } else {
+        env.circuitBeakersHolder.resetCircuitBreakersFor(id)
+        Ok(Json.obj("done" -> true))
+      }
     }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2012,6 +2022,7 @@ class BackOfficeController(
   def routeEntries(routeId: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.routeDataStore.findById(routeId) flatMap {
       case None        => NotFound(Json.obj("error" -> "route not found")).future
+      case Some(route) if !ctx.canUserRead(route) => ApiActionContext.fforbidden
       case Some(route) =>
         val isSecured = route.plugins.slots.exists(p => p.plugin.contains("ForceHttpsTraffic"))
 
@@ -2140,10 +2151,14 @@ class BackOfficeController(
 
     val wasmoConfiguration = TlsWasmoSettings.format.reads(jsonBody).get
     val (header, token)    = ApikeyHelper.generate(wasmoConfiguration.settings)
+    // only certificates the user can read are used as client certificates
+    val tlsConfig          = wasmoConfiguration.tlsConfig.copy(
+      certs = wasmoConfiguration.tlsConfig.certs.filter(id => env.proxyState.certificate(id).exists(c => ctx.canUserRead(c)))
+    )
 
     Try {
       env.MtlsWs
-        .url(s"${wasmoConfiguration.settings.url}/plugins", wasmoConfiguration.tlsConfig)
+        .url(s"${wasmoConfiguration.settings.url}/plugins", tlsConfig)
         .withFollowRedirects(false)
         .withHttpHeaders(
           header -> token,
@@ -2169,7 +2184,10 @@ class BackOfficeController(
 
   def anonymousReporting() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val enabled = ctx.request.body.select("enabled").asOpt[Boolean].getOrElse(false)
-    if (enabled) {
+    // writing the global config is for super admins only, like the global config endpoints
+    if (enabled && !env.bypassUserRightsCheck && !SuperAdminOnly.canPerform(ctx.user, ctx.currentTenant)) {
+      ApiActionContext.fforbidden
+    } else if (enabled) {
       env.datastores.globalConfigDataStore
         .set(env.datastores.globalConfigDataStore.latest().copy(anonymousReporting = true))
         .map { _ =>
