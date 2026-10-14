@@ -840,6 +840,52 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       sessionExists("own-tenant-auth-module") mustBe false
     }
 
+    "only let a caller with rights on the workflow manage its paused sessions" in {
+      val otoEnv   = otoroshiComponents.env
+      val wf       = otoroshi.next.workflow.Workflow
+        .template()
+        .copy(id = "paused-sessions-workflow", location = EntityLocation(tenant, Seq(team)))
+      createOtoroshiWorkflow(wf).futureValue
+      val wfJson   = Json.obj("kind" -> "value", "value" -> "resumed")
+      def session(id: String): JsValue = otoroshi.next.workflow
+        .PausedWorkflowSession(
+          id = id,
+          workflowRef = wf.id,
+          workflow = wfJson,
+          functions = Map.empty,
+          wfr = otoroshi.next.workflow.WorkflowRun(
+            id = id,
+            attrs = otoroshi.utils.TypedMap.empty,
+            env = otoEnv,
+            workflow_ref = wf.id,
+            workflow = wfJson
+          ),
+          from = Seq.empty,
+          createdAt = org.joda.time.DateTime.now(),
+          validUntil = None
+        )
+        .json
+      // rights on the default tenant only, nothing on the tenant of the workflow
+      val outsider = scopedUser.copy(
+        randomId = "outsider@otoroshi.io",
+        name = "outsider@otoroshi.io",
+        email = "outsider@otoroshi.io",
+        rights = UserRights(Seq(UserRight(TenantAccess("default"), Seq(TeamAccess("default")))))
+      )
+      val base     = "/apis/extensions/otoroshi.extensions.workflows/sessions"
+      call("POST", base, readOnlyUser, session("read-only-session").some)._2 mustBe 403
+      call("POST", base, scopedUser, session("scoped-session").some)._2 mustBe 200
+      call("GET", s"$base/${wf.id}/scoped-session", readOnlyUser)._2 mustBe 200
+      call("POST", s"$base/${wf.id}/scoped-session/_resume", readOnlyUser, Json.obj().some)._2 mustBe 403
+      call("DELETE", s"$base/${wf.id}/scoped-session", readOnlyUser)._2 mustBe 403
+      call("GET", s"$base/${wf.id}/scoped-session", outsider, currentTenant = TenantId("default"))._2 mustBe 403
+      call("GET", s"$base/${wf.id}", outsider, currentTenant = TenantId("default"))._2 mustBe 403
+      val (all, allStatus) = call("GET", base, outsider, currentTenant = TenantId("default"))
+      allStatus mustBe 200
+      all.as[Seq[JsObject]].map(s => (s \ "id").as[String]) must not contain "scoped-session"
+      call("DELETE", s"$base/${wf.id}/scoped-session", scopedUser)._2 mustBe 200
+    }
+
     "not let a caller renew a certificate it cannot write" in {
       val otoEnv = otoroshiComponents.env
       def certificate(id: String, tenantId: String): Unit = {

@@ -6,7 +6,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.util.ByteString
 import io.azam.ulidj.ULID
-import otoroshi.actions.{ApiAction, BackOfficeActionContext}
+import otoroshi.actions.{ApiAction, ApiActionContext, BackOfficeActionContext}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}
@@ -302,6 +302,18 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
     )
   )
 
+  // a paused session runs the workflow stored in it (system calls included), it takes the rights of the workflow it
+  // belongs to: read to look at it, write to create, resume or delete it. without the workflow, only super admins
+  private def canAccessSessions(apiCtx: ApiActionContext[?], wfId: String, write: Boolean): Boolean = {
+    workflow(wfId) match {
+      case Some(wf) => if (write) apiCtx.canUserWrite(wf)(using env) else apiCtx.canUserRead(wf)(using env)
+      case None     => apiCtx.userIsSuperAdmin(using env)
+    }
+  }
+
+  private def sessionsForbidden: Future[Result] =
+    Results.Forbidden(Json.obj("error" -> "You're not authorized here !")).vfuture
+
   override def adminApiRoutes(): Seq[AdminExtensionAdminApiRoute] = {
     Seq(
       AdminExtensionAdminApiRoute(
@@ -312,6 +324,8 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
           val wfId = ctx.named("wfId").getOrElse("--")
           val id   = ctx.named("id").getOrElse("--")
           optBody match {
+            case _ if !canAccessSessions(ApiActionContext(apikey, req.withBody(())), wfId, write = true) =>
+              sessionsForbidden
             case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
             case Some(body) =>
               body
@@ -352,7 +366,8 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
         handle = (ctx, req, apikey, optBody) => {
           val wfId = ctx.named("wfId").getOrElse("--")
           val id   = ctx.named("id").getOrElse("--")
-          datastores.pausedWorkflowSession
+          if (!canAccessSessions(ApiActionContext(apikey, req.withBody(())), wfId, write = false)) sessionsForbidden
+          else datastores.pausedWorkflowSession
             .one(wfId, id)
             .map {
               case Some(session) => Results.Ok(session.json)
@@ -367,7 +382,8 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
         handle = (ctx, req, apikey, optBody) => {
           val wfId = ctx.named("wfId").getOrElse("--")
           val id   = ctx.named("id").getOrElse("--")
-          datastores.pausedWorkflowSession
+          if (!canAccessSessions(ApiActionContext(apikey, req.withBody(())), wfId, write = true)) sessionsForbidden
+          else datastores.pausedWorkflowSession
             .delete(wfId, id)
             .map {
               case true  => Results.Ok(Json.obj("done" -> true))
@@ -381,7 +397,8 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
         wantsBody = false,
         handle = (ctx, req, apikey, optBody) => {
           val wfId = ctx.named("wfId").getOrElse("--")
-          datastores.pausedWorkflowSession
+          if (!canAccessSessions(ApiActionContext(apikey, req.withBody(())), wfId, write = false)) sessionsForbidden
+          else datastores.pausedWorkflowSession
             .allForWorkflow(wfId)
             .map { sessions =>
               Results.Ok(JsArray(sessions.map(_.json)))
@@ -402,6 +419,9 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
                   val json = bodyRaw.utf8String.parseJson
                   PausedWorkflowSession.format.reads(json) match {
                     case JsError(errors)       => Results.BadRequest(Json.obj("error" -> errors.mkString("\n"))).vfuture
+                    case JsSuccess(session, _)
+                        if !canAccessSessions(ApiActionContext(apikey, req.withBody(())), session.workflowRef, write = true) =>
+                      sessionsForbidden
                     case JsSuccess(session, _) => {
                       val wfId = session.workflowRef
                       val id   = session.id
@@ -428,10 +448,13 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
         path = "/apis/extensions/otoroshi.extensions.workflows/sessions",
         wantsBody = false,
         handle = (ctx, req, apikey, optBody) => {
+          val apiCtx = ApiActionContext(apikey, req.withBody(()))
           datastores.pausedWorkflowSession
             .all()
             .map { sessions =>
-              Results.Ok(JsArray(sessions.map(_.json)))
+              Results.Ok(
+                JsArray(sessions.filter(s => canAccessSessions(apiCtx, s.workflowRef, write = false)).map(_.json))
+              )
             }(using env.otoroshiExecutionContext)
         }
       )
