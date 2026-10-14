@@ -965,7 +965,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
           a.withClaim(
             b._1,
             (claim: Claim, token: DecodedJWT) => {
-              val contained = b._2.substring(9).init
+              val contained = b._2.substring(12).init
               !claim.toString.contains(contained)
             }
           )

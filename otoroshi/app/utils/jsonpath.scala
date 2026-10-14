@@ -293,9 +293,9 @@ case class JsonPathValidator(path: String, value: JsValue, error: Option[String]
           seq.size <= expected.substring(8).init.toInt
         } else if (expected.trim.startsWith("SizeGte(") && expected.trim.endsWith(")")) {
           seq.size >= expected.substring(8).init.toInt
-        } else if (expected.trim.startsWith("Contains(") && expected.trim.endsWith(")")) {
+        } else if (expected.trim.startsWith("Contains(") && expected.trim.endsWith(")") && !expected.trim.startsWith("Contains(Regex(") && !expected.trim.startsWith("Contains(Wildcard(")) {
           seq.contains(JsString(expected.substring(9).init))
-        } else if (expected.trim.startsWith("ContainsNot(") && expected.trim.endsWith(")")) {
+        } else if (expected.trim.startsWith("ContainsNot(") && expected.trim.endsWith(")") && !expected.trim.startsWith("ContainsNot(Regex(") && !expected.trim.startsWith("ContainsNot(Wildcard(")) {
           !seq.contains(JsString(expected.substring(12).init))
         } else if (expected.trim.startsWith("Contains(Regex(") && expected.trim.endsWith("))")) {
           val regex = expected.substring(15).init.init
@@ -326,9 +326,9 @@ case class JsonPathValidator(path: String, value: JsValue, error: Option[String]
             case _             => false
           }
         } ///////
-        else if (expected.trim.startsWith("JsonContains(") && expected.trim.endsWith(")")) {
+        else if (expected.trim.startsWith("JsonContains(") && expected.trim.endsWith(")") && !expected.trim.startsWith("JsonContains(Regex(") && !expected.trim.startsWith("JsonContains(Wildcard(")) {
           seq.exists(_.stringify.contains(expected.substring(13).init))
-        } else if (expected.trim.startsWith("JsonContainsNot(") && expected.trim.endsWith(")")) {
+        } else if (expected.trim.startsWith("JsonContainsNot(") && expected.trim.endsWith(")") && !expected.trim.startsWith("JsonContainsNot(Regex(") && !expected.trim.startsWith("JsonContainsNot(Wildcard(")) {
           !seq.exists(_.stringify.contains(expected.substring(16).init))
         } else if (expected.trim.startsWith("JsonContains(Regex(") && expected.trim.endsWith("))")) {
           val regex = expected.substring(19).init.init
