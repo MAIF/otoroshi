@@ -440,7 +440,9 @@ object OIDCAuthToken {
     val tokenHash  = s"${oauth2Config.id}:$token".sha256
 
     def createSession(): Future[Either[Result, NgAccess]] = {
-      if (config.fetchUserProfile) {
+      // only a jwt verified by the module (non opaque mode) can be trusted as is, an opaque token is only valid if the
+      // authorization server says so: decoding it locally let any forged jwt in
+      if (config.fetchUserProfile || config.opaque) {
         val userInfoF =
           if (config.useIntrospection)
             authModule.introspectTokenSafe(token, env.datastores.globalConfigDataStore.latest())

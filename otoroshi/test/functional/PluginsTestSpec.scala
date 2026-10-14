@@ -41,6 +41,15 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// opaque tokens of the oidc access_token validator: sbt "testOnly functional.OIDCAuthTokenOpaqueSpec"
+class OIDCAuthTokenOpaqueSpec extends PluginsTestSpecBase {
+  s"oidc access_token validator" should {
+    "never trust the payload of an opaque token" in {
+      new OIDCAuthTokenOpaqueTests(this)
+    }
+  }
+}
+
 // login cache of the basic auth. from auth. module plugin: sbt "testOnly functional.BasicAuthLdapCacheSpec"
 class BasicAuthLdapCacheSpec extends PluginsTestSpecBase {
   s"basic auth. from auth. module" should {
