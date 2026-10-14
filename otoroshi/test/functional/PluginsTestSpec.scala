@@ -118,6 +118,9 @@ class RemoteCatalogsChecksSpec extends PluginsTestSpecBase {
     "deploy, update and remove an api written as code" in {
       new RemoteCatalogsApisTests(this)
     }
+    "only deploy, undeploy or dry run a catalog for a caller that can write it" in {
+      new RemoteCatalogsRightsTests(this)
+    }
   }
 }
 

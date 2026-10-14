@@ -3,9 +3,10 @@ package otoroshi.next.catalogs
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+import otoroshi.actions.ApiActionContext
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
-import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
+import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.*
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import otoroshi.security.IdGenerator
@@ -239,13 +240,13 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
         method = "POST",
         path = "/api/extensions/remote-catalogs/_deploy",
         wantsBody = true,
-        handle = (ctx, req, apikey, optBody) => handleDeploy(optBody)
+        handle = (ctx, req, apikey, optBody) => handleDeploy(optBody, canApiWriteCatalog(req, apikey))
       ),
       AdminExtensionAdminApiRoute(
         method = "POST",
         path = "/api/extensions/remote-catalogs/_undeploy",
         wantsBody = true,
-        handle = (ctx, req, apikey, optBody) => handleUndeploy(optBody)
+        handle = (ctx, req, apikey, optBody) => handleUndeploy(optBody, canApiWriteCatalog(req, apikey))
       )
     )
   }
@@ -255,23 +256,38 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
       method = "POST",
       path = "/extensions/remote-catalogs/_deploy",
       wantsBody = true,
-      handle = (ctx, req, user, body) => handleDeploy(body)
+      handle = (ctx, req, user, body) => handleDeploy(body, canUserWriteCatalog(user))
     ),
     AdminExtensionBackofficeAuthRoute(
       method = "POST",
       path = "/extensions/remote-catalogs/_test",
       wantsBody = true,
-      handle = (ctx, req, user, body) => handleTest(body)
+      handle = (ctx, req, user, body) => handleTest(body, canUserWriteCatalog(user))
     ),
     AdminExtensionBackofficeAuthRoute(
       method = "POST",
       path = "/extensions/remote-catalogs/_undeploy",
       wantsBody = true,
-      handle = (ctx, req, user, body) => handleUndeploy(body)
+      handle = (ctx, req, user, body) => handleUndeploy(body, canUserWriteCatalog(user))
     )
   )
 
-  private def handleDeploy(optBody: Option[Source[ByteString, ?]]): Future[Result] = {
+  // deploying a catalog creates and deletes the entities it describes: it takes the rights to write the catalog
+  private def canUserWriteCatalog(user: Option[BackOfficeUser])(catalog: RemoteCatalog): Boolean = {
+    user.exists(u =>
+      u.rights.canWriteTenant(catalog.location.tenant)(using env) && u.rights
+        .canWriteTeams(catalog.location.tenant, catalog.location.teams)(using env)
+    )
+  }
+
+  private def canApiWriteCatalog(req: RequestHeader, apikey: ApiKey)(catalog: RemoteCatalog): Boolean = {
+    ApiActionContext(apikey, req.withBody(())).canUserWrite(catalog)(using env)
+  }
+
+  private def handleDeploy(
+      optBody: Option[Source[ByteString, ?]],
+      canWrite: RemoteCatalog => Boolean
+  ): Future[Result] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     implicit val ev: otoroshi.env.Env = env
@@ -288,6 +304,8 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
               states.catalog(catalogId) match {
                 case None          =>
                   Json.obj("catalog_id" -> catalogId, "error" -> "catalog not found").vfuture
+                case Some(catalog) if !canWrite(catalog) =>
+                  Json.obj("catalog_id" -> catalogId, "error" -> "You're not authorized here !").vfuture
                 case Some(catalog) =>
                   engine.deploy(catalog, args).map {
                     case Left(err)     => Json.obj("catalog_id" -> catalogId, "error" -> err)
@@ -300,7 +318,7 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
     }
   }
 
-  private def handleTest(optBody: Option[Source[ByteString, ?]]): Future[Result] = {
+  private def handleTest(optBody: Option[Source[ByteString, ?]], canWrite: RemoteCatalog => Boolean): Future[Result] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     implicit val ev: otoroshi.env.Env = env
@@ -314,6 +332,8 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
           states.catalog(catalogId) match {
             case None          =>
               Results.NotFound(Json.obj("error" -> "catalog not found")).vfuture
+            case Some(catalog) if !canWrite(catalog) =>
+              Results.Forbidden(Json.obj("error" -> "You're not authorized here !")).vfuture
             case Some(catalog) =>
               engine.dryRun(catalog, args).map {
                 case Left(err)     => Results.InternalServerError(Json.obj("error" -> err))
@@ -324,7 +344,10 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
     }
   }
 
-  private def handleUndeploy(optBody: Option[Source[ByteString, ?]]): Future[Result] = {
+  private def handleUndeploy(
+      optBody: Option[Source[ByteString, ?]],
+      canWrite: RemoteCatalog => Boolean
+  ): Future[Result] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     implicit val ev: otoroshi.env.Env = env
@@ -340,6 +363,8 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
               states.catalog(catalogId) match {
                 case None          =>
                   Json.obj("catalog_id" -> catalogId, "error" -> "catalog not found").vfuture
+                case Some(catalog) if !canWrite(catalog) =>
+                  Json.obj("catalog_id" -> catalogId, "error" -> "You're not authorized here !").vfuture
                 case Some(catalog) =>
                   engine.undeploy(catalog).map {
                     case Left(err)     => Json.obj("catalog_id" -> catalogId, "error" -> err)
