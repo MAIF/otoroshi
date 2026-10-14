@@ -1,6 +1,11 @@
 package plugins
 
 import functional.PluginsTestSpecBase
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.headers.{Host, RawHeader}
+import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest, Message as WsMessage}
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.models.*
 import otoroshi.next.workflow.Workflow
 import play.api.http.Status
@@ -95,6 +100,32 @@ class WorkflowTestRightsTests(parent: PluginsTestSpecBase) {
   withClue(s"writer, new workflow in its own tenant: status=${allowed.status} body=${allowed.body} ") {
     allowed.status mustBe Status.OK
     (allowed.json \ "returned").as[String] mustBe "rights-probe"
+  }
+
+  // the debugger websocket: a blacklisted user whose session is still alive must not get it
+  def debuggerUpgrade(user: BackOfficeUser): Int = {
+    val cookie       = sessionCookieBaker.encodeAsCookie(Session(Map("bousr" -> user.randomId)))
+    val (upgrade, _) = Http()(using system).singleWebSocketRequest(
+      WebSocketRequest(
+        s"ws://127.0.0.1:$port/extensions/workflows/_debugger",
+        extraHeaders = Seq(Host(env.backOfficeHost), RawHeader("Cookie", s"${cookie.name}=${cookie.value}"))
+      ),
+      Flow.fromSinkAndSourceMat(Sink.ignore, Source.maybe[WsMessage])((_, promise) => promise)
+    )
+    upgrade.futureValue match {
+      case ValidUpgrade(response, _)           => response.status.intValue
+      case InvalidUpgradeResponse(response, _) => response.status.intValue
+    }
+  }
+
+  withClue("debugger, writer ") {
+    debuggerUpgrade(writer) mustBe Status.SWITCHING_PROTOCOLS
+  }
+  env.datastores.rawDataStore
+    .sadd(s"${env.storageRoot}:users:blacklist:backoffice", Seq(ByteString(writer.email)))
+    .futureValue
+  withClue("debugger, blacklisted writer ") {
+    debuggerUpgrade(writer) mustBe Status.FORBIDDEN
   }
 
   Seq(writer, reader).foreach(_.delete()(using env.otoroshiExecutionContext, env).futureValue)

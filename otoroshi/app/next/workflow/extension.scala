@@ -9,6 +9,7 @@ import io.azam.ulidj.ULID
 import otoroshi.actions.{ApiAction, BackOfficeActionContext}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
+import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.*
 import otoroshi.next.models.NgBackend
@@ -18,6 +19,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
@@ -644,12 +646,27 @@ class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(using 
       case Some(id) => {
         env.datastores.backOfficeUserDataStore.findById(id).flatMap {
           case None       => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
+          // same blacklist check as BackOfficeActionAuth: the session of a blacklisted user can still be alive
           case Some(user) => {
-            env.adminExtensions.extension[WorkflowAdminExtension] match {
-              case None      => Results.NotFound(Json.obj("error" -> "extension not found")).leftf
-              case Some(ext) => {
-                ext.handleWorkflowDebug(user).rightf
-              }
+            env.datastores.backOfficeUserDataStore.blacklisted(user.email).flatMap {
+              case true  =>
+                Alerts.send(
+                  BlackListedBackOfficeUserAlert(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    user,
+                    request.theIpAddress,
+                    request.theUserAgent
+                  )
+                )
+                Results.Forbidden(Json.obj("error" -> "forbidden")).leftf
+              case false =>
+                env.adminExtensions.extension[WorkflowAdminExtension] match {
+                  case None      => Results.NotFound(Json.obj("error" -> "extension not found")).leftf
+                  case Some(ext) => {
+                    ext.handleWorkflowDebug(user).rightf
+                  }
+                }
             }
           }
         }
