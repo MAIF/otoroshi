@@ -840,6 +840,23 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       sessionExists("own-tenant-auth-module") mustBe false
     }
 
+    "not let a caller send profile links for an auth module it cannot write" in {
+      val module = otoroshi.auth.BasicAuthModuleConfig(
+        id = "profile-link-other-module",
+        name = "profile-link-other-module",
+        desc = "profile-link-other-module",
+        clientSideSessionEnabled = true,
+        webauthn = true,
+        tags = Seq.empty,
+        metadata = Map.empty,
+        sessionCookieValues = otoroshi.auth.SessionCookieValues(),
+        location = EntityLocation(TenantId("default"), Seq(TeamId("default")))
+      )
+      otoroshiApiCall("POST", "/api/auths", module.asJson.some).futureValue._2 mustBe 201
+      call("POST", s"/api/privateapps/sessions/send/${module.id}/someone@oto.tools", scopedUser)._2 mustBe 403
+      call("POST", s"/api/privateapps/sessions/${module.id}/someone@oto.tools", scopedUser)._2 mustBe 403
+    }
+
     "require the role of the typed controllers on the privileged generic resources" in {
       def admin(username: String, rights: Option[JsArray]): JsValue = Json.obj(
         "username" -> username,

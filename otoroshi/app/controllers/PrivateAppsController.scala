@@ -235,7 +235,8 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def sendSelfUpdateLink(authModuleId: String, username: String) =
     ApiAction.async { ctx =>
-      registerSessionForUser(authModuleId, username).flatMap { case (sessionId, host) =>
+      // like registerSession: only for an auth module the caller can write
+      ctx.canWriteAuthModule(authModuleId)(registerSessionForUser(authModuleId, username).flatMap { case (sessionId, host) =>
         // env.datastores.authConfigsDataStore.findById(authModuleId).flatMap {
         env.proxyState.authModuleAsync(authModuleId).flatMap {
           case Some(auth) => {
@@ -274,6 +275,6 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
               Json.obj("error" -> s"GlobalAuthModule with id $authModuleId not found")
             ).future
         }
-      }
+      })
     }
 }
