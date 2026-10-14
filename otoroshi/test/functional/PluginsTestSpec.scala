@@ -41,6 +41,15 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// login cache of the basic auth. from auth. module plugin: sbt "testOnly functional.BasicAuthLdapCacheSpec"
+class BasicAuthLdapCacheSpec extends PluginsTestSpecBase {
+  s"basic auth. from auth. module" should {
+    "only reuse a cached ldap login for the password it was bound with" in {
+      new BasicAuthLdapCacheTests(this)
+    }
+  }
+}
+
 // workflow test endpoint authentication and rights: sbt "testOnly functional.WorkflowTestRightsSpec"
 class WorkflowTestRightsSpec extends PluginsTestSpecBase {
   s"workflow test endpoint" should {

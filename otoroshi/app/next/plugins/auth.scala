@@ -5,7 +5,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, LdapAuthModule, LdapAuthModuleConfig}
-import otoroshi.utils.crypto.BCryptHelper
+import otoroshi.utils.crypto.{BCryptHelper, Signatures}
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
@@ -854,12 +854,22 @@ object BasicAuthWithAuthModule {
 
   val cache: Cache[String, PrivateAppsUser] = Scaffeine().expireAfterWrite(1.minutes).build()
 
-  def alreadyLoggedIn(username: String, config: AuthModuleConfig): Option[PrivateAppsUser] = {
-    cache.getIfPresent(s"${config.id}:${username.sha256}")
+  // a cache hit skips the ldap bind, so the key must carry the password: keyed on the username alone, any password
+  // was accepted for a user who logged in during the last minute
+  private def cacheKey(username: String, password: String, config: AuthModuleConfig)(using env: Env): String = {
+    s"${config.id}:${Signatures.hmacSha256Sign(s"$username:$password", env.otoroshiSecret)}"
   }
 
-  def addLoggedIn(username: String, user: PrivateAppsUser, config: AuthModuleConfig): Unit = {
-    cache.put(s"${config.id}:${username.sha256}", user)
+  def alreadyLoggedIn(username: String, password: String, config: AuthModuleConfig)(using
+      env: Env
+  ): Option[PrivateAppsUser] = {
+    cache.getIfPresent(cacheKey(username, password, config))
+  }
+
+  def addLoggedIn(username: String, password: String, user: PrivateAppsUser, config: AuthModuleConfig)(using
+      env: Env
+  ): Unit = {
+    cache.put(cacheKey(username, password, config), user)
   }
 }
 
@@ -934,7 +944,7 @@ class BasicAuthWithAuthModule extends NgAccessValidator {
                 }
               }
               case Some(authModule: LdapAuthModuleConfig)  => {
-                BasicAuthWithAuthModule.alreadyLoggedIn(username, authModule) match {
+                BasicAuthWithAuthModule.alreadyLoggedIn(username, password, authModule) match {
                   case Some(user) => {
                     ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
                     NgAllowed.vfuture
@@ -943,7 +953,7 @@ class BasicAuthWithAuthModule extends NgAccessValidator {
                     LdapAuthModule(authModule).bindUser(username, password, descriptor).map {
                       case Left(_)     => NgAccess.NgDenied(unauthorized(authModuleOpt))
                       case Right(user) => {
-                        BasicAuthWithAuthModule.addLoggedIn(username, user, authModule)
+                        BasicAuthWithAuthModule.addLoggedIn(username, password, user, authModule)
                         ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
                         NgAllowed
                       }
