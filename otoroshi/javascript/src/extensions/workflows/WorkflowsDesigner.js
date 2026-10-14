@@ -1492,6 +1492,7 @@ export function WorkflowsDesigner(props) {
     input: JSON.stringify(input),
     workflow: graphToJson()[0],
     workflow_id: props.workflow.id,
+    _loc: props.workflow._loc,
     functions: props.workflow.functions,
   });
 

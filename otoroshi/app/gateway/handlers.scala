@@ -11,7 +11,7 @@ import com.auth0.jwt.JWT
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
 import controllers.Assets
-import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
+import otoroshi.actions.{ApiAction, BackOfficeActionAuth, PrivateAppsAction}
 import otoroshi.controllers.HealthController
 import otoroshi.env.Env
 import otoroshi.events.*
@@ -330,7 +330,7 @@ class GatewayRequestHandler(
     optDevContext: Option[DevContext],
     actionBuilder: ActionBuilder[Request, AnyContent],
     apiActionBuilder: ApiAction,
-    backofficeActionBuilder: BackOfficeAction,
+    backofficeActionBuilder: BackOfficeActionAuth,
     privateActionBuilder: PrivateAppsAction,
     healthController: HealthController
 )(using env: Env, mat: Materializer)

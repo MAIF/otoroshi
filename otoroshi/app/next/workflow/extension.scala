@@ -1,6 +1,7 @@
 package otoroshi.next.workflow
 
 import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.util.ByteString
@@ -465,7 +466,17 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
 
   def workflow(id: String): Option[Workflow] = states.workflow(id)
 
-  def handleWorkflowDebug(): Flow[Message, Message, NotUsed] = {
+  // running a workflow from the backoffice is as powerful as writing it (system calls, files, vault secrets)
+  def canRunWorkflow(user: BackOfficeUser, payload: JsValue): Boolean = {
+    val location = payload.select("workflow_id").asOptString.flatMap(id => workflow(id)) match {
+      case Some(wf) => wf.location
+      case None     => EntityLocation.readFromKey(payload)
+    }
+    user.rights.canWriteTenant(location.tenant)(using env) && user.rights
+      .canWriteTeams(location.tenant, location.teams)(using env)
+  }
+
+  def handleWorkflowDebug(user: BackOfficeUser): Flow[Message, Message, NotUsed] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
     val hotFlux: Flux[JsObject]         = hotSource.asFlux()
@@ -505,6 +516,18 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
           val data = json.select("data").asOpt[JsObject].getOrElse(Json.obj())
 
           kind match {
+            case "start" if !canRunWorkflow(user, data) =>
+              hotSource.tryEmitNext(
+                Json.obj(
+                  "kind" -> "result",
+                  "data" -> Json.obj(
+                    "returned" -> JsNull,
+                    "error"    -> WorkflowError("You're not authorized here !").json,
+                    "run"      -> Json.obj("log" -> Json.arr(), "memory" -> Json.obj())
+                  )
+                )
+              )
+              hotSource.tryEmitComplete()
             case "start"  =>
               start(data)
             case "next"   =>
@@ -537,8 +560,10 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
       case Some(bodySource) =>
         bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
           val payload_raw      = bodyRaw.utf8String
+          val authorized       = user.exists(u => canRunWorkflow(u, payload_raw.parseJson))
           val secretFillFuture =
-            if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw)
+            if (!authorized) payload_raw.vfuture
+            else if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw)
             else payload_raw.vfuture
           secretFillFuture.flatMap { payload_filled =>
             val payload     = payload_filled.parseJson
@@ -548,7 +573,9 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
             val workflow    = payload.select("workflow").asObject
             val live        = req.getQueryString("live").contains("true")
             val node        = Node.from(workflow)
-            if (live) {
+            if (!authorized) {
+              Results.Forbidden(Json.obj("error" -> "You're not authorized here !")).vfuture
+            } else if (live) {
               val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
               val hotFlux: Flux[JsObject]         = hotSource.asFlux()
               //val debugger = new WorkflowDebugger()
@@ -601,8 +628,18 @@ class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(using 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
+  // same origin check as BackOfficeActionAuth, the session cookie is sent by same-site pages too
+  private def badOrigin(request: RequestHeader): Boolean = {
+    request.headers.get("Origin") match {
+      case None         => false
+      case Some(origin) =>
+        Try(Uri(origin).authority.copy(port = 0).toString()).toOption.forall(_ != env.backOfficeHost)
+    }
+  }
+
   def handleWorkflowDebug() = WebSocket.acceptOrResult[Message, Message] { request =>
     request.session.get("bousr") match {
+      case _ if badOrigin(request) => Results.Forbidden(Json.obj("error" -> "bad origin")).leftf
       case None     => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
       case Some(id) => {
         env.datastores.backOfficeUserDataStore.findById(id).flatMap {
@@ -611,7 +648,7 @@ class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(using 
             env.adminExtensions.extension[WorkflowAdminExtension] match {
               case None      => Results.NotFound(Json.obj("error" -> "extension not found")).leftf
               case Some(ext) => {
-                ext.handleWorkflowDebug().rightf
+                ext.handleWorkflowDebug(user).rightf
               }
             }
           }

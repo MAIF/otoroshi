@@ -2,7 +2,7 @@ package otoroshi.next.extensions
 
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
+import otoroshi.actions.{ApiAction, BackOfficeActionAuth, PrivateAppsAction}
 import otoroshi.api.Resource
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, PrivateAppsUser}
@@ -442,7 +442,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   def handleBackofficeCall(
       request: RequestHeader,
       actionBuilder: ActionBuilder[Request, AnyContent],
-      BackOfficeAction: BackOfficeAction,
+      BackOfficeActionAuth: BackOfficeActionAuth,
       sourceBodyParser: BodyParser[Source[ByteString, ?]]
   )(f: => Option[Handler]): Option[Handler] = {
     if (hasExtensions && assetsOverrides.nonEmpty) {
@@ -461,11 +461,11 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     } else if (hasExtensions && backofficeAuthOverridesRoutes.nonEmpty) {
       backofficeAuthOverridesRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
-          Some(BackOfficeAction.async(sourceBodyParser) { ctx =>
-            route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some)
+          Some(BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+            route.adminRoute.handle(route, ctx.request, ctx.user.some, ctx.request.body.some)
           })
         case Some(route) if !route.adminRoute.wantsBody =>
-          Some(BackOfficeAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
+          Some(BackOfficeActionAuth.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user.some, None) })
         case _                                       => f
       }
     } else if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
@@ -484,11 +484,11 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     } else if (hasExtensions && request.path.startsWith("/extensions/") && backofficeAuthRoutes.nonEmpty) {
       backofficeAuthRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
-          Some(BackOfficeAction.async(sourceBodyParser) { ctx =>
-            route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some)
+          Some(BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+            route.adminRoute.handle(route, ctx.request, ctx.user.some, ctx.request.body.some)
           })
         case Some(route) if !route.adminRoute.wantsBody =>
-          Some(BackOfficeAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
+          Some(BackOfficeActionAuth.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user.some, None) })
         case _                                       => f
       }
     } else f

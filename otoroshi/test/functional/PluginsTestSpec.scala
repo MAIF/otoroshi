@@ -41,6 +41,15 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// workflow test endpoint authentication and rights: sbt "testOnly functional.WorkflowTestRightsSpec"
+class WorkflowTestRightsSpec extends PluginsTestSpecBase {
+  s"workflow test endpoint" should {
+    "require a backoffice session and the rights to write the workflow" in {
+      new WorkflowTestRightsTests(this)
+    }
+  }
+}
+
 // apikey jwt kid handling: sbt "testOnly functional.ApikeyJwtKidSpec functional.ApikeyJwtPinnedKidSpec"
 class ApikeyJwtKidSpec extends PluginsTestSpecBase {
   s"apikey jwt kid" should {

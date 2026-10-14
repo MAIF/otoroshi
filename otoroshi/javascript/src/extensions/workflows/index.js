@@ -44,6 +44,7 @@ export function setupWorkflowsExtension(registerExtension) {
               body: JSON.stringify({
                 input: this.state.input,
                 workflow_id: this.props.rawValue.id,
+                _loc: this.props.rawValue._loc,
                 workflow: this.props.rawValue.config,
                 functions: this.props.rawValue.functions,
               }),
