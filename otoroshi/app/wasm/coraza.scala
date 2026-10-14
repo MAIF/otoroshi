@@ -597,7 +597,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
   ): Future[NgAccess] = {
     val instance: WasmVm = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
     val in               = Json.obj(
-      "url"     -> request.uri.path.toString(),
+      "url"     -> request.uri.toRelative.toString(), // path and query string, the args rules need it
       "method"  -> request.method,
       "headers" -> request.headers,
       "proto"   -> request.version.toUpperCase
@@ -651,7 +651,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
     if (body_bytes.isDefined) {
       val instance = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
       val in       = Json.obj(
-        "url"     -> req.uri.path.toString(),
+        "url"     -> req.uri.toRelative.toString(), // path and query string, the args rules need it
         "method"  -> req.method,
         "headers" -> req.headers,
         "body"    -> body_bytes.get.toArray[Byte].map(b => b & 0xff),
@@ -689,7 +689,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
         val in = Json.obj(
           "request"  -> Json
             .obj(
-              "url"     -> request.uri.path.toString(),
+              "url"     -> request.uri.toRelative.toString(), // path and query string, the args rules need it
               "method"  -> request.method,
               "headers" -> request.headers,
               "proto"   -> request.version.toUpperCase
