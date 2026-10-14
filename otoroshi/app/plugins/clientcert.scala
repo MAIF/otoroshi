@@ -63,9 +63,11 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
                 context.request.clientCertificateChain match {
                   case Some(chain) =>
                     chain.headOption match {
+                      // the subject of the client certificate, like NgHasClientCertMatchingApikeyValidator: the issuer
+                      // is shared by every certificate of the same ca
                       case Some(cert) =>
                         FastFuture.successful(
-                          RegexPool(dn).matches(DN(cert.getIssuerX500Principal.getName).stringify)
+                          RegexPool(DN(dn).stringify).matches(DN(cert.getSubjectX500Principal.getName).stringify)
                         )
                       case None       => FastFuture.successful(false)
                     }

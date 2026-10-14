@@ -2,7 +2,7 @@ package plugins
 
 import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
-import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
+import functional.{CustomInetNameResolver, PluginsTestSpecBase, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetSocketAddressResolver}
 import io.netty.util.CharsetUtil
@@ -11,6 +11,7 @@ import otoroshi.api.Otoroshi
 import otoroshi.models.{ApiKey, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.next.plugins.wrappers.AccessValidatorWrapper
 import otoroshi.next.plugins.{ApikeyCalls, NgHasClientCertMatchingApikeyValidator, OverrideHost}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
@@ -29,7 +30,8 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
-class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
+// legacy: run the old HasClientCertMatchingApikeyValidator through the access validator wrapper instead
+class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpecBase, legacy: Boolean = false) {
 
   import parent.*
 
@@ -113,9 +115,17 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[ApikeyCalls]
       ),
-      NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[NgHasClientCertMatchingApikeyValidator]
-      )
+      if (legacy)
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[AccessValidatorWrapper],
+          config = NgPluginInstanceConfig(
+            Json.obj("plugin" -> "cp:otoroshi.plugins.clientcert.HasClientCertMatchingApikeyValidator")
+          )
+        )
+      else
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[NgHasClientCertMatchingApikeyValidator]
+        )
     ),
     domain = "foo.oto.bar".some,
     customOtoroshiPort = publicInstance.port.some
@@ -137,6 +147,15 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
     metadata = Map("allowed-client-cert-dn" -> "C=EN")
   )
 
+  // the dn of the ca that issued the client certificate: shared by every certificate of that ca, it must not match
+  val issuerApikey = ApiKey(
+    clientName = IdGenerator.uuid,
+    clientId = IdGenerator.uuid,
+    clientSecret = IdGenerator.uuid,
+    authorizedEntities = Seq(RouteIdentifier(route.id)),
+    metadata = Map("allowed-client-cert-dn" -> "C=FR, ST=Paris, L=Paris, O=TestCA, OU=Dev, CN=TestCA")
+  )
+
   val missingMetadataApikey = ApiKey(
     clientName = IdGenerator.uuid,
     clientId = IdGenerator.uuid,
@@ -147,6 +166,7 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
   createOtoroshiApiKey(goodApikey, publicInstance.port.some).futureValue
   createOtoroshiApiKey(badApikey, publicInstance.port.some).futureValue
   createOtoroshiApiKey(missingMetadataApikey, publicInstance.port.some).futureValue
+  createOtoroshiApiKey(issuerApikey, publicInstance.port.some).futureValue
 
   val certificateTemplate: Cert = Cert._fmt.reads(getOtoroshiCertificate().futureValue._1).get
 
@@ -425,9 +445,13 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
     code mustBe status
   }
 
+  // a legacy access validator denies with a 400
+  val denied = if (legacy) Status.BAD_REQUEST else Status.FORBIDDEN
+
   callRoute(route, goodApikey, Status.OK)
-  callRoute(route, badApikey, Status.FORBIDDEN)
-  callRoute(route, missingMetadataApikey, Status.FORBIDDEN)
+  callRoute(route, badApikey, denied)
+  callRoute(route, missingMetadataApikey, denied)
+  callRoute(route, issuerApikey, denied)
 
   publicInstance.stop()
 }

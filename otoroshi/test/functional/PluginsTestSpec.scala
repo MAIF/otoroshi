@@ -41,6 +41,18 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// client certificate bound to an apikey, new and legacy plugins: sbt "testOnly functional.ClientCertApikeyMatchingSpec"
+class ClientCertApikeyMatchingSpec extends PluginsTestSpecBase {
+  s"client certificate + apikey" should {
+    "match the subject of the client certificate (new plugin)" in {
+      new NgHasClientCertMatchingApikeyValidatorTests(this)
+    }
+    "match the subject of the client certificate (legacy plugin)" in {
+      new NgHasClientCertMatchingApikeyValidatorTests(this, legacy = true)
+    }
+  }
+}
+
 // opaque tokens of the oidc access_token validator: sbt "testOnly functional.OIDCAuthTokenOpaqueSpec"
 class OIDCAuthTokenOpaqueSpec extends PluginsTestSpecBase {
   s"oidc access_token validator" should {
