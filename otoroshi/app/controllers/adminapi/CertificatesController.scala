@@ -41,6 +41,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
     ApiAction.async { ctx =>
       env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
         case None       => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
+        case Some(cert) if !ctx.canUserWrite(cert) => ctx.fforbidden
         case Some(cert) =>
           cert.renew().map {
             case Left(err) => InternalServerError(Json.obj("error" -> err))

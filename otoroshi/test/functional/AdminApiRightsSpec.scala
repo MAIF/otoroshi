@@ -840,6 +840,27 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       sessionExists("own-tenant-auth-module") mustBe false
     }
 
+    "not let a caller renew a certificate it cannot write" in {
+      val otoEnv = otoroshiComponents.env
+      def certificate(id: String, tenantId: String): Unit = {
+        val cert = otoEnv.pki
+          .genSelfSignedCert(otoroshi.ssl.pki.models.GenCsrQuery(hosts = Seq(s"$id.oto.tools"), subject = Some(s"CN=$id")))(
+            using otoEnv.otoroshiExecutionContext
+          )
+          .futureValue
+          .toOption
+          .get
+          .toCert
+          .copy(id = id, name = id, location = EntityLocation(TenantId(tenantId), Seq(team)))
+        cert.save()(using otoEnv.otoroshiExecutionContext, otoEnv).futureValue
+      }
+      certificate("renew-own-cert", tenant.value)
+      certificate("renew-other-cert", "default")
+      call("POST", "/api/certificates/renew-own-cert/_renew", readOnlyUser)._2 mustBe 403
+      call("POST", "/api/certificates/renew-other-cert/_renew", scopedUser)._2 mustBe 403
+      call("POST", "/api/certificates/renew-own-cert/_renew", scopedUser)._2 mustBe 200
+    }
+
     "only list the drafts of the caller's own scope" in {
       createDraft("rights-draft-own", tenant.value)
       createDraft("rights-draft-other", "other-tenant")
