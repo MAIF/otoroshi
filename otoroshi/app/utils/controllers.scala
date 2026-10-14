@@ -312,6 +312,17 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             case Left(_)            => true
             case Right((_, entity)) => ctx.canUserWrite(entity)
           }
+          // a bulk creation may replace an existing entity, but only one the caller can write: the stored one may
+          // live where the caller has no rights
+          .mapAsync(grouping) {
+            case left @ Left(_)           => left.future
+            case right @ Right((_, entity)) =>
+              findByIdOps(processId(extractId(entity), ctx), ctx.request).map {
+                case Right(OptionalEntityAndContext(Some(stored), _, _, _, _)) if !ctx.canUserWrite(stored) =>
+                  Left((JsString("you're not allowed to replace this entity"), writeEntity(entity)))
+                case _                                                                                      => right
+              }
+          }
           .mapAsync(grouping) {
             case Left((error, json)) =>
               Json
@@ -394,6 +405,17 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           .filter {
             case Left(_)            => true
             case Right((_, entity)) => ctx.canUserWrite(entity)
+          }
+          // the stored entity has to be writable too, like a single update: otherwise the new one replaces an entity
+          // the caller has no rights on
+          .mapAsync(grouping) {
+            case left @ Left(_)           => left.future
+            case right @ Right((_, entity)) =>
+              findByIdOps(processId(extractId(entity), ctx), ctx.request).map {
+                case Right(OptionalEntityAndContext(Some(stored), _, _, _, _)) if !ctx.canUserWrite(stored) =>
+                  Left((JsString("you're not allowed to update this entity"), writeEntity(entity)))
+                case _                                                                                      => right
+              }
           }
           .mapAsync(grouping) {
             case Left((error, json)) =>
@@ -519,6 +541,8 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                             .stringify
                             .byteString
                             .future
+                        // the patch must not move the entity where the caller has no rights
+                        case Right(newEntity) if !ctx.canUserWrite(newEntity) => ByteString.empty.future
                         case Right(newEntity) => {
                           updateEntityOps(newEntity, ctx.request).map {
                             case Left(error)                                              =>
