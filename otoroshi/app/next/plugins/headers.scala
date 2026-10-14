@@ -924,7 +924,7 @@ class RejectHeaderInTooLong extends NgRequestTransformer {
             HeaderTooLongAlert(key, value, "", "remove", "client", "plugin", ctx.otoroshiRequest, ctx.route, env)
               .toAnalytics()
             logger.error(
-              s"removing header '${key}' from request to backend because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}' and value is '${value}'"
+              s"removing header '${key}' from request to backend because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}'"
             )
             false
           }
@@ -981,7 +981,7 @@ class RejectHeaderOutTooLong extends NgRequestTransformer {
               env
             ).toAnalytics()
             logger.error(
-              s"removing header '${key}' from response to client because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}' and value is '${value}'"
+              s"removing header '${key}' from response to client because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}'"
             )
             false
           }
@@ -1072,7 +1072,7 @@ class LimitHeaderInTooLong extends NgRequestTransformer {
             HeaderTooLongAlert(key, value, newValue, "limit", "backend", "plugin", ctx.otoroshiRequest, ctx.route, env)
               .toAnalytics()
             logger.error(
-              s"limiting header '${key}' from request to backend because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'"
+              s"limiting header '${key}' from request to backend because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}'"
             )
             (key, newValue)
           }
