@@ -41,6 +41,18 @@ trait PluginsTestSpecBase extends OtoroshiSpec with BeforeAndAfterAll {
   }
 }
 
+// authentication of the tunnel websockets: sbt "testOnly functional.TunnelAuthSpec"
+class TunnelAuthSpec extends PluginsTestSpecBase {
+  override def configurationSpec: Configuration = Configuration(
+    ConfigFactory.parseString("otoroshi.tunnels.enabled = true").resolve()
+  )
+  s"tunnel websockets" should {
+    "take the admin api authentication" in {
+      new TunnelAuthTests(this)
+    }
+  }
+}
+
 // routing of the admin extensions routes: sbt "testOnly functional.AdminExtensionsRoutingSpec"
 class AdminExtensionsRoutingSpec extends PluginsTestSpecBase {
   s"admin extensions routing" should {

@@ -909,8 +909,19 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(u
 
   private val tunnelsEnabled = env.configuration.getOptional[Boolean]("otoroshi.tunnels.enabled").getOrElse(false)
 
-  private def validateRequest(request: RequestHeader): Option[ApiKey] = {
-    env.backOfficeApiKey.some // TODO: actual validation
+  // the websockets cannot be ApiAction themselves, but they take the same authentication: agents and relaying nodes
+  // reach them through the admin api route, which validates their apikey and sends the otoroshi claim
+  private def validateRequest(request: RequestHeader): Future[Option[ApiKey]] = {
+    val authenticated = Promise[ApiKey]()
+    ApiAction
+      .invokeBlock[AnyContent](
+        Request(request, AnyContentAsEmpty),
+        ctx => {
+          authenticated.trySuccess(ctx.apiKey)
+          Results.Ok.vfuture
+        }
+      )
+      .map(_ => authenticated.future.value.flatMap(_.toOption))
   }
 
   def infos = ApiAction {
@@ -979,7 +990,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(u
 
   def tunnelRelayWs(tunnelId: String) = WebSocket.acceptOrResult[Message, Message] { request =>
     if (tunnelsEnabled) {
-      validateRequest(request) match {
+      validateRequest(request).flatMap {
         case None    => Left(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
         case Some(_) => {
           request.getQueryString("mid") match {
@@ -1003,7 +1014,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(u
     if (tunnelsEnabled) {
       val tunnelId: String         = request.getQueryString("tunnel_id").get
       val reversePingPong: Boolean = request.getQueryString("pong_ping").getOrElse("false") == "true"
-      validateRequest(request) match {
+      validateRequest(request).flatMap {
         case None    => Left(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
         case Some(_) =>
           val instanceId = IdGenerator.uuid
