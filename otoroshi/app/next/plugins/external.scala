@@ -187,7 +187,9 @@ class NgExternalValidator extends NgAccessValidator {
         config.cacheExpression match {
           case None                     => externalValidation(ctx, rawUrl, config, None)
           case Some(cacheExpressionRaw) => {
-            val cacheKey = GlobalExpressionLanguage.apply(
+            // the verdict cache is shared by every instance of the plugin: scoped to the route, the instance and the
+            // validation url, a verdict given for one route is never reused on another
+            val cacheKey = s"${ctx.route.cacheableId}::${ctx.idx}::$rawUrl::" + GlobalExpressionLanguage.apply(
               value = cacheExpressionRaw,
               req = ctx.request.some,
               service = None,
