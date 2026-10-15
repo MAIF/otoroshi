@@ -295,6 +295,14 @@ class DataExporterSettingsEntityFormatSpec extends EntityFormatSpec {
       readOk(format, Json.obj("saslConfig" -> Json.obj())).saslConfig mustBe Some(SaslConfig("foo", "bar", "PLAIN", None))
     }
 
+    "round trip a config without sasl settings" in {
+      roundTrip(format, full.copy(saslConfig = None)).saslConfig mustBe None
+    }
+
+    "read null sasl settings as no sasl settings" in {
+      readOk(format, Json.obj("saslConfig" -> JsNull)).saslConfig mustBe None
+    }
+
     "ignore properties holding a non string value" in {
       readOk(format, Json.obj("properties" -> Json.obj("acks" -> 1))).properties mustBe None
     }

@@ -110,7 +110,7 @@ object KafkaConfig {
           topic = (json \ "topic").asOpt[String].getOrElse("otoroshi-events"),
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
           securityProtocol = (json \ "securityProtocol").asOpt[String].getOrElse(SecurityProtocol.PLAINTEXT.name),
-          saslConfig = (json \ "saslConfig").asOpt[JsValue].flatMap(c => SaslConfig.format.reads(c).asOpt),
+          saslConfig = (json \ "saslConfig").asOpt[JsObject].flatMap(c => SaslConfig.format.reads(c).asOpt),
           properties = (json \ "properties").asOpt[Map[String, String]]
         )
       } match {
