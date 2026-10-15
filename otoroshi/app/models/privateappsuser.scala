@@ -147,7 +147,8 @@ object PrivateAppsUser {
             profile = (json \ "profile").as[JsValue],
             token = (json \ "token").asOpt[JsValue].getOrElse(Json.obj()),
             realm = (json \ "realm").asOpt[String].getOrElse("none"),
-            otoroshiData = (json \ "otoroshiData").asOpt[JsValue],
+            // a missing otoroshiData is written as null, which must not read back as a json null
+            otoroshiData = (json \ "otoroshiData").asOpt[JsValue].filterNot(_ == JsNull),
             createdAt = new DateTime((json \ "createdAt").as[Long]),
             expiredAt = new DateTime((json \ "expiredAt").as[Long]),
             lastRefresh = new DateTime((json \ "lastRefresh").as[Long]),

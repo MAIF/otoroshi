@@ -75,8 +75,15 @@ class PrivateAppsUserEntityFormatSpec extends EntityFormatSpec {
       (written(format, full) \ "otoroshiData").as[JsValue] mustBe Json.obj("level" -> 1, "groups" -> Json.arr("admins"))
     }
 
-    // a user without otoroshi data does not round trip: its None is written as null and read back as Some(JsNull)
     val withEmptyData = minimal.copy(otoroshiData = Some(Json.obj()))
+
+    "round trip a minimal user, without otoroshi data" in {
+      roundTrip(format, minimal).otoroshiData mustBe None
+    }
+
+    "read a null otoroshi data as no otoroshi data" in {
+      readOk(format, written(format, minimal) ++ Json.obj("otoroshiData" -> JsNull)).otoroshiData mustBe None
+    }
 
     "round trip a minimal user with empty otoroshi data" in {
       roundTrip(format, withEmptyData)
