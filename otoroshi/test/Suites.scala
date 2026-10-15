@@ -209,7 +209,8 @@ class UnitTests
       new plugins.configs.IzanamiPluginConfigsSpec(),
       new plugins.configs.BodySizePluginConfigsSpec(),
       new plugins.configs.FilesPluginConfigsSpec(),
-      new plugins.configs.OAuthProtectedResourcesPluginConfigsSpec()
+      new plugins.configs.OAuthProtectedResourcesPluginConfigsSpec(),
+      new plugins.configs.MirrorPluginConfigsSpec()
     )
 
 class MapFilterTest
