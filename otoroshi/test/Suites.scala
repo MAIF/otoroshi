@@ -183,7 +183,8 @@ class UnitTests
       new plugins.configs.CorazaPluginConfigsSpec(),
       new plugins.configs.SwaggerPluginConfigsSpec(),
       new plugins.configs.RbacPluginConfigsSpec(),
-      new plugins.configs.HttpsPluginConfigsSpec()
+      new plugins.configs.HttpsPluginConfigsSpec(),
+      new plugins.configs.ImgPluginConfigsSpec()
     )
 
 class MapFilterTest
