@@ -177,7 +177,8 @@ class UnitTests
       new plugins.configs.HtmlPluginConfigsSpec(),
       new plugins.configs.HttpPluginConfigsSpec(),
       new plugins.configs.DeferPluginConfigsSpec(),
-      new plugins.configs.AuthPluginConfigsSpec()
+      new plugins.configs.AuthPluginConfigsSpec(),
+      new plugins.configs.RemoteCatalogsPluginConfigsSpec()
     )
 
 class MapFilterTest
