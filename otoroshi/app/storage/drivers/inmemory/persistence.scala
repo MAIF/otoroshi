@@ -393,6 +393,14 @@ object S3Configuration {
             case "Private"                => CannedAcl.Private
             case "PublicRead"             => CannedAcl.PublicRead
             case "PublicReadWrite"        => CannedAcl.PublicReadWrite
+            // the s3 header values, which is what writes emits
+            case "authenticated-read"        => CannedAcl.AuthenticatedRead
+            case "aws-exec-read"             => CannedAcl.AwsExecRead
+            case "bucket-owner-full-control" => CannedAcl.BucketOwnerFullControl
+            case "bucket-owner-read"         => CannedAcl.BucketOwnerRead
+            case "private"                   => CannedAcl.Private
+            case "public-read"               => CannedAcl.PublicRead
+            case "public-read-write"         => CannedAcl.PublicReadWrite
             case _                        => CannedAcl.Private
           }
           .getOrElse(CannedAcl.Private),

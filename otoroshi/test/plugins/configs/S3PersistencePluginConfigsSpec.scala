@@ -13,7 +13,7 @@ class S3PersistencePluginConfigsSpec extends PluginConfigFormatSpec {
 
     val format = S3Configuration.format
 
-    // the acl stays private: any other acl is lost on the way back (see the report of this spec)
+    // every field set to something else than its default
     val full = S3Configuration(
       bucket = "otoroshi-states",
       endpoint = "https://s3.oto.tools",
@@ -24,7 +24,7 @@ class S3PersistencePluginConfigsSpec extends PluginConfigFormatSpec {
       chunkSize = 5 * 1024 * 1024,
       v4auth = false,
       writeEvery = 30.seconds,
-      acl = CannedAcl.Private,
+      acl = CannedAcl.BucketOwnerFullControl,
       pathStyleAccess = true
     )
 
@@ -73,7 +73,7 @@ class S3PersistencePluginConfigsSpec extends PluginConfigFormatSpec {
       roundTrip(format, S3Configuration.default)
     }
 
-    "round trip a config where every field but the acl is set" in {
+    "round trip a config where every field is set" in {
       roundTrip(format, full)
     }
 
@@ -172,6 +172,31 @@ class S3PersistencePluginConfigsSpec extends PluginConfigFormatSpec {
 
     "read the private acl it writes" in {
       readOk(format, Json.obj("acl" -> "private")).acl mustBe CannedAcl.Private
+    }
+
+    "round trip every canned acl" in {
+      Seq(
+        CannedAcl.AuthenticatedRead,
+        CannedAcl.AwsExecRead,
+        CannedAcl.BucketOwnerFullControl,
+        CannedAcl.BucketOwnerRead,
+        CannedAcl.Private,
+        CannedAcl.PublicRead,
+        CannedAcl.PublicReadWrite
+      ).foreach { acl =>
+        roundTrip(format, S3Configuration.default.copy(acl = acl)).acl mustBe acl
+      }
+    }
+
+    "read every acl from its s3 header value" in {
+      def acl(value: String) = readOk(format, Json.obj("acl" -> value)).acl
+      acl("authenticated-read") mustBe CannedAcl.AuthenticatedRead
+      acl("aws-exec-read") mustBe CannedAcl.AwsExecRead
+      acl("bucket-owner-full-control") mustBe CannedAcl.BucketOwnerFullControl
+      acl("bucket-owner-read") mustBe CannedAcl.BucketOwnerRead
+      acl("private") mustBe CannedAcl.Private
+      acl("public-read") mustBe CannedAcl.PublicRead
+      acl("public-read-write") mustBe CannedAcl.PublicReadWrite
     }
 
     "read an unknown acl as private" in {

@@ -107,7 +107,7 @@ class FilesPluginConfigsSpec extends PluginConfigFormatSpec {
 
     val default = S3Configuration.default
 
-    // every field but the acl, see the acl tests below
+    // every field set to something else than its default
     val full = S3Configuration(
       bucket = "my-bucket",
       endpoint = "https://s3.oto.tools",
@@ -118,7 +118,7 @@ class FilesPluginConfigsSpec extends PluginConfigFormatSpec {
       chunkSize = 1024,
       v4auth = false,
       writeEvery = 30.seconds,
-      acl = CannedAcl.Private,
+      acl = CannedAcl.PublicRead,
       pathStyleAccess = true
     )
 
@@ -142,7 +142,7 @@ class FilesPluginConfigsSpec extends PluginConfigFormatSpec {
       roundTrip(format, default)
     }
 
-    "round trip a config where every field but the acl is set" in {
+    "round trip a config where every field is set" in {
       roundTrip(format, full)
     }
 
@@ -215,6 +215,31 @@ class FilesPluginConfigsSpec extends PluginConfigFormatSpec {
 
     "read an unknown acl as private" in {
       readOk(format, Json.obj("acl" -> "Everyone")).acl mustBe CannedAcl.Private
+    }
+
+    "round trip every canned acl" in {
+      Seq(
+        CannedAcl.AuthenticatedRead,
+        CannedAcl.AwsExecRead,
+        CannedAcl.BucketOwnerFullControl,
+        CannedAcl.BucketOwnerRead,
+        CannedAcl.Private,
+        CannedAcl.PublicRead,
+        CannedAcl.PublicReadWrite
+      ).foreach { acl =>
+        roundTrip(format, S3Configuration.default.copy(acl = acl)).acl mustBe acl
+      }
+    }
+
+    "read every acl from its s3 header value" in {
+      def acl(value: String) = readOk(format, Json.obj("acl" -> value)).acl
+      acl("authenticated-read") mustBe CannedAcl.AuthenticatedRead
+      acl("aws-exec-read") mustBe CannedAcl.AwsExecRead
+      acl("bucket-owner-full-control") mustBe CannedAcl.BucketOwnerFullControl
+      acl("bucket-owner-read") mustBe CannedAcl.BucketOwnerRead
+      acl("private") mustBe CannedAcl.Private
+      acl("public-read") mustBe CannedAcl.PublicRead
+      acl("public-read-write") mustBe CannedAcl.PublicReadWrite
     }
 
     "ignore an acl that is not a string" in {
