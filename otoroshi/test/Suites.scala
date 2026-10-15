@@ -284,7 +284,8 @@ class UnitTests
       new entities.BackOfficeUserEntityFormatSpec(),
       new entities.AdminsEntityFormatSpec(),
       new entities.PrivateAppsUserEntityFormatSpec(),
-      new entities.GlobalConfigEntityFormatSpec()
+      new entities.GlobalConfigEntityFormatSpec(),
+      new entities.DataExporterEntityFormatSpec()
     )
 
 class MapFilterTest
