@@ -307,8 +307,11 @@ class NgResponseCache extends NgRequestTransformer {
     }
   }
 
+  // a request carrying credentials gets a response for its caller only: it is neither served from nor stored in the
+  // cache, which is shared by every caller of the route
   private def filter(req: RequestHeader, config: NgResponseCacheConfig, statusOpt: Option[Int] = None): Boolean = {
-    config.filter match {
+    if (req.headers.get("Authorization").isDefined || req.headers.get("Cookie").isDefined) false
+    else config.filter match {
       case None         => true
       case Some(filter) => {
         val matchPath      =
@@ -427,7 +430,8 @@ class NgResponseCache extends NgRequestTransformer {
                   .getOrElse("text/plain")
                 val headers: Map[String, String] = ctx.rawResponse.headers.filterNot { tuple =>
                   val name = tuple._1.toLowerCase()
-                  name == "content-type" || name == "transfer-encoding" || name == "content-length"
+                  // a cookie set for one caller is never replayed to the others
+                  name == "content-type" || name == "transfer-encoding" || name == "content-length" || name == "set-cookie"
                 }
                 val event                        = Json.obj(
                   "status"  -> ctx.rawResponse.status,

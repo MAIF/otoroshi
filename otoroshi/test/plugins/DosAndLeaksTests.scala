@@ -1,14 +1,17 @@
 package plugins
 
 import functional.{PluginsTestSpecBase, TargetService}
+import org.apache.pekko.http.scaladsl.model.headers.{`Set-Cookie`, HttpCookie}
 import otoroshi.models.*
-import otoroshi.next.models.{NgPluginInstance, NgRoute, NgTarget}
+import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget}
+import otoroshi.next.plugins.*
+import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.plugins.log4j.Log4jExpressionParser
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.json.*
 import play.api.mvc.{DefaultSessionCookieBaker, Session}
 
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.duration.DurationInt
 
 class DosAndLeaksTests(parent: PluginsTestSpecBase) {
@@ -119,6 +122,48 @@ class DosAndLeaksTests(parent: PluginsTestSpecBase) {
     withClue("cookie received by the backend ") {
       received.get() mustBe Some("app=kept")
     }
+    deleteOtoroshiRoute(route).futureValue
+    target.stop()
+  }
+
+  // the response cache used to serve the response to a caller with credentials to every other caller, its
+  // set-cookie included
+  def responseCacheCredentials(): Unit = {
+    val calls  = new AtomicInteger(0)
+    val target = TargetService
+      .full(
+        None,
+        "/",
+        "application/json",
+        _ => {
+          val call = calls.incrementAndGet()
+          (200, s"""{"call":$call}""", List(`Set-Cookie`(HttpCookie("caller", call.toString))))
+        }
+      )
+      .await()
+    val route  = externalRoute(
+      target,
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[NgResponseCache],
+        config = NgPluginInstanceConfig(NgResponseCacheConfig().json.as[JsObject])
+      )
+    )
+    def get(path: String, headers: (String, String)*) = ws
+      .url(s"http://127.0.0.1:$port$path")
+      .withHttpHeaders((Seq("Host" -> route.frontend.domains.head.domain) ++ headers)*)
+      .get()
+      .futureValue
+    get("/anonymous").status mustBe 200
+    await(500.millis)
+    val cached = get("/anonymous")
+    withClue("anonymous calls reaching the backend ") { calls.get() mustBe 1 }
+    withClue("set-cookie served from the cache ") { cached.header("Set-Cookie") mustBe None }
+    get("/anonymous", "Authorization" -> "Bearer caller")
+    withClue("a caller with credentials served from the cache ") { calls.get() mustBe 2 }
+    get("/private", "Cookie" -> "session=first")
+    await(500.millis)
+    get("/private", "Cookie" -> "session=second")
+    withClue("a response to a caller with credentials stored in the cache ") { calls.get() mustBe 4 }
     deleteOtoroshiRoute(route).futureValue
     target.stop()
   }

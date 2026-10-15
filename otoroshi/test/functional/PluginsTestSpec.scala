@@ -49,6 +49,7 @@ class DosAndLeaksSpec extends PluginsTestSpecBase {
     "use the metrics filter as a literal wildcard pattern" in { dos.metricsFilter() }
     "not forward the backoffice cookies through the graphql proxy" in { dos.graphqlProxyCookies() }
     "not forward the otoroshi session cookies to the backends" in { dos.sessionCookies() }
+    "not share the cached responses of callers with credentials" in { dos.responseCacheCredentials() }
   }
 }
 
