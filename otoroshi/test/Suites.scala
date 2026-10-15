@@ -281,7 +281,8 @@ class UnitTests
       new entities.SamlAuthModuleEntityFormatSpec(),
       new entities.WasmAuthModuleEntityFormatSpec(),
       new entities.WorkflowAuthModuleEntityFormatSpec(),
-      new entities.BackOfficeUserEntityFormatSpec()
+      new entities.BackOfficeUserEntityFormatSpec(),
+      new entities.AdminsEntityFormatSpec()
     )
 
 class MapFilterTest
