@@ -268,7 +268,8 @@ class UnitTests
       new entities.CertificateEntityFormatSpec(),
       new entities.JwtVerifierEntityFormatSpec(),
       new entities.ApiEntityFormatSpec(),
-      new entities.ApiPlanEntityFormatSpec()
+      new entities.ApiPlanEntityFormatSpec(),
+      new entities.ApiDocumentationEntityFormatSpec()
     )
 
 class MapFilterTest
