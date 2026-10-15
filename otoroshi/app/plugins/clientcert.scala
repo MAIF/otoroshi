@@ -131,8 +131,7 @@ class HasClientCertMatchingValidator extends AccessValidator {
         _.take(1).map(cert =>
           SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectX500Principal.getName), DN(cert.getIssuerX500Principal.getName))
         )
-      ) //match {
-      .orElse(Some(Seq(SubIss("1234567890", DN("SN=foo"), DN("SN=ca, CN=CA_MAIF_ROOTCA"))))) match {
+      ) match {
       case Some(certs) => {
         val config                 = (context.config \ "HasClientCertMatchingValidator")
           .asOpt[JsValue]

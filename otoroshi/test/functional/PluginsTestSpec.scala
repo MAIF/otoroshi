@@ -69,6 +69,9 @@ class PluginsHardeningSpec extends PluginsTestSpecBase {
     "not let the not match rules of the allowed users plugin let users in" in { hardening.allowedUsers() }
     "keep the request data in the strings of the openfga config" in { hardening.openFgaElInjection() }
     "check an apikey another plugin put in the request" in { hardening.presetApikey() }
+    "not match a legacy client certificate rule without client certificate" in {
+      hardening.legacyClientCertWithoutCertificate()
+    }
     "stop" in { hardening.stop() }
   }
 }

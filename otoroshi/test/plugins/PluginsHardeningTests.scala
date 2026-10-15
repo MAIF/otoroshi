@@ -18,6 +18,7 @@ import otoroshi.models.{
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget}
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.*
+import otoroshi.next.plugins.wrappers.AccessValidatorWrapper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits.BetterSyntax
@@ -416,6 +417,23 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     Seq(active, disabled, elsewhere).foreach { apikey =>
       otoroshiApiCall("DELETE", s"/api/apikeys/${apikey.clientId}").futureValue
     }
+    deleteOtoroshiRoute(r).futureValue
+  }
+
+  // without client certificate, the legacy matcher used to check a fake certificate of its own
+  def legacyClientCertWithoutCertificate(): Unit = {
+    val r = route(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[AccessValidatorWrapper],
+        config = NgPluginInstanceConfig(
+          Json.obj(
+            "plugin"        -> "cp:otoroshi.plugins.clientcert.HasClientCertMatchingValidator",
+            "serialNumbers" -> Json.arr("1234567890")
+          )
+        )
+      )
+    )
+    withClue("a request without client certificate ") { call(r, "/") must not be Status.OK }
     deleteOtoroshiRoute(r).futureValue
   }
 
