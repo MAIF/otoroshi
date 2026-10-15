@@ -249,8 +249,43 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
                 NgAccess.NgAllowed
             }
         }
+        case Some(apikey) if config.validate && !pass               => checkPresetApikey(ctx, config, apikey)
         case _                                                      => NgAccess.NgAllowed.vfuture
       }
+    }
+  }
+
+  // an apikey another plugin put in the request (certificate as apikey, biscuit, ...) went through none of the checks
+  // of this plugin: it has to be active, authorized on the route, and to match the routing and the restrictions. the
+  // quotas are left to the ApikeyQuotas plugin
+  private def checkPresetApikey(ctx: NgAccessContext, config: NgApikeyCallsConfig, apikey: ApiKey)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[NgAccess] = {
+    val routeId = ctx.route.cacheableId
+    def denied(message: String, code: String): Future[NgAccess] = Errors
+      .craftResponseResult(
+        message,
+        Results.Unauthorized,
+        ctx.request,
+        None,
+        code.some,
+        attrs = ctx.attrs,
+        maybeRoute = ctx.route.some
+      )
+      .map(NgAccess.NgDenied.apply)
+    val authorized = apikey.authorizedOnServiceOrGroups(routeId, ctx.route.groups) ||
+      ctx.route.apiRef.exists(ref => apikey.authorizedOnApi(ref.id))
+    if (apikey.isInactive()) {
+      denied("bad apikey", "errors.bad.api.key")
+    } else if (!authorized) {
+      denied("invalid apikey", "errors.invalid.api.key")
+    } else if (config.routing.enabled && !apikey.matchRouting(config.legacy)) {
+      denied("invalid apikey", "errors.invalid.api.key")
+    } else {
+      val (restricted, errResult) =
+        apikey.restrictions.handleRestrictions(routeId, None, ctx.route.some, apikey.some, ctx.request, ctx.attrs)
+      if (restricted) errResult.map(NgAccess.NgDenied.apply) else NgAccess.NgAllowed.vfuture
     }
   }
 

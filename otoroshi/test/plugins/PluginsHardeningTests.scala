@@ -3,7 +3,9 @@ package plugins
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import functional.{PluginsTestSpecBase, TargetService}
+import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.model.HttpRequest
+import otoroshi.env.Env
 import otoroshi.models.{
   ApiKey,
   GlobalJwtVerifier,
@@ -15,7 +17,7 @@ import otoroshi.models.{
 }
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget}
 import otoroshi.next.plugins.*
-import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits.BetterSyntax
@@ -25,7 +27,27 @@ import play.api.libs.json.*
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
+
+// puts the apikey named by a header in the request without any check, the way an extractor plugin does
+class PresetApikeyProbe extends NgPreRouting {
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory]           = Seq.empty
+  override def steps: Seq[NgStep]                          = Seq(NgStep.PreRoute)
+  override def multiInstance: Boolean                      = true
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def isPreRouteAsync: Boolean                    = false
+
+  override def preRouteSync(
+      ctx: NgPreRoutingContext
+  )(using env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
+    ctx.request.headers.get("X-Preset-Apikey").flatMap(id => env.proxyState.apikey(id)).foreach { apikey =>
+      ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+    }
+    Right(Done)
+  }
+}
 
 // access control plugins that let requests through when they should not
 class PluginsHardeningTests(parent: PluginsTestSpecBase) {
@@ -357,6 +379,44 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     deleteOtoroshiRoute(r).futureValue
     fga.stop()
     injected.stop()
+  }
+
+  // an apikey another plugin put in the request went through none of the checks of the apikey plugin
+  def presetApikey(): Unit = {
+    val r         = route(
+      NgPluginInstance(plugin = NgPluginHelper.pluginId[PresetApikeyProbe]),
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[ApikeyCalls],
+        config = NgPluginInstanceConfig(NgApikeyCallsConfig().json.as[JsObject])
+      )
+    )
+    val active    = ApiKey(
+      clientId = "hardening-preset-active",
+      clientSecret = "hardening-preset-secret",
+      clientName = "hardening-preset-active",
+      authorizedEntities = Seq(RouteIdentifier(r.id))
+    )
+    val disabled  = active.copy(clientId = "hardening-preset-disabled", enabled = false)
+    val elsewhere = active.copy(
+      clientId = "hardening-preset-elsewhere",
+      authorizedEntities = Seq(RouteIdentifier("hardening-another-route"))
+    )
+    // through /api/apikeys: the group endpoint of createOtoroshiApiKey would authorize them on the default group too
+    Seq(active, disabled, elsewhere).foreach { apikey =>
+      otoroshiApiCall("POST", "/api/apikeys", Some(apikey.toJson)).futureValue._2 mustBe Status.CREATED
+    }
+    await(1.second)
+    withClue("an active apikey authorized on the route ") {
+      call(r, "/", "X-Preset-Apikey" -> active.clientId) mustBe Status.OK
+    }
+    withClue("a disabled apikey ") { call(r, "/", "X-Preset-Apikey" -> disabled.clientId) mustBe Status.UNAUTHORIZED }
+    withClue("an apikey authorized on another route ") {
+      call(r, "/", "X-Preset-Apikey" -> elsewhere.clientId) mustBe Status.UNAUTHORIZED
+    }
+    Seq(active, disabled, elsewhere).foreach { apikey =>
+      otoroshiApiCall("DELETE", s"/api/apikeys/${apikey.clientId}").futureValue
+    }
+    deleteOtoroshiRoute(r).futureValue
   }
 
   def stop(): Unit = backend.stop()
