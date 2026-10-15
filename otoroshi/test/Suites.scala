@@ -210,7 +210,8 @@ class UnitTests
       new plugins.configs.BodySizePluginConfigsSpec(),
       new plugins.configs.FilesPluginConfigsSpec(),
       new plugins.configs.OAuthProtectedResourcesPluginConfigsSpec(),
-      new plugins.configs.MirrorPluginConfigsSpec()
+      new plugins.configs.MirrorPluginConfigsSpec(),
+      new plugins.configs.ContextPluginConfigsSpec()
     )
 
 class MapFilterTest
