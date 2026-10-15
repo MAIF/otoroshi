@@ -8,6 +8,7 @@ import org.apache.pekko.http.scaladsl.model.HttpRequest
 import otoroshi.env.Env
 import otoroshi.models.{
   ApiKey,
+  DefaultToken,
   GlobalJwtVerifier,
   HSAlgoSettings,
   InHeader,
@@ -483,6 +484,41 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     }
     deleteOtoroshiRoute(bounded).futureValue
     deleteOtoroshiRoute(unbounded).futureValue
+  }
+
+  // fail_if_present used to refuse the requests without a token and to let the ones with a token through
+  def jwtSignerFailIfPresent(): Unit = {
+    val verifier = GlobalJwtVerifier(
+      id = "hardening-signer-verifier",
+      name = "hardening-signer-verifier",
+      desc = "hardening-signer-verifier",
+      strict = true,
+      source = InHeader(name = "X-Signed-Token"),
+      algoSettings = HSAlgoSettings(512, "hardening-signer-secret"),
+      strategy = DefaultToken(token = Json.obj("sub" -> "signed"))
+    )
+    createOtoroshiVerifier(verifier).futureValue
+    val failing  = route(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[JwtSigner],
+        config = NgPluginInstanceConfig(
+          NgJwtSignerConfig(verifier = Some(verifier.id), failIfPresent = true).json.as[JsObject]
+        )
+      )
+    )
+    val default  = route(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[JwtSigner],
+        config = NgPluginInstanceConfig(Json.obj("verifier" -> verifier.id))
+      )
+    )
+    withClue("fail if present, without token ") { call(failing, "/") mustBe Status.OK }
+    withClue("fail if present, with a token ") {
+      call(failing, "/", "X-Signed-Token" -> "a-token") mustBe Status.BAD_REQUEST
+    }
+    withClue("default config, with a token ") { call(default, "/", "X-Signed-Token" -> "a-token") mustBe Status.OK }
+    deleteOtoroshiRoute(failing).futureValue
+    deleteOtoroshiRoute(default).futureValue
   }
 
   def stop(): Unit = backend.stop()

@@ -305,7 +305,7 @@ object NgJwtSignerConfig {
       NgJwtSignerConfig(
         verifier = json.select("verifier").asOpt[String],
         replaceIfPresent = json.select("replace_if_present").asOpt[Boolean].getOrElse(true),
-        failIfPresent = json.select("fail_if_present").asOpt[Boolean].getOrElse(true)
+        failIfPresent = json.select("fail_if_present").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -350,9 +350,10 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
           env.proxyState.jwtVerifier(verifierId) match {
             case None           => NgAccess.NgAllowed.vfuture
             case Some(verifier) =>
+              // a token already present in the request is refused
               verifier.source.token(ctx.request) match {
-                case None => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "bad request"))).vfuture
-                case _    => NgAccess.NgAllowed.vfuture
+                case Some(_) => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "bad request"))).vfuture
+                case None    => NgAccess.NgAllowed.vfuture
               }
           }
       }

@@ -73,6 +73,7 @@ class PluginsHardeningSpec extends PluginsTestSpecBase {
       hardening.legacyClientCertWithoutCertificate()
     }
     "bound the replay of an hmac signature when asked" in { hardening.hmacReplay() }
+    "refuse a present token in the jwt signer when asked" in { hardening.jwtSignerFailIfPresent() }
     "stop" in { hardening.stop() }
   }
 }
