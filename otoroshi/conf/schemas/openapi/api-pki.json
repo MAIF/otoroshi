@@ -1,0 +1,442 @@
+{
+  "GenKeyPairQuery": {
+    "type": "object",
+    "description": "The settings of a key pair to generate. Every field is optional, an empty object generating a 2048 bits rsa key pair",
+    "properties": {
+      "algo": {
+        "type": "string",
+        "description": "The algorithm of the key pair, as known by BouncyCastle: `rsa`, `ecdsa` (an elliptic curve key pair, its curve picked from the size), or another algorithm name such as `ec` or `dsa`. Defaults to `rsa`",
+        "example": "rsa"
+      },
+      "size": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The size of the key in bits, 2048 by default: 2048 or 4096 for an rsa key; 256, 384 or 521 for an `ecdsa` key (the curves secp256r1, secp384r1 and secp521r1, any other size giving secp256r1)",
+        "example": 2048
+      }
+    },
+    "example": {
+      "algo": "rsa",
+      "size": 2048
+    }
+  },
+  "GenCsrQuery": {
+    "type": "object",
+    "description": "The settings of a certificate (or of a certificate signing request) to generate with the pki of otoroshi: its key pair, its subject, its alternative names, its usages and its lifetime. Its key pair is described by `key`, or by `keyType` and `keySize`: a query that gives none of them is refused. The certificate is a server certificate (extended key usage `serverAuth`) unless `client` or `ca` says otherwise",
+    "properties": {
+      "hosts": {
+        "type": "array",
+        "description": "The dns names written as subject alternative names of the certificate (ignored for a ca)",
+        "items": {
+          "type": "string",
+          "description": "A dns name, wildcards accepted",
+          "example": "api.oto.tools"
+        },
+        "example": [
+          "api.oto.tools",
+          "*.api.oto.tools"
+        ]
+      },
+      "key": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GenKeyPairQuery"
+          }
+        ],
+        "description": "The key pair of the certificate. Required unless `keyType` and `keySize` are given, `{}` giving a 2048 bits rsa key pair"
+      },
+      "keyType": {
+        "type": "string",
+        "writeOnly": true,
+        "description": "The algorithm of the key pair (`RSA`, `ECDSA`...), read lowercased when `key` is absent, `keySize` being then required too. Never written back",
+        "example": "RSA"
+      },
+      "keySize": {
+        "type": "integer",
+        "format": "int32",
+        "writeOnly": true,
+        "description": "The size of the key in bits, read when `key` is absent, `keyType` being then required too. Never written back",
+        "example": 2048
+      },
+      "name": {
+        "type": "object",
+        "description": "The parts of the distinguished name of the subject (`CN`, `OU`, `O`, `L`, `ST`, `C`...), used when `subject` is absent",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the part of the distinguished name"
+        },
+        "example": {
+          "CN": "api.oto.tools",
+          "O": "Oto",
+          "C": "FR"
+        }
+      },
+      "subject": {
+        "type": "string",
+        "nullable": true,
+        "description": "The distinguished name of the subject of the certificate. When absent, it is built from `name`",
+        "example": "CN=api.oto.tools, OU=Platform, O=Oto, C=FR"
+      },
+      "client": {
+        "type": "boolean",
+        "description": "Whether the certificate is a client certificate (extended key usages `clientAuth` and `serverAuth`). Defaults to false",
+        "example": false
+      },
+      "ca": {
+        "type": "boolean",
+        "description": "Whether the certificate is a certificate authority (basic constraint `CA:true`, key usages `keyCertSign` and `cRLSign`). Defaults to false",
+        "example": false
+      },
+      "includeAIA": {
+        "type": "boolean",
+        "writeOnly": true,
+        "description": "Whether to add the authority information access extension (the ocsp responder and the ca issuers urls of otoroshi) to a certificate signed by the root ca of otoroshi. Defaults to false, never written back",
+        "example": false
+      },
+      "duration": {
+        "type": "integer",
+        "format": "int64",
+        "description": "How long the certificate is valid from now, in milliseconds. Defaults to 365 days",
+        "example": 31536000000
+      },
+      "signatureAlg": {
+        "type": "string",
+        "description": "The signature algorithm of the certificate, as known by BouncyCastle. Defaults to `SHA256WithRSAEncryption`, `SHA256withECDSA` being the one of an elliptic curve key pair",
+        "example": "SHA256WithRSAEncryption"
+      },
+      "digestAlg": {
+        "type": "string",
+        "description": "The digest algorithm of the signature. Defaults to `SHA-256`",
+        "example": "SHA-256"
+      }
+    },
+    "example": {
+      "hosts": [
+        "api.oto.tools"
+      ],
+      "key": {
+        "algo": "rsa",
+        "size": 2048
+      },
+      "name": {},
+      "subject": "CN=api.oto.tools, OU=Platform, O=Oto, C=FR",
+      "client": false,
+      "ca": false,
+      "duration": 31536000000,
+      "signatureAlg": "SHA256WithRSAEncryption",
+      "digestAlg": "SHA-256"
+    }
+  },
+  "GenCsrResponse": {
+    "type": "object",
+    "description": "A certificate signing request generated by the pki of otoroshi, with the key pair it was generated for. Nothing is stored",
+    "properties": {
+      "csr": {
+        "type": "string",
+        "description": "The certificate signing request, PEM encoded",
+        "example": "-----BEGIN CERTIFICATE REQUEST-----\nMIH/MIGlAgEAMBgxFjAUBgNVBAMMDWFwaS5vdG8udG9vbHMwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQMgfryxgBtjHjHfcBj\nWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/oCswKQYJKoZIhvcNAQkOMRww\nGjAYBgNVHREEETAPgg1hcGkub3RvLnRvb2xzMAoGCCqGSM49BAMCA0kAMEYCIQCn\n5pWVAG5d9/upPkJ8tZX7lvWtVGCnD+X3NXTpUFodmAIhAO/f4pwl3yFllNNMfFbJ\na5A8IhGS5zAzdYWCXUeTNkGV\n-----END CERTIFICATE REQUEST-----\n"
+      },
+      "publicKey": {
+        "type": "string",
+        "description": "The public key of the certificate signing request, PEM encoded",
+        "example": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAERF0PTqw0mFG+pt9sSZpQXQbQTGnk\nDIH68sYAbYx4x33AY1kkpr3BYRfSR6i4Jsgtkwi02tStrWzQ4UJE77OCvw==\n-----END PUBLIC KEY-----\n"
+      },
+      "privateKey": {
+        "type": "string",
+        "description": "The private key of the certificate signing request, PEM encoded (PKCS#8)",
+        "example": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgcsXGchfAf/T24w8q\nDnDBDm8LEi/bNoq2N2MIDfGmu+ShRANCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQM\ngfryxgBtjHjHfcBjWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/\n-----END PRIVATE KEY-----\n"
+      }
+    },
+    "example": {
+      "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIH/MIGlAgEAMBgxFjAUBgNVBAMMDWFwaS5vdG8udG9vbHMwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQMgfryxgBtjHjHfcBj\nWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/oCswKQYJKoZIhvcNAQkOMRww\nGjAYBgNVHREEETAPgg1hcGkub3RvLnRvb2xzMAoGCCqGSM49BAMCA0kAMEYCIQCn\n5pWVAG5d9/upPkJ8tZX7lvWtVGCnD+X3NXTpUFodmAIhAO/f4pwl3yFllNNMfFbJ\na5A8IhGS5zAzdYWCXUeTNkGV\n-----END CERTIFICATE REQUEST-----\n",
+      "publicKey": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAERF0PTqw0mFG+pt9sSZpQXQbQTGnk\nDIH68sYAbYx4x33AY1kkpr3BYRfSR6i4Jsgtkwi02tStrWzQ4UJE77OCvw==\n-----END PUBLIC KEY-----\n",
+      "privateKey": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgcsXGchfAf/T24w8q\nDnDBDm8LEi/bNoq2N2MIDfGmu+ShRANCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQM\ngfryxgBtjHjHfcBjWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/\n-----END PRIVATE KEY-----\n"
+    }
+  },
+  "SignCertResponse": {
+    "type": "object",
+    "description": "A certificate signed by a certificate authority of otoroshi from a certificate signing request. Nothing is stored",
+    "properties": {
+      "cert": {
+        "type": "string",
+        "description": "The signed certificate, PEM encoded",
+        "example": "-----BEGIN CERTIFICATE-----\nMIIBmDCCAT+gAwIBAgIUHmaApVzaf97nvdtkn1zXWPCsNw4wCgYIKoZIzj0EAwIw\nIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNTIw\nMDM0OFoXDTI3MTAxNTIwMDM0OFowGDEWMBQGA1UEAwwNYXBpLm90by50b29sczBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABERdD06sNJhRvqbfbEmaUF0G0Exp5AyB\n+vLGAG2MeMd9wGNZJKa9wWEX0keouCbILZMItNrUra1s0OFCRO+zgr+jXDBaMBgG\nA1UdEQQRMA+CDWFwaS5vdG8udG9vbHMwHQYDVR0OBBYEFCMIuwvZa6WNpN6l/R2e\nBqQCkQ1yMB8GA1UdIwQYMBaAFC0ILPN7bjaQP5qU2j762hOZtZTlMAoGCCqGSM49\nBAMCA0cAMEQCIF9CP8IoYL4nXRAfBDwZvjPE09nS6+ClleeFlY2tQ6exAiAeuJ1F\niYzxB++dXcZk2e8bHQG/t0Wvaz/5RXvwPHlawg==\n-----END CERTIFICATE-----\n"
+      },
+      "csr": {
+        "type": "string",
+        "description": "The certificate signing request the certificate was signed from, PEM encoded",
+        "example": "-----BEGIN CERTIFICATE REQUEST-----\nMIH/MIGlAgEAMBgxFjAUBgNVBAMMDWFwaS5vdG8udG9vbHMwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQMgfryxgBtjHjHfcBj\nWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/oCswKQYJKoZIhvcNAQkOMRww\nGjAYBgNVHREEETAPgg1hcGkub3RvLnRvb2xzMAoGCCqGSM49BAMCA0kAMEYCIQCn\n5pWVAG5d9/upPkJ8tZX7lvWtVGCnD+X3NXTpUFodmAIhAO/f4pwl3yFllNNMfFbJ\na5A8IhGS5zAzdYWCXUeTNkGV\n-----END CERTIFICATE REQUEST-----\n"
+      },
+      "ca": {
+        "type": "string",
+        "description": "The certificate of the certificate authority that signed the certificate, PEM encoded",
+        "example": "-----BEGIN CERTIFICATE-----\nMIIBqzCCAVGgAwIBAgIUDSkuOt38oc3hi49VAroJHYJ2iTcwCgYIKoZIzj0EAwIw\nIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNTIw\nMDM0OFoXDTM2MTAxMjIwMDM0OFowIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJt\nZWRpYXRlIENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYzx8Kq5ZtmeRKku9\nogbFmYAAHv9A6oH+RxB9diMlkzfWglovvBAslATi1Ej3k9+mnn8smOmfhrB+NpwJ\nsmt7NaNjMGEwHQYDVR0OBBYEFC0ILPN7bjaQP5qU2j762hOZtZTlMB8GA1UdIwQY\nMBaAFC0ILPN7bjaQP5qU2j762hOZtZTlMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0P\nAQH/BAQDAgEGMAoGCCqGSM49BAMCA0gAMEUCIDj0PB7h6v295PTJYcmlxVIUFwam\nHrQNd32/prLBBUmbAiEA3s6SteAGZXY9Og07TmAWYEOwUj1SROef3fKrlIAX+Kw=\n-----END CERTIFICATE-----\n"
+      }
+    },
+    "example": {
+      "cert": "-----BEGIN CERTIFICATE-----\nMIIBmDCCAT+gAwIBAgIUHmaApVzaf97nvdtkn1zXWPCsNw4wCgYIKoZIzj0EAwIw\nIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNTIw\nMDM0OFoXDTI3MTAxNTIwMDM0OFowGDEWMBQGA1UEAwwNYXBpLm90by50b29sczBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABERdD06sNJhRvqbfbEmaUF0G0Exp5AyB\n+vLGAG2MeMd9wGNZJKa9wWEX0keouCbILZMItNrUra1s0OFCRO+zgr+jXDBaMBgG\nA1UdEQQRMA+CDWFwaS5vdG8udG9vbHMwHQYDVR0OBBYEFCMIuwvZa6WNpN6l/R2e\nBqQCkQ1yMB8GA1UdIwQYMBaAFC0ILPN7bjaQP5qU2j762hOZtZTlMAoGCCqGSM49\nBAMCA0cAMEQCIF9CP8IoYL4nXRAfBDwZvjPE09nS6+ClleeFlY2tQ6exAiAeuJ1F\niYzxB++dXcZk2e8bHQG/t0Wvaz/5RXvwPHlawg==\n-----END CERTIFICATE-----\n",
+      "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIH/MIGlAgEAMBgxFjAUBgNVBAMMDWFwaS5vdG8udG9vbHMwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQMgfryxgBtjHjHfcBj\nWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/oCswKQYJKoZIhvcNAQkOMRww\nGjAYBgNVHREEETAPgg1hcGkub3RvLnRvb2xzMAoGCCqGSM49BAMCA0kAMEYCIQCn\n5pWVAG5d9/upPkJ8tZX7lvWtVGCnD+X3NXTpUFodmAIhAO/f4pwl3yFllNNMfFbJ\na5A8IhGS5zAzdYWCXUeTNkGV\n-----END CERTIFICATE REQUEST-----\n",
+      "ca": "-----BEGIN CERTIFICATE-----\nMIIBqzCCAVGgAwIBAgIUDSkuOt38oc3hi49VAroJHYJ2iTcwCgYIKoZIzj0EAwIw\nIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNTIw\nMDM0OFoXDTM2MTAxMjIwMDM0OFowIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJt\nZWRpYXRlIENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYzx8Kq5ZtmeRKku9\nogbFmYAAHv9A6oH+RxB9diMlkzfWglovvBAslATi1Ej3k9+mnn8smOmfhrB+NpwJ\nsmt7NaNjMGEwHQYDVR0OBBYEFC0ILPN7bjaQP5qU2j762hOZtZTlMB8GA1UdIwQY\nMBaAFC0ILPN7bjaQP5qU2j762hOZtZTlMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0P\nAQH/BAQDAgEGMAoGCCqGSM49BAMCA0gAMEUCIDj0PB7h6v295PTJYcmlxVIUFwam\nHrQNd32/prLBBUmbAiEA3s6SteAGZXY9Og07TmAWYEOwUj1SROef3fKrlIAX+Kw=\n-----END CERTIFICATE-----\n"
+    }
+  },
+  "GenCertResponse": {
+    "type": "object",
+    "description": "A certificate ordered from Let's Encrypt, with its private key and the certificate of the authority that issued it",
+    "properties": {
+      "serial": {
+        "type": "integer",
+        "description": "The serial number of the certificate. It can be greater than a 64 bits integer",
+        "example": 8922432013914401082
+      },
+      "cert": {
+        "type": "string",
+        "description": "The certificate, PEM encoded",
+        "example": "-----BEGIN CERTIFICATE-----\nMIIBmDCCAT+gAwIBAgIUHmaApVzaf97nvdtkn1zXWPCsNw4wCgYIKoZIzj0EAwIw\nIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNTIw\nMDM0OFoXDTI3MTAxNTIwMDM0OFowGDEWMBQGA1UEAwwNYXBpLm90by50b29sczBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABERdD06sNJhRvqbfbEmaUF0G0Exp5AyB\n+vLGAG2MeMd9wGNZJKa9wWEX0keouCbILZMItNrUra1s0OFCRO+zgr+jXDBaMBgG\nA1UdEQQRMA+CDWFwaS5vdG8udG9vbHMwHQYDVR0OBBYEFCMIuwvZa6WNpN6l/R2e\nBqQCkQ1yMB8GA1UdIwQYMBaAFC0ILPN7bjaQP5qU2j762hOZtZTlMAoGCCqGSM49\nBAMCA0cAMEQCIF9CP8IoYL4nXRAfBDwZvjPE09nS6+ClleeFlY2tQ6exAiAeuJ1F\niYzxB++dXcZk2e8bHQG/t0Wvaz/5RXvwPHlawg==\n-----END CERTIFICATE-----\n"
+      },
+      "csr": {
+        "type": "string",
+        "description": "A certificate signing request built for the domain and the subject of the certificate, PEM encoded",
+        "example": "-----BEGIN CERTIFICATE REQUEST-----\nMIH/MIGlAgEAMBgxFjAUBgNVBAMMDWFwaS5vdG8udG9vbHMwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQMgfryxgBtjHjHfcBj\nWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/oCswKQYJKoZIhvcNAQkOMRww\nGjAYBgNVHREEETAPgg1hcGkub3RvLnRvb2xzMAoGCCqGSM49BAMCA0kAMEYCIQCn\n5pWVAG5d9/upPkJ8tZX7lvWtVGCnD+X3NXTpUFodmAIhAO/f4pwl3yFllNNMfFbJ\na5A8IhGS5zAzdYWCXUeTNkGV\n-----END CERTIFICATE REQUEST-----\n"
+      },
+      "key": {
+        "type": "string",
+        "description": "The private key of the certificate, PEM encoded (PKCS#8)",
+        "example": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgcsXGchfAf/T24w8q\nDnDBDm8LEi/bNoq2N2MIDfGmu+ShRANCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQM\ngfryxgBtjHjHfcBjWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/\n-----END PRIVATE KEY-----\n"
+      },
+      "ca": {
+        "type": "string",
+        "description": "The certificate of the authority that issued the certificate, PEM encoded",
+        "example": "-----BEGIN CERTIFICATE-----\nMIIBqzCCAVGgAwIBAgIUDSkuOt38oc3hi49VAroJHYJ2iTcwCgYIKoZIzj0EAwIw\nIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNTIw\nMDM0OFoXDTM2MTAxMjIwMDM0OFowIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJt\nZWRpYXRlIENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYzx8Kq5ZtmeRKku9\nogbFmYAAHv9A6oH+RxB9diMlkzfWglovvBAslATi1Ej3k9+mnn8smOmfhrB+NpwJ\nsmt7NaNjMGEwHQYDVR0OBBYEFC0ILPN7bjaQP5qU2j762hOZtZTlMB8GA1UdIwQY\nMBaAFC0ILPN7bjaQP5qU2j762hOZtZTlMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0P\nAQH/BAQDAgEGMAoGCCqGSM49BAMCA0gAMEUCIDj0PB7h6v295PTJYcmlxVIUFwam\nHrQNd32/prLBBUmbAiEA3s6SteAGZXY9Og07TmAWYEOwUj1SROef3fKrlIAX+Kw=\n-----END CERTIFICATE-----\n"
+      },
+      "query": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GenCsrQuery"
+          }
+        ],
+        "nullable": true,
+        "description": "The domain and the subject of the certificate, as a certificate query"
+      },
+      "certId": {
+        "type": "string",
+        "description": "The id of the certificate entity otoroshi stored for the certificate",
+        "example": "LLMiLgA3D0Y7zdWv0Oy9ZW7UGvj3cJmnrcSmOVCSBgcnixHXuRSzRWy0ED8B5j4Q"
+      }
+    }
+  },
+  "GeneratedCertificate": {
+    "description": "A certificate generated by the pki of otoroshi, as a certificate entity, with the id it was stored under",
+    "allOf": [
+      {
+        "$ref": "#/components/schemas/pki.otoroshi.io.Certificate"
+      },
+      {
+        "type": "object",
+        "description": "The id the certificate was stored under",
+        "properties": {
+          "certId": {
+            "type": "string",
+            "description": "The id of the stored certificate entity, the same as its `id`. Absent when the certificate is not stored (`persist=false`)",
+            "example": "LLMiLgA3D0Y7zdWv0Oy9ZW7UGvj3cJmnrcSmOVCSBgcnixHXuRSzRWy0ED8B5j4Q"
+          }
+        }
+      }
+    ]
+  },
+  "LetsEncryptCertificateQuery": {
+    "type": "object",
+    "description": "The domain of a certificate to order from Let's Encrypt",
+    "required": [
+      "host"
+    ],
+    "properties": {
+      "host": {
+        "type": "string",
+        "description": "The domain of the certificate. It has to resolve to this otoroshi, Let's Encrypt validating the order with an http-01 challenge served by otoroshi",
+        "example": "www.example.com"
+      }
+    },
+    "example": {
+      "host": "www.example.com"
+    }
+  },
+  "CertificateValidity": {
+    "type": "object",
+    "description": "Whether a certificate can be loaded by otoroshi",
+    "properties": {
+      "valid": {
+        "type": "boolean",
+        "description": "Whether the private key of the certificate can be read (with its password, if any) and its chain holds at least one certificate, the way otoroshi loads a certificate to serve tls. Neither its validity period nor its revocation are checked",
+        "example": true
+      }
+    },
+    "example": {
+      "valid": true
+    }
+  },
+  "CertificateExtension": {
+    "type": "object",
+    "description": "An extension of an X509 certificate",
+    "properties": {
+      "oid": {
+        "type": "string",
+        "description": "The object identifier of the extension, in dotted notation: `2.5.29.17` for the subject alternative names, `2.5.29.19` for the basic constraints, `2.5.29.15` for the key usages, `2.5.29.37` for the extended key usages...",
+        "example": "2.5.29.17"
+      },
+      "value": {
+        "type": "string",
+        "description": "The raw DER encoded value of the extension, its bytes read as an utf-8 string: the readable parts (a dns name) show through, the others are unreadable",
+        "example": "\u0004\u00110\u000f�\rapi.oto.tools"
+      }
+    },
+    "example": {
+      "oid": "2.5.29.17",
+      "value": "\u0004\u00110\u000f�\rapi.oto.tools"
+    }
+  },
+  "CertificateData": {
+    "type": "object",
+    "description": "What an X509 certificate holds: its subject, its issuer, its validity period, its serial number, its signature, its public key, its usages and its extensions",
+    "properties": {
+      "issuerDN": {
+        "type": "string",
+        "description": "The distinguished name of the issuer of the certificate",
+        "example": "CN=Otoroshi Intermediate CA"
+      },
+      "notAfter": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The end of the validity period of the certificate, a timestamp in milliseconds",
+        "example": 1823630628000
+      },
+      "notBefore": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The start of the validity period of the certificate, a timestamp in milliseconds",
+        "example": 1792094628000
+      },
+      "serialNumber": {
+        "type": "string",
+        "description": "The serial number of the certificate, in lowercase hexadecimal",
+        "example": "7bd2d8a4c1f0e93a"
+      },
+      "serialNumberLng": {
+        "type": "integer",
+        "description": "The serial number of the certificate, as a number. It can be greater than a 64 bits integer",
+        "example": 8922432013914401082
+      },
+      "sigAlgName": {
+        "type": "string",
+        "description": "The name of the signature algorithm of the certificate",
+        "example": "SHA256withECDSA"
+      },
+      "sigAlgOID": {
+        "type": "string",
+        "description": "The object identifier of the signature algorithm of the certificate",
+        "example": "1.2.840.10045.4.3.2"
+      },
+      "_signature": {
+        "type": "string",
+        "format": "byte",
+        "description": "The signature of the certificate, base64 encoded",
+        "example": "MEQCIF9CP8IoYL4nXRAfBDwZvjPE09nS6+ClleeFlY2tQ6exAiAeuJ1FiYzxB++dXcZk2e8bHQG/t0Wvaz/5RXvwPHlawg=="
+      },
+      "signature": {
+        "type": "string",
+        "description": "The sha-256 digest of the signature of the certificate, as uppercase hexadecimal bytes separated by colons",
+        "example": "2E:F2:BE:69:38:7B:F6:87:2F:71:C4:55:4A:E1:58:5E:9B:73:90:BD:AD:0F:7B:06:9D:7E:3F:0A:0A:6C:09:F8"
+      },
+      "subjectDN": {
+        "type": "string",
+        "description": "The distinguished name of the subject of the certificate",
+        "example": "CN=api.oto.tools"
+      },
+      "domain": {
+        "type": "string",
+        "description": "The main domain of the certificate: its first subject alternative name, or the common name of its subject, or its whole subject",
+        "example": "api.oto.tools"
+      },
+      "rawDomain": {
+        "type": "string",
+        "nullable": true,
+        "description": "The common name of the subject of the certificate, null when it has none",
+        "example": "api.oto.tools"
+      },
+      "version": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The version of the X509 format of the certificate",
+        "example": 3
+      },
+      "type": {
+        "type": "string",
+        "description": "The type of the certificate, as named by the java certificate factory: always `X.509`",
+        "example": "X.509"
+      },
+      "publicKey": {
+        "type": "string",
+        "description": "The public key of the certificate, PEM encoded",
+        "example": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAERF0PTqw0mFG+pt9sSZpQXQbQTGnk\nDIH68sYAbYx4x33AY1kkpr3BYRfSR6i4Jsgtkwi02tStrWzQ4UJE77OCvw==\n-----END PUBLIC KEY-----\n"
+      },
+      "selfSigned": {
+        "type": "boolean",
+        "description": "Whether the certificate is self signed",
+        "example": false
+      },
+      "constraints": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The basic constraints of the certificate: -1 when it is not a certificate authority, otherwise the number of intermediate certificate authorities allowed under it (2147483647 when unlimited)",
+        "example": -1
+      },
+      "ca": {
+        "type": "boolean",
+        "description": "Whether the certificate is a certificate authority",
+        "example": false
+      },
+      "client": {
+        "type": "boolean",
+        "description": "Whether the certificate can authenticate a client (extended key usage `clientAuth`)",
+        "example": false
+      },
+      "subAltNames": {
+        "type": "array",
+        "description": "The subject alternative names of the certificate",
+        "items": {
+          "type": "string",
+          "description": "A subject alternative name",
+          "example": "api.oto.tools"
+        },
+        "example": [
+          "api.oto.tools"
+        ]
+      },
+      "cExtensions": {
+        "type": "array",
+        "description": "The extensions of the certificate marked critical, that a reader has to understand to accept the certificate (like the basic constraints or the key usages)",
+        "items": {
+          "$ref": "#/components/schemas/CertificateExtension"
+        },
+        "example": [
+          {
+            "oid": "2.5.29.19",
+            "value": "\u0004\u00050\u0003\u0001\u0001�"
+          }
+        ]
+      },
+      "ncExtensions": {
+        "type": "array",
+        "description": "The extensions of the certificate that are not marked critical (like the subject alternative names)",
+        "items": {
+          "$ref": "#/components/schemas/CertificateExtension"
+        },
+        "example": [
+          {
+            "oid": "2.5.29.17",
+            "value": "\u0004\u00110\u000f�\rapi.oto.tools"
+          }
+        ]
+      }
+    }
+  }
+}
