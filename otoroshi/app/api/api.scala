@@ -248,10 +248,11 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       case e: JsError             => e
       case JsSuccess(value, path) => JsSuccess(value.json, path)
     }
-    // an otoroshi admin carries the rights of its holder: a user cannot write one with more than it already has,
-    // like UsersController.checkNewUserRights
+    // otoroshi admins and apikeys carry the rights of their holder: a user cannot write one with more than it already
+    // has, like UsersController.checkNewUserRights and the typed apikeys api
     def grantsMoreThan(user: BackOfficeUser): Boolean = format.reads(json) match {
       case JsSuccess(admin: OtoroshiAdmin, _) => !user.rights.covers(admin.rights)
+      case JsSuccess(apikey: ApiKey, _)       => !ApiActionContext.canUserGrantApikeyRights(apikey, user)
       case _                                  => false
     }
     f match {

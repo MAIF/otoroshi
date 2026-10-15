@@ -605,6 +605,49 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       status mustBe 201
     }
 
+    // an apikey authorized on the admin api without rights metadata is unrestricted when it is used
+    "not let a tenant admin write an admin api apikey without rights metadata" in {
+      def unrestricted(clientId: String): JsValue = Json.obj(
+        "clientId"           -> clientId,
+        "clientSecret"       -> s"$clientId-secret",
+        "clientName"         -> clientId,
+        "authorizedEntities" -> Json.arr("group_admin-api-group"),
+        "_loc"               -> Json.obj("tenant" -> tenant.value, "teams" -> Json.arr(team.value))
+      )
+      val (_, typedStatus)   = call("POST", "/api/apikeys", tenantAdminUser, unrestricted("unrestricted-typed").some)
+      val (_, genericStatus) = call(
+        "POST",
+        "/apis/apim.otoroshi.io/v1/apikeys",
+        tenantAdminUser,
+        unrestricted("unrestricted-generic").some
+      )
+      val (_, typedGet)      = otoroshiApiCall("GET", "/api/apikeys/unrestricted-typed").futureValue
+      val (_, genericGet)    = otoroshiApiCall("GET", "/api/apikeys/unrestricted-generic").futureValue
+      withClue(s"typed=$typedStatus generic=$genericStatus ") {
+        typedStatus mustBe 403
+        genericStatus must not be 201
+        typedGet mustBe 404
+        genericGet mustBe 404
+      }
+      val (_, adminStatus)   = call(
+        "POST",
+        "/api/apikeys",
+        adminUser,
+        unrestricted("unrestricted-admin").some,
+        currentTenant = TenantId("default")
+      )
+      val (_, plainStatus)   = call(
+        "POST",
+        "/api/apikeys",
+        tenantAdminUser,
+        (unrestricted("unrestricted-plain").as[JsObject] ++ Json.obj("authorizedEntities" -> Json.arr())).some
+      )
+      withClue(s"admin=$adminStatus plain=$plainStatus ") {
+        adminStatus mustBe 201
+        plainStatus mustBe 201
+      }
+    }
+
     // checkNewUserRights computed its team containment over the caller's own rights instead of the
     // requested ones, so the check was always true as soon as the caller had a "*" tenant access
     "not let an admin grant another admin rights it does not have itself" in {

@@ -24,6 +24,25 @@ import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 object ApiActionContext {
+
+  // an apikey carries the admin api rights of its holder in its own metadata, so writing one is also
+  // granting rights: refuse to write an apikey that would grant more than the writer already has. an apikey
+  // authorized on the admin api without rights metadata has no restriction at all: only super admins write those
+  def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
+    apikey.metadata.get(ApiKey.accessRightsMetadataKey) match {
+      case None      =>
+        user.rights.superAdmin || !(apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
+          .authorizedOnService(env.backOfficeDescriptor.id))
+      case Some(raw) =>
+        Try(Json.parse(raw)).toOption.flatMap(_.asOpt[JsArray]).map(UserRights.readFromArray) match {
+          // unreadable rights are read as "no restriction at all" when the apikey is used, which is
+          // the widest grant there is
+          case None         => false
+          case Some(rights) => user.rights.covers(rights)
+        }
+    }
+  }
+
   val forbidden  = Results.Forbidden(Json.obj("error" -> "You're not authorized here !"))
   val fforbidden = forbidden.future
 
@@ -176,20 +195,8 @@ trait ApiActionContextCapable {
     canUserWrite(FakeEntityLocationSupport(EntityLocation.readFromKey(item)))
   }
 
-  // an apikey carries the admin api rights of its holder in its own metadata, so writing one is also
-  // granting rights: refuse to write an apikey that would grant more than the writer already has
-  private def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
-    apikey.metadata.get(ApiKey.accessRightsMetadataKey) match {
-      case None      => true
-      case Some(raw) =>
-        Try(Json.parse(raw)).toOption.flatMap(_.asOpt[JsArray]).map(UserRights.readFromArray) match {
-          // unreadable rights are read as "no restriction at all" when the apikey is used, which is
-          // the widest grant there is
-          case None         => false
-          case Some(rights) => user.rights.covers(rights)
-        }
-    }
-  }
+  private def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    ApiActionContext.canUserGrantApikeyRights(apikey, user)
 
   def canUserWrite[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     backOfficeUser match {
