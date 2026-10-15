@@ -253,7 +253,8 @@ class UnitTests
       new entities.WasmPluginEntityFormatSpec(),
       new entities.UserDashboardEntityFormatSpec(),
       new entities.UserAlertEntityFormatSpec(),
-      new entities.RouteEntityFormatSpec()
+      new entities.RouteEntityFormatSpec(),
+      new entities.RouteCompositionEntityFormatSpec()
     )
 
 class MapFilterTest
