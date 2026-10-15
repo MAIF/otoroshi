@@ -230,7 +230,8 @@ class UnitTests
       new plugins.configs.GeolocationPluginConfigsSpec(),
       new plugins.configs.CanaryPluginConfigsSpec(),
       new plugins.configs.S3PersistencePluginConfigsSpec(),
-      new plugins.configs.Fail2BanPluginConfigsSpec()
+      new plugins.configs.Fail2BanPluginConfigsSpec(),
+      new plugins.configs.TracingPluginConfigsSpec()
     )
 
 class MapFilterTest
