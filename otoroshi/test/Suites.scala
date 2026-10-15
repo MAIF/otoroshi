@@ -171,7 +171,8 @@ class UnitTests
       new plugins.configs.QuotasPluginConfigsSpec(),
       new plugins.configs.RegexPluginConfigsSpec(),
       new plugins.configs.HmacPluginConfigsSpec(),
-      new plugins.configs.WorkflowPluginConfigsSpec()
+      new plugins.configs.WorkflowPluginConfigsSpec(),
+      new plugins.configs.GreenScorePluginConfigsSpec()
     )
 
 class MapFilterTest
