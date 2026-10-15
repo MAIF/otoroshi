@@ -234,7 +234,8 @@ class UnitTests
       new plugins.configs.TracingPluginConfigsSpec(),
       new plugins.configs.OpenFgaPluginConfigsSpec(),
       new plugins.configs.RestrictionsPluginConfigsSpec(),
-      new plugins.configs.DaikokuPluginConfigsSpec()
+      new plugins.configs.DaikokuPluginConfigsSpec(),
+      new plugins.configs.ApiManagementPluginConfigsSpec()
     )
 
 class MapFilterTest
