@@ -250,7 +250,8 @@ class UnitTests
       // json formats of the core entities, one spec per entity family
       new entities.TeamsEntityFormatSpec(),
       new entities.ScriptEntityFormatSpec(),
-      new entities.WasmPluginEntityFormatSpec()
+      new entities.WasmPluginEntityFormatSpec(),
+      new entities.UserDashboardEntityFormatSpec()
     )
 
 class MapFilterTest
