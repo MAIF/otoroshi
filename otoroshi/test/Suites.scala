@@ -244,7 +244,8 @@ class UnitTests
       new plugins.configs.BiscuitPluginConfigsSpec(),
       new plugins.configs.CorsPluginConfigsSpec(),
       new plugins.configs.GenericListsPluginConfigsSpec(),
-      new plugins.configs.StaticAssetPluginConfigsSpec()
+      new plugins.configs.StaticAssetPluginConfigsSpec(),
+      new plugins.configs.RedirectionPluginConfigsSpec()
     )
 
 class MapFilterTest
