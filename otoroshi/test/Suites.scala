@@ -238,7 +238,8 @@ class UnitTests
       new plugins.configs.ApiManagementPluginConfigsSpec(),
       new plugins.configs.OAuthPluginConfigsSpec(),
       new plugins.configs.HttpSignaturePluginConfigsSpec(),
-      new plugins.configs.XmlPluginConfigsSpec()
+      new plugins.configs.XmlPluginConfigsSpec(),
+      new plugins.configs.Auth0PasswordlessPluginConfigsSpec()
     )
 
 class MapFilterTest
