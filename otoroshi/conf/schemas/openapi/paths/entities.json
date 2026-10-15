@@ -1,0 +1,81 @@
+{
+  "/api/entities/{entity}/{id}": {
+    "get": {
+      "tags": [
+        "entities"
+      ],
+      "summary": "List the routes that use a jwt verifier",
+      "description": "Answers the entities that use an entity. Only jwt verifiers are supported: the answer holds the routes, among the ones the credentials can read, whose plugins mention the id of the verifier in their configuration. Any other kind of entity answers an empty object. The backoffice shows them before a jwt verifier is deleted.",
+      "operationId": "otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph",
+      "parameters": [
+        {
+          "name": "entity",
+          "in": "path",
+          "description": "The kind of the entity, `jwt-verifiers` being the only one supported",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "jwt-verifiers"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The `id` of the entity, a jwt verifier as listed by `GET /apis/security.otoroshi.io/v1/jwt-verifiers`. The configurations of the plugins of the routes are searched for this text",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "jwt_verifier_8f8c2b0e-1c3d-4b6a-9a7e-2d4f6b8c0e1a"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The routes whose plugins mention the jwt verifier, in a `routes` array; an empty object for any other kind of entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntityGraph"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
