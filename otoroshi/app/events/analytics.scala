@@ -455,6 +455,26 @@ object GatewayEvent {
     case other            => other
   }
 
+  // the json embedded in an exported alert or report (route, request, flow contexts): the secret fields, the values
+  // of the credential headers and the values of the cookies are masked, unless app.events.maskSecrets is disabled
+  def maskEmbeddedJson(value: JsValue, env: Env): JsValue =
+    if (env.maskSecretsInEvents) maskEmbeddedJsonWith(value, secretFields ++ credentialHeaders(env)) else value
+
+  private def maskEmbeddedJsonWith(value: JsValue, fields: Set[String]): JsValue = value match {
+    case JsObject(entries) =>
+      JsObject(entries.map {
+        case (key, JsString(s)) if s.nonEmpty && fields.contains(key.toLowerCase) => (key, JsString(masked))
+        case (key, JsArray(cookies)) if key.toLowerCase == "cookies"               =>
+          (key, JsArray(cookies.map {
+            case cookie: JsObject if cookie.value.contains("value") => cookie ++ Json.obj("value" -> masked)
+            case other                                             => maskEmbeddedJsonWith(other, fields)
+          }))
+        case (key, v)                                                              => (key, maskEmbeddedJsonWith(v, fields))
+      })
+    case JsArray(values)   => JsArray(values.map(maskEmbeddedJsonWith(_, fields)))
+    case other             => other
+  }
+
   def writes(o: GatewayEvent, env: Env): JsValue = {
     // app.events.maskSecrets (OTOROSHI_EVENTS_MASK_SECRETS) turns the masking off
     val mask                            = env.maskSecretsInEvents

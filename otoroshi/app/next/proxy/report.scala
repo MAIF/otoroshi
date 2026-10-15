@@ -2,7 +2,7 @@ package otoroshi.next.proxy
 
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.AnalyticEvent
+import otoroshi.events.{AnalyticEvent, GatewayEvent}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
@@ -425,7 +425,7 @@ case class RequestFlowReport(report: NgExecutionReport, route: NgRoute) extends 
       "@serviceId" -> `@serviceId`,
       "@service"   -> `@service`,
       "@env"       -> "prod",
-      "route"      -> route.json,
-      "report"     -> report.json
+      "route"      -> GatewayEvent.maskEmbeddedJson(route.json, env),
+      "report"     -> GatewayEvent.maskEmbeddedJson(report.json, env)
     )
 }

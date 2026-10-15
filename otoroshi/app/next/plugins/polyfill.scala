@@ -6,7 +6,7 @@ import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import org.jsoup.Jsoup
 import otoroshi.env.Env
-import otoroshi.events.AlertEvent
+import otoroshi.events.{AlertEvent, GatewayEvent}
 import otoroshi.next.plugins.api.*
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.syntax.implicits.*
@@ -182,11 +182,11 @@ case class CdnPolyfillIoDetectedAlert(
       "@service"       -> `@service`,
       "@env"           -> "prod",
       "alert"          -> "CdnPolyfillIoDetectedAlert",
-      "route"          -> ctx.route.json,
+      "route"          -> GatewayEvent.maskEmbeddedJson(ctx.route.json, _env),
       "payload"        -> payload,
       "occurences_nbr" -> occurences.size,
       "occurences"     -> occurences,
-      "request"        -> JsonHelpers.requestToJson(ctx.request, ctx.attrs)
+      "request"        -> GatewayEvent.maskEmbeddedJson(JsonHelpers.requestToJson(ctx.request, ctx.attrs), _env)
     )
 }
 
@@ -213,10 +213,10 @@ case class CdnPolyfillIoReplacedAlert(
       "@service"       -> `@service`,
       "@env"           -> "prod",
       "alert"          -> "CdnPolyfillIoReplacedAlert",
-      "route"          -> ctx.route.json,
+      "route"          -> GatewayEvent.maskEmbeddedJson(ctx.route.json, _env),
       "payload"        -> payload,
       "occurences_nbr" -> occurences.size,
       "occurences"     -> occurences,
-      "request"        -> JsonHelpers.requestToJson(ctx.request, ctx.attrs)
+      "request"        -> GatewayEvent.maskEmbeddedJson(JsonHelpers.requestToJson(ctx.request, ctx.attrs), _env)
     )
 }

@@ -4,10 +4,12 @@ import functional.{PluginsTestSpecBase, TargetService}
 import org.apache.pekko.http.scaladsl.model.headers.{`Set-Cookie`, HttpCookie}
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+import org.joda.time.DateTime
 import otoroshi.models.*
-import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget}
+import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgPlugins, NgRoute, NgTarget}
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.next.proxy.{NgExecutionReport, RequestFlowReport}
 import otoroshi.plugins.log4j.Log4jExpressionParser
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.json.*
@@ -170,6 +172,41 @@ class DosAndLeaksTests(parent: PluginsTestSpecBase) {
     withClue("a response to a caller with credentials stored in the cache ") { calls.get() mustBe 4 }
     deleteOtoroshiRoute(route).futureValue
     target.stop()
+  }
+
+  // the alerts and the flow reports used to export the route and the request as they are, secrets included
+  def exportedAlertsMasking(): Unit = {
+    val route  = NgRoute.empty.copy(
+      plugins = NgPlugins(
+        Seq(
+          NgPluginInstance(
+            plugin = "cp:otoroshi.next.plugins.SomePlugin",
+            config = NgPluginInstanceConfig(Json.obj("secret" -> "plugin-secret", "kept" -> "visible-value"))
+          )
+        )
+      )
+    )
+    val report = new NgExecutionReport("masked-report", DateTime.now(), true)
+    report
+      .setContext(
+        Json.obj(
+          "request" -> Json.obj(
+            "headers" -> Json.obj(
+              "Authorization" -> "Bearer the-token",
+              "Cookie"        -> "session=the-cookie",
+              "Accept"        -> "text/visible"
+            ),
+            "cookies" -> Json.arr(Json.obj("name" -> "session", "value" -> "the-cookie-value"))
+          )
+        )
+      )
+      .markFailure("masked")
+    val json   = Json.stringify(RequestFlowReport(report, route).toJson(using env))
+    Seq("plugin-secret", "the-token", "the-cookie").foreach { secret =>
+      withClue(s"$secret in the exported report ") { json must not include secret }
+    }
+    json must include("visible-value")
+    json must include("text/visible")
   }
 
   // the plugins reading the whole body in memory used to read it without any bound

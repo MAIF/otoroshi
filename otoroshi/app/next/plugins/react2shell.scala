@@ -4,7 +4,7 @@ import org.apache.pekko.stream.{Materializer, StreamLimitReachedException}
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.AlertEvent
+import otoroshi.events.{AlertEvent, GatewayEvent}
 import otoroshi.next.plugins.api.*
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.syntax.implicits.*
@@ -158,9 +158,9 @@ case class ReactToShellDetectedAlert(
       "@service"         -> `@service`,
       "@env"             -> "prod",
       "alert"            -> "ReactToShellDetectedAlert",
-      "route"            -> ctx.route.json,
+      "route"            -> GatewayEvent.maskEmbeddedJson(ctx.route.json, _env),
       "payload"          -> payload,
       "suspicious_score" -> suspiciousScore,
-      "request"          -> JsonHelpers.requestToJson(ctx.request, ctx.attrs)
+      "request"          -> GatewayEvent.maskEmbeddedJson(JsonHelpers.requestToJson(ctx.request, ctx.attrs), _env)
     )
 }
