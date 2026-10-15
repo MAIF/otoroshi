@@ -1455,6 +1455,20 @@ class Env(
 
   lazy val privateAppsSessionManager: PrivateAppsSessionManager = new PrivateAppsSessionManager(this)
 
+  // the cookies of the otoroshi sessions (backoffice, private apps): they never have to reach a backend
+  def isOtoroshiSessionCookie(name: String): Boolean = {
+    name == httpConfiguration.session.cookieName || name.startsWith("oto-papps-") || name == privateAppsSessionManager.cookieName
+  }
+
+  def withoutOtoroshiSessionCookies(cookieHeader: String): Option[String] = {
+    val kept = cookieHeader
+      .split(";")
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .filterNot(cookie => isOtoroshiSessionCookie(cookie.takeWhile(_ != '=').trim))
+    if (kept.isEmpty) None else Some(kept.mkString("; "))
+  }
+
   lazy val defaultConfig = GlobalConfig(
     initWithNewEngine = true,
     trustXForwarded = initialTrustXForwarded,

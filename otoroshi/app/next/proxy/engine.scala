@@ -3310,7 +3310,8 @@ class ProxyEngine() extends RequestHandler {
       val counterIn                                      = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
       counterIn.addAndGet(contentLengthIn.getOrElse(0L))
       val (currentReqHasBody, shouldInjectContentLength) = request.hasBodyWithoutLength
-      val wsCookiesIn                                    = request.cookies
+      // the session cookies of otoroshi never reach the backends
+      val wsCookiesIn                                    = request.cookies.filterNot(c => env.isOtoroshiSessionCookie(c.name))
       val clientConfig                                   = route.backend.client
       val clientReq: WSRequest                           = if (route.useNettyClient || finalTarget.protocol.isHttp2OrHttp3) {
         env.reactorClientGateway

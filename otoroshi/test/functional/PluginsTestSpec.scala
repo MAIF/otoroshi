@@ -48,6 +48,7 @@ class DosAndLeaksSpec extends PluginsTestSpecBase {
     "parse nested unclosed log4shell expressions in linear time" in { dos.log4ShellParser() }
     "use the metrics filter as a literal wildcard pattern" in { dos.metricsFilter() }
     "not forward the backoffice cookies through the graphql proxy" in { dos.graphqlProxyCookies() }
+    "not forward the otoroshi session cookies to the backends" in { dos.sessionCookies() }
   }
 }
 

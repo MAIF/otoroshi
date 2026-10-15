@@ -694,6 +694,9 @@ object WebSocketProxyActor {
         Seq(org.apache.pekko.http.scaladsl.model.headers.Host(part.head))
       case (key, value) if key.toLowerCase == "user-agent" =>
         Seq(org.apache.pekko.http.scaladsl.model.headers.`User-Agent`(value))
+      // the session cookies of otoroshi never reach the backends
+      case (key, value) if key.toLowerCase == "cookie"     =>
+        env.withoutOtoroshiSessionCookies(value).map(v => RawHeader(key, v)).toSeq
       case (key, value)                                    =>
         Seq(RawHeader(key, value))
     }
@@ -847,6 +850,9 @@ class WebSocketProxyActor(
           Seq(org.apache.pekko.http.scaladsl.model.headers.Host(value.split(":").head))
         case (key, value) if key.toLowerCase == "user-agent" =>
           Seq(org.apache.pekko.http.scaladsl.model.headers.`User-Agent`(value))
+        // the session cookies of otoroshi never reach the backends
+        case (key, value) if key.toLowerCase == "cookie"     =>
+          env.withoutOtoroshiSessionCookies(value).map(v => RawHeader(key, v)).toSeq
         case (key, value)                                    =>
           Seq(RawHeader(key, value))
       }

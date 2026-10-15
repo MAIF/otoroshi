@@ -2,6 +2,7 @@ package plugins
 
 import functional.{PluginsTestSpecBase, TargetService}
 import otoroshi.models.*
+import otoroshi.next.models.{NgPluginInstance, NgRoute, NgTarget}
 import otoroshi.plugins.log4j.Log4jExpressionParser
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.json.*
@@ -79,6 +80,46 @@ class DosAndLeaksTests(parent: PluginsTestSpecBase) {
       received.get() mustBe None
     }
     user.delete()(using env.otoroshiExecutionContext, env).futureValue
+    target.stop()
+  }
+
+  def externalRoute(target: TargetService, plugins: NgPluginInstance*): NgRoute = createRouteWithExternalTarget(
+    plugins,
+    target = Some(NgTarget(id = "dos-and-leaks-backend", hostname = "127.0.0.1", port = target.port, tls = false))
+  ).futureValue
+
+  // the session cookies of otoroshi (backoffice, private apps) used to be forwarded to the backends
+  def sessionCookies(): Unit = {
+    val received = new AtomicReference[Option[String]](None)
+    val target   = TargetService
+      .full(
+        None,
+        "/",
+        "application/json",
+        req => {
+          received.set(req.headers.find(_.name().equalsIgnoreCase("Cookie")).map(_.value()))
+          (200, "{}", List.empty)
+        }
+      )
+      .await()
+    val route    = externalRoute(target)
+    val cookies  = Seq(
+      s"${env.httpConfiguration.session.cookieName}=backoffice",
+      "oto-papps-module=privateapps",
+      s"${env.privateAppsSessionManager.cookieName}=sso",
+      "app=kept"
+    ).mkString("; ")
+    val status   = ws
+      .url(s"http://127.0.0.1:$port/")
+      .withHttpHeaders("Host" -> route.frontend.domains.head.domain, "Cookie" -> cookies)
+      .get()
+      .futureValue
+      .status
+    status mustBe 200
+    withClue("cookie received by the backend ") {
+      received.get() mustBe Some("app=kept")
+    }
+    deleteOtoroshiRoute(route).futureValue
     target.stop()
   }
 }

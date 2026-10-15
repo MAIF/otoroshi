@@ -58,6 +58,8 @@ class PrivateAppsSessionManager(env: Env) {
 
   def isEnabled: Boolean = enabled
 
+  def cookieName: String = sessionConfig.cookieName
+
   def sessionDomain: String = sessionConfig.domain.get
 
   def decodeFromCookies(request: RequestHeader): Session = {
