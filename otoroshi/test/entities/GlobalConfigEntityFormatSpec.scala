@@ -582,12 +582,35 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       back.tags mustBe empty
     }
 
-    "ignore trusted proxies given as a single string" in {
-      readOk(format, Json.obj("trustedProxies" -> "10.0.0.1")).trustedProxies mustBe empty
+    "read trusted proxies given as a single string as a one entry list" in {
+      readOk(format, Json.obj("trustedProxies" -> "10.0.0.1")).trustedProxies mustBe Seq("10.0.0.1")
     }
 
-    "ignore trusted proxies holding a non string value" in {
-      readOk(format, Json.obj("trustedProxies" -> Json.arr("10.0.0.1", 42))).trustedProxies mustBe empty
+    "keep a comma separated string of trusted proxies as one entry" in {
+      readOk(format, Json.obj("trustedProxies" -> "10.0.0.0/8, 192.168.1.1")).trustedProxies mustBe Seq(
+        "10.0.0.0/8, 192.168.1.1"
+      )
+    }
+
+    "write trusted proxies given as a single string back as an array" in {
+      val back = readOk(format, Json.obj("trustedProxies" -> "10.0.0.1"))
+      (written(format, back) \ "trustedProxies").as[JsArray] mustBe Json.arr("10.0.0.1")
+    }
+
+    "skip the trusted proxies that are not strings, in order" in {
+      readOk(
+        format,
+        Json.obj("trustedProxies" -> Json.arr("10.0.0.1", 42, JsNull, Json.obj(), "192.168.*", true))
+      ).trustedProxies mustBe Seq("10.0.0.1", "192.168.*")
+    }
+
+    "read null trusted proxies as an empty list" in {
+      readOk(format, Json.obj("trustedProxies" -> JsNull)).trustedProxies mustBe empty
+    }
+
+    "read trusted proxies of another type as an empty list" in {
+      readOk(format, Json.obj("trustedProxies" -> 42)).trustedProxies mustBe empty
+      readOk(format, Json.obj("trustedProxies" -> Json.obj("a" -> "10.0.0.1"))).trustedProxies mustBe empty
     }
 
     "trim the client address header" in {

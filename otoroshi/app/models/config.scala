@@ -810,6 +810,15 @@ object GlobalConfig {
       }
     }
 
+    // without trusted proxies the forwarded headers of anyone are trusted, so a value of the wrong type must not
+    // drop the declared proxies. a single string is read as a one entry list (an entry can hold a comma
+    // separated list), the entries that are not strings are left out
+    def readTrustedProxies(json: JsValue): Seq[String] = (json \ "trustedProxies").asOpt[JsValue] match {
+      case Some(JsString(value)) => Seq(value)
+      case Some(JsArray(values)) => values.collect { case JsString(value) => value }.toSeq
+      case _                     => Seq.empty[String]
+    }
+
     override def writes(o: GlobalConfig): JsValue = {
       val mailerSettings: JsValue = o.mailerSettings match {
         case None         => JsNull
@@ -917,7 +926,7 @@ object GlobalConfig {
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),
           trustXForwarded = (json \ "trustXForwarded").asOpt[Boolean].getOrElse(true),
-          trustedProxies = (json \ "trustedProxies").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          trustedProxies = readTrustedProxies(json),
           clientAddressHeader = (json \ "clientAddressHeader")
             .asOpt[String]
             .map(_.trim)
