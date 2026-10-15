@@ -213,7 +213,8 @@ class UnitTests
       new plugins.configs.MirrorPluginConfigsSpec(),
       new plugins.configs.ContextPluginConfigsSpec(),
       new plugins.configs.TimePluginConfigsSpec(),
-      new plugins.configs.Log4ShellPluginConfigsSpec()
+      new plugins.configs.Log4ShellPluginConfigsSpec(),
+      new plugins.configs.QueryPluginConfigsSpec()
     )
 
 class MapFilterTest
