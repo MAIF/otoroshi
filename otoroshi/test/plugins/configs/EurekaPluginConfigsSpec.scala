@@ -250,5 +250,15 @@ class EurekaPluginConfigsSpec extends PluginConfigFormatSpec {
     "expose through json what the format writes" in {
       jsonMatchesFormat(format, ExternalEurekaTargetConfig(Some("http://e:8761"), Some("my-app")))
     }
+
+    "be the default config of ExternalEurekaTarget" in {
+      defaultConfigReadsBack(new ExternalEurekaTarget(), format) mustBe ExternalEurekaTargetConfig()
+    }
+
+    "give ExternalEurekaTarget a default config with its own keys" in {
+      new ExternalEurekaTarget().defaultConfig mustBe Some(
+        Json.obj("service_url_default_zone" -> JsNull, "eureka_app" -> JsNull)
+      )
+    }
   }
 }

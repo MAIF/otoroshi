@@ -688,7 +688,7 @@ class ExternalEurekaTarget extends NgPreRouting {
          |""".stripMargin)
   }
 
-  override def defaultConfigObject: Option[NgPluginConfig] = EurekaTargetConfig().some
+  override def defaultConfigObject: Option[NgPluginConfig] = ExternalEurekaTargetConfig().some
   override def multiInstance: Boolean                      = false
 
   override def preRoute(

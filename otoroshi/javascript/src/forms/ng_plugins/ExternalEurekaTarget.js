@@ -1,8 +1,8 @@
 export default {
   id: 'cp:otoroshi.next.plugins.ExternalEurekaTarget',
   config_schema: {
-    eureka_server: {
-      label: 'eureka_server',
+    service_url_default_zone: {
+      label: 'service_url_default_zone',
       type: 'string',
     },
     eureka_app: {
@@ -10,5 +10,5 @@ export default {
       type: 'string',
     },
   },
-  config_flow: ['eureka_app', 'eureka_server'],
+  config_flow: ['eureka_app', 'service_url_default_zone'],
 };
