@@ -376,7 +376,12 @@ class TeamsEntityFormatSpec extends EntityFormatSpec {
     "write its raw value" in {
       TeamAccess("team-1", true, true).raw mustBe "team-1:rw"
       TeamAccess("team-1", true, false).raw mustBe "team-1:r"
-      TeamAccess("team-1", false, false).raw mustBe "team-1:"
+      TeamAccess("team-1", false, false).raw mustBe "team-1:not"
+    }
+
+    "write a team or tenant access without any right as not" in {
+      TeamAccess("team-1", false, true).raw mustBe "team-1:not"
+      TenantAccess("tenant-1", false, false).raw mustBe "tenant-1:not"
     }
 
     "read back its raw value" in {
@@ -386,6 +391,26 @@ class TeamsEntityFormatSpec extends EntityFormatSpec {
 
     "read back the raw value of a team without right" in {
       TeamAccess(TeamAccess("team-1", false, false).raw) mustBe TeamAccess("team-1", false, false)
+    }
+
+    "read back the raw value of a team without right whose name holds an r or a w" in {
+      TeamAccess(TeamAccess("rw-team", false, false).raw) mustBe TeamAccess("rw-team", false, false)
+      TeamAccess(TeamAccess("writers", false, false).raw) mustBe TeamAccess("writers", false, false)
+    }
+
+    "read back the raw value of a tenant without right whose name holds an r or a w" in {
+      TenantAccess(TenantAccess("prod", false, false).raw) mustBe TenantAccess("prod", false, false)
+      TenantAccess(TenantAccess("rw-tenant", false, false).raw) mustBe TenantAccess("rw-tenant", false, false)
+    }
+
+    "read the empty permissions written by older versions as no right" in {
+      TeamAccess("rw-team:") mustBe TeamAccess("rw-team", false, false)
+      TenantAccess("prod:") mustBe TenantAccess("prod", false, false)
+    }
+
+    "keep the read and write rights of the other raw values" in {
+      TeamAccess(TeamAccess("rw-team", true, false).raw) mustBe TeamAccess("rw-team", true, false)
+      TenantAccess(TenantAccess("rw-tenant", true, true).raw) mustBe TenantAccess("rw-tenant", true, true)
     }
   }
 
@@ -424,6 +449,16 @@ class TeamsEntityFormatSpec extends EntityFormatSpec {
 
     "round trip several tenants with read only teams" in {
       roundTrip(format, custom)
+    }
+
+    "round trip a team and a tenant without any right whose names hold an r or a w" in {
+      val rights = UserRights.varargs(
+        UserRight(TenantAccess("prod:not"), Seq(TeamAccess("writers:not"), TeamAccess("rw-team:r")))
+      )
+      roundTrip(format, rights).rights.head mustBe UserRight(
+        TenantAccess("prod", false, false),
+        Seq(TeamAccess("writers", false, false), TeamAccess("rw-team", true, false))
+      )
     }
 
     "write duplicated teams once" in {
