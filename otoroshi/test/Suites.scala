@@ -245,7 +245,8 @@ class UnitTests
       new plugins.configs.CorsPluginConfigsSpec(),
       new plugins.configs.GenericListsPluginConfigsSpec(),
       new plugins.configs.StaticAssetPluginConfigsSpec(),
-      new plugins.configs.RedirectionPluginConfigsSpec()
+      new plugins.configs.RedirectionPluginConfigsSpec(),
+      new plugins.configs.RateLimitingPluginConfigsSpec()
     )
 
 class MapFilterTest
