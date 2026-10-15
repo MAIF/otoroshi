@@ -234,12 +234,36 @@ class CachePluginConfigsSpec extends PluginConfigFormatSpec {
       config.filter mustBe None
     }
 
-    "write the ttl, maxSize and autoClean of the default config" in {
-      (written(format, NgResponseCacheConfig()) - "filter") mustBe Json.obj(
+    "write the default config with all its keys" in {
+      format.writes(NgResponseCacheConfig()) mustBe Json.obj(
         "ttl"       -> 3600000L,
         "maxSize"   -> 52428800L,
-        "autoClean" -> true
+        "autoClean" -> true,
+        "filter"    -> JsNull
       )
+    }
+
+    "round trip the default config" in {
+      roundTrip(format, NgResponseCacheConfig())
+    }
+
+    "round trip a config without filter" in {
+      roundTrip(format, NgResponseCacheConfig(ttl = 1000L, autoClean = false)).filter mustBe None
+    }
+
+    "round trip a config with the default filter" in {
+      roundTrip(format, NgResponseCacheConfig(filter = Some(NgResponseCacheFilterConfig()))).filter mustBe Some(
+        NgResponseCacheFilterConfig()
+      )
+    }
+
+    "read a null filter as no filter, which caches every response" in {
+      readOk(format, Json.obj("filter" -> JsNull)).filter mustBe None
+    }
+
+    "read a filter that is not an object as no filter" in {
+      readOk(format, Json.obj("filter" -> "GET")).filter mustBe None
+      readOk(format, Json.obj("filter" -> Json.arr(200))).filter mustBe None
     }
 
     "write the filter with the filter format" in {
@@ -295,6 +319,10 @@ class CachePluginConfigsSpec extends PluginConfigFormatSpec {
 
     "expose through json what the format writes" in {
       jsonMatchesFormat(format, full)
+    }
+
+    "be the default config of NgResponseCache" in {
+      defaultConfigReadsBack(new NgResponseCache(), format) mustBe NgResponseCacheConfig()
     }
   }
 }
