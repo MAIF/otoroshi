@@ -1361,7 +1361,8 @@ object ApiSubscription {
   val format: Format[ApiSubscription] = new Format[ApiSubscription] {
     override def reads(json: JsValue): JsResult[ApiSubscription] = Try {
       ApiSubscription(
-        location = json.select("location").as(using EntityLocation.format),
+        // under _loc like every other entity: the admin api checks the rights on that key
+        location = EntityLocation.readFromKey(json),
         id = json.select("id").asString,
         name = json.select("name").asString,
         description = json.select("description").asString,
@@ -1395,8 +1396,7 @@ object ApiSubscription {
       case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
-    override def writes(o: ApiSubscription): JsValue             = Json.obj(
-      "location"          -> o.location.json,
+    override def writes(o: ApiSubscription): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"                -> o.id,
       "name"              -> o.name,
       "description"       -> o.description,

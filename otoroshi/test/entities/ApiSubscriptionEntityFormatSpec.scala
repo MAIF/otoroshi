@@ -43,7 +43,7 @@ class ApiSubscriptionEntityFormatSpec extends EntityFormatSpec {
   )
 
   private val minimalJson = Json.obj(
-    "location"          -> defaultLocationJson,
+    "_loc"              -> defaultLocationJson,
     "id"                -> "sub-1",
     "name"              -> "sub",
     "description"       -> "",
@@ -60,7 +60,7 @@ class ApiSubscriptionEntityFormatSpec extends EntityFormatSpec {
 
     "write a subscription" in {
       format.writes(full) mustBe Json.obj(
-        "location"          -> customLocationJson,
+        "_loc"              -> customLocationJson,
         "id"                -> "api-subscription_1",
         "name"              -> "gold subscription",
         "description"       -> "the gold subscription of the mobile app",
@@ -137,16 +137,38 @@ class ApiSubscriptionEntityFormatSpec extends EntityFormatSpec {
       )
     }
 
-    "not read a subscription without location" in {
-      readError(format, minimalJson - "location")
+    "read a subscription without _loc in the default location" in {
+      readOk(format, minimalJson - "_loc").location mustBe EntityLocation()
     }
 
-    "not read the location from the _loc key" in {
-      readError(format, (minimalJson - "location") ++ Json.obj("_loc" -> customLocationJson))
+    "read the location from the _loc key" in {
+      readOk(format, minimalJson ++ Json.obj("_loc" -> customLocationJson)).location mustBe customLocation
     }
 
     "read a null location as the default location" in {
-      readOk(format, minimalJson ++ Json.obj("location" -> JsNull)).location mustBe EntityLocation()
+      readOk(format, minimalJson ++ Json.obj("_loc" -> JsNull)).location mustBe EntityLocation()
+    }
+
+    "ignore the location key it used to be written under" in {
+      readOk(format, (minimalJson - "_loc") ++ Json.obj("location" -> customLocationJson)).location mustBe EntityLocation()
+    }
+
+    "read its location from _loc when the location key says something else" in {
+      val json = minimalJson ++ Json.obj("_loc" -> customLocationJson, "location" -> defaultLocationJson)
+      readOk(format, json).location mustBe customLocation
+    }
+
+    "store the location the admin api checks the rights on" in {
+      val json = minimalJson ++ Json.obj("_loc" -> defaultLocationJson, "location" -> customLocationJson)
+      readOk(format, json).location mustBe EntityLocation.readFromKey(json)
+    }
+
+    "not write the location key anymore" in {
+      writtenKeys(format, full) must not contain "location"
+    }
+
+    "expose its location to the json based rights checks" in {
+      EntityLocation.readFromKey(full.json) mustBe customLocation
     }
 
     "not read a subscription without one of its mandatory keys" in {

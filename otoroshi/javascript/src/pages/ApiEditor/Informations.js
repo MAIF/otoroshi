@@ -22,7 +22,7 @@ export function Informations(props) {
   }, []);
 
   const schema = {
-    location: {
+    _loc: {
       type: 'location',
       props: {},
     },
@@ -195,7 +195,7 @@ export function Informations(props) {
     },
   };
   const flow = [
-    'location',
+    '_loc',
     {
       type: 'group',
       collapsable: false,

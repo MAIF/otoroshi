@@ -17,7 +17,7 @@ import { Row } from '../../components/Row';
 const SUBSCRIPTION_FORM_SETTINGS = {
   schema: (item) => {
     return {
-      location: {
+      _loc: {
         type: 'location',
       },
       name: {
@@ -122,7 +122,7 @@ const SUBSCRIPTION_FORM_SETTINGS = {
     };
   },
   flow: (isEdition) => [
-    'location',
+    '_loc',
     {
       type: 'group',
       name: 'Informations',

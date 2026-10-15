@@ -55,7 +55,7 @@ class RouteTemplateEntityFormatSpec extends EntityFormatSpec {
   )
 
   private val minimalJson = Json.obj(
-    "location"    -> defaultLocationJson,
+    "_loc"        -> defaultLocationJson,
     "id"          -> "route-template-1",
     "name"        -> "template",
     "description" -> ""
@@ -67,7 +67,7 @@ class RouteTemplateEntityFormatSpec extends EntityFormatSpec {
 
     "write a route template" in {
       format.writes(full) mustBe Json.obj(
-        "location"    -> customLocationJson,
+        "_loc"        -> customLocationJson,
         "id"          -> "route-template-1",
         "name"        -> "users template",
         "description" -> "a template for the users routes",
@@ -133,20 +133,42 @@ class RouteTemplateEntityFormatSpec extends EntityFormatSpec {
       readOk(format, minimalJson ++ Json.obj("route" -> "route-1")).route.name mustBe "empty route"
     }
 
-    "not read a route template without location" in {
-      readError(format, minimalJson - "location")
+    "read a route template without _loc in the default location" in {
+      readOk(format, minimalJson - "_loc").location mustBe EntityLocation()
     }
 
-    "not read the location from the _loc key" in {
-      readError(format, (minimalJson - "location") ++ Json.obj("_loc" -> customLocationJson))
+    "read the location from the _loc key" in {
+      readOk(format, minimalJson ++ Json.obj("_loc" -> customLocationJson)).location mustBe customLocation
     }
 
     "read a null location as the default location" in {
-      readOk(format, minimalJson ++ Json.obj("location" -> JsNull)).location mustBe EntityLocation()
+      readOk(format, minimalJson ++ Json.obj("_loc" -> JsNull)).location mustBe EntityLocation()
+    }
+
+    "ignore the location key it used to be written under" in {
+      readOk(format, (minimalJson - "_loc") ++ Json.obj("location" -> customLocationJson)).location mustBe EntityLocation()
+    }
+
+    "read its location from _loc when the location key says something else" in {
+      val json = minimalJson ++ Json.obj("_loc" -> customLocationJson, "location" -> defaultLocationJson)
+      readOk(format, json).location mustBe customLocation
+    }
+
+    "store the location the admin api checks the rights on" in {
+      val json = minimalJson ++ Json.obj("_loc" -> defaultLocationJson, "location" -> customLocationJson)
+      readOk(format, json).location mustBe EntityLocation.readFromKey(json)
+    }
+
+    "not write the location key anymore" in {
+      writtenKeys(format, full) must not contain "location"
+    }
+
+    "expose its location to the json based rights checks" in {
+      EntityLocation.readFromKey(full.json) mustBe customLocation
     }
 
     "read a location that is not an object as the default location" in {
-      readOk(format, minimalJson ++ Json.obj("location" -> "tenant-1")).location mustBe EntityLocation()
+      readOk(format, minimalJson ++ Json.obj("_loc" -> "tenant-1")).location mustBe EntityLocation()
     }
 
     "not read a route template without id" in {
