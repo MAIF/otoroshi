@@ -309,11 +309,26 @@ class SamlAuthModuleEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, minimal)
     }
 
-    "round trip a module where every field but the location is set, with every validation disabled" in {
-      val back = roundTrip(format, full.copy(location = EntityLocation()))
+    "round trip a module where every field is set, with every validation disabled" in {
+      val back = roundTrip(format, full)
+      back.location mustBe customLocation
       back.validateSignature mustBe false
       back.validateAssertions mustBe false
       back.validateConditions mustBe false
+    }
+
+    "round trip a module in another tenant and teams" in {
+      roundTrip(format, minimal.copy(location = customLocation)).location mustBe customLocation
+    }
+
+    "read its location from _loc" in {
+      readOk(format, written(format, minimal) ++ Json.obj("_loc" -> customLocationJson)).location mustBe customLocation
+    }
+
+    "keep its location through a write and a read, as the users it logs in get their rights from it" in {
+      val back = readOk(format, format.writes(minimal.copy(location = customLocation)))
+      back.location.tenant mustBe customLocation.tenant
+      back.location.teams mustBe customLocation.teams
     }
 
     "round trip a module without email attribute name" in {
