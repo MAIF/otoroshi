@@ -243,7 +243,8 @@ class UnitTests
       new plugins.configs.TailscalePluginConfigsSpec(),
       new plugins.configs.BiscuitPluginConfigsSpec(),
       new plugins.configs.CorsPluginConfigsSpec(),
-      new plugins.configs.GenericListsPluginConfigsSpec()
+      new plugins.configs.GenericListsPluginConfigsSpec(),
+      new plugins.configs.StaticAssetPluginConfigsSpec()
     )
 
 class MapFilterTest
