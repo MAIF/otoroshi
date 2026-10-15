@@ -211,7 +211,8 @@ class UnitTests
       new plugins.configs.FilesPluginConfigsSpec(),
       new plugins.configs.OAuthProtectedResourcesPluginConfigsSpec(),
       new plugins.configs.MirrorPluginConfigsSpec(),
-      new plugins.configs.ContextPluginConfigsSpec()
+      new plugins.configs.ContextPluginConfigsSpec(),
+      new plugins.configs.TimePluginConfigsSpec()
     )
 
 class MapFilterTest
