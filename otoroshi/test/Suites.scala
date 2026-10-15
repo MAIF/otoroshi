@@ -184,7 +184,8 @@ class UnitTests
       new plugins.configs.SwaggerPluginConfigsSpec(),
       new plugins.configs.RbacPluginConfigsSpec(),
       new plugins.configs.HttpsPluginConfigsSpec(),
-      new plugins.configs.ImgPluginConfigsSpec()
+      new plugins.configs.ImgPluginConfigsSpec(),
+      new plugins.configs.Http3PluginConfigsSpec()
     )
 
 class MapFilterTest
