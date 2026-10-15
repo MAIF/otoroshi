@@ -3,6 +3,7 @@ package entities
 import otoroshi.models.EntityLocation
 import otoroshi.next.workflow.*
 import otoroshi.script.{JobId, JobInstantiation, JobKind}
+import otoroshi.utils.TypedMap
 import play.api.libs.json.*
 
 import scala.concurrent.duration.*
@@ -308,6 +309,27 @@ class WorkflowEntityFormatSpec extends EntityFormatSpec {
 
     "round trip its template" in {
       roundTrip(format, Workflow.template())
+    }
+  }
+
+  "WorkflowRun" should {
+
+    // a stored run has no workflow, the paused session gives it back when the run is resumed
+    val stored = WorkflowRun(id = "run-1", attrs = TypedMap.empty, env = null, workflow_ref = "", workflow = Json.obj())
+
+    "take the workflow ref and the workflow of the paused session when hydrated" in {
+      val workflow = Json.obj("kind" -> "workflow", "steps" -> Json.arr())
+      val run      = stored.hydrate("workflow-1", workflow, TypedMap.empty, null)
+      run.workflow_ref mustBe "workflow-1"
+      run.workflow mustBe workflow
+    }
+
+    "keep its id, functions and memory when hydrated" in {
+      val withFunctions = stored.copy(functions = Map("f" -> Json.obj("kind" -> "noop")))
+      val run           = withFunctions.hydrate("workflow-1", Json.obj(), TypedMap.empty, null)
+      run.id mustBe "run-1"
+      run.functions mustBe Map("f" -> Json.obj("kind" -> "noop"))
+      run.memory mustBe withFunctions.memory
     }
   }
 
