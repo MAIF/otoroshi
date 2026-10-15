@@ -199,7 +199,8 @@ class UnitTests
       new plugins.configs.ResponsePluginConfigsSpec(),
       new plugins.configs.CookiesPluginConfigsSpec(),
       new plugins.configs.JqPluginConfigsSpec(),
-      new plugins.configs.CachePluginConfigsSpec()
+      new plugins.configs.CachePluginConfigsSpec(),
+      new plugins.configs.ConditionalPluginConfigsSpec()
     )
 
 class MapFilterTest
