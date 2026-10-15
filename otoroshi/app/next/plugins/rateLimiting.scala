@@ -1342,7 +1342,9 @@ class RateLimiter(_env: Env) {
       attrs: TypedMap,
       throttlingStrategy: Option[ThrottlingStrategyConfig]
   ): ThrottlingStrategy = {
-    val key = value.evaluateEl(attrs)(using env)
+    // the callers pass a key they already evaluated, with request data in it: evaluating it again would run the
+    // expressions a caller put in that data
+    val key = value
     throttlingStrategy match {
       case Some(config) => getOrCreateWithConfig(key, config)
       case None         => strategies.getOrElse(key, ThrottlingStrategy.default(key))
