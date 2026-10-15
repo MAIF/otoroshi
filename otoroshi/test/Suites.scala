@@ -168,7 +168,8 @@ class UnitTests
       // json formats of the plugin configurations, one spec per plugin source file
       new plugins.configs.HeadersPluginConfigsSpec(),
       new plugins.configs.WebsocketPluginConfigsSpec(),
-      new plugins.configs.QuotasPluginConfigsSpec()
+      new plugins.configs.QuotasPluginConfigsSpec(),
+      new plugins.configs.RegexPluginConfigsSpec()
     )
 
 class MapFilterTest
