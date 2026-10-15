@@ -22,6 +22,7 @@ Nothing here is a bug report. It is the list of things nobody else can decide fo
 - [ ] `otoroshi.secret` is not the shipped default, and neither are the admin API credentials
 - [ ] Every admin API key carries an explicit `otoroshi-access-rights` metadata
 - [ ] `otoroshi.bypassUserRightsCheck` is off
+- [ ] The backoffice session cookie is `secure`, and not scoped wider than it needs to be
 - [ ] `otoroshi.ssl.trust.all` is off
 - [ ] `strictBackendServerValidation` is enabled in your global config, not just assumed
 - [ ] `trustXForwarded` matches your topology: on only if a trusted proxy rewrites those headers
@@ -85,6 +86,25 @@ It exists for local development and for recovering from a configuration that loc
 
 It has no legitimate use in production. Its default is `false`; make sure nothing in your deployment
 turns it on.
+
+### The backoffice session cookie is sent over http and to every subdomain
+
+The session cookie of the backoffice (`otoroshi-session`) is not `secure` by default, and its domain is
+the parent domain, `.` followed by `otoroshi.domain`. The browser sends it over plain http, and to every
+host under that domain. These defaults keep a local setup on `http://*.oto.tools` working.
+
+Otoroshi never forwards its own session cookies to the backends of your routes. But any other server
+answering for a host under that domain, or any plain http listener, receives the backoffice session of
+an admin who browses it.
+
+In production, make the cookie `secure`:
+
+```sh
+export OTOROSHI_SESSION_SECURE_ONLY=true
+```
+
+If the backoffice is the only thing under that domain that needs this cookie, you can also restrict it
+to the backoffice host with `OTOROSHI_SESSION_DOMAIN`.
 
 ### API key secrets are stored and returned in clear text
 
