@@ -228,7 +228,8 @@ class UnitTests
       new plugins.configs.ClientCertPluginConfigsSpec(),
       new plugins.configs.EurekaPluginConfigsSpec(),
       new plugins.configs.GeolocationPluginConfigsSpec(),
-      new plugins.configs.CanaryPluginConfigsSpec()
+      new plugins.configs.CanaryPluginConfigsSpec(),
+      new plugins.configs.S3PersistencePluginConfigsSpec()
     )
 
 class MapFilterTest
