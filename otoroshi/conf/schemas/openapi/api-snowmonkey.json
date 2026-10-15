@@ -1,0 +1,42 @@
+{
+  "Outage": {
+    "type": "object",
+    "description": "An outage the snow monkey injects into a route: during it, the chaos settings of the snow monkey apply to the calls of the route",
+    "properties": {
+      "descriptorId": {
+        "type": "string",
+        "description": "The id of the route under outage (the field is named after the legacy service descriptors)",
+        "example": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+      },
+      "descriptorName": {
+        "type": "string",
+        "description": "The name of the route under outage, as it was when the outage started",
+        "example": "billing-api"
+      },
+      "until": {
+        "type": "string",
+        "description": "The time of the day the outage ends at, as `HH:mm:ss.SSS`",
+        "example": "14:32:10.000"
+      },
+      "duration": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The duration of the outage, in milliseconds",
+        "example": 1800000
+      },
+      "startedAt": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the outage started",
+        "example": "2026-10-15T14:02:10.000+02:00"
+      }
+    },
+    "example": {
+      "descriptorId": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10",
+      "descriptorName": "billing-api",
+      "until": "14:32:10.000",
+      "duration": 1800000,
+      "startedAt": "2026-10-15T14:02:10.000+02:00"
+    }
+  }
+}
