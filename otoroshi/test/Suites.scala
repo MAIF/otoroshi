@@ -254,7 +254,8 @@ class UnitTests
       new entities.UserDashboardEntityFormatSpec(),
       new entities.UserAlertEntityFormatSpec(),
       new entities.RouteEntityFormatSpec(),
-      new entities.RouteCompositionEntityFormatSpec()
+      new entities.RouteCompositionEntityFormatSpec(),
+      new entities.BackendEntityFormatSpec()
     )
 
 class MapFilterTest
