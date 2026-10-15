@@ -19,7 +19,9 @@ import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute, 
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.*
 import otoroshi.next.plugins.wrappers.AccessValidatorWrapper
+import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.security.IdGenerator
+import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
@@ -435,6 +437,52 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     )
     withClue("a request without client certificate ") { call(r, "/") must not be Status.OK }
     deleteOtoroshiRoute(r).futureValue
+  }
+
+  // an hmac signature used to cover neither the date nor the request: a captured one was replayed forever
+  def hmacReplay(): Unit = {
+    val secret                                                    = "hardening-hmac-secret"
+    val bounded                                                   = route(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[HMACValidator],
+        config = NgPluginInstanceConfig(
+          HMACValidatorConfig(secret = Some(secret), maxDateSkewSeconds = Some(60L), signRequestTarget = true).json
+            .as[JsObject]
+        )
+      )
+    )
+    val unbounded                                                 = route(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[HMACValidator],
+        config = NgPluginInstanceConfig(HMACValidatorConfig(secret = Some(secret)).json.as[JsObject])
+      )
+    )
+    def authorization(headers: String, signingString: String): String = {
+      val signature =
+        Base64.getEncoder.encodeToString(Signatures.hmac(HMACUtils.Algo("HMAC-SHA256"), signingString, secret))
+      s"""hmac algorithm="hmac-sha256", headers="$headers", signature="$signature""""
+    }
+    val now                                                       = System.currentTimeMillis().toString
+    val old                                                       = (System.currentTimeMillis() - 600000L).toString
+    val onA                                                       = authorization("(request-target) Date", s"get /a $now")
+    withClue("a fresh signature of the request ") {
+      call(bounded, "/a", "Date" -> now, "Authorization" -> onA) mustBe Status.OK
+    }
+    withClue("the same signature on another path ") {
+      call(bounded, "/b", "Date" -> now, "Authorization" -> onA) mustBe Status.BAD_REQUEST
+    }
+    withClue("an old signature ") {
+      call(bounded, "/a", "Date" -> old, "Authorization" -> authorization("(request-target) Date", s"get /a $old")) mustBe
+      Status.BAD_REQUEST
+    }
+    withClue("a signature of the date only ") {
+      call(bounded, "/a", "Date" -> now, "Authorization" -> authorization("Date", now)) mustBe Status.BAD_REQUEST
+    }
+    withClue("without the options, a signature of the date only ") {
+      call(unbounded, "/a", "Date" -> now, "Authorization" -> authorization("Date", now)) mustBe Status.OK
+    }
+    deleteOtoroshiRoute(bounded).futureValue
+    deleteOtoroshiRoute(unbounded).futureValue
   }
 
   def stop(): Unit = backend.stop()

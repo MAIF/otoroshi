@@ -19,6 +19,13 @@ export default {
       label: 'Header used to send HMAC signature',
       placeholder: 'Authorization, Proxy-Authorization, ...',
     },
+    signRequestTarget: {
+      type: 'bool',
+      label: 'Sign the request target',
+      props: {
+        help: 'Also sign the (request-target) pseudo header, the method and the path of the request',
+      },
+    },
   },
-  config_flow: ['secret', 'algo', 'authorizationHeader'],
+  config_flow: ['secret', 'algo', 'authorizationHeader', 'signRequestTarget'],
 };

@@ -11,12 +11,21 @@ import play.api.libs.json.*
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class HMACValidatorConfig(secret: Option[String] = None, authorizationHeader: Option[String] = None)
-    extends NgPluginConfig {
+// maxDateSkewSeconds and signRequestTarget are opt-in, they bound the replay of a signature: the signed date header
+// has to be that close to now, and the signature has to cover the (request-target) pseudo header, the method and the
+// path of the request. with signRequestTarget, the signing string follows the order of the headers parameter
+case class HMACValidatorConfig(
+    secret: Option[String] = None,
+    authorizationHeader: Option[String] = None,
+    maxDateSkewSeconds: Option[Long] = None,
+    signRequestTarget: Boolean = false
+) extends NgPluginConfig {
   def json: JsValue = HMACValidatorConfig.format.writes(this)
 }
 
@@ -25,7 +34,9 @@ object HMACValidatorConfig {
     override def reads(json: JsValue): JsResult[HMACValidatorConfig] = Try {
       HMACValidatorConfig(
         secret = json.select("secret").asOpt[String],
-        authorizationHeader = json.select("authorizationHeader").asOpt[String]
+        authorizationHeader = json.select("authorizationHeader").asOpt[String],
+        maxDateSkewSeconds = json.select("maxDateSkewSeconds").asOpt[Long],
+        signRequestTarget = json.select("signRequestTarget").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -34,7 +45,9 @@ object HMACValidatorConfig {
     override def writes(o: HMACValidatorConfig): JsValue             =
       Json.obj(
         "secret"              -> o.secret,
-        "authorizationHeader" -> o.authorizationHeader
+        "authorizationHeader" -> o.authorizationHeader,
+        "maxDateSkewSeconds"  -> o.maxDateSkewSeconds,
+        "signRequestTarget"   -> o.signRequestTarget
       )
   }
 }
@@ -55,7 +68,18 @@ class HMACValidator extends NgAccessValidator {
     Some("This plugin can be used to check if a HMAC signature is present and valid in Authorization header.")
   }
 
-  private def checkHMACSignature(authorization: String, context: NgAccessContext, secret: String): NgAccess = {
+  // the date header of the hmac caller carries epoch millis, the one of an http client an http date
+  private def parseDate(value: String): Option[Long] = {
+    if (value.nonEmpty && value.forall(_.isDigit)) value.toLongOption
+    else Try(ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant.toEpochMilli).toOption
+  }
+
+  private def checkHMACSignature(
+      authorization: String,
+      context: NgAccessContext,
+      secret: String,
+      config: HMACValidatorConfig
+  ): NgAccess = {
     val params = authorization
       .replace("hmac ", "")
       .replace("\"", "")
@@ -69,8 +93,22 @@ class HMACValidator extends NgAccessValidator {
     val algorithm            = params.getOrElse("algorithm", "HMAC-SHA256")
     val signature            = params("signature")
     val headers: Seq[String] = params.get("headers").map(_.split(" ").toSeq).getOrElse(Seq.empty[String]).toSeq
-    val signingValues        = context.request.headers.headers.filter(p => headers.contains(p._1)).map(_._2)
+    val signingValues        =
+      if (config.signRequestTarget)
+        headers.flatMap {
+          case "(request-target)" => Some(s"${context.request.method.toLowerCase()} ${context.request.uri}")
+          case name               => context.request.headers.get(name)
+        }
+      else context.request.headers.headers.filter(p => headers.contains(p._1)).map(_._2)
     val signingString        = signingValues.mkString(" ")
+    val requestTargetSigned  = !config.signRequestTarget || headers.contains("(request-target)")
+    val dateInWindow         = config.maxDateSkewSeconds.forall { skew =>
+      headers
+        .find(_.equalsIgnoreCase("date"))
+        .flatMap(name => context.request.headers.get(name))
+        .flatMap(parseDate)
+        .exists(date => math.abs(System.currentTimeMillis() - date) <= skew * 1000L)
+    }
 
     //if (logger.isDebugEnabled) logger.debug(s"Secret used : $secret")
     //if (logger.isDebugEnabled) logger.debug(s"Signature generated : ${Base64.getEncoder
@@ -78,7 +116,7 @@ class HMACValidator extends NgAccessValidator {
     //if (logger.isDebugEnabled) logger.debug(s"Signature received : $signature")
     //if (logger.isDebugEnabled) logger.debug(s"Algorithm used : $algorithm")
 
-    if (signingValues.size != headers.size)
+    if (signingValues.size != headers.size || !requestTargetSigned || !dateInWindow)
       NgAccess.NgDenied(BadRequest)
     else if (
       Signatures.constantTimeEquals(
@@ -94,8 +132,9 @@ class HMACValidator extends NgAccessValidator {
   }
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val HMACValidatorConfig(secret, authorizationHeader) =
+    val config                                                 =
       ctx.cachedConfig(internalName)(HMACValidatorConfig.format).getOrElse(HMACValidatorConfig())
+    val HMACValidatorConfig(secret, authorizationHeader, _, _) = config
 
     ((secret match {
       case Some(value) if value.nonEmpty => Some(value)
@@ -108,11 +147,11 @@ class HMACValidator extends NgAccessValidator {
         Try {
           authorizationHeader match {
             case Some(authorization) if ctx.request.headers.get(authorization).isDefined =>
-              checkHMACSignature(ctx.request.headers.get(authorization).get, ctx, secret)
+              checkHMACSignature(ctx.request.headers.get(authorization).get, ctx, secret, config)
             case _                                                                    =>
               (ctx.request.headers.get("Authorization"), ctx.request.headers.get("Proxy-Authorization")) match {
-                case (Some(authorization), None) => checkHMACSignature(authorization, ctx, secret)
-                case (None, Some(authorization)) => checkHMACSignature(authorization, ctx, secret)
+                case (Some(authorization), None) => checkHMACSignature(authorization, ctx, secret, config)
+                case (None, Some(authorization)) => checkHMACSignature(authorization, ctx, secret, config)
                 case (_, _)                      =>
                   if (logger.isDebugEnabled) logger.debug("Missing authorization header")
                   NgAccess.NgDenied(BadRequest)
@@ -125,10 +164,12 @@ class HMACValidator extends NgAccessValidator {
   }
 }
 
+// signRequestTarget also signs the (request-target) pseudo header, for a validator that requires it
 case class HMACCallerConfig(
     secret: Option[String] = None,
     algo: String = "HMAC-SHA512",
-    authorizationHeader: Option[String] = None
+    authorizationHeader: Option[String] = None,
+    signRequestTarget: Boolean = false
 ) extends NgPluginConfig {
   def json: JsValue = HMACCallerConfig.format.writes(this)
 }
@@ -139,14 +180,20 @@ object HMACCallerConfig {
       HMACCallerConfig(
         secret = json.select("secret").asOpt[String],
         algo = json.select("algo").asOpt[String].getOrElse("HMAC-SHA512"),
-        authorizationHeader = json.select("authorizationHeader").asOpt[String]
+        authorizationHeader = json.select("authorizationHeader").asOpt[String],
+        signRequestTarget = json.select("signRequestTarget").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: HMACCallerConfig): JsValue             =
-      Json.obj("secret" -> o.secret, "algo" -> o.algo, "authorizationHeader" -> o.authorizationHeader)
+      Json.obj(
+        "secret"              -> o.secret,
+        "algo"                -> o.algo,
+        "authorizationHeader" -> o.authorizationHeader,
+        "signRequestTarget"   -> o.signRequestTarget
+      )
   }
 }
 
@@ -179,7 +226,7 @@ class HMACCaller extends NgRequestTransformer {
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val HMACCallerConfig(secret, algo, authorizationHeader) =
+    val HMACCallerConfig(secret, algo, authorizationHeader, signRequestTarget) =
       ctx.cachedConfig(internalName)(HMACCallerConfig.format).getOrElse(HMACCallerConfig())
 
     secret match {
@@ -190,7 +237,11 @@ class HMACCaller extends NgRequestTransformer {
         Left(BadRequest(Json.obj("error" -> "Bad parameters")))
       case Some(secret) =>
         val authHeader    = authorizationHeader.getOrElse("Authorization")
-        val signingString = System.currentTimeMillis().toString
+        val date          = System.currentTimeMillis().toString
+        val signedHeaders = if (signRequestTarget) "(request-target) Date" else "Date"
+        val signingString =
+          if (signRequestTarget) s"${ctx.otoroshiRequest.method.toLowerCase()} ${ctx.otoroshiRequest.relativeUri} $date"
+          else date
         val signature     =
           Base64.getEncoder.encodeToString(Signatures.hmac(HMACUtils.Algo(algo), signingString, secret))
 
@@ -199,13 +250,13 @@ class HMACCaller extends NgRequestTransformer {
                |Signature send : $signature
                |Algorithm used : $algo
                |Date generated : $signingString
-               |Send Authorization header : ${s"$authHeader" -> s"""hmac algorithm="${algo.toLowerCase}", headers="Date", signature="$signature""""}
+               |Send Authorization header : ${s"$authHeader" -> s"""hmac algorithm="${algo.toLowerCase}", headers="$signedHeaders", signature="$signature""""}
                |""".stripMargin)
         }
 
         val hmacHeaders = Map(
-          "Date"     -> signingString,
-          authHeader -> s"""hmac algorithm="${algo.toLowerCase}", headers="Date", signature="$signature""""
+          "Date"     -> date,
+          authHeader -> s"""hmac algorithm="${algo.toLowerCase}", headers="$signedHeaders", signature="$signature""""
         )
 
         ctx.otoroshiRequest

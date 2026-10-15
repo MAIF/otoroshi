@@ -72,6 +72,7 @@ class PluginsHardeningSpec extends PluginsTestSpecBase {
     "not match a legacy client certificate rule without client certificate" in {
       hardening.legacyClientCertWithoutCertificate()
     }
+    "bound the replay of an hmac signature when asked" in { hardening.hmacReplay() }
     "stop" in { hardening.stop() }
   }
 }
