@@ -1395,8 +1395,14 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
       oidcModule: OAuth2ModuleConfig,
       attrs: TypedMap
   )(using env: Env, ec: ExecutionContext): Future[Either[Result, Unit]] = {
-    val cacheKey  =
-      s"${subjectToken.sha256}-${config.exchange.audience.getOrElse("")}-${config.exchange.scope.getOrElse("")}"
+    // every parameter of the exchange is part of the key: the same subject token exchanged through another auth
+    // module, client, resource or actor gets its own token
+    val cacheKey  = Seq(
+      subjectToken,
+      oidcModule.id,
+      config.clientCredentialsOverride.map(_.clientId).getOrElse(oidcModule.clientId),
+      config.exchange.json.stringify
+    ).mkString("|").sha256
     val cacheTtl  = config.cacheTtlMs
     val now       = System.currentTimeMillis()
     val fromCache = if (cacheTtl > 0) {
