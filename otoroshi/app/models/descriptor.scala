@@ -372,7 +372,7 @@ object CookieHash {
 
 class CookieHash(cookieName: String) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue             = Json.obj("type" -> "CookieHash")
+  override def toJson: JsValue             = Json.obj("type" -> "CookieHash", "cookie_name" -> cookieName)
   override def select(
       reqId: String,
       tid: String,
@@ -401,7 +401,7 @@ object QueryHash {
 
 class QueryHash(queryName: String) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue             = Json.obj("type" -> "QueryHash")
+  override def toJson: JsValue             = Json.obj("type" -> "QueryHash", "query_name" -> queryName)
   override def select(
       reqId: String,
       tid: String,
@@ -430,7 +430,7 @@ object HeaderHash {
 
 class HeaderHash(headerName: String) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue             = Json.obj("type" -> "HeaderHash")
+  override def toJson: JsValue             = Json.obj("type" -> "HeaderHash", "header_name" -> headerName)
   override def select(
       reqId: String,
       tid: String,

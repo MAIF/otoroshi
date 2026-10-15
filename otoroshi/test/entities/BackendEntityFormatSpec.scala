@@ -572,6 +572,23 @@ class BackendEntityFormatSpec extends EntityFormatSpec {
       (format.writes(new QueryHash("user")) \ "type").as[String] mustBe "QueryHash"
     }
 
+    "write the header, cookie and query names of the hash load balancings" in {
+      format.writes(new HeaderHash("x-user")) mustBe Json.obj("type" -> "HeaderHash", "header_name" -> "x-user")
+      format.writes(new CookieHash("session")) mustBe Json.obj("type" -> "CookieHash", "cookie_name" -> "session")
+      format.writes(new QueryHash("user")) mustBe Json.obj("type" -> "QueryHash", "query_name" -> "user")
+    }
+
+    "keep the header, cookie and query names of the hash load balancings on a round trip" in {
+      hashedName(readOk(format, format.writes(new HeaderHash("x-user")))) mustBe "x-user"
+      hashedName(readOk(format, format.writes(new CookieHash("session")))) mustBe "session"
+      hashedName(readOk(format, format.writes(new QueryHash("user")))) mustBe "user"
+    }
+
+    "keep the name of a hash load balancing through a backend round trip" in {
+      val backend = NgBackend.empty.copy(loadBalancing = new HeaderHash("x-tenant"))
+      hashedName(readOk(NgBackend.fmt, NgBackend.fmt.writes(backend)).loadBalancing) mustBe "x-tenant"
+    }
+
     "read an unknown or a missing type as round robin" in {
       readOk(format, Json.obj("type" -> "Whatever")) mustBe RoundRobin
       readOk(format, Json.obj()) mustBe RoundRobin
