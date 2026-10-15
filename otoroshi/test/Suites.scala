@@ -207,7 +207,8 @@ class UnitTests
       new plugins.configs.GzipPluginConfigsSpec(),
       new plugins.configs.JwtPluginConfigsSpec(),
       new plugins.configs.IzanamiPluginConfigsSpec(),
-      new plugins.configs.BodySizePluginConfigsSpec()
+      new plugins.configs.BodySizePluginConfigsSpec(),
+      new plugins.configs.FilesPluginConfigsSpec()
     )
 
 class MapFilterTest
