@@ -635,6 +635,29 @@ class DataExporterCallSettingsEntityFormatSpec extends EntityFormatSpec {
       readError(format, Json.obj("id" -> "m", "kind" -> "Gauge"))
     }
 
+    "write each kind under its own name" in {
+      (format.writes(MetricSettings("m", None, MetricSettingsKind.Timer, None, Map.empty)) \ "kind").as[String] mustBe "Timer"
+      (format.writes(MetricSettings("m", None, MetricSettingsKind.Histogram, None, Map.empty)) \ "kind").as[String] mustBe "Histogram"
+    }
+
+    "round trip each kind" in {
+      Seq(MetricSettingsKind.Counter, MetricSettingsKind.Timer, MetricSettingsKind.Histogram).foreach { kind =>
+        roundTrip(format, MetricSettings("m", None, kind, Some("GatewayEvent"), Map.empty)).kind mustBe kind
+      }
+    }
+
+    "round trip a metric on every event" in {
+      roundTrip(format, MetricSettings("m", None, MetricSettingsKind.Counter, None, Map.empty)).eventType mustBe None
+    }
+
+    "write a metric on every event with a null event type" in {
+      (format.writes(MetricSettings("m", None, MetricSettingsKind.Counter, None, Map.empty)) \ "eventType").get mustBe JsNull
+    }
+
+    "read a null event type as every event" in {
+      readOk(format, Json.obj("id" -> "m", "eventType" -> JsNull)).eventType mustBe None
+    }
+
     "not read a metric without id" in {
       readError(format, Json.obj("kind" -> "Counter"))
     }
