@@ -226,7 +226,8 @@ class UnitTests
       new plugins.configs.KubernetesPluginConfigsSpec(),
       new plugins.configs.RequestPluginConfigsSpec(),
       new plugins.configs.ClientCertPluginConfigsSpec(),
-      new plugins.configs.EurekaPluginConfigsSpec()
+      new plugins.configs.EurekaPluginConfigsSpec(),
+      new plugins.configs.GeolocationPluginConfigsSpec()
     )
 
 class MapFilterTest
