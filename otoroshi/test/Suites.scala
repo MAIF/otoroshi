@@ -175,7 +175,8 @@ class UnitTests
       new plugins.configs.GreenScorePluginConfigsSpec(),
       new plugins.configs.EchoPluginConfigsSpec(),
       new plugins.configs.HtmlPluginConfigsSpec(),
-      new plugins.configs.HttpPluginConfigsSpec()
+      new plugins.configs.HttpPluginConfigsSpec(),
+      new plugins.configs.DeferPluginConfigsSpec()
     )
 
 class MapFilterTest
