@@ -1,0 +1,1079 @@
+{
+  "UserAnalyticsQueryFilters": {
+    "type": "object",
+    "description": "The data a query runs on. The tenant (organization) is not a filter: it always comes from the `Otoroshi-Tenant` header",
+    "properties": {
+      "from": {
+        "type": "string",
+        "description": "The start of the time range (inclusive): `now`, `now-<n><unit>` with a unit among `s`, `m`, `h` and `d` (like `now-30m` or `now-7d`), or an ISO-8601 instant (like `2026-10-01T00:00:00Z`). `now-1h` when missing or invalid",
+        "default": "now-1h",
+        "example": "now-24h"
+      },
+      "to": {
+        "type": "string",
+        "description": "The end of the time range (exclusive): `now`, `now-<n><unit>` with a unit among `s`, `m`, `h` and `d` (like `now-30m` or `now-7d`), or an ISO-8601 instant (like `2026-10-01T00:00:00Z`). `now` when missing or invalid",
+        "default": "now",
+        "example": "now"
+      },
+      "route_id": {
+        "type": "string",
+        "description": "Only keep the requests handled by this route (its id)",
+        "example": "route_d74ea8b27-b8be-4177-82d9-c50722416c50"
+      },
+      "api_id": {
+        "type": "string",
+        "description": "Only keep the requests handled by this api (its id)",
+        "example": "api_6c4e8b1a-2f3d-4e5a-9b7c-1d2e3f4a5b6c"
+      },
+      "apikey_id": {
+        "type": "string",
+        "description": "Only keep the requests made with this api key (its client id)",
+        "example": "xjcmqmdnbmhswkwh"
+      },
+      "group_id": {
+        "type": "string",
+        "description": "Only keep the requests handled by a route of this service group (its id)",
+        "example": "default"
+      },
+      "err": {
+        "type": "boolean",
+        "description": "Only keep the requests in error (`true`) or the successful ones (`false`)"
+      }
+    },
+    "example": {
+      "from": "now-24h",
+      "to": "now",
+      "route_id": "route_d74ea8b27-b8be-4177-82d9-c50722416c50",
+      "err": false
+    }
+  },
+  "UserAnalyticsQueryRequest": {
+    "type": "object",
+    "description": "The body of `POST /api/analytics/_query`: the id of a query of the catalog, its parameters, the data it runs on, the size of its time buckets and how its result is cached",
+    "required": [
+      "query"
+    ],
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The id of the query, as listed by `GET /api/analytics/_schema`",
+        "example": "requests_per_second"
+      },
+      "params": {
+        "type": "object",
+        "description": "The parameters of the query, as listed in its `params`, like `{\"top_n\": 10}` for the top N queries",
+        "additionalProperties": true,
+        "example": {
+          "top_n": 10
+        }
+      },
+      "filters": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserAnalyticsQueryFilters"
+          }
+        ],
+        "description": "The data the query runs on: the last hour of every request of the tenant (organization) when absent"
+      },
+      "bucket": {
+        "type": "string",
+        "description": "The time bucket size of timeseries and heatmaps: `1m`, `5m`, `1h`, `6h` or `1d`. When missing or unknown, it depends on the time range: up to 1 hour `1m`, up to 24 hours `1h`, up to 7 days `6h`, `1d` beyond",
+        "nullable": true,
+        "example": "1h"
+      },
+      "compare": {
+        "type": "boolean",
+        "description": "Also run the query on the previous period of the same length and return it in `compare`. Ignored by the queries that do not support it (`supports_compare` in the catalog)",
+        "default": false
+      },
+      "nocache": {
+        "type": "boolean",
+        "description": "Run the query even if its result is in the cache, and do not cache the new one",
+        "default": false
+      }
+    },
+    "example": {
+      "query": "requests_per_second",
+      "params": {},
+      "filters": {
+        "from": "now-24h",
+        "to": "now",
+        "route_id": "route_d74ea8b27-b8be-4177-82d9-c50722416c50"
+      },
+      "bucket": "1h",
+      "compare": false,
+      "nocache": false
+    }
+  },
+  "UserAnalyticsQueryData": {
+    "type": "object",
+    "description": "The result of a query. Its fields depend on `shape`: `scalar` has `value` and `label`, `pie` has `label` and `items` (with `key` and `value`), `topN` has `items` (with `key`, `label` and `value`), `timeseries` has `bucket` and either `points` (one series) or `series` (several named series), `heatmap` has `bucket`, `xBuckets`, `yBuckets` and `values`. The layout of `metric` and `table` results, and of the results of the queries of admin extensions, is up to the extension providing the query",
+    "properties": {
+      "value": {
+        "type": "number",
+        "description": "The value of a `scalar` result",
+        "example": 1207
+      },
+      "label": {
+        "type": "string",
+        "description": "The label of a `scalar` or `pie` result",
+        "example": "Total requests"
+      },
+      "items": {
+        "type": "array",
+        "description": "The items of a `pie` or `topN` result, biggest first",
+        "items": {
+          "$ref": "#/components/schemas/UserAnalyticsQueryItem"
+        }
+      },
+      "bucket": {
+        "type": "string",
+        "description": "The time bucket size of a `timeseries` or `heatmap` result",
+        "example": "1h"
+      },
+      "points": {
+        "type": "array",
+        "description": "The points of a single series `timeseries` result, one per bucket",
+        "items": {
+          "$ref": "#/components/schemas/UserAnalyticsTimeseriesPoint"
+        }
+      },
+      "series": {
+        "type": "array",
+        "description": "The series of a multi-series `timeseries` result",
+        "items": {
+          "$ref": "#/components/schemas/UserAnalyticsTimeseriesSeries"
+        }
+      },
+      "xBuckets": {
+        "type": "array",
+        "description": "The time buckets of a `heatmap` result (X axis), as unix timestamps in milliseconds",
+        "items": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "example": [
+          1792090800000,
+          1792094400000
+        ]
+      },
+      "yBuckets": {
+        "type": "array",
+        "description": "The response time ranges of a `heatmap` result (Y axis), from `<50ms` to `>=3s`",
+        "items": {
+          "type": "string"
+        },
+        "example": [
+          "<50ms",
+          "50-100ms",
+          "100-250ms",
+          "250-500ms",
+          "500ms-1s",
+          "1s-3s",
+          ">=3s"
+        ]
+      },
+      "values": {
+        "type": "array",
+        "description": "The request counts of a `heatmap` result, one row per `yBuckets` entry and one column per `xBuckets` entry",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "example": [
+          [
+            120,
+            98
+          ],
+          [
+            40,
+            35
+          ],
+          [
+            12,
+            9
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "additionalProperties": true,
+    "example": {
+      "bucket": "1h",
+      "points": [
+        {
+          "ts": 1792090800000,
+          "value": 12.5
+        },
+        {
+          "ts": 1792094400000,
+          "value": 14.25
+        }
+      ]
+    }
+  },
+  "UserAnalyticsQueryItem": {
+    "type": "object",
+    "description": "An item of a `pie` or `topN` result",
+    "properties": {
+      "key": {
+        "type": "string",
+        "description": "What is counted: a status code, a method, a route id, an api key client id, ... `(unknown)` when the events do not hold it",
+        "example": "route_d74ea8b27-b8be-4177-82d9-c50722416c50"
+      },
+      "label": {
+        "type": "string",
+        "description": "A readable name for `key` (the route name for routes, `key` otherwise). `topN` only",
+        "example": "users-api"
+      },
+      "value": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of requests counted for `key` on the time range, only the failed ones for `top_error_routes`",
+        "example": 1180
+      }
+    },
+    "example": {
+      "key": "route_d74ea8b27-b8be-4177-82d9-c50722416c50",
+      "label": "users-api",
+      "value": 1180
+    }
+  },
+  "UserAnalyticsTimeseriesPoint": {
+    "type": "object",
+    "description": "A point of a timeseries: the value of a time bucket. Every bucket of the time range has its point, the buckets without data included",
+    "properties": {
+      "ts": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The start of the time bucket, as a unix timestamp in milliseconds",
+        "nullable": true,
+        "example": 1792090800000
+      },
+      "value": {
+        "type": "number",
+        "description": "The value for this time bucket (0 when there is no data)",
+        "example": 12.5
+      }
+    },
+    "example": {
+      "ts": 1792090800000,
+      "value": 12.5
+    }
+  },
+  "UserAnalyticsTimeseriesSeries": {
+    "type": "object",
+    "description": "A named series of a multi-series timeseries",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name of the series, like `p95`, `data_in` or `5xx`",
+        "example": "p95"
+      },
+      "points": {
+        "type": "array",
+        "description": "The points of the series, one per bucket",
+        "items": {
+          "$ref": "#/components/schemas/UserAnalyticsTimeseriesPoint"
+        }
+      }
+    },
+    "example": {
+      "name": "p95",
+      "points": [
+        {
+          "ts": 1792090800000,
+          "value": 182.0
+        },
+        {
+          "ts": 1792094400000,
+          "value": 175.5
+        }
+      ]
+    }
+  },
+  "UserAnalyticsQueryResult": {
+    "type": "object",
+    "description": "The result of a user analytics query on a period",
+    "properties": {
+      "shape": {
+        "type": "string",
+        "description": "The shape of the result, which tells the fields of `data` (see `UserAnalyticsQueryData`) and the widget types that can draw it",
+        "enum": [
+          "timeseries",
+          "topN",
+          "pie",
+          "scalar",
+          "metric",
+          "table",
+          "heatmap"
+        ],
+        "example": "scalar"
+      },
+      "data": {
+        "$ref": "#/components/schemas/UserAnalyticsQueryData"
+      },
+      "raw": {
+        "type": "array",
+        "description": "The rows behind `data`, when the query provides them. Empty for multi-series timeseries and heatmaps",
+        "items": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "A row: an item of a `pie` or `topN` result, a point of a timeseries, the `value` of a `scalar` result"
+        },
+        "example": [
+          {
+            "value": 1207
+          }
+        ]
+      },
+      "meta": {
+        "type": "object",
+        "description": "Execution details, merged into the details the query adds itself (none for the built-in queries). In `compare`, only the details the query adds",
+        "additionalProperties": true,
+        "properties": {
+          "execution_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time it took to run the query, in milliseconds. Missing when the result comes from the cache",
+            "example": 12
+          },
+          "from_cache": {
+            "type": "boolean",
+            "description": "Whether the result, and its comparison when there is one, comes from the 30 seconds result cache"
+          },
+          "bucket": {
+            "type": "string",
+            "description": "The time bucket size used by the query",
+            "example": "1h"
+          }
+        },
+        "example": {
+          "execution_ms": 12,
+          "from_cache": false,
+          "bucket": "1h"
+        }
+      }
+    },
+    "example": {
+      "shape": "scalar",
+      "data": {
+        "value": 1207,
+        "label": "Total requests"
+      },
+      "raw": [
+        {
+          "value": 1207
+        }
+      ],
+      "meta": {}
+    }
+  },
+  "UserAnalyticsQueryResponse": {
+    "type": "object",
+    "description": "The result of a user analytics query, with its comparison with the previous period when asked for",
+    "allOf": [
+      {
+        "$ref": "#/components/schemas/UserAnalyticsQueryResult"
+      }
+    ],
+    "properties": {
+      "compare": {
+        "description": "The result of the same query on the previous period of the same length. Only present when `compare` was asked for and the query supports it",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserAnalyticsQueryResult"
+          }
+        ]
+      }
+    },
+    "example": {
+      "shape": "scalar",
+      "data": {
+        "value": 1207,
+        "label": "Total requests"
+      },
+      "raw": [
+        {
+          "value": 1207
+        }
+      ],
+      "meta": {
+        "execution_ms": 12,
+        "from_cache": false,
+        "bucket": "1h"
+      },
+      "compare": {
+        "shape": "scalar",
+        "data": {
+          "value": 1103,
+          "label": "Total requests"
+        },
+        "raw": [
+          {
+            "value": 1103
+          }
+        ],
+        "meta": {}
+      }
+    }
+  },
+  "UserAnalyticsQueryCatalog": {
+    "type": "object",
+    "description": "The catalog of the user analytics queries, the ones of the admin extensions included, and the widget types of the dashboards",
+    "properties": {
+      "queries": {
+        "type": "array",
+        "description": "The queries a query request, a dashboard widget or an alert condition can run, the built-in ones first",
+        "items": {
+          "$ref": "#/components/schemas/UserAnalyticsQueryDefinition"
+        }
+      },
+      "widget_types": {
+        "type": "array",
+        "description": "The values the `type` of a dashboard widget can take",
+        "items": {
+          "type": "string",
+          "description": "A widget type",
+          "enum": [
+            "line",
+            "area",
+            "bar",
+            "pie",
+            "donut",
+            "scalar",
+            "metric",
+            "table",
+            "heatmap"
+          ]
+        },
+        "example": [
+          "line",
+          "area",
+          "bar",
+          "pie",
+          "donut",
+          "scalar",
+          "metric",
+          "table",
+          "heatmap"
+        ]
+      }
+    },
+    "example": {
+      "queries": [
+        {
+          "id": "requests_by_route",
+          "name": "Top routes",
+          "description": "Routes with the most requests.",
+          "shape": "topN",
+          "default_widget": "bar",
+          "params": [
+            {
+              "name": "top_n",
+              "kind": "int",
+              "default": 10,
+              "description": "Maximum number of items returned"
+            }
+          ],
+          "supports_compare": false
+        }
+      ],
+      "widget_types": [
+        "line",
+        "area",
+        "bar",
+        "pie",
+        "donut",
+        "scalar",
+        "metric",
+        "table",
+        "heatmap"
+      ]
+    }
+  },
+  "UserAnalyticsQueryDefinition": {
+    "type": "object",
+    "description": "A query of the catalog: its id, what it computes, the shape of its result, its parameters and whether it can be compared with the previous period",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id to use in `POST /api/analytics/_query` and in dashboard widgets",
+        "example": "requests_by_route"
+      },
+      "name": {
+        "type": "string",
+        "description": "The readable name of the query, the default title of the widgets the backoffice creates on it",
+        "example": "Top routes"
+      },
+      "description": {
+        "type": "string",
+        "description": "What the query computes",
+        "example": "Routes with the most requests."
+      },
+      "shape": {
+        "type": "string",
+        "description": "The shape of the result of the query, which tells the fields of its `data`",
+        "enum": [
+          "timeseries",
+          "topN",
+          "pie",
+          "scalar",
+          "metric",
+          "table",
+          "heatmap"
+        ],
+        "example": "topN"
+      },
+      "default_widget": {
+        "type": "string",
+        "description": "The widget type that displays the query by default, one of the `widget_types` of the catalog for the built-in queries",
+        "example": "bar"
+      },
+      "params": {
+        "type": "array",
+        "description": "The parameters the query reads in the `params` of a query request, a widget or an alert condition. Empty when it takes none",
+        "items": {
+          "$ref": "#/components/schemas/UserAnalyticsQueryParam"
+        }
+      },
+      "supports_compare": {
+        "type": "boolean",
+        "description": "Whether the query can be compared with the previous period: `compare` is ignored when it cannot"
+      }
+    },
+    "example": {
+      "id": "requests_by_route",
+      "name": "Top routes",
+      "description": "Routes with the most requests.",
+      "shape": "topN",
+      "default_widget": "bar",
+      "params": [
+        {
+          "name": "top_n",
+          "kind": "int",
+          "default": 10,
+          "description": "Maximum number of items returned"
+        }
+      ],
+      "supports_compare": false
+    }
+  },
+  "UserAnalyticsQueryParam": {
+    "type": "object",
+    "description": "A parameter of a user analytics query",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name of the parameter in `params`",
+        "example": "top_n"
+      },
+      "kind": {
+        "type": "string",
+        "description": "The type of the parameter, like `int`",
+        "example": "int"
+      },
+      "default": {
+        "description": "The value used when the parameter is missing, `null` when there is none"
+      },
+      "description": {
+        "type": "string",
+        "description": "What the parameter does",
+        "example": "Maximum number of items returned"
+      }
+    },
+    "example": {
+      "name": "top_n",
+      "kind": "int",
+      "default": 10,
+      "description": "Maximum number of items returned"
+    }
+  },
+  "UserAnalyticsProjection": {
+    "type": "object",
+    "description": "A family of events the user-analytics data exporter can store, each one in its own table: the gateway events, the fired user alerts, and the families of the admin extensions",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the projection, to use in `excluded_projections`",
+        "example": "otoroshi.gateway-events"
+      },
+      "name": {
+        "type": "string",
+        "description": "The readable name of the projection, shown in the settings of the user-analytics data exporter where projections can be excluded",
+        "example": "Gateway events"
+      },
+      "description": {
+        "type": "string",
+        "description": "What the events of the projection are and what stops working without them, shown next to its name",
+        "example": "Every request proxied by Otoroshi. Feeds the core queries, the default dashboards and most alerts."
+      },
+      "core": {
+        "type": "boolean",
+        "description": "Whether the projection is built into otoroshi (`false` when an admin extension provides it)"
+      },
+      "table": {
+        "type": "string",
+        "description": "The table the events are written to, with its schema, computed from the `schema` and `table_prefix` query parameters. `null` when the projection cannot tell",
+        "nullable": true,
+        "example": "public.otoroshi_analytics_events"
+      }
+    },
+    "example": {
+      "id": "otoroshi.gateway-events",
+      "name": "Gateway events",
+      "description": "Every request proxied by Otoroshi. Feeds the core queries, the default dashboards and most alerts.",
+      "core": true,
+      "table": "public.otoroshi_analytics_events"
+    }
+  },
+  "UserAnalyticsExporterSettings": {
+    "type": "object",
+    "description": "The settings of a user-analytics data exporter (its `config`): the PostgreSQL database the exporter writes the events to, where the user analytics queries, dashboards and alerts read them",
+    "properties": {
+      "uri": {
+        "type": "string",
+        "description": "A PostgreSQL connection uri, like `postgresql://user:password@host:5432/database`. Used instead of the other connection settings when present and not empty",
+        "nullable": true,
+        "example": "postgresql://otoroshi:otoroshi@localhost:5432/otoroshi"
+      },
+      "host": {
+        "type": "string",
+        "description": "The host name or ip address of the PostgreSQL server. Ignored when `uri` is set",
+        "default": "localhost",
+        "example": "localhost"
+      },
+      "port": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The port of the PostgreSQL server. Ignored when `uri` is set",
+        "default": 5432,
+        "example": 5432
+      },
+      "database": {
+        "type": "string",
+        "description": "The PostgreSQL database that holds the tables. Ignored when `uri` is set",
+        "default": "otoroshi",
+        "example": "otoroshi"
+      },
+      "user": {
+        "type": "string",
+        "description": "The PostgreSQL user otoroshi connects as. It must be allowed to create the schema, the tables and the indexes, which the exporter does when it starts. Ignored when `uri` is set",
+        "default": "otoroshi",
+        "example": "otoroshi"
+      },
+      "password": {
+        "type": "string",
+        "description": "The password of `user`. Ignored when `uri` is set",
+        "default": "otoroshi",
+        "example": "otoroshi"
+      },
+      "schema": {
+        "type": "string",
+        "description": "The PostgreSQL schema of the tables, created when it does not exist",
+        "default": "public",
+        "example": "public"
+      },
+      "table_prefix": {
+        "type": "string",
+        "description": "The name of the table of the gateway events, and the prefix of the names of the other tables (`<table_prefix>_fired_alerts`, the tables of the projections of the admin extensions). `table` is read instead when it is absent or empty",
+        "default": "otoroshi_analytics_events",
+        "example": "otoroshi_analytics_events"
+      },
+      "table": {
+        "type": "string",
+        "readOnly": true,
+        "description": "The former name of `table_prefix`, always written with its value for the nodes that predate the rename. Only read when `table_prefix` is absent or empty, as in the configs saved before the rename",
+        "example": "otoroshi_analytics_events"
+      },
+      "pool_size": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The maximum number of connections the exporter opens to the database",
+        "default": 10,
+        "example": 10
+      },
+      "ssl": {
+        "type": "boolean",
+        "description": "Whether the connection to the database requires tls (`sslmode=require`). Ignored when `uri` is set: the uri tells it",
+        "default": false
+      },
+      "retention_days": {
+        "type": "integer",
+        "format": "int32",
+        "description": "How long the events of every projection are kept, in days: an hourly job deletes the older ones from the tables of the active user-analytics data exporter. `0` (or less) keeps them forever",
+        "default": 30,
+        "example": 30
+      },
+      "statement_timeout_ms": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The maximum duration of a query, in milliseconds. Reserved: it is not applied yet",
+        "default": 30000,
+        "example": 30000
+      },
+      "rollup_enabled": {
+        "type": "boolean",
+        "description": "Reserved: rollup tables are not computed yet",
+        "default": false
+      },
+      "excluded_projections": {
+        "type": "array",
+        "description": "The ids of the projections whose events are not stored (see `GET /api/analytics/_projections`). Their tables are still created and pruned, and their queries keep answering with the events stored before",
+        "items": {
+          "type": "string"
+        },
+        "example": [
+          "otoroshi.fired-alerts"
+        ]
+      }
+    },
+    "example": {
+      "uri": null,
+      "host": "localhost",
+      "port": 5432,
+      "database": "otoroshi",
+      "user": "otoroshi",
+      "password": "otoroshi",
+      "schema": "public",
+      "table_prefix": "otoroshi_analytics_events",
+      "table": "otoroshi_analytics_events",
+      "pool_size": 10,
+      "ssl": false,
+      "retention_days": 30,
+      "statement_timeout_ms": 30000,
+      "rollup_enabled": false,
+      "excluded_projections": []
+    }
+  },
+  "UserAnalyticsOkResponse": {
+    "type": "object",
+    "description": "The outcome of an operation on a user analytics database",
+    "properties": {
+      "ok": {
+        "type": "boolean",
+        "description": "Whether the operation succeeded"
+      },
+      "error": {
+        "type": "string",
+        "description": "Why the operation failed",
+        "example": "Connection refused: localhost/127.0.0.1:5432"
+      }
+    },
+    "example": {
+      "ok": false,
+      "error": "Connection refused: localhost/127.0.0.1:5432"
+    }
+  },
+  "UserAnalyticsSetActiveExporterResponse": {
+    "type": "object",
+    "description": "The outcome of the activation of a user-analytics data exporter",
+    "properties": {
+      "ok": {
+        "type": "boolean",
+        "description": "Always `true`: the exporter is now the active one"
+      },
+      "active": {
+        "type": "string",
+        "description": "The id of the data exporter that is now the active user-analytics data exporter, the `id` of the path",
+        "example": "data_exporter_8d7f4a2b-3c1e-4f5a-9b6c-7d8e9f0a1b2c"
+      },
+      "demoted_count": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of the other exporters that were flagged as active before",
+        "example": 0
+      },
+      "seeded_default": {
+        "type": "array",
+        "description": "The `otoroshi-default-id` metadata of the default dashboards that were missing and are now created",
+        "items": {
+          "type": "string"
+        },
+        "example": [
+          "analytics-default-overview"
+        ]
+      }
+    },
+    "example": {
+      "ok": true,
+      "active": "data_exporter_8d7f4a2b-3c1e-4f5a-9b6c-7d8e9f0a1b2c",
+      "demoted_count": 0,
+      "seeded_default": [
+        "analytics-default-overview"
+      ]
+    }
+  },
+  "UserAnalyticsRestoreDefaultsResponse": {
+    "type": "object",
+    "description": "The default dashboards that were missing and are now created",
+    "properties": {
+      "created": {
+        "type": "array",
+        "description": "The default ids of the dashboards that were created (kept in their `otoroshi-default-id` metadata)",
+        "items": {
+          "type": "string"
+        },
+        "example": [
+          "analytics-default-overview"
+        ]
+      },
+      "count": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of dashboards that were created",
+        "example": 1
+      }
+    },
+    "example": {
+      "created": [
+        "analytics-default-overview"
+      ],
+      "count": 1
+    }
+  },
+  "UserAnalyticsAlertEventsPage": {
+    "type": "object",
+    "description": "A page of fired events of a user alert",
+    "properties": {
+      "items": {
+        "type": "array",
+        "description": "The fired events, newest first",
+        "items": {
+          "$ref": "#/components/schemas/UserAnalyticsAlertEvent"
+        }
+      },
+      "limit": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The maximum number of events of the page, the `limit` query parameter brought back between 1 and 2000 (200 by default)",
+        "example": 200
+      },
+      "offset": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of events skipped before the page, the `offset` query parameter (0 by default)",
+        "example": 0
+      }
+    },
+    "example": {
+      "items": [
+        {
+          "id": "2110822681589842411",
+          "ts": 1792094319137,
+          "tenant": "default",
+          "alert_id": "user-alert_3f2a1b4c-5d6e-4f7a-8b9c-0d1e2f3a4b5c",
+          "alert_name": "Too many errors",
+          "severity": "critical",
+          "message": "More than 5% of the requests failed",
+          "combine": "AND",
+          "windowSeconds": 300,
+          "conditions": [
+            {
+              "query": "error_rate_ts",
+              "reducer": "avg",
+              "operator": ">",
+              "threshold": 5.0,
+              "value": 7.3,
+              "matched": true,
+              "error": null
+            }
+          ],
+          "seen_at": null,
+          "seen_by": null
+        }
+      ],
+      "limit": 200,
+      "offset": 0
+    }
+  },
+  "UserAnalyticsAlertEvent": {
+    "type": "object",
+    "description": "A fired event of a user alert, as stored in the `<table_prefix>_fired_alerts` table of the active user-analytics data exporter, with the evaluation of its conditions and its acknowledgement",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the fired event (the `@id` of the alert event, a snowflake id), to use in the paths that acknowledge it",
+        "example": "2110822681589842411"
+      },
+      "ts": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the alert fired, as a unix timestamp in milliseconds",
+        "nullable": true,
+        "example": 1792094319137
+      },
+      "tenant": {
+        "type": "string",
+        "description": "The tenant (organization) of the user alert: only the events of the tenant of the `Otoroshi-Tenant` header are answered",
+        "example": "default"
+      },
+      "alert_id": {
+        "type": "string",
+        "description": "The id of the user alert that fired, the `alertId` of the path",
+        "example": "user-alert_3f2a1b4c-5d6e-4f7a-8b9c-0d1e2f3a4b5c"
+      },
+      "alert_name": {
+        "type": "string",
+        "description": "The name of the user alert when it fired",
+        "nullable": true,
+        "example": "Too many errors"
+      },
+      "severity": {
+        "type": "string",
+        "description": "The severity of the user alert, like `info`, `warning` or `critical`",
+        "nullable": true,
+        "example": "critical"
+      },
+      "message": {
+        "type": "string",
+        "description": "The `message` of the user alert when it fired",
+        "nullable": true,
+        "example": "More than 5% of the requests failed"
+      },
+      "combine": {
+        "type": "string",
+        "description": "How the conditions were combined: `AND` or `OR`",
+        "nullable": true,
+        "example": "AND"
+      },
+      "windowSeconds": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The time window the conditions were evaluated on, in seconds",
+        "nullable": true,
+        "example": 300
+      },
+      "conditions": {
+        "type": "array",
+        "description": "The evaluation of each condition of the alert",
+        "items": {
+          "$ref": "#/components/schemas/UserAnalyticsAlertConditionEval"
+        }
+      },
+      "seen_at": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the event was acknowledged, as a unix timestamp in milliseconds",
+        "nullable": true,
+        "example": 1792094419137
+      },
+      "seen_by": {
+        "type": "string",
+        "description": "The email of the admin who acknowledged the event, `?` when it was acknowledged through the admin api without a backoffice user",
+        "nullable": true,
+        "example": "admin@otoroshi.io"
+      }
+    },
+    "example": {
+      "id": "2110822681589842411",
+      "ts": 1792094319137,
+      "tenant": "default",
+      "alert_id": "user-alert_3f2a1b4c-5d6e-4f7a-8b9c-0d1e2f3a4b5c",
+      "alert_name": "Too many errors",
+      "severity": "critical",
+      "message": "More than 5% of the requests failed",
+      "combine": "AND",
+      "windowSeconds": 300,
+      "conditions": [
+        {
+          "query": "error_rate_ts",
+          "reducer": "avg",
+          "operator": ">",
+          "threshold": 5.0,
+          "value": 7.3,
+          "matched": true,
+          "error": null
+        }
+      ],
+      "seen_at": null,
+      "seen_by": null
+    }
+  },
+  "UserAnalyticsAlertConditionEval": {
+    "type": "object",
+    "description": "How a condition of a user alert was evaluated when the alert fired: the reduced result of its query, compared to its threshold",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The id of the query of the condition",
+        "example": "error_rate_ts"
+      },
+      "reducer": {
+        "type": "string",
+        "description": "How the query result was reduced to a single value: `avg`, `max`, `min`, `sum` or `last`",
+        "example": "avg"
+      },
+      "operator": {
+        "type": "string",
+        "description": "How the value was compared to the threshold: `>`, `>=`, `<`, `<=`, `==` or `!=`",
+        "example": ">"
+      },
+      "threshold": {
+        "type": "number",
+        "description": "The value the reduced value was compared to, the `threshold` of the condition",
+        "format": "double",
+        "example": 5.0
+      },
+      "value": {
+        "type": "number",
+        "description": "The result of the query reduced to a single number, `null` when the query answered no value or could not run",
+        "nullable": true,
+        "format": "double",
+        "example": 7.3
+      },
+      "matched": {
+        "type": "boolean",
+        "description": "Whether the condition was met"
+      },
+      "error": {
+        "type": "string",
+        "description": "Why the condition could not be evaluated (no active user-analytics data exporter, an unknown query, a failed query), `null` when it was",
+        "nullable": true,
+        "example": "unknown query 'error_rate'"
+      }
+    },
+    "example": {
+      "query": "error_rate_ts",
+      "reducer": "avg",
+      "operator": ">",
+      "threshold": 5.0,
+      "value": 7.3,
+      "matched": true,
+      "error": null
+    }
+  },
+  "UserAnalyticsUpdatedResponse": {
+    "type": "object",
+    "description": "How many fired events of a user alert a call acknowledged",
+    "properties": {
+      "updated": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of events that were acknowledged by the call",
+        "example": 3
+      }
+    },
+    "example": {
+      "updated": 3
+    }
+  }
+}
