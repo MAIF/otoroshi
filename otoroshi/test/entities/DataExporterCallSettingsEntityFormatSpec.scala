@@ -551,6 +551,28 @@ class DataExporterCallSettingsEntityFormatSpec extends EntityFormatSpec {
       readOk(format, Json.obj("endpoint" -> "http://otlp", "trusted_cert" -> "ca-1")).trustedCert mustBe Some("ca-1")
     }
 
+    "write the trusted certificate and the client certificate under their own keys" in {
+      val json = written(format, otlp.copy(clientCert = Some("client-1"), trustedCert = Some("ca-1")))
+      json.value("client_cert") mustBe JsString("client-1")
+      json.value("trusted_cert") mustBe JsString("ca-1")
+    }
+
+    "round trip settings with a client and a trusted certificate" in {
+      val back = roundTrip(format, otlp.copy(clientCert = Some("client-1"), trustedCert = Some("ca-1")))
+      back.clientCert mustBe Some("client-1")
+      back.trustedCert mustBe Some("ca-1")
+    }
+
+    "round trip settings with a trusted certificate and no client certificate" in {
+      roundTrip(format, otlp.copy(trustedCert = Some("ca-1"))).trustedCert mustBe Some("ca-1")
+    }
+
+    "round trip settings with a client certificate and no trusted certificate" in {
+      val back = roundTrip(format, otlp.copy(clientCert = Some("client-1")))
+      back.clientCert mustBe Some("client-1")
+      back.trustedCert mustBe None
+    }
+
     "read a lone endpoint with the defaults" in {
       readOk(format, Json.obj("endpoint" -> "http://otlp")) mustBe OtlpSettings(
         grpc = false,

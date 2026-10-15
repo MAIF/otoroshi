@@ -240,7 +240,7 @@ object OtlpSettings {
       "endpoint"     -> o.endpoint,
       "timeout"      -> o.timeout.toMillis,
       "client_cert"  -> o.clientCert.map(JsString.apply).getOrElse(JsNull).asValue,
-      "trusted_cert" -> o.clientCert.map(JsString.apply).getOrElse(JsNull).asValue,
+      "trusted_cert" -> o.trustedCert.map(JsString.apply).getOrElse(JsNull).asValue,
       "headers"      -> o.headers,
       "max_batch"    -> o.maxBatch,
       "max_duration" -> o.maxDuration.toMillis
