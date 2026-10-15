@@ -166,7 +166,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
               case Some("listener") if script.`type` == PluginType.EventListenerType       => true
               case Some("job") if script.`type` == PluginType.JobType                      => true
               case Some("exporter") if script.`type` == PluginType.DataExporterType        => true
-              case Some("request-handler") if script.`type` == PluginType.DataExporterType => true
+              case Some("request-handler") if script.`type` == PluginType.RequestHandlerType => true
               case Some("tunnel-handler") if script.`type` == PluginType.TunnelHandlerType => true
               case Some("composite") if script.`type` == PluginType.CompositeType          => true
               case Some("*")                                                               => true

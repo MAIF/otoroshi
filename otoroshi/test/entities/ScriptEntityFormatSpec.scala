@@ -109,15 +109,25 @@ class ScriptEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, full)
     }
 
-    "round trip every plugin type the reads know" in {
+    "read an event listener script as an event listener" in {
+      readOk(format, written(format, minimal) ++ Json.obj("type" -> "listener")).`type` mustBe PluginType.EventListenerType
+    }
+
+    "read a tunnel handler script as a tunnel handler" in {
+      readOk(format, written(format, minimal) ++ Json.obj("type" -> "tunnel-handler")).`type` mustBe PluginType.TunnelHandlerType
+    }
+
+    "round trip every plugin type" in {
       val types = Seq(
         PluginType.AppType,
         PluginType.TransformerType,
         PluginType.AccessValidatorType,
         PluginType.PreRoutingType,
         PluginType.RequestSinkType,
+        PluginType.EventListenerType,
         PluginType.JobType,
         PluginType.DataExporterType,
+        PluginType.TunnelHandlerType,
         PluginType.RequestHandlerType,
         PluginType.CompositeType
       )
