@@ -3,16 +3,27 @@ package plugins
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import functional.{PluginsTestSpecBase, TargetService}
-import otoroshi.models.{GlobalJwtVerifier, HSAlgoSettings, InHeader, PassThrough, VerificationSettings}
+import otoroshi.models.{
+  ApiKey,
+  GlobalJwtVerifier,
+  HSAlgoSettings,
+  InHeader,
+  PassThrough,
+  RouteIdentifier,
+  VerificationSettings
+}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget}
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.security.IdGenerator
 import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+import scala.concurrent.duration.DurationInt
 
 // access control plugins that let requests through when they should not
 class PluginsHardeningTests(parent: PluginsTestSpecBase) {
@@ -122,6 +133,75 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
       )
       .futureValue
       .isRight mustBe true
+  }
+
+  // the apikey plugin validates the apikey for each candidate route of a request: the verdict for one route used to
+  // be reused for the next one. both routes serve the same path, the frontend header of the first one makes it the
+  // first candidate
+  def apikeyRoutingVerdict(): Unit = {
+    val domain   = s"apikey-routing-${IdGenerator.uuid}.oto.tools"
+    val target   = Some(NgTarget(id = "hardening-backend", hostname = "127.0.0.1", port = backend.port, tls = false))
+    val backendB = TargetService.full(None, "/", "application/json", _ => (200, """{"route":"b"}""", List.empty)).await()
+    val routeA = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[ApikeyCalls],
+          config = NgPluginInstanceConfig(
+            NgApikeyCallsConfig(routing = NgApikeyMatcher(enabled = true, oneTagIn = Seq("route-a"))).json.as[JsObject]
+          )
+        )
+      ),
+      domain = Some(domain),
+      target = target
+    ).futureValue
+      .applyOn(r => r.copy(frontend = r.frontend.copy(headers = Map("X-Hardening-Route" -> "any"))))
+    updateOtoroshiRoute(routeA).futureValue
+    val routeB = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[ApikeyCalls],
+          config = NgPluginInstanceConfig(NgApikeyCallsConfig().json.as[JsObject])
+        )
+      ),
+      domain = Some(domain),
+      target = Some(NgTarget(id = "hardening-backend-b", hostname = "127.0.0.1", port = backendB.port, tls = false))
+    ).futureValue
+    val onA    = ApiKey(
+      clientId = "hardening-on-a",
+      clientSecret = "hardening-on-a-secret",
+      clientName = "hardening-on-a",
+      authorizedEntities = Seq(RouteIdentifier(routeA.id))
+    )
+    val onB    = ApiKey(
+      clientId = "hardening-on-b",
+      clientSecret = "hardening-on-b-secret",
+      clientName = "hardening-on-b",
+      authorizedEntities = Seq(RouteIdentifier(routeB.id))
+    )
+    // through /api/apikeys: the group endpoint of createOtoroshiApiKey would authorize them on the default group too
+    otoroshiApiCall("POST", "/api/apikeys", Some(onA.toJson)).futureValue._2 mustBe Status.CREATED
+    otoroshiApiCall("POST", "/api/apikeys", Some(onB.toJson)).futureValue._2 mustBe Status.CREATED
+    await(1.second)
+    def callWith(apikey: ApiKey): (Int, String) = ws
+      .url(s"http://127.0.0.1:$port/api/x")
+      .withHttpHeaders(
+        "Host"                   -> domain,
+        "X-Hardening-Route"      -> "any",
+        "Otoroshi-Client-Id"     -> apikey.clientId,
+        "Otoroshi-Client-Secret" -> apikey.clientSecret
+      )
+      .get()
+      .futureValue
+      .applyOn(resp => (resp.status, resp.body))
+    val (statusB, bodyB) = callWith(onB)
+    withClue(s"an apikey of the second route: $bodyB ") { statusB mustBe Status.OK }
+    val (statusA, bodyA) = callWith(onA)
+    withClue(s"an apikey of the first route only, that fails its routing: $bodyA ") { statusA must not be Status.OK }
+    otoroshiApiCall("DELETE", s"/api/apikeys/${onA.clientId}").futureValue
+    otoroshiApiCall("DELETE", s"/api/apikeys/${onB.clientId}").futureValue
+    deleteOtoroshiRoute(routeA).futureValue
+    deleteOtoroshiRoute(routeB).futureValue
+    backendB.stop()
   }
 
   def stop(): Unit = backend.stop()

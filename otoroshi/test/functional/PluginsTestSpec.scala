@@ -64,6 +64,7 @@ class PluginsHardeningSpec extends PluginsTestSpecBase {
     "keep the config of each apikey plugin instance" in { hardening.apikeyInstances() }
     "not reuse the verdict of a jwt for another payload" in { hardening.jwtVerifierCache() }
     "not use a pem key as an http signature hmac secret" in { hardening.httpSignaturePemAsHmac() }
+    "not reuse the apikey verdict of another candidate route" in { hardening.apikeyRoutingVerdict() }
     "stop" in { hardening.stop() }
   }
 }

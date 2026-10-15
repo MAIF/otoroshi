@@ -2162,8 +2162,10 @@ object ApiKeyHelper {
       attrs: TypedMap
   )(using env: Env): Either[(Option[ApiKey], Option[String]), ApiKey] = {
     attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyKey) match {
-      case Some(either) => either
-      case None         => {
+      // the routing of the apikey plugin validates the apikey for every candidate route, a verdict only holds for the
+      // route it was validated for
+      case Some((validatedFor, either)) if validatedFor == service => either
+      case _                                                       => {
         env.datastores.apiKeyDataStore.findAuthorizeKeyForFromCache(apikeyTuple.clientId, service) match {
           case None         => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
           case Some(apikey) =>

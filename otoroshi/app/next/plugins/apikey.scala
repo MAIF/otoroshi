@@ -148,7 +148,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
             ctx.attrs.put(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey -> tuple)
             ApiKeyHelper.validateApikeyTuple(ctx.request, tuple, config.legacy, ctx.route.id, ctx.attrs).applyOn {
               either =>
-                ctx.attrs.put(otoroshi.next.plugins.Keys.PreExtractedApikeyKey -> either)
+                ctx.attrs.put(otoroshi.next.plugins.Keys.PreExtractedApikeyKey -> (ctx.route.id, either))
                 either
             } match {
               case Left(_)       => false
