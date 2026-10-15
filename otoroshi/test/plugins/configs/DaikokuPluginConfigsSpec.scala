@@ -137,6 +137,27 @@ class DaikokuPluginConfigsSpec extends PluginConfigFormatSpec {
       readOk(format, Json.obj("exclude" -> defaultExclude)).headerName mustBe Some("Otoroshi-claim")
     }
 
+    "round trip a config without header name" in {
+      roundTrip(format, ExposeDaikokuPresetConfig(headerName = None)).headerName mustBe None
+    }
+
+    "write a missing header name as null" in {
+      (written(format, ExposeDaikokuPresetConfig(headerName = None)) \ "header_name").get mustBe JsNull
+    }
+
+    "read a null header name as no header name" in {
+      readOk(format, Json.obj("exclude" -> defaultExclude, "header_name" -> JsNull)).headerName mustBe None
+    }
+
+    "tell a missing header name from a null one" in {
+      readOk(format, Json.obj()).headerName mustBe Some("Otoroshi-claim")
+      readOk(format, Json.obj("header_name" -> JsNull)).headerName mustBe None
+    }
+
+    "read a header name that is not a string as Otoroshi-claim" in {
+      readOk(format, Json.obj("header_name" -> 42)).headerName mustBe Some("Otoroshi-claim")
+    }
+
     "ignore an authentication module that is not a string" in {
       readOk(format, Json.obj("authentication_ref" -> 42)).authenticationRef mustBe None
     }

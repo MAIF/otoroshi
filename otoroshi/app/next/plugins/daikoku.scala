@@ -35,7 +35,11 @@ object ExposeDaikokuPresetConfig {
       ExposeDaikokuPresetConfig(
         authenticationRef = json.selectAsOptString("authentication_ref"),
         exclude = (json \ "exclude").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
-        headerName = json.selectAsOptString("header_name").orElse("Otoroshi-claim".some),
+        // a missing header name falls back to the default one, a null one is written for no header name
+        headerName = json.select("header_name").asOpt[JsValue] match {
+          case Some(JsNull) => None
+          case _            => json.selectAsOptString("header_name").orElse("Otoroshi-claim".some)
+        },
         addFields = json.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m)),
         algo = AlgoSettings
           .fromJson(json.select("algo").asOpt[JsObject].getOrElse(Json.obj()))
