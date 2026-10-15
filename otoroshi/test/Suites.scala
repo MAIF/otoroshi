@@ -216,7 +216,8 @@ class UnitTests
       new plugins.configs.Log4ShellPluginConfigsSpec(),
       new plugins.configs.QueryPluginConfigsSpec(),
       new plugins.configs.ApikeyPluginConfigsSpec(),
-      new plugins.configs.OidcPluginConfigsSpec()
+      new plugins.configs.OidcPluginConfigsSpec(),
+      new plugins.configs.ClientCredentialsPluginConfigsSpec()
     )
 
 class MapFilterTest
