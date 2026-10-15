@@ -1338,7 +1338,8 @@ object HttpSignatureSignResponseConfig {
 
   val format: Format[HttpSignatureSignResponseConfig] = new Format[HttpSignatureSignResponseConfig] {
     override def reads(json: JsValue): JsResult[HttpSignatureSignResponseConfig] = Try {
-      val keyJson   = (json \ "key").asOpt[JsValue]
+      // a missing key is written as null, which must not read back as an empty inline key
+      val keyJson   = (json \ "key").asOpt[JsValue].filterNot(_ == JsNull)
       val keySource = keyJson.flatMap(HttpSigKeySource.read(_).asOpt)
       HttpSignatureSignResponseConfig(
         key = keySource,

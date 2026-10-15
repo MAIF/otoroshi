@@ -344,6 +344,18 @@ class HttpSignaturePluginConfigsSpec extends PluginConfigFormatSpec {
       roundTrip(format, full)
     }
 
+    "round trip the default config" in {
+      roundTrip(format, HttpSignatureSignResponseConfig())
+    }
+
+    "round trip a config without key" in {
+      roundTrip(format, full.copy(key = None)).key mustBe None
+    }
+
+    "read a null key as no key" in {
+      readOk(format, Json.obj("key" -> JsNull)).key mustBe None
+    }
+
     "round trip a certificate key" in {
       roundTrip(format, HttpSignatureSignResponseConfig(key = Some(certKey))).key mustBe Some(certKey)
     }
@@ -479,6 +491,10 @@ class HttpSignaturePluginConfigsSpec extends PluginConfigFormatSpec {
 
     "be the default config object of HttpSignatureSignResponse" in {
       new HttpSignatureSignResponse().defaultConfigObject mustBe Some(HttpSignatureSignResponseConfig())
+    }
+
+    "be the default config of HttpSignatureSignResponse" in {
+      defaultConfigReadsBack(new HttpSignatureSignResponse(), format) mustBe HttpSignatureSignResponseConfig()
     }
   }
 
