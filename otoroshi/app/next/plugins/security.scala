@@ -451,9 +451,19 @@ object SecurityHeadersPluginConfig {
 
     override def reads(json: JsValue): JsResult[SecurityHeadersPluginConfig] = Try {
       SecurityHeadersPluginConfig(
-        frameOptions = FrameOptions.fromString((json \ "frame_options").as[String]),
-        xssProtection = XssProtection.fromString((json \ "xss_protection").as[String]),
-        contentTypeOptions = (json \ "content_type_options").as[Boolean],
+        // like the other sections, a missing field takes its default value instead of failing the whole config,
+        // which would leave the plugin on its default config and drop every other setting
+        frameOptions = (json \ "frame_options")
+          .asOpt[String]
+          .map(FrameOptions.fromString)
+          .getOrElse(SecurityHeadersPluginConfig.default.frameOptions),
+        xssProtection = (json \ "xss_protection")
+          .asOpt[String]
+          .map(XssProtection.fromString)
+          .getOrElse(SecurityHeadersPluginConfig.default.xssProtection),
+        contentTypeOptions = (json \ "content_type_options")
+          .asOpt[Boolean]
+          .getOrElse(SecurityHeadersPluginConfig.default.contentTypeOptions),
         hsts = json
           .select("hsts")
           .asOpt[JsObject]

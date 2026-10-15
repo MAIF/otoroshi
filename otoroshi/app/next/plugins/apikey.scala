@@ -617,7 +617,7 @@ case class NgApikeyMatcher(
   def json: JsValue                         = gentleJson
   def gentleJson: JsValue                   = Json
     .obj("enabled" -> enabled)
-    .applyOnIf(noneTagIn.nonEmpty)(obj => obj ++ Json.obj("none_tagIn" -> noneTagIn))
+    .applyOnIf(noneTagIn.nonEmpty)(obj => obj ++ Json.obj("none_tag_in" -> noneTagIn))
     .applyOnIf(oneTagIn.nonEmpty)(obj => obj ++ Json.obj("one_tag_in" -> oneTagIn))
     .applyOnIf(allTagsIn.nonEmpty)(obj => obj ++ Json.obj("all_tags_in" -> allTagsIn))
     .applyOnIf(noneMetaIn.nonEmpty)(obj => obj ++ Json.obj("none_meta_in" -> noneMetaIn))
@@ -645,7 +645,12 @@ object NgApikeyMatcher {
     override def reads(json: JsValue): JsResult[NgApikeyMatcher] = JsonHelpers.reader {
       NgApikeyMatcher(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-        noneTagIn = (json \ "none_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        // none_tagIn is the key this format used to write
+        noneTagIn = (json \ "none_tag_in")
+          .asOpt[Seq[String]]
+          .orElse((json \ "none_tagIn").asOpt[Seq[String]])
+          .getOrElse(Seq.empty[String])
+          .toSeq,
         oneTagIn = (json \ "one_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         allTagsIn = (json \ "all_tags_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         noneMetaIn = (json \ "none_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
@@ -790,10 +795,8 @@ object ApikeyAuthModuleConfig {
     override def reads(json: JsValue): JsResult[ApikeyAuthModuleConfig] = Try {
       ApikeyAuthModuleConfig(
         realm = json.select("realm").asOpt[String],
-        matcher = ApiKeyRouteMatcher.format.reads(json.select("matcher").getOrElse(Json.obj())) match {
-          case JsSuccess(value, _) => value.some
-          case JsError(_)          => None
-        }
+        // a missing matcher is written as null, which must not read back as an empty matcher
+        matcher = json.select("matcher").asOpt[JsObject].flatMap(obj => ApiKeyRouteMatcher.format.reads(obj).asOpt)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

@@ -275,10 +275,12 @@ case class MockResponsesConfig(
 
 object MockResponsesConfig {
   val format = new Format[MockResponsesConfig] {
-    override def writes(o: MockResponsesConfig): JsValue             = Json.obj(
-      "responses"    -> JsArray(o.responses.map(_.json)),
-      "pass_through" -> o.passThrough
-    )
+    override def writes(o: MockResponsesConfig): JsValue             = Json
+      .obj(
+        "responses"    -> JsArray(o.responses.map(_.json)),
+        "pass_through" -> o.passThrough
+      )
+      .applyOnWithOpt(o.formData)((obj, data) => obj ++ Json.obj("form_data" -> MockFormData.format.writes(data)))
     override def reads(json: JsValue): JsResult[MockResponsesConfig] = Try {
       MockResponsesConfig(
         responses = json
@@ -287,7 +289,7 @@ object MockResponsesConfig {
           .map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt))
           .getOrElse(Seq.empty).toSeq,
         passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true),
-        formData = json.select("form_data").asOpt[MockFormData](using MockFormData.format)
+        formData = json.select("form_data").asOpt[JsObject].flatMap(MockFormData.format.reads(_).asOpt)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

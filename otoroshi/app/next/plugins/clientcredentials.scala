@@ -91,7 +91,8 @@ object NgClientCredentialsConfig {
         defaultKeyPair = json.select("default_key_pair").asOpt[String].getOrElse(Cert.OtoroshiJwtSigning),
         domain = json.select("domain").asOpt[String].getOrElse("*"),
         secure = json.select("secure").asOpt[Boolean].getOrElse(true),
-        biscuit = json.select("biscuit").asOpt(using BiscuitConf.format),
+        // a missing biscuit config is written as null, which must not read back as an empty biscuit config
+        biscuit = json.select("biscuit").asOpt[JsObject].flatMap(BiscuitConf.format.reads(_).asOpt),
         jwksCacheTtl = json.select("jwks_cache_ttl").asOpt[Long].map(_.millis),
         maxBodySize = json.select("max_body_size").asOpt[Long].getOrElse(defaultMaxBodySize)
       )

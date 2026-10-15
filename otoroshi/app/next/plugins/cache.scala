@@ -205,7 +205,8 @@ object NgResponseCacheConfig {
         ttl = json.select("ttl").asOpt[Long].getOrElse(60.minutes.toMillis),
         maxSize = json.select("maxSize").asOpt[Long].getOrElse(50L * 1024L * 1024L),
         autoClean = json.select("autoClean").asOpt[Boolean].getOrElse(true),
-        filter = json.select("filter").asOpt[NgResponseCacheFilterConfig](using NgResponseCacheFilterConfig.format)
+        // a missing filter is written as null, which must not read back as a default filter
+        filter = json.select("filter").asOpt[JsObject].flatMap(NgResponseCacheFilterConfig.format.reads(_).asOpt)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)

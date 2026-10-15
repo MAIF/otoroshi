@@ -24,7 +24,12 @@ object NgGenericListConfig {
     )
     override def reads(json: JsValue): JsResult[NgGenericListConfig] = Try {
       NgGenericListConfig(
-        expression = json.select("expression").asOpt[String].filterNot(_.isBlank),
+        // a missing expression falls back to the default one: reading it as no expression would let every request
+        // pass an allowed list. an explicit null or blank expression still means no expression
+        expression = json.select("expression") match {
+          case JsDefined(value) => value.asOpt[String].filterNot(_.isBlank)
+          case _                => NgGenericListConfig().expression
+        },
         values = json.select("values").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {

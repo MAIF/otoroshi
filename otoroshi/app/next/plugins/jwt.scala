@@ -510,14 +510,17 @@ object NgJweSignerConfig {
   val format = new Format[NgJweSignerConfig] {
     override def reads(json: JsValue): JsResult[NgJweSignerConfig] = Try {
       NgJweSignerConfig(
+        // keyManagementAlgorithm, contentEncryptionAlgorithm and metadata are the keys this format used to write
         keyManagementAlgorithm = json
           .select("key_management_algorithm")
           .asOpt[String]
+          .orElse(json.select("keyManagementAlgorithm").asOpt[String])
           .map(keyManagementAlgorithmFromString)
           .getOrElse(JWEAlgorithm.RSA_OAEP_256),
         contentEncryptionAlgorithm = json
           .select("content_encryption_algorithm")
           .asOpt[String]
+          .orElse(json.select("contentEncryptionAlgorithm").asOpt[String])
           .map(contentEncryptionAlgorithmFromString)
           .getOrElse(EncryptionMethod.A128CBC_HS256),
         certId = json.select("certId").asOpt[String],
@@ -525,20 +528,24 @@ object NgJweSignerConfig {
         forwardLocation =
           JwtTokenLocation.fromJson((json \ "forward_location").as[JsValue]).getOrElse(InHeader("X-JWT-Token")),
         strict = json.select("strict").asOpt[Boolean].getOrElse(false),
-        payload = json.select("payload").asOpt[Map[String, String]].getOrElse(Map.empty)
+        payload = json
+          .select("payload")
+          .asOpt[Map[String, String]]
+          .orElse(json.select("metadata").asOpt[Map[String, String]])
+          .getOrElse(Map.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: NgJweSignerConfig): JsValue             = Json.obj(
-      "keyManagementAlgorithm"     -> keyManagementAlgorithmToString(o.keyManagementAlgorithm),
-      "contentEncryptionAlgorithm" -> contentEncryptionAlgorithmToString(o.contentEncryptionAlgorithm),
-      "certId"                     -> o.certId,
-      "source"                     -> o.source.asJson,
-      "forward_location"           -> o.forwardLocation.asJson,
-      "strict"                     -> o.strict,
-      "metadata"                   -> o.payload
+      "key_management_algorithm"     -> keyManagementAlgorithmToString(o.keyManagementAlgorithm),
+      "content_encryption_algorithm" -> contentEncryptionAlgorithmToString(o.contentEncryptionAlgorithm),
+      "certId"                       -> o.certId,
+      "source"                       -> o.source.asJson,
+      "forward_location"             -> o.forwardLocation.asJson,
+      "strict"                       -> o.strict,
+      "payload"                      -> o.payload
     )
   }
 
