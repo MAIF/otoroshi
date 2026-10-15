@@ -71,6 +71,23 @@ class ClientCredentialsPluginConfigsSpec extends PluginConfigFormatSpec {
       roundTrip(format, custom)
     }
 
+    "round trip the default config" in {
+      roundTrip(format, NgClientCredentialsConfig())
+    }
+
+    "round trip a config without biscuit config" in {
+      roundTrip(format, custom.copy(biscuit = None)).biscuit mustBe None
+    }
+
+    "read a null biscuit config as no biscuit config" in {
+      readOk(format, Json.obj("biscuit" -> JsNull)).biscuit mustBe None
+    }
+
+    "read a biscuit config that is not an object as no biscuit config" in {
+      readOk(format, Json.obj("biscuit" -> "facts")).biscuit mustBe None
+      readOk(format, Json.obj("biscuit" -> Json.arr("f"))).biscuit mustBe None
+    }
+
     "round trip an empty biscuit config" in {
       roundTrip(format, NgClientCredentialsConfig(biscuit = Some(BiscuitConf()))).biscuit mustBe Some(BiscuitConf())
     }
@@ -154,6 +171,10 @@ class ClientCredentialsPluginConfigsSpec extends PluginConfigFormatSpec {
 
     "expose through json what the format writes" in {
       jsonMatchesFormat(format, custom)
+    }
+
+    "be the default config of NgClientCredentials" in {
+      defaultConfigReadsBack(new NgClientCredentials(), format) mustBe NgClientCredentialsConfig()
     }
   }
 
