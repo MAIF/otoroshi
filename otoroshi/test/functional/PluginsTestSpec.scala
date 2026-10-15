@@ -94,6 +94,7 @@ class AuthHardeningSpec extends PluginsTestSpecBase {
     "not let read only users use the url fetching tooling" in { auth.backofficeTooling() }
     "only let a multi auth login use a module of the route" in { auth.multiAuthRef() }
     "keep the patterns of the wasm plugin datastore in their prefix" in { auth.wasmPluginDatastorePatterns() }
+    "evict the idle rate limiter strategies" in { auth.rateLimiterIdleTimeout() }
     "stop" in { auth.stop() }
   }
 }

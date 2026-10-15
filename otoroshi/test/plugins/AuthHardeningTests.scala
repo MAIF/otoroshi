@@ -253,5 +253,15 @@ class AuthHardeningTests(parent: PluginsTestSpecBase) {
     otoroshi.wasm.DataStore.isSafePattern("(.*)") mustBe false
   }
 
+  // the rate limiter evicts the strategies idle for longer than their window, and at least an hour
+  def rateLimiterIdleTimeout(): Unit = {
+    import otoroshi.next.plugins.*
+    import scala.concurrent.duration.DurationInt
+    RateLimiter.idleTimeout(LegacyThrottlingStrategy("idle", LegacyThrottlingStrategyConfig(), env)) mustBe 1.hour
+    RateLimiter.idleTimeout(
+      FixedWindowStrategy("idle", FixedWindowStrategyConfig(windowDurationMs = 2.hours.toMillis), env)
+    ) mustBe 2.hours
+  }
+
   def stop(): Unit = backend.stop()
 }

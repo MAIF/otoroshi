@@ -12,7 +12,6 @@ import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.drivers.lettuce.{LettuceRedisCluster, LettuceRedisStandaloneAndSentinels}
 import otoroshi.utils.TypedMap
-import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.*
 import play.api.mvc.Results.TooManyRequests
@@ -20,6 +19,9 @@ import play.api.mvc.Results.TooManyRequests
 import java.util.concurrent.atomic.AtomicReference
 import scala.jdk.CollectionConverters.*
 import scala.compat.java8.FutureConverters.*
+import com.github.blemale.scaffeine.Scaffeine
+
+import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -1287,12 +1289,33 @@ object ThrottlingStrategy {
     }
 }
 
+object RateLimiter {
+  def idleTimeout(strategy: ThrottlingStrategy): FiniteDuration = {
+    val window = strategy.config match {
+      case c: FixedWindowStrategyConfig       => c.windowDurationMs
+      // the time an empty bucket takes to be full again
+      case c: LocalTokensBucketStrategyConfig =>
+        math.ceil(c.capacity.toDouble / math.max(1L, c.refillRequestedTokens)).toLong * c.refillRequestIntervalMs
+      case _                                  => 0L
+    }
+    math.max(1.hour.toMillis, window).millis
+  }
+}
+
 class RateLimiter(_env: Env) {
   private implicit val env: Env     = _env
   implicit val ec: ExecutionContext = _env.otoroshiExecutionContext
 
   private val distributedRedisId = "otoroshi-rate-limiter-distributed-redis"
-  private val strategies         = new UnboundedTrieMap[String, ThrottlingStrategy]()
+  // the bucket keys come from requests: a strategy idle for longer than its window, and at least an hour, is evicted.
+  // a strategy only keeps the state of its current window in memory, the daily and monthly quotas are in the datastore
+  private val strategies         = Scaffeine()
+    .expireAfter[String, ThrottlingStrategy](
+      create = (_, strategy) => RateLimiter.idleTimeout(strategy),
+      update = (_, strategy, _) => RateLimiter.idleTimeout(strategy),
+      read = (_, strategy, _) => RateLimiter.idleTimeout(strategy)
+    )
+    .build[String, ThrottlingStrategy]()
 
   lazy val distributedRedisSettings: RateLimiterDistributedRedisSettings = RateLimiterDistributedRedisSettings(
     enabled = _env.configuration
@@ -1347,12 +1370,12 @@ class RateLimiter(_env: Env) {
     val key = value
     throttlingStrategy match {
       case Some(config) => getOrCreateWithConfig(key, config)
-      case None         => strategies.getOrElse(key, ThrottlingStrategy.default(key))
+      case None         => strategies.getIfPresent(key).getOrElse(ThrottlingStrategy.default(key))
     }
   }
 
   private def getOrCreateWithConfig(key: String, config: ThrottlingStrategyConfig): ThrottlingStrategy = {
-    strategies.get(key) match {
+    strategies.getIfPresent(key) match {
       case Some(strategy) if strategy.config.id == config.id => strategy
       case _                                                 =>
         val newStrategy = ThrottlingStrategy.apply(config, key)(using env)
