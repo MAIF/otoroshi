@@ -166,7 +166,8 @@ class UnitTests
       new NgTreeRouterPathParamsSpec(),
       new NgTreeRouterWildcardSpec(),
       // json formats of the plugin configurations, one spec per plugin source file
-      new plugins.configs.HeadersPluginConfigsSpec()
+      new plugins.configs.HeadersPluginConfigsSpec(),
+      new plugins.configs.WebsocketPluginConfigsSpec()
     )
 
 class MapFilterTest
