@@ -266,6 +266,7 @@ object SOAPActionConfig {
         action = json.select("action").asOpt[String],
         preserveQuery = json.select("preserve_query").asOpt[Boolean].getOrElse(true),
         charset = json.select("charset").asOpt[String],
+        convertRequestBodyToXml = json.select("convert_request_body_to_xml").asOpt[Boolean].getOrElse(true),
         jqRequestFilter = json.select("jq_request_filter").asOpt[String],
         jqResponseFilter = json.select("jq_response_filter").asOpt[String]
       )
@@ -282,6 +283,7 @@ object SOAPActionConfig {
       "action"             -> o.action.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "preserve_query"     -> o.preserveQuery,
       "charset"            -> o.charset.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "convert_request_body_to_xml" -> o.convertRequestBodyToXml,
       "jq_request_filter"  -> o.jqRequestFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "jq_response_filter" -> o.jqResponseFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )

@@ -93,13 +93,14 @@ class XmlPluginConfigsSpec extends PluginConfigFormatSpec {
 
     val pluginDefault = SOAPActionConfig(envelope = "<soap envelope />")
 
-    // convertRequestBodyToXml is left to its default value: the format neither writes nor reads it
+    // every field set to something else than its default
     val full = SOAPActionConfig(
       url = Some("https://soap.oto.tools/ws/NumberConversion.wso"),
       envelope = """<soap:Envelope><soap:Body><NumberToWords><ubiNum>${req.query.n}</ubiNum></NumberToWords></soap:Body></soap:Envelope>""",
       action = Some("NumberToWords"),
       preserveQuery = false,
       charset = Some("utf-8"),
+      convertRequestBodyToXml = false,
       jqRequestFilter = Some(".body"),
       jqResponseFilter = Some(".Envelope.Body.NumberToWordsResponse.NumberToWordsResult")
     )
@@ -121,6 +122,7 @@ class XmlPluginConfigsSpec extends PluginConfigFormatSpec {
         "action"             -> JsNull,
         "preserve_query"     -> true,
         "charset"            -> JsNull,
+        "convert_request_body_to_xml" -> true,
         "jq_request_filter"  -> JsNull,
         "jq_response_filter" -> JsNull
       )
@@ -133,6 +135,7 @@ class XmlPluginConfigsSpec extends PluginConfigFormatSpec {
         "action"             -> "NumberToWords",
         "preserve_query"     -> false,
         "charset"            -> "utf-8",
+        "convert_request_body_to_xml" -> false,
         "jq_request_filter"  -> ".body",
         "jq_response_filter" -> ".Envelope.Body.NumberToWordsResponse.NumberToWordsResult"
       )
@@ -144,6 +147,28 @@ class XmlPluginConfigsSpec extends PluginConfigFormatSpec {
 
     "round trip a config where every field is set" in {
       roundTrip(format, full)
+    }
+
+    "round trip a config that does not convert the request body to xml" in {
+      roundTrip(format, pluginDefault.copy(convertRequestBodyToXml = false)).convertRequestBodyToXml mustBe false
+    }
+
+    "read the convert_request_body_to_xml flag of the ui form" in {
+      readOk(
+        format,
+        Json.obj("envelope" -> "<e/>", "convert_request_body_to_xml" -> false)
+      ).convertRequestBodyToXml mustBe false
+    }
+
+    "convert the request body to xml when the flag is missing" in {
+      readOk(format, Json.obj("envelope" -> "<e/>")).convertRequestBodyToXml mustBe true
+    }
+
+    "convert the request body to xml when the flag is not a boolean" in {
+      readOk(
+        format,
+        Json.obj("envelope" -> "<e/>", "convert_request_body_to_xml" -> "false")
+      ).convertRequestBodyToXml mustBe true
     }
 
     "round trip a config that does not preserve the query" in {
