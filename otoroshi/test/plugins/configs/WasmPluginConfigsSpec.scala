@@ -1,6 +1,19 @@
 package plugins.configs
 
 import io.otoroshi.wasm4s.scaladsl.{WasmSource, WasmSourceKind, WasmVmKillOptions, WasmVmLifetime}
+import otoroshi.next.plugins.{
+  WasmAccessValidator,
+  WasmBackend,
+  WasmOPA,
+  WasmPreRoute,
+  WasmRequestTransformer,
+  WasmResponseTransformer,
+  WasmRouteMatcher,
+  WasmRouter,
+  WasmSink,
+  WasmWebsocketTransformer
+}
+import otoroshi.next.plugins.api.NgNamedPlugin
 import otoroshi.wasm.{WasmAuthorizations, WasmConfig, WasmDataRights}
 import play.api.libs.json.*
 
@@ -322,6 +335,85 @@ class WasmPluginConfigsSpec extends PluginConfigFormatSpec {
 
     "expose through json what the format writes" in {
       jsonMatchesFormat(format, custom)
+    }
+  }
+
+  "the wasm plugins" should {
+
+    val format = WasmConfig.format
+
+    val plainPlugins: Seq[NgNamedPlugin] = Seq(
+      new WasmRouteMatcher(),
+      new WasmPreRoute(),
+      new WasmBackend(),
+      new WasmAccessValidator(),
+      new WasmRequestTransformer(),
+      new WasmResponseTransformer(),
+      new WasmSink(),
+      new WasmRouter(),
+      new WasmWebsocketTransformer()
+    )
+
+    "have the default wasm config as default config of WasmRouteMatcher" in {
+      defaultConfigReadsBack(new WasmRouteMatcher(), format) mustBe WasmConfig()
+    }
+
+    "have the default wasm config as default config of WasmPreRoute" in {
+      defaultConfigReadsBack(new WasmPreRoute(), format) mustBe WasmConfig()
+    }
+
+    "have the default wasm config as default config of WasmBackend" in {
+      defaultConfigReadsBack(new WasmBackend(), format) mustBe WasmConfig()
+    }
+
+    "have the default wasm config as default config of WasmAccessValidator" in {
+      defaultConfigReadsBack(new WasmAccessValidator(), format) mustBe WasmConfig()
+    }
+
+    "have the default wasm config as default config of WasmRequestTransformer" in {
+      defaultConfigReadsBack(new WasmRequestTransformer(), format) mustBe WasmConfig()
+    }
+
+    "have the default wasm config as default config of WasmResponseTransformer" in {
+      defaultConfigReadsBack(new WasmResponseTransformer(), format) mustBe WasmConfig()
+    }
+
+    "have the default wasm config as default config of WasmSink" in {
+      defaultConfigReadsBack(new WasmSink(), format) mustBe WasmConfig()
+    }
+
+    "have the default wasm config as default config of WasmRouter" in {
+      defaultConfigReadsBack(new WasmRouter(), format) mustBe WasmConfig()
+    }
+
+    "have the default wasm config as default config of WasmWebsocketTransformer" in {
+      defaultConfigReadsBack(new WasmWebsocketTransformer(), format) mustBe WasmConfig()
+    }
+
+    "have an opa wasm config as default config of WasmOPA" in {
+      defaultConfigReadsBack(new WasmOPA(), format) mustBe WasmConfig(opa = true)
+    }
+
+    "write the opa flag in the default config of WasmOPA" in {
+      (new WasmOPA().defaultConfig.get \ "opa").as[Boolean] mustBe true
+    }
+
+    "differ from the default wasm config only by the opa flag for WasmOPA" in {
+      val opa   = new WasmOPA().defaultConfig.get
+      val plain = new WasmAccessValidator().defaultConfig.get
+      (opa - "opa") mustBe (plain - "opa")
+    }
+
+    "give the same default config json to every plain wasm plugin" in {
+      plainPlugins.map(_.defaultConfig.get).distinct mustBe Seq(format.writes(WasmConfig()))
+    }
+
+    "not use opa in the default config of the plain wasm plugins" in {
+      plainPlugins.foreach { plugin =>
+        withClue(plugin.getClass.getName) {
+          (plugin.defaultConfig.get \ "opa").as[Boolean] mustBe false
+        }
+      }
     }
   }
 }
