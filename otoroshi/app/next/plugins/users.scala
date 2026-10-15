@@ -190,9 +190,9 @@ object NgJwtUserExtractorConfig {
         verifier = json.select("verifier").as[String],
         strict = json.select("strict").asOpt[Boolean].getOrElse(true),
         strip = json.select("strip").asOpt[Boolean].getOrElse(false),
-        namePath = json.select("namePath").asOpt[String],
-        emailPath = json.select("emailPath").asOpt[String],
-        metaPath = json.select("metaPath").asOpt[String]
+        namePath = json.select("name_path").asOpt[String].orElse(json.select("namePath").asOpt[String]),
+        emailPath = json.select("email_path").asOpt[String].orElse(json.select("emailPath").asOpt[String]),
+        metaPath = json.select("meta_path").asOpt[String].orElse(json.select("metaPath").asOpt[String])
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

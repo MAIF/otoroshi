@@ -226,11 +226,81 @@ class UsersPluginConfigsSpec extends PluginConfigFormatSpec {
       readOk(format, Json.obj("verifier" -> "v")) mustBe NgJwtUserExtractorConfig("v")
     }
 
-    "read the camel case path keys" in {
+    "round trip the name, email and meta paths" in {
+      roundTrip(
+        format,
+        NgJwtUserExtractorConfig("v", namePath = Some("$.n"), emailPath = Some("$.e"), metaPath = Some("$.m"))
+      )
+    }
+
+    "round trip a name path alone" in {
+      roundTrip(format, NgJwtUserExtractorConfig("v", namePath = Some("name"))).namePath mustBe Some("name")
+    }
+
+    "round trip an email path alone" in {
+      roundTrip(format, NgJwtUserExtractorConfig("v", emailPath = Some("email"))).emailPath mustBe Some("email")
+    }
+
+    "round trip a meta path alone" in {
+      roundTrip(format, NgJwtUserExtractorConfig("v", metaPath = Some("meta"))).metaPath mustBe Some("meta")
+    }
+
+    "round trip a config where every field is set" in {
+      roundTrip(
+        format,
+        NgJwtUserExtractorConfig(
+          "verifier-1",
+          strict = false,
+          strip = true,
+          namePath = Some("$.name"),
+          emailPath = Some("$.email"),
+          metaPath = Some("$.meta")
+        )
+      )
+    }
+
+    "read the snake case path keys written by the ui form" in {
+      readOk(
+        format,
+        Json.obj("verifier" -> "v", "name_path" -> "$.n", "email_path" -> "$.e", "meta_path" -> "$.m")
+      ) mustBe NgJwtUserExtractorConfig("v", namePath = Some("$.n"), emailPath = Some("$.e"), metaPath = Some("$.m"))
+    }
+
+    "still read the legacy camel case path keys" in {
       readOk(
         format,
         Json.obj("verifier" -> "v", "namePath" -> "$.n", "emailPath" -> "$.e", "metaPath" -> "$.m")
       ) mustBe NgJwtUserExtractorConfig("v", namePath = Some("$.n"), emailPath = Some("$.e"), metaPath = Some("$.m"))
+    }
+
+    "prefer the snake case path keys over the camel case ones" in {
+      readOk(
+        format,
+        Json.obj(
+          "verifier"   -> "v",
+          "name_path"  -> "snake-n",
+          "namePath"   -> "camel-n",
+          "email_path" -> "snake-e",
+          "emailPath"  -> "camel-e",
+          "meta_path"  -> "snake-m",
+          "metaPath"   -> "camel-m"
+        )
+      ) mustBe NgJwtUserExtractorConfig(
+        "v",
+        namePath = Some("snake-n"),
+        emailPath = Some("snake-e"),
+        metaPath = Some("snake-m")
+      )
+    }
+
+    "fall back to the camel case key when the snake case one is null" in {
+      readOk(format, Json.obj("verifier" -> "v", "name_path" -> JsNull, "namePath" -> "$.n")).namePath mustBe Some("$.n")
+    }
+
+    "rewrite the legacy camel case path keys as snake case ones" in {
+      val legacy = readOk(format, Json.obj("verifier" -> "v", "namePath" -> "$.n"))
+      written(format, legacy).value.get("name_path") mustBe Some(JsString("$.n"))
+      written(format, legacy).keys must not contain "namePath"
     }
 
     "ignore flags written as strings" in {
