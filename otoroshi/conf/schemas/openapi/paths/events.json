@@ -1,0 +1,1392 @@
+{
+  "/api/audit/events": {
+    "get": {
+      "tags": [
+        "events"
+      ],
+      "summary": "List the audit events",
+      "description": "Answers the latest audit events otoroshi keeps in its datastore, the most recent first: at most 1001 of them, the datastore itself keeping the `maxLogsSize` latest ones of the global configuration.\n\nEach `filter.<field>=<value>` query parameter keeps the events whose top level `field` holds the value: a string equal to it, a boolean or a number equal to it once parsed, or an array holding it. The filters apply to the page given by `page` and `pageSize`.\n\nThe events are answered as a json array, or as ndjson (one event per line) when the `Accept` header asks for `application/x-ndjson` and not for json. The call is itself audited (`ACCESS_AUDIT_EVENTS`). Super admins only.",
+      "operationId": "otoroshi.controllers.adminapi.EventsController.auditEvents",
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "description": "The page to answer, starting at 1. Only applied when at least one `filter.<field>` parameter is given",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "default": 1
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "description": "The number of events of a page. Every event is answered when absent. Only applied when at least one `filter.<field>` parameter is given",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The audit events, the most recent first: a json array, or one event per line with ndjson",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AuditEvent"
+                }
+              }
+            },
+            "application/x-ndjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditEvent"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin, or the backoffice user token of the `Otoroshi-BackOffice-User` header is invalid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/alert/events": {
+    "get": {
+      "tags": [
+        "events"
+      ],
+      "summary": "List the alert events",
+      "description": "Answers the latest alert events otoroshi keeps in its datastore, the most recent first: at most 1001 of them, the datastore itself keeping the `maxLogsSize` latest ones of the global configuration.\n\nEach `filter.<field>=<value>` query parameter keeps the events whose top level `field` holds the value: a string equal to it, a boolean or a number equal to it once parsed, or an array holding it. The filters apply to the page given by `page` and `pageSize`.\n\nThe events are answered as a json array, or as ndjson (one event per line) when the `Accept` header asks for `application/x-ndjson` and not for json. The call is itself audited (`ACCESS_ALERT_EVENTS`). Super admins only.",
+      "operationId": "otoroshi.controllers.adminapi.EventsController.alertEvents",
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "description": "The page to answer, starting at 1. Only applied when at least one `filter.<field>` parameter is given",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "default": 1
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "description": "The number of events of a page. Every event is answered when absent. Only applied when at least one `filter.<field>` parameter is given",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The alert events, the most recent first: a json array, or one event per line with ndjson",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AlertEvent"
+                }
+              }
+            },
+            "application/x-ndjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertEvent"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin, or the backoffice user token of the `Otoroshi-BackOffice-User` header is invalid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/live": {
+    "get": {
+      "tags": [
+        "stats"
+      ],
+      "summary": "Read the live statistics of the whole traffic",
+      "description": "Answers the counters of the whole traffic otoroshi handled (calls, bytes in and out), and the rates and average durations of the latest calls. Calling it is audited (`ACCESS_GLOBAL_LIVESTATS`). On a leader, the rates add up, and the durations average, the ones the members of the cluster report. The same as `GET /api/live/global`.",
+      "operationId": "otoroshi.controllers.adminapi.StatsController.globalLiveStats",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The live statistics of the whole traffic",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveStats"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The backoffice user token of the `Otoroshi-BackOffice-User` header is invalid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/live/host": {
+    "get": {
+      "tags": [
+        "stats"
+      ],
+      "summary": "Stream the metrics of the host",
+      "description": "Answers a server sent events stream that sends, every 2 seconds and as long as the client keeps the connection open, the metrics of the jvm and of the host of the otoroshi instance that answers: cpu, heap, threads, and some environment variables. The `data` of each event is a json `HostMetrics`. Calling it is audited (`ACCESS_HOST_METRICS`).",
+      "operationId": "otoroshi.controllers.adminapi.StatsController.hostMetrics",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "A server sent events stream, an event every 2 seconds whose `data` is a json `HostMetrics`",
+          "content": {
+            "text/event-stream": {
+              "schema": {
+                "$ref": "#/components/schemas/HostMetrics"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The backoffice user token of the `Otoroshi-BackOffice-User` header is invalid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/live/{id}": {
+    "get": {
+      "tags": [
+        "stats"
+      ],
+      "summary": "Read the live statistics of a route",
+      "description": "Answers the counters of the traffic of a route (calls, bytes in and out), and the rates and average durations of its latest calls. With `every`, answers a server sent events stream that sends them every `every` milliseconds, as long as the client keeps the connection open, the `data` of each event being a json `LiveStats`. Calling it is audited (`ACCESS_SERVICE_LIVESTATS`). On a leader, the rates add up, and the durations average, the ones the members of the cluster report. The number of requests being handled right now is the one of the whole instance (or cluster), not of the route.",
+      "operationId": "otoroshi.controllers.adminapi.StatsController.serviceLiveStats",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The id of the route, or `global` for the whole traffic. The ids of apis, of their routes, of route compositions and of drafts are accepted too",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "global"
+          }
+        },
+        {
+          "name": "every",
+          "in": "query",
+          "description": "Answers a server sent events stream that sends the statistics every `every` milliseconds instead of a single json document",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "example": 2000
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The live statistics: a json document, or with `every` a server sent events stream whose events hold a json `LiveStats` in their `data`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveStats"
+              }
+            },
+            "text/event-stream": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveStats"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or `every` is not an integer",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The route does not exist, or the credentials cannot read it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/stats/global": {
+    "get": {
+      "tags": [
+        "stats"
+      ],
+      "summary": "Read the statistics of the whole traffic over a period",
+      "description": "Answers the statistics of every call of the period, read from the Elasticsearch cluster of the global configuration (`elasticReadsConfig`): counts, bytes, durations and overheads, their histograms over time, and the calls by status code and by route. Calling it is audited (`ACCESS_GLOBAL_STATS`). Super admins only.",
+      "operationId": "otoroshi.controllers.adminapi.AnalyticsController.globalStats",
+      "parameters": [
+        {
+          "name": "from",
+          "in": "query",
+          "description": "The start of the period, as a unix timestamp in milliseconds. The whole history when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1791489600000
+          }
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "description": "The end of the period, as a unix timestamp in milliseconds. Now when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1792094400000
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The statistics of every call of the period, the calls by route included",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrafficStats"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin, or the backoffice user token of the `Otoroshi-BackOffice-User` header is invalid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The global configuration has no Elasticsearch cluster to read the analytics from (`elasticReadsConfig`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The Elasticsearch cluster does not work, cannot be reached, or failed to answer",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/stats": {
+    "get": {
+      "tags": [
+        "stats"
+      ],
+      "summary": "Read the statistics of a route, an api key or a group over a period",
+      "description": "Answers the statistics of the calls of the period made to a route (`service`), with an api key (`apikey`) or to the routes of a group (`group`), read from the Elasticsearch cluster of the global configuration (`elasticReadsConfig`): counts, bytes, durations and overheads, their histograms over time, and the calls by status code (and by route, for an api key or a group). `fields` keeps only some of them.",
+      "operationId": "otoroshi.controllers.adminapi.AnalyticsController.filterableStats",
+      "parameters": [
+        {
+          "name": "from",
+          "in": "query",
+          "description": "The start of the period, as a unix timestamp in milliseconds. The whole history when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1791489600000
+          }
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "description": "The end of the period, as a unix timestamp in milliseconds. Now when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1792094400000
+          }
+        },
+        {
+          "name": "service",
+          "in": "query",
+          "description": "The id of the route whose statistics are read. Takes precedence over `apikey` and `group`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "route_d74ea8b27-b8be-4177-82d9-c50722416c50"
+          }
+        },
+        {
+          "name": "apikey",
+          "in": "query",
+          "description": "The client id of the api key whose statistics are read. Takes precedence over `group`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "xjcmqmdnbmhswkwh"
+          }
+        },
+        {
+          "name": "group",
+          "in": "query",
+          "description": "The id of the group of routes whose statistics are read",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "default"
+          }
+        },
+        {
+          "name": "fields",
+          "in": "query",
+          "description": "Comma separated list of the statistics to answer, among `statusesPiechart`, `statusesHistogram`, `overheadPercentiles`, `overheadStats`, `durationPercentiles`, `durationStats`, `dataInStats`, `dataOutStats`, `hits`, `dataIn`, `dataOut`, `avgDuration`, `avgOverhead` and `servicePiechart` (case insensitive). All of them when absent",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "hits,avgDuration"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The statistics of the calls of the route, the api key or the group (named in `type`), only the ones of `fields` when it is given",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrafficStats"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The credentials cannot read the route, the api key or the group",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The global configuration has no Elasticsearch cluster to read the analytics from (`elasticReadsConfig`), none of `service`, `apikey` and `group` is given, or the entity they name does not exist",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The Elasticsearch cluster does not work, cannot be reached, or failed to answer",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/status/global": {
+    "get": {
+      "tags": [
+        "stats"
+      ],
+      "summary": "Read the health of the routes over a period",
+      "description": "Answers the health of the routes the credentials can read whose health check is enabled, day by day, read from the health check events of the Elasticsearch cluster of the global configuration (`elasticReadsConfig`). The routes are sorted by name and paginated: the `X-Count` header holds the number of routes, `X-Offset`, `X-Page` and `X-Page-Size` the page answered. Calling it is audited (`ACCESS_GLOBAL_STATUSES`).",
+      "operationId": "otoroshi.controllers.adminapi.AnalyticsController.globalStatus",
+      "parameters": [
+        {
+          "name": "from",
+          "in": "query",
+          "description": "The start of the period, as a unix timestamp in milliseconds. 90 days ago, at the start of the day, when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1791489600000
+          }
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "description": "The end of the period, as a unix timestamp in milliseconds. Now when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1792094400000
+          }
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "description": "The page of routes to answer: the page answered starts at the route `page * pageSize` (counted from 0)",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "default": 1
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "description": "The number of routes of a page. Every route when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The health of the routes, the ones with no health check event left out",
+          "headers": {
+            "X-Count": {
+              "description": "The number of routes the credentials can read whose health check is enabled",
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "X-Offset": {
+              "description": "The position of the first route of the page",
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "X-Page": {
+              "description": "The page answered",
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "X-Page-Size": {
+              "description": "The number of routes of a page",
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ServiceStatus"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The global configuration has no Elasticsearch cluster to read the analytics from (`elasticReadsConfig`), or no route the credentials can read has its health check enabled",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The Elasticsearch cluster does not work, cannot be reached, or failed to answer",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/status": {
+    "post": {
+      "tags": [
+        "stats"
+      ],
+      "summary": "Read the health of some routes over a period",
+      "description": "Answers the health of the routes listed in the body (every route when the body is not an array) that the credentials can read, day by day, read from the health check events of the Elasticsearch cluster of the global configuration (`elasticReadsConfig`).",
+      "operationId": "otoroshi.controllers.adminapi.AnalyticsController.servicesStatus",
+      "parameters": [
+        {
+          "name": "from",
+          "in": "query",
+          "description": "The start of the period, as a unix timestamp in milliseconds. 90 days ago, at the start of the day, when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1791489600000
+          }
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "description": "The end of the period, as a unix timestamp in milliseconds. Now when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1792094400000
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The ids of the routes whose health is read. Any other json value than an array reads the health of every route",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "description": "The ids of the routes",
+              "items": {
+                "type": "string",
+                "description": "The id of a route"
+              },
+              "example": [
+                "route_d74ea8b27-b8be-4177-82d9-c50722416c50"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The health of the routes, the ones with no health check event left out",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ServiceStatus"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the body is not valid json",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The global configuration has no Elasticsearch cluster to read the analytics from (`elasticReadsConfig`), or none of the routes exists or can be read by the credentials",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "415": {
+          "description": "The body is not sent as `application/json`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The Elasticsearch cluster does not work, cannot be reached, or failed to answer",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/events": {
+    "get": {
+      "tags": [
+        "events"
+      ],
+      "summary": "List the gateway events of a route, an api key or a group",
+      "description": "Answers a page of the gateway events of the period, read from the Elasticsearch cluster of the global configuration (`elasticReadsConfig`): the calls made to a route (`service`), with an api key (`apikey`), or to the routes of a group (`group`). Without any of them, every call of every tenant (organization) is answered, to super admins only.",
+      "operationId": "otoroshi.controllers.adminapi.AnalyticsController.filterableEvents",
+      "parameters": [
+        {
+          "name": "from",
+          "in": "query",
+          "description": "The start of the period, as a unix timestamp in milliseconds. The whole history when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1791489600000
+          }
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "description": "The end of the period, as a unix timestamp in milliseconds. Now when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1792094400000
+          }
+        },
+        {
+          "name": "service",
+          "in": "query",
+          "description": "The id of the route whose gateway events are read. Takes precedence over `apikey` and `group`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "route_d74ea8b27-b8be-4177-82d9-c50722416c50"
+          }
+        },
+        {
+          "name": "apikey",
+          "in": "query",
+          "description": "The client id of the api key whose gateway events are read. Takes precedence over `group`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "xjcmqmdnbmhswkwh"
+          }
+        },
+        {
+          "name": "group",
+          "in": "query",
+          "description": "The id of the group of routes whose gateway events are read",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "default"
+          }
+        },
+        {
+          "name": "order",
+          "in": "query",
+          "description": "The order of the events, by date",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "asc"
+          }
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "description": "The page to answer, starting at 1",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "default": 1
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "description": "The number of events of a page",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "default": 9999
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "A page of the gateway events of the route, the api key or the group, or of the whole traffic, with what they are filtered on in `type`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrafficEvents"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The credentials cannot read the route, the api key or the group, or none of them is given and the admin behind the credentials is not a super admin",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The global configuration has no Elasticsearch cluster to read the analytics from (`elasticReadsConfig`), or the route, the api key or the group does not exist",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The Elasticsearch cluster does not work, cannot be reached, or failed to answer",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/events/_template": {
+    "get": {
+      "tags": [
+        "events"
+      ],
+      "summary": "List the fields of a kind of event",
+      "description": "Answers the paths of the fields of a kind of event, sorted, the fields of the nested objects written with dots (`data.dataIn`). They are read from the Scala class of the event, the names of its fields as the jvm holds them. The backoffice suggests them in the filters and the projections of the data exporters.",
+      "operationId": "otoroshi.controllers.adminapi.TemplatesController.templateSpec",
+      "parameters": [
+        {
+          "name": "eventType",
+          "in": "query",
+          "description": "The kind of event whose fields are listed: the name of its Scala class, like `GatewayEvent`, `HealthCheckEvent` or `AdminLoggedInAlert`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "GatewayEvent",
+              "MaxConcurrentRequestReachedAlert",
+              "CircuitBreakerOpenedAlert",
+              "CircuitBreakerClosedAlert",
+              "SessionDiscardedAlert",
+              "SessionsDiscardedAlert",
+              "PanicModeAlert",
+              "OtoroshiExportAlert",
+              "U2FAdminDeletedAlert",
+              "BlackListedBackOfficeUserAlert",
+              "AdminLoggedInAlert",
+              "AdminFirstLogin",
+              "AdminLoggedOutAlert",
+              "GlobalConfigModification",
+              "RevokedApiKeyUsageAlert",
+              "ServiceGroupCreatedAlert",
+              "ServiceGroupUpdatedAlert",
+              "ServiceGroupDeletedAlert",
+              "ServiceCreatedAlert",
+              "ServiceUpdatedAlert",
+              "ServiceDeletedAlert",
+              "ApiKeyCreatedAlert",
+              "ApiKeyUpdatedAlert",
+              "ApiKeyDeletedAlert",
+              "TrafficCaptureEvent",
+              "TcpEvent",
+              "HealthCheckEvent",
+              "RequestBodyEvent",
+              "ResponseBodyEvent",
+              "MirroringEvent",
+              "BackOfficeEvent",
+              "AdminApiEvent",
+              "SnowMonkeyOutageRegisteredEvent",
+              "CircuitBreakerOpenedEvent",
+              "CircuitBreakerClosedEvent",
+              "MaxConcurrentRequestReachedEvent",
+              "JobRunEvent",
+              "JobErrorEvent",
+              "JobStoppedEvent",
+              "JobStartedEvent"
+            ],
+            "example": "GatewayEvent"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The paths of the fields of the event",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The paths of the fields",
+                "items": {
+                  "type": "string",
+                  "description": "The path of a field, the names of the nested fields separated by dots"
+                },
+                "example": [
+                  "backendDuration",
+                  "data.dataIn",
+                  "data.dataOut",
+                  "duration",
+                  "method",
+                  "protocol",
+                  "reqId",
+                  "status",
+                  "to.host",
+                  "to.scheme",
+                  "to.uri"
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials or `eventType` are missing, or `eventType` is not a known kind of event (answered in plain text)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "description": "The error",
+                "example": "Event type unkown"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The backoffice user token of the `Otoroshi-BackOffice-User` header is invalid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/node/eventstream": {
+    "get": {
+      "tags": [
+        "events"
+      ],
+      "summary": "Stream the events of the node",
+      "description": "Answers a server sent events stream of the events the otoroshi instance that answers produces (gateway events, audit and alert events, health checks, jobs...), as long as the client keeps the connection open. The `data` of each event is the json of an otoroshi event. Only the events produced after the connection are sent, and only those of this instance, not of the other members of the cluster. The stream stays empty when `otoroshi.options.useEventStreamForScriptEvents` is `false`. Super admins only.",
+      "operationId": "otoroshi.controllers.adminapi.AnalyticsController.getNodeEventStream",
+      "parameters": [
+        {
+          "name": "filter",
+          "in": "query",
+          "description": "Only sends the events of this `@type`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "GatewayEvent"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "A server sent events stream, an event per otoroshi event whose `data` is its json",
+          "content": {
+            "text/event-stream": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "The json of an otoroshi event: its `@id`, `@timestamp`, `@type` and the fields of its kind"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin, or the backoffice user token of the `Otoroshi-BackOffice-User` header is invalid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
