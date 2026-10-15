@@ -191,7 +191,8 @@ class UnitTests
       new plugins.configs.IpAddressPluginConfigsSpec(),
       new plugins.configs.ZipPluginConfigsSpec(),
       new plugins.configs.ExternalPluginConfigsSpec(),
-      new plugins.configs.GrpcPluginConfigsSpec()
+      new plugins.configs.GrpcPluginConfigsSpec(),
+      new plugins.configs.BrotliPluginConfigsSpec()
     )
 
 class MapFilterTest
