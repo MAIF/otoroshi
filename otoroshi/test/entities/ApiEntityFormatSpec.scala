@@ -222,6 +222,23 @@ class ApiEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, full)
     }
 
+    "round trip a flow whose plugin sets every plugin index" in {
+      val index = PluginIndex(
+        sink = Some(1),
+        preRoute = Some(2),
+        validateAccess = Some(3),
+        transformRequest = Some(4),
+        transformResponse = Some(5),
+        matchRoute = Some(6),
+        handlesTunnel = Some(7),
+        handlesWebsocket = Some(8),
+        handlesWebsocketBackend = Some(9),
+        callBackend = Some(10)
+      )
+      val indexed = flow.copy(plugins = NgPlugins(flow.plugins.slots.map(_.copy(pluginIndex = Some(index)))))
+      roundTrip(ApiFlows._fmt, indexed).plugins.slots.head.pluginIndex mustBe Some(index)
+    }
+
     "round trip every state" in {
       Seq(ApiStaging, ApiPublished, ApiDeprecated, ApiRemoved).foreach { state =>
         roundTrip(format, full.copy(state = state)).state mustBe state

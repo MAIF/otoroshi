@@ -42,7 +42,7 @@ class RouteEntityFormatSpec extends EntityFormatSpec {
     exact = true
   )
 
-  // every field of the plugin index that the format writes
+  // every field of the plugin index
   private val fullIndex = PluginIndex(
     sink = Some(1),
     preRoute = Some(2),
@@ -51,7 +51,9 @@ class RouteEntityFormatSpec extends EntityFormatSpec {
     transformResponse = Some(5),
     matchRoute = Some(6),
     handlesTunnel = Some(7),
-    handlesWebsocket = Some(8)
+    handlesWebsocket = Some(8),
+    handlesWebsocketBackend = Some(9),
+    callBackend = Some(10)
   )
 
   private val fullInstance = NgPluginInstance(
@@ -283,8 +285,25 @@ class RouteEntityFormatSpec extends EntityFormatSpec {
         "transform_response" -> 5,
         "match_route"        -> 6,
         "handles_tunnel"     -> 7,
-        "handles_websocket"  -> 8
+        "handles_websocket"  -> 8,
+        "handles_websocket_backend" -> 9,
+        "call_backend"       -> 10
       )
+    }
+
+    "read the websocket backend and call backend phases" in {
+      readOk(format, Json.obj("handles_websocket_backend" -> 9, "call_backend" -> 10.5)) mustBe PluginIndex(
+        handlesWebsocketBackend = Some(9),
+        callBackend = Some(10.5)
+      )
+    }
+
+    "keep the call backend phase of a plugin on a round trip" in {
+      roundTrip(format, PluginIndex(callBackend = Some(2))).callBackend mustBe Some(2)
+    }
+
+    "keep the websocket backend phase of a plugin on a round trip" in {
+      roundTrip(format, PluginIndex(handlesWebsocketBackend = Some(3))).handlesWebsocketBackend mustBe Some(3)
     }
 
     "expose through json what the format writes" in {
@@ -295,7 +314,7 @@ class RouteEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, PluginIndex())
     }
 
-    "round trip an index where every written phase is set" in {
+    "round trip an index where every phase is set" in {
       roundTrip(format, fullIndex)
     }
 
