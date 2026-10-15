@@ -233,7 +233,8 @@ class UnitTests
       new plugins.configs.Fail2BanPluginConfigsSpec(),
       new plugins.configs.TracingPluginConfigsSpec(),
       new plugins.configs.OpenFgaPluginConfigsSpec(),
-      new plugins.configs.RestrictionsPluginConfigsSpec()
+      new plugins.configs.RestrictionsPluginConfigsSpec(),
+      new plugins.configs.DaikokuPluginConfigsSpec()
     )
 
 class MapFilterTest
