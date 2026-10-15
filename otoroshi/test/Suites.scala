@@ -279,7 +279,8 @@ class UnitTests
       new entities.OAuth1AuthModuleEntityFormatSpec(),
       new entities.LdapAuthModuleEntityFormatSpec(),
       new entities.SamlAuthModuleEntityFormatSpec(),
-      new entities.WasmAuthModuleEntityFormatSpec()
+      new entities.WasmAuthModuleEntityFormatSpec(),
+      new entities.WorkflowAuthModuleEntityFormatSpec()
     )
 
 class MapFilterTest
