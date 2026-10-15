@@ -222,6 +222,18 @@ class ApiEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, full)
     }
 
+    "round trip a minimal api" in {
+      roundTrip(format, minimal)
+    }
+
+    "round trip an api without documentation" in {
+      roundTrip(format, full.copy(documentation = None)).documentation mustBe None
+    }
+
+    "read a null documentation as no documentation" in {
+      readOk(format, minimalJson ++ Json.obj("documentation" -> JsNull)).documentation mustBe None
+    }
+
     "round trip a flow whose plugin sets every plugin index" in {
       val index = PluginIndex(
         sink = Some(1),
@@ -539,8 +551,8 @@ class ApiEntityFormatSpec extends EntityFormatSpec {
       )
     }
 
-    "read a documentation that is not an object as the default documentation" in {
-      readOk(format, minimalJson ++ Json.obj("documentation" -> "doc")).documentation mustBe Some(ApiDocumentation())
+    "read a documentation that is not an object as no documentation" in {
+      readOk(format, minimalJson ++ Json.obj("documentation" -> "doc")).documentation mustBe None
     }
 
     "read a testing that is not an object as a disabled testing" in {

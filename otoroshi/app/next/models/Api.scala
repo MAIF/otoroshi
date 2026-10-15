@@ -2468,8 +2468,10 @@ object Api {
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
           .getOrElse(Seq(ApiBackendClient.defaultClient)),
+        // a missing documentation is written as null, which must not read back as an enabled empty documentation
         documentation = (json \ "documentation")
-          .asOpt[ApiDocumentation](using ApiDocumentation._fmt),
+          .asOpt[JsObject]
+          .flatMap(ApiDocumentation._fmt.reads(_).asOpt),
         deployments = (json \ "deployments")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiDeployment._fmt.reads(v).asOpt))
