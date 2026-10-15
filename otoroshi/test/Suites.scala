@@ -173,7 +173,8 @@ class UnitTests
       new plugins.configs.HmacPluginConfigsSpec(),
       new plugins.configs.WorkflowPluginConfigsSpec(),
       new plugins.configs.GreenScorePluginConfigsSpec(),
-      new plugins.configs.EchoPluginConfigsSpec()
+      new plugins.configs.EchoPluginConfigsSpec(),
+      new plugins.configs.HtmlPluginConfigsSpec()
     )
 
 class MapFilterTest
