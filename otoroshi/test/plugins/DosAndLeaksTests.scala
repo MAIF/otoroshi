@@ -2,6 +2,8 @@ package plugins
 
 import functional.{PluginsTestSpecBase, TargetService}
 import org.apache.pekko.http.scaladsl.model.headers.{`Set-Cookie`, HttpCookie}
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget}
 import otoroshi.next.plugins.*
@@ -9,7 +11,9 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.plugins.log4j.Log4jExpressionParser
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
 import play.api.mvc.{DefaultSessionCookieBaker, Session}
+import play.api.test.FakeRequest
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.duration.DurationInt
@@ -165,6 +169,54 @@ class DosAndLeaksTests(parent: PluginsTestSpecBase) {
     get("/private", "Cookie" -> "session=second")
     withClue("a response to a caller with credentials stored in the cache ") { calls.get() mustBe 4 }
     deleteOtoroshiRoute(route).futureValue
+    target.stop()
+  }
+
+  // the plugins reading the whole body in memory used to read it without any bound
+  def bodyLimits(): Unit = {
+    val target        = TargetService.full(None, "/", "application/json", _ => (200, "{}", List.empty)).await()
+    val log4shell     = externalRoute(
+      target,
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[NgLog4ShellFilter],
+        config = NgPluginInstanceConfig(NgLog4ShellFilterConfig(parseBody = true, maxBodySize = 1024).json.as[JsObject])
+      )
+    )
+    val react2shell   = externalRoute(
+      target,
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[React2SShellDetector],
+        config = NgPluginInstanceConfig(React2SShellDetectorConfig(maxBodySize = 1024).json.as[JsObject])
+      )
+    )
+    val tokenEndpoint = externalRoute(
+      target,
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[NgClientCredentialTokenEndpoint],
+        config = NgPluginInstanceConfig(
+          NgClientCredentialTokenEndpointConfig.default.copy(maxBodySize = 1024).json.as[JsObject]
+        )
+      )
+    )
+    def post(route: NgRoute, size: Int, contentType: String = "text/plain"): Int = ws
+      .url(s"http://127.0.0.1:$port/")
+      .withHttpHeaders("Host" -> route.frontend.domains.head.domain, "Content-Type" -> contentType)
+      .post("a" * size)
+      .futureValue
+      .status
+    withClue("log4shell, small body ") { post(log4shell, 100) mustBe 200 }
+    withClue("log4shell, big body ") { post(log4shell, 2048) mustBe 413 }
+    withClue("react2shell, small body ") { post(react2shell, 100) mustBe 200 }
+    withClue("react2shell, big body ") { post(react2shell, 2048) mustBe 413 }
+    withClue("token endpoint, small body ") {
+      post(tokenEndpoint, 100, "application/x-www-form-urlencoded") must not be 413
+    }
+    withClue("token endpoint, big body ") { post(tokenEndpoint, 2048, "application/x-www-form-urlencoded") mustBe 413 }
+    val ocsp          = env.ocspResponder
+      .respond(FakeRequest(), Source.single(ByteString(Array.fill[Byte](5 * 1024 * 1024)(1))), Seq.empty)
+      .futureValue
+    withClue("ocsp responder, big body ") { ocsp.header.status mustBe 413 }
+    Seq(log4shell, react2shell, tokenEndpoint).foreach(r => deleteOtoroshiRoute(r).futureValue)
     target.stop()
   }
 }

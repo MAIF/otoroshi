@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.{Materializer, StreamLimitReachedException}
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -15,28 +15,41 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class React2SShellDetectorConfig(block: Boolean = false) extends NgPluginConfig {
+case class React2SShellDetectorConfig(
+    block: Boolean = false,
+    maxBodySize: Long = React2SShellDetectorConfig.defaultMaxBodySize
+) extends NgPluginConfig {
   def json: JsValue = React2SShellDetectorConfig.format.writes(this)
 }
 
 object React2SShellDetectorConfig {
+  // the inspected body is held in memory, a bigger one is rejected
+  val defaultMaxBodySize: Long = 10L * 1024L * 1024L
   def configFlow: Seq[String] = Seq(
-    "block"
+    "block",
+    "max_body_size"
   )
   def configSchema: JsObject  = Json.obj(
-    "block" -> Json.obj("type" -> "bool", "label" -> "Block request", "default" -> true)
+    "block"         -> Json.obj("type" -> "bool", "label" -> "Block request", "default" -> true),
+    "max_body_size" -> Json.obj(
+      "type"    -> "number",
+      "label"   -> "Max body size (bytes)",
+      "default" -> defaultMaxBodySize,
+      "props"   -> Json.obj("help" -> "An inspected body bigger than this is rejected with a 413")
+    )
   )
   val format                  = new Format[React2SShellDetectorConfig] {
     override def reads(json: JsValue): JsResult[React2SShellDetectorConfig] = Try {
       React2SShellDetectorConfig(
-        block = (json \ "block").asOpt[Boolean].getOrElse(false)
+        block = (json \ "block").asOpt[Boolean].getOrElse(false),
+        maxBodySize = (json \ "max_body_size").asOpt[Long].getOrElse(defaultMaxBodySize)
       )
     } match {
       case Success(cfg)       => JsSuccess(cfg)
       case Failure(exception) => JsError(exception.getMessage)
     }
     override def writes(o: React2SShellDetectorConfig): JsValue = {
-      Json.obj("block" -> o.block)
+      Json.obj("block" -> o.block, "max_body_size" -> o.maxBodySize)
     }
   }
 }
@@ -94,7 +107,7 @@ class React2SShellDetector extends NgRequestTransformer {
         ctx.cachedConfig(internalName)(React2SShellDetectorConfig.format).getOrElse(React2SShellDetectorConfig())
       val headers      = ctx.otoroshiRequest.headers
       val hasRscHeader = headers.keys.exists(k => rscHeaders.contains(k.toLowerCase()))
-      ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+      ctx.otoroshiRequest.body.limitWeighted(config.maxBodySize)(_.size).runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val bodyStr           = bodyRaw.utf8String
         val hasFlightPatterns = flightPatterns.exists(p => bodyStr.contains(p))
         val hasRecon          = reconKeywords.exists(bodyStr.contains)
@@ -112,6 +125,8 @@ class React2SShellDetector extends NgRequestTransformer {
         } else {
           ctx.otoroshiRequest.copy(body = bodyRaw.chunks(32 * 1024)).right
         }
+      }.recover { case _: StreamLimitReachedException =>
+        Results.EntityTooLarge(Json.obj("error" -> "request body too large")).left
       }
     } else {
       ctx.otoroshiRequest.rightf

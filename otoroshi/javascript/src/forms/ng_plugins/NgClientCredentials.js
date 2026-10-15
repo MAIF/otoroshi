@@ -24,6 +24,13 @@ export default {
         help: 'How long the JWKS keys are cached. Leave empty to use the global setting, 0 disables the cache',
       },
     },
+    max_body_size: {
+      type: 'number',
+      label: 'Max body size (bytes)',
+      props: {
+        help: 'A token request body bigger than this is rejected with a 413',
+      },
+    },
     'biscuit.privkey': {
       type: 'array',
       array: true,
@@ -55,6 +62,7 @@ export default {
     'domain',
     'secure',
     'jwks_cache_ttl',
+    'max_body_size',
     '<<<Biscuit',
     'biscuit.privkey',
     'biscuit.checks',

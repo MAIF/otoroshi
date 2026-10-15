@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.{Materializer, StreamLimitReachedException}
 import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -66,7 +66,8 @@ case class NgClientCredentialsConfig(
     domain: String = "*",
     secure: Boolean = true,
     biscuit: Option[BiscuitConf] = None,
-    jwksCacheTtl: Option[FiniteDuration] = None
+    jwksCacheTtl: Option[FiniteDuration] = None,
+    maxBodySize: Long = NgClientCredentialsConfig.defaultMaxBodySize
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
     "expiration"       -> expiration.toMillis,
@@ -74,11 +75,14 @@ case class NgClientCredentialsConfig(
     "domain"           -> domain,
     "secure"           -> secure,
     "biscuit"          -> biscuit.map(_.json).getOrElse(JsNull).asValue,
-    "jwks_cache_ttl"   -> jwksCacheTtl.map(_.toMillis.json).getOrElse(JsNull).asValue
+    "jwks_cache_ttl"   -> jwksCacheTtl.map(_.toMillis.json).getOrElse(JsNull).asValue,
+    "max_body_size"    -> maxBodySize
   )
 }
 
 object NgClientCredentialsConfig {
+  // the body of a token request is held in memory, a bigger one is rejected
+  val defaultMaxBodySize: Long = 4L * 1024L * 1024L
   val format = new Format[NgClientCredentialsConfig] {
     override def writes(o: NgClientCredentialsConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgClientCredentialsConfig] = Try {
@@ -88,7 +92,8 @@ object NgClientCredentialsConfig {
         domain = json.select("domain").asOpt[String].getOrElse("*"),
         secure = json.select("secure").asOpt[Boolean].getOrElse(true),
         biscuit = json.select("biscuit").asOpt(using BiscuitConf.format),
-        jwksCacheTtl = json.select("jwks_cache_ttl").asOpt[Long].map(_.millis)
+        jwksCacheTtl = json.select("jwks_cache_ttl").asOpt[Long].map(_.millis),
+        maxBodySize = json.select("max_body_size").asOpt[Long].getOrElse(defaultMaxBodySize)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -121,11 +126,12 @@ class NgClientCredentials extends NgRequestSink {
   }
 
   private def handleBody(
-      ctx: NgRequestSinkContext
+      ctx: NgRequestSinkContext,
+      maxBodySize: Long
   )(f: Map[String, String] => Future[Result])(using env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val charset      = ctx.request.charset.getOrElse("UTF-8")
-    ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+    ctx.body.limitWeighted(maxBodySize)(_.size).runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
           val urlEncodedString         = bodyRaw.utf8String
@@ -164,6 +170,8 @@ class NgClientCredentials extends NgRequestSink {
           // bad content type
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
       }
+    }.recover { case _: StreamLimitReachedException =>
+      Results.EntityTooLarge(Json.obj("error" -> "invalid_request", "error_description" -> "request body too large"))
     }
   }
 
@@ -191,7 +199,7 @@ class NgClientCredentials extends NgRequestSink {
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
-    handleBody(ctx) { body =>
+    handleBody(ctx, conf.maxBodySize) { body =>
       body.get("token") match {
         case Some(token) => {
           val decoded        = JWT.decode(token)
@@ -425,7 +433,7 @@ class NgClientCredentials extends NgRequestSink {
       env: Env,
       ec: ExecutionContext
   ): Future[Result] =
-    handleBody(ctx) { body =>
+    handleBody(ctx, conf.maxBodySize) { body =>
       (
         body.get("grant_type"),
         body.get("client_id"),
@@ -498,7 +506,8 @@ case class NgClientCredentialTokenEndpointConfig(
     expiration: FiniteDuration,
     defaultKeyPair: String,
     allowedApikeys: Seq[String],
-    allowedGroups: Seq[String]
+    allowedGroups: Seq[String],
+    maxBodySize: Long = NgClientCredentialsConfig.defaultMaxBodySize
 ) extends NgPluginConfig {
   override def json: JsValue = NgClientCredentialTokenEndpointConfig.format.writes(this)
 }
@@ -511,7 +520,9 @@ object NgClientCredentialTokenEndpointConfig {
         defaultKeyPair =
           json.select("default_key_pair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning),
         allowedApikeys = json.select("allowed_apikeys").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
-        allowedGroups = json.select("allowed_groups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+        allowedGroups = json.select("allowed_groups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        maxBodySize =
+          json.select("max_body_size").asOpt[Long].getOrElse(NgClientCredentialsConfig.defaultMaxBodySize)
       )
     } match {
       case Success(s) => JsSuccess(s)
@@ -522,7 +533,8 @@ object NgClientCredentialTokenEndpointConfig {
       "expiration"       -> o.expiration.toMillis,
       "default_key_pair" -> o.defaultKeyPair,
       "allowed_apikeys"  -> o.allowedApikeys,
-      "allowed_groups"   -> o.allowedGroups
+      "allowed_groups"   -> o.allowedGroups,
+      "max_body_size"    -> o.maxBodySize
     )
   }
 }
@@ -551,11 +563,12 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
   override def steps: Seq[NgStep] = Seq(NgStep.CallBackend)
 
   private def handleBody(
-      ctx: NgbBackendCallContext
+      ctx: NgbBackendCallContext,
+      maxBodySize: Long
   )(f: Map[String, String] => Future[Result])(using env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val charset      = ctx.rawRequest.charset.getOrElse("UTF-8")
-    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+    ctx.request.body.limitWeighted(maxBodySize)(_.size).runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
           val urlEncodedString         = bodyRaw.utf8String
@@ -594,6 +607,8 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
           // bad content type
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
       }
+    }.recover { case _: StreamLimitReachedException =>
+      Results.EntityTooLarge(Json.obj("error" -> "invalid_request", "error_description" -> "request body too large"))
     }
   }
 
@@ -719,7 +734,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
     val config = ctx
       .cachedConfig(internalName)(NgClientCredentialTokenEndpointConfig.format)
       .getOrElse(NgClientCredentialTokenEndpointConfig.default)
-    handleBody(ctx) { body =>
+    handleBody(ctx, config.maxBodySize) { body =>
       (
         body.get("grant_type"),
         body.get("client_id"),

@@ -50,6 +50,7 @@ class DosAndLeaksSpec extends PluginsTestSpecBase {
     "not forward the backoffice cookies through the graphql proxy" in { dos.graphqlProxyCookies() }
     "not forward the otoroshi session cookies to the backends" in { dos.sessionCookies() }
     "not share the cached responses of callers with credentials" in { dos.responseCacheCredentials() }
+    "bound the bodies read in memory by plugins" in { dos.bodyLimits() }
   }
 }
 

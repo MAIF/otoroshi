@@ -13,6 +13,13 @@ export default {
       type: 'bool',
       label: 'Parse body',
     },
+    max_body_size: {
+      type: 'number',
+      label: 'Max body size (bytes)',
+      props: {
+        help: 'A parsed body bigger than this is rejected with a 413',
+      },
+    },
   },
-  config_flow: ['status', 'body', 'parse_body'],
+  config_flow: ['status', 'body', 'parse_body', 'max_body_size'],
 };

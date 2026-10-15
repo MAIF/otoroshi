@@ -16,6 +16,13 @@ export default {
       type: 'number',
       label: 'Token lifetime (ms)',
     },
+    max_body_size: {
+      type: 'number',
+      label: 'Max body size (bytes)',
+      props: {
+        help: 'A token request body bigger than this is rejected with a 413',
+      },
+    },
   },
-  config_flow: ['default_key_pair', 'expiration'],
+  config_flow: ['default_key_pair', 'expiration', 'max_body_size'],
 };

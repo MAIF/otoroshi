@@ -2,6 +2,7 @@ package otoroshi.ssl
 
 import java.security.cert.X509Certificate
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.StreamLimitReachedException
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
@@ -121,6 +122,9 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
   val rejectUnknown         = true
   val nextUpdateOffset: Int =
     env.configuration.getOptionalWithFileSupport[Int]("app.ocsp.caching.seconds").getOrElse(3600)
+  // the ocsp request is held in memory, a bigger one is rejected
+  val maxBodySize: Long     =
+    env.configuration.getOptionalWithFileSupport[Long]("app.ocsp.maxBodySize").getOrElse(4L * 1024L * 1024L)
 
   def aia(id: String, req: RequestHeader, possibleCerts: Seq[String])(using ec: ExecutionContext): Future[Result] = {
     import scala.util.*
@@ -149,7 +153,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
   def respond(req: RequestHeader, body: Source[ByteString, ?], possibleCerts: Seq[String])(using
       ec: ExecutionContext
   ): Future[Result] = {
-    body.runFold(ByteString.empty)(_ ++ _).flatMap { bs =>
+    body.limitWeighted(maxBodySize)(_.size).runFold(ByteString.empty)(_ ++ _).flatMap { bs =>
       if (bs.isEmpty) {
         FastFuture.successful(
           Results.BadRequest(Json.obj("error" -> "Missing body"))
@@ -169,6 +173,8 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
           }
         }
       }
+    }.recover { case _: StreamLimitReachedException =>
+      Results.EntityTooLarge(Json.obj("error" -> "Body too large"))
     }
   }
 

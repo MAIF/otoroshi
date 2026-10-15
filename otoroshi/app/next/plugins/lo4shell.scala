@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.{Materializer, StreamLimitReachedException}
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
@@ -19,23 +19,28 @@ import scala.util.*
 case class NgLog4ShellFilterConfig(
     status: Int = 200,
     body: String = "",
-    parseBody: Boolean = false
+    parseBody: Boolean = false,
+    maxBodySize: Long = NgLog4ShellFilterConfig.defaultMaxBodySize
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "status"     -> status,
-    "body"       -> body,
-    "parse_body" -> parseBody
+    "status"        -> status,
+    "body"          -> body,
+    "parse_body"    -> parseBody,
+    "max_body_size" -> maxBodySize
   )
 }
 
 object NgLog4ShellFilterConfig {
+  // the parsed body is held in memory, a bigger one is rejected
+  val defaultMaxBodySize: Long = 10L * 1024L * 1024L
   val format = new Format[NgLog4ShellFilterConfig] {
     override def writes(o: NgLog4ShellFilterConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgLog4ShellFilterConfig] = Try {
       NgLog4ShellFilterConfig(
         status = json.select("status").asOpt[Int].getOrElse(200),
         body = json.select("body").asOpt[String].getOrElse(""),
-        parseBody = json.select("parse_body").asOpt[Boolean].getOrElse(false)
+        parseBody = json.select("parse_body").asOpt[Boolean].getOrElse(false),
+        maxBodySize = json.select("max_body_size").asOpt[Long].getOrElse(defaultMaxBodySize)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -86,7 +91,7 @@ class NgLog4ShellFilter extends NgRequestTransformer {
       Results.Status(config.status)(config.body).as("text/plain").leftf
     } else {
       if (config.parseBody && BodyUtils.hasBody(ctx.request)) {
-        ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+        ctx.otoroshiRequest.body.limitWeighted(config.maxBodySize)(_.size).runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
           val bodyStr = bodyRaw.utf8String
           if (containsBadValue(bodyStr)) {
             Results.Status(config.status)(config.body).as("text/plain").left
@@ -94,6 +99,8 @@ class NgLog4ShellFilter extends NgRequestTransformer {
             val source = Source(bodyRaw.grouped(32 * 1024).toList)
             ctx.otoroshiRequest.copy(body = source).right
           }
+        }.recover { case _: StreamLimitReachedException =>
+          Results.EntityTooLarge(Json.obj("error" -> "request body too large")).left
         }
       } else {
         ctx.otoroshiRequest.rightf
