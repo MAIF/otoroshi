@@ -208,7 +208,8 @@ class UnitTests
       new plugins.configs.JwtPluginConfigsSpec(),
       new plugins.configs.IzanamiPluginConfigsSpec(),
       new plugins.configs.BodySizePluginConfigsSpec(),
-      new plugins.configs.FilesPluginConfigsSpec()
+      new plugins.configs.FilesPluginConfigsSpec(),
+      new plugins.configs.OAuthProtectedResourcesPluginConfigsSpec()
     )
 
 class MapFilterTest
