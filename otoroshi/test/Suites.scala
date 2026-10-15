@@ -260,7 +260,8 @@ class UnitTests
       new entities.ApikeyEntityFormatSpec(),
       new entities.ServiceGroupEntityFormatSpec(),
       new entities.ErrorTemplateEntityFormatSpec(),
-      new entities.GreenScoreEntityFormatSpec()
+      new entities.GreenScoreEntityFormatSpec(),
+      new entities.RemoteCatalogEntityFormatSpec()
     )
 
 class MapFilterTest
