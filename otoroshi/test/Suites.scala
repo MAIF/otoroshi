@@ -229,7 +229,8 @@ class UnitTests
       new plugins.configs.EurekaPluginConfigsSpec(),
       new plugins.configs.GeolocationPluginConfigsSpec(),
       new plugins.configs.CanaryPluginConfigsSpec(),
-      new plugins.configs.S3PersistencePluginConfigsSpec()
+      new plugins.configs.S3PersistencePluginConfigsSpec(),
+      new plugins.configs.Fail2BanPluginConfigsSpec()
     )
 
 class MapFilterTest
