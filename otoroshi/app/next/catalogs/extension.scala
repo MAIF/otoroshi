@@ -272,16 +272,14 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
     )
   )
 
-  // deploying a catalog creates and deletes the entities it describes: it takes the rights to write the catalog
+  // deploying a catalog creates and deletes any entity it describes, and its sources can run commands: super admins
+  // only, for now
   private def canUserWriteCatalog(user: Option[BackOfficeUser])(catalog: RemoteCatalog): Boolean = {
-    user.exists(u =>
-      u.rights.canWriteTenant(catalog.location.tenant)(using env) && u.rights
-        .canWriteTeams(catalog.location.tenant, catalog.location.teams)(using env)
-    )
+    user.exists(_.rights.superAdmin(using env))
   }
 
   private def canApiWriteCatalog(req: RequestHeader, apikey: ApiKey)(catalog: RemoteCatalog): Boolean = {
-    ApiActionContext(apikey, req.withBody(())).canUserWrite(catalog)(using env)
+    ApiActionContext(apikey, req.withBody(())).userIsSuperAdmin(using env)
   }
 
   private def handleDeploy(

@@ -35,9 +35,11 @@ class RemoteCatalogsRightsTests(parent: PluginsTestSpecBase) {
     adminEntityValidators = Map()
   )
 
+  // remote catalogs are for super admins only: a writer of the location of the catalog is not enough
+  val admin  = user("remote-catalog-admin", "*:rw", "*:rw")
   val writer = user("remote-catalog-writer", "default:rw", "default:rw")
   val reader = user("remote-catalog-reader", "default:r", "default:r")
-  Seq(writer, reader).foreach(_.save(5.minutes)(using env.otoroshiExecutionContext, env).futureValue)
+  Seq(admin, writer, reader).foreach(_.save(5.minutes)(using env.otoroshiExecutionContext, env).futureValue)
 
   // an empty file catalog: deploying it creates nothing, only the rights decide whether it runs
   val root: Path    = Files.createTempDirectory("remoteCatalogRights")
@@ -123,13 +125,40 @@ class RemoteCatalogsRightsTests(parent: PluginsTestSpecBase) {
 
   val writerTest = backoffice("_test", writer, one)
   withClue(s"writer dry runs from the backoffice: status=${writerTest.status} body=${writerTest.body} ") {
-    writerTest.status mustBe Status.OK
+    writerTest.status mustBe Status.FORBIDDEN
   }
-  itemError("writer deploys from the backoffice", backoffice("_deploy", writer, many)) must not be Some(notAuthorized)
+  itemError("writer deploys from the backoffice", backoffice("_deploy", writer, many)) mustBe Some(notAuthorized)
+  itemError("writer deploys through the admin api", adminApi("_deploy", Some(writer), many)) mustBe Some(
+    notAuthorized
+  )
+  val writerList = ws
+    .url(s"http://127.0.0.1:$port/apis/catalogs.otoroshi.io/v1/remote-catalogs")
+    .withHttpHeaders(
+      "Host"                     -> "otoroshi-api.oto.tools",
+      "Otoroshi-BackOffice-User" -> JWT
+        .create()
+        .withClaim("user", Json.stringify(writer.toJson))
+        .withExpiresAt(java.time.Instant.now().plusSeconds(30L))
+        .sign(Algorithm.HMAC512(env.otoroshiSecret))
+    )
+    .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+    .get()
+    .futureValue
+  withClue(s"writer lists the catalogs: status=${writerList.status} ") {
+    writerList.status mustBe Status.FORBIDDEN
+  }
+
+  val adminTest = backoffice("_test", admin, one)
+  withClue(s"super admin dry runs from the backoffice: status=${adminTest.status} body=${adminTest.body} ") {
+    adminTest.status mustBe Status.OK
+  }
+  itemError("super admin deploys from the backoffice", backoffice("_deploy", admin, many)) must not be Some(
+    notAuthorized
+  )
   itemError("admin apikey deploys through the admin api", adminApi("_deploy", None, many)) must not be Some(
     notAuthorized
   )
 
-  Seq(writer, reader).foreach(_.delete()(using env.otoroshiExecutionContext, env).futureValue)
+  Seq(admin, writer, reader).foreach(_.delete()(using env.otoroshiExecutionContext, env).futureValue)
   otoroshiApiCall("DELETE", s"/apis/catalogs.otoroshi.io/v1/remote-catalogs/$catalogId").futureValue
 }

@@ -1763,7 +1763,9 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     ("security.otoroshi.io", "admins")            -> RightsChecker.TenantAdminOnly,
     ("security.otoroshi.io", "admin-sessions")    -> RightsChecker.TenantAdminOnly,
     ("security.otoroshi.io", "auth-module-users") -> RightsChecker.TenantAdminOnly,
-    ("config.otoroshi.io", "global-configs")      -> RightsChecker.SuperAdminOnly
+    ("config.otoroshi.io", "global-configs")      -> RightsChecker.SuperAdminOnly,
+    // a remote catalog writes any entity it describes, and its sources can run commands
+    ("catalogs.otoroshi.io", "remote-catalogs")   -> RightsChecker.SuperAdminOnly
   )
 
   private def withResource(
