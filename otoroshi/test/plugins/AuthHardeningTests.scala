@@ -52,6 +52,60 @@ class AuthHardeningTests(parent: PluginsTestSpecBase) {
       .futureValue
   }
 
+  // a saml assertion was accepted whatever its validity window, its audience, its recipient and the request it answers
+  def samlConditions(): Unit = {
+    import org.opensaml.saml.saml2.core.*
+    org.opensaml.core.config.InitializationService.initialize()
+    def build[T](qname: javax.xml.namespace.QName): T = otoroshi.auth.SAMLModule.buildObject(qname).asInstanceOf[T]
+    val now                                           = java.time.Instant.now()
+    def response(
+        audience: String = "otoroshi-sp",
+        notOnOrAfter: java.time.Instant = now.plusSeconds(300),
+        recipient: String = "https://privateapps.oto.tools/privateapps/generic/callback",
+        inResponseTo: Option[String] = Some("zrequest")
+    ): Response = {
+      val audienceElement  = build[Audience](Audience.DEFAULT_ELEMENT_NAME)
+      audienceElement.setURI(audience)
+      val restriction      = build[AudienceRestriction](AudienceRestriction.DEFAULT_ELEMENT_NAME)
+      restriction.getAudiences.add(audienceElement)
+      val conditions       = build[Conditions](Conditions.DEFAULT_ELEMENT_NAME)
+      conditions.setNotBefore(now.minusSeconds(10))
+      conditions.setNotOnOrAfter(notOnOrAfter)
+      conditions.getAudienceRestrictions.add(restriction)
+      val confirmationData = build[SubjectConfirmationData](SubjectConfirmationData.DEFAULT_ELEMENT_NAME)
+      confirmationData.setRecipient(recipient)
+      confirmationData.setNotOnOrAfter(notOnOrAfter)
+      inResponseTo.foreach(confirmationData.setInResponseTo)
+      val confirmation     = build[SubjectConfirmation](SubjectConfirmation.DEFAULT_ELEMENT_NAME)
+      confirmation.setMethod(SubjectConfirmation.METHOD_BEARER)
+      confirmation.setSubjectConfirmationData(confirmationData)
+      val subject          = build[Subject](Subject.DEFAULT_ELEMENT_NAME)
+      subject.getSubjectConfirmations.add(confirmation)
+      val assertion        = build[Assertion](Assertion.DEFAULT_ELEMENT_NAME)
+      assertion.setConditions(conditions)
+      assertion.setSubject(subject)
+      val result           = build[Response](Response.DEFAULT_ELEMENT_NAME)
+      inResponseTo.foreach(result.setInResponseTo)
+      result.getAssertions.add(assertion)
+      result
+    }
+    def check(r: Response, requestId: Option[String] = Some("zrequest")) = otoroshi.auth.ValidatorUtils
+      .validateConditions(r, "otoroshi-sp", Some("http://privateapps.oto.tools:8080/privateapps/generic/callback"), requestId, 60L)
+    withClue("a valid assertion ") { check(response()).isRight mustBe true }
+    withClue("an idp initiated assertion ") {
+      check(response(inResponseTo = None), requestId = None).isRight mustBe true
+    }
+    withClue("an expired assertion ") { check(response(notOnOrAfter = now.minusSeconds(120))).isLeft mustBe true }
+    withClue("an assertion for another service provider ") { check(response(audience = "another-sp")).isLeft mustBe true }
+    withClue("an assertion for another recipient ") {
+      check(response(recipient = "https://another-sp.oto.tools/callback")).isLeft mustBe true
+    }
+    withClue("an answer to another request ") { check(response(inResponseTo = Some("zanother"))).isLeft mustBe true }
+    withClue("an answer to a request without relay state ") {
+      check(response(), requestId = None).isLeft mustBe true
+    }
+  }
+
   // the origin of a webauthn ceremony comes from the browser, any page sharing the rp id could relay a ceremony
   def webAuthnOrigin(): Unit = {
     WebAuthnSupport.originAllowed(s"http://${env.backOfficeHost}:9999")(using env) mustBe true

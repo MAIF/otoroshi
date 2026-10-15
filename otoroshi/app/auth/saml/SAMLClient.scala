@@ -40,6 +40,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.ssl.DynamicSSLEngineProvider.PRIVATE_KEY_PATTERN
 import otoroshi.ssl.{DynamicSSLEngineProvider, PemHeaders}
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsObject, JsString, JsSuccess, JsValue, Json}
@@ -94,6 +95,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
     )
     val hash       = env.sign(s"${authConfig.id}:::${descriptor.id}")
+    val requestId  = "z" + UUID.randomUUID().toString
     val relayState = JWT
       .create()
       .withClaim("hash", hash)
@@ -101,12 +103,13 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       .withClaim("route", isRoute)
       .withClaim("ref", authConfig.id)
       .withClaim("redirect_uri", redirectTo)
+      .withClaim(SAMLModule.requestIdClaim, requestId)
       .sign(Algorithm.HMAC512(env.otoroshiSecret))
     //URLEncoder.encode(
     //  s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirectTo}&route=$isRoute&ref=${authConfig.id}",
     //  "UTF-8"
     //)
-    getRequest(env, authConfig).map {
+    getRequest(env, authConfig, requestId).map {
       case Left(value)    => BadRequest(value)
       case Right(encoded) =>
         if (authConfig.ssoProtocolBinding == SAMLProtocolBinding.Post)
@@ -166,7 +169,14 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       case Some(body) =>
         val samlResponse = body("SAMLResponse").head
 
-        decodeAndValidateSamlResponse(env, authConfig, samlResponse, "") match {
+        decodeAndValidateSamlResponse(
+          env,
+          authConfig,
+          samlResponse,
+          "",
+          SAMLModule.requestIdFrom(body, env),
+          s"${request.theProtocol}://${request.theHost}${request.path}".some
+        ) match {
           case Left(value)       =>
             env.logger.error(value)
             FastFuture.successful(Left(ErrorReason(value)))
@@ -230,18 +240,23 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
-    val encodedRequest = getRequest(env, authConfig)
+    val requestId      = "z" + UUID.randomUUID().toString
+    val relayState     = JWT
+      .create()
+      .withClaim(SAMLModule.requestIdClaim, requestId)
+      .sign(Algorithm.HMAC512(env.otoroshiSecret))
+    val encodedRequest = getRequest(env, authConfig, requestId)
 
     encodedRequest.map {
       case Left(value)    => BadRequest(value)
       case Right(encoded) =>
         if (authConfig.ssoProtocolBinding == SAMLProtocolBinding.Post)
-          Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleSignOnUrl, env))
+          Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleSignOnUrl, env, Some(relayState)))
         else {
           val redirectUrl = if (authConfig.singleSignOnUrl.contains("?")) {
-            s"${authConfig.singleSignOnUrl}&SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
+            s"${authConfig.singleSignOnUrl}&SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=$relayState"
           } else {
-            s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
+            s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=$relayState"
           }
           Redirect(redirectUrl).addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))(using request)
         }
@@ -283,7 +298,14 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       case Some(body) =>
         val samlResponse = body("SAMLResponse").head
 
-        decodeAndValidateSamlResponse(env, authConfig, samlResponse, "") match {
+        decodeAndValidateSamlResponse(
+          env,
+          authConfig,
+          samlResponse,
+          "",
+          SAMLModule.requestIdFrom(body, env),
+          s"${request.theProtocol}://${request.theHost}${request.path}".some
+        ) match {
           case Left(value)       =>
             env.logger.error(value)
             FastFuture.successful(Left(ErrorReason(value)))
@@ -404,6 +426,8 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .map(n => NameIDFormat(n).getOrElse(NameIDFormat.Transient))
             .getOrElse(NameIDFormat.Transient),
           validateAssertions = (json \ "validateAssertions").as[Boolean],
+          validateConditions = (json \ "validateConditions").asOpt[Boolean].getOrElse(true),
+          clockSkewSeconds = (json \ "clockSkewSeconds").asOpt[Long].getOrElse(60L),
           signature = (json \ "signature").as[SAMLSignature](using SAMLSignature.fmt),
           usedNameIDAsEmail = (json \ "usedNameIDAsEmail").asOpt[Boolean].getOrElse(true),
           emailAttributeName = (json \ "emailAttributeName").asOpt[String],
@@ -783,6 +807,9 @@ case class SamlAuthModuleConfig(
     // secure by default: a new module, and one built from idp metadata, authenticates what it receives
     validateSignature: Boolean = true,
     validateAssertions: Boolean = true,
+    // the validity window, the audience, the recipient and the request of the assertion
+    validateConditions: Boolean = true,
+    clockSkewSeconds: Long = 60L,
     usedNameIDAsEmail: Boolean = true,
     emailAttributeName: Option[String] = Some("Email"),
     sessionCookieValues: SessionCookieValues,
@@ -824,6 +851,8 @@ case class SamlAuthModuleConfig(
     "validatingCertificates"        -> this.validatingCertificates,
     "validateSignature"             -> this.validateSignature,
     "validateAssertions"            -> this.validateAssertions,
+    "validateConditions"            -> this.validateConditions,
+    "clockSkewSeconds"              -> this.clockSkewSeconds,
     "signature"                     -> SAMLSignature.fmt.writes(this.signature),
     "nameIDFormat"                  -> this.nameIDFormat.name,
     "ssoProtocolBinding"            -> this.ssoProtocolBinding.name,
@@ -845,6 +874,17 @@ object SAMLModule {
 
   lazy val logger: Logger = Logger("SAMLModule")
 
+  // the claim of the signed relay state carrying the id of the request otoroshi sent to the idp
+  val requestIdClaim: String = "saml_request_id"
+
+  def requestIdFrom(body: Map[String, Seq[String]], env: Env): Option[String] = {
+    body
+      .get("RelayState")
+      .flatMap(_.headOption)
+      .flatMap(relayState => Try(JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(relayState)).toOption)
+      .flatMap(decoded => Option(decoded.getClaim(requestIdClaim).asString()))
+  }
+
   def defaultConfig = SamlAuthModuleConfig(
     id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
     name = "New auth. module",
@@ -858,7 +898,7 @@ object SAMLModule {
     clientSideSessionEnabled = true
   )
 
-  def getRequest(env: Env, samlConfig: SamlAuthModuleConfig): Future[Either[String, String]] = {
+  def getRequest(env: Env, samlConfig: SamlAuthModuleConfig, requestId: String): Future[Either[String, String]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     InitializationService.initialize()
@@ -877,7 +917,7 @@ object SAMLModule {
     nameIDPolicy.setFormat(samlConfig.nameIDFormat.value)
     request.setNameIDPolicy(nameIDPolicy)
 
-    request.setID("z" + UUID.randomUUID().toString)
+    request.setID(requestId)
 
     val issuer = buildObject(Issuer.DEFAULT_ELEMENT_NAME).asInstanceOf[Issuer]
     issuer.setValue(samlConfig.issuer)
@@ -936,11 +976,15 @@ object SAMLModule {
     Base64Codec.encodeUrlSafeToString(deflatedBody)
   }
 
+  // `requestId` is the id of the request otoroshi sent, carried by the signed relay state, `recipient` the url the
+  // response was posted to
   def decodeAndValidateSamlResponse(
       env: Env,
       samlConfig: SamlAuthModuleConfig,
       encodedResponse: String,
-      method: String
+      method: String,
+      requestId: Option[String],
+      recipient: Option[String]
   ): Either[String, util.List[Assertion]] = {
     val response = parseResponse(encodedResponse, method).asInstanceOf[Response]
 
@@ -953,8 +997,19 @@ object SAMLModule {
       samlConfig.validateSignature,
       samlConfig.validateAssertions
     ) match {
-      case Left(value) => Left(value)
-      case Right(_)    => Right(response.getAssertions)
+      case Left(value)                                => Left(value)
+      case Right(_) if samlConfig.validateConditions =>
+        ValidatorUtils.validateConditions(
+          response,
+          samlConfig.issuer,
+          recipient,
+          requestId,
+          samlConfig.clockSkewSeconds
+        ) match {
+          case Left(value) => Left(value)
+          case Right(_)    => Right(response.getAssertions)
+        }
+      case Right(_)                                   => Right(response.getAssertions)
     }
   }
 

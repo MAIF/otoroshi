@@ -2221,6 +2221,8 @@ export class SamlModuleConfig extends Component {
     'issuer',
     'validateSignature',
     'validateAssertions',
+    'validateConditions',
+    'clockSkewSeconds',
     'validatingCertificates',
     'allowedUsers',
     'deniedUsers',
@@ -2518,6 +2520,21 @@ export class SamlModuleConfig extends Component {
       props: {
         label: 'Validate Assertions Signature',
         help: 'Enable/disable signature validation of SAML assertions',
+      },
+    },
+    validateConditions: {
+      type: 'bool',
+      props: {
+        label: 'Validate Assertions Conditions',
+        help: 'Check the validity window, the audience (the issuer), the recipient and the request of the SAML assertions',
+      },
+    },
+    clockSkewSeconds: {
+      type: 'number',
+      props: {
+        label: 'Clock skew',
+        suffix: 'seconds',
+        help: 'The clock skew allowed when checking the validity window of the SAML assertions',
       },
     },
     validatingCertificates: {

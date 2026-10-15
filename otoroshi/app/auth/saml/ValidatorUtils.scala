@@ -1,11 +1,21 @@
 package otoroshi.auth
 
 import org.opensaml.saml.common.SignableSAMLObject
-import org.opensaml.saml.saml2.core.{LogoutRequest, RequestAbstractType, Response, StatusCode, StatusResponseType}
+import org.opensaml.saml.saml2.core.{
+  LogoutRequest,
+  RequestAbstractType,
+  Response,
+  StatusCode,
+  StatusResponseType,
+  SubjectConfirmation
+}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.support.SignatureValidator
 import play.api.Logger
 
+import java.net.URI
+import java.time.Instant
+import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
 object ValidatorUtils {
@@ -110,6 +120,57 @@ object ValidatorUtils {
             } get
           })
     }
+  }
+
+  // an assertion is only accepted within its validity window, for this service provider (the issuer of the requests
+  // of otoroshi), posted to the recipient it names and, when it answers a request, for a request otoroshi sent (an
+  // idp initiated response answers none)
+  def validateConditions(
+      response: Response,
+      audience: String,
+      recipient: Option[String],
+      requestId: Option[String],
+      clockSkewSeconds: Long
+  ): Either[String, Unit] = {
+    val assertion                     = response.getAssertions.get(0)
+    val now                           = Instant.now()
+    val skew                          = java.time.Duration.ofSeconds(math.max(0L, clockSkewSeconds))
+    def notYet(at: Instant): Boolean  = at != null && now.plus(skew).isBefore(at)
+    def expired(at: Instant): Boolean = at != null && !now.minus(skew).isBefore(at)
+    val conditions                    = Option(assertion.getConditions)
+    val bearers                       = Option(assertion.getSubject).toSeq
+      .flatMap(_.getSubjectConfirmations.asScala)
+      .filter(_.getMethod == SubjectConfirmation.METHOD_BEARER)
+      .flatMap(confirmation => Option(confirmation.getSubjectConfirmationData))
+    val answers                       = Option(response.getInResponseTo).toSeq ++ bearers.flatMap(d => Option(d.getInResponseTo))
+    if (conditions.exists(c => notYet(c.getNotBefore))) {
+      Left("The assertion is not valid yet")
+    } else if (conditions.exists(c => expired(c.getNotOnOrAfter))) {
+      Left("The assertion has expired")
+    } else if (
+      conditions.exists(_.getAudienceRestrictions.asScala.exists(!_.getAudiences.asScala.exists(_.getURI == audience)))
+    ) {
+      Left("The assertion is meant for another service provider")
+    } else if (bearers.exists(d => expired(d.getNotOnOrAfter))) {
+      Left("The subject confirmation has expired")
+    } else if (
+      recipient.exists(url => bearers.exists(d => d.getRecipient != null && !sameEndpoint(d.getRecipient, url)))
+    ) {
+      Left("The assertion is meant for another recipient")
+    } else if (answers.exists(id => !requestId.contains(id))) {
+      Left("The response answers a request otoroshi did not send")
+    } else {
+      Right(())
+    }
+  }
+
+  // the host and the path: the scheme and the port may differ behind a proxy
+  private def sameEndpoint(a: String, b: String): Boolean = {
+    Try {
+      val ua = new URI(a)
+      val ub = new URI(b)
+      ua.getHost.equalsIgnoreCase(ub.getHost) && ua.getPath.stripSuffix("/") == ub.getPath.stripSuffix("/")
+    }.getOrElse(false)
   }
 
   def validateResponse(response: Response, responseIssuer: String): Either[String, Unit] = {
