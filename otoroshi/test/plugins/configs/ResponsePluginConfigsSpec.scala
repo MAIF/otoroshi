@@ -386,10 +386,43 @@ class ResponsePluginConfigsSpec extends PluginConfigFormatSpec {
       config.formData mustBe None
     }
 
-    "write the responses and pass_through of the default config" in {
-      (written(format, MockResponsesConfig()) - "form_data") mustBe Json.obj(
+    "write the default config" in {
+      format.writes(MockResponsesConfig()) mustBe Json.obj(
         "responses"    -> Json.arr(),
         "pass_through" -> true
+      )
+    }
+
+    "write the form data of the mocks designer under form_data" in {
+      val formData = MockFormData(endpoints = Seq(MockEndpoint("GET", "/users", 200)))
+      (format.writes(MockResponsesConfig(formData = Some(formData))) \ "form_data").as[JsValue] mustBe
+        MockFormData.format.writes(formData)
+    }
+
+    "not write a missing form data" in {
+      writtenKeys(format, MockResponsesConfig(responses)) must not contain "form_data"
+    }
+
+    "round trip the form data of the mocks designer" in {
+      val formData = MockFormData(
+        resources = Seq(MockResource("user", Seq(MockField("name", "string", JsString("john"))))),
+        endpoints = Seq(MockEndpoint("GET", "/users", 200), MockEndpoint("DELETE", "/users/:id", 204))
+      )
+      roundTrip(format, MockResponsesConfig(formData = Some(formData))).formData mustBe Some(formData)
+    }
+
+    "round trip an empty form data" in {
+      roundTrip(format, MockResponsesConfig(formData = Some(MockFormData()))).formData mustBe Some(MockFormData())
+    }
+
+    "round trip a config where every field is set" in {
+      roundTrip(
+        format,
+        MockResponsesConfig(
+          responses = responses,
+          passThrough = false,
+          formData = Some(MockFormData(endpoints = Seq(MockEndpoint("GET", "/users", 200))))
+        )
       )
     }
 
@@ -445,12 +478,18 @@ class ResponsePluginConfigsSpec extends PluginConfigFormatSpec {
       readOk(format, json) mustBe MockResponsesConfig(formData = Some(formData))
     }
 
-    "read a form_data that is not an object as an empty form data" in {
-      readOk(format, Json.obj("form_data" -> "foo")).formData mustBe Some(MockFormData())
+    "read a form_data that is not an object as no form data" in {
+      readOk(format, Json.obj("form_data" -> "foo")).formData mustBe None
+      readOk(format, Json.obj("form_data" -> Json.arr())).formData mustBe None
+    }
+
+    "read a null form_data as no form data" in {
+      readOk(format, Json.obj("form_data" -> JsNull)).formData mustBe None
     }
 
     "expose through json what the format writes" in {
       jsonMatchesFormat(format, MockResponsesConfig(responses, passThrough = false))
+      jsonMatchesFormat(format, MockResponsesConfig(formData = Some(MockFormData())))
     }
 
     "be the default config of MockResponses" in {
