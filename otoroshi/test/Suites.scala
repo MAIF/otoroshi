@@ -180,7 +180,8 @@ class UnitTests
       new plugins.configs.AuthPluginConfigsSpec(),
       new plugins.configs.RemoteCatalogsPluginConfigsSpec(),
       new plugins.configs.SecurityPluginConfigsSpec(),
-      new plugins.configs.CorazaPluginConfigsSpec()
+      new plugins.configs.CorazaPluginConfigsSpec(),
+      new plugins.configs.SwaggerPluginConfigsSpec()
     )
 
 class MapFilterTest
