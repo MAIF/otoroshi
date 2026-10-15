@@ -387,18 +387,18 @@ class JwtPluginConfigsSpec extends PluginConfigFormatSpec {
 
     val defaultLocation = Json.obj("type" -> "InHeader", "name" -> "X-JWT-Token", "remove" -> "")
 
-    // the fields that the format writes and reads under the same key
+    // the two token locations, the only mandatory fields
     val minimal = Json.obj("source" -> defaultLocation, "forward_location" -> defaultLocation)
 
     "write the default config with all its keys" in {
       format.writes(NgJweSignerConfig()) mustBe Json.obj(
-        "keyManagementAlgorithm"     -> "RSA_OAEP_256",
-        "contentEncryptionAlgorithm" -> "A128CBC_HS256",
-        "certId"                     -> JsNull,
-        "source"                     -> defaultLocation,
-        "forward_location"           -> defaultLocation,
-        "strict"                     -> false,
-        "metadata"                   -> Json.obj()
+        "key_management_algorithm"     -> "RSA_OAEP_256",
+        "content_encryption_algorithm" -> "A128CBC_HS256",
+        "certId"                       -> JsNull,
+        "source"                       -> defaultLocation,
+        "forward_location"             -> defaultLocation,
+        "strict"                       -> false,
+        "payload"                      -> Json.obj()
       )
     }
 
@@ -414,16 +414,85 @@ class JwtPluginConfigsSpec extends PluginConfigFormatSpec {
       roundTrip(format, NgJweSignerConfig())
     }
 
-    "round trip the fields kept by the format" in {
+    "round trip a config where every field is set" in {
       roundTrip(
         format,
         NgJweSignerConfig(
+          keyManagementAlgorithm = JWEAlgorithm.RSA_OAEP_512,
+          contentEncryptionAlgorithm = EncryptionMethod.A256GCM,
           certId = Some("cert-1"),
           source = InCookie("jwe"),
           forwardLocation = InQueryParam("token"),
-          strict = true
+          strict = true,
+          payload = Map("sub" -> "${user.email}", "iss" -> "otoroshi")
         )
       )
+    }
+
+    "round trip every supported key management algorithm" in {
+      Seq(JWEAlgorithm.RSA_OAEP_256, JWEAlgorithm.RSA_OAEP_384, JWEAlgorithm.RSA_OAEP_512).foreach { algo =>
+        roundTrip(format, NgJweSignerConfig(keyManagementAlgorithm = algo)).keyManagementAlgorithm mustBe algo
+      }
+    }
+
+    "round trip every supported content encryption algorithm" in {
+      Seq(
+        EncryptionMethod.A128CBC_HS256,
+        EncryptionMethod.A192CBC_HS384,
+        EncryptionMethod.A256CBC_HS512,
+        EncryptionMethod.A128GCM,
+        EncryptionMethod.A192GCM,
+        EncryptionMethod.A256GCM
+      ).foreach { enc =>
+        roundTrip(format, NgJweSignerConfig(contentEncryptionAlgorithm = enc)).contentEncryptionAlgorithm mustBe enc
+      }
+    }
+
+    "round trip a payload" in {
+      roundTrip(format, NgJweSignerConfig(payload = Map("sub" -> "foo"))).payload mustBe Map("sub" -> "foo")
+    }
+
+    "write the algorithms and the payload under the keys of the ui form" in {
+      writtenKeys(format, NgJweSignerConfig()) must contain allOf (
+        "key_management_algorithm",
+        "content_encryption_algorithm",
+        "payload"
+      )
+      writtenKeys(format, NgJweSignerConfig()) must contain noneOf (
+        "keyManagementAlgorithm",
+        "contentEncryptionAlgorithm",
+        "metadata"
+      )
+    }
+
+    "still read the camel case algorithm keys written by older versions" in {
+      val back = readOk(
+        format,
+        minimal ++ Json.obj("keyManagementAlgorithm" -> "RSA_OAEP_384", "contentEncryptionAlgorithm" -> "A192GCM")
+      )
+      back.keyManagementAlgorithm mustBe JWEAlgorithm.RSA_OAEP_384
+      back.contentEncryptionAlgorithm mustBe EncryptionMethod.A192GCM
+    }
+
+    "still read the metadata key written by older versions" in {
+      readOk(format, minimal ++ Json.obj("metadata" -> Json.obj("sub" -> "foo"))).payload mustBe Map("sub" -> "foo")
+    }
+
+    "prefer the snake case keys over the ones written by older versions" in {
+      val back = readOk(
+        format,
+        minimal ++ Json.obj(
+          "key_management_algorithm"     -> "RSA_OAEP_512",
+          "keyManagementAlgorithm"       -> "RSA_OAEP_384",
+          "content_encryption_algorithm" -> "A256GCM",
+          "contentEncryptionAlgorithm"   -> "A192GCM",
+          "payload"                      -> Json.obj("sub" -> "new"),
+          "metadata"                     -> Json.obj("sub" -> "old")
+        )
+      )
+      back.keyManagementAlgorithm mustBe JWEAlgorithm.RSA_OAEP_512
+      back.contentEncryptionAlgorithm mustBe EncryptionMethod.A256GCM
+      back.payload mustBe Map("sub" -> "new")
     }
 
     "round trip a cert id" in {
@@ -467,7 +536,7 @@ class JwtPluginConfigsSpec extends PluginConfigFormatSpec {
 
     "write every supported key management algorithm" in {
       def algo(a: JWEAlgorithm) = written(format, NgJweSignerConfig(keyManagementAlgorithm = a)).value(
-        "keyManagementAlgorithm"
+        "key_management_algorithm"
       )
       algo(JWEAlgorithm.RSA_OAEP_256) mustBe JsString("RSA_OAEP_256")
       algo(JWEAlgorithm.RSA_OAEP_384) mustBe JsString("RSA_OAEP_384")
@@ -476,7 +545,7 @@ class JwtPluginConfigsSpec extends PluginConfigFormatSpec {
 
     "write every supported content encryption algorithm" in {
       def enc(e: EncryptionMethod) = written(format, NgJweSignerConfig(contentEncryptionAlgorithm = e)).value(
-        "contentEncryptionAlgorithm"
+        "content_encryption_algorithm"
       )
       enc(EncryptionMethod.A128CBC_HS256) mustBe JsString("A128CBC_HS256")
       enc(EncryptionMethod.A192CBC_HS384) mustBe JsString("A192CBC_HS384")
@@ -486,8 +555,8 @@ class JwtPluginConfigsSpec extends PluginConfigFormatSpec {
       enc(EncryptionMethod.A256GCM) mustBe JsString("A256GCM")
     }
 
-    "write the payload under metadata" in {
-      written(format, NgJweSignerConfig(payload = Map("sub" -> "${user.email}"))).value("metadata") mustBe Json.obj(
+    "write the payload under payload" in {
+      written(format, NgJweSignerConfig(payload = Map("sub" -> "${user.email}"))).value("payload") mustBe Json.obj(
         "sub" -> "${user.email}"
       )
     }
