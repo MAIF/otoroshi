@@ -92,6 +92,7 @@ class AuthHardeningSpec extends PluginsTestSpecBase {
     "refuse password checks after too many failures from an address" in { auth.passwordAttempts() }
     "serve the backoffice metrics to super admins only" in { auth.backofficeMetrics() }
     "not let read only users use the url fetching tooling" in { auth.backofficeTooling() }
+    "only let a multi auth login use a module of the route" in { auth.multiAuthRef() }
     "stop" in { auth.stop() }
   }
 }

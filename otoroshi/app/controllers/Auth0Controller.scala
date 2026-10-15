@@ -152,6 +152,13 @@ class AuthController(
       case None             => error
       case Some(authPlugin) => {
         req.getQueryString("ref") orElse refFromRelayState orElse refFromState match {
+          // one of the modules of the route only
+          case Some(ref)
+              if !NgMultiAuthModuleConfig.format
+                .reads(authPlugin.config.raw)
+                .asOpt
+                .exists(_.modules.contains(ref)) =>
+            error
           case Some(ref) =>
             env.proxyState.authModuleAsync(ref).flatMap {
               case None       => error

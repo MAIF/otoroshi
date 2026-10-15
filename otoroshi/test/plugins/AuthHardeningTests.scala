@@ -198,5 +198,53 @@ class AuthHardeningTests(parent: PluginsTestSpecBase) {
     withClue("a writer ") { backoffice(writer, "GET", url).status mustBe Status.OK }
   }
 
+  // the ref of a multi auth login used to select any auth module, not only one of the route
+  def multiAuthRef(): Unit = {
+    def module(id: String): otoroshi.auth.BasicAuthModuleConfig = otoroshi.auth.BasicAuthModuleConfig(
+      id = id,
+      name = id,
+      desc = id,
+      users = Seq.empty,
+      clientSideSessionEnabled = false,
+      userValidators = Seq.empty,
+      remoteValidators = Seq.empty,
+      tags = Seq.empty,
+      metadata = Map.empty,
+      sessionCookieValues = otoroshi.auth.SessionCookieValues(httpOnly = true, secure = false),
+      location = EntityLocation(),
+      allowedUsers = Seq.empty,
+      deniedUsers = Seq.empty
+    )
+    val listed  = module("auth-hardening-listed-module")
+    val foreign = module("auth-hardening-foreign-module")
+    createAuthModule(listed).futureValue
+    createAuthModule(foreign).futureValue
+    val route   = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[otoroshi.next.plugins.MultiAuthModule],
+          config = NgPluginInstanceConfig(
+            otoroshi.next.plugins.NgMultiAuthModuleConfig(modules = Seq(listed.id)).json.as[JsObject]
+          )
+        )
+      ),
+      target = Some(NgTarget(id = "auth-hardening-backend", hostname = "127.0.0.1", port = backend.port, tls = false))
+    ).futureValue
+    await(1.second)
+    def login(ref: String): Int = ws
+      .url(s"http://127.0.0.1:$port/privateapps/generic/login")
+      .withFollowRedirects(false)
+      .withHttpHeaders("Host" -> env.privateAppsHost)
+      .withQueryStringParameters("route" -> route.id, "ref" -> ref)
+      .get()
+      .futureValue
+      .status
+    withClue("a module of the route ") { login(listed.id) must not be Status.INTERNAL_SERVER_ERROR }
+    withClue("a module of another route ") { login(foreign.id) mustBe Status.INTERNAL_SERVER_ERROR }
+    deleteOtoroshiRoute(route).futureValue
+    deleteAuthModule(listed).futureValue
+    deleteAuthModule(foreign).futureValue
+  }
+
   def stop(): Unit = backend.stop()
 }
