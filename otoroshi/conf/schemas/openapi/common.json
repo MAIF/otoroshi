@@ -1,0 +1,146 @@
+{
+  "EntityLocation": {
+    "type": "object",
+    "description": "Where an entity lives: the tenant (organization) it belongs to, and the teams that can see and change it. The rights of the admins are checked against it",
+    "properties": {
+      "tenant": {
+        "type": "string",
+        "description": "The id of the tenant (organization) of the entity",
+        "example": "default"
+      },
+      "teams": {
+        "type": "array",
+        "description": "The ids of the teams of the entity. `*` stands for every team of the tenant (organization)",
+        "items": {
+          "type": "string",
+          "description": "The id of a team"
+        },
+        "example": [
+          "default"
+        ]
+      }
+    },
+    "example": {
+      "tenant": "default",
+      "teams": [
+        "default"
+      ]
+    }
+  },
+  "MtlsConfig": {
+    "type": "object",
+    "description": "The tls settings of the calls otoroshi makes to a remote server: the client certificates it presents, and the certificates it trusts",
+    "properties": {
+      "certs": {
+        "type": "array",
+        "description": "The ids of the certificates of otoroshi presented as client certificates when `mtls` is true. A certificate can also be designated by its distinguished name, the valid one expiring last is then used",
+        "items": {
+          "type": "string",
+          "description": "The id or the distinguished name of a certificate",
+          "example": "otoroshi-client-cert"
+        }
+      },
+      "trustedCerts": {
+        "type": "array",
+        "description": "The ids of the certificates of otoroshi trusted to validate the certificate of the remote server, on top of the default trust store",
+        "items": {
+          "type": "string",
+          "description": "The id of a certificate",
+          "example": "my-ca"
+        }
+      },
+      "mtls": {
+        "type": "boolean",
+        "description": "Use these tls settings for the calls. When false, the default tls settings of otoroshi are used. The legacy `tls` key is read too"
+      },
+      "loose": {
+        "type": "boolean",
+        "description": "Do not check the host name of the certificate of the remote server"
+      },
+      "trustAll": {
+        "type": "boolean",
+        "description": "Trust any certificate of the remote server. For tests only"
+      }
+    },
+    "example": {
+      "certs": [
+        "otoroshi-client-cert"
+      ],
+      "trustedCerts": [
+        "my-ca"
+      ],
+      "mtls": true,
+      "loose": false,
+      "trustAll": false
+    }
+  },
+  "WSProxyServer": {
+    "type": "object",
+    "description": "An http proxy the calls of otoroshi go through. It is only used when its host and its port are set",
+    "properties": {
+      "host": {
+        "type": "string",
+        "description": "The host name or the ip address of the proxy. A blank host disables the proxy, the calls are then direct",
+        "example": "proxy.oto.tools"
+      },
+      "port": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The port the proxy listens on. Without a port, the proxy is not used",
+        "example": 3128
+      },
+      "protocol": {
+        "type": "string",
+        "nullable": true,
+        "description": "The protocol used to talk to the proxy, `http` when null",
+        "example": "https"
+      },
+      "principal": {
+        "type": "string",
+        "nullable": true,
+        "description": "The user to authenticate on the proxy",
+        "example": "otoroshi"
+      },
+      "password": {
+        "type": "string",
+        "nullable": true,
+        "description": "The password to authenticate on the proxy",
+        "example": "secret"
+      },
+      "ntlmDomain": {
+        "type": "string",
+        "nullable": true,
+        "description": "The NTLM domain of the user, for a proxy using NTLM authentication",
+        "example": "CORP"
+      },
+      "encoding": {
+        "type": "string",
+        "nullable": true,
+        "description": "The charset of the credentials sent to the proxy",
+        "example": "UTF-8"
+      },
+      "nonProxyHosts": {
+        "type": "array",
+        "nullable": true,
+        "description": "The hosts called directly, without the proxy, compared without case: a host name, or a pattern with a `*` at its start or at its end (`*.internal.oto.tools`, `10.0.*`)",
+        "items": {
+          "type": "string",
+          "description": "A host or a host pattern",
+          "example": "*.internal.oto.tools"
+        }
+      }
+    },
+    "example": {
+      "host": "proxy.oto.tools",
+      "port": 3128,
+      "protocol": "http",
+      "principal": null,
+      "password": null,
+      "ntlmDomain": null,
+      "encoding": null,
+      "nonProxyHosts": [
+        "*.internal.oto.tools"
+      ]
+    }
+  }
+}
