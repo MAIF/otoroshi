@@ -54,7 +54,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHe
           case Off    => NotFound(Json.obj("error" -> "Cluster API not available")).future
           case Worker => NotFound(Json.obj("error" -> "Cluster API not available")).future
           case Leader => {
-            val every  = ctx.request.getQueryString("every").map(_.toInt).getOrElse(2000)
+            // one tick per `every` ms for as long as the caller stays connected: never faster than a tick per second
+            val every  = ctx.request.getQueryString("every").flatMap(_.toIntOption).map(math.max(_, 1000)).getOrElse(2000)
             val source = Source
               .tick(FiniteDuration(0, TimeUnit.MILLISECONDS), FiniteDuration(every, TimeUnit.MILLISECONDS), NotUsed)
               .mapAsync(1) { _ =>
