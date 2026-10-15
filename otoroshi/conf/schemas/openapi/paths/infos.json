@@ -1,0 +1,474 @@
+{
+  "/api/infos": {
+    "get": {
+      "tags": [
+        "infos"
+      ],
+      "summary": "Describe the instance or build its usage report",
+      "description": "Answers what this otoroshi instance is: the id of its cluster, its version, its java virtual machine, its operating system, the url of its backoffice, its datastore and its environment. With `full=true`, answers instead the anonymous usage report of the cluster (the one the anonymous reporting job sends, whether it is enabled or not): the features it uses, its traffic, its members and the number of its entities. Any admin can call it. Also served as `GET /apis/cluster/node/infos`.",
+      "operationId": "otoroshi.controllers.adminapi.InfosApiController.infos",
+      "parameters": [
+        {
+          "name": "full",
+          "in": "query",
+          "description": "`true` to answer the anonymous usage report of the cluster instead of the description of the instance",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": false,
+            "example": false
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The description of the instance, or the anonymous usage report with `full=true`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "The description of the instance, or the anonymous usage report",
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/NodeInfos"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AnonymousReport"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "With `full=true`, a member of the cluster has not sent its statistics yet (a worker registered by `GET /api/cluster/state` before its first quotas update): the report cannot be built",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/version": {
+    "get": {
+      "tags": [
+        "infos"
+      ],
+      "summary": "Read the version of otoroshi",
+      "description": "Answers the version of otoroshi this instance runs, parsed. Any admin can call it. Also served as `GET /apis/cluster/node/version`.",
+      "operationId": "otoroshi.controllers.adminapi.InfosApiController.version",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The version of otoroshi the instance runs, as written and split into its parts",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/cluster/node/infos": {
+    "get": {
+      "tags": [
+        "infos"
+      ],
+      "summary": "Describe the instance or build its usage report",
+      "description": "Answers what this otoroshi instance is: the id of its cluster, its version, its java virtual machine, its operating system, the url of its backoffice, its datastore and its environment. With `full=true`, answers instead the anonymous usage report of the cluster (the one the anonymous reporting job sends, whether it is enabled or not): the features it uses, its traffic, its members and the number of its entities. Any admin can call it. Also served as `GET /api/infos`.",
+      "operationId": "otoroshi.controllers.adminapi.InfosApiController.nodeInfos",
+      "parameters": [
+        {
+          "name": "full",
+          "in": "query",
+          "description": "`true` to answer the anonymous usage report of the cluster instead of the description of the instance",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": false,
+            "example": false
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The description of the instance, or the anonymous usage report with `full=true`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "The description of the instance, or the anonymous usage report",
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/NodeInfos"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AnonymousReport"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "With `full=true`, a member of the cluster has not sent its statistics yet (a worker registered by `GET /api/cluster/state` before its first quotas update): the report cannot be built",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/cluster/node/version": {
+    "get": {
+      "tags": [
+        "infos"
+      ],
+      "summary": "Read the version of otoroshi",
+      "description": "Answers the version of otoroshi this instance runs, parsed. Any admin can call it. Also served as `GET /api/version`.",
+      "operationId": "otoroshi.controllers.adminapi.InfosApiController.nodeVersion",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The version of otoroshi the instance runs, as written and split into its parts",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/cluster/node/health": {
+    "get": {
+      "tags": [
+        "infos"
+      ],
+      "summary": "Check the health of the instance",
+      "description": "Checks the health of this otoroshi instance and of its components: the datastore, the proxy engine (with a test request), the event store, the certificates, the scripts and the cluster. Answers 200 when the instance is healthy, 503 with the same body otherwise (otoroshi or the datastore not healthy, the proxy engine down, the certificates or the scripts not loaded yet, or a worker that has not loaded the state yet). Any admin can call it.",
+      "operationId": "otoroshi.api.GenericApiController.health",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The health of the instance and of its components, when every check passes",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NodeHealth"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "503": {
+          "description": "The health of the instance and of its components, when a check fails: the same body as the 200 one",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NodeHealth"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/cluster/node/metrics": {
+    "get": {
+      "tags": [
+        "infos"
+      ],
+      "summary": "Read the metrics of the instance",
+      "description": "Answers the metrics of this otoroshi instance (jvm, proxy, datastore, plugins...). The format is chosen by the `format` query parameter, or else by the `Accept` header: a json array of metrics (`format=json`, or a client accepting `application/json`, the default), the raw json export of the metric registry (`format=old_json` or `format=old`), or the Prometheus text format (`format=prometheus` or `format=prom`, or a client accepting `application/prometheus` but not `application/json`). Any admin can call it.",
+      "operationId": "otoroshi.api.GenericApiController.metrics",
+      "parameters": [
+        {
+          "name": "format",
+          "in": "query",
+          "description": "The format of the metrics: `json`, `old_json` (or `old`), `prometheus` (or `prom`). When absent, the format follows the `Accept` header",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "json",
+              "old_json",
+              "old",
+              "prometheus",
+              "prom"
+            ],
+            "example": "json"
+          }
+        },
+        {
+          "name": "filter",
+          "in": "query",
+          "description": "Keeps the metrics whose name matches this pattern, `*` matching any characters (with the Prometheus format, the lines matching it, the dots of the pattern read as underscores)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "otoroshi.core.proxy.*"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The metrics of the instance: a json array of metrics, the raw export of the metric registry with `format=old_json`, or the Prometheus text format",
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "The metrics: an array of metrics, or the raw export of the metric registry with `format=old_json` (an array of metrics as well when they are filtered)",
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "description": "The metrics, one item per metric and group",
+                    "items": {
+                      "$ref": "#/components/schemas/NodeMetric"
+                    }
+                  },
+                  {
+                    "$ref": "#/components/schemas/NodeRawMetrics"
+                  }
+                ]
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "description": "The metrics in the Prometheus text format",
+                "example": "# HELP otoroshi_core_proxy_handle_http_request Generated from Dropwizard metric import\n# TYPE otoroshi_core_proxy_handle_http_request summary\notoroshi_core_proxy_handle_http_request{quantile=\"0.5\",} 2.1\n"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The metrics are disabled (`otoroshi.metrics.enabled` is `false`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
