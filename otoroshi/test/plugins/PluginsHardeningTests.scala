@@ -521,5 +521,52 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     deleteOtoroshiRoute(default).futureValue
   }
 
+  // without created, the max age of an http signature did not apply
+  def httpSignatureWithoutCreated(): Unit = {
+    val secret                                   = "hardening-httpsig-secret-0123456789".getBytes(StandardCharsets.UTF_8)
+    val secretB64                                = Base64.getEncoder.encodeToString(secret)
+    val r                                        = route(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[HttpSignatureVerifyRequest],
+        config = NgPluginInstanceConfig(
+          HttpSignatureVerifyRequestConfig(
+            keys = List(HttpSigKeyInline(s"base64:$secretB64", Some("hardening-key"), Some("hmac-sha256"))),
+            maxAgeSeconds = Some(300L),
+            mandatory = true
+          ).json.as[JsObject]
+        )
+      )
+    )
+    val host                                     = r.frontend.domains.head.domain
+    def signed(withCreated: Boolean): Seq[(String, String)] = {
+      val params     = Seq("keyid" -> HttpSigStructuredFields.ParamString("hardening-key")) ++
+        (if (withCreated)
+           Seq("created" -> HttpSigStructuredFields.ParamInt(System.currentTimeMillis() / 1000L))
+         else Seq.empty) ++
+        Seq("alg" -> HttpSigStructuredFields.ParamString("hmac-sha256"))
+      val components = List(
+        HttpSigStructuredFields.ComponentId("@method", Nil),
+        HttpSigStructuredFields.ComponentId("@target-uri", Nil)
+      )
+      val sigInput   = HttpSigStructuredFields.SignatureInputValue(components, params.toList)
+      val message    = SimpleSigMessage(
+        method = "GET",
+        fullUri = s"http://$host/api",
+        headers = Seq("Host" -> host),
+        status = None
+      )
+      val base       = HttpSigBase.build(message, sigInput, None).toOption.get
+      val sigBytes   =
+        HttpSigAlgorithms.sign("hmac-sha256", base.getBytes(StandardCharsets.UTF_8), Left(secret)).toOption.get
+      Seq(
+        "Signature-Input" -> HttpSigStructuredFields.serializeSignatureInputDict(List("sig1" -> sigInput)),
+        "Signature"       -> HttpSigStructuredFields.serializeSignatureDict(List("sig1" -> sigBytes))
+      )
+    }
+    withClue("a signature with created ") { call(r, "/api", signed(withCreated = true)*) mustBe Status.OK }
+    withClue("a signature without created ") { call(r, "/api", signed(withCreated = false)*) must not be Status.OK }
+    deleteOtoroshiRoute(r).futureValue
+  }
+
   def stop(): Unit = backend.stop()
 }

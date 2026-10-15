@@ -1135,6 +1135,9 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
               return Future.successful(Left(s"signature '$label' is older than $maxAge seconds"))
           case None      => ()
         }
+      // without created, the age of the signature is unknown: a configured max age cannot be applied
+      case None if config.maxAgeSeconds.isDefined =>
+        return Future.successful(Left(s"signature '$label' has no created timestamp, required by the max age"))
       case None    => ()
     }
     input.expires match {
