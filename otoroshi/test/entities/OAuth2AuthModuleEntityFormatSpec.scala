@@ -251,6 +251,14 @@ class OAuth2AuthModuleEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, minimal.copy(pkce = Some(PKCEConfig())))
     }
 
+    "round trip a minimal module without pkce config" in {
+      roundTrip(format, minimal).pkce mustBe None
+    }
+
+    "read a null pkce config as no pkce config" in {
+      readOk(format, written(format, minimal) ++ Json.obj("pkce" -> JsNull)).pkce mustBe None
+    }
+
     "round trip a module where every field is set" in {
       roundTrip(format, full)
     }

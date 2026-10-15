@@ -78,7 +78,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           claims = (json \ "claims").asOpt[String].getOrElse("email name"),
           refreshTokens = (json \ "refreshTokens").asOpt[Boolean].getOrElse(false),
           useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
-          pkce = (json \ "pkce").asOpt[PKCEConfig](using PKCEConfig._fmt),
+          pkce = (json \ "pkce").asOpt[JsObject].flatMap(PKCEConfig._fmt.reads(_).asOpt),
           noWildcardRedirectURI = (json \ "noWildcardRedirectURI").asOpt[Boolean].getOrElse(false),
           useCookie = (json \ "useCookie").asOpt[Boolean].getOrElse(false),
           readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
