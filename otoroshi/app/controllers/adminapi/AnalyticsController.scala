@@ -100,6 +100,17 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
     withEventStoreAndParser[AnyContent](BodyParsers.utils.ignore(AnyContentAsEmpty: AnyContent))(f)
   }
 
+  // the analytics of every route, apikey and group of every tenant
+  def withEventStoreForSuperAdmins(f: ApiActionContext[AnyContent] => Future[Result]): Action[AnyContent] = {
+    withEventStore(ctx => ctx.checkRights(RightsChecker.SuperAdminOnly)(f(ctx)))
+  }
+
+  private def canReadFilterable(ctx: ApiActionContext[?], filterable: Filterable): Boolean = filterable match {
+    case ServiceDescriptorFilterable(service) => ctx.canUserRead(service)
+    case ApiKeyFilterable(apikey)             => ctx.canUserRead(apikey)
+    case ServiceGroupFilterable(group)        => ctx.canUserRead(group)
+  }
+
   def findServiceById(serviceId: String): Future[Option[ServiceDescriptor]] = {
     //[REMOVE SERVICEDESC] env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
     //[REMOVE SERVICEDESC]   case Some(service) => service.some.vfuture
@@ -252,7 +263,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
     }
 
   def globalStats(from: Option[String] = None, to: Option[String] = None) =
-    withEventStore { ctx =>
+    withEventStoreForSuperAdmins { ctx =>
       Audit.send(
         AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -529,6 +540,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
           }
           futureFilterable.flatMap {
             case None             => NotFound(Json.obj("error" -> s"Service with id: '$entityId' not found")).future
+            case Some(filterable) if !canReadFilterable(ctx, filterable) => ctx.fforbidden
             case Some(filterable) => {
 
               val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -544,7 +556,9 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
           }
         }
       } getOrElse {
-        env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        // every event of every tenant
+        if (!ctx.userIsSuperAdmin) ctx.fforbidden
+        else env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
           val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
           analyticsService
             .events("GatewayEvent", None, fromDate, toDate, paginationPage, paginationPageSize, order)
@@ -585,6 +599,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
           }
           futureFilterable.flatMap {
             case None             => NotFound(Json.obj("error" -> s"Entity: '$entityId' not found")).future
+            case Some(filterable) if !canReadFilterable(ctx, filterable) => ctx.fforbidden
             case Some(filterable) => {
 
               val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
