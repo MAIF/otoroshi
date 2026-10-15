@@ -82,7 +82,7 @@ The `steps` field defines at which points in the proxy engine pipeline this WASM
 | `wasi` | boolean | `false` | Enable WebAssembly System Interface support |
 | `opa` | boolean | `false` | Enable Open Policy Agent mode for policy evaluation |
 | `httpWasm` | boolean | `false` | Enable HTTP WASM mode |
-| `allowedHosts` | array of string | `[]` | Hostnames the WASM plugin is allowed to call via HTTP |
+| `allowedHosts` | array of string | `[]` | Hostnames the WASM plugin is allowed to call via HTTP. **Empty means every host** (see below) |
 | `allowedPaths` | object | `{}` | File paths the WASM plugin is allowed to access (path -> permissions) |
 | `killOptions` | object |     | VM termination options for resource management |
 | `authorizations` | object |     | Fine-grained access control for the WASM plugin (see below) |
@@ -113,6 +113,12 @@ The `authorizations` field controls what the WASM plugin is allowed to access at
 | `pluginMapAccess` | object | `{"read": false, "write": false}` | Read/write access to the plugin-scoped in-memory store |
 | `proxyStateAccess` | boolean | `false` | Allow reading the current Otoroshi proxy state |
 | `configurationAccess` | boolean | `false` | Allow reading the Otoroshi configuration |
+
+:::warning An empty `allowedHosts` allows every host
+Once `httpAccess` is granted, a plugin whose `allowedHosts` is empty (or contains `*`) can call any host, internal
+services and cloud metadata endpoints included. List the hosts the plugin needs. A plugin restricted to some hosts
+never follows redirects, as a redirect could lead it elsewhere.
+:::
 
 ## JSON example
 
