@@ -125,9 +125,10 @@ class HasClientCertMatchingValidator extends AccessValidator {
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
+    // the leaf only: the chain is the one the client sent, it may append any certificate of its own after a valid leaf
     context.request.clientCertificateChain
       .map(
-        _.map(cert =>
+        _.take(1).map(cert =>
           SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectX500Principal.getName), DN(cert.getIssuerX500Principal.getName))
         )
       ) //match {
@@ -307,7 +308,10 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
 
   override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
-      case Some(certs) => {
+      case Some(chain) => {
+        // the leaf only: the chain is the one the client sent, it may append any certificate of its own after a
+        // valid leaf
+        val certs           = chain.take(1)
         val config: JsValue = (context.config \ "HasClientCertMatchingHttpValidator")
           .asOpt[JsValue]
           .orElse((context.globalConfig \ "HasClientCertMatchingHttpValidator").asOpt[JsValue])

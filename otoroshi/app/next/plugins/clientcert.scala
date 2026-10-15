@@ -184,8 +184,10 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
         )
       ) match {
       case Some(certs)            => {
+        // the leaf only: the chain is the one the client sent, it may append any certificate of its own after a
+        // valid leaf
         if (
-          certs.exists { cert =>
+          certs.headOption.exists { cert =>
             config.serialNumbers.contains(cert.sn) ||
             config.subjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify)) ||
             config.issuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify)) ||
@@ -505,8 +507,9 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
       (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val regexAllowedIssuerDNs  =
       (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
+    // the leaf only: the chain is the one the client sent, it may append any certificate of its own after a valid leaf
     if (
-      certs.exists { cert =>
+      certs.headOption.exists { cert =>
         allowedSerialNumbers.exists(_ == cert.getSerialNumber.toString(16)) ||
         allowedSubjectDNs.exists(r => RegexPool(r).matches(DN(cert.getSubjectX500Principal.getName).stringify)) ||
         allowedIssuerDNs.exists(r => RegexPool(r).matches(DN(cert.getIssuerX500Principal.getName).stringify)) ||
