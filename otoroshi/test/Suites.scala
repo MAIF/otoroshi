@@ -185,7 +185,8 @@ class UnitTests
       new plugins.configs.RbacPluginConfigsSpec(),
       new plugins.configs.HttpsPluginConfigsSpec(),
       new plugins.configs.ImgPluginConfigsSpec(),
-      new plugins.configs.Http3PluginConfigsSpec()
+      new plugins.configs.Http3PluginConfigsSpec(),
+      new plugins.configs.OtoroshiPluginConfigsSpec()
     )
 
 class MapFilterTest
