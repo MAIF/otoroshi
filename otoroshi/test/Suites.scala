@@ -262,7 +262,8 @@ class UnitTests
       new entities.ErrorTemplateEntityFormatSpec(),
       new entities.GreenScoreEntityFormatSpec(),
       new entities.RemoteCatalogEntityFormatSpec(),
-      new entities.HttpListenerEntityFormatSpec()
+      new entities.HttpListenerEntityFormatSpec(),
+      new entities.WorkflowEntityFormatSpec()
     )
 
 class MapFilterTest
