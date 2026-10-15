@@ -250,8 +250,12 @@ class CookiesPluginConfigsSpec extends PluginConfigFormatSpec {
       defaultConfigReadsBack(new AdditionalCookieIn(), format) mustBe AdditionalCookieInConfig.default
     }
 
-    "read the default config of MissingCookieIn as the default in config" in {
-      readOk(format, new MissingCookieIn().defaultConfig.get) mustBe AdditionalCookieInConfig.default
+    "be the default config of MissingCookieIn" in {
+      defaultConfigReadsBack(new MissingCookieIn(), format) mustBe AdditionalCookieInConfig.default
+    }
+
+    "give MissingCookieIn a default config without the out cookie attributes" in {
+      new MissingCookieIn().defaultConfig mustBe Some(Json.obj("name" -> "cookie", "value" -> "value"))
     }
 
     "give its config flow and schema to the in plugins" in {

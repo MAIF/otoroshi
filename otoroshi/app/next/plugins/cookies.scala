@@ -317,7 +317,7 @@ class MissingCookieIn extends NgRequestTransformer {
   override def transformsError: Boolean                    = false
   override def name: String                                = "Missing cookies in"
   override def description: Option[String]                 = "This plugin adds cookies in the otoroshi request if not present".some
-  override def defaultConfigObject: Option[NgPluginConfig] = AdditionalCookieOutConfig.default.some
+  override def defaultConfigObject: Option[NgPluginConfig] = AdditionalCookieInConfig.default.some
   override def noJsForm: Boolean                           = true
   override def configFlow: Seq[String]                     = AdditionalCookieInConfig.configFlow
   override def configSchema: Option[JsObject]              = AdditionalCookieInConfig.configSchema
