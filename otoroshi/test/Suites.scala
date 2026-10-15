@@ -231,7 +231,8 @@ class UnitTests
       new plugins.configs.CanaryPluginConfigsSpec(),
       new plugins.configs.S3PersistencePluginConfigsSpec(),
       new plugins.configs.Fail2BanPluginConfigsSpec(),
-      new plugins.configs.TracingPluginConfigsSpec()
+      new plugins.configs.TracingPluginConfigsSpec(),
+      new plugins.configs.OpenFgaPluginConfigsSpec()
     )
 
 class MapFilterTest
