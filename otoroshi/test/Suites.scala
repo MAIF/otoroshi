@@ -225,7 +225,8 @@ class UnitTests
       new plugins.configs.React2ShellPluginConfigsSpec(),
       new plugins.configs.KubernetesPluginConfigsSpec(),
       new plugins.configs.RequestPluginConfigsSpec(),
-      new plugins.configs.ClientCertPluginConfigsSpec()
+      new plugins.configs.ClientCertPluginConfigsSpec(),
+      new plugins.configs.EurekaPluginConfigsSpec()
     )
 
 class MapFilterTest
