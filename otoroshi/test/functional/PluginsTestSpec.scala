@@ -66,6 +66,7 @@ class PluginsHardeningSpec extends PluginsTestSpecBase {
     "not use a pem key as an http signature hmac secret" in { hardening.httpSignaturePemAsHmac() }
     "not reuse the apikey verdict of another candidate route" in { hardening.apikeyRoutingVerdict() }
     "wipe the apikey credentials from the backend request" in { hardening.apikeyWipe() }
+    "not let the not match rules of the allowed users plugin let users in" in { hardening.allowedUsers() }
     "stop" in { hardening.stop() }
   }
 }

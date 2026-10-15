@@ -276,5 +276,50 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     target.stop()
   }
 
+  // a not match rule of the allowed users plugin used to let in every user it did not keep out, whatever the other
+  // rules, a match rule alone nobody, and an email domain matched any domain ending the same way
+  def allowedUsers(): Unit = {
+    val verifier                                                = GlobalJwtVerifier(
+      id = "hardening-users-verifier",
+      name = "hardening-users-verifier",
+      desc = "hardening-users-verifier",
+      strict = true,
+      source = InHeader(name = "Authorization", remove = "Bearer "),
+      algoSettings = HSAlgoSettings(512, "hardening-users-secret"),
+      strategy = PassThrough(verificationSettings = VerificationSettings())
+    )
+    createOtoroshiVerifier(verifier).futureValue
+    def usersRoute(config: NgHasAllowedUsersValidatorConfig): NgRoute = route(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[NgJwtUserExtractor],
+        config = NgPluginInstanceConfig(NgJwtUserExtractorConfig(verifier.id).json.as[JsObject])
+      ),
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[NgHasAllowedUsersValidator],
+        config = NgPluginInstanceConfig(config.json.as[JsObject])
+      )
+    )
+    def user(name: String, email: String, claims: String*): (String, String) = {
+      val token = claims
+        .foldLeft(JWT.create().withClaim("name", name).withClaim("email", email))((b, claim) => b.withClaim(claim, true))
+        .sign(Algorithm.HMAC512("hardening-users-secret"))
+      "Authorization" -> s"Bearer $token"
+    }
+    val byName = usersRoute(NgHasAllowedUsersValidatorConfig(usernames = Seq("alice"), profileNotMatch = Seq("$.banned")))
+    withClue("an allowed username ") { call(byName, "/", user("alice", "alice@other.org")) mustBe Status.OK }
+    withClue("another user, not banned ") { call(byName, "/", user("bob", "bob@other.org")) mustBe Status.FORBIDDEN }
+    val byRules = usersRoute(NgHasAllowedUsersValidatorConfig(emailDomains = Seq("example.com"), profileMatch = Seq("$.admin")))
+    withClue("an email of the domain ") { call(byRules, "/", user("carol", "carol@example.com")) mustBe Status.OK }
+    withClue("an email of a subdomain ") { call(byRules, "/", user("dave", "dave@eu.example.com")) mustBe Status.OK }
+    withClue("an email of a domain ending the same way ") {
+      call(byRules, "/", user("eve", "eve@evilexample.com")) mustBe Status.FORBIDDEN
+    }
+    withClue("a profile matching a match rule alone ") {
+      call(byRules, "/", user("frank", "frank@other.org", "admin")) mustBe Status.OK
+    }
+    deleteOtoroshiRoute(byName).futureValue
+    deleteOtoroshiRoute(byRules).futureValue
+  }
+
   def stop(): Unit = backend.stop()
 }

@@ -81,7 +81,9 @@ class HasAllowedUsersValidator extends AccessValidator {
         if (
           allowedUsernames.contains(user.name) ||
           allowedEmails.contains(user.email) ||
-          allowedEmailDomains.exists(domain => user.email.endsWith(domain)) ||
+          allowedEmailDomains.exists(domain =>
+            otoroshi.next.plugins.NgHasAllowedUsersValidator.emailInDomain(user.email, domain)
+          ) ||
           (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw)) && !metadataNotMatch.exists(
             JsonPathUtils.matchWith(userMetaRaw)
           )) ||

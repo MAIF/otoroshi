@@ -50,6 +50,8 @@ object NgHasAllowedUsersValidatorConfig {
         emailDomains = json.select("email_domains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadataMatch = json.select("metadata_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadataNotMatch = json.select("metadata_not_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        otoroshiDataMatch = json.select("otoroshi_data_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        otoroshiDataNotMatch = json.select("otoroshi_data_not_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         profileMatch = json.select("profile_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         profileNotMatch = json.select("profile_not_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
@@ -57,6 +59,15 @@ object NgHasAllowedUsersValidatorConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
+  }
+}
+
+object NgHasAllowedUsersValidator {
+  // the domain of the email address or one of its subdomains: example.com does not match x@evilexample.com
+  def emailInDomain(email: String, domain: String): Boolean = {
+    val emailDomain = email.substring(email.lastIndexOf('@') + 1).toLowerCase()
+    val expected    = domain.stripPrefix("@").toLowerCase()
+    emailDomain == expected || emailDomain.endsWith("." + expected)
   }
 }
 
@@ -102,34 +113,45 @@ class NgHasAllowedUsersValidator extends NgAccessValidator {
         //  - user otoroshi data are managed with metadata fields
         //  - user metadata with otoroshi data fields
 
-        val metaAllowed = config.otoroshiDataMatch.isEmpty ||
-          config.otoroshiDataMatch.exists(userMetaRaw.contains)
+        // the match rules let users in, the not match rules keep users out whatever let them in: usernames [alice]
+        // with profile_not_match [$.banned] lets alice in unless she is banned, and nobody else. without any match
+        // rule, the not match rules alone let in everybody they do not keep out. an empty config lets nobody in
 
-        val metaForbidden =
-          config.otoroshiDataNotMatch.isEmpty ||
-          config.otoroshiDataNotMatch.exists(userMetaRaw.contains)
+        val metaAllowed = config.otoroshiDataMatch.exists(userMetaRaw.contains)
 
-        val otoroshiMetaAllowed = config.metadataMatch.isEmpty ||
-          config.metadataMatch.exists(JsonPathUtils.matchWith(otoroshiUserMetaRaw))
+        val metaForbidden = config.otoroshiDataNotMatch.exists(userMetaRaw.contains)
 
-        val otoroshiMetaForbidden =
-          config.metadataNotMatch.isEmpty ||
-          config.metadataNotMatch.exists(JsonPathUtils.matchWith(otoroshiUserMetaRaw))
+        val otoroshiMetaAllowed = config.metadataMatch.exists(JsonPathUtils.matchWith(otoroshiUserMetaRaw))
 
-        val profileAllowed = config.profileMatch.isEmpty ||
-          config.profileMatch.exists(JsonPathUtils.matchWith(user.profile))
+        val otoroshiMetaForbidden = config.metadataNotMatch.exists(JsonPathUtils.matchWith(otoroshiUserMetaRaw))
 
-        val profileForbidden =
-          config.profileNotMatch.isEmpty ||
-          config.profileNotMatch.exists(JsonPathUtils.matchWith(user.profile))
+        val profileAllowed = config.profileMatch.exists(JsonPathUtils.matchWith(user.profile))
 
-        val isAllowed =
+        val profileForbidden = config.profileNotMatch.exists(JsonPathUtils.matchWith(user.profile))
+
+        val matched =
           config.usernames.contains(user.name) ||
           config.emails.contains(user.email) ||
-          config.emailDomains.exists(domain => user.email.endsWith(domain)) ||
-          (otoroshiMetaAllowed && !otoroshiMetaForbidden) ||
-          (metaAllowed && !metaForbidden) ||
-          (profileAllowed && !profileForbidden)
+          config.emailDomains.exists(domain => NgHasAllowedUsersValidator.emailInDomain(user.email, domain)) ||
+          otoroshiMetaAllowed ||
+          metaAllowed ||
+          profileAllowed
+
+        val keptOut = otoroshiMetaForbidden || metaForbidden || profileForbidden
+
+        val hasMatchRules = Seq(
+          config.usernames,
+          config.emails,
+          config.emailDomains,
+          config.otoroshiDataMatch,
+          config.metadataMatch,
+          config.profileMatch
+        ).exists(_.nonEmpty)
+
+        val hasNotMatchRules =
+          Seq(config.otoroshiDataNotMatch, config.metadataNotMatch, config.profileNotMatch).exists(_.nonEmpty)
+
+        val isAllowed = (if (hasMatchRules) matched else hasNotMatchRules) && !keptOut
 
         if (isAllowed) {
           NgAccess.NgAllowed.vfuture
