@@ -538,9 +538,14 @@ class ApiEntityFormatSpec extends EntityFormatSpec {
       a[JsResultException] must be thrownBy back.plans.head.id
     }
 
-    "drop every plan when one of them is not an object" in {
+    "drop only the plans that are not objects" in {
       val plans = Json.arr(planJson, "plan-2")
-      readOk(format, minimalJson ++ Json.obj("plans" -> plans)).plans mustBe empty
+      readOk(format, minimalJson ++ Json.obj("plans" -> plans)).plans.map(_.raw) mustBe Seq(planJson)
+    }
+
+    "keep every plan when they are all objects" in {
+      val second = planJson ++ Json.obj("id" -> "plan-2")
+      readOk(format, minimalJson ++ Json.obj("plans" -> Json.arr(planJson, second))).plans.map(_.raw) mustBe Seq(planJson, second)
     }
 
     "read a hook without ref, and a hook that is not an object, as hooks with an empty ref" in {

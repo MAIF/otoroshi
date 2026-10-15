@@ -2492,7 +2492,14 @@ object Api {
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiStateHook.format.reads(v).asOpt))
           .getOrElse(Seq.empty).toSeq,
-        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiPlan(o))
+        // the entries that are not objects are left out one by one: dropping every plan would leave the routes of the
+        // api without any access plugin
+        plans = json
+          .select("plans")
+          .asOpt[Seq[JsValue]]
+          .getOrElse(Seq.empty)
+          .collect { case o: JsObject => ApiPlan(o) }
+          .toSeq
       )
     } match {
       case Failure(ex)    =>
