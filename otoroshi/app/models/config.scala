@@ -986,7 +986,7 @@ object GlobalConfig {
           // }
           },
           backOfficeAuthRef = (json \ "backOfficeAuthRef").asOpt[String],
-          mailerSettings = (json \ "mailerSettings").asOpt[JsValue].flatMap { config =>
+          mailerSettings = (json \ "mailerSettings").asOpt[JsObject].flatMap { config =>
             MailerSettings.format.reads(config).asOpt
           },
           cleverSettings = (json \ "cleverSettings").asOpt[JsValue].flatMap { config =>

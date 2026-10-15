@@ -160,7 +160,7 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
     extensions = Map("my-extension" -> Json.obj("enabled" -> true))
   )
 
-  // the optional exporters set, as their absence does not read back as is (see the report)
+  // with its optional exporters set
   private val minimal = GlobalConfig(
     otoroshiId = "otoroshi-1",
     kafkaConfig = Some(KafkaConfig(Seq("kafka:9092"), saslConfig = Some(SaslConfig("user", "password")))),
@@ -324,6 +324,13 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, full)
     }
 
+    "round trip the default config" in {
+      val back = roundTrip(format, GlobalConfig(otoroshiId = "otoroshi-1"))
+      back.kafkaConfig mustBe None
+      back.mailerSettings mustBe None
+      back.wasmoSettings mustBe None
+    }
+
     "round trip a proxy for every usage of the config" in {
       val proxies = Proxies(
         alertEmails = Some(DefaultWSProxyServer("mail-proxy.oto.tools", 3128)),
@@ -341,6 +348,10 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
 
     "read a null kafka config as no kafka config" in {
       readOk(format, Json.obj("kafkaConfig" -> JsNull)).kafkaConfig mustBe None
+    }
+
+    "read a null mailer settings as no mailer settings" in {
+      readOk(format, Json.obj("mailerSettings" -> JsNull)).mailerSettings mustBe None
     }
 
     "read a null wasmo settings as no wasmo settings" in {
