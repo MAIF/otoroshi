@@ -130,6 +130,7 @@ case class GoReplayS3Settings(
   override def toJson: JsValue =
     Json.obj(
       "s3"                    -> s3.json,
+      "maxFileSize"           -> maxFileSize,
       "captureRequests"       -> captureRequests,
       "captureResponses"      -> captureResponses,
       "preferBackendRequest"  -> preferBackendRequest,

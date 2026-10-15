@@ -293,6 +293,15 @@ class DataExporterEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, exporter(DataExporterConfigType.GoReplayS3, goreplay)).config mustBe goreplay
     }
 
+    "round trip a goreplay s3 exporter with a custom maximum file size" in {
+      val goreplay = GoReplayS3Settings(s3, 1024L, false, true, true, true, Seq("GET"))
+      roundTrip(format, exporter(DataExporterConfigType.GoReplayS3, goreplay)).config mustBe goreplay
+    }
+
+    "write the maximum file size of a goreplay s3 exporter" in {
+      (GoReplayS3Settings(s3, 1024L, false, true, true, true, Seq("GET")).toJson \ "maxFileSize").as[Long] mustBe 1024L
+    }
+
     "round trip each kind of mailer exporter" in {
       val to = Seq(EmailLocation("Ops", "ops@oto.tools"))
       Seq(
