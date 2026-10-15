@@ -64,7 +64,7 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
     "document every user analytics endpoint" in {
       val spec   = Json.parse(otoroshi.api.OpenApi.generate(otoroshiComponents.env, None))
       val paths  = (spec \ "paths").as[JsObject]
-      // the user analytics endpoints are not generic resources, they are described in conf/schemas/additionalPaths.json.
+      // the user analytics endpoints are not generic resources, they are described in conf/schemas/openapi/paths/analytics.json.
       // the legacy events migration is left out as it only answers in dev mode
       val source = scala.io.Source.fromInputStream(otoroshiComponents.env.environment.resourceAsStream("/routes").get)
       val routes =

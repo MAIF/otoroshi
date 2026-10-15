@@ -1202,10 +1202,12 @@ class OtoroshiResources(env: Env) {
     )
   )
 
-  lazy val resources = nativeResources ++ env.adminExtensions.resources()
+  // every resource carries its hand written schema when it has one (conf/schemas/openapi), read once
+  lazy val resources = (nativeResources ++ env.adminExtensions.resources()).map(r => OpenApiSchemas.carriedBy(env, r))
 
   // the resources of otoroshi and of the admin extensions shipped with it, leaving out the third party extensions
-  lazy val coreResources = nativeResources ++ env.adminExtensions.coreResources()
+  lazy val coreResources =
+    (nativeResources ++ env.adminExtensions.coreResources()).map(r => OpenApiSchemas.carriedBy(env, r))
 
 }
 
@@ -2443,8 +2445,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // GET /apis/:group/:version/:entity/:id/_template
   def schema(group: String, version: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx) { resource =>
-      val schema = resource.version.finalSchema(resource.kind, resource.access.clazz)
-      Ok(schema).vfuture
+      Ok(resource.version.finalSchema(resource.kind, resource.access.clazz)).vfuture
     }
   }
 
