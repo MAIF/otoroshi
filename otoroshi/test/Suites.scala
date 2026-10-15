@@ -232,7 +232,8 @@ class UnitTests
       new plugins.configs.S3PersistencePluginConfigsSpec(),
       new plugins.configs.Fail2BanPluginConfigsSpec(),
       new plugins.configs.TracingPluginConfigsSpec(),
-      new plugins.configs.OpenFgaPluginConfigsSpec()
+      new plugins.configs.OpenFgaPluginConfigsSpec(),
+      new plugins.configs.RestrictionsPluginConfigsSpec()
     )
 
 class MapFilterTest
