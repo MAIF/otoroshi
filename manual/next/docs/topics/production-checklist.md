@@ -146,11 +146,17 @@ curl -u "$CLIENT_ID:$CLIENT_SECRET" \
   https://otoroshi-api.your.domain/api/globalconfig | jq '.tlsSettings.strictBackendServerValidation'
 ```
 
-:::note mTLS on incoming connections
-The same trust manager serves client certificate validation. Note that the built-in
-`NgHasClientCertValidator` plugin only checks that a client certificate is *present*. If you need the
-certificate to be issued by a specific authority, or to match a specific API key, use the dedicated
-validators instead.
+:::warning mTLS on incoming connections needs the strict mode
+The same trust manager serves client certificate validation. In the permissive mode, a client certificate
+is accepted during the handshake whether or not a trusted authority issued it: anybody can present a
+self-signed certificate. Every plugin that relies on the client certificate then trusts what the client
+wrote in it. `NgHasClientCertValidator` only checks that a certificate is *present*, and the matching
+validators (subject, issuer, serial number) or `NgCertificateAsApikey` compare names a self-signed
+certificate can carry as well.
+
+If you accept client certificates, set `strictBackendServerValidation` to `true`: the chain of a client
+certificate is then validated against your trusted authorities during the handshake, and only then do
+the matching validators restrict which of those certificates get in.
 :::
 
 ### `otoroshi.ssl.trust.all` disables TLS validation completely
