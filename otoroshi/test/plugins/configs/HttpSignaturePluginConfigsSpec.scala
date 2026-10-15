@@ -140,10 +140,21 @@ class HttpSignaturePluginConfigsSpec extends PluginConfigFormatSpec {
       readOk(format, Json.obj("signature_label" -> "")).label mustBe None
     }
 
-    // a missing max_age_seconds reads as no max age instead of the 300 seconds default: it is left aside here
-    "read an empty object with the default values" in {
-      val back = readOk(format, Json.obj())
-      back.copy(maxAgeSeconds = Some(300L)) mustBe HttpSignatureVerifyRequestConfig()
+    "read an empty object as the default config" in {
+      readOk(format, Json.obj()) mustBe HttpSignatureVerifyRequestConfig()
+    }
+
+    "read a missing max age as the 300 seconds default, not as no max age" in {
+      readOk(format, Json.obj("mandatory" -> true)).maxAgeSeconds mustBe Some(300L)
+    }
+
+    "tell a missing max age from a null one" in {
+      readOk(format, Json.obj()).maxAgeSeconds mustBe Some(300L)
+      readOk(format, Json.obj("max_age_seconds" -> JsNull)).maxAgeSeconds mustBe None
+    }
+
+    "read a max age that is not a number as no max age" in {
+      readOk(format, Json.obj("max_age_seconds" -> "300")).maxAgeSeconds mustBe None
     }
 
     "read a json null like an empty object" in {
@@ -163,13 +174,13 @@ class HttpSignaturePluginConfigsSpec extends PluginConfigFormatSpec {
     }
 
     "read the mandatory flag alone" in {
-      readOk(format, Json.obj("mandatory" -> true, "max_age_seconds" -> 300)) mustBe HttpSignatureVerifyRequestConfig(
+      readOk(format, Json.obj("mandatory" -> true)) mustBe HttpSignatureVerifyRequestConfig(
         mandatory = true
       )
     }
 
     "read the clock skew alone" in {
-      readOk(format, Json.obj("clock_skew_seconds" -> 0, "max_age_seconds" -> 300)) mustBe HttpSignatureVerifyRequestConfig(
+      readOk(format, Json.obj("clock_skew_seconds" -> 0)) mustBe HttpSignatureVerifyRequestConfig(
         clockSkewSeconds = 0L
       )
     }
@@ -382,10 +393,17 @@ class HttpSignaturePluginConfigsSpec extends PluginConfigFormatSpec {
       roundTrip(format, HttpSignatureSignResponseConfig(key = Some(certKey), components = Nil)).components mustBe empty
     }
 
-    // a missing expires_in_seconds reads as no expiration instead of the 300 seconds default: it is left aside here
-    "read an empty object with the default values" in {
-      val back = readOk(format, Json.obj())
-      back.copy(expiresInSeconds = Some(300L)) mustBe HttpSignatureSignResponseConfig()
+    "read an empty object as the default config" in {
+      readOk(format, Json.obj()) mustBe HttpSignatureSignResponseConfig()
+    }
+
+    "read a missing expiration as the 300 seconds default, not as no expiration" in {
+      readOk(format, Json.obj("keyid" -> "k1")).expiresInSeconds mustBe Some(300L)
+    }
+
+    "tell a missing expiration from a null one" in {
+      readOk(format, Json.obj()).expiresInSeconds mustBe Some(300L)
+      readOk(format, Json.obj("expires_in_seconds" -> JsNull)).expiresInSeconds mustBe None
     }
 
     "read a json null like an empty object" in {
@@ -401,7 +419,7 @@ class HttpSignaturePluginConfigsSpec extends PluginConfigFormatSpec {
     }
 
     "read the keyid alone" in {
-      readOk(format, Json.obj("keyid" -> "k1", "expires_in_seconds" -> 300)) mustBe HttpSignatureSignResponseConfig(
+      readOk(format, Json.obj("keyid" -> "k1")) mustBe HttpSignatureSignResponseConfig(
         keyid = "k1"
       )
     }

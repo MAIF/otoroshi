@@ -963,7 +963,11 @@ object HttpSignatureVerifyRequestConfig {
         requiredComponents = (json \ "required_components").asOpt[Seq[String]].getOrElse(Seq("@method", "@target-uri")),
         allowedAlgorithms = (json \ "allowed_algorithms").asOpt[Seq[String]].getOrElse(HttpSigAlgorithms.all),
         requireKeyid = (json \ "require_keyid").asOpt[Boolean].getOrElse(true),
-        maxAgeSeconds = (json \ "max_age_seconds").asOpt[Long],
+        // a missing max age falls back to the default one, an explicit null disables the check
+        maxAgeSeconds = (json \ "max_age_seconds") match {
+          case JsDefined(value) => value.asOpt[Long]
+          case _                => HttpSignatureVerifyRequestConfig().maxAgeSeconds
+        },
         clockSkewSeconds = (json \ "clock_skew_seconds").asOpt[Long].getOrElse(30L),
         label = (json \ "signature_label").asOpt[String].filter(_.nonEmpty),
         mandatory = (json \ "mandatory").asOpt[Boolean].getOrElse(false)
@@ -1348,7 +1352,11 @@ object HttpSignatureSignResponseConfig {
         label = (json \ "signature_label").asOpt[String].filter(_.nonEmpty).getOrElse("sig1"),
         components =
           (json \ "components").asOpt[Seq[String]].getOrElse(Seq("@status", "content-type", "content-digest")),
-        expiresInSeconds = (json \ "expires_in_seconds").asOpt[Long],
+        // a missing expiration falls back to the default one, an explicit null means no expiration
+        expiresInSeconds = (json \ "expires_in_seconds") match {
+          case JsDefined(value) => value.asOpt[Long]
+          case _                => HttpSignatureSignResponseConfig().expiresInSeconds
+        },
         includeCreated = (json \ "include_created").asOpt[Boolean].getOrElse(true),
         includeNonce = (json \ "include_nonce").asOpt[Boolean].getOrElse(false),
         addContentDigest = (json \ "add_content_digest").asOpt[Boolean].getOrElse(true),
