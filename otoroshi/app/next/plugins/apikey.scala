@@ -795,10 +795,8 @@ object ApikeyAuthModuleConfig {
     override def reads(json: JsValue): JsResult[ApikeyAuthModuleConfig] = Try {
       ApikeyAuthModuleConfig(
         realm = json.select("realm").asOpt[String],
-        matcher = ApiKeyRouteMatcher.format.reads(json.select("matcher").getOrElse(Json.obj())) match {
-          case JsSuccess(value, _) => value.some
-          case JsError(_)          => None
-        }
+        // a missing matcher is written as null, which must not read back as an empty matcher
+        matcher = json.select("matcher").asOpt[JsObject].flatMap(obj => ApiKeyRouteMatcher.format.reads(obj).asOpt)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

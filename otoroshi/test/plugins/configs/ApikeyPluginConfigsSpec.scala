@@ -607,12 +607,33 @@ class ApikeyPluginConfigsSpec extends PluginConfigFormatSpec {
       ).matcher mustBe Some(ApiKeyRouteMatcher(noneTagIn = Seq("c")))
     }
 
-    "read a matcher that is not an object as an empty matcher" in {
-      readOk(format, Json.obj("matcher" -> "tags")).matcher mustBe Some(ApiKeyRouteMatcher())
+    "read a matcher that is not an object as no matcher" in {
+      readOk(format, Json.obj("matcher" -> "tags")).matcher mustBe None
+      readOk(format, Json.obj("matcher" -> Json.arr("tags"))).matcher mustBe None
+    }
+
+    "round trip the default config" in {
+      roundTrip(format, ApikeyAuthModuleConfig())
+    }
+
+    "round trip a config without matcher" in {
+      roundTrip(format, ApikeyAuthModuleConfig(realm = Some("my-realm"))).matcher mustBe None
+    }
+
+    "read a null matcher as no matcher" in {
+      readOk(format, Json.obj("realm" -> "r", "matcher" -> JsNull)).matcher mustBe None
+    }
+
+    "read a missing matcher as no matcher" in {
+      readOk(format, Json.obj("realm" -> "r")).matcher mustBe None
     }
 
     "expose through json what the format writes" in {
       jsonMatchesFormat(format, ApikeyAuthModuleConfig(realm = Some("r"), matcher = Some(fullMatcher)))
+    }
+
+    "be the default config of ApikeyAuthModule" in {
+      defaultConfigReadsBack(new ApikeyAuthModule(), format) mustBe ApikeyAuthModuleConfig()
     }
   }
 
