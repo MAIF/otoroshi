@@ -251,7 +251,8 @@ class UnitTests
       new entities.TeamsEntityFormatSpec(),
       new entities.ScriptEntityFormatSpec(),
       new entities.WasmPluginEntityFormatSpec(),
-      new entities.UserDashboardEntityFormatSpec()
+      new entities.UserDashboardEntityFormatSpec(),
+      new entities.UserAlertEntityFormatSpec()
     )
 
 class MapFilterTest
