@@ -595,5 +595,44 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     deleteOtoroshiRoute(r).futureValue
   }
 
+  // the izanami proxy kept any context starting like the forced one, and joined the decoded params back unencoded
+  def izanamiForcedContext(): Unit = {
+    val contexts = new AtomicReference[Seq[String]](Seq.empty)
+    val izanami  = TargetService
+      .full(
+        None,
+        "/",
+        "application/json",
+        req => {
+          contexts.set(req.uri.query().getAll("context").reverse)
+          (200, "{}", List.empty)
+        }
+      )
+      .await()
+    val r        = route(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[IzanamiV2Proxy],
+        config = NgPluginInstanceConfig(
+          IzanamiV2ProxyConfig(url = s"http://127.0.0.1:${izanami.port}", context = Some("/prod")).json.as[JsObject]
+        )
+      )
+    )
+    def forwarded(context: String): Seq[String] = {
+      ws.url(s"http://127.0.0.1:$port/features")
+        .withHttpHeaders("Host" -> r.frontend.domains.head.domain)
+        .withQueryStringParameters("context" -> context)
+        .get()
+        .futureValue
+        .status mustBe Status.OK
+      contexts.get()
+    }
+    withClue("a subcontext ") { forwarded("/prod/eu") mustBe Seq("/prod/eu") }
+    withClue("a context starting the same way ") { forwarded("/production") mustBe Seq("/prod") }
+    withClue("a context going up ") { forwarded("/prod/../dev") mustBe Seq("/prod") }
+    withClue("a second context in the value ") { forwarded("/prod&context=/dev") mustBe Seq("/prod") }
+    deleteOtoroshiRoute(r).futureValue
+    izanami.stop()
+  }
+
   def stop(): Unit = backend.stop()
 }

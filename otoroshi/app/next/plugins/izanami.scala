@@ -22,6 +22,8 @@ import play.api.libs.json.*
 import play.api.libs.ws.{WSAuthScheme, WSCookie}
 import play.api.mvc.{Cookie, Result, Results}
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.*
@@ -570,18 +572,25 @@ class IzanamiV2Proxy extends NgBackendCall {
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(IzanamiV2ProxyConfig.format).getOrElse(IzanamiV2ProxyConfig())
 
+    // the requested context is kept when it is the forced context or one of its subcontexts, compared segment by
+    // segment: a /prod context lets neither /production nor /prod/../dev through
+    def segments(context: String): Seq[String] = context.split("/").toSeq.filter(_.nonEmpty)
     val queryPart = ctx.request.queryParams
-      .applyOnWithOpt(config.context)((map, izaCtx) => {
-        val shouldNotReplaceContext =
-          map.get("context").exists(requestCtx => requestCtx.dropWhile(_ == '/').startsWith(izaCtx.dropWhile(_ == '/')))
+      .applyOnWithOpt(config.context.map(c => applyExpressionLangage(c, ctx)))((map, izaCtx) => {
+        val shouldNotReplaceContext = map.get("context").exists { requestCtx =>
+          val requested = segments(requestCtx)
+          !requested.exists(s => s == "." || s == "..") && requested.startsWith(segments(izaCtx))
+        }
         if (shouldNotReplaceContext) {
           map
         } else {
-          map + ("context" -> applyExpressionLangage(izaCtx, ctx))
+          map + ("context" -> izaCtx)
         }
       })
       .map { case (key, value) =>
-        s"${key}=${value}"
+        // the params are decoded: encoded again, a value carrying & or = cannot add a param, a second context for
+        // instance
+        s"${URLEncoder.encode(key, StandardCharsets.UTF_8)}=${URLEncoder.encode(value, StandardCharsets.UTF_8)}"
       }
       .mkString("&")
 

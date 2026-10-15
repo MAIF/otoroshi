@@ -78,6 +78,7 @@ class PluginsHardeningSpec extends PluginsTestSpecBase {
     "keep a discovery registration on its route and refuse a glob as registration id" in {
       hardening.discoveryRegistration()
     }
+    "keep the forced izanami context" in { hardening.izanamiForcedContext() }
     "stop" in { hardening.stop() }
   }
 }
