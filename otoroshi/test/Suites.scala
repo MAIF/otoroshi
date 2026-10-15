@@ -248,7 +248,8 @@ class UnitTests
       new plugins.configs.RedirectionPluginConfigsSpec(),
       new plugins.configs.RateLimitingPluginConfigsSpec(),
       // json formats of the core entities, one spec per entity family
-      new entities.TeamsEntityFormatSpec()
+      new entities.TeamsEntityFormatSpec(),
+      new entities.ScriptEntityFormatSpec()
     )
 
 class MapFilterTest
