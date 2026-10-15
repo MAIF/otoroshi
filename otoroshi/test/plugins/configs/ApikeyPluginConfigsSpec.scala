@@ -47,7 +47,7 @@ class ApikeyPluginConfigsSpec extends PluginConfigFormatSpec {
     "update_quotas"        -> true
   )
 
-  // every field set to something else than its default, but the none tag constraint of the routing
+  // every field set to something else than its default
   private val customExtractors = NgApikeyExtractors(
     basic = NgApikeyExtractorBasic(
       enabled = false,
@@ -90,6 +90,7 @@ class ApikeyPluginConfigsSpec extends PluginConfigFormatSpec {
 
   private val customRouting = NgApikeyMatcher(
     enabled = true,
+    noneTagIn = Seq("none-a"),
     oneTagIn = Seq("one-a", "one-b"),
     allTagsIn = Seq("all-a"),
     noneMetaIn = Map("none" -> "meta"),
@@ -122,7 +123,7 @@ class ApikeyPluginConfigsSpec extends PluginConfigFormatSpec {
       roundTrip(format, NgApikeyCallsConfig())
     }
 
-    "round trip a config where every field but the none tag constraint is set" in {
+    "round trip a config where every field is set" in {
       roundTrip(format, customCalls)
     }
 
@@ -237,6 +238,42 @@ class ApikeyPluginConfigsSpec extends PluginConfigFormatSpec {
 
     "read the none_tag_in routing key" in {
       readOk(NgApikeyMatcher.format, Json.obj("none_tag_in" -> Json.arr("banned"))).noneTagIn mustBe Seq("banned")
+    }
+
+    "write the none tag constraint under none_tag_in, the key the ui forms use" in {
+      written(NgApikeyMatcher.format, NgApikeyMatcher(noneTagIn = Seq("banned"))) mustBe Json.obj(
+        "enabled"     -> false,
+        "none_tag_in" -> Json.arr("banned")
+      )
+    }
+
+    "round trip a none tag constraint alone" in {
+      roundTrip(NgApikeyMatcher.format, NgApikeyMatcher(enabled = true, noneTagIn = Seq("banned", "legacy"))).noneTagIn mustBe Seq(
+        "banned",
+        "legacy"
+      )
+    }
+
+    "round trip a none tag constraint through the whole config" in {
+      roundTrip(format, NgApikeyCallsConfig(routing = NgApikeyMatcher(enabled = true, noneTagIn = Seq("banned")))).routing.noneTagIn mustBe Seq(
+        "banned"
+      )
+    }
+
+    "still read the none_tagIn key written by older versions" in {
+      readOk(NgApikeyMatcher.format, Json.obj("none_tagIn" -> Json.arr("banned"))).noneTagIn mustBe Seq("banned")
+    }
+
+    "prefer none_tag_in over the older none_tagIn key" in {
+      readOk(
+        NgApikeyMatcher.format,
+        Json.obj("none_tag_in" -> Json.arr("new"), "none_tagIn" -> Json.arr("old"))
+      ).noneTagIn mustBe Seq("new")
+    }
+
+    "keep the none tag constraint of converted legacy constraints through a round trip" in {
+      val converted = NgApikeyCallsConfig.fromLegacy(ApiKeyConstraints(routing = ApiKeyRouteMatcher(noneTagIn = Seq("banned"))))
+      roundTrip(format, converted).routing.noneTagIn mustBe Seq("banned")
     }
 
     "read every routing key" in {
