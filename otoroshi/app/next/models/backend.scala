@@ -427,10 +427,11 @@ case class NgTarget(
   def isSecondary: Boolean = backup
 
   lazy val baseUrl: String                  = s"${if (tls) "https" else "http"}://${ipAddress.getOrElse(hostname)}${defaultPortString}"
-  lazy val defaultPortString                = port match {
-    case 443 => ""
-    case 80  => ""
-    case _   => s":${port}"
+  // the port can only be left out when it is the default port of the scheme
+  lazy val defaultPortString                = (tls, port) match {
+    case (true, 443) => ""
+    case (false, 80) => ""
+    case _           => s":${port}"
   }
   lazy val legacy: otoroshi.models.Target   = toTarget
   lazy val toTarget: otoroshi.models.Target = otoroshi.models.Target(

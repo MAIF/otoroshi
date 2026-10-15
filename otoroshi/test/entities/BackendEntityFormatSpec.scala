@@ -810,6 +810,27 @@ class BackendEntityFormatSpec extends EntityFormatSpec {
     "take the host of a legacy target without tag as id" in {
       NgTarget.fromTarget(Target(host = "h:8080", scheme = "http")) mustBe NgTarget("h:8080", "h", 8080, false)
     }
+
+    "leave the default port of the scheme out of the legacy target" in {
+      NgTarget("t", "h", 443, true).toTarget.host mustBe "h"
+      NgTarget("t", "h", 80, false).toTarget.host mustBe "h"
+    }
+
+    "keep in the legacy target a port that is not the default one of the scheme" in {
+      NgTarget("t", "h", 80, true).toTarget.host mustBe "h:80"
+      NgTarget("t", "h", 443, false).toTarget.host mustBe "h:443"
+    }
+
+    "keep in the base url a port that is not the default one of the scheme" in {
+      NgTarget("t", "h", 80, true).baseUrl mustBe "https://h:80"
+      NgTarget("t", "h", 443, false).baseUrl mustBe "http://h:443"
+      NgTarget("t", "h", 443, true).baseUrl mustBe "https://h"
+    }
+
+    "call an https target on port 80 on port 80" in {
+      NgTarget("t", "h", 80, true).toTarget.thePort mustBe 80
+      NgTarget("t", "h", 443, false).toTarget.thePort mustBe 443
+    }
   }
 
   "NgBackend" should {
