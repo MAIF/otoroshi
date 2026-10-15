@@ -112,17 +112,32 @@ class GenericListsPluginConfigsSpec extends PluginConfigFormatSpec {
       ) mustBe NgGenericListConfig()
     }
 
-    // a missing expression reads as no expression, not as the ${req.ip_address} default: it is left aside here
-    "read an empty object without values" in {
-      readOk(format, Json.obj()).values mustBe empty
+    "read an empty object as the default config" in {
+      readOk(format, Json.obj()) mustBe NgGenericListConfig()
     }
 
-    "read a json null without values" in {
-      readOk(format, JsNull).values mustBe empty
+    "read a json null as the default config" in {
+      readOk(format, JsNull) mustBe NgGenericListConfig()
     }
 
-    "read a json array without values" in {
-      readOk(format, Json.arr("1.2.3.4")).values mustBe empty
+    "read a json array as the default config" in {
+      readOk(format, Json.arr("1.2.3.4")) mustBe NgGenericListConfig()
+    }
+
+    "read a missing expression as the client ip address expression" in {
+      readOk(format, Json.obj("values" -> Json.arr("1.2.3.4"))) mustBe NgGenericListConfig(
+        Some("${req.ip_address}"),
+        Seq("1.2.3.4")
+      )
+    }
+
+    "not turn values without expression into a list that checks nothing" in {
+      readOk(format, Json.obj("values" -> Json.arr("1.2.3.4", "5.6.7.8"))).expression mustBe defined
+    }
+
+    "tell a missing expression from a null one" in {
+      readOk(format, Json.obj("values" -> Json.arr("a"))).expression mustBe Some("${req.ip_address}")
+      readOk(format, Json.obj("expression" -> JsNull, "values" -> Json.arr("a"))).expression mustBe None
     }
 
     "ignore unknown keys" in {
