@@ -356,7 +356,9 @@ object Tenant {
         "name"        -> o.name,
         "description" -> o.description,
         "metadata"    -> o.metadata,
-        "tags"        -> JsArray(o.tags.map(JsString.apply))
+        "tags"        -> JsArray(o.tags.map(JsString.apply)),
+        // not read back, the location of a tenant is its id: the generic admin api checks the rights on this field
+        "_loc"        -> o.location.json
       )
     override def reads(json: JsValue): JsResult[Tenant] =
       Try {
@@ -404,7 +406,10 @@ object Team   {
         "name"        -> o.name,
         "description" -> o.description,
         "metadata"    -> o.metadata,
-        "tags"        -> JsArray(o.tags.map(JsString.apply))
+        "tags"        -> JsArray(o.tags.map(JsString.apply)),
+        // not read back, the location of a team is its tenant and itself: the generic admin api checks the rights on
+        // this field
+        "_loc"        -> o.location.json
       )
     override def reads(json: JsValue): JsResult[Team] =
       Try {

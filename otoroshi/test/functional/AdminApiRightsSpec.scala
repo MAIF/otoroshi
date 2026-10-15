@@ -605,6 +605,48 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       status mustBe 201
     }
 
+    // tenants and teams carried no _loc: the generic api checked their rights against default/default
+    "not let a default/default writer update or delete another tenant or its teams through the generic api" in {
+      val defaultWriter = scopedUser.copy(
+        randomId = "default-writer@otoroshi.io",
+        name = "default-writer@otoroshi.io",
+        email = "default-writer@otoroshi.io",
+        rights = UserRights(Seq(UserRight(TenantAccess("default"), Seq(TeamAccess("default")))))
+      )
+      otoroshiApiCall("POST", "/api/tenants", Json.obj("id" -> "victim-org", "name" -> "victim-org").some)
+        .futureValue
+        ._2 mustBe 201
+      otoroshiApiCall(
+        "POST",
+        "/api/teams",
+        Json.obj("id" -> "victim-team", "tenant" -> "victim-org", "name" -> "victim-team").some
+      ).futureValue._2 mustBe 201
+      val (_, updateStatus) = call(
+        "PUT",
+        "/apis/organize.otoroshi.io/v1/tenants/victim-org",
+        defaultWriter,
+        Json.obj("id" -> "victim-org", "name" -> "hijacked").some,
+        currentTenant = TenantId("default")
+      )
+      val (_, deleteStatus) = call(
+        "DELETE",
+        "/apis/organize.otoroshi.io/v1/teams/victim-org:victim-team",
+        defaultWriter,
+        None,
+        currentTenant = TenantId("default")
+      )
+      val (tenant, _)       = otoroshiApiCall("GET", "/api/tenants/victim-org").futureValue
+      // teams are stored under tenant:team
+      val (_, teamStatus)   =
+        otoroshiApiCall("GET", "/apis/organize.otoroshi.io/v1/teams/victim-org:victim-team").futureValue
+      withClue(s"update=$updateStatus delete=$deleteStatus ") {
+        updateStatus must not be 200
+        deleteStatus must not be 200
+        (tenant \ "name").as[String] mustBe "victim-org"
+        teamStatus mustBe 200
+      }
+    }
+
     // an apikey authorized on the admin api without rights metadata is unrestricted when it is used
     "not let a tenant admin write an admin api apikey without rights metadata" in {
       def unrestricted(clientId: String): JsValue = Json.obj(
