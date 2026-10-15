@@ -21,7 +21,14 @@ case class NgDiscoverySelfRegistrationConfig(
 
   override def json: JsValue = raw
 
-  def legacy: SelfRegistrationConfig = SelfRegistrationConfig(raw)
+  // the legacy config only reads the camel case keys, while the ui form writes the snake case ones
+  def legacy: SelfRegistrationConfig = SelfRegistrationConfig(
+    raw.asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+      "hosts"           -> hosts,
+      "targetTemplate"  -> targetTemplate,
+      "registrationTtl" -> registrationTtl.toMillis
+    )
+  )
 
   lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val targetTemplate: JsObject        = raw

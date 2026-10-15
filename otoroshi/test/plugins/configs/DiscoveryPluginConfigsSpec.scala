@@ -1,6 +1,7 @@
 package plugins.configs
 
 import otoroshi.next.plugins.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.*
 
 import scala.concurrent.duration.*
@@ -147,6 +148,68 @@ class DiscoveryPluginConfigsSpec extends PluginConfigFormatSpec {
       legacy.hosts mustBe full.hosts
       legacy.targetTemplate mustBe full.targetTemplate
       legacy.registrationTtl mustBe full.registrationTtl
+    }
+
+    "hand the snake case target template of the ui form to the legacy config" in {
+      val config = NgDiscoverySelfRegistrationConfig(Json.obj("target_template" -> Json.obj("scheme" -> "https")))
+      config.legacy.targetTemplate mustBe Json.obj("scheme" -> "https")
+    }
+
+    "hand the snake case registration ttl of the ui form to the legacy config" in {
+      val config = NgDiscoverySelfRegistrationConfig(Json.obj("registration_ttl" -> 5000))
+      config.legacy.registrationTtl mustBe 5.seconds
+    }
+
+    "hand the hosts of the ui form to the legacy config" in {
+      val config = NgDiscoverySelfRegistrationConfig(Json.obj("hosts" -> Json.arr("a.oto.tools", "b.oto.tools")))
+      config.legacy.hosts mustBe Seq("a.oto.tools", "b.oto.tools")
+    }
+
+    "hand every snake case value of the ui form to the legacy config" in {
+      val config = NgDiscoverySelfRegistrationConfig(
+        Json.obj(
+          "hosts"            -> Json.arr("a.oto.tools"),
+          "target_template"  -> Json.obj("weight" -> 3),
+          "registration_ttl" -> 1000
+        )
+      )
+      val legacy = config.legacy
+      legacy.hosts mustBe config.hosts
+      legacy.targetTemplate mustBe config.targetTemplate
+      legacy.registrationTtl mustBe config.registrationTtl
+    }
+
+    "hand the same values to the legacy config whatever the key case" in {
+      val camel = NgDiscoverySelfRegistrationConfig(raw).legacy
+      val snake = NgDiscoverySelfRegistrationConfig(
+        Json.obj(
+          "hosts"            -> Json.arr("discovery.oto.tools", "registry.oto.tools"),
+          "target_template"  -> Json.obj("scheme" -> "https", "weight" -> 2),
+          "registration_ttl" -> 30000
+        )
+      ).legacy
+      snake.hosts mustBe camel.hosts
+      snake.targetTemplate mustBe camel.targetTemplate
+      snake.registrationTtl mustBe camel.registrationTtl
+    }
+
+    "hand an empty template and a one minute ttl to the legacy config by default" in {
+      val legacy = NgDiscoverySelfRegistrationConfig().legacy
+      legacy.hosts mustBe empty
+      legacy.targetTemplate mustBe Json.obj()
+      legacy.registrationTtl mustBe 60.seconds
+    }
+
+    "keep the unknown keys in the legacy config" in {
+      NgDiscoverySelfRegistrationConfig(Json.obj("foo" -> "bar")).legacy.raw.select("foo").asOpt[String] mustBe Some(
+        "bar"
+      )
+    }
+
+    "hand a legacy config to plugins whose raw value is not an object" in {
+      val legacy = NgDiscoverySelfRegistrationConfig(JsString("foo")).legacy
+      legacy.hosts mustBe empty
+      legacy.registrationTtl mustBe 60.seconds
     }
 
     "expose through json what the format writes" in {
