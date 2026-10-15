@@ -21,6 +21,7 @@ Nothing here is a bug report. It is the list of things nobody else can decide fo
 
 - [ ] `otoroshi.secret` is not the shipped default, and neither are the admin API credentials
 - [ ] Every admin API key carries an explicit `otoroshi-access-rights` metadata
+- [ ] Every admin and user has explicit rights, and `superAdminWhenNoRights` is off
 - [ ] `otoroshi.bypassUserRightsCheck` is off
 - [ ] The backoffice session cookie is `secure`, and not scoped wider than it needs to be
 - [ ] `otoroshi.ssl.trust.all` is off
@@ -78,6 +79,27 @@ rights grants it everything, silently.
 
 Audit your existing keys: any key authorized on the admin API group without that metadata is a
 superadmin, whatever its name suggests.
+
+### An admin or a user without rights is a superadmin on upgraded installations
+
+The backoffice admins, their sessions and the users of the basic authentication modules carry their
+rights in a `rights` field. What happens when that field is missing, or cannot be read, is decided by
+`superAdminWhenNoRights` in the global config (the danger zone):
+
+- **on**, an admin or a user without rights gets the superadmin rights. That is how Otoroshi used to read
+  them, and it is the value of every installation upgraded from a version that predates the setting: a
+  persisted configuration without the field reads as `true`, so old admins keep working after the
+  upgrade.
+- **off**, an admin or a user without rights gets no right at all. That is the value of a **fresh
+  install**.
+
+Otoroshi logs a warning at startup as long as it is on. Before going live, check that every admin and
+every user has explicit rights, then turn it off:
+
+```sh
+curl -u "$CLIENT_ID:$CLIENT_SECRET" \
+  https://otoroshi-api.your.domain/api/globalconfig | jq '.superAdminWhenNoRights'
+```
 
 ### `otoroshi.bypassUserRightsCheck` disables RBAC entirely
 

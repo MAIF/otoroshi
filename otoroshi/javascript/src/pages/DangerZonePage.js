@@ -781,6 +781,14 @@ export class DangerZonePage extends Component {
         help: 'Forces admins to login only with user/password or user/password/u2F device',
       },
     },
+    superAdminWhenNoRights: {
+      type: 'bool',
+      props: {
+        label: 'Super admin when no rights',
+        placeholder: '--',
+        help: 'Gives the super admin rights to the admins and users stored without rights, as Otoroshi used to do. Off on a new instance, on on the instances that predate this setting. Turn it off once every admin and user has rights, before going live',
+      },
+    },
     trustXForwarded: {
       type: 'bool',
       props: {
@@ -1416,6 +1424,7 @@ export class DangerZonePage extends Component {
     '<<<Misc. Settings',
     'maintenanceMode',
     'u2fLoginOnly',
+    'superAdminWhenNoRights',
     'apiReadOnly',
     // 'streamEntityOnly',
     'autoLinkToDefaultGroup',

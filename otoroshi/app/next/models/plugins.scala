@@ -67,6 +67,11 @@ object PluginIndex {
           .asOpt[Int]
           .map(_.toDouble)
           .orElse(json.select("handles_websocket").asOpt[Double]),
+        handlesWebsocketBackend = json
+          .select("handles_websocket_backend")
+          .asOpt[Int]
+          .map(_.toDouble)
+          .orElse(json.select("handles_websocket_backend").asOpt[Double]),
         callBackend =
           json.select("call_backend").asOpt[Int].map(_.toDouble).orElse(json.select("call_backend").asOpt[Double])
       )
@@ -84,6 +89,8 @@ object PluginIndex {
       .applyOnWithOpt(o.matchRoute)((o, v) => o ++ Json.obj("match_route" -> JsNumber(v)))
       .applyOnWithOpt(o.handlesTunnel)((o, v) => o ++ Json.obj("handles_tunnel" -> JsNumber(v)))
       .applyOnWithOpt(o.handlesWebsocket)((o, v) => o ++ Json.obj("handles_websocket" -> JsNumber(v)))
+      .applyOnWithOpt(o.handlesWebsocketBackend)((o, v) => o ++ Json.obj("handles_websocket_backend" -> JsNumber(v)))
+      .applyOnWithOpt(o.callBackend)((o, v) => o ++ Json.obj("call_backend" -> JsNumber(v)))
   }
 }
 

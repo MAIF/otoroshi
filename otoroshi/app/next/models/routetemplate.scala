@@ -41,7 +41,8 @@ object RouteTemplate {
   val format                                    = new Format[RouteTemplate] {
     override def reads(json: JsValue): JsResult[RouteTemplate] = Try {
       RouteTemplate(
-        location = json.select("location").as(using EntityLocation.format),
+        // under _loc like every other entity: the admin api checks the rights on that key
+        location = EntityLocation.readFromKey(json),
         id = json.selectAsString("id"),
         name = json.selectAsString("name"),
         description = json.selectAsString("description"),
@@ -56,8 +57,7 @@ object RouteTemplate {
       case Success(value) => JsSuccess(value)
     }
 
-    override def writes(o: RouteTemplate): JsValue = Json.obj(
-      "location"    -> o.location.json,
+    override def writes(o: RouteTemplate): JsValue = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,
       "description" -> o.description,

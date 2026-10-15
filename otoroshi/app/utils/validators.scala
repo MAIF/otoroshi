@@ -56,8 +56,9 @@ case class WasmPluginValidator(ref: String, error: Option[String] = None) extend
   override def kind: String = "wasm-plugin-validator"
 
   override def json: JsValue = Json.obj(
-    "kind" -> kind,
-    "ref"  -> ref
+    "kind"  -> kind,
+    "ref"   -> ref,
+    "error" -> error
   )
 
   override def validate(ctx: JsValue)(using env: Env): Boolean = {
@@ -99,8 +100,9 @@ case class OpaPluginValidator(ref: String, error: Option[String] = None) extends
   override def kind: String = "opa-plugin-validator"
 
   override def json: JsValue = Json.obj(
-    "kind" -> kind,
-    "ref"  -> ref
+    "kind"  -> kind,
+    "ref"   -> ref,
+    "error" -> error
   )
 
   override def validate(ctx: JsValue)(using env: Env): Boolean = {

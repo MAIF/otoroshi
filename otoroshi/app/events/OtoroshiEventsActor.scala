@@ -1995,8 +1995,8 @@ object Exporters {
       "selector"  -> selector,
       "kind"      -> (kind match {
         case MetricSettingsKind.Counter   => "Counter"
-        case MetricSettingsKind.Timer     => "Histogram"
-        case MetricSettingsKind.Histogram => "Timer"
+        case MetricSettingsKind.Timer     => "Timer"
+        case MetricSettingsKind.Histogram => "Histogram"
       }),
       "eventType" -> eventType,
       "labels"    -> labels
@@ -2017,7 +2017,11 @@ object Exporters {
               case "Timer"     => MetricSettingsKind.Timer
             }
             .getOrElse(MetricSettingsKind.Counter),
-          eventType = (json \ "eventType").asOpt[String].getOrElse("AlertEvent").some,
+          // a null event type is written for all the events, a missing one means the alert events
+          eventType = (json \ "eventType") match {
+            case JsDefined(JsNull) => None
+            case _                 => (json \ "eventType").asOpt[String].getOrElse("AlertEvent").some
+          },
           labels = (json \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       } match {

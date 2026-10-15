@@ -701,14 +701,15 @@ object ApiDocumentationPlanValidationKind       {
   case object Wasm     extends ApiDocumentationPlanValidationKind { def name: String = "wasm"     }
   case object Custom   extends ApiDocumentationPlanValidationKind { def name: String = "custom"   }
 
-  def apply(str: String): ApiDocumentationPlanValidationKind = str match {
+  // an unknown kind needs a manual validation rather than accepting every subscription
+  def apply(str: String): ApiDocumentationPlanValidationKind = str.trim.toLowerCase match {
     case "auto"     => Auto
     case "manual"   => Manual
     case "webhook"  => Webhook
     case "workflow" => Workflow
     case "wasm"     => Wasm
     case "custom"   => Custom
-    case _          => Auto
+    case _          => Manual
   }
 }
 
@@ -1134,7 +1135,7 @@ object ApiSubscription {
       currentApikeyMetadata.get(PLAN_METADATA_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty[String]).toIndexedSeq ++
       currentApikeyMetadata
         .get(SUBSCRIPTION_METADATA_KEY)
-        .map(_.split(SUBSCRIPTION_METADATA_KEY))
+        .map(_.split(METADATA_AND_TAGS_SEPARATOR))
         .getOrElse(Array.empty[String])
 
     currentApikeyMetadata.view.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key)).toMap
@@ -1146,7 +1147,7 @@ object ApiSubscription {
   ): Seq[String] = {
     val managed_keys: Seq[String] =
       currentApikeyMetadata.get(PLAN_TAGS_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty[String]).toIndexedSeq ++
-      currentApikeyMetadata.get(SUBSCRIPTION_TAGS_KEY).map(_.split(SUBSCRIPTION_METADATA_KEY)).getOrElse(Array.empty[String])
+      currentApikeyMetadata.get(SUBSCRIPTION_TAGS_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty[String])
 
     currentApikeyTags.filter(key => !managed_keys.contains(key))
   }
@@ -1361,7 +1362,8 @@ object ApiSubscription {
   val format: Format[ApiSubscription] = new Format[ApiSubscription] {
     override def reads(json: JsValue): JsResult[ApiSubscription] = Try {
       ApiSubscription(
-        location = json.select("location").as(using EntityLocation.format),
+        // under _loc like every other entity: the admin api checks the rights on that key
+        location = EntityLocation.readFromKey(json),
         id = json.select("id").asString,
         name = json.select("name").asString,
         description = json.select("description").asString,
@@ -1395,8 +1397,7 @@ object ApiSubscription {
       case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
-    override def writes(o: ApiSubscription): JsValue             = Json.obj(
-      "location"          -> o.location.json,
+    override def writes(o: ApiSubscription): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"                -> o.id,
       "name"              -> o.name,
       "description"       -> o.description,
@@ -2468,8 +2469,10 @@ object Api {
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
           .getOrElse(Seq(ApiBackendClient.defaultClient)),
+        // a missing documentation is written as null, which must not read back as an enabled empty documentation
         documentation = (json \ "documentation")
-          .asOpt[ApiDocumentation](using ApiDocumentation._fmt),
+          .asOpt[JsObject]
+          .flatMap(ApiDocumentation._fmt.reads(_).asOpt),
         deployments = (json \ "deployments")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiDeployment._fmt.reads(v).asOpt))
@@ -2490,7 +2493,14 @@ object Api {
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiStateHook.format.reads(v).asOpt))
           .getOrElse(Seq.empty).toSeq,
-        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiPlan(o))
+        // the entries that are not objects are left out one by one: dropping every plan would leave the routes of the
+        // api without any access plugin
+        plans = json
+          .select("plans")
+          .asOpt[Seq[JsValue]]
+          .getOrElse(Seq.empty)
+          .collect { case o: JsObject => ApiPlan(o) }
+          .toSeq
       )
     } match {
       case Failure(ex)    =>

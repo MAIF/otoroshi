@@ -130,6 +130,7 @@ case class GoReplayS3Settings(
   override def toJson: JsValue =
     Json.obj(
       "s3"                    -> s3.json,
+      "maxFileSize"           -> maxFileSize,
       "captureRequests"       -> captureRequests,
       "captureResponses"      -> captureResponses,
       "preferBackendRequest"  -> preferBackendRequest,
@@ -251,7 +252,8 @@ object SplunkCallSettings {
         token = json.select("token").asOptString,
         index = json.select("index").asOptString,
         fields = json.select("fields").asOpt[Map[String, String]].getOrElse(Map.empty),
-        sourceType = json.select("source_type").asOptString,
+        // sourceType is the key this format used to write
+        sourceType = json.select("source_type").asOptString.orElse(json.select("sourceType").asOptString),
         tlsConfig = json
           .select("tls_config")
           .asOpt[JsObject]
@@ -290,7 +292,7 @@ case class SplunkCallSettings(
         obj ++ Json.obj("token" -> token)
       }
       .applyOnWithOpt(sourceType) { case (obj, sourceType) =>
-        obj ++ Json.obj("sourceType" -> sourceType)
+        obj ++ Json.obj("source_type" -> sourceType)
       }
       .applyOnWithOpt(index) { case (obj, index) =>
         obj ++ Json.obj("index" -> index)

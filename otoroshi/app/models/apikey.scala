@@ -58,7 +58,7 @@ object RemainingQuotas {
         throttlingCallsPerWindow =
           json.select("throttlingCallsPerWindow").asOpt[Long].getOrElse(json.select("currentCallsPerSec").asLong),
         remainingCallsPerWindow =
-          json.select("remainingCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
+          json.select("remainingCallsPerWindow").asOpt[Long].getOrElse(json.select("remainingCallsPerSec").asLong),
         authorizedCallsPerDay = json.select("authorizedCallsPerDay").asLong,
         currentCallsPerDay = json.select("currentCallsPerDay").asLong,
         remainingCallsPerDay = json.select("remainingCallsPerDay").asLong,
@@ -431,10 +431,10 @@ case class ApiKey(
     s"${prefix}_${signature}"
   }
 
+  // like the next secret in isValid, the next bearer is only valid while the secret is rotating
   def checkBearer(value: String): Boolean = {
-    val bearer       = toBearer()
-    lazy val bearer2 = toNextBearer()
-    Signatures.constantTimeEquals(value, bearer) || Signatures.constantTimeEquals(value, bearer2)
+    Signatures.constantTimeEquals(value, toBearer()) ||
+    (rotation.enabled && rotation.nextSecret.isDefined && Signatures.constantTimeEquals(value, toNextBearer()))
   }
 }
 
@@ -612,9 +612,14 @@ object ApiKey {
             apiRef = (json \ "apiRef").asOpt[JsObject].flatMap(o => ApiRef.format.reads(o).asOpt),
             plugins = (json \ "plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt),
             tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            // read entry by entry: one value that is not a string must not drop the whole map, and with it the
+            // access rights of the apikey. such a value is kept as its json text
             metadata = (json \ "metadata")
-              .asOpt[Map[String, String]]
-              .map(m => m.filter(_._1.nonEmpty))
+              .asOpt[JsObject]
+              .map(_.value.collect {
+                case (key, JsString(value)) if key.nonEmpty => (key, value)
+                case (key, value) if key.nonEmpty           => (key, Json.stringify(value))
+              }.toMap)
               .getOrElse(Map.empty[String, String])
           )
       } map { case sd =>

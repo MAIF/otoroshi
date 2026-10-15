@@ -845,7 +845,8 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
               .obj(
                 "bearer" -> apiKey.toBearer()
               )
-              .applyOnWithOpt(apiKey.rotation.nextSecret) { case (json, next) =>
+              // the next bearer is only valid while the secret is rotating, see ApiKey.checkBearer
+              .applyOnIf(apiKey.rotation.enabled && apiKey.rotation.nextSecret.isDefined) { json =>
                 json ++ Json.obj("bearer_next" -> apiKey.toNextBearer())
               }
               .applyOnWithOpt(ctx.request.getQueryString("newSecret")) { case (json, newSecret) =>

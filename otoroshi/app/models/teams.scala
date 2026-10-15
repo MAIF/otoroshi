@@ -103,11 +103,20 @@ object UserRights {
         }
     )
   }
-  def readFromObject(json: JsValue): UserRights = {
+  // missing or unreadable rights are no rights, unless the superAdminWhenNoRights flag of the global config is on:
+  // the instances that predate the flag read them as super admin rights until it is turned off
+  def readFromObject(json: JsValue): UserRights = readFromObject(json, superAdminWhenNoRights)
+  def readFromObject(json: JsValue, superAdminWhenNoRights: Boolean): UserRights = {
     val rights: Option[UserRights] = (json \ "rights").asOpt[JsArray].map { arr =>
       readFromArray(arr)
     }
-    rights.getOrElse(superAdmin)
+    rights.getOrElse(if (superAdminWhenNoRights) superAdmin else empty)
+  }
+  // read from the cached global config: off outside a running otoroshi and before the global config is loaded
+  private def superAdminWhenNoRights: Boolean = {
+    val env = otoroshi.api.OtoroshiEnvHolder.get()
+    if (env == null) false
+    else env.datastores.globalConfigDataStore.latestSafe.exists(_.superAdminWhenNoRights)
   }
 }
 
@@ -268,8 +277,10 @@ case class TeamAccess(value: String, canRead: Boolean, canWrite: Boolean) {
     AccessCoverage.coversValue(value, other.value) &&
     AccessCoverage.coversPermissions((canRead, canWrite), (other.canRead, other.canWrite))
   }
+  // an access without any right is written name:not, name: would be read back with the rights found in the letters
+  // of the name
   lazy val raw: String = {
-    s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
+    if (canRead) s"$value:r${if (canWrite) "w" else ""}" else s"$value:not"
   }
   lazy val asTeamId: TeamId          = TeamId(value)
   lazy val plain: Boolean            = !containsWildcard
@@ -287,7 +298,8 @@ object TeamAccess {
   def apply(_raw: String): TeamAccess = {
     val raw = _raw.toLowerCase.trim
     if (raw.contains(":")) {
-      val parts    = raw.toLowerCase.split(":")
+      // the -1 keeps the empty permissions of name:, which used to be written for an access without any right
+      val parts    = raw.toLowerCase.split(":", -1)
       val not      = parts.last == "not"
       val canRead  = if (not) false else parts.last.contains("r")
       val canWrite = if (not) false else parts.last.contains("w")
@@ -302,7 +314,8 @@ object TenantAccess {
   def apply(_raw: String): TenantAccess = {
     val raw = _raw.toLowerCase.trim
     if (raw.contains(":")) {
-      val parts    = raw.toLowerCase.split(":")
+      // the -1 keeps the empty permissions of name:, which used to be written for an access without any right
+      val parts    = raw.toLowerCase.split(":", -1)
       val not      = parts.last == "not"
       val canRead  = if (not) false else parts.last.contains("r")
       val canWrite = if (not) false else parts.last.contains("w")
@@ -326,8 +339,10 @@ case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
   lazy val containsWildcard: Boolean = value.contains("*")
   lazy val wildcard: Boolean         = value == "*"
   lazy val canReadWrite: Boolean     = canRead && canWrite
+  // an access without any right is written name:not, name: would be read back with the rights found in the letters
+  // of the name
   lazy val raw: String = {
-    s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
+    if (canRead) s"$value:r${if (canWrite) "w" else ""}" else s"$value:not"
   }
 }
 

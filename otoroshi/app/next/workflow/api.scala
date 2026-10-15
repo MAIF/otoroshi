@@ -287,7 +287,8 @@ case class WorkflowRun(
       attrs: TypedMap,
       env: Env
   ): WorkflowRun = {
-    copy(attrs = attrs, env = env)
+    // the run is stored without its workflow, the paused session gives them back
+    copy(workflow_ref = workflow_ref, workflow = workflow, attrs = attrs, env = env)
   }
   def json: JsValue             = WorkflowRun.format.writes(this)
   def lightJson: JsValue        = json.asObject - "log" - "functions"

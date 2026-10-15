@@ -396,6 +396,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
     Try {
       Right(
         SamlAuthModuleConfig(
+          location = otoroshi.models.EntityLocation.readFromKey(json),
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),

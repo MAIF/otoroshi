@@ -57,7 +57,7 @@ export function NewAPI(props) {
   }, [choice]);
 
   const schema = {
-    location: {
+    _loc: {
       type: 'location',
       props: {
         collapsed: false,
@@ -207,7 +207,7 @@ export function NewAPI(props) {
     step === 0
       ? ['picker']
       : [
-          'location',
+          '_loc',
           choice === 'openapi'
             ? {
                 type: 'group',

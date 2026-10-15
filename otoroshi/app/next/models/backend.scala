@@ -353,7 +353,8 @@ object NgBackend {
           loadBalancing = LoadBalancing.format
             .reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj()))
             .getOrElse(RoundRobin),
-          healthCheck = obj.select("health_check").asOpt(using HealthCheck.format),
+          // a missing health check is written as null, which must not read back as a disabled health check
+          healthCheck = obj.select("health_check").asOpt[JsObject].flatMap(HealthCheck.format.reads(_).asOpt),
           client = obj.select("client").asOpt(using NgClientConfig.format).getOrElse(NgClientConfig())
         )
     }
@@ -427,10 +428,11 @@ case class NgTarget(
   def isSecondary: Boolean = backup
 
   lazy val baseUrl: String                  = s"${if (tls) "https" else "http"}://${ipAddress.getOrElse(hostname)}${defaultPortString}"
-  lazy val defaultPortString                = port match {
-    case 443 => ""
-    case 80  => ""
-    case _   => s":${port}"
+  // the port can only be left out when it is the default port of the scheme
+  lazy val defaultPortString                = (tls, port) match {
+    case (true, 443) => ""
+    case (false, 80) => ""
+    case _           => s":${port}"
   }
   lazy val legacy: otoroshi.models.Target   = toTarget
   lazy val toTarget: otoroshi.models.Target = otoroshi.models.Target(

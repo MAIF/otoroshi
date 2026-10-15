@@ -642,6 +642,19 @@ case class TlsWasmoSettings(settings: WasmoSettings = WasmoSettings(), tlsConfig
 }
 
 object TlsWasmoSettings {
+  // wasm4s 5.0.3 writes the tls config of the wasmo settings under tlsConfig but reads it from tls or tls_config, and
+  // reads a null pluginsFilter as *. read them back here until wasm4s does
+  def readSettings(json: JsValue): JsResult[WasmoSettings] = WasmoSettings.format.reads(json).map { settings =>
+    settings.copy(
+      pluginsFilter = (json \ "pluginsFilter") match {
+        case JsDefined(JsNull) => None
+        case _                 => settings.pluginsFilter
+      },
+      tlsConfig = settings.tlsConfig.orElse(
+        (json \ "tlsConfig").asOpt[JsObject].flatMap(io.otoroshi.wasm4s.scaladsl.security.TlsConfig.format.reads(_).asOpt)
+      )
+    )
+  }
   val format = new Format[TlsWasmoSettings] {
     override def writes(o: TlsWasmoSettings): JsValue =
       Json.obj(
@@ -652,7 +665,7 @@ object TlsWasmoSettings {
     override def reads(json: JsValue): JsResult[TlsWasmoSettings] = {
       Try {
         TlsWasmoSettings(
-          settings = (json \ "settings").as[WasmoSettings](using WasmoSettings.format),
+          settings = readSettings((json \ "settings").as[JsValue]).get,
           tlsConfig = (json \ "tlsConfig").as[MtlsConfig](using MtlsConfig.format)
         )
       } match {
@@ -677,6 +690,9 @@ case class GlobalConfig(
     useCircuitBreakers: Boolean = true,
     apiReadOnly: Boolean = false,
     u2fLoginOnly: Boolean = false,
+    // an admin or a user without rights gets the super admin rights. off for a new instance, on for the instances
+    // that predate the flag (the reads default it to true), and to be turned off before going live
+    superAdminWhenNoRights: Boolean = false,
     maintenanceMode: Boolean = false,
     trustXForwarded: Boolean = true,
     trustedProxies: Seq[String] = Seq.empty[String],
@@ -775,21 +791,12 @@ object GlobalConfig {
 
     def readWasmoSettings(json: JsValue): Option[TlsWasmoSettings] = {
       if (json.atPath("wasmoSettings.settings").isEmpty) {
-        val wasmoSettings: JsResult[WasmoSettings]       = WasmoSettings.format.reads(
-          (json \ "wasmoSettings")
-            .asOpt[JsValue]
-            .getOrElse(JsNull)
-        )
-        val wasmManagerSettings: JsResult[WasmoSettings] = WasmoSettings.format
-          .reads(
-            (json \ "wasmManagerSettings")
-              .asOpt[JsValue]
-              .getOrElse(JsNull)
-          )
-
-        wasmoSettings
-          .map(r => r.some)
-          .getOrElse(wasmManagerSettings.map(r => r.some).getOrElse(None))
+        // a missing wasmo config is written as null, which must not read back as a wasmo on localhost. the legacy
+        // wasmManagerSettings key is only read when there is no wasmoSettings
+        (json \ "wasmoSettings")
+          .asOpt[JsObject]
+          .orElse((json \ "wasmManagerSettings").asOpt[JsObject])
+          .flatMap(obj => TlsWasmoSettings.readSettings(obj).asOpt)
           .map(value => TlsWasmoSettings(settings = value))
       } else {
         TlsWasmoSettings.format.reads(
@@ -858,6 +865,7 @@ object GlobalConfig {
         "useCircuitBreakers"      -> true, // [REMOVE SERVICEDESC] o.useCircuitBreakers,
         "apiReadOnly"             -> o.apiReadOnly,
         "u2fLoginOnly"            -> o.u2fLoginOnly,
+        "superAdminWhenNoRights"  -> o.superAdminWhenNoRights,
         "trustXForwarded"         -> o.trustXForwarded,
         "trustedProxies"          -> JsArray(o.trustedProxies.map(JsString.apply)),
         "clientAddressHeader"     -> o.clientAddressHeader,
@@ -890,6 +898,7 @@ object GlobalConfig {
         "tlsSettings"             -> o.tlsSettings.json,
         "quotasSettings"          -> o.quotasSettings.json,
         "plugins"                 -> o.plugins.json,
+        "proxies"                 -> o.proxies.toJson,
         "wasmoSettings"           -> o.wasmoSettings.map(_.json).getOrElse(JsNull).as[JsValue],
         "metadata"                -> o.metadata,
         "env"                     -> o.env,
@@ -926,6 +935,9 @@ object GlobalConfig {
           otoroshiId = (json \ "otoroshiId").asOpt[String].getOrElse(s"otoroshi_${IdGenerator.uuid}"),
           apiReadOnly = (json \ "apiReadOnly").asOpt[Boolean].getOrElse(false),
           u2fLoginOnly = (json \ "u2fLoginOnly").asOpt[Boolean].getOrElse(false),
+          // a stored config without the flag comes from an instance that predates it, where missing rights meant
+          // super admin rights
+          superAdminWhenNoRights = (json \ "superAdminWhenNoRights").asOpt[Boolean].getOrElse(true),
           logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),
           useAkkaHttpClient = (json \ "useAkkaHttpClient").asOpt[Boolean].getOrElse(false),
           ipFiltering = (json \ "ipFiltering").asOpt[IpFiltering](using IpFiltering.format).getOrElse(IpFiltering()),
@@ -968,7 +980,8 @@ object GlobalConfig {
               case e                                 => None
             }
           },
-          kafkaConfig = (json \ "kafkaConfig").asOpt[JsValue].flatMap { config =>
+          // a missing kafka config is written as null, which must not read back as a kafka config without server
+          kafkaConfig = (json \ "kafkaConfig").asOpt[JsObject].flatMap { config =>
             KafkaConfig.format.reads(config).asOpt
           // (
           //   (config \ "servers").asOpt[Seq[String]].filter(_.nonEmpty),
@@ -993,7 +1006,7 @@ object GlobalConfig {
           // }
           },
           backOfficeAuthRef = (json \ "backOfficeAuthRef").asOpt[String],
-          mailerSettings = (json \ "mailerSettings").asOpt[JsValue].flatMap { config =>
+          mailerSettings = (json \ "mailerSettings").asOpt[JsObject].flatMap { config =>
             MailerSettings.format.reads(config).asOpt
           },
           cleverSettings = (json \ "cleverSettings").asOpt[JsValue].flatMap { config =>
@@ -1041,6 +1054,7 @@ object GlobalConfig {
             .orElse(json.select("templates").asOpt(using DefaultTemplates.format))
             .getOrElse(DefaultTemplates()),
           wasmoSettings = readWasmoSettings(json),
+          proxies = (json \ "proxies").asOpt(using Proxies.format).getOrElse(Proxies()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
           extensions = (json \ "extensions").asOpt[Map[String, JsValue]].getOrElse(Map.empty),

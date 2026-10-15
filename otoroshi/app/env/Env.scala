@@ -1910,6 +1910,13 @@ class Env(
         }
         case Success(false) if clusterConfig.mode != ClusterMode.Worker => {
           deleteInitialAdminPasswordFileIfNeeded()
+          datastores.globalConfigDataStore.singleton()(using ec, this).map { config =>
+            if (config.superAdminWhenNoRights) {
+              logger.warn(
+                "The admins and users without rights get the super admin rights (superAdminWhenNoRights in the danger zone). Turn it off once every admin and user has rights, see the production checklist"
+              )
+            }
+          }(using ec)
           datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(using ec, this).flatMap {
             case Some(adminService) if !adminApiExposedDomains.forall(d => adminService.hosts.contains(d))    => {
               adminService

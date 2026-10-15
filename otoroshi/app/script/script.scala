@@ -1557,9 +1557,11 @@ object Script {
           case "validator"       => PluginType.AccessValidatorType
           case "preroute"        => PluginType.PreRoutingType
           case "sink"            => PluginType.RequestSinkType
+          case "listener"        => PluginType.EventListenerType
           case "job"             => PluginType.JobType
           case "exporter"        => PluginType.DataExporterType
           case "request-handler" => PluginType.RequestHandlerType
+          case "tunnel-handler"  => PluginType.TunnelHandlerType
           case "composite"       => PluginType.CompositeType
           case _                 => PluginType.TransformerType
         }

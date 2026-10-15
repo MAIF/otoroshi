@@ -318,7 +318,8 @@ case class Cert(
   }
   lazy val notExpired: Boolean = from.isBefore(org.joda.time.DateTime.now()) && to.isAfter(org.joda.time.DateTime.now())
   def notExpiredAt(date: DateTime): Boolean             = from.isBefore(date) && to.isAfter(date)
-  lazy val notExpiredSoon: Boolean                      = notExpiredAt(to.minusDays(15))
+  // still valid 15 days from now. a def, as a certificate instance can live longer than a day
+  def notExpiredSoon: Boolean                           = notExpiredAt(DateTime.now().plusDays(15))
   lazy val expired: Boolean                             = !notExpired
   def enrich() = {
     val meta = this.metadata.get
@@ -600,6 +601,9 @@ object Cert {
       )
     override def reads(json: JsValue): JsResult[Cert] =
       Try {
+        // a flag can also be given as a string: "revoked": "true" must not read as a certificate that is not revoked
+        def flag(key: String): Boolean =
+          (json \ key).asOpt[Boolean].orElse((json \ key).asOpt[String].map(_.trim.equalsIgnoreCase("true"))).getOrElse(false)
         Cert(
           location = otoroshi.models.EntityLocation.readFromKey(json),
           id = (json \ "id").as[String],
@@ -614,15 +618,15 @@ object Cert {
           caRef = (json \ "caRef").asOpt[String],
           password = (json \ "password").asOpt[String].filter(_.trim.nonEmpty),
           privateKey = (json \ "privateKey").asOpt[String].getOrElse(""),
-          selfSigned = (json \ "selfSigned").asOpt[Boolean].getOrElse(false),
-          ca = (json \ "ca").asOpt[Boolean].getOrElse(false),
-          client = (json \ "client").asOpt[Boolean].getOrElse(false),
-          keypair = (json \ "keypair").asOpt[Boolean].getOrElse(false),
-          valid = (json \ "valid").asOpt[Boolean].getOrElse(false),
-          exposed = (json \ "exposed").asOpt[Boolean].getOrElse(false),
-          revoked = (json \ "revoked").asOpt[Boolean].getOrElse(false),
-          autoRenew = (json \ "autoRenew").asOpt[Boolean].getOrElse(false),
-          letsEncrypt = (json \ "letsEncrypt").asOpt[Boolean].getOrElse(false),
+          selfSigned = flag("selfSigned"),
+          ca = flag("ca"),
+          client = flag("client"),
+          keypair = flag("keypair"),
+          valid = flag("valid"),
+          exposed = flag("exposed"),
+          revoked = flag("revoked"),
+          autoRenew = flag("autoRenew"),
+          letsEncrypt = flag("letsEncrypt"),
           subject = (json \ "subject").asOpt[String].getOrElse("--"),
           from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),

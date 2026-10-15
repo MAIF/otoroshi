@@ -372,7 +372,7 @@ object CookieHash {
 
 class CookieHash(cookieName: String) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue             = Json.obj("type" -> "CookieHash")
+  override def toJson: JsValue             = Json.obj("type" -> "CookieHash", "cookie_name" -> cookieName)
   override def select(
       reqId: String,
       tid: String,
@@ -401,7 +401,7 @@ object QueryHash {
 
 class QueryHash(queryName: String) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue             = Json.obj("type" -> "QueryHash")
+  override def toJson: JsValue             = Json.obj("type" -> "QueryHash", "query_name" -> queryName)
   override def select(
       reqId: String,
       tid: String,
@@ -430,7 +430,7 @@ object HeaderHash {
 
 class HeaderHash(headerName: String) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue             = Json.obj("type" -> "HeaderHash")
+  override def toJson: JsValue             = Json.obj("type" -> "HeaderHash", "header_name" -> headerName)
   override def select(
       reqId: String,
       tid: String,
@@ -618,10 +618,13 @@ object TargetPredicate {
 
 case class GeoPositionRadius(latitude: Double, longitude: Double, radius: Double) {
   def toJson: JsValue                         = JsString(s"$latitude:$longitude:$radius")
-  def near(lat: Double, lng: Double): Boolean =
-    Math.acos(
-      Math.sin(latitude) * Math.sin(lat) + Math.cos(latitude) * Math.cos(lat) * Math.cos(lng - longitude)
-    ) * 6371 <= radius
+  // the positions are in degrees, the trigonometric functions take radians. the distance is in kilometers
+  def near(lat: Double, lng: Double): Boolean = {
+    val (lat1, lng1, lat2, lng2) = (Math.toRadians(latitude), Math.toRadians(longitude), Math.toRadians(lat), Math.toRadians(lng))
+    // rounding can push the cosine slightly above 1, which acos turns into NaN for two identical positions
+    val cos                      = Math.sin(lat1) * Math.sin(lat2) + Math.cos(lat1) * Math.cos(lat2) * Math.cos(lng2 - lng1)
+    Math.acos(Math.min(1.0, Math.max(-1.0, cos))) * 6371 <= radius
+  }
 }
 
 case class GeolocationMatch(positions: Seq[GeoPositionRadius]) extends TargetPredicate {
@@ -879,9 +882,32 @@ class CidrOfString(cdr: String) {
 }
 
 object IpFiltering {
-  // the default values are used for the fields a persisted filtering predates. without them, an
-  // existing one would fail to read and be replaced by an empty one, losing its lists
-  implicit val format: play.api.libs.json.OFormat[IpFiltering] = Json.using[Json.WithDefaultValues].format[IpFiltering]
+  // each list is read on its own and the fields a persisted filtering predates take their default value: one list
+  // of the wrong type must not drop the whole filtering. a single string is read as a one entry list, the entries
+  // that are not strings are left out
+  implicit val format: play.api.libs.json.OFormat[IpFiltering] = new play.api.libs.json.OFormat[IpFiltering] {
+    private def list(json: JsValue, key: String): Seq[String] = (json \ key).asOpt[JsValue] match {
+      case Some(JsString(value)) => Seq(value)
+      case Some(JsArray(values)) => values.collect { case JsString(value) => value }.toSeq
+      case _                     => Seq.empty[String]
+    }
+    override def writes(o: IpFiltering): JsObject             = Json.obj(
+      "whitelist"                      -> o.whitelist,
+      "blacklist"                      -> o.blacklist,
+      "blacklistMatchesForwardedChain" -> o.blacklistMatchesForwardedChain
+    )
+    override def reads(json: JsValue): JsResult[IpFiltering] = json match {
+      case obj: JsObject =>
+        JsSuccess(
+          IpFiltering(
+            whitelist = list(obj, "whitelist"),
+            blacklist = list(obj, "blacklist"),
+            blacklistMatchesForwardedChain = (obj \ "blacklistMatchesForwardedChain").asOpt[Boolean].getOrElse(false)
+          )
+        )
+      case _             => JsError("an ip filtering must be an object")
+    }
+  }
   private val cidrCache           = Caches.bounded[String, CidrOfString](10000)
   private[models] val ipaddrCache = Caches.bounded[String, Option[IpAddress]](10000)
   def cidr(cdr: String): CidrOfString = {
@@ -959,7 +985,7 @@ object CustomTimeouts {
         CustomTimeouts(
           path = (json \ "path").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
           connectionTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(10000),
-          idleTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(60000),
+          idleTimeout = (json \ "idleTimeout").asOpt[Long].getOrElse(60000),
           callAndStreamTimeout = (json \ "callAndStreamTimeout").asOpt[Long].getOrElse(1.hour.toMillis),
           callTimeout = (json \ "callTimeout").asOpt[Long].getOrElse(30000),
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000)
