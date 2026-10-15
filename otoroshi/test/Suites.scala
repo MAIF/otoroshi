@@ -186,7 +186,8 @@ class UnitTests
       new plugins.configs.HttpsPluginConfigsSpec(),
       new plugins.configs.ImgPluginConfigsSpec(),
       new plugins.configs.Http3PluginConfigsSpec(),
-      new plugins.configs.OtoroshiPluginConfigsSpec()
+      new plugins.configs.OtoroshiPluginConfigsSpec(),
+      new plugins.configs.GraphQLPluginConfigsSpec()
     )
 
 class MapFilterTest
