@@ -220,7 +220,8 @@ class UnitTests
       new plugins.configs.ClientCredentialsPluginConfigsSpec(),
       new plugins.configs.UsersPluginConfigsSpec(),
       new plugins.configs.UserAgentPluginConfigsSpec(),
-      new plugins.configs.WasmPluginConfigsSpec()
+      new plugins.configs.WasmPluginConfigsSpec(),
+      new plugins.configs.JsonSchemaPluginConfigsSpec()
     )
 
 class MapFilterTest
