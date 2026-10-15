@@ -244,9 +244,8 @@ object Http extends AwaitCapable {
           val url          = (context \ "url").asOpt[String].getOrElse("https://request.otoroshi.io")
           val allowedHosts = hostData.config.allowedHosts
           val urlHost      = Uri(url).authority.host.toString()
-          val allowed      = allowedHosts.isEmpty || allowedHosts.contains("*") || allowedHosts.exists(h =>
-            RegexPool(h).matches(urlHost)
-          )
+          val unrestricted = allowedHosts.isEmpty || allowedHosts.contains("*")
+          val allowed      = unrestricted || allowedHosts.exists(h => RegexPool(h).matches(urlHost))
           if (allowed) {
             val builder                  = hostData.ic
               .asInstanceOf[OtoroshiWasmIntegrationContext]
@@ -267,7 +266,8 @@ object Http extends AwaitCapable {
                   TimeUnit.MILLISECONDS
                 )
               )
-              .withFollowRedirects((context \ "follow_redirects").asOpt[Boolean].getOrElse(false))
+              // a redirect could lead to a host that is not allowed: only followed when every host is
+              .withFollowRedirects(unrestricted && (context \ "follow_redirects").asOpt[Boolean].getOrElse(false))
               .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq*)
             val bodyAsBytes              = context.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
             val bodyBase64               = context.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
