@@ -194,7 +194,8 @@ class UnitTests
       new plugins.configs.GrpcPluginConfigsSpec(),
       new plugins.configs.BrotliPluginConfigsSpec(),
       new plugins.configs.PathsPluginConfigsSpec(),
-      new plugins.configs.ConsumerPluginConfigsSpec()
+      new plugins.configs.ConsumerPluginConfigsSpec(),
+      new plugins.configs.TunnelPluginConfigsSpec()
     )
 
 class MapFilterTest
