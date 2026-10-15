@@ -259,7 +259,7 @@ object Http extends AwaitCapable {
                   (context \ "request_timeout")
                     .asOpt[Long]
                     .getOrElse(try {
-                      hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig.worker.timeout
+                      hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig.worker.timeout
                     } catch {
                       case _: Throwable => 10000
                     }),
@@ -490,6 +490,12 @@ object Http extends AwaitCapable {
 
 object DataStore extends AwaitCapable {
 
+  // the key pattern is turned into a regex by some datastores: a plugin restricted to its own keys cannot use the
+  // characters that would let the regex leave its prefix
+  private val unsafePatternChars: Set[Char] = "|()[]{}+?^$\\".toSet
+
+  def isSafePattern(pattern: String): Boolean = !pattern.exists(unsafePatternChars.contains)
+
   def proxyDataStoreAllMatching(
       pluginRestricted: Boolean = false,
       prefix: Option[String] = None,
@@ -506,11 +512,14 @@ object DataStore extends AwaitCapable {
         {
           val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
-          val future = env.datastores.rawDataStore
-            .allMatching(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key")
-            .map { values =>
-              values.map(v => JsString(v.encodeBase64.utf8String))
-            }
+          val future =
+            if (pluginRestricted && !isSafePattern(key)) Seq.empty[JsString].vfuture
+            else
+              env.datastores.rawDataStore
+                .allMatching(s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key")
+                .map { values =>
+                  values.map(v => JsString(v.encodeBase64.utf8String))
+                }
           val res    = await(future)
           plugin.returnBytes(returns(0), ByteString(JsArray(res).stringify).toArray)
         }
@@ -533,11 +542,14 @@ object DataStore extends AwaitCapable {
         {
           val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
-          val future = env.datastores.rawDataStore
-            .keys(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key")
-            .map { values =>
-              JsArray(values.map(JsString.apply)).stringify
-            }
+          val future =
+            if (pluginRestricted && !isSafePattern(key)) "[]".vfuture
+            else
+              env.datastores.rawDataStore
+                .keys(s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key")
+                .map { values =>
+                  JsArray(values.map(JsString.apply)).stringify
+                }
           val out    = await(future)
           plugin.returnString(returns(0), out)
         }
@@ -561,7 +573,7 @@ object DataStore extends AwaitCapable {
           val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore.get(
-            s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key"
+            s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key"
           )
           val out    = await(future)
           val bytes  = out.map(_.toArray).getOrElse(Array.empty[Byte])
@@ -587,7 +599,7 @@ object DataStore extends AwaitCapable {
           val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore.exists(
-            s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key"
+            s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key"
           )
           val out    = await(future)
           plugin.returnInt(returns(0), if (out) 1 else 0)
@@ -612,7 +624,7 @@ object DataStore extends AwaitCapable {
           val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore.pttl(
-            s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key"
+            s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key"
           )
           returns(0).v.i64 = await(future)
         }
@@ -643,7 +655,7 @@ object DataStore extends AwaitCapable {
             .get
           val ttl    = (data \ "ttl").asOpt[Long]
           val future = env.datastores.rawDataStore.setnx(
-            s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key",
+            s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key",
             value,
             ttl
           )
@@ -677,7 +689,7 @@ object DataStore extends AwaitCapable {
             .get
           val ttl    = (data \ "ttl").asOpt[Long]
           val future = env.datastores.rawDataStore.set(
-            s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key",
+            s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key",
             value,
             ttl
           )
@@ -708,7 +720,7 @@ object DataStore extends AwaitCapable {
               (data \ "keys")
                 .asOpt[Seq[String]]
                 .getOrElse(Seq.empty).toSeq
-                .map(r => s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$r")
+                .map(r => s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$r")
             )
           val out    = await(future)
           returns(0).v.i64 = out
@@ -735,7 +747,7 @@ object DataStore extends AwaitCapable {
           val key    = (data \ "key").as[String]
           val incr   = (data \ "incr").asOpt[String].map(_.toInt).getOrElse((data \ "incr").asOpt[Int].getOrElse(0))
           val future = env.datastores.rawDataStore
-            .incrby(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key", incr)
+            .incrby(s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key", incr)
           val out    = await(future)
           returns(0).v.i64 = out
         }
@@ -761,7 +773,7 @@ object DataStore extends AwaitCapable {
           val key    = (data \ "key").as[String]
           val pttl   = (data \ "pttl").asOpt[String].map(_.toInt).getOrElse((data \ "pttl").asOpt[Int].getOrElse(0))
           val future = env.datastores.rawDataStore
-            .pexpire(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key", pttl)
+            .pexpire(s"${hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key", pttl)
           val out    = await(future)
           plugin.returnInt(returns(0), if (out) 1 else 0)
         }
@@ -874,7 +886,7 @@ object State {
       LibExtism.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
-        val proxyState = hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.proxyState
+        val proxyState = hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.proxyState
 
         val state = Json
           .obj(
@@ -978,7 +990,7 @@ object State {
       LibExtism.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
-        val cc = hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.configurationJson.stringify
+        val cc = hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.configurationJson.stringify
         plugin.returnString(returns(0), cc)
       }
     }
@@ -1017,7 +1029,7 @@ object State {
       LibExtism.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
-        val cc = hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig
+        val cc = hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig
         plugin.returnString(returns(0), getClusterState(cc).stringify)
       }
     }

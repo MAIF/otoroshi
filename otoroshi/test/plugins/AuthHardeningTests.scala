@@ -246,5 +246,12 @@ class AuthHardeningTests(parent: PluginsTestSpecBase) {
     deleteAuthModule(foreign).futureValue
   }
 
+  // the plugin datastore of wasm plugins takes key patterns: some datastores turn them into regexes
+  def wasmPluginDatastorePatterns(): Unit = {
+    otoroshi.wasm.DataStore.isSafePattern("my-key:*") mustBe true
+    otoroshi.wasm.DataStore.isSafePattern("*|otoroshi:*") mustBe false
+    otoroshi.wasm.DataStore.isSafePattern("(.*)") mustBe false
+  }
+
   def stop(): Unit = backend.stop()
 }
