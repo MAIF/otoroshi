@@ -1,0 +1,279 @@
+{
+  "/apis/proxy.otoroshi.io/v1/routes/_from_service_descriptor": {
+    "post": {
+      "tags": [
+        "route",
+        "proxy.otoroshi.io"
+      ],
+      "summary": "Convert legacy service descriptors to routes",
+      "description": "Converts the legacy service descriptor of the body, or each object of an array of them, to the route that does the same, without saving anything. Each descriptor is merged on top of the template of a new descriptor, so every field is optional. The items of an array that are not objects are ignored. The service descriptors were removed in otoroshi 18, this conversion is kept for their migration.",
+      "operationId": "otoroshi.next.controllers.adminapi.NgRoutesController.fromServiceDescriptor",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "A legacy service descriptor, or an array of them",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "description": "A legacy service descriptor, or an array of them",
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ServiceDescriptor"
+                },
+                {
+                  "type": "array",
+                  "description": "Legacy service descriptors",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceDescriptor"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The route, or the routes in the order of the descriptors",
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "The route converted from the descriptor, or an array of routes for an array of descriptors",
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/proxy.otoroshi.io.Route"
+                  },
+                  {
+                    "type": "array",
+                    "description": "The routes converted from the descriptors",
+                    "items": {
+                      "$ref": "#/components/schemas/proxy.otoroshi.io.Route"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, or it is neither a descriptor nor an array of descriptors (`bad input`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/proxy.otoroshi.io/v1/drafts/{id}/live": {
+    "get": {
+      "tags": [
+        "draft",
+        "proxy.otoroshi.io"
+      ],
+      "summary": "Read the live statistics of the draft of an api",
+      "description": "Reads the draft with this id as an api, and answers the statistics of the routes it exposes (its routes when it is published or deprecated, and the routes of the draft of the same id when its testing is enabled), added up. No draft with this id answers an empty object. The admin behind the credentials has to be able to read the entity with this id: an id that is not the one of an api, a route, a route composition or a draft of an api with routes is refused with a 403. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.draftLiveStats",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The id of the draft, the id of the api it drafts",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "every",
+          "in": "query",
+          "description": "When present, the statistics are streamed as server sent events, one every `every` milliseconds, until the client closes the connection. When absent, they are answered once, as json",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "example": 2000
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The statistics of the routes of the draft: once as json without the `every` parameter, as a server sent events stream with it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiLiveStats"
+              }
+            },
+            "text/event-stream": {
+              "schema": {
+                "type": "string",
+                "description": "A server sent events stream: every `every` milliseconds, a `data:` line holding the statistics as json (an `ApiLiveStats` object) followed by an empty line",
+                "example": "data: {\"calls\":1250,\"dataIn\":0,\"dataOut\":0,\"rate\":3.5,\"duration\":42.17,\"overhead\":1.8}\n\n"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or `every` is not an integer",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot read it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/proxy.otoroshi.io/v1/drafts/{kind}": {
+    "get": {
+      "tags": [
+        "draft",
+        "proxy.otoroshi.io"
+      ],
+      "summary": "List the drafts whose id starts with a prefix",
+      "description": "Answers the drafts whose id starts with the value of the path, and whose drafted entity (its `content`) the admin behind the credentials can read. The id of a draft is the id of the entity it drafts, so a prefix lists the drafts of a kind of entity, `api_` for the drafts of the apis for instance; the id of a draft lists that draft, along with the drafts whose id starts with it. This route shadows the generic GET of a draft by id (`/apis/proxy.otoroshi.io/v1/drafts/{id}`), which cannot be reached: a draft is read through this list.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.findAllByKind",
+      "parameters": [
+        {
+          "name": "kind",
+          "in": "path",
+          "description": "The prefix of the ids of the drafts to list",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The drafts whose id starts with the prefix",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The drafts whose id starts with the prefix and whose drafted entity the admin behind the credentials can read",
+                "items": {
+                  "$ref": "#/components/schemas/proxy.otoroshi.io.Draft"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
