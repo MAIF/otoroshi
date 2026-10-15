@@ -4,7 +4,14 @@ import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, LdapAuthModule, LdapAuthModuleConfig}
+import otoroshi.auth.{
+  AuthModuleConfig,
+  BasicAuthModule,
+  BasicAuthModuleConfig,
+  ErrorReason,
+  LdapAuthModule,
+  LdapAuthModuleConfig
+}
 import otoroshi.utils.crypto.{BCryptHelper, Signatures}
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
@@ -15,6 +22,7 @@ import otoroshi.next.plugins.BasicAuthWithAuthModule.alreadyLoggedIn
 import otoroshi.next.plugins.api.NgAccess.NgAllowed
 import otoroshi.next.plugins.api.*
 import otoroshi.security.OtoroshiClaim
+import otoroshi.utils.PasswordAttempts
 import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
@@ -742,7 +750,7 @@ class SimpleBasicAuth extends NgAccessValidator {
     if (authorization.contains(":") && parts.length > 1) {
       val username = parts.head
       val password = parts.tail.mkString(":")
-      (config.users ++ globalUsers).get(username) match {
+      def check(): Future[NgAccess] = (config.users ++ globalUsers).get(username) match {
         // a stored bcrypt hash is only checked as a hash: compared as plain text, the hash itself was a valid password
         case Some(pwd) if !isBcryptHash(pwd) && Signatures.constantTimeEquals(password, pwd) => NgAccess.NgAllowed.vfuture
         case Some(pwd) if safeCheckPassword(password, pwd) => NgAccess.NgAllowed.vfuture
@@ -756,6 +764,10 @@ class SimpleBasicAuth extends NgAccessValidator {
             .vfuture
         }
       }
+      // guarded against online guessing, see PasswordAttempts
+      PasswordAttempts.guard[NgAccess](s"simple-basic-auth:${ctx.route.id}", username, ctx.request.theIpAddress)(
+        NgAccess.NgDenied(PasswordAttempts.tooManyFailuresResult)
+      )(_.isInstanceOf[NgAccess.NgDenied])(check())
     } else {
       NgAccess
         .NgDenied(
@@ -939,7 +951,14 @@ class BasicAuthWithAuthModule extends NgAccessValidator {
                   )
                   .vfuture
               case Some(authModule: BasicAuthModuleConfig) => {
-                BasicAuthModule(authModule).bindUser(username, password, descriptor).map {
+                // guarded against online guessing, see PasswordAttempts
+                PasswordAttempts.guard[Either[ErrorReason, PrivateAppsUser]](
+                  s"auth-module:${authModule.id}",
+                  username,
+                  ctx.request.theIpAddress
+                )(Left(ErrorReason("too many failed attempts")))(_.isLeft)(
+                  BasicAuthModule(authModule).bindUser(username, password, descriptor)
+                ).map {
                   case Left(_)     => NgAccess.NgDenied(unauthorized(authModuleOpt))
                   case Right(user) => {
                     ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
@@ -954,7 +973,14 @@ class BasicAuthWithAuthModule extends NgAccessValidator {
                     NgAllowed.vfuture
                   }
                   case None       => {
-                    LdapAuthModule(authModule).bindUser(username, password, descriptor).map {
+                    // guarded against online guessing, see PasswordAttempts
+                    PasswordAttempts.guard[Either[ErrorReason, PrivateAppsUser]](
+                      s"auth-module:${authModule.id}",
+                      username,
+                      ctx.request.theIpAddress
+                    )(Left(ErrorReason("too many failed attempts")))(_.isLeft)(
+                      LdapAuthModule(authModule).bindUser(username, password, descriptor)
+                    ).map {
                       case Left(_)     => NgAccess.NgDenied(unauthorized(authModuleOpt))
                       case Right(user) => {
                         BasicAuthWithAuthModule.addLoggedIn(username, password, user, authModule)

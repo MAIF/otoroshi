@@ -741,6 +741,13 @@ class Env(
   // exported gateway events carry masked values for credential headers and configuration secrets, unless disabled
   lazy val maskSecretsInEvents: Boolean             =
     configuration.getOptionalWithFileSupport[Boolean]("app.events.maskSecrets").getOrElse(true)
+  // the brute force guard of the password checks, see PasswordAttempts
+  lazy val passwordAttemptsEnabled: Boolean         =
+    configuration.getOptionalWithFileSupport[Boolean]("app.passwordAttempts.enabled").getOrElse(true)
+  lazy val passwordAttemptsMaxFailures: Long        =
+    configuration.getOptionalWithFileSupport[Long]("app.passwordAttempts.maxFailures").getOrElse(10L)
+  lazy val passwordAttemptsWindowMillis: Long       =
+    configuration.getOptionalWithFileSupport[Long]("app.passwordAttempts.windowSeconds").getOrElse(300L) * 1000L
   lazy val storageRoot: String                      =
     configuration.getOptionalWithFileSupport[String]("app.storageRoot").getOrElse("otoroshi")
   lazy val hideInitialAdminPassword: Boolean        =

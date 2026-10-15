@@ -17,7 +17,7 @@ import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.*
-import otoroshi.utils.{RegexPool, TypedMap}
+import otoroshi.utils.{PasswordAttempts, RegexPool, TypedMap}
 import play.api.Logger
 import play.api.libs.json.*
 import play.api.mvc.*
@@ -63,6 +63,35 @@ class AuthController(
       Json.obj()
     } get
   }
+
+  // the password checks of the basic and ldap modules (login forms, webauthn ceremonies) are guarded against online
+  // guessing, per module, username and address, see PasswordAttempts
+  private def guardPasswordCheck[A](auth: AuthModuleConfig, req: Request[AnyContent], blocked: => A)(
+      isFailure: A => Boolean
+  )(check: => Future[A]): Future[A] = {
+    val username = req.body.asFormUrlEncoded
+      .flatMap(_.get("username").flatMap(_.lastOption))
+      .orElse(
+        req.body.asJson.flatMap(json =>
+          (json \ "username").asOpt[String].orElse((json \ "otoroshi" \ "username").asOpt[String])
+        )
+      )
+    (auth.`type`, username) match {
+      case ("basic" | "ldap", Some(user)) =>
+        PasswordAttempts.guard[A](s"auth-module:${auth.id}", user, req.theIpAddress)(blocked)(isFailure)(check)
+      case _                               => check
+    }
+  }
+
+  private def guardedLogin[U](auth: AuthModuleConfig, req: Request[AnyContent])(
+      check: => Future[Either[ErrorReason, U]]
+  ): Future[Either[ErrorReason, U]] =
+    guardPasswordCheck[Either[ErrorReason, U]](auth, req, Left(ErrorReason("too many failed attempts")))(_.isLeft)(check)
+
+  private def guardedWebAuthnLoginStart(auth: AuthModuleConfig, req: Request[AnyContent])(
+      check: => Future[Either[String, JsValue]]
+  ): Future[Either[String, JsValue]] =
+    guardPasswordCheck[Either[String, JsValue]](auth, req, Left("too many failed attempts"))(_.isLeft)(check)
 
   def verifyHash(descId: String, auth: AuthModuleConfig, req: RequestHeader)(
       f: AuthModuleConfig => Future[Result]
@@ -764,13 +793,13 @@ class AuthController(
                   val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
                   req.headers.get("WebAuthn-Login-Step") match {
                     case Some("start")  => {
-                      authModule.webAuthnLoginStart(ctx.request.body.asJson.get, descriptor).map {
+                      guardedWebAuthnLoginStart(auth, ctx.request)(authModule.webAuthnLoginStart(ctx.request.body.asJson.get, descriptor)).map {
                         case Left(error) => BadRequest(Json.obj("error" -> error))
                         case Right(reg)  => Ok(reg)
                       }
                     }
                     case Some("finish") => {
-                      authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, descriptor).flatMap {
+                      guardedLogin(auth, ctx.request)(authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, descriptor)).flatMap {
                         case Left(error) => {
                           logger.error(
                             s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
@@ -788,9 +817,7 @@ class AuthController(
                   }
                 }
                 case auth                                                                                => {
-                  auth
-                    .authModule(ctx.globalConfig)
-                    .paCallback(ctx.request, ctx.globalConfig, descriptor)
+                  guardedLogin(auth, ctx.request)(auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor))
                     .flatMap {
                       case Left(error) => {
                         BadRequest(
@@ -826,13 +853,13 @@ class AuthController(
                   val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
                   req.headers.get("WebAuthn-Login-Step") match {
                     case Some("start")  => {
-                      authModule.webAuthnLoginStart(ctx.request.body.asJson.get, route.legacy).map {
+                      guardedWebAuthnLoginStart(auth, ctx.request)(authModule.webAuthnLoginStart(ctx.request.body.asJson.get, route.legacy)).map {
                         case Left(error) => BadRequest(Json.obj("error" -> error))
                         case Right(reg)  => Ok(reg)
                       }
                     }
                     case Some("finish") => {
-                      authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy).flatMap {
+                      guardedLogin(auth, ctx.request)(authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy)).flatMap {
                         case Left(error) => {
                           logger.error(
                             s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
@@ -850,9 +877,7 @@ class AuthController(
                   }
                 }
                 case auth                                                                                => {
-                  auth
-                    .authModule(ctx.globalConfig)
-                    .paCallback(ctx.request, ctx.globalConfig, route.legacy)
+                  guardedLogin(auth, ctx.request)(auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, route.legacy))
                     .flatMap {
                       case Left(error) => {
                         BadRequest(
@@ -877,13 +902,13 @@ class AuthController(
                   val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
                   req.headers.get("WebAuthn-Login-Step") match {
                     case Some("start")  => {
-                      authModule.webAuthnLoginStart(ctx.request.body.asJson.get, route.legacy).map {
+                      guardedWebAuthnLoginStart(auth, ctx.request)(authModule.webAuthnLoginStart(ctx.request.body.asJson.get, route.legacy)).map {
                         case Left(error) => BadRequest(Json.obj("error" -> error))
                         case Right(reg)  => Ok(reg)
                       }
                     }
                     case Some("finish") => {
-                      authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy).flatMap {
+                      guardedLogin(auth, ctx.request)(authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy)).flatMap {
                         case Left(error) => {
                           logger.error(
                             s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
@@ -901,9 +926,7 @@ class AuthController(
                   }
                 }
                 case auth                                                                                => {
-                  auth
-                    .authModule(ctx.globalConfig)
-                    .paCallback(ctx.request, ctx.globalConfig, route.legacy)
+                  guardedLogin(auth, ctx.request)(auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, route.legacy))
                     .flatMap {
                       case Left(error) => {
                         BadRequest(
@@ -1147,13 +1170,13 @@ class AuthController(
                           val authModule = auth.authModule(config).asInstanceOf[BasicAuthModule]
                           request.headers.get("WebAuthn-Login-Step") match {
                             case Some("start")  => {
-                              authModule.webAuthnAdminLoginStart(ctx.request.body.asJson.get).map {
+                              guardedWebAuthnLoginStart(auth, ctx.request)(authModule.webAuthnAdminLoginStart(ctx.request.body.asJson.get)).map {
                                 case Left(error) => BadRequest(Json.obj("error" -> error))
                                 case Right(reg)  => Ok(reg)
                               }
                             }
                             case Some("finish") => {
-                              authModule.webAuthnAdminLoginFinish(ctx.request.body.asJson.get).flatMap {
+                              guardedLogin(auth, ctx.request)(authModule.webAuthnAdminLoginFinish(ctx.request.body.asJson.get)).flatMap {
                                 case Left(error) => {
                                   logger.error(
                                     s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
@@ -1171,7 +1194,7 @@ class AuthController(
                           }
                         }
                         case auth                                                                                => {
-                          oauth.authModule(config).boCallback(ctx.request, config).flatMap {
+                          guardedLogin(oauth, ctx.request)(oauth.authModule(config).boCallback(ctx.request, config)).flatMap {
                             case Left(err)   =>
                               FastFuture.successful(
                                 BadRequest(

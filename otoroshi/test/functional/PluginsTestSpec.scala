@@ -89,6 +89,7 @@ class AuthHardeningSpec extends PluginsTestSpecBase {
   s"auth modules and backoffice" should {
     "check the conditions of saml assertions" in { auth.samlConditions() }
     "only accept the otoroshi hosts as webauthn origins" in { auth.webAuthnOrigin() }
+    "refuse password checks after too many failures from an address" in { auth.passwordAttempts() }
     "serve the backoffice metrics to super admins only" in { auth.backofficeMetrics() }
     "not let read only users use the url fetching tooling" in { auth.backofficeTooling() }
     "stop" in { auth.stop() }

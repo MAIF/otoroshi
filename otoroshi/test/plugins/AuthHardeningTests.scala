@@ -3,12 +3,18 @@ package plugins
 import functional.{PluginsTestSpecBase, TargetService}
 import otoroshi.auth.WebAuthnSupport
 import otoroshi.models.*
+import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
+import otoroshi.next.plugins.{SimpleBasicAuth, SimpleBasicAuthConfig}
+import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.http.Status
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{DefaultSessionCookieBaker, Session}
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import scala.concurrent.duration.DurationInt
 
 // auth modules, backoffice logins and backoffice tooling
@@ -112,6 +118,51 @@ class AuthHardeningTests(parent: PluginsTestSpecBase) {
     WebAuthnSupport.originAllowed(s"https://${env.privateAppsHost}")(using env) mustBe true
     WebAuthnSupport.originAllowed("https://another-page.oto.tools")(using env) mustBe false
     WebAuthnSupport.originAllowed("not an origin")(using env) mustBe false
+  }
+
+  // password checks used to be unlimited
+  def passwordAttempts(): Unit = {
+    val route = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[SimpleBasicAuth],
+          config = NgPluginInstanceConfig(SimpleBasicAuthConfig(users = Map("john" -> "the-password")).json.as[JsObject])
+        )
+      ),
+      target = Some(NgTarget(id = "auth-hardening-backend", hostname = "127.0.0.1", port = backend.port, tls = false))
+    ).futureValue
+    def basicAuth(password: String, address: String): Int = ws
+      .url(s"http://127.0.0.1:$port/")
+      .withHttpHeaders(
+        "Host"            -> route.frontend.domains.head.domain,
+        "X-Forwarded-For" -> address,
+        "Authorization"   -> ("Basic " + Base64.getEncoder.encodeToString(
+          s"john:$password".getBytes(StandardCharsets.UTF_8)
+        ))
+      )
+      .get()
+      .futureValue
+      .status
+    (1 to 10).foreach { _ => basicAuth("wrong-password", "10.0.0.1") mustBe Status.UNAUTHORIZED }
+    withClue("the right password after 10 failures from that address ") {
+      basicAuth("the-password", "10.0.0.1") mustBe Status.TOO_MANY_REQUESTS
+    }
+    withClue("the right password from another address ") { basicAuth("the-password", "10.0.0.2") mustBe Status.OK }
+    def login(address: String): Int = ws
+      .url(s"http://127.0.0.1:$port/bo/simple/login")
+      .withHttpHeaders(
+        "Host"            -> env.backOfficeHost,
+        "Content-Type"    -> "application/json",
+        "X-Forwarded-For" -> address
+      )
+      .post(Json.stringify(Json.obj("username" -> "nobody@otoroshi.io", "password" -> "wrong-password")))
+      .futureValue
+      .status
+    (1 to 10).foreach { _ => login("10.0.0.3") mustBe Status.UNAUTHORIZED }
+    withClue("a backoffice login after 10 failures from that address ") {
+      login("10.0.0.3") mustBe Status.TOO_MANY_REQUESTS
+    }
+    deleteOtoroshiRoute(route).futureValue
   }
 
   // the metrics of every route of every tenant used to be served to any backoffice user

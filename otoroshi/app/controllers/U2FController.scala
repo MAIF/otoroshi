@@ -16,9 +16,12 @@ import play.api.Logger
 import play.api.libs.json.*
 import play.api.mvc.*
 import otoroshi.security.IdGenerator
+import otoroshi.utils.PasswordAttempts
 import otoroshi.utils.crypto.BCryptHelper
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.syntax.implicits.*
 
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class U2FController(
@@ -39,13 +42,23 @@ class U2FController(
 
   /////////// Simple admins ////////////////////////////////////////////////////////////////////////////////////////////
 
+  // the password of the admins is guarded against online guessing (see PasswordAttempts), `failure` is the status of a
+  // wrong password
+  private def guardPasswordCheck(req: RequestHeader, username: String, failure: Int)(
+      check: => Future[Result]
+  ): Future[Result] = {
+    PasswordAttempts.guard[Result]("backoffice-admins", username, req.theIpAddress)(
+      PasswordAttempts.tooManyFailuresResult
+    )(_.header.status == failure)(check)
+  }
+
   def simpleLogin =
     BackOfficeAction.async(parse.json) { ctx =>
       implicit val req = ctx.request
       val usernameOpt  = (ctx.request.body \ "username").asOpt[String]
       val passwordOpt  = (ctx.request.body \ "password").asOpt[String]
       (usernameOpt, passwordOpt) match {
-        case (Some(username), Some(pass)) => {
+        case (Some(username), Some(pass)) => guardPasswordCheck(req, username, 401) {
           env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
             case Some(user) => {
               val password = user.password
@@ -290,7 +303,7 @@ class U2FController(
       val passwordOpt = (ctx.request.body \ "password").asOpt[String]
       val origin      = (ctx.request.body \ "origin").as[String]
       (usernameOpt, passwordOpt) match {
-        case (Some(username), Some(password)) => {
+        case (Some(username), Some(password)) => guardPasswordCheck(ctx.request, username, 400) {
           env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
             users.find(u => u.username == username) match {
               case Some(user) if BCryptHelper.checkpw(password, user.password) => {
@@ -314,7 +327,7 @@ class U2FController(
       val usernameOpt = (otoroshi \ "username").asOpt[String]
       val passwordOpt = (otoroshi \ "password").asOpt[String]
       (usernameOpt, passwordOpt) match {
-        case (Some(username), Some(pass)) => {
+        case (Some(username), Some(pass)) => guardPasswordCheck(req, username, 401) {
           env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
             users.find(u => u.username == username) match {
               case None                                                     => BadRequest(Json.obj("error" -> "Bad user")).future
