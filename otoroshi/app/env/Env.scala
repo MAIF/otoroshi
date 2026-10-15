@@ -1135,6 +1135,13 @@ class Env(
         "otoroshi.admin-api-secret",
         "OTOROSHI_ADMIN_API_SECRET",
         "used to access otoroshi admin api"
+      ),
+      checkValue(
+        sharedKey,
+        "secret",
+        "app.claim.sharedKey",
+        "OTOROSHI_CLAIM_SHAREDKEY",
+        "used to sign the otoroshi claims, including the ones the admin api trusts"
       )
     ).collect { case Some(mess) =>
       s" - $mess"
