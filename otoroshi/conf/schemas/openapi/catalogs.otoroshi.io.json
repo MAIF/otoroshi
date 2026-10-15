@@ -1,0 +1,317 @@
+{
+  "catalogs.otoroshi.io.RemoteCatalog": {
+    "description": "A remote catalog: a source outside otoroshi (an http endpoint, a file, a git repository of github, gitlab, bitbucket, gitea, forgejo or codeberg, an s3 bucket, a consul kv store) holding entity definitions in json or yaml. Deploying the catalog reconciles otoroshi with the source: the entities it holds are created or updated, the ones it created before and that the source no longer holds are deleted. It is deployed through the api, on a schedule, or from a webhook",
+    "type": "object",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The tenant (organization) and the teams the remote catalog belongs to. The default tenant and team when absent"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the remote catalog, used to deploy it. The entities it creates carry it in their metadata, as `created_by: remote_catalog=<id>`",
+        "example": "remote-catalog_1b8bacb6a-8d18-4eef-a4bc-a81c3cdd9cb6"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the remote catalog, shown and searched in the list of the remote catalogs of the backoffice",
+        "example": "Infrastructure catalog"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the remote catalog, shown in its form of the backoffice. `--` when absent",
+        "example": "The routes and backends of the infrastructure repository"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the remote catalog, with string values. The admin api stores the date of the last write of the entity under `created_at` or `updated_at`",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of a metadata"
+        },
+        "example": {
+          "owner": "platform-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the remote catalog, to sort and search the catalogs",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "example": [
+          "gitops"
+        ]
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the remote catalog is deployed by its schedule and by the webhook plugin, true when absent. A disabled catalog can still be deployed through the api"
+      },
+      "source_kind": {
+        "type": "string",
+        "description": "The kind of source the entities are fetched from, that tells how `source_config` is read: `http`, `file`, `github`, `gitlab`, `bitbucket` (bitbucket cloud), `bitbucketserver` (bitbucket server / data center), `gitea`, `forgejo`, `codeberg`, `git` (any git repository, cloned), `s3` or `consulkv`, or the kind of a source registered by an extension. `http` when absent",
+        "example": "github"
+      },
+      "source_config": {
+        "type": "object",
+        "description": "The configuration of the source, read according to `source_kind`: each kind reads the fields listed below that name it, and ignores the others. Free json object, empty when absent",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "`http`: the url of the document to fetch, that holds entities or is a catalog listing naming the documents to deploy (relative to the same url)",
+            "example": "https://config-server.internal/otoroshi/entities.json"
+          },
+          "headers": {
+            "type": "object",
+            "description": "`http`: the headers sent with the request, by name",
+            "additionalProperties": {
+              "type": "string",
+              "description": "The value of a header"
+            },
+            "example": {
+              "Authorization": "Bearer my-token"
+            }
+          },
+          "timeout": {
+            "type": "integer",
+            "format": "int64",
+            "description": "`http`: the timeout of the request, in milliseconds, 30000 when absent",
+            "example": 30000
+          },
+          "path": {
+            "type": "string",
+            "description": "`file`: the path of the file or directory to read on the otoroshi host. Git sources: the path of the file or directory in the repository, the root of the repository when absent. A file can be a catalog listing that names the files to deploy",
+            "example": "otoroshi/"
+          },
+          "pre_command": {
+            "type": "array",
+            "description": "`file`: a command run before the files are read (to pull a repository for instance), as the program followed by its arguments",
+            "items": {
+              "type": "string",
+              "description": "The program or one of its arguments"
+            },
+            "example": [
+              "git",
+              "-C",
+              "/opt/otoroshi-config",
+              "pull"
+            ]
+          },
+          "repo": {
+            "type": "string",
+            "description": "`github`, `gitlab`, `bitbucket`, `bitbucketserver`, `gitea`, `forgejo`, `codeberg`: the repository, as `owner/name`, or an organization, a group, a workspace or a project to scan all its repositories. `git`: the url of the repository to clone, over https or ssh",
+            "example": "my-org/otoroshi-config"
+          },
+          "branch": {
+            "type": "string",
+            "description": "Git sources: the branch to read, `main` when absent",
+            "example": "main"
+          },
+          "token": {
+            "type": "string",
+            "description": "Git sources: the token used to call the api of the forge, or added to the https url of a `git` repository. `consulkv`: the acl token",
+            "example": "my-github-token"
+          },
+          "username": {
+            "type": "string",
+            "description": "`bitbucket`, `bitbucketserver`, `git`: the user name that goes with the token",
+            "example": "oauth2"
+          },
+          "base_url": {
+            "type": "string",
+            "description": "`github`, `gitlab`, `bitbucket`, `bitbucketserver`, `gitea`, `forgejo`, `codeberg`: the base url of the api of the forge, for a self hosted one. `https://api.github.com`, `https://gitlab.com`, `https://api.bitbucket.org`, `http://localhost:7990`, `http://localhost:3000` (gitea, forgejo) and `https://codeberg.org` when absent",
+            "example": "https://api.github.com"
+          },
+          "repo_patterns": {
+            "type": "array",
+            "description": "Git forges, when `repo` is an organization: the glob patterns of the names of the repositories to scan, all of them when absent",
+            "items": {
+              "type": "string",
+              "description": "A glob pattern of repository names"
+            },
+            "example": [
+              "otoroshi-*"
+            ]
+          },
+          "ssh_private_key_path": {
+            "type": "string",
+            "description": "`git`: the path of the private ssh key used to clone a repository over ssh",
+            "example": "/etc/otoroshi/keys/id_ed25519"
+          },
+          "bucket": {
+            "type": "string",
+            "description": "`s3`: the name of the bucket",
+            "example": "otoroshi-config"
+          },
+          "key": {
+            "type": "string",
+            "description": "`s3`: the key of the object to read, that can be a catalog listing naming the objects to deploy",
+            "example": "entities/deploy.json"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "`s3`: the url of the s3 endpoint, `https://s3.amazonaws.com` when absent. `consulkv`: the url of the consul http api, `http://localhost:8500` when absent",
+            "example": "https://s3.amazonaws.com"
+          },
+          "region": {
+            "type": "string",
+            "description": "`s3`: the region of the bucket, `eu-west-1` when absent",
+            "example": "eu-west-1"
+          },
+          "access": {
+            "type": "string",
+            "description": "`s3`: the access key id",
+            "example": "my-access-key-id"
+          },
+          "secret": {
+            "type": "string",
+            "description": "`s3`: the secret access key",
+            "example": "my-secret-access-key"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "`consulkv`: the key to read, or the prefix of the keys to read (the ones ending with `.json`, `.yaml` or `.yml`)",
+            "example": "otoroshi/entities"
+          },
+          "dc": {
+            "type": "string",
+            "description": "`consulkv`: the datacenter to read from, the one of the agent when absent",
+            "example": "dc1"
+          }
+        },
+        "additionalProperties": true,
+        "example": {
+          "repo": "my-org/otoroshi-config",
+          "branch": "main",
+          "path": "otoroshi/",
+          "token": "my-github-token"
+        }
+      },
+      "scheduling": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RemoteCatalogScheduling"
+          }
+        ],
+        "description": "Deploys the remote catalog as a job of otoroshi: once, at a fixed interval or on a cron expression. Not scheduled when absent or invalid"
+      },
+      "test_deploy_args": {
+        "type": "object",
+        "description": "The arguments given to the source when the catalog is deployed or tested from the backoffice. Free json object, empty when absent",
+        "additionalProperties": true,
+        "example": {}
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "remote-catalog_1b8bacb6a-8d18-4eef-a4bc-a81c3cdd9cb6",
+      "name": "Infrastructure catalog",
+      "description": "The routes and backends of the infrastructure repository",
+      "metadata": {
+        "owner": "platform-team"
+      },
+      "tags": [
+        "gitops"
+      ],
+      "enabled": true,
+      "source_kind": "github",
+      "source_config": {
+        "repo": "my-org/otoroshi-config",
+        "branch": "main",
+        "path": "otoroshi/",
+        "token": "my-github-token"
+      },
+      "scheduling": {
+        "enabled": true,
+        "kind": "ScheduledEvery",
+        "instantiation": "OneInstancePerOtoroshiCluster",
+        "initial_delay": 10000,
+        "interval": 300000,
+        "cron_expression": null,
+        "deploy_args": {}
+      },
+      "test_deploy_args": {}
+    }
+  },
+  "RemoteCatalogScheduling": {
+    "description": "How a remote catalog is deployed as a job of otoroshi, and the arguments of each deployment. The job is scheduled as soon as the catalog is saved with `enabled` true (the catalog being enabled too), and stopped when it is disabled or deleted",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the remote catalog is deployed as a job, false when absent"
+      },
+      "kind": {
+        "type": "string",
+        "description": "When the job runs: `ScheduledOnce` once after `initial_delay`, `ScheduledEvery` after `initial_delay` then every `interval`, `Cron` on `cron_expression`, `Autonomous` once after `initial_delay`. Read without case, an unknown value is read as `ScheduledEvery`, which is also the default",
+        "enum": [
+          "ScheduledOnce",
+          "ScheduledEvery",
+          "Cron",
+          "Autonomous"
+        ],
+        "example": "ScheduledEvery"
+      },
+      "instantiation": {
+        "type": "string",
+        "description": "Where the job runs in a cluster: `OneInstancePerOtoroshiInstance` on every instance, `OneInstancePerOtoroshiWorkerInstance` on every worker, `OneInstancePerOtoroshiLeaderInstance` on every leader, `OneInstancePerOtoroshiCluster` on a single instance of the cluster. Read without case, an unknown value is read as `OneInstancePerOtoroshiInstance`, which is also the default",
+        "enum": [
+          "OneInstancePerOtoroshiInstance",
+          "OneInstancePerOtoroshiWorkerInstance",
+          "OneInstancePerOtoroshiLeaderInstance",
+          "OneInstancePerOtoroshiCluster"
+        ],
+        "example": "OneInstancePerOtoroshiCluster"
+      },
+      "initial_delay": {
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "description": "The delay before the first deployment, in milliseconds. No delay when null",
+        "example": 10000
+      },
+      "interval": {
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "description": "The delay between two deployments of a `ScheduledEvery` job, in milliseconds. A `ScheduledEvery` job without interval only runs once",
+        "example": 300000
+      },
+      "cron_expression": {
+        "type": "string",
+        "nullable": true,
+        "description": "The quartz cron expression (seconds, minutes, hours, day of month, month, day of week) of a `Cron` job",
+        "example": "0 */10 * * * ?"
+      },
+      "deploy_args": {
+        "type": "object",
+        "description": "The arguments given to the source on each scheduled deployment. Free json object, empty when absent",
+        "additionalProperties": true,
+        "example": {}
+      }
+    },
+    "example": {
+      "enabled": true,
+      "kind": "Cron",
+      "instantiation": "OneInstancePerOtoroshiCluster",
+      "initial_delay": null,
+      "interval": null,
+      "cron_expression": "0 */10 * * * ?",
+      "deploy_args": {}
+    }
+  }
+}
