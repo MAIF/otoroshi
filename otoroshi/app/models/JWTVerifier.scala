@@ -68,7 +68,8 @@ object JwtInjection extends FromJson[JwtInjection] {
   override def fromJson(json: JsValue): Either[Throwable, JwtInjection] = {
     Try {
       JwtInjection(
-        decodedToken = json.select("decodedToken").asOpt[String].map(JWT.decode),
+        // asJson writes the token under token, decodedToken is still read
+        decodedToken = json.select("token").asOpt[String].orElse(json.select("decodedToken").asOpt[String]).map(JWT.decode),
         additionalHeaders = json.select("additionalHeaders").as[Map[String, String]],
         removeHeaders = json.select("removeHeaders").as[Seq[String]],
         additionalCookies = json.select("additionalCookies").as[Map[String, String]],

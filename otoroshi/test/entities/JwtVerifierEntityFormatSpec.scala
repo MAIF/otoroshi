@@ -289,8 +289,23 @@ class JwtVerifierEntityFormatSpec extends EntityFormatSpec {
       back.removeCookies mustBe injection.removeCookies
     }
 
-    "read a raw token from the decodedToken key" in {
-      val json = JwtInjection().asJson.as[JsObject] ++ Json.obj("decodedToken" -> rawToken)
+    "read back the token it writes" in {
+      val back = fromJsonOk(JwtInjection.fromJson, injection.asJson)
+      back.decodedToken.map(_.getToken) mustBe Some(rawToken)
+      back.decodedToken.map(_.getSubject) mustBe Some("john")
+    }
+
+    "round trip an injection without token" in {
+      fromJsonOk(JwtInjection.fromJson, JwtInjection().asJson).decodedToken mustBe None
+    }
+
+    "prefer the token key over the decodedToken key" in {
+      val json = injection.asJson.as[JsObject] ++ Json.obj("decodedToken" -> "not-a-jwt")
+      fromJsonOk(JwtInjection.fromJson, json).decodedToken.map(_.getToken) mustBe Some(rawToken)
+    }
+
+    "still read a raw token from the decodedToken key" in {
+      val json = JwtInjection().asJson.as[JsObject] - "token" ++ Json.obj("decodedToken" -> rawToken)
       fromJsonOk(JwtInjection.fromJson, json).decodedToken.map(_.getSubject) mustBe Some("john")
     }
 
