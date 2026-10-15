@@ -58,7 +58,7 @@ object RemainingQuotas {
         throttlingCallsPerWindow =
           json.select("throttlingCallsPerWindow").asOpt[Long].getOrElse(json.select("currentCallsPerSec").asLong),
         remainingCallsPerWindow =
-          json.select("remainingCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
+          json.select("remainingCallsPerWindow").asOpt[Long].getOrElse(json.select("remainingCallsPerSec").asLong),
         authorizedCallsPerDay = json.select("authorizedCallsPerDay").asLong,
         currentCallsPerDay = json.select("currentCallsPerDay").asLong,
         remainingCallsPerDay = json.select("remainingCallsPerDay").asLong,

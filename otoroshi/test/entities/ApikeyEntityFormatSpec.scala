@@ -220,6 +220,12 @@ class ApikeyEntityFormatSpec extends EntityFormatSpec {
       back.throttlingCallsPerWindow mustBe 5
     }
 
+    "read the remaining calls of the window from the legacy remaining per second key" in {
+      val legacy = format.writes(custom).as[JsObject] - "authorizedCallsPerWindow" - "throttlingCallsPerWindow" -
+        "remainingCallsPerWindow" ++ Json.obj("authorizedCallsPerSec" -> 20, "currentCallsPerSec" -> 5, "remainingCallsPerSec" -> 15)
+      readOk(format, legacy).remainingCallsPerWindow mustBe 15
+    }
+
     "prefer the window keys over the legacy per second keys" in {
       val both = format.writes(custom).as[JsObject] ++ Json.obj("authorizedCallsPerSec" -> 20, "currentCallsPerSec" -> 5)
       readOk(format, both) mustBe custom
