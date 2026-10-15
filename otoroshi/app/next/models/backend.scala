@@ -353,7 +353,8 @@ object NgBackend {
           loadBalancing = LoadBalancing.format
             .reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj()))
             .getOrElse(RoundRobin),
-          healthCheck = obj.select("health_check").asOpt(using HealthCheck.format),
+          // a missing health check is written as null, which must not read back as a disabled health check
+          healthCheck = obj.select("health_check").asOpt[JsObject].flatMap(HealthCheck.format.reads(_).asOpt),
           client = obj.select("client").asOpt(using NgClientConfig.format).getOrElse(NgClientConfig())
         )
     }

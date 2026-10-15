@@ -627,6 +627,18 @@ class RouteEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, full)
     }
 
+    "round trip a minimal route" in {
+      roundTrip(format, minimal)
+    }
+
+    "round trip the empty route" in {
+      roundTrip(format, NgRoute.empty)
+    }
+
+    "round trip the default route" in {
+      roundTrip(format, NgRoute.default)
+    }
+
     "round trip a route with an empty name and description" in {
       roundTrip(format, full.copy(name = "", description = ""))
     }

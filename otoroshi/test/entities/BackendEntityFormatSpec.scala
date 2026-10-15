@@ -856,6 +856,18 @@ class BackendEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, NgBackend.empty.copy(healthCheck = Some(HealthCheck.empty)))
     }
 
+    "round trip the empty backend, without health check" in {
+      roundTrip(format, NgBackend.empty).healthCheck mustBe None
+    }
+
+    "read a null health check as no health check" in {
+      readOk(format, NgBackend.empty.json.as[JsObject] ++ Json.obj("health_check" -> JsNull)).healthCheck mustBe None
+    }
+
+    "read a health check that is not an object as no health check" in {
+      readOk(format, NgBackend.empty.json.as[JsObject] ++ Json.obj("health_check" -> "yes")).healthCheck mustBe None
+    }
+
     "round trip a backend with each load balancing" in {
       Seq(Failover, Sticky, LeastConnections, BestResponseTime).foreach { lb =>
         roundTrip(format, fullBackend.copy(loadBalancing = lb)).loadBalancing mustBe lb
@@ -1017,6 +1029,10 @@ class BackendEntityFormatSpec extends EntityFormatSpec {
 
     "round trip a minimal backend with a health check" in {
       roundTrip(format, minimal.copy(backend = NgBackend.empty.copy(healthCheck = Some(HealthCheck.empty))))
+    }
+
+    "round trip a minimal backend" in {
+      roundTrip(format, minimal)
     }
 
     "round trip a custom location" in {
