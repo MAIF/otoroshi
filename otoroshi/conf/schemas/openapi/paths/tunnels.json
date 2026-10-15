@@ -1,0 +1,393 @@
+{
+  "/api/tunnels": {
+    "get": {
+      "tags": [
+        "tunnels"
+      ],
+      "summary": "List the tunnels connected to the cluster",
+      "description": "Answers the tunnels connected to the cluster: the remote otoroshi instances that opened a tunnel to an instance of the cluster (`GET /api/tunnels/register`) and described it in the last two minutes, with the routes they expose and the instances of the cluster they are connected to. Any admin can call it.",
+      "operationId": "otoroshi.next.tunnel.TunnelController.tunnelInfos",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The tunnels the remote otoroshi instances described in the last two minutes, each with its routes and the instances of the cluster it is connected to",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The tunnels connected to the cluster",
+                "items": {
+                  "$ref": "#/components/schemas/TunnelInfos"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/tunnels/infos": {
+    "get": {
+      "tags": [
+        "tunnels"
+      ],
+      "summary": "Describe how to reach this otoroshi",
+      "description": "Answers the domain, the scheme and the exposed ports of this otoroshi: what a remote otoroshi needs to connect its tunnels to it. Any admin can call it.",
+      "operationId": "otoroshi.next.tunnel.TunnelController.infos",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "How this otoroshi is reached",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TunnelsEndpoint"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/tunnels/register": {
+    "get": {
+      "tags": [
+        "tunnels"
+      ],
+      "summary": "Open a tunnel from a remote otoroshi",
+      "description": "Upgrades the connection to a websocket a remote otoroshi uses as a tunnel: the routes of this cluster that call the tunnel (with the `Remote tunnel calls` plugin, `otoroshi.next.tunnel.TunnelPlugin`) send their requests through it to the remote otoroshi, which routes them as if it had received them. Every message is a binary message holding a json object, its `type` telling what it is. The instance sends `request` messages (a `TunnelRequest`), and the remote otoroshi answers each with a `response` message (a `TunnelResponse` with the same `request_id`). Every 10 seconds, the remote otoroshi also sends a `ping` message, answered with a `pong` unless `pong_ping=true`, and a `tunnel_meta` message describing itself (`tunnel_id`, `name`, `routes`), listed by `GET /api/tunnels`. A `pong` message is answered with a `ping`, and with `pong_ping=true` the instance sends a `pong` message every 10 seconds. The instance lists the tunnel in its `tunnels` as a member of the cluster while it is open. Any admin can open it.",
+      "operationId": "otoroshi.next.tunnel.TunnelController.tunnelEndpoint",
+      "parameters": [
+        {
+          "name": "tunnel_id",
+          "in": "query",
+          "description": "The id of the tunnel (`otoroshi.tunnels.<key>.id` on the remote otoroshi), as listed by `GET /api/tunnels` and named by the `tunnel_id` of the `Remote tunnel calls` plugin. Several remote otoroshi instances can connect under the same id: the requests go to them in turn",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "datacenter-paris"
+          }
+        },
+        {
+          "name": "pong_ping",
+          "in": "query",
+          "description": "Whether the instance sends a `pong` message every 10 seconds and answers the `pong` messages of the remote otoroshi with a `ping` (reversed keep alive), instead of answering its `ping` messages with a `pong`. False by default",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": false,
+            "example": false
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "101": {
+          "description": "The connection is upgraded to a websocket"
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The tunnels are disabled on this instance (`otoroshi.tunnels.enabled`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The `tunnel_id` query parameter is missing (answered as a server error)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/tunnels/{tunnelId}/relay": {
+    "get": {
+      "tags": [
+        "tunnels"
+      ],
+      "summary": "Open a relay to a tunnel",
+      "description": "Upgrades the connection to a websocket another instance of the cluster uses to send requests to a tunnel connected to this instance (when `otoroshi.tunnels.worker-ws` is enabled, the default). Every message is a binary message holding a json object: the other instance sends `request` messages (a `TunnelRequest`) and `ping` messages; this instance answers `response` messages (a `TunnelResponse`, with the `request_id` of the request, a 404 answer when the tunnel is not connected here) and `pong` messages. Any admin can open it.",
+      "operationId": "otoroshi.next.tunnel.TunnelController.tunnelRelayWs",
+      "parameters": [
+        {
+          "name": "tunnelId",
+          "in": "path",
+          "description": "The id of a tunnel connected to this instance (`otoroshi.tunnels.<key>.id` on the remote otoroshi), as listed by `GET /api/tunnels`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "datacenter-paris"
+          }
+        },
+        {
+          "name": "mid",
+          "in": "query",
+          "description": "The id of the instance the relay is meant for (the `id` of the member): the connection is refused with a 417 when it is not this one. Sent when the instances reach each other through a load balancer (`otoroshi.tunnels.worker-use-loadbalancing`), the caller retrying until it reaches the right one",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "node_17bad625d-f161-44a3-9a90-0c4417a01fb0"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "101": {
+          "description": "The connection is upgraded to a websocket"
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The tunnels are disabled on this instance (`otoroshi.tunnels.enabled`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "417": {
+          "description": "The `mid` query parameter is not the id of this instance",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": [
+        "tunnels"
+      ],
+      "summary": "Send a request to a tunnel",
+      "description": "Sends the request of the body through a tunnel connected to this instance, and answers the answer of the remote otoroshi, wrapped in a `TunnelResponse`. When the tunnel is not connected to this instance, the wrapped answer is a 404 (`missing local tunnel`), the call itself answering 200. Any admin can call it.",
+      "operationId": "otoroshi.next.tunnel.TunnelController.tunnelRelay",
+      "parameters": [
+        {
+          "name": "tunnelId",
+          "in": "path",
+          "description": "The id of a tunnel connected to this instance (`otoroshi.tunnels.<key>.id` on the remote otoroshi), as listed by `GET /api/tunnels`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "datacenter-paris"
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The request to send through the tunnel, as the instances of the cluster write it",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TunnelRequest"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The answer of the remote otoroshi wrapped in a `TunnelResponse`, whatever its status: a 404 one when the tunnel is not connected to this instance",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TunnelResponse"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the body is not json",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The tunnels are disabled on this instance (`otoroshi.tunnels.enabled`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
