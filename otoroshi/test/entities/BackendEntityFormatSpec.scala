@@ -436,6 +436,34 @@ class BackendEntityFormatSpec extends EntityFormatSpec {
     }
   }
 
+  "GeoPositionRadius" should {
+
+    val paris = GeoPositionRadius(48.8566, 2.3522, 10.0)
+
+    "be near a position inside its radius" in {
+      paris.near(48.8606, 2.3376) mustBe true
+    }
+
+    "not be near a position outside its radius" in {
+      paris.near(45.764, 4.8357) mustBe false
+    }
+
+    "measure the distance between its positions in kilometers" in {
+      // paris and lyon are about 392 kilometers apart
+      paris.copy(radius = 400.0).near(45.764, 4.8357) mustBe true
+      paris.copy(radius = 380.0).near(45.764, 4.8357) mustBe false
+    }
+
+    "be near its own position" in {
+      paris.near(48.8566, 2.3522) mustBe true
+      GeoPositionRadius(0.0, 0.0, 0.0).near(0.0, 0.0) mustBe true
+    }
+
+    "measure the distance across the antimeridian" in {
+      GeoPositionRadius(0.0, 179.9, 50.0).near(0.0, -179.9) mustBe true
+    }
+  }
+
   "TargetPredicate" should {
 
     val format = TargetPredicate.format

@@ -618,10 +618,13 @@ object TargetPredicate {
 
 case class GeoPositionRadius(latitude: Double, longitude: Double, radius: Double) {
   def toJson: JsValue                         = JsString(s"$latitude:$longitude:$radius")
-  def near(lat: Double, lng: Double): Boolean =
-    Math.acos(
-      Math.sin(latitude) * Math.sin(lat) + Math.cos(latitude) * Math.cos(lat) * Math.cos(lng - longitude)
-    ) * 6371 <= radius
+  // the positions are in degrees, the trigonometric functions take radians. the distance is in kilometers
+  def near(lat: Double, lng: Double): Boolean = {
+    val (lat1, lng1, lat2, lng2) = (Math.toRadians(latitude), Math.toRadians(longitude), Math.toRadians(lat), Math.toRadians(lng))
+    // rounding can push the cosine slightly above 1, which acos turns into NaN for two identical positions
+    val cos                      = Math.sin(lat1) * Math.sin(lat2) + Math.cos(lat1) * Math.cos(lat2) * Math.cos(lng2 - lng1)
+    Math.acos(Math.min(1.0, Math.max(-1.0, cos))) * 6371 <= radius
+  }
 }
 
 case class GeolocationMatch(positions: Seq[GeoPositionRadius]) extends TargetPredicate {
