@@ -92,7 +92,7 @@ class AdminsEntityFormatSpec extends EntityFormatSpec {
 
     "write its admin entity validators by entity" in {
       (written(format, full) \ "adminEntityValidators" \ "apikey").as[JsValue] mustBe Json.arr(
-        Json.obj("kind" -> "opa-plugin-validator", "ref" -> "opa-1")
+        Json.obj("kind" -> "opa-plugin-validator", "ref" -> "opa-1", "error" -> JsNull)
       )
     }
 

@@ -248,12 +248,34 @@ class AuthModuleCommonsEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, OpaPluginValidator("opa-1"))
     }
 
-    "write the kind and the ref of a wasm plugin validator" in {
-      format.writes(WasmPluginValidator("wasm-1")) mustBe Json.obj("kind" -> "wasm-plugin-validator", "ref" -> "wasm-1")
+    "write the kind, the ref and the error of a wasm plugin validator" in {
+      format.writes(WasmPluginValidator("wasm-1")) mustBe Json.obj(
+        "kind"  -> "wasm-plugin-validator",
+        "ref"   -> "wasm-1",
+        "error" -> JsNull
+      )
     }
 
-    "write the kind and the ref of an opa plugin validator" in {
-      format.writes(OpaPluginValidator("opa-1")) mustBe Json.obj("kind" -> "opa-plugin-validator", "ref" -> "opa-1")
+    "write the kind, the ref and the error of an opa plugin validator" in {
+      format.writes(OpaPluginValidator("opa-1")) mustBe Json.obj(
+        "kind"  -> "opa-plugin-validator",
+        "ref"   -> "opa-1",
+        "error" -> JsNull
+      )
+    }
+
+    "round trip the custom error of a wasm plugin validator" in {
+      roundTrip(format, WasmPluginValidator("wasm-1", Some("not allowed by the wasm policy"))) mustBe WasmPluginValidator(
+        "wasm-1",
+        Some("not allowed by the wasm policy")
+      )
+    }
+
+    "round trip the custom error of an opa plugin validator" in {
+      roundTrip(format, OpaPluginValidator("opa-1", Some("denied by opa"))) mustBe OpaPluginValidator(
+        "opa-1",
+        Some("denied by opa")
+      )
     }
 
     "not read an unknown kind" in {

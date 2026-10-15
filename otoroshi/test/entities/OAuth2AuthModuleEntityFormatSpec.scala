@@ -221,7 +221,7 @@ class OAuth2AuthModuleEntityFormatSpec extends EntityFormatSpec {
 
     "write the admin entity validators overrides by user and by entity" in {
       (written(format, full) \ "adminEntityValidatorsOverride" \ "john@oto.tools" \ "all").as[JsValue] mustBe Json.arr(
-        Json.obj("kind" -> "opa-plugin-validator", "ref" -> "opa-1")
+        Json.obj("kind" -> "opa-plugin-validator", "ref" -> "opa-1", "error" -> JsNull)
       )
     }
 
