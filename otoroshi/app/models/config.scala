@@ -890,6 +890,7 @@ object GlobalConfig {
         "tlsSettings"             -> o.tlsSettings.json,
         "quotasSettings"          -> o.quotasSettings.json,
         "plugins"                 -> o.plugins.json,
+        "proxies"                 -> o.proxies.toJson,
         "wasmoSettings"           -> o.wasmoSettings.map(_.json).getOrElse(JsNull).as[JsValue],
         "metadata"                -> o.metadata,
         "env"                     -> o.env,
@@ -1041,6 +1042,7 @@ object GlobalConfig {
             .orElse(json.select("templates").asOpt(using DefaultTemplates.format))
             .getOrElse(DefaultTemplates()),
           wasmoSettings = readWasmoSettings(json),
+          proxies = (json \ "proxies").asOpt(using Proxies.format).getOrElse(Proxies()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
           extensions = (json \ "extensions").asOpt[Map[String, JsValue]].getOrElse(Map.empty),

@@ -221,6 +221,7 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
         "tlsSettings",
         "quotasSettings",
         "plugins",
+        "proxies",
         "wasmoSettings",
         "metadata",
         "env",
@@ -232,7 +233,7 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
     "write the scalar values of the default config" in {
       val json = written(format, GlobalConfig(otoroshiId = "otoroshi-1"))
       json - "letsEncryptSettings" - "ipFiltering" - "snowMonkeyConfig" - "scripts" - "geolocationSettings" -
-        "userAgentSettings" - "autoCert" - "tlsSettings" - "quotasSettings" - "plugins" - "templates" mustBe Json.obj(
+        "userAgentSettings" - "autoCert" - "tlsSettings" - "quotasSettings" - "plugins" - "templates" - "proxies" mustBe Json.obj(
         "tags"                     -> Json.arr(),
         "lines"                    -> Json.arr("prod"),
         "anonymousReporting"       -> false,
@@ -321,6 +322,21 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
 
     "round trip a config where every field is set" in {
       roundTrip(format, full)
+    }
+
+    "round trip a proxy for every usage of the config" in {
+      val proxies = Proxies(
+        alertEmails = Some(DefaultWSProxyServer("mail-proxy.oto.tools", 3128)),
+        services = Some(DefaultWSProxyServer("proxy.oto.tools", 3128, principal = Some("user"), password = Some("pass"))),
+        auth = Some(DefaultWSProxyServer("auth-proxy.oto.tools", 8080)),
+        elastic = Some(DefaultWSProxyServer("elastic-proxy.oto.tools", 8080))
+      )
+      roundTrip(format, minimal.copy(proxies = proxies)).proxies mustBe proxies
+    }
+
+    "write the proxies with their own format" in {
+      val proxies = Proxies(services = Some(DefaultWSProxyServer("proxy.oto.tools", 3128)))
+      (written(format, minimal.copy(proxies = proxies)) \ "proxies").as[JsValue] mustBe Proxies.format.writes(proxies)
     }
 
     "keep the security settings of the admin api on a round trip" in {
