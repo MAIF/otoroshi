@@ -701,14 +701,15 @@ object ApiDocumentationPlanValidationKind       {
   case object Wasm     extends ApiDocumentationPlanValidationKind { def name: String = "wasm"     }
   case object Custom   extends ApiDocumentationPlanValidationKind { def name: String = "custom"   }
 
-  def apply(str: String): ApiDocumentationPlanValidationKind = str match {
+  // an unknown kind needs a manual validation rather than accepting every subscription
+  def apply(str: String): ApiDocumentationPlanValidationKind = str.trim.toLowerCase match {
     case "auto"     => Auto
     case "manual"   => Manual
     case "webhook"  => Webhook
     case "workflow" => Workflow
     case "wasm"     => Wasm
     case "custom"   => Custom
-    case _          => Auto
+    case _          => Manual
   }
 }
 

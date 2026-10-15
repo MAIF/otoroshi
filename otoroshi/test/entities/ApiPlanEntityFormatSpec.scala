@@ -731,8 +731,18 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
       ).map(_.name) mustBe Seq("auto", "manual", "webhook", "workflow", "wasm", "custom")
     }
 
-    "read an unknown kind as automatic" in {
-      ApiDocumentationPlanValidationKind("Manual") mustBe ApiDocumentationPlanValidationKind.Auto
+    "read an unknown kind as manual" in {
+      ApiDocumentationPlanValidationKind("approve") mustBe ApiDocumentationPlanValidationKind.Manual
+    }
+
+    "read the validation kinds whatever their case" in {
+      ApiDocumentationPlanValidationKind("Manual") mustBe ApiDocumentationPlanValidationKind.Manual
+      ApiDocumentationPlanValidationKind("AUTO") mustBe ApiDocumentationPlanValidationKind.Auto
+      ApiDocumentationPlanValidationKind(" webhook ") mustBe ApiDocumentationPlanValidationKind.Webhook
+    }
+
+    "read a validation without kind as automatic" in {
+      ApiPlanValidation.format.reads(Json.obj()).get.kind mustBe ApiDocumentationPlanValidationKind.Auto
     }
 
     "tell an automatic validation" in {
