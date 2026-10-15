@@ -201,7 +201,8 @@ class UnitTests
       new plugins.configs.JqPluginConfigsSpec(),
       new plugins.configs.CachePluginConfigsSpec(),
       new plugins.configs.ConditionalPluginConfigsSpec(),
-      new plugins.configs.ChaosPluginConfigsSpec()
+      new plugins.configs.ChaosPluginConfigsSpec(),
+      new plugins.configs.DiscoveryPluginConfigsSpec()
     )
 
 class MapFilterTest
