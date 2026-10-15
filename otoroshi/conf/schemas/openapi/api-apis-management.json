@@ -1,0 +1,326 @@
+{
+  "RemainingQuotas": {
+    "type": "object",
+    "description": "The quotas of an api key: the calls it is allowed to make in the current throttling window, day and month, the calls it made, and the calls it has left. The quotas of an api key without limit are 10000000",
+    "properties": {
+      "authorizedCallsPerWindow": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the api key is allowed to make during a throttling window (the `throttlingQuota` of the api key, per second for the legacy strategy)",
+        "example": 100
+      },
+      "throttlingCallsPerWindow": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the api key made during the current throttling window",
+        "example": 12
+      },
+      "remainingCallsPerWindow": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the api key can still make during the current throttling window",
+        "example": 88
+      },
+      "authorizedCallsPerDay": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the api key is allowed to make per day (its `dailyQuota`)",
+        "example": 10000
+      },
+      "currentCallsPerDay": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the api key made today",
+        "example": 1250
+      },
+      "remainingCallsPerDay": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the api key can still make today",
+        "example": 8750
+      },
+      "authorizedCallsPerMonth": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the api key is allowed to make per month (its `monthlyQuota`)",
+        "example": 300000
+      },
+      "currentCallsPerMonth": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the api key made this month",
+        "example": 41200
+      },
+      "remainingCallsPerMonth": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the api key can still make this month",
+        "example": 258800
+      }
+    },
+    "example": {
+      "authorizedCallsPerWindow": 100,
+      "throttlingCallsPerWindow": 12,
+      "remainingCallsPerWindow": 88,
+      "authorizedCallsPerDay": 10000,
+      "currentCallsPerDay": 1250,
+      "remainingCallsPerDay": 8750,
+      "authorizedCallsPerMonth": 300000,
+      "currentCallsPerMonth": 41200,
+      "remainingCallsPerMonth": 258800
+    }
+  },
+  "ApiKeyValidationError": {
+    "description": "Why an api key was refused: an error, or the errors of the entity validators of the admin",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ErrorResponse"
+      },
+      {
+        "type": "object",
+        "description": "The api key was refused by the entity validators of the admin behind the credentials",
+        "required": [
+          "error",
+          "details"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "The error, always `Bad ApiKey format`",
+            "enum": [
+              "Bad ApiKey format"
+            ]
+          },
+          "details": {
+            "description": "What the validators say: a message, or the errors of the validators that refused the api key",
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "The message of the validation",
+                "example": "entity validation failed"
+              },
+              {
+                "type": "array",
+                "description": "The errors of the validators that refused the api key",
+                "items": {
+                  "type": "string",
+                  "description": "The error of a validator",
+                  "example": "the client name has to start with 'team-'"
+                }
+              }
+            ]
+          }
+        },
+        "example": {
+          "error": "Bad ApiKey format",
+          "details": [
+            "the client name has to start with 'team-'"
+          ]
+        }
+      }
+    ]
+  },
+  "ApiKeyDeletion": {
+    "type": "object",
+    "description": "The outcome of the deletion of an api key",
+    "properties": {
+      "deleted": {
+        "type": "boolean",
+        "description": "Always true: the api key is deleted",
+        "example": true
+      }
+    },
+    "example": {
+      "deleted": true
+    }
+  },
+  "ApiLiveStats": {
+    "type": "object",
+    "description": "The live statistics of an api: the statistics of each of the routes it exposes, added up. The values are rounded to two decimals. An id that is not the one of an api answers an empty object",
+    "properties": {
+      "calls": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The calls the routes of the api served since the statistics were last reset",
+        "example": 1250
+      },
+      "dataIn": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The bytes the routes of the api received. Always 0: the statistics of the routes are not added up for this field",
+        "example": 0
+      },
+      "dataOut": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The bytes the routes of the api sent. Always 0: the statistics of the routes are not added up for this field",
+        "example": 0
+      },
+      "rate": {
+        "type": "number",
+        "format": "double",
+        "description": "The calls per second the routes of the api serve, over the recent calls",
+        "example": 3.5
+      },
+      "duration": {
+        "type": "number",
+        "format": "double",
+        "description": "The sum, over the routes of the api, of the average duration of their recent calls, in milliseconds",
+        "example": 42.17
+      },
+      "overhead": {
+        "type": "number",
+        "format": "double",
+        "description": "The sum, over the routes of the api, of the average time otoroshi added to their recent calls, in milliseconds",
+        "example": 1.8
+      }
+    },
+    "example": {
+      "calls": 1250,
+      "dataIn": 0,
+      "dataOut": 0,
+      "rate": 3.5,
+      "duration": 42.17,
+      "overhead": 1.8
+    }
+  },
+  "ApiFromOpenApiRequest": {
+    "type": "object",
+    "description": "Where an openapi document is, and where the api built from it is exposed. Every field is required",
+    "required": [
+      "domain",
+      "openapi",
+      "contextPath",
+      "backendHostname",
+      "backendPath"
+    ],
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "The domain the api is exposed on",
+        "example": "petstore.oto.tools"
+      },
+      "openapi": {
+        "type": "string",
+        "description": "The url of the openapi (or swagger) document, fetched by otoroshi. A yaml document has to be served with an `application/yaml` or `text/yaml` content type, anything else is read as json",
+        "example": "https://petstore3.swagger.io/api/v3/openapi.json"
+      },
+      "contextPath": {
+        "type": "string",
+        "description": "The path the routes of the api are exposed under",
+        "example": "/v3"
+      },
+      "backendHostname": {
+        "type": "string",
+        "description": "The hostname of the targets of the backend of the api, one target per server of the document",
+        "example": "petstore3.swagger.io"
+      },
+      "backendPath": {
+        "type": "string",
+        "description": "The root path of the backend of the api",
+        "example": "/api/v3"
+      },
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The location of the api to build, which the admin behind the credentials has to be able to write. The default tenant (organization) and team when absent. The api built is in the default location anyway"
+      }
+    },
+    "example": {
+      "domain": "petstore.oto.tools",
+      "openapi": "https://petstore3.swagger.io/api/v3/openapi.json",
+      "contextPath": "/v3",
+      "backendHostname": "petstore3.swagger.io",
+      "backendPath": "/api/v3"
+    }
+  },
+  "ApiDeployTransitionError": {
+    "type": "object",
+    "description": "The deployment would move the api to a state it cannot reach from its own: a `removed` api refuses the deployment of a draft in `staging`, which would publish it",
+    "required": [
+      "error",
+      "error_description",
+      "from",
+      "to"
+    ],
+    "properties": {
+      "error": {
+        "type": "string",
+        "description": "The error, always `invalid_deploy_transition`",
+        "enum": [
+          "invalid_deploy_transition"
+        ]
+      },
+      "error_description": {
+        "type": "string",
+        "description": "A message naming the state of the api and the state the deployment would set",
+        "example": "cannot deploy from 'removed' to 'published'"
+      },
+      "from": {
+        "type": "string",
+        "description": "The state the api is in, `removed` being the only one a deployment can fail from",
+        "enum": [
+          "staging",
+          "published",
+          "deprecated",
+          "removed"
+        ],
+        "example": "removed"
+      },
+      "to": {
+        "type": "string",
+        "description": "The state the deployment would have set, `published` for a draft in `staging`",
+        "enum": [
+          "staging",
+          "published",
+          "deprecated",
+          "removed"
+        ],
+        "example": "published"
+      }
+    },
+    "example": {
+      "error": "invalid_deploy_transition",
+      "error_description": "cannot deploy from 'removed' to 'published'",
+      "from": "removed",
+      "to": "published"
+    }
+  },
+  "ApiDuplicationRequest": {
+    "type": "object",
+    "description": "What changes in the copy of an api. The other fields of the body are ignored",
+    "properties": {
+      "contextPath": {
+        "type": "string",
+        "description": "The context path of the copy. `/vnew` when absent",
+        "example": "/v2"
+      },
+      "version": {
+        "type": "string",
+        "description": "The version of the copy. `vnew` when absent",
+        "example": "2.0.0"
+      }
+    },
+    "example": {
+      "contextPath": "/v2",
+      "version": "2.0.0"
+    }
+  },
+  "ApiDuplicationResult": {
+    "type": "object",
+    "description": "The outcome of the duplication of an api: the id of the copy, saved in the `staging` state",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id generated for the copy (`api_<uuid>`), to read it with `GET /apis/apis.otoroshi.io/v1/apis/{id}`",
+        "example": "api_3e7b1c9a-5d2f-4a8e-b6c0-1f4d7a9e2b5c"
+      }
+    },
+    "example": {
+      "id": "api_3e7b1c9a-5d2f-4a8e-b6c0-1f4d7a9e2b5c"
+    }
+  }
+}
