@@ -204,7 +204,7 @@ class SecurityPluginConfigsSpec extends PluginConfigFormatSpec {
       permissionsPolicy = PermissionsPolicyConf(enabled = true, policy = "geolocation=()")
     )
 
-    // the three fields the format cannot do without
+    // the three top level fields, all disabled
     val mandatory = Json.obj(
       "frame_options"        -> "DISABLED",
       "xss_protection"       -> "DISABLED",
@@ -368,40 +368,58 @@ class SecurityPluginConfigsSpec extends PluginConfigFormatSpec {
       )
     }
 
-    "not read an empty object, the frame and xss options and content type options are mandatory" in {
-      readError(format, Json.obj())
+    "read an empty object as the default config" in {
+      readOk(format, Json.obj()) mustBe default
     }
 
-    "not read a json null" in {
-      readError(format, JsNull)
+    "read a json null as the default config" in {
+      readOk(format, JsNull) mustBe default
     }
 
-    "not read a json string" in {
-      readError(format, JsString("DENY"))
+    "read a json string as the default config" in {
+      readOk(format, JsString("DENY")) mustBe default
     }
 
-    "not read a json array" in {
-      readError(format, Json.arr("DENY"))
+    "read a json array as the default config" in {
+      readOk(format, Json.arr("DENY")) mustBe default
     }
 
-    "not read a config without frame_options" in {
-      readError(format, mandatory - "frame_options")
+    "read a config without frame_options with frame options disabled" in {
+      readOk(format, mandatory - "frame_options").frameOptions mustBe FrameOptions.DISABLED
     }
 
-    "not read a config without xss_protection" in {
-      readError(format, mandatory - "xss_protection")
+    "read a config without xss_protection with xss protection disabled" in {
+      readOk(format, mandatory - "xss_protection").xssProtection mustBe XssProtection.DISABLED
     }
 
-    "not read a config without content_type_options" in {
-      readError(format, mandatory - "content_type_options")
+    "read a config without content_type_options without content type options" in {
+      readOk(format, mandatory - "content_type_options").contentTypeOptions mustBe false
     }
 
-    "not read a content_type_options written as a string" in {
-      readError(format, mandatory ++ Json.obj("content_type_options" -> "true"))
+    "ignore a content_type_options written as a string" in {
+      readOk(format, mandatory ++ Json.obj("content_type_options" -> "true")).contentTypeOptions mustBe false
     }
 
-    "not read a frame_options that is not a string" in {
-      readError(format, mandatory ++ Json.obj("frame_options" -> true))
+    "ignore a frame_options that is not a string" in {
+      readOk(format, mandatory ++ Json.obj("frame_options" -> true)).frameOptions mustBe FrameOptions.DISABLED
+    }
+
+    "read a lone hsts section and default the rest" in {
+      val hsts = HstsConf(enabled = true, includeSubdomains = true, maxAge = 600L, preload = false, onHttp = false)
+      readOk(format, Json.obj("hsts" -> HstsConf.format.writes(hsts))) mustBe default.copy(hsts = hsts)
+    }
+
+    "read a lone content security policy and default the rest" in {
+      val csp = CspConf(CspMode.REPORT_ONLY, "default-src 'self'")
+      readOk(format, Json.obj("csp" -> CspConf.format.writes(csp))) mustBe default.copy(csp = csp)
+    }
+
+    "read a lone frame_options and default the rest" in {
+      readOk(format, Json.obj("frame_options" -> "DENY")) mustBe default.copy(frameOptions = FrameOptions.DENY)
+    }
+
+    "read a lone content_type_options and default the rest" in {
+      readOk(format, Json.obj("content_type_options" -> true)) mustBe default.copy(contentTypeOptions = true)
     }
 
     "fill the missing hsts fields with their defaults" in {
@@ -444,7 +462,7 @@ class SecurityPluginConfigsSpec extends PluginConfigFormatSpec {
     }
 
     "not read the camel case keys" in {
-      readError(format, Json.obj("frameOptions" -> "DENY", "xssProtection" -> "ON", "contentTypeOptions" -> true))
+      readOk(format, Json.obj("frameOptions" -> "DENY", "xssProtection" -> "ON", "contentTypeOptions" -> true)) mustBe default
     }
 
     "ignore unknown keys" in {
