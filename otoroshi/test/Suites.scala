@@ -242,7 +242,8 @@ class UnitTests
       new plugins.configs.Auth0PasswordlessPluginConfigsSpec(),
       new plugins.configs.TailscalePluginConfigsSpec(),
       new plugins.configs.BiscuitPluginConfigsSpec(),
-      new plugins.configs.CorsPluginConfigsSpec()
+      new plugins.configs.CorsPluginConfigsSpec(),
+      new plugins.configs.GenericListsPluginConfigsSpec()
     )
 
 class MapFilterTest
