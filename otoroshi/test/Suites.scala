@@ -258,7 +258,8 @@ class UnitTests
       new entities.BackendEntityFormatSpec(),
       new entities.TcpServiceEntityFormatSpec(),
       new entities.ApikeyEntityFormatSpec(),
-      new entities.ServiceGroupEntityFormatSpec()
+      new entities.ServiceGroupEntityFormatSpec(),
+      new entities.ErrorTemplateEntityFormatSpec()
     )
 
 class MapFilterTest
