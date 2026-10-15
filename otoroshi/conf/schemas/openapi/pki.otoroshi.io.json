@@ -1,0 +1,198 @@
+{
+  "pki.otoroshi.io.Certificate": {
+    "type": "object",
+    "description": "A certificate: an X509 certificate chain and its private key, stored in otoroshi and used to serve tls (picked by SNI from its domain and SANs), to present a client certificate to backends (mtls), to trust remote servers or clients, or as a key pair to sign and verify jwt tokens. Otoroshi can generate them with its own pki, get them from Let's Encrypt, and renew them. The boolean flags are also read from the strings `true` and `false`",
+    "required": [
+      "id",
+      "domain",
+      "chain"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The id of the certificate, referenced by the routes, backends, verifiers and tls settings",
+        "example": "cert_dev_be6df92c-c503-476b-93ea-ed6a4ab46e8b"
+      },
+      "domain": {
+        "type": "string",
+        "description": "The main domain of the certificate, the common name of its subject. Computed from the chain by otoroshi when the certificate is saved, read back as is otherwise. `--` when unknown",
+        "example": "api.oto.tools"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the certificate, shown and searched in the list of the certificates of the backoffice. Defaults to the domain",
+        "example": "api.oto.tools"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the certificate, shown and searched in the list of the certificates of the backoffice. `Certificate for <domain>` when absent",
+        "example": "Certificate of the public api"
+      },
+      "chain": {
+        "type": "string",
+        "description": "The certificate chain, PEM encoded: the certificate first, then the certificates of the authorities that signed it. Empty for a key pair only entity",
+        "example": "-----BEGIN CERTIFICATE-----\nMIIB0zCCAXqgAwIBAgIUZvUZ4nQdG92WAzh7Fc+eFcpBI2YwCgYIKoZIzj0EAwIw\nGDEWMBQGA1UEAwwNYXBpLm90by50b29sczAeFw0yNjEwMTUxOTU4MzBaFw0yNzEw\nMTUxOTU4MzBaMBgxFjAUBgNVBAMMDWFwaS5vdG8udG9vbHMwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAATzSWSma92ec7nh59JLREHcx/UCczBTGV5eqtdJykdio/Qm\nhkJh1h8HHcFgM2cKT16Bvxj/w6t3m8vUUaRTXJlYo4GhMIGeMB0GA1UdDgQWBBRC\nA8hJIVui4KdBNJiPu9OPsYFoCDAfBgNVHSMEGDAWgBRCA8hJIVui4KdBNJiPu9OP\nsYFoCDApBgNVHREEIjAggg1hcGkub3RvLnRvb2xzgg8qLmFwaS5vdG8udG9vbHMw\nDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYIKwYBBQUH\nAwEwCgYIKoZIzj0EAwIDRwAwRAIgEzbtbOGbUjzV38jTAjB8EY0lFpaXE81FRrGo\ny0S2f4ACIEjmPDXJNFNzyrKb+y0xIL2kGQOXPhoIkEofsLn87a9u\n-----END CERTIFICATE-----\n"
+      },
+      "caRef": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the certificate of the authority (an otoroshi CA) that signed this one, used to renew it. Null when it was not signed by an otoroshi CA",
+        "example": "otoroshi-intermediate-ca"
+      },
+      "privateKey": {
+        "type": "string",
+        "description": "The private key of the certificate, PEM encoded (PKCS#8, PKCS#1 or SEC1). Empty for a certificate only trusted, like the certificate of a remote authority",
+        "example": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg4mxOGe3wdWMl0rLg\nMccZGsOJ73P3iOa66hGbDYX4qaGhRANCAATzSWSma92ec7nh59JLREHcx/UCczBT\nGV5eqtdJykdio/QmhkJh1h8HHcFgM2cKT16Bvxj/w6t3m8vUUaRTXJlY\n-----END PRIVATE KEY-----\n"
+      },
+      "selfSigned": {
+        "type": "boolean",
+        "description": "Whether the certificate is self signed. Computed from the chain by otoroshi when the certificate is saved, read back as is otherwise"
+      },
+      "ca": {
+        "type": "boolean",
+        "description": "Whether the certificate is a certificate authority, able to sign other certificates. Computed from the chain by otoroshi when the certificate is saved, read back as is otherwise"
+      },
+      "valid": {
+        "type": "boolean",
+        "description": "Whether the private key matches the chain, so that the certificate can be used to serve tls. Computed from the chain by otoroshi when the certificate is saved, read back as is otherwise"
+      },
+      "exposed": {
+        "type": "boolean",
+        "description": "Whether the public key of the certificate is exposed in the JWKS of otoroshi (`/.well-known/otoroshi/security/jwks.json`), so that others can verify the tokens it signs"
+      },
+      "revoked": {
+        "type": "boolean",
+        "description": "Whether the certificate is revoked: otoroshi stops using it and its OCSP responder says so"
+      },
+      "autoRenew": {
+        "type": "boolean",
+        "description": "Whether otoroshi renews the certificate before it expires (with its CA, or with Let's Encrypt for a Let's Encrypt certificate)"
+      },
+      "letsEncrypt": {
+        "type": "boolean",
+        "description": "Whether the certificate was issued by Let's Encrypt (ACME), and is renewed through it"
+      },
+      "subject": {
+        "type": "string",
+        "description": "The distinguished name of the subject of the certificate. Computed from the chain by otoroshi when the certificate is saved, read back as is otherwise. `--` when unknown",
+        "example": "CN=api.oto.tools"
+      },
+      "from": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The start of the validity of the certificate, a timestamp in milliseconds. Computed from the chain by otoroshi when the certificate is saved, read back as is otherwise",
+        "example": 1792094310000
+      },
+      "to": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The end of the validity of the certificate, a timestamp in milliseconds. Computed from the chain by otoroshi when the certificate is saved, read back as is otherwise",
+        "example": 1823630310000
+      },
+      "client": {
+        "type": "boolean",
+        "description": "Whether the certificate is a client certificate, presented by otoroshi to the backends that require mtls. A client certificate is not used to serve tls"
+      },
+      "keypair": {
+        "type": "boolean",
+        "description": "Whether the entity is only used as a key pair, for instance to sign and verify jwt tokens, and not to serve tls"
+      },
+      "sans": {
+        "type": "array",
+        "description": "The subject alternative names of the certificate: the other domains it is valid for. Computed from the chain by otoroshi when the certificate is saved, read back as is otherwise",
+        "items": {
+          "type": "string",
+          "description": "A domain name, possibly a wildcard",
+          "example": "*.api.oto.tools"
+        },
+        "example": [
+          "api.oto.tools",
+          "*.api.oto.tools"
+        ]
+      },
+      "certType": {
+        "type": "string",
+        "enum": [
+          "client",
+          "ca",
+          "letsEncrypt",
+          "keypair",
+          "selfSigned",
+          "certificate"
+        ],
+        "description": "The kind of certificate, written by otoroshi from its flags, in this order of precedence: `client`, `ca`, `letsEncrypt`, `keypair`, `selfSigned`, then `certificate`. It is not read back",
+        "readOnly": true,
+        "example": "selfSigned"
+      },
+      "password": {
+        "type": "string",
+        "nullable": true,
+        "description": "The password of the private key when it is encrypted, null otherwise. A blank password is read as null",
+        "example": "changeit"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the certificate",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "issued-for": "public-api"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the certificate, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "prod"
+        },
+        "example": [
+          "prod"
+        ]
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "cert_dev_be6df92c-c503-476b-93ea-ed6a4ab46e8b",
+      "domain": "api.oto.tools",
+      "name": "api.oto.tools",
+      "description": "Certificate of the public api",
+      "chain": "-----BEGIN CERTIFICATE-----\nMIIB0zCCAXqgAwIBAgIUZvUZ4nQdG92WAzh7Fc+eFcpBI2YwCgYIKoZIzj0EAwIw\nGDEWMBQGA1UEAwwNYXBpLm90by50b29sczAeFw0yNjEwMTUxOTU4MzBaFw0yNzEw\nMTUxOTU4MzBaMBgxFjAUBgNVBAMMDWFwaS5vdG8udG9vbHMwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAATzSWSma92ec7nh59JLREHcx/UCczBTGV5eqtdJykdio/Qm\nhkJh1h8HHcFgM2cKT16Bvxj/w6t3m8vUUaRTXJlYo4GhMIGeMB0GA1UdDgQWBBRC\nA8hJIVui4KdBNJiPu9OPsYFoCDAfBgNVHSMEGDAWgBRCA8hJIVui4KdBNJiPu9OP\nsYFoCDApBgNVHREEIjAggg1hcGkub3RvLnRvb2xzgg8qLmFwaS5vdG8udG9vbHMw\nDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYIKwYBBQUH\nAwEwCgYIKoZIzj0EAwIDRwAwRAIgEzbtbOGbUjzV38jTAjB8EY0lFpaXE81FRrGo\ny0S2f4ACIEjmPDXJNFNzyrKb+y0xIL2kGQOXPhoIkEofsLn87a9u\n-----END CERTIFICATE-----\n",
+      "caRef": null,
+      "privateKey": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg4mxOGe3wdWMl0rLg\nMccZGsOJ73P3iOa66hGbDYX4qaGhRANCAATzSWSma92ec7nh59JLREHcx/UCczBT\nGV5eqtdJykdio/QmhkJh1h8HHcFgM2cKT16Bvxj/w6t3m8vUUaRTXJlY\n-----END PRIVATE KEY-----\n",
+      "selfSigned": true,
+      "ca": false,
+      "valid": true,
+      "exposed": false,
+      "revoked": false,
+      "autoRenew": false,
+      "letsEncrypt": false,
+      "subject": "CN=api.oto.tools",
+      "from": 1792094310000,
+      "to": 1823630310000,
+      "client": false,
+      "keypair": false,
+      "sans": [
+        "api.oto.tools",
+        "*.api.oto.tools"
+      ],
+      "certType": "selfSigned",
+      "password": null,
+      "metadata": {},
+      "tags": [
+        "public"
+      ]
+    }
+  }
+}
