@@ -51,6 +51,8 @@ import sangria.schema.{
 import sangria.util.tag.@@
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.*
@@ -908,10 +910,14 @@ class GraphQLBackend extends NgBackendCall {
     }
   }
 
+  // the arguments come from the client: encoded, a value cannot add a path segment or a query param to the url
+  private def encodeArg(value: String): String =
+    URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20")
+
   def replaceQueryParams(c: AstDirectiveContext[Unit]) = {
     val queryArgs = c.ctx.args.raw.map {
-      case (str, Some(v)) => (str, String.valueOf(v))
-      case (k, v)         => (k, String.valueOf(v))
+      case (str, Some(v)) => (str, encodeArg(String.valueOf(v)))
+      case (k, v)         => (k, encodeArg(String.valueOf(v)))
     }
 
     queryArgs.foldLeft(c.arg(urlArg): String)((u, value) =>
@@ -924,8 +930,8 @@ class GraphQLBackend extends NgBackendCall {
 
   def replaceTermsInUrl(c: AstDirectiveContext[Unit])(using env: Env) = {
     val queryArgs = c.ctx.args.raw.map {
-      case (str, Some(v)) => (str, String.valueOf(v))
-      case (k, v)         => (k, String.valueOf(v))
+      case (str, Some(v)) => (str, encodeArg(String.valueOf(v)))
+      case (k, v)         => (k, encodeArg(String.valueOf(v)))
     }
 
     val paramsArgs: Map[String, String] = queryArgs.foldLeft(Map.empty[String, String]) { case (acc, (key, value)) =>
