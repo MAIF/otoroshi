@@ -203,7 +203,8 @@ class UnitTests
       new plugins.configs.ConditionalPluginConfigsSpec(),
       new plugins.configs.ChaosPluginConfigsSpec(),
       new plugins.configs.DiscoveryPluginConfigsSpec(),
-      new plugins.configs.RobotPluginConfigsSpec()
+      new plugins.configs.RobotPluginConfigsSpec(),
+      new plugins.configs.GzipPluginConfigsSpec()
     )
 
 class MapFilterTest
