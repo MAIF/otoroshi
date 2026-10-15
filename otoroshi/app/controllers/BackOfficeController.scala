@@ -1414,6 +1414,8 @@ class BackOfficeController(
                   val cc   = c.enrich()
                   Ok(cc.toJson)
                 }
+                // signing with a ca needs the rights to read it
+                case Some(ca) if !ctx.canUserRead(ca) => ctx.forbidden
                 case Some(ca) => {
                   val cert = FakeKeyStore.createCertificateFromCA(
                     host,
@@ -1453,6 +1455,8 @@ class BackOfficeController(
                   val cc   = c.enrich()
                   Ok(cc.toJson)
                 }
+                // signing with a ca needs the rights to read it
+                case Some(ca) if !ctx.canUserRead(ca) => ctx.forbidden
                 case Some(ca) => {
                   val cert = FakeKeyStore.createClientCertificateFromCA(
                     dn,
@@ -1489,6 +1493,9 @@ class BackOfficeController(
           if (!many) {
             val cert = certs.head
             Ok(cert.enrich().copy(client = client).toJson).future
+          } else if (certs.exists(cert => !ctx.canUserWrite(cert.enrich().copy(client = client)))) {
+            // the certificates are stored: the user has to be able to write them
+            ApiActionContext.fforbidden
           } else {
             Source(certs.toList)
               .mapAsync(1) { cert =>
@@ -1554,6 +1561,8 @@ class BackOfficeController(
             case (Some(id), Some(host)) => {
               env.datastores.certificatesDataStore.findById(id).map {
                 case None     => NotFound(Json.obj("error" -> s"No CA found"))
+                // signing with a ca needs the rights to read it
+                case Some(ca) if !ctx.canUserRead(ca) => ctx.forbidden
                 case Some(ca) => {
                   // val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
                   // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
@@ -1588,6 +1597,8 @@ class BackOfficeController(
             case (Some(id), Some(dn)) => {
               env.datastores.certificatesDataStore.findById(id).map {
                 case None     => NotFound(Json.obj("error" -> s"No CA found"))
+                // signing with a ca needs the rights to read it
+                case Some(ca) if !ctx.canUserRead(ca) => ctx.forbidden
                 case Some(ca) => {
                   val cert = FakeKeyStore.createClientCertificateFromCA(
                     dn,
@@ -1628,6 +1639,8 @@ class BackOfficeController(
     BackOfficeActionAuth.async(parse.json) { ctx =>
       (ctx.request.body \ "host").asOpt[String] match {
         case None         => FastFuture.successful(BadRequest(Json.obj("error" -> "no domain found in request")))
+        // the certificate is stored in the default location: the user has to be able to write there
+        case Some(_) if !ctx.canUserWrite(FakeEntityLocationSupport(EntityLocation())) => ApiActionContext.fforbidden
         case Some(domain) =>
           otoroshi.utils.letsencrypt.LetsEncryptHelper.createCertificate(domain).map {
             case Left(err)   => InternalServerError(Json.obj("error" -> err))
@@ -1672,7 +1685,11 @@ class BackOfficeController(
 
       env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
         val issuer = issuerRef.flatMap(ref => certificates.find(_.id == ref))
-        (ctx.request.body \ "letsEncrypt").asOpt[Boolean] match {
+        // signing with a ca needs the rights to read it
+        if (issuer.exists(ca => !ctx.canUserRead(ca))) ApiActionContext.fforbidden
+        else (ctx.request.body \ "letsEncrypt").asOpt[Boolean] match {
+          // the certificate is stored in the default location: the user has to be able to write there
+          case Some(true) if !ctx.canUserWrite(FakeEntityLocationSupport(EntityLocation())) => ApiActionContext.fforbidden
           case Some(true) =>
             maybeHost match {
               case None         => BadRequest(Json.obj("error" -> "No domain found !")).future

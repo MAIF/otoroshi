@@ -246,6 +246,46 @@ class AuthHardeningTests(parent: PluginsTestSpecBase) {
     deleteAuthModule(foreign).futureValue
   }
 
+  // the certificate tooling of the backoffice signed with any stored ca and stored certificates anywhere
+  def backofficeCertificates(): Unit = {
+    // the otoroshi intermediate ca exists: without it, the self signed certificates are signed by no ca
+    env.datastores.certificatesDataStore
+      .findById(otoroshi.ssl.Cert.OtoroshiIntermediateCA)(using env.otoroshiExecutionContext, env)
+      .futureValue must not be empty
+    val teamUser = backofficeUser(
+      "auth-hardening-certificates-team",
+      UserRights(Seq(UserRight(TenantAccess("default"), Seq(TeamAccess("certificates-team")))))
+    )
+    val admin    = backofficeUser("auth-hardening-certificates-admin", UserRights.superAdmin)
+    def post(user: BackOfficeUser, path: String, body: JsValue): Int = {
+      val cookie = sessionCookieBaker.encodeAsCookie(Session(Map("bousr" -> user.randomId)))
+      ws.url(s"http://127.0.0.1:$port$path")
+        .withHttpHeaders(
+          "Host"         -> env.backOfficeHost,
+          "Content-Type" -> "application/json",
+          "Cookie"       -> s"${cookie.name}=${cookie.value}"
+        )
+        .post(Json.stringify(body))
+        .futureValue
+        .status
+    }
+    val caSigned = Json.obj("id" -> otoroshi.ssl.Cert.OtoroshiIntermediateCA, "host" -> "certificates.oto.tools")
+    withClue("a team user signing with the otoroshi ca ") {
+      post(teamUser, "/bo/api/certificates/_caSigned", caSigned) mustBe Status.FORBIDDEN
+    }
+    withClue("a team user signing with the otoroshi ca, self signed ") {
+      post(teamUser, "/bo/api/certificates/_selfSigned", Json.obj("host" -> "certificates.oto.tools")) mustBe
+      Status.FORBIDDEN
+    }
+    withClue("a team user storing a let's encrypt certificate ") {
+      post(teamUser, "/bo/api/certificates/_letsencrypt", Json.obj("host" -> "certificates.oto.tools")) mustBe
+      Status.FORBIDDEN
+    }
+    withClue("a super admin signing with the otoroshi ca ") {
+      post(admin, "/bo/api/certificates/_caSigned", caSigned) mustBe Status.OK
+    }
+  }
+
   // the plugin datastore of wasm plugins takes key patterns: some datastores turn them into regexes
   def wasmPluginDatastorePatterns(): Unit = {
     otoroshi.wasm.DataStore.isSafePattern("my-key:*") mustBe true
