@@ -212,7 +212,8 @@ class UnitTests
       new plugins.configs.OAuthProtectedResourcesPluginConfigsSpec(),
       new plugins.configs.MirrorPluginConfigsSpec(),
       new plugins.configs.ContextPluginConfigsSpec(),
-      new plugins.configs.TimePluginConfigsSpec()
+      new plugins.configs.TimePluginConfigsSpec(),
+      new plugins.configs.Log4ShellPluginConfigsSpec()
     )
 
 class MapFilterTest
