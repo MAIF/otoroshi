@@ -690,6 +690,9 @@ case class GlobalConfig(
     useCircuitBreakers: Boolean = true,
     apiReadOnly: Boolean = false,
     u2fLoginOnly: Boolean = false,
+    // an admin or a user without rights gets the super admin rights. off for a new instance, on for the instances
+    // that predate the flag (the reads default it to true), and to be turned off before going live
+    superAdminWhenNoRights: Boolean = false,
     maintenanceMode: Boolean = false,
     trustXForwarded: Boolean = true,
     trustedProxies: Seq[String] = Seq.empty[String],
@@ -862,6 +865,7 @@ object GlobalConfig {
         "useCircuitBreakers"      -> true, // [REMOVE SERVICEDESC] o.useCircuitBreakers,
         "apiReadOnly"             -> o.apiReadOnly,
         "u2fLoginOnly"            -> o.u2fLoginOnly,
+        "superAdminWhenNoRights"  -> o.superAdminWhenNoRights,
         "trustXForwarded"         -> o.trustXForwarded,
         "trustedProxies"          -> JsArray(o.trustedProxies.map(JsString.apply)),
         "clientAddressHeader"     -> o.clientAddressHeader,
@@ -931,6 +935,9 @@ object GlobalConfig {
           otoroshiId = (json \ "otoroshiId").asOpt[String].getOrElse(s"otoroshi_${IdGenerator.uuid}"),
           apiReadOnly = (json \ "apiReadOnly").asOpt[Boolean].getOrElse(false),
           u2fLoginOnly = (json \ "u2fLoginOnly").asOpt[Boolean].getOrElse(false),
+          // a stored config without the flag comes from an instance that predates it, where missing rights meant
+          // super admin rights
+          superAdminWhenNoRights = (json \ "superAdminWhenNoRights").asOpt[Boolean].getOrElse(true),
           logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),
           useAkkaHttpClient = (json \ "useAkkaHttpClient").asOpt[Boolean].getOrElse(false),
           ipFiltering = (json \ "ipFiltering").asOpt[IpFiltering](using IpFiltering.format).getOrElse(IpFiltering()),

@@ -143,12 +143,12 @@ class AdminsEntityFormatSpec extends EntityFormatSpec {
       back.createdAt.getMillis must be >= before
     }
 
-    "read an admin without rights as a super admin" in {
-      readOk(format, Json.obj("username" -> "u", "password" -> "p", "label" -> "l")).rights mustBe UserRights.superAdmin
+    "read an admin without rights as an admin without any right" in {
+      readOk(format, Json.obj("username" -> "u", "password" -> "p", "label" -> "l")).rights mustBe UserRights.empty
     }
 
-    "read an admin whose rights are null as a super admin" in {
-      readOk(format, written(format, minimal) ++ Json.obj("rights" -> JsNull)).rights mustBe UserRights.superAdmin
+    "read an admin whose rights are null as an admin without any right" in {
+      readOk(format, written(format, minimal) ++ Json.obj("rights" -> JsNull)).rights mustBe UserRights.empty
     }
 
     "read an admin whose rights cannot be read as an admin without any right" in {
@@ -309,8 +309,8 @@ class AdminsEntityFormatSpec extends EntityFormatSpec {
       readError(format, written(format, minimal) - "credentials" ++ Json.obj("credential" -> Json.obj("publicKeyCose" -> "x")))
     }
 
-    "read an admin without rights as a super admin" in {
-      readOk(format, written(format, minimal) - "rights").rights mustBe UserRights.superAdmin
+    "read an admin without rights as an admin without any right" in {
+      readOk(format, written(format, minimal) - "rights").rights mustBe UserRights.empty
     }
 
     "not read an admin without handle" in {

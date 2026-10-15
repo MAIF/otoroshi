@@ -118,20 +118,20 @@ class BasicAuthModuleEntityFormatSpec extends EntityFormatSpec {
       )
     }
 
-    "read a user without rights as a super admin" in {
-      readOk(format, Json.obj("name" -> "n", "password" -> "p", "email" -> "e")).rights mustBe UserRights.superAdmin
+    "read a user without rights as a user without any right" in {
+      readOk(format, Json.obj("name" -> "n", "password" -> "p", "email" -> "e")).rights mustBe UserRights.empty
     }
 
-    "read a user whose rights are null as a super admin" in {
+    "read a user whose rights are null as a user without any right" in {
       readOk(format, Json.obj("name" -> "n", "password" -> "p", "email" -> "e", "rights" -> JsNull)).rights mustBe
-        UserRights.superAdmin
+        UserRights.empty
     }
 
-    "read a user whose rights are an object as a super admin" in {
+    "read a user whose rights are an object as a user without any right" in {
       readOk(
         format,
         Json.obj("name" -> "n", "password" -> "p", "email" -> "e", "rights" -> Json.obj("tenant" -> "t", "teams" -> Json.arr("a")))
-      ).rights mustBe UserRights.superAdmin
+      ).rights mustBe UserRights.empty
     }
 
     "read a user whose rights cannot be read as a user without any right" in {
@@ -149,7 +149,7 @@ class BasicAuthModuleEntityFormatSpec extends EntityFormatSpec {
         webauthn = None,
         metadata = Json.obj(),
         tags = Seq.empty,
-        rights = UserRights.superAdmin,
+        rights = UserRights.empty,
         adminEntityValidators = Map.empty
       )
     }

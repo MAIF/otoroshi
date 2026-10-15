@@ -189,6 +189,7 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
         "useCircuitBreakers",
         "apiReadOnly",
         "u2fLoginOnly",
+        "superAdminWhenNoRights",
         "trustXForwarded",
         "trustedProxies",
         "clientAddressHeader",
@@ -248,6 +249,7 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
         "useCircuitBreakers"       -> true,
         "apiReadOnly"              -> false,
         "u2fLoginOnly"             -> false,
+        "superAdminWhenNoRights"   -> false,
         "trustXForwarded"          -> true,
         "trustedProxies"           -> Json.arr(),
         "clientAddressHeader"      -> "X-Forwarded-For",
@@ -493,6 +495,24 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
     "read a missing new engine flag as false while a new config enables it" in {
       GlobalConfig().initWithNewEngine mustBe true
       readOk(format, Json.obj()).initWithNewEngine mustBe false
+    }
+
+    "give no right to the admins and users without rights on a new config" in {
+      GlobalConfig().superAdminWhenNoRights mustBe false
+    }
+
+    "read a missing superAdminWhenNoRights as on, as for an instance that predates it" in {
+      readOk(format, Json.obj()).superAdminWhenNoRights mustBe true
+      readOk(format, written(format, minimal) - "superAdminWhenNoRights").superAdminWhenNoRights mustBe true
+    }
+
+    "round trip superAdminWhenNoRights on and off" in {
+      roundTrip(format, minimal.copy(superAdminWhenNoRights = true)).superAdminWhenNoRights mustBe true
+      roundTrip(format, minimal.copy(superAdminWhenNoRights = false)).superAdminWhenNoRights mustBe false
+    }
+
+    "ignore a superAdminWhenNoRights that is not a boolean, as for an instance that predates it" in {
+      readOk(format, Json.obj("superAdminWhenNoRights" -> "false")).superAdminWhenNoRights mustBe true
     }
 
     "generate an otoroshi id prefixed with otoroshi_ when it is missing" in {

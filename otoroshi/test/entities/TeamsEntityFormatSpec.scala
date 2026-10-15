@@ -489,8 +489,29 @@ class TeamsEntityFormatSpec extends EntityFormatSpec {
       UserRights.readFromObject(Json.obj("rights" -> format.writes(custom))) mustBe custom
     }
 
-    "read the rights of an entity without rights key as super admin rights" in {
-      UserRights.readFromObject(Json.obj("id" -> "x")) mustBe UserRights.superAdmin
+    "read the rights of an entity without rights key as no right" in {
+      UserRights.readFromObject(Json.obj("id" -> "x")) mustBe UserRights.empty
+    }
+
+    "read the rights of an entity without rights key as super admin rights when superAdminWhenNoRights is on" in {
+      UserRights.readFromObject(Json.obj("id" -> "x"), superAdminWhenNoRights = true) mustBe UserRights.superAdmin
+      UserRights.readFromObject(Json.obj("rights" -> JsNull), superAdminWhenNoRights = true) mustBe UserRights.superAdmin
+      UserRights.readFromObject(Json.obj("rights" -> "default:rw"), superAdminWhenNoRights = true) mustBe UserRights.superAdmin
+    }
+
+    "read the rights of an entity without rights key as no right when superAdminWhenNoRights is off" in {
+      UserRights.readFromObject(Json.obj("id" -> "x"), superAdminWhenNoRights = false) mustBe UserRights.empty
+      UserRights.readFromObject(Json.obj("rights" -> JsNull), superAdminWhenNoRights = false) mustBe UserRights.empty
+    }
+
+    "read the rights an entity carries whatever superAdminWhenNoRights" in {
+      val json = Json.obj("rights" -> format.writes(custom))
+      UserRights.readFromObject(json, superAdminWhenNoRights = true) mustBe custom
+      UserRights.readFromObject(json, superAdminWhenNoRights = false) mustBe custom
+    }
+
+    "read no right outside a running otoroshi, where superAdminWhenNoRights is off" in {
+      UserRights.readFromObject(Json.obj("id" -> "x")) mustBe UserRights.empty
     }
 
     "expose through json what the format writes" in {

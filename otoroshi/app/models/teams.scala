@@ -103,11 +103,20 @@ object UserRights {
         }
     )
   }
-  def readFromObject(json: JsValue): UserRights = {
+  // missing or unreadable rights are no rights, unless the superAdminWhenNoRights flag of the global config is on:
+  // the instances that predate the flag read them as super admin rights until it is turned off
+  def readFromObject(json: JsValue): UserRights = readFromObject(json, superAdminWhenNoRights)
+  def readFromObject(json: JsValue, superAdminWhenNoRights: Boolean): UserRights = {
     val rights: Option[UserRights] = (json \ "rights").asOpt[JsArray].map { arr =>
       readFromArray(arr)
     }
-    rights.getOrElse(superAdmin)
+    rights.getOrElse(if (superAdminWhenNoRights) superAdmin else empty)
+  }
+  // read from the cached global config: off outside a running otoroshi and before the global config is loaded
+  private def superAdminWhenNoRights: Boolean = {
+    val env = otoroshi.api.OtoroshiEnvHolder.get()
+    if (env == null) false
+    else env.datastores.globalConfigDataStore.latestSafe.exists(_.superAdminWhenNoRights)
   }
 }
 

@@ -151,16 +151,16 @@ class BackOfficeUserEntityFormatSpec extends EntityFormatSpec {
       }
     }
 
-    "read a user without rights as a super admin" in {
-      readOk(format, Json.obj("randomId" -> "s", "name" -> "n", "email" -> "e")).rights mustBe UserRights.superAdmin
+    "read a user without rights as a user without any right" in {
+      readOk(format, Json.obj("randomId" -> "s", "name" -> "n", "email" -> "e")).rights mustBe UserRights.empty
     }
 
-    "read a user whose rights are null as a super admin" in {
-      readOk(format, written(format, minimal) ++ Json.obj("rights" -> JsNull)).rights mustBe UserRights.superAdmin
+    "read a user whose rights are null as a user without any right" in {
+      readOk(format, written(format, minimal) ++ Json.obj("rights" -> JsNull)).rights mustBe UserRights.empty
     }
 
-    "read a user whose rights are a string as a super admin" in {
-      readOk(format, written(format, minimal) ++ Json.obj("rights" -> "default:r")).rights mustBe UserRights.superAdmin
+    "read a user whose rights are a string as a user without any right" in {
+      readOk(format, written(format, minimal) ++ Json.obj("rights" -> "default:r")).rights mustBe UserRights.empty
     }
 
     "read a user whose rights cannot be read as a user without any right" in {

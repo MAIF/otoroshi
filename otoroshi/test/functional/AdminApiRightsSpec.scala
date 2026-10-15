@@ -987,12 +987,22 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       call("GET", "/apis/security.otoroshi.io/v1/admin-sessions", scopedUser)._2 mustBe 403
       call("GET", "/apis/security.otoroshi.io/v1/auth-module-users", scopedUser)._2 mustBe 403
       call("GET", "/apis/config.otoroshi.io/v1/global-configs", scopedUser)._2 mustBe 403
-      // a tenant admin, but no rights field means super admin rights
-      val (_, superStatus) = call("POST", admins, tenantAdminUser, admin("generic-super@otoroshi.io", None).some)
+      // a tenant admin cannot grant super admin rights
+      val superAdminRights = Json.arr(Json.obj("tenant" -> "*:rw", "teams" -> Json.arr("*:rw")))
+      val (_, superStatus)  =
+        call("POST", admins, tenantAdminUser, admin("generic-super@otoroshi.io", superAdminRights.some).some)
       withClue(s"super admin created by a tenant admin: $superStatus ") {
         superStatus must (be >= 400 and be < 500)
       }
       otoroshiApiCall("GET", s"$admins/generic-super@otoroshi.io").futureValue._2 mustBe 404
+      // no rights field means no right at all, not super admin rights
+      val (_, noRightsStatus) =
+        call("POST", admins, tenantAdminUser, admin("generic-norights@otoroshi.io", None).some)
+      withClue(s"admin without rights created by a tenant admin: $noRightsStatus ") {
+        noRightsStatus must (be >= 200 and be < 300)
+      }
+      val (noRightsAdmin, _)  = otoroshiApiCall("GET", s"$admins/generic-norights@otoroshi.io").futureValue
+      (noRightsAdmin \ "rights").as[JsArray].value mustBe empty
       // a tenant admin granting rights inside its own tenant
       val (body, ownStatus) = call(
         "POST",
