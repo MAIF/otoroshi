@@ -1,0 +1,536 @@
+{
+  "green-score.extensions.otoroshi.io.GreenScore": {
+    "description": "A green score group: routes whose eco design otoroshi scores. Each route gets a static score from the green rules it follows (architecture, design, usage and logs retention) and a dynamic score from its traffic, compared to the thresholds of the group",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description",
+      "thresholds"
+    ],
+    "properties": {
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The tenant (organization) and the teams the green score group belongs to. The default tenant and team when absent"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the green score group, the `group` of `GET /api/extensions/green-score/efficiency/{group}/{route}` that reads the efficiency of its routes",
+        "example": "green-score_56bad999-9db0-40af-91b2-ca5f001ae883"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the green score group, shown in the table of the green score groups of the backoffice",
+        "example": "Public apis"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the green score group, shown in the table of the green score groups of the backoffice",
+        "example": "The green score of the routes of the public apis"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the green score group, with string values. The admin api stores the date of the last write of the entity under `created_at` or `updated_at`",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of a metadata"
+        },
+        "example": {
+          "owner": "platform-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the green score group, to sort and search the groups",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "example": [
+          "public"
+        ]
+      },
+      "routes": {
+        "type": "array",
+        "description": "The routes of the group with the green rules each one follows. Empty when absent",
+        "items": {
+          "$ref": "#/components/schemas/RouteRules"
+        },
+        "example": [
+          {
+            "routeId": "route_8b1e2c4d-5f6a-4b7c-9d0e-1f2a3b4c5d6e",
+            "rulesConfig": {
+              "states": [
+                {
+                  "date": 1767225600000,
+                  "states": [
+                    {
+                      "id": "AR01",
+                      "enabled": true
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "thresholds": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Thresholds"
+          }
+        ],
+        "description": "The bounds the traffic of the routes of the group is compared to, for their dynamic score"
+      },
+      "efficiency": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Efficiency"
+          }
+        ],
+        "description": "The settings of the efficiency view of the group. No path excluded when absent"
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "green-score_56bad999-9db0-40af-91b2-ca5f001ae883",
+      "name": "Public apis",
+      "description": "The green score of the routes of the public apis",
+      "metadata": {
+        "owner": "platform-team"
+      },
+      "tags": [
+        "public"
+      ],
+      "routes": [
+        {
+          "routeId": "route_8b1e2c4d-5f6a-4b7c-9d0e-1f2a3b4c5d6e",
+          "rulesConfig": {
+            "states": [
+              {
+                "date": 1767225600000,
+                "states": [
+                  {
+                    "id": "AR01",
+                    "enabled": true
+                  },
+                  {
+                    "id": "DE01",
+                    "enabled": true
+                  },
+                  {
+                    "id": "LO01",
+                    "enabled": false
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "thresholds": {
+        "overhead": {
+          "excellent": 5,
+          "sufficient": 10,
+          "poor": 15
+        },
+        "duration": {
+          "excellent": 5,
+          "sufficient": 10,
+          "poor": 15
+        },
+        "backendDuration": {
+          "excellent": 5,
+          "sufficient": 10,
+          "poor": 15
+        },
+        "calls": {
+          "excellent": 5,
+          "sufficient": 10,
+          "poor": 15
+        },
+        "dataIn": {
+          "excellent": 100,
+          "sufficient": 500,
+          "poor": 1000
+        },
+        "dataOut": {
+          "excellent": 100,
+          "sufficient": 500,
+          "poor": 1000
+        },
+        "headersOut": {
+          "excellent": 10,
+          "sufficient": 30,
+          "poor": 50
+        },
+        "headersIn": {
+          "excellent": 10,
+          "sufficient": 30,
+          "poor": 50
+        }
+      },
+      "efficiency": {
+        "paths": [
+          "/health"
+        ]
+      }
+    }
+  },
+  "RouteRules": {
+    "description": "A route of a green score group, with the history of the green rules it follows",
+    "type": "object",
+    "required": [
+      "routeId",
+      "rulesConfig"
+    ],
+    "properties": {
+      "routeId": {
+        "type": "string",
+        "description": "The id of the scored route (the `id` of a route entity): the traffic of the route is matched by this id to compute its dynamic score",
+        "example": "route_8b1e2c4d-5f6a-4b7c-9d0e-1f2a3b4c5d6e"
+      },
+      "rulesConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RulesRouteConfiguration"
+          }
+        ],
+        "description": "The green rules the route follows, over time"
+      }
+    },
+    "example": {
+      "routeId": "route_8b1e2c4d-5f6a-4b7c-9d0e-1f2a3b4c5d6e",
+      "rulesConfig": {
+        "states": [
+          {
+            "date": 1767225600000,
+            "states": [
+              {
+                "id": "AR01",
+                "enabled": true
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "RulesRouteConfiguration": {
+    "description": "The history of the green rules a route follows: records of rule states, each one taking effect at its date. At a given date, a rule follows the state of the last record that sets it, and a rule no record sets is not followed",
+    "type": "object",
+    "properties": {
+      "states": {
+        "type": "array",
+        "description": "The records of rule states, in any order. Empty when absent",
+        "items": {
+          "$ref": "#/components/schemas/RuleStateRecord"
+        },
+        "example": [
+          {
+            "date": 1767225600000,
+            "states": [
+              {
+                "id": "AR01",
+                "enabled": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "example": {
+      "states": [
+        {
+          "date": 1767225600000,
+          "states": [
+            {
+              "id": "AR01",
+              "enabled": true
+            },
+            {
+              "id": "US01",
+              "enabled": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "RuleStateRecord": {
+    "description": "The states of some green rules of a route, set at a date",
+    "type": "object",
+    "required": [
+      "date"
+    ],
+    "properties": {
+      "date": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The date the states take effect at, a timestamp in milliseconds. The backoffice records the changes of a day at midnight utc",
+        "example": 1767225600000
+      },
+      "states": {
+        "type": "array",
+        "description": "The states of the rules set at this date. Empty when absent",
+        "items": {
+          "$ref": "#/components/schemas/RuleState"
+        },
+        "example": [
+          {
+            "id": "AR01",
+            "enabled": true
+          }
+        ]
+      }
+    },
+    "example": {
+      "date": 1767225600000,
+      "states": [
+        {
+          "id": "AR01",
+          "enabled": true
+        }
+      ]
+    }
+  },
+  "RuleState": {
+    "description": "Whether a route follows a green rule",
+    "type": "object",
+    "required": [
+      "id"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the green rule: `AR01` to `AR04` (architecture), `DE01` to `DE11` (design), `US01` to `US07` (usage), `LO01` (logs retention)",
+        "enum": [
+          "AR01",
+          "AR02",
+          "AR03",
+          "AR04",
+          "DE01",
+          "DE02",
+          "DE03",
+          "DE04",
+          "DE05",
+          "DE06",
+          "DE07",
+          "DE08",
+          "DE09",
+          "DE10",
+          "DE11",
+          "US01",
+          "US02",
+          "US03",
+          "US04",
+          "US05",
+          "US06",
+          "US07",
+          "LO01"
+        ],
+        "example": "AR01"
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the route follows the rule, true when absent"
+      }
+    },
+    "example": {
+      "id": "AR01",
+      "enabled": true
+    }
+  },
+  "Thresholds": {
+    "description": "The bounds of the dynamic score of a green score group: for each metric of the traffic of a route, averaged over the calls, the values up to which it is excellent, sufficient, and from which it is poor",
+    "type": "object",
+    "required": [
+      "overhead",
+      "duration",
+      "backendDuration",
+      "calls",
+      "dataIn",
+      "dataOut",
+      "headersOut",
+      "headersIn"
+    ],
+    "properties": {
+      "overhead": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TripleBounds"
+          }
+        ],
+        "description": "The bounds of the time otoroshi spends on a call, backend excluded, in milliseconds. 5, 10, 15 by default"
+      },
+      "duration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TripleBounds"
+          }
+        ],
+        "description": "The bounds of the whole duration of a call, in milliseconds. 5, 10, 15 by default"
+      },
+      "backendDuration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TripleBounds"
+          }
+        ],
+        "description": "The bounds of the time the backend takes to answer, in milliseconds. 5, 10, 15 by default"
+      },
+      "calls": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TripleBounds"
+          }
+        ],
+        "description": "The bounds of the calls metric, where each call of the route counts for 1. 5, 10, 15 by default"
+      },
+      "dataIn": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TripleBounds"
+          }
+        ],
+        "description": "The bounds of the size of the data otoroshi receives from the client, in bytes. 100, 500, 1000 by default"
+      },
+      "dataOut": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TripleBounds"
+          }
+        ],
+        "description": "The bounds of the size of the data otoroshi sends back to the client, in bytes. 100, 500, 1000 by default"
+      },
+      "headersOut": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TripleBounds"
+          }
+        ],
+        "description": "The bounds of the size of the status line and headers of the response, in bytes. 10, 30, 50 by default"
+      },
+      "headersIn": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TripleBounds"
+          }
+        ],
+        "description": "The bounds of the size of the request line (method, url, protocol) and headers of the request, in bytes. 10, 30, 50 by default"
+      }
+    },
+    "example": {
+      "overhead": {
+        "excellent": 5,
+        "sufficient": 10,
+        "poor": 15
+      },
+      "duration": {
+        "excellent": 5,
+        "sufficient": 10,
+        "poor": 15
+      },
+      "backendDuration": {
+        "excellent": 5,
+        "sufficient": 10,
+        "poor": 15
+      },
+      "calls": {
+        "excellent": 5,
+        "sufficient": 10,
+        "poor": 15
+      },
+      "dataIn": {
+        "excellent": 100,
+        "sufficient": 500,
+        "poor": 1000
+      },
+      "dataOut": {
+        "excellent": 100,
+        "sufficient": 500,
+        "poor": 1000
+      },
+      "headersOut": {
+        "excellent": 10,
+        "sufficient": 30,
+        "poor": 50
+      },
+      "headersIn": {
+        "excellent": 10,
+        "sufficient": 30,
+        "poor": 50
+      }
+    }
+  },
+  "TripleBounds": {
+    "description": "The bounds of a metric of the dynamic green score, in the unit of the metric: the mean of the metric is excellent up to `excellent`, sufficient up to `sufficient`, poor above. The score of the metric goes down from its best at 0 to its lowest at `poor`",
+    "type": "object",
+    "required": [
+      "excellent",
+      "sufficient",
+      "poor"
+    ],
+    "properties": {
+      "excellent": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The value up to which (included) the metric is excellent",
+        "example": 5
+      },
+      "sufficient": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The value up to which (included) the metric is sufficient, when it is above `excellent`",
+        "example": 10
+      },
+      "poor": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The value from which the score of the metric is at its lowest. The metric is poor above `sufficient`",
+        "example": 15
+      }
+    },
+    "example": {
+      "excellent": 5,
+      "sufficient": 10,
+      "poor": 15
+    }
+  },
+  "Efficiency": {
+    "description": "The settings of the efficiency view of a green score group, that shows the hits of its routes over time from the analytics",
+    "type": "object",
+    "required": [
+      "paths"
+    ],
+    "properties": {
+      "paths": {
+        "type": "array",
+        "description": "The paths whose calls are left out of the efficiency view, matched against the uri of the calls",
+        "items": {
+          "type": "string",
+          "description": "A path to leave out",
+          "example": "/health"
+        },
+        "example": [
+          "/health"
+        ]
+      }
+    },
+    "example": {
+      "paths": [
+        "/health"
+      ]
+    }
+  }
+}
