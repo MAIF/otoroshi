@@ -1,7 +1,7 @@
 package plugins.configs
 
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
-import otoroshi.models.{AlwaysMatch, HttpProtocols, NetworkLocationMatch}
+import otoroshi.models.{AlwaysMatch, GeoPositionRadius, GeolocationMatch, HttpProtocols, NetworkLocationMatch, TargetPredicate}
 import otoroshi.next.models.{NgTarget, NgTlsConfig}
 import otoroshi.next.plugins.*
 import play.api.libs.json.*
@@ -163,6 +163,48 @@ class CanaryPluginConfigsSpec extends PluginConfigFormatSpec {
     "read an unknown target protocol as http 1.1" in {
       val target = Json.obj("id" -> "t", "hostname" -> "foo.oto.tools", "port" -> 80, "protocol" -> "SPDY/3")
       readOk(format, Json.obj("targets" -> Json.arr(target))).targets.head.protocol mustBe HttpProtocols.HTTP_1_1
+    }
+
+    "round trip a target with a geolocation predicate" in {
+      val geo    = GeolocationMatch(Seq(GeoPositionRadius(48.85, 2.35, 50.0), GeoPositionRadius(-33.86, 151.2, 10.5)))
+      val target = Json.obj("id" -> "t", "hostname" -> "foo.oto.tools", "port" -> 80, "predicate" -> geo.toJson)
+      readOk(format, Json.obj("targets" -> Json.arr(target))).targets.head.predicate mustBe geo
+    }
+
+    "round trip a geolocation predicate" in {
+      roundTrip(
+        TargetPredicate.format,
+        GeolocationMatch(Seq(GeoPositionRadius(48.85, 2.35, 50.0), GeoPositionRadius(45.75, 4.85, 25.0)))
+      )
+    }
+
+    "round trip a geolocation predicate with negative coordinates" in {
+      roundTrip(TargetPredicate.format, GeolocationMatch(Seq(GeoPositionRadius(-33.86, -70.65, 1.5))))
+    }
+
+    "round trip a geolocation predicate without position" in {
+      roundTrip(TargetPredicate.format, GeolocationMatch(Seq.empty))
+    }
+
+    "write the geolocation positions as lat:lng:radius" in {
+      TargetPredicate.format.writes(GeolocationMatch(Seq(GeoPositionRadius(48.85, 2.35, 50.0)))) mustBe Json.obj(
+        "type"      -> "GeolocationMatch",
+        "positions" -> Json.arr("48.85:2.35:50.0")
+      )
+    }
+
+    "still read geolocation positions separated by semicolons" in {
+      readOk(
+        TargetPredicate.format,
+        Json.obj("type" -> "GeolocationMatch", "positions" -> Json.arr("48.85;2.35;50", " 45.75 ; 4.85 ; 25 "))
+      ) mustBe GeolocationMatch(Seq(GeoPositionRadius(48.85, 2.35, 50.0), GeoPositionRadius(45.75, 4.85, 25.0)))
+    }
+
+    "drop the geolocation positions that do not have three parts" in {
+      readOk(
+        TargetPredicate.format,
+        Json.obj("type" -> "GeolocationMatch", "positions" -> Json.arr("48.85:2.35", "48.85:2.35:50:1", "45.75:4.85:25"))
+      ) mustBe GeolocationMatch(Seq(GeoPositionRadius(45.75, 4.85, 25.0)))
     }
 
     "read an unknown target predicate as always match" in {

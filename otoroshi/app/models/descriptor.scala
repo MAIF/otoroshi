@@ -593,7 +593,8 @@ object TargetPredicate {
             GeolocationMatch(
               positions = (json \ "positions")
                 .asOpt[Seq[String]]
-                .map(_.map(_.split(";").toList.map(_.trim)).collect { case lat :: lng :: radius :: Nil =>
+                // GeoPositionRadius.toJson writes lat:lng:radius, lat;lng;radius is still read
+                .map(_.map(_.split("[;:]").toList.map(_.trim)).collect { case lat :: lng :: radius :: Nil =>
                   GeoPositionRadius(lat.toDouble, lng.toDouble, radius.toDouble)
                 })
                 .getOrElse(Seq.empty).toSeq
