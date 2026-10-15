@@ -318,7 +318,8 @@ case class Cert(
   }
   lazy val notExpired: Boolean = from.isBefore(org.joda.time.DateTime.now()) && to.isAfter(org.joda.time.DateTime.now())
   def notExpiredAt(date: DateTime): Boolean             = from.isBefore(date) && to.isAfter(date)
-  lazy val notExpiredSoon: Boolean                      = notExpiredAt(to.minusDays(15))
+  // still valid 15 days from now. a def, as a certificate instance can live longer than a day
+  def notExpiredSoon: Boolean                           = notExpiredAt(DateTime.now().plusDays(15))
   lazy val expired: Boolean                             = !notExpired
   def enrich() = {
     val meta = this.metadata.get

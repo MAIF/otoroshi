@@ -693,6 +693,22 @@ class CertificateEntityFormatSpec extends EntityFormatSpec {
       minimal.copy(from = now.minusDays(1), to = now.plusDays(365)).notExpiredSoon mustBe true
     }
 
+    "expire soon when it expires in the coming days, whatever its lifetime" in {
+      val now = DateTime.now()
+      minimal.copy(from = now.minusDays(80), to = now.plusDays(1)).notExpiredSoon mustBe false
+      minimal.copy(from = now.minusDays(365), to = now.plusDays(14)).notExpiredSoon mustBe false
+    }
+
+    "not expire soon when it is still valid in more than 15 days" in {
+      val now = DateTime.now()
+      minimal.copy(from = now.minusDays(80), to = now.plusDays(16)).notExpiredSoon mustBe true
+    }
+
+    "expire soon once it has expired" in {
+      val now = DateTime.now()
+      minimal.copy(from = now.minusDays(80), to = now.minusDays(1)).notExpiredSoon mustBe false
+    }
+
     "be revoked or not" in {
       minimal.notRevoked mustBe true
       minimal.copy(revoked = true).notRevoked mustBe false
