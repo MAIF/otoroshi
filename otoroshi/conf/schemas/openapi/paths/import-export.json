@@ -1,0 +1,270 @@
+{
+  "/api/otoroshi.json": {
+    "get": {
+      "tags": [
+        "import-export"
+      ],
+      "summary": "Export the whole state of otoroshi",
+      "description": "Answers the whole state of otoroshi: as json (the global configuration and every entity, grouped by kind), or, when the client accepts `application/x-ndjson` but not `application/json`, as an ndjson stream of every key of the datastore with its value, its type and its expiration. An audit event (`FULL_OTOROSHI_EXPORT`) and an alert are sent. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ImportExportController.fullExport",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The whole state of otoroshi: a json export, or, when the client accepts `application/x-ndjson` but not `application/json`, an ndjson stream of the keys of the datastore",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtoroshiExport"
+              }
+            },
+            "application/x-ndjson": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageExportLine"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": [
+        "import-export"
+      ],
+      "summary": "Replace the whole state with an export",
+      "description": "Replaces the whole state of otoroshi with the one of the body: a json export (`OtoroshiExport`), or, when the content type is `application/x-ndjson`, an ndjson export of the datastore (one key per line, as answered by `GET /api/otoroshi.json` with `Accept: application/x-ndjson`), imported key by key; every line has to end with a new line, the last one included. The import first deletes every key of the datastore: the entities, the sessions, the quotas and the statistics. The admin api keeps working only if the import holds the api key used to call it (and the service group it is authorized on). Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ImportExportController.fullImport",
+      "requestBody": {
+        "description": "The state to import: a json export as answered by `GET /api/otoroshi.json`, or, sent as `application/x-ndjson`, its ndjson export, one key of the datastore per line",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OtoroshiExport"
+            }
+          },
+          "application/x-ndjson": {
+            "schema": {
+              "$ref": "#/components/schemas/StorageExportLine"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The datastore is emptied and the state of the body imported: `done` is `true`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body could not be imported: it is not json, a line of the ndjson body is not json or has no new line, or an entity cannot be read. The datastore may be left partly imported",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/import": {
+    "post": {
+      "tags": [
+        "import-export"
+      ],
+      "summary": "Replace the whole state with an export file",
+      "description": "Replaces the whole state of otoroshi with the one of the file sent as the raw body: a json export (`OtoroshiExport`), or, when the `X-Content-Type` header is `application/x-ndjson`, an ndjson export of the datastore (one key per line, as answered by `GET /api/otoroshi.json` with `Accept: application/x-ndjson`), imported key by key; every line has to end with a new line, the last one included. The content type of the body itself is not read. The import first deletes every key of the datastore: the entities, the sessions, the quotas and the statistics. The admin api keeps working only if the import holds the api key used to call it (and the service group it is authorized on). Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ImportExportController.fullImportFromFile",
+      "parameters": [
+        {
+          "name": "X-Content-Type",
+          "in": "header",
+          "description": "The format of the file: `application/x-ndjson` for an ndjson export of the datastore, anything else (or nothing) for a json export",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "application/x-ndjson"
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The file to import, as the raw body",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OtoroshiExport"
+            }
+          },
+          "application/x-ndjson": {
+            "schema": {
+              "$ref": "#/components/schemas/StorageExportLine"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The datastore is emptied and the state of the file imported: `done` is `true`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The file could not be imported: it is not json (answered as a server error), a line of the ndjson file is not json or has no new line, or an entity cannot be read. The datastore may be left partly imported",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
