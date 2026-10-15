@@ -598,11 +598,11 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       readOk(format, Json.obj("clientAddressHeader" -> "  ")).clientAddressHeader mustBe "X-Forwarded-For"
     }
 
-    "drop the whole ip filtering when one of its lists has the wrong type" in {
+    "keep the other lists of the ip filtering when one of them is a single string" in {
       readOk(
         format,
         Json.obj("ipFiltering" -> Json.obj("whitelist" -> "10.0.0.1", "blacklist" -> Json.arr("6.6.6.6")))
-      ).ipFiltering mustBe IpFiltering()
+      ).ipFiltering mustBe IpFiltering(Seq("10.0.0.1"), Seq("6.6.6.6"))
     }
 
     "read a partial ip filtering with the defaults of its missing fields" in {
@@ -943,8 +943,20 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       )
     }
 
-    "not read lists of the wrong type" in {
-      readError(format, Json.obj("whitelist" -> "10.0.0.1"))
+    "read a single string as a one entry list" in {
+      readOk(format, Json.obj("whitelist" -> "10.0.0.1")) mustBe IpFiltering(whitelist = Seq("10.0.0.1"))
+    }
+
+    "keep the entries that are strings and leave the others out" in {
+      readOk(format, Json.obj("blacklist" -> Json.arr("6.6.6.6", 42, true, "7.7.7.0/24"))).blacklist mustBe Seq("6.6.6.6", "7.7.7.0/24")
+    }
+
+    "read a list of another type as an empty list without touching the other one" in {
+      readOk(format, Json.obj("whitelist" -> 42, "blacklist" -> Json.arr("6.6.6.6"))) mustBe IpFiltering(blacklist = Seq("6.6.6.6"))
+    }
+
+    "not read an ip filtering that is not an object" in {
+      readError(format, Json.arr("10.0.0.1"))
     }
 
     "match the whitelist by cidr and let everything through when it is empty" in {

@@ -879,9 +879,32 @@ class CidrOfString(cdr: String) {
 }
 
 object IpFiltering {
-  // the default values are used for the fields a persisted filtering predates. without them, an
-  // existing one would fail to read and be replaced by an empty one, losing its lists
-  implicit val format: play.api.libs.json.OFormat[IpFiltering] = Json.using[Json.WithDefaultValues].format[IpFiltering]
+  // each list is read on its own and the fields a persisted filtering predates take their default value: one list
+  // of the wrong type must not drop the whole filtering. a single string is read as a one entry list, the entries
+  // that are not strings are left out
+  implicit val format: play.api.libs.json.OFormat[IpFiltering] = new play.api.libs.json.OFormat[IpFiltering] {
+    private def list(json: JsValue, key: String): Seq[String] = (json \ key).asOpt[JsValue] match {
+      case Some(JsString(value)) => Seq(value)
+      case Some(JsArray(values)) => values.collect { case JsString(value) => value }.toSeq
+      case _                     => Seq.empty[String]
+    }
+    override def writes(o: IpFiltering): JsObject             = Json.obj(
+      "whitelist"                      -> o.whitelist,
+      "blacklist"                      -> o.blacklist,
+      "blacklistMatchesForwardedChain" -> o.blacklistMatchesForwardedChain
+    )
+    override def reads(json: JsValue): JsResult[IpFiltering] = json match {
+      case obj: JsObject =>
+        JsSuccess(
+          IpFiltering(
+            whitelist = list(obj, "whitelist"),
+            blacklist = list(obj, "blacklist"),
+            blacklistMatchesForwardedChain = (obj \ "blacklistMatchesForwardedChain").asOpt[Boolean].getOrElse(false)
+          )
+        )
+      case _             => JsError("an ip filtering must be an object")
+    }
+  }
   private val cidrCache           = Caches.bounded[String, CidrOfString](10000)
   private[models] val ipaddrCache = Caches.bounded[String, Option[IpAddress]](10000)
   def cidr(cdr: String): CidrOfString = {
