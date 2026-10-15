@@ -346,6 +346,13 @@ object RightsChecker {
     def canPerform(user: BackOfficeUser, currentTenant: TenantId)(using env: Env): Boolean =
       user.rights.tenantAdmin(currentTenant)
   }
+  // can write something in the current tenant, a read only user cannot
+  case object WriterOnly      extends RightsChecker {
+    def canPerform(user: BackOfficeUser, currentTenant: TenantId)(using env: Env): Boolean =
+      user.rights.tenantAdmin(currentTenant) || user.rights.rights.exists(ur =>
+        ur.tenant.matches(currentTenant) && ur.tenant.canReadWrite && ur.teams.exists(_.canReadWrite)
+      )
+  }
 }
 
 object Tenant {

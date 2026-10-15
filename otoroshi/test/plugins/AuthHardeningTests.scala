@@ -62,5 +62,27 @@ class AuthHardeningTests(parent: PluginsTestSpecBase) {
     withClue("a super admin ") { backoffice(admin, "GET", "/bo/api/metrics").status mustBe Status.OK }
   }
 
+  // the tooling that calls a url given by the user, and returns its response, used to be open to read only users
+  def backofficeTooling(): Unit = {
+    val readOnly = backofficeUser(
+      "auth-hardening-readonly",
+      UserRights(
+        Seq(
+          UserRight(
+            TenantAccess("default", canRead = true, canWrite = false),
+            Seq(TeamAccess("default", canRead = true, canWrite = false))
+          )
+        )
+      )
+    )
+    val writer   = backofficeUser(
+      "auth-hardening-writer",
+      UserRights(Seq(UserRight(TenantAccess("default"), Seq(TeamAccess("default")))))
+    )
+    val url      = s"/bo/api/graphqlproxy?url=http://127.0.0.1:${backend.port}/schema"
+    withClue("a read only user ") { backoffice(readOnly, "GET", url).status mustBe Status.FORBIDDEN }
+    withClue("a writer ") { backoffice(writer, "GET", url).status mustBe Status.OK }
+  }
+
   def stop(): Unit = backend.stop()
 }

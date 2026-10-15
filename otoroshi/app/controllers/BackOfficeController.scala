@@ -166,6 +166,17 @@ class BackOfficeController(
     Accumulator.source[ByteString].map(Right.apply)
   }
 
+  // the tooling that calls a url given by the user and returns its response: not for read only users
+  private lazy val BackOfficeWriterActionAuth = BackOfficeActionAuth.andThen(
+    new ActionFilter[BackOfficeActionContextAuth] {
+      override protected def executionContext: ExecutionContext = ec
+      override protected def filter[A](ctx: BackOfficeActionContextAuth[A]): Future[Option[Result]] = {
+        if (env.bypassUserRightsCheck || RightsChecker.WriterOnly.canPerform(ctx.user, ctx.currentTenant)) None.vfuture
+        else ApiActionContext.forbidden.some.vfuture
+      }
+    }
+  )
+
   def getFlags() = BackOfficeActionAuth.async { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       Ok(BackofficeFlags.latest.rawJson).future
@@ -696,7 +707,7 @@ class BackOfficeController(
     }
 
   def externalEurekaServers() =
-    BackOfficeActionAuth.async { ctx =>
+    BackOfficeWriterActionAuth.async { ctx =>
       ctx.request.getQueryString("url") match {
         case Some(url) =>
           env.Ws
@@ -974,7 +985,7 @@ class BackOfficeController(
   //[REMOVE SERVICEDESC]   }
 
   def fetchOpenIdConfiguration() =
-    BackOfficeActionAuth.async(parse.json) { ctx =>
+    BackOfficeWriterActionAuth.async(parse.json) { ctx =>
       import otoroshi.utils.http.Implicits.*
 
       import scala.concurrent.duration.*
@@ -1137,7 +1148,7 @@ class BackOfficeController(
       }
     }
 
-  def fetchSAMLConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def fetchSAMLConfiguration() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
     import scala.xml.Elem
     import scala.xml.XML.*
     Try {
@@ -1770,7 +1781,7 @@ class BackOfficeController(
     }
 
   def checkLdapConnection() =
-    BackOfficeActionAuth.async(parse.json) { ctx =>
+    BackOfficeWriterActionAuth.async(parse.json) { ctx =>
       if ((ctx.request.body \ "user").isDefined) {
         val username = (ctx.request.body \ "user" \ "username").as[String]
         val password = (ctx.request.body \ "user" \ "password").as[String]
@@ -1867,7 +1878,7 @@ class BackOfficeController(
       }
     }
 
-  def checkElasticsearchConnection() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def checkElasticsearchConnection() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("none" -> true)).future
       case Some(config) => {
@@ -1896,7 +1907,7 @@ class BackOfficeController(
     }
   }
 
-  def applyElasticsearchTemplate() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def applyElasticsearchTemplate() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) => {
@@ -1915,7 +1926,7 @@ class BackOfficeController(
     }
   }
 
-  def elasticTemplate() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def elasticTemplate() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) => {
@@ -1953,7 +1964,7 @@ class BackOfficeController(
     }
   }
 
-  def elasticVersion() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def elasticVersion() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) => {
@@ -1990,7 +2001,7 @@ class BackOfficeController(
     NoContent.addingToSession("ui-mode" -> mode).future
   }
 
-  def graphqlProxy() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+  def graphqlProxy() = BackOfficeWriterActionAuth.async(sourceBodyParser) { ctx =>
     val url     = ctx.request.queryString.get("url").map(_.last).get
     val host    = Uri(url).authority.host.toString()
     // the cookies of the backoffice (the admin session) must never leave otoroshi
@@ -2147,7 +2158,7 @@ class BackOfficeController(
       }
   }
 
-  def getWasmFilesFromBodyConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def getWasmFilesFromBodyConfiguration() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
     val jsonBody = ctx.request.body
 
     val wasmoConfiguration = TlsWasmoSettings.format.reads(jsonBody).get
