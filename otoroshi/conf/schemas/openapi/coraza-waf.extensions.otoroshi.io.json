@@ -1,0 +1,116 @@
+{
+  "coraza-waf.extensions.otoroshi.io.CorazaConfig": {
+    "description": "A configuration of the coraza web application firewall (its wasm build), that the Coraza WAF plugin of a route applies through its `ref`: the seclang directives of the firewall, with or without the OWASP core rule set, in blocking or detection mode",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description"
+    ],
+    "properties": {
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The tenant (organization) and the teams the coraza configuration belongs to. The default tenant and team when absent"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the coraza configuration, the `ref` of the Coraza WAF plugins that use it",
+        "example": "coraza-waf-config_23279c62b-3e83-4e75-ab8c-3ebab9646c11"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the coraza configuration, shown and searched in the list of the configurations of the backoffice",
+        "example": "Blocking WAF"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the coraza configuration, shown and searched in the list of the configurations of the backoffice",
+        "example": "Blocks the calls that break the OWASP core rule set"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the coraza configuration, with string values. The admin api stores the date of the last write of the entity under `created_at` or `updated_at`",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of a metadata"
+        },
+        "example": {
+          "owner": "security-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the coraza configuration, to sort and search the configurations",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "example": [
+          "waf"
+        ]
+      },
+      "inspect_in_body": {
+        "type": "boolean",
+        "description": "Whether coraza inspects the bodies of the requests, true when absent"
+      },
+      "inspect_out_body": {
+        "type": "boolean",
+        "description": "Whether coraza inspects the bodies of the responses, true when absent"
+      },
+      "is_blocking_mode": {
+        "type": "boolean",
+        "description": "Whether coraza blocks the calls that break a rule (`SecRuleEngine On`) instead of only logging them (`SecRuleEngine DetectionOnly`), true when absent"
+      },
+      "include_owasp_crs": {
+        "type": "boolean",
+        "description": "Whether the rules of the OWASP core rule set are loaded, true when absent"
+      },
+      "directives": {
+        "type": "array",
+        "description": "The seclang directives (rules, actions, settings) applied on top of the recommended configuration of coraza, one per line. The lines that set the rule engine or the body access, or that include the bundled configurations, are ignored: the other fields set them. When absent, the `default` directives of the legacy `config.directives_map` field are read, none otherwise",
+        "items": {
+          "type": "string",
+          "description": "A seclang directive"
+        },
+        "example": [
+          "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,deny,msg:'ADMIN PATH forbidden'\""
+        ]
+      },
+      "pool_capacity": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of coraza wasm vms of the pool of this configuration, that handle the calls concurrently. 2 when absent",
+        "example": 2
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "coraza-waf-config_23279c62b-3e83-4e75-ab8c-3ebab9646c11",
+      "name": "Blocking WAF",
+      "description": "Blocks the calls that break the OWASP core rule set",
+      "metadata": {
+        "owner": "security-team"
+      },
+      "tags": [
+        "waf"
+      ],
+      "inspect_in_body": true,
+      "inspect_out_body": false,
+      "is_blocking_mode": true,
+      "include_owasp_crs": true,
+      "directives": [
+        "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,deny,msg:'ADMIN PATH forbidden'\""
+      ],
+      "pool_capacity": 2
+    }
+  }
+}
