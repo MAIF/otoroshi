@@ -1897,18 +1897,13 @@ object ApiKeyHelper {
       case None        => {
         var location                                        = ApikeyLocation(ApikeyLocationKind.Header, "--")
         val authByOtoBearerToken: Option[ApikeyTuple]       =
-          OtoroshiBearerToken.extractTokenFromRequest(req, constraints, attrs).map { bearer =>
+          OtoroshiBearerToken.extractTokenAndLocationFromRequest(req, constraints, attrs).map { (bearer, bearerLocation) =>
             val clientId = OtoroshiBearerToken.extractClientId(bearer)
             ApikeyTuple(
               clientId = clientId,
               clientSecret = None,
               jwtToken = None,
-              location = Some(
-                ApikeyLocation(
-                  ApikeyLocationKind.Header,
-                  constraints.otoBearerAuth.headerName.getOrElse("Authorization")
-                )
-              ),
+              location = Some(bearerLocation),
               otoBearer = Some(bearer)
             )
           }
@@ -1924,10 +1919,12 @@ object ApiKeyHelper {
             )
           )
           .orElse(
-            req.headers.get("Authorization").filter(_.startsWith("Bearer "))
-          )
-          .seffectOnWithPredicate(_.isDefined)(_ =>
-            location = ApikeyLocation(ApikeyLocationKind.Header, "Authorization")
+            req.headers
+              .get("Authorization")
+              .filter(_.startsWith("Bearer "))
+              .seffectOnWithPredicate(_.isDefined)(_ =>
+                location = ApikeyLocation(ApikeyLocationKind.Header, "Authorization")
+              )
           )
           .map(_.replace("Bearer ", ""))
           .orElse(
@@ -1969,7 +1966,7 @@ object ApiKeyHelper {
               .seffectOnWithPredicate(_.isDefined)(_ =>
                 location = ApikeyLocation(
                   ApikeyLocationKind.Path,
-                  constraints.jwtAuth.cookieName.getOrElse(env.Headers.OtoroshiJWTAuthorization)
+                  constraints.jwtAuth.pathName.getOrElse("apikey_jwt")
                 )
               )
           )
@@ -2511,55 +2508,57 @@ object OtoroshiBearerToken {
   def extractTokenFromRequest(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(using
       env: Env
   ): Option[String] = {
+    extractTokenAndLocationFromRequest(req, constraints, attrs).map(_._1)
+  }
+
+  // the bearer with the place it was read from, the apikey plugin wipes it from the backend request
+  def extractTokenAndLocationFromRequest(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(using
+      env: Env
+  ): Option[(String, ApikeyLocation)] = {
+    val bearerHeaderName   = constraints.otoBearerAuth.headerName.getOrElse(env.Headers.OtoroshiBearer)
+    val bearerQueryName    = constraints.otoBearerAuth.queryName.getOrElse(env.Headers.OtoroshiBearerAuthorization)
+    val clientIdQueryName  = constraints.otoBearerAuth.queryName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+    val clientIdHeaderName = constraints.otoBearerAuth.headerName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+    val cookieName         = constraints.otoBearerAuth.cookieName.getOrElse("bearer")
+    val pathName           = constraints.otoBearerAuth.pathName.getOrElse("apikey_bearer")
     req.headers
-      .get(
-        constraints.otoBearerAuth.headerName
-          .getOrElse(env.Headers.OtoroshiBearer)
-      )
+      .get(bearerHeaderName)
+      .map(v => (v, ApikeyLocation(ApikeyLocationKind.Header, bearerHeaderName)))
       .orElse(
-        req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+        req.headers
+          .get("Authorization")
+          .filter(_.startsWith("Bearer "))
+          .map(v => (v, ApikeyLocation(ApikeyLocationKind.Header, "Authorization")))
       )
-      .map(_.replace("Bearer ", ""))
-      .orElse(
-        req.queryString
-          .get(
-            constraints.otoBearerAuth.queryName
-              .getOrElse(env.Headers.OtoroshiBearerAuthorization)
-          )
-          .flatMap(_.lastOption)
-      )
+      .map { case (v, location) => (v.replace("Bearer ", ""), location) }
       .orElse(
         req.queryString
-          .get(
-            constraints.otoBearerAuth.queryName
-              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
-          )
+          .get(bearerQueryName)
           .flatMap(_.lastOption)
+          .map(v => (v, ApikeyLocation(ApikeyLocationKind.Query, bearerQueryName)))
+      )
+      .orElse(
+        req.queryString
+          .get(clientIdQueryName)
+          .flatMap(_.lastOption)
+          .map(v => (v, ApikeyLocation(ApikeyLocationKind.Query, clientIdQueryName)))
       )
       .orElse(
         req.headers
-          .get(
-            constraints.otoBearerAuth.headerName
-              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
-          )
+          .get(clientIdHeaderName)
+          .map(v => (v, ApikeyLocation(ApikeyLocationKind.Header, clientIdHeaderName)))
       )
       .orElse(
         req.cookies
-          .get(
-            constraints.otoBearerAuth.cookieName
-              .getOrElse("bearer")
-          )
-          .map(_.value)
+          .get(cookieName)
+          .map(c => (c.value, ApikeyLocation(ApikeyLocationKind.Cookie, cookieName)))
       )
       .orElse(
         attrs
           .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
-          .flatMap(
-            _.pathParams.get(
-              constraints.otoBearerAuth.pathName.getOrElse("apikey_bearer")
-            )
-          )
+          .flatMap(_.pathParams.get(pathName))
+          .map(v => (v, ApikeyLocation(ApikeyLocationKind.Path, pathName)))
       )
-      .filter(v => v.startsWith("otoapk_"))
+      .filter(_._1.startsWith("otoapk_"))
   }
 }

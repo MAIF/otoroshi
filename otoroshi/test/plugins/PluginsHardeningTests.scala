@@ -3,6 +3,7 @@ package plugins
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import functional.{PluginsTestSpecBase, TargetService}
+import org.apache.pekko.http.scaladsl.model.HttpRequest
 import otoroshi.models.{
   ApiKey,
   GlobalJwtVerifier,
@@ -23,6 +24,7 @@ import play.api.libs.json.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt
 
 // access control plugins that let requests through when they should not
@@ -202,6 +204,76 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     deleteOtoroshiRoute(routeA).futureValue
     deleteOtoroshiRoute(routeB).futureValue
     backendB.stop()
+  }
+
+  // the apikey plugin wipes the credentials from the backend request where it recorded them: it recorded the wrong
+  // place for the otoroshi bearer and for a jwt in the otoroshi token header, and missed the custom secret header
+  def apikeyWipe(): Unit = {
+    val received = new AtomicReference[HttpRequest]()
+    val target   = TargetService
+      .full(
+        None,
+        "/",
+        "application/json",
+        req => {
+          received.set(req)
+          (200, "{}", List.empty)
+        }
+      )
+      .await()
+    val config   = NgApikeyCallsConfig(extractors =
+      NgApikeyExtractors(customHeaders =
+        NgApikeyExtractorCustomHeaders(
+          clientIdHeaderName = Some("X-Hardening-Id"),
+          clientSecretHeaderName = Some("X-Hardening-Secret")
+        )
+      )
+    )
+    val r        = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[ApikeyCalls],
+          config = NgPluginInstanceConfig(config.json.as[JsObject])
+        )
+      ),
+      target = Some(NgTarget(id = "hardening-wipe-backend", hostname = "127.0.0.1", port = target.port, tls = false))
+    ).futureValue
+    val apikey   = ApiKey(
+      clientId = "hardening-wipe",
+      clientSecret = "hardening-wipe-secret",
+      clientName = "hardening-wipe",
+      authorizedEntities = Seq(RouteIdentifier(r.id))
+    )
+    createOtoroshiApiKey(apikey).futureValue
+    await(1.second)
+    def forwarded(headers: (String, String)*): String = {
+      val status = ws
+        .url(s"http://127.0.0.1:$port/")
+        .withHttpHeaders((Seq("Host" -> r.frontend.domains.head.domain) ++ headers)*)
+        .get()
+        .futureValue
+        .status
+      status mustBe Status.OK
+      received.get().headers.map(h => s"${h.name()}: ${h.value()}").mkString("\n")
+    }
+    val bearer   = apikey.toBearer()
+    val jwt      = JWT
+      .create()
+      .withClaim("clientId", apikey.clientId)
+      .withIssuedAt(java.time.Instant.now())
+      .withExpiresAt(java.time.Instant.now().plusSeconds(60))
+      .sign(Algorithm.HMAC256(apikey.clientSecret))
+    withClue("custom secret header ") {
+      forwarded("X-Hardening-Id" -> apikey.clientId, "X-Hardening-Secret" -> apikey.clientSecret) must not include apikey.clientSecret
+    }
+    withClue("otoroshi bearer in the otoroshi token header ") {
+      forwarded(env.Headers.OtoroshiBearer -> bearer) must not include bearer
+    }
+    withClue("otoroshi bearer in a cookie ") { forwarded("Cookie" -> s"bearer=$bearer") must not include bearer }
+    withClue("jwt in the otoroshi token header ") { forwarded(env.Headers.OtoroshiBearer -> jwt) must not include jwt }
+    deleteOtoroshiApiKey(apikey).futureValue
+    deleteOtoroshiRoute(r).futureValue
+    target.stop()
   }
 
   def stop(): Unit = backend.stop()

@@ -264,10 +264,16 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
         case Some(ApikeyTuple(_, _, _, Some(location), _)) => {
           location.kind match {
             case ApikeyLocationKind.Header =>
+              // the custom headers extractor reads the client id and the client secret from two headers, the location
+              // only names the first one
+              val customHeaders = config.legacy.customHeadersAuth
+              val wiped         =
+                if (location.name.equalsIgnoreCase(customHeaders.clientIdHeaderName.getOrElse(env.Headers.OtoroshiClientId)))
+                  Set(location.name, customHeaders.clientSecretHeaderName.getOrElse(env.Headers.OtoroshiClientSecret))
+                    .map(_.toLowerCase())
+                else Set(location.name.toLowerCase())
               ctx.otoroshiRequest
-                .copy(headers =
-                  ctx.otoroshiRequest.headers.filterNot(_._1.toLowerCase() == location.name.toLowerCase())
-                )
+                .copy(headers = ctx.otoroshiRequest.headers.filterNot(h => wiped.contains(h._1.toLowerCase())))
                 .right
             case ApikeyLocationKind.Query  => {
               val uri      = ctx.otoroshiRequest.uri
