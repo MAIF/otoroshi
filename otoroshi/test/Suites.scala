@@ -219,7 +219,8 @@ class UnitTests
       new plugins.configs.OidcPluginConfigsSpec(),
       new plugins.configs.ClientCredentialsPluginConfigsSpec(),
       new plugins.configs.UsersPluginConfigsSpec(),
-      new plugins.configs.UserAgentPluginConfigsSpec()
+      new plugins.configs.UserAgentPluginConfigsSpec(),
+      new plugins.configs.WasmPluginConfigsSpec()
     )
 
 class MapFilterTest
