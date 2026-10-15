@@ -234,7 +234,89 @@ class IzanamiPluginConfigsSpec extends PluginConfigFormatSpec {
       json.value("client_secret") mustBe JsString("my-secret")
     }
 
-    "read every field from its camel case key" in {
+    "round trip a config where every field is set" in {
+      roundTrip(
+        format,
+        NgIzanamiV1CanaryConfig(
+          experimentId = "p:exp",
+          configId = "p:exp:config",
+          izanamiUrl = "https://izanami.oto.tools",
+          tls = customTls,
+          clientId = "my-client",
+          clientSecret = "my-secret",
+          timeout = 750.millis,
+          routeConfig = Some(routeConfig)
+        )
+      )
+    }
+
+    "round trip an experiment id alone" in {
+      roundTrip(format, NgIzanamiV1CanaryConfig(experimentId = "p:exp")).experimentId mustBe "p:exp"
+    }
+
+    "round trip a config id alone" in {
+      roundTrip(format, NgIzanamiV1CanaryConfig(configId = "p:exp:config")).configId mustBe "p:exp:config"
+    }
+
+    "round trip an izanami url alone" in {
+      roundTrip(format, NgIzanamiV1CanaryConfig(izanamiUrl = "https://izanami.oto.tools")).izanamiUrl mustBe "https://izanami.oto.tools"
+    }
+
+    "round trip client credentials alone" in {
+      val back = roundTrip(format, NgIzanamiV1CanaryConfig(clientId = "my-client", clientSecret = "my-secret"))
+      back.clientId mustBe "my-client"
+      back.clientSecret mustBe "my-secret"
+    }
+
+    "round trip a route config alone" in {
+      roundTrip(format, NgIzanamiV1CanaryConfig(routeConfig = Some(routeConfig))).routeConfig mustBe Some(routeConfig)
+    }
+
+    "read every field from the snake case keys of the ui form" in {
+      val json = Json.obj(
+        "experiment_id" -> "p:exp",
+        "config_id"     -> "p:exp:config",
+        "izanami_url"   -> "https://izanami.oto.tools",
+        "tls"           -> NgTlsConfig.format.writes(customTls),
+        "client_id"     -> "my-client",
+        "client_secret" -> "my-secret",
+        "timeout"       -> 750,
+        "route_config"  -> routeConfig
+      )
+      readOk(format, json) mustBe NgIzanamiV1CanaryConfig(
+        experimentId = "p:exp",
+        configId = "p:exp:config",
+        izanamiUrl = "https://izanami.oto.tools",
+        tls = customTls,
+        clientId = "my-client",
+        clientSecret = "my-secret",
+        timeout = 750.millis,
+        routeConfig = Some(routeConfig)
+      )
+    }
+
+    "prefer the snake case keys over the camel case ones" in {
+      val back = readOk(
+        format,
+        Json.obj(
+          "experiment_id" -> "snake",
+          "experimentId"  -> "camel",
+          "client_id"     -> "snake-client",
+          "clientId"      -> "camel-client",
+          "route_config"  -> routeConfig,
+          "routeConfig"   -> Json.obj("routes" -> Json.arr("camel"))
+        )
+      )
+      back.experimentId mustBe "snake"
+      back.clientId mustBe "snake-client"
+      back.routeConfig mustBe Some(routeConfig)
+    }
+
+    "fall back to the camel case key when the snake case one is not a string" in {
+      readOk(format, Json.obj("experiment_id" -> 42, "experimentId" -> "camel")).experimentId mustBe "camel"
+    }
+
+    "still read every field from its camel case key" in {
       val json = Json.obj(
         "experimentId" -> "p:exp",
         "configId"     -> "p:exp:config",

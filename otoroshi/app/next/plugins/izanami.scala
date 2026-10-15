@@ -256,16 +256,19 @@ object NgIzanamiV1CanaryConfig {
   val format = new Format[NgIzanamiV1CanaryConfig] {
     override def writes(o: NgIzanamiV1CanaryConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgIzanamiV1CanaryConfig] = Try {
+      // the snake case keys are the ones written by this format and the ui form, the camel case ones are still read
+      def string(key: String, legacyKey: String): Option[String] =
+        json.select(key).asOpt[String].orElse(json.select(legacyKey).asOpt[String])
       NgIzanamiV1CanaryConfig(
-        experimentId = json.select("experimentId").asOpt[String].getOrElse("foo:bar:qix"),
-        configId = json.select("configId").asOpt[String].getOrElse("foo:bar:qix:config"),
-        izanamiUrl = json.select("izanamiUrl").asOpt[String].getOrElse("https://izanami.foo.bar"),
+        experimentId = string("experiment_id", "experimentId").getOrElse("foo:bar:qix"),
+        configId = string("config_id", "configId").getOrElse("foo:bar:qix:config"),
+        izanamiUrl = string("izanami_url", "izanamiUrl").getOrElse("https://izanami.foo.bar"),
         tls =
           json.select("tls").asOpt[JsValue].flatMap(NgTlsConfig.format.reads(_).asOpt).getOrElse(NgTlsConfig.default),
-        clientId = json.select("clientId").asOpt[String].getOrElse("client"),
-        clientSecret = json.select("clientSecret").asOpt[String].getOrElse("secret"),
+        clientId = string("client_id", "clientId").getOrElse("client"),
+        clientSecret = string("client_secret", "clientSecret").getOrElse("secret"),
         timeout = json.select("timeout").asOpt[Long].getOrElse(5000L).millis,
-        routeConfig = json.select("routeConfig").asOpt[JsObject]
+        routeConfig = json.select("route_config").asOpt[JsObject].orElse(json.select("routeConfig").asOpt[JsObject])
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
