@@ -1,0 +1,494 @@
+{
+  "analytics.otoroshi.io.UserAlert": {
+    "type": "object",
+    "description": "A user analytics alert: conditions on the analytics queries of the active user-analytics data exporter, evaluated periodically on a sliding window. When they hold, an alert event (`AlertEvent` with `alert` set to `UserAnalyticsAlert`) is sent to the data exporters, at most once per cooldown period",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The id of the alert, used in the paths of `/api/analytics/alerts/{alertId}/events` and copied as `alertId` into the events it emits. A random one is generated when it is missing or empty",
+        "example": "user-alert_dev_f3900e33-1dce-4852-aedc-27d89dafa791"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the alert, shown in the backoffice and copied as `alertName` into the events it emits",
+        "example": "High error rate on the billing api"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text telling what the alert watches, shown under its name on the page of its fired events in the backoffice. Unlike `message`, it is not copied into the events",
+        "example": "More than 5% of the calls fail"
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the alert, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "prod"
+        },
+        "example": [
+          "prod"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the alert",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "owner": "team-billing"
+        }
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the alert is evaluated: a disabled alert never fires. Defaults to true"
+      },
+      "windowSeconds": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The duration of the sliding window the queries are run on, in seconds. Defaults to 300",
+        "example": 300
+      },
+      "evaluationIntervalSeconds": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The delay between two evaluations of the alert, in seconds. Defaults to 60. The evaluation job runs every 60 seconds on a single instance of the cluster, so a shorter delay acts as 60 seconds",
+        "example": 60
+      },
+      "cooldownSeconds": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The minimum delay between two events emitted by the alert, in seconds. Defaults to 600",
+        "example": 600
+      },
+      "severity": {
+        "type": "string",
+        "enum": [
+          "info",
+          "warning",
+          "critical"
+        ],
+        "description": "The severity of the alert, copied into the events it emits. Defaults to `warning`",
+        "example": "critical"
+      },
+      "message": {
+        "type": "string",
+        "description": "The text of the events the alert emits (their `message`), for the people and the systems that receive them",
+        "example": "The error rate of the billing api is above 5%"
+      },
+      "combine": {
+        "type": "string",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "description": "How the conditions are combined: `AND` when all of them must hold, `OR` when one is enough. Defaults to `AND`, the value is case insensitive",
+        "example": "AND"
+      },
+      "conditions": {
+        "type": "array",
+        "description": "The conditions of the alert. An alert without condition never fires. A condition that cannot be read is dropped",
+        "items": {
+          "$ref": "#/components/schemas/AlertCondition"
+        },
+        "example": [
+          {
+            "query": "error_rate_ts",
+            "params": {},
+            "filters": {
+              "route_id": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+            },
+            "reducer": "max",
+            "operator": ">",
+            "threshold": 0.05
+          }
+        ]
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "user-alert_dev_f3900e33-1dce-4852-aedc-27d89dafa791",
+      "name": "High error rate on the billing api",
+      "description": "More than 5% of the calls fail",
+      "tags": [
+        "billing"
+      ],
+      "metadata": {},
+      "enabled": true,
+      "windowSeconds": 300,
+      "evaluationIntervalSeconds": 60,
+      "cooldownSeconds": 600,
+      "severity": "critical",
+      "message": "The error rate of the billing api is above 5%",
+      "combine": "AND",
+      "conditions": [
+        {
+          "query": "error_rate_ts",
+          "params": {},
+          "filters": {
+            "route_id": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+          },
+          "reducer": "max",
+          "operator": ">",
+          "threshold": 0.05
+        }
+      ]
+    }
+  },
+  "AlertCondition": {
+    "type": "object",
+    "description": "A condition of a user analytics alert: an analytics query run on the window of the alert, its result reduced to a single number, compared to a threshold",
+    "required": [
+      "query"
+    ],
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The id of an analytics query of the catalog (`GET /api/analytics/_schema` lists them), like `requests_total`, `error_rate_ts` or `duration_avg_ts`",
+        "example": "error_rate_ts"
+      },
+      "params": {
+        "type": "object",
+        "description": "The parameters of the query, as listed in the catalog of the queries (for instance `top_n`)",
+        "additionalProperties": true,
+        "example": {
+          "top_n": 5
+        }
+      },
+      "filters": {
+        "type": "object",
+        "description": "The entities the query is restricted to, for this condition only. An empty or missing value does not filter",
+        "properties": {
+          "route_id": {
+            "type": "string",
+            "description": "Only the calls handled by this route (its id)",
+            "example": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+          },
+          "api_id": {
+            "type": "string",
+            "description": "Only the calls handled by this api (its id)",
+            "example": "api_dev_6f0a3c1e-1b0a-4f25-9d6e-0c0e9c2a3b4d"
+          },
+          "apikey_id": {
+            "type": "string",
+            "description": "Only the calls made with this api key (its client id)",
+            "example": "v0stmnfeqy9fqbqh"
+          },
+          "group_id": {
+            "type": "string",
+            "description": "Only the calls of the routes of this service group (its id)",
+            "example": "default"
+          },
+          "err": {
+            "type": "boolean",
+            "description": "Only the calls that failed (`true`) or only the ones that succeeded (`false`)"
+          }
+        },
+        "example": {
+          "route_id": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+        }
+      },
+      "reducer": {
+        "type": "string",
+        "enum": [
+          "avg",
+          "max",
+          "min",
+          "sum",
+          "last"
+        ],
+        "description": "How the result of the query (a timeseries, the first series of a multi-series timeseries, a top or a single value) is reduced to a single number. Defaults to `avg`, the value is case insensitive. A condition whose query returns no value does not hold",
+        "example": "max"
+      },
+      "operator": {
+        "type": "string",
+        "enum": [
+          ">",
+          ">=",
+          "<",
+          "<=",
+          "==",
+          "!="
+        ],
+        "description": "How the reduced value is compared to the threshold. Defaults to `>`, another value never holds",
+        "example": ">"
+      },
+      "threshold": {
+        "type": "number",
+        "format": "double",
+        "description": "The value the reduced result is compared to. Defaults to 0",
+        "example": 0.05
+      }
+    },
+    "example": {
+      "query": "error_rate_ts",
+      "params": {},
+      "filters": {
+        "route_id": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+      },
+      "reducer": "max",
+      "operator": ">",
+      "threshold": 0.05
+    }
+  },
+  "analytics.otoroshi.io.UserDashboard": {
+    "type": "object",
+    "description": "A user analytics dashboard: a grid of widgets, each one showing the result of an analytics query of the active user-analytics data exporter",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The id of the dashboard. A random one is generated when it is missing or empty",
+        "example": "dashboard_dev_45ae8248-a686-4860-bf73-5cc48a0e6efa"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the dashboard, shown in the list of the dashboards and at the top of the dashboard in the backoffice",
+        "example": "Billing api overview"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text telling what the dashboard shows, displayed in the list of the dashboards and under the name of the dashboard in the backoffice",
+        "example": "Traffic, errors and latency of the billing api"
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the dashboard, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "prod"
+        },
+        "example": [
+          "prod"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the dashboard. The default dashboards created by otoroshi carry `otoroshi-default-id` and `otoroshi-default-version`",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "owner": "team-billing"
+        }
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the dashboard is enabled, an information for the backoffice: otoroshi itself does not read it. Defaults to true"
+      },
+      "widgets": {
+        "type": "array",
+        "description": "The widgets of the dashboard, in display order. A widget that cannot be read is dropped",
+        "items": {
+          "$ref": "#/components/schemas/Widget"
+        },
+        "example": [
+          {
+            "id": "rps",
+            "title": "Requests per second",
+            "query": "requests_per_second",
+            "params": {},
+            "type": "line",
+            "width": 4,
+            "height": 2,
+            "options": {
+              "format": "rps"
+            }
+          }
+        ]
+      },
+      "defaults": {
+        "type": "object",
+        "description": "The filters the backoffice applies when the dashboard is opened without filters in its url, saved from the filters of the dashboard by its editor. Empty when there are none",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "The start of the time range: `now`, `now-<n><unit>` with a unit among `s`, `m`, `h` and `d`, or an ISO-8601 instant",
+            "example": "now-1h"
+          },
+          "to": {
+            "type": "string",
+            "description": "The end of the time range: `now`, `now-<n><unit>` with a unit among `s`, `m`, `h` and `d`, or an ISO-8601 instant",
+            "example": "now"
+          },
+          "route": {
+            "type": "string",
+            "description": "Only the calls of this route (its id)",
+            "example": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+          },
+          "api": {
+            "type": "string",
+            "description": "Only the calls of this api (its id)",
+            "example": "api_dev_6f0a3c1e-1b0a-4f25-9d6e-0c0e9c2a3b4d"
+          },
+          "apikey": {
+            "type": "string",
+            "description": "Only the calls made with this api key (its client id)",
+            "example": "v0stmnfeqy9fqbqh"
+          },
+          "group": {
+            "type": "string",
+            "description": "Only the calls of the routes of this service group (its id)",
+            "example": "default"
+          },
+          "refresh": {
+            "type": "string",
+            "description": "The auto refresh period, in seconds, as a string. `0` disables it",
+            "example": "30"
+          },
+          "compare": {
+            "type": "string",
+            "description": "`1` (or `true`) to compare the results with the previous period of the same length, anything else not to",
+            "example": "1"
+          }
+        },
+        "example": {
+          "from": "now-24h",
+          "to": "now",
+          "refresh": "60"
+        }
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "dashboard_dev_45ae8248-a686-4860-bf73-5cc48a0e6efa",
+      "name": "Billing api overview",
+      "description": "Traffic, errors and latency of the billing api",
+      "tags": [
+        "billing"
+      ],
+      "metadata": {},
+      "enabled": true,
+      "widgets": [
+        {
+          "id": "requests-total",
+          "title": "Total requests",
+          "query": "requests_total",
+          "params": {},
+          "type": "metric",
+          "width": 1,
+          "height": 1,
+          "options": {
+            "format": "count"
+          }
+        },
+        {
+          "id": "rps",
+          "title": "Requests per second",
+          "query": "requests_per_second",
+          "params": {},
+          "type": "line",
+          "width": 4,
+          "height": 2,
+          "options": {
+            "format": "rps"
+          }
+        }
+      ],
+      "defaults": {
+        "from": "now-24h",
+        "to": "now"
+      }
+    }
+  },
+  "Widget": {
+    "type": "object",
+    "description": "A widget of a user analytics dashboard: an analytics query and the way its result is drawn",
+    "required": [
+      "query"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the widget, unique within its dashboard. A random one is generated when it is missing or empty",
+        "example": "rps"
+      },
+      "title": {
+        "type": "string",
+        "description": "The title shown in the header of the widget, the id of its query when empty. The backoffice fills it with the name of the query when the widget is created",
+        "example": "Requests per second"
+      },
+      "query": {
+        "type": "string",
+        "description": "The id of an analytics query of the catalog (`GET /api/analytics/_schema` lists them), like `requests_total`, `error_rate_ts` or `duration_avg_ts`",
+        "example": "requests_per_second"
+      },
+      "params": {
+        "type": "object",
+        "description": "The parameters of the query, as listed in the catalog of the queries (for instance `top_n`)",
+        "additionalProperties": true,
+        "example": {
+          "top_n": 10
+        }
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "line",
+          "area",
+          "bar",
+          "pie",
+          "donut",
+          "scalar",
+          "metric",
+          "table",
+          "heatmap"
+        ],
+        "description": "How the result is drawn. It must suit the shape of the result of the query: `line` or `area` for a timeseries, `bar`, `pie`, `donut` or `table` for a top, `scalar` or `metric` for a single value, `heatmap` for a heatmap. Defaults to `line`",
+        "example": "line"
+      },
+      "width": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The width of the widget, in columns of the grid. Defaults to 4",
+        "example": 4
+      },
+      "height": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The height of the widget, in rows of the grid. Defaults to 2",
+        "example": 2
+      },
+      "options": {
+        "type": "object",
+        "description": "The display options of the widget, read by the backoffice: `format` (`count`, `number`, `compact`, `currency`, `rps`, `ms`, `percent`, `bytes`), `decimals`, `unit`, `currency`, `legend`, `stacked`, `thresholds`, `title`",
+        "additionalProperties": true,
+        "example": {
+          "format": "rps",
+          "legend": true
+        }
+      }
+    },
+    "example": {
+      "id": "rps",
+      "title": "Requests per second",
+      "query": "requests_per_second",
+      "params": {},
+      "type": "line",
+      "width": 4,
+      "height": 2,
+      "options": {
+        "format": "rps"
+      }
+    }
+  }
+}
