@@ -222,7 +222,8 @@ class UnitTests
       new plugins.configs.UserAgentPluginConfigsSpec(),
       new plugins.configs.WasmPluginConfigsSpec(),
       new plugins.configs.JsonSchemaPluginConfigsSpec(),
-      new plugins.configs.React2ShellPluginConfigsSpec()
+      new plugins.configs.React2ShellPluginConfigsSpec(),
+      new plugins.configs.KubernetesPluginConfigsSpec()
     )
 
 class MapFilterTest
