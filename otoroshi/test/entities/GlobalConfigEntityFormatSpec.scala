@@ -1249,6 +1249,45 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, wasmo)
     }
 
+    "round trip the tls config of the wasm4s settings" in {
+      val tls  = TlsConfig(certs = Seq("c1"), trustedCerts = Seq("t1"), enabled = true, loose = true, trustAll = false)
+      val back = roundTrip(format, wasmo.copy(settings = wasmo.settings.copy(tlsConfig = Some(tls))))
+      back.settings.tlsConfig mustBe Some(tls)
+    }
+
+    "round trip wasm4s settings without plugins filter" in {
+      roundTrip(format, wasmo.copy(settings = wasmo.settings.copy(pluginsFilter = None))).settings.pluginsFilter mustBe None
+    }
+
+    "read a null tls config of the wasm4s settings as no tls config" in {
+      TlsWasmoSettings.readSettings(wasmo.settings.json).get.tlsConfig mustBe None
+    }
+
+    "read a missing plugins filter as every plugin" in {
+      val json = wasmo.settings.json.as[JsObject] - "pluginsFilter"
+      TlsWasmoSettings.readSettings(json).get.pluginsFilter mustBe Some("*")
+    }
+
+    "read the wasm4s tls config from the keys wasm4s reads it from" in {
+      val tls  = TlsConfig(certs = Seq("c1"), enabled = true)
+      val json = (wasmo.settings.json.as[JsObject] - "tlsConfig") ++ Json.obj("tls" -> tls.json)
+      TlsWasmoSettings.readSettings(json).get.tlsConfig mustBe Some(tls)
+    }
+
+    "prefer the tls key of wasm4s over the tlsConfig key" in {
+      val json = wasmo.settings.json.as[JsObject] ++ Json.obj(
+        "tls"       -> TlsConfig(certs = Seq("from-tls")).json,
+        "tlsConfig" -> TlsConfig(certs = Seq("from-tlsConfig")).json
+      )
+      TlsWasmoSettings.readSettings(json).get.tlsConfig.map(_.certs) mustBe Some(Seq("from-tls"))
+    }
+
+    "keep the tls config of the wasm4s settings in the global config" in {
+      val tls     = TlsConfig(certs = Seq("c1"), enabled = true)
+      val config  = minimal.copy(wasmoSettings = Some(TlsWasmoSettings(WasmoSettings(tlsConfig = Some(tls)))))
+      roundTrip(GlobalConfig._fmt, config).wasmoSettings.flatMap(_.settings.tlsConfig) mustBe Some(tls)
+    }
+
     "not read settings without tls config" in {
       readError(format, Json.obj("settings" -> WasmoSettings().json))
     }

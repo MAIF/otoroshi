@@ -642,6 +642,19 @@ case class TlsWasmoSettings(settings: WasmoSettings = WasmoSettings(), tlsConfig
 }
 
 object TlsWasmoSettings {
+  // wasm4s 5.0.3 writes the tls config of the wasmo settings under tlsConfig but reads it from tls or tls_config, and
+  // reads a null pluginsFilter as *. read them back here until wasm4s does
+  def readSettings(json: JsValue): JsResult[WasmoSettings] = WasmoSettings.format.reads(json).map { settings =>
+    settings.copy(
+      pluginsFilter = (json \ "pluginsFilter") match {
+        case JsDefined(JsNull) => None
+        case _                 => settings.pluginsFilter
+      },
+      tlsConfig = settings.tlsConfig.orElse(
+        (json \ "tlsConfig").asOpt[JsObject].flatMap(io.otoroshi.wasm4s.scaladsl.security.TlsConfig.format.reads(_).asOpt)
+      )
+    )
+  }
   val format = new Format[TlsWasmoSettings] {
     override def writes(o: TlsWasmoSettings): JsValue =
       Json.obj(
@@ -652,7 +665,7 @@ object TlsWasmoSettings {
     override def reads(json: JsValue): JsResult[TlsWasmoSettings] = {
       Try {
         TlsWasmoSettings(
-          settings = (json \ "settings").as[WasmoSettings](using WasmoSettings.format),
+          settings = readSettings((json \ "settings").as[JsValue]).get,
           tlsConfig = (json \ "tlsConfig").as[MtlsConfig](using MtlsConfig.format)
         )
       } match {
@@ -780,7 +793,7 @@ object GlobalConfig {
         (json \ "wasmoSettings")
           .asOpt[JsObject]
           .orElse((json \ "wasmManagerSettings").asOpt[JsObject])
-          .flatMap(obj => WasmoSettings.format.reads(obj).asOpt)
+          .flatMap(obj => TlsWasmoSettings.readSettings(obj).asOpt)
           .map(value => TlsWasmoSettings(settings = value))
       } else {
         TlsWasmoSettings.format.reads(
