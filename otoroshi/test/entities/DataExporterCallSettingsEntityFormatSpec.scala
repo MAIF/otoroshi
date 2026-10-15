@@ -121,6 +121,27 @@ class DataExporterCallSettingsEntityFormatSpec extends EntityFormatSpec {
       readOk(format, Json.obj("url" -> "http://splunk", "source_type" -> "_json")).sourceType mustBe Some("_json")
     }
 
+    "write the source type under its snake case key" in {
+      val json = written(format, SplunkCallSettings("http://splunk", Map.empty, None, Some("_json"), None, Map.empty, 1.second, tls))
+      (json \ "source_type").as[String] mustBe "_json"
+      json.keys must not contain "sourceType"
+    }
+
+    "round trip settings with a source type" in {
+      roundTrip(
+        format,
+        SplunkCallSettings("http://splunk", Map("X-A" -> "b"), Some("t"), Some("_json"), Some("main"), Map("env" -> "prod"), 2.seconds, tls)
+      ).sourceType mustBe Some("_json")
+    }
+
+    "still read the camel case source type it used to write" in {
+      readOk(format, Json.obj("url" -> "http://splunk", "sourceType" -> "_json")).sourceType mustBe Some("_json")
+    }
+
+    "prefer the snake case source type over the camel case one" in {
+      readOk(format, Json.obj("url" -> "http://splunk", "source_type" -> "a", "sourceType" -> "b")).sourceType mustBe Some("a")
+    }
+
     "read a lone url with the defaults" in {
       readOk(format, Json.obj("url" -> "http://splunk")) mustBe
         SplunkCallSettings("http://splunk", Map.empty, None, None, None, Map.empty, 60.seconds, NgTlsConfig())
