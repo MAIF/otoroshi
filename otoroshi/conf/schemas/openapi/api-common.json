@@ -1,0 +1,16 @@
+{
+  "Done": {
+    "type": "object",
+    "description": "The answer of an operation that has nothing to tell but that it is done",
+    "properties": {
+      "done": {
+        "type": "boolean",
+        "description": "Always true: the operation is done",
+        "example": true
+      }
+    },
+    "example": {
+      "done": true
+    }
+  }
+}
