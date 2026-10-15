@@ -497,7 +497,11 @@ class ProxyEngine() extends RequestHandler {
         report.markFailure("last-recover", t)
         otoroshiJsonError(
           Json
-            .obj("error" -> "internal_server_error", "error_description" -> t.getMessage)
+            // the message of an unexpected error may tell about the internals: it is logged above, and only shown in dev
+            .obj(
+              "error"             -> "internal_server_error",
+              "error_description" -> (if (env.isDev) t.getMessage else "an unexpected error occurred")
+            )
             .applyOnIf(env.isDev) { obj => obj ++ Json.obj("report" -> report.json) },
           Results.InternalServerError,
           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
@@ -723,7 +727,11 @@ class ProxyEngine() extends RequestHandler {
         report.markFailure("last-recover", t)
         otoroshiJsonError(
           Json
-            .obj("error" -> "internal_server_error", "error_description" -> t.getMessage)
+            // the message of an unexpected error may tell about the internals: it is logged above, and only shown in dev
+            .obj(
+              "error"             -> "internal_server_error",
+              "error_description" -> (if (env.isDev) t.getMessage else "an unexpected error occurred")
+            )
             .applyOnIf(env.isDev) { obj => obj ++ Json.obj("report" -> report.json) },
           Results.InternalServerError,
           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
