@@ -1,0 +1,515 @@
+{
+  "TunnelsEndpoint": {
+    "type": "object",
+    "description": "How this otoroshi is reached: what a remote otoroshi needs to connect its tunnels to it",
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "The domain this otoroshi exposes its admin api and its services under (`app.domain`, `oto.tools` by default)",
+        "example": "oto.tools"
+      },
+      "scheme": {
+        "type": "string",
+        "description": "The scheme this otoroshi is exposed with (`app.rootScheme`)",
+        "enum": [
+          "http",
+          "https"
+        ],
+        "example": "https"
+      },
+      "exposed_port_http": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The http port clients reach this otoroshi on (`app.exposed-ports.http`, the http port it listens on by default)",
+        "example": 8080
+      },
+      "exposed_port_https": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The https port clients reach this otoroshi on (`app.exposed-ports.https`, the https port it listens on by default)",
+        "example": 8443
+      }
+    },
+    "example": {
+      "domain": "oto.tools",
+      "scheme": "https",
+      "exposed_port_http": 8080,
+      "exposed_port_https": 8443
+    }
+  },
+  "TunnelRoute": {
+    "type": "object",
+    "description": "A route a remote otoroshi exposes through its tunnel",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name of the route on the remote otoroshi. The tunnels page of the backoffice names the route it creates to expose it after it",
+        "example": "billing-api"
+      },
+      "id": {
+        "type": "string",
+        "description": "The id of the route on the remote otoroshi, kept in the `from_route_id` metadata of the route the backoffice creates to expose it",
+        "example": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+      },
+      "frontend": {
+        "type": "string",
+        "description": "The first domain of the frontend of the route, its path included: the backoffice uses it as the hostname and the root of the target of the route it creates to expose it",
+        "example": "billing.internal.oto.tools"
+      }
+    },
+    "example": {
+      "name": "billing-api",
+      "id": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10",
+      "frontend": "billing.internal.oto.tools"
+    }
+  },
+  "TunnelNode": {
+    "type": "object",
+    "description": "An instance of the cluster a tunnel is connected to",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id the instance generated when it started (`node_` followed by a uuid)",
+        "example": "node_17bad625d-f161-44a3-9a90-0c4417a01fb0"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the instance in the cluster (`otoroshi.cluster.leader.name` or `otoroshi.cluster.worker.name`)",
+        "example": "otoroshi-leader-1"
+      },
+      "location": {
+        "type": "string",
+        "description": "The ip address of the instance (`otoroshi.cluster.selfAddress`, or the one detected when it started): the other instances reach it there, on its ports, to relay requests to the tunnel",
+        "example": "10.0.12.34"
+      },
+      "http_port": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The exposed http port of the instance, used with `location` to reach it",
+        "example": 8080
+      },
+      "https_port": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The exposed https port of the instance, used with `location` to reach it",
+        "example": 8443
+      },
+      "last_seen": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the leaders last saw the instance as a member of the cluster",
+        "example": "2026-10-15T21:54:55.102+02:00"
+      },
+      "type": {
+        "type": "string",
+        "description": "Always `Leader`, whatever the cluster mode of the instance (a worker connected to the leaders by websocket lists its tunnels too)",
+        "enum": [
+          "Leader"
+        ],
+        "example": "Leader"
+      }
+    },
+    "example": {
+      "id": "node_17bad625d-f161-44a3-9a90-0c4417a01fb0",
+      "name": "otoroshi-leader-1",
+      "location": "10.0.12.34",
+      "http_port": 8080,
+      "https_port": 8443,
+      "last_seen": "2026-10-15T21:54:55.102+02:00",
+      "type": "Leader"
+    }
+  },
+  "TunnelInfos": {
+    "type": "object",
+    "description": "A tunnel connected to the cluster: the remote otoroshi at the other end, the routes it exposes, and the instances of the cluster it is connected to. A tunnel is listed for two minutes after the remote otoroshi last described it (every 10 seconds); a remote otoroshi that does not export its routes (`export-routes`) never describes it",
+    "properties": {
+      "tunnel_id": {
+        "type": "string",
+        "description": "The id of the tunnel (`otoroshi.tunnels.<key>.id` on the remote otoroshi, the key by default): the `tunnel_id` of the `Remote tunnel calls` plugin of the routes that use it",
+        "example": "datacenter-paris"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name the remote otoroshi gives the tunnel in its configuration (`otoroshi.tunnels.<key>.name`, `default` when absent): the label of the tunnel in the backoffice",
+        "example": "otoroshi-paris-1"
+      },
+      "routes": {
+        "type": "array",
+        "description": "The routes the remote otoroshi exposes through the tunnel: all its routes, or only the ones tagged with its `export-routes-tag`",
+        "items": {
+          "$ref": "#/components/schemas/TunnelRoute"
+        }
+      },
+      "last_seen": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the remote otoroshi last described the tunnel, with a `tunnel_meta` message",
+        "example": "2026-10-15T21:54:57.918+02:00"
+      },
+      "nodes": {
+        "type": "array",
+        "description": "The instances of the cluster the tunnel is connected to, one per address and ports",
+        "items": {
+          "$ref": "#/components/schemas/TunnelNode"
+        }
+      }
+    },
+    "example": {
+      "tunnel_id": "datacenter-paris",
+      "name": "otoroshi-paris-1",
+      "routes": [
+        {
+          "name": "billing-api",
+          "id": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10",
+          "frontend": "billing.internal.oto.tools"
+        }
+      ],
+      "last_seen": "2026-10-15T21:54:57.918+02:00",
+      "nodes": [
+        {
+          "id": "node_17bad625d-f161-44a3-9a90-0c4417a01fb0",
+          "name": "otoroshi-leader-1",
+          "location": "10.0.12.34",
+          "http_port": 8080,
+          "https_port": 8443,
+          "last_seen": "2026-10-15T21:54:55.102+02:00",
+          "type": "Leader"
+        }
+      ]
+    }
+  },
+  "TunnelCookie": {
+    "type": "object",
+    "description": "A cookie of a request or of an answer that goes through a tunnel",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name the cookie is sent under",
+        "example": "session"
+      },
+      "value": {
+        "type": "string",
+        "description": "The content of the cookie, as sent",
+        "example": "4f9c2d1e"
+      },
+      "domain": {
+        "type": "string",
+        "nullable": true,
+        "description": "The domain the cookie is restricted to, `null` when it is not",
+        "example": "billing.internal.oto.tools"
+      },
+      "path": {
+        "type": "string",
+        "nullable": true,
+        "description": "The path the cookie is restricted to. The remote otoroshi cannot route a request with a cookie that has none",
+        "example": "/"
+      },
+      "maxAge": {
+        "type": "integer",
+        "format": "int32",
+        "nullable": true,
+        "description": "The lifetime of the cookie in seconds (in a request)",
+        "example": 3600
+      },
+      "max_age": {
+        "type": "integer",
+        "format": "int32",
+        "nullable": true,
+        "description": "The lifetime of the cookie in seconds (in an answer)",
+        "example": 3600
+      },
+      "secure": {
+        "type": "boolean",
+        "description": "Whether the cookie is only sent over https",
+        "example": true
+      },
+      "httpOnly": {
+        "type": "boolean",
+        "description": "Whether the cookie is hidden from javascript (in a request)",
+        "example": true
+      },
+      "http_only": {
+        "type": "boolean",
+        "description": "Whether the cookie is hidden from javascript (in an answer)",
+        "example": true
+      },
+      "same_site": {
+        "type": "string",
+        "nullable": true,
+        "description": "The `SameSite` policy of the cookie (`Strict`, `Lax` or `None`), in an answer",
+        "example": "Lax"
+      }
+    },
+    "example": {
+      "name": "session",
+      "value": "4f9c2d1e",
+      "domain": null,
+      "path": "/",
+      "max_age": 3600,
+      "secure": true,
+      "http_only": true,
+      "same_site": "Lax"
+    }
+  },
+  "TunnelRequest": {
+    "type": "object",
+    "description": "A request sent through a tunnel to the remote otoroshi, that routes it as if it had received it",
+    "required": [
+      "url",
+      "method",
+      "version",
+      "addr"
+    ],
+    "properties": {
+      "request_id": {
+        "type": "string",
+        "description": "The id of the request, its answer carrying the same one. Generated when absent, as `<otoroshiId of the global configuration>-<id of the instance>-<uuid>-<counter>`",
+        "example": "65fe2ae2-3ec4-4c65-9922-86601aa63ae8-node_17bad625d-1d72b5df-42"
+      },
+      "type": {
+        "type": "string",
+        "description": "Marks the message as a request to route (the other messages of a tunnel are `response`, `ping`, `pong` and `tunnel_meta`)",
+        "enum": [
+          "request"
+        ],
+        "example": "request"
+      },
+      "url": {
+        "type": "string",
+        "description": "The full url of the request, as the route that sends it through the tunnel would call its backend (the target of its backend, then the path and the query). The remote otoroshi takes the path and the query of the request from it",
+        "example": "http://billing.internal.oto.tools/invoices?page=2"
+      },
+      "path": {
+        "type": "string",
+        "description": "The path and the query of the request, informative: the remote otoroshi takes them from `url`",
+        "example": "/invoices?page=2"
+      },
+      "method": {
+        "type": "string",
+        "description": "The http method the remote otoroshi handles the request with, like `GET` or `POST`",
+        "example": "GET"
+      },
+      "headers": {
+        "type": "object",
+        "description": "The headers of the request, one value per name, as the route would send them to its backend",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Host": "billing.internal.oto.tools",
+          "Accept": "application/json"
+        }
+      },
+      "query": {
+        "type": "object",
+        "description": "The query parameters of the request, by name, informative: the remote otoroshi takes the query from `url`",
+        "additionalProperties": {
+          "type": "array",
+          "description": "The values of the parameter",
+          "items": {
+            "type": "string",
+            "description": "A value of the parameter"
+          }
+        },
+        "example": {
+          "page": [
+            "2"
+          ]
+        }
+      },
+      "version": {
+        "type": "string",
+        "description": "The http protocol version of the request, like `HTTP/1.1` or `HTTP/2.0`",
+        "example": "HTTP/1.1"
+      },
+      "addr": {
+        "type": "string",
+        "description": "The ip address of the client of the request",
+        "example": "192.168.1.42"
+      },
+      "secured": {
+        "description": "Whether the request came over https, as a boolean. The instances of the cluster write it as the string `true` or `false`, which the remote otoroshi reads as false",
+        "oneOf": [
+          {
+            "type": "boolean",
+            "description": "Whether the request came over https"
+          },
+          {
+            "type": "string",
+            "description": "The string the instances of the cluster write, `true` or `false`",
+            "enum": [
+              "true",
+              "false"
+            ]
+          }
+        ],
+        "example": "false"
+      },
+      "hasBody": {
+        "type": "boolean",
+        "description": "Whether the request has a body",
+        "example": false
+      },
+      "body": {
+        "type": "string",
+        "format": "byte",
+        "description": "The body of the request, base64 encoded, read by the remote otoroshi when present. The `Remote tunnel calls` plugin does not send it: the requests of a route go through the tunnel without their body",
+        "example": "eyJhbW91bnQiOjQyfQ=="
+      },
+      "cookies": {
+        "type": "array",
+        "description": "The cookies of the request, the remote otoroshi reading their `name`, `value`, `path`, `domain`, `maxAge`, `secure` and `httpOnly`",
+        "items": {
+          "$ref": "#/components/schemas/TunnelCookie"
+        },
+        "example": [
+          {
+            "name": "session",
+            "value": "4f9c2d1e",
+            "domain": null,
+            "path": "/",
+            "maxAge": null,
+            "secure": false,
+            "httpOnly": false
+          }
+        ]
+      },
+      "client_cert_chain": {
+        "type": "array",
+        "nullable": true,
+        "description": "The client certificate chain of the request, as PEM certificates the remote otoroshi gives the route as the client certificates of the request. `null` without client certificates",
+        "items": {
+          "type": "string",
+          "description": "A certificate, PEM encoded",
+          "example": "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n-----END CERTIFICATE-----"
+        },
+        "example": [
+          "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n-----END CERTIFICATE-----"
+        ]
+      },
+      "backend": {
+        "type": "object",
+        "nullable": true,
+        "description": "The target the route picked for the request, as json (an `NgTarget`: `id`, `hostname`, `port`, `tls`...). Informative, not read by the remote otoroshi",
+        "additionalProperties": true,
+        "example": {
+          "id": "billing-service-1",
+          "hostname": "billing-1.internal.oto.tools",
+          "port": 8443,
+          "tls": true,
+          "weight": 1,
+          "backup": false,
+          "predicate": {
+            "type": "AlwaysMatch"
+          },
+          "protocol": "HTTP/1.1",
+          "ip_address": null,
+          "tls_config": {
+            "certs": [],
+            "trusted_certs": [],
+            "enabled": false,
+            "loose": false,
+            "trust_all": false
+          }
+        }
+      }
+    },
+    "example": {
+      "request_id": "65fe2ae2-3ec4-4c65-9922-86601aa63ae8-node_17bad625d-1d72b5df-42",
+      "type": "request",
+      "url": "http://billing.internal.oto.tools/invoices?page=2",
+      "path": "/invoices?page=2",
+      "method": "GET",
+      "headers": {
+        "Host": "billing.internal.oto.tools",
+        "Accept": "application/json"
+      },
+      "query": {
+        "page": [
+          "2"
+        ]
+      },
+      "version": "HTTP/1.1",
+      "addr": "192.168.1.42",
+      "secured": "false",
+      "hasBody": false,
+      "cookies": [],
+      "client_cert_chain": null,
+      "backend": null
+    }
+  },
+  "TunnelResponse": {
+    "type": "object",
+    "description": "The answer to a request sent through a tunnel",
+    "properties": {
+      "request_id": {
+        "type": "string",
+        "description": "The `request_id` of the request this answers: the instance that waits for the answer finds the request with it",
+        "example": "65fe2ae2-3ec4-4c65-9922-86601aa63ae8-node_17bad625d-1d72b5df-42"
+      },
+      "type": {
+        "type": "string",
+        "description": "Marks the message as the answer to a request",
+        "enum": [
+          "response"
+        ],
+        "example": "response"
+      },
+      "status": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The http status of the answer of the remote otoroshi: 404 when the tunnel is not connected to the instance asked to relay the request, 500 when the tunnel fails or closes before answering",
+        "example": 200
+      },
+      "headers": {
+        "type": "object",
+        "description": "The headers of the answer, its content type and length included",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Content-Type": "application/json",
+          "Content-Length": "27"
+        }
+      },
+      "cookies": {
+        "type": "array",
+        "description": "The cookies found in the `Cookie` header of the answer, written with `max_age`, `http_only` and `same_site`",
+        "items": {
+          "$ref": "#/components/schemas/TunnelCookie"
+        },
+        "example": [
+          {
+            "name": "session",
+            "value": "4f9c2d1e",
+            "path": "/",
+            "domain": null,
+            "http_only": true,
+            "max_age": 3600,
+            "secure": true,
+            "same_site": "Lax"
+          }
+        ]
+      },
+      "body": {
+        "type": "string",
+        "format": "byte",
+        "description": "The body of the answer, base64 encoded",
+        "example": "eyJpbnZvaWNlcyI6W10sInBhZ2UiOjJ9"
+      }
+    },
+    "example": {
+      "request_id": "65fe2ae2-3ec4-4c65-9922-86601aa63ae8-node_17bad625d-1d72b5df-42",
+      "type": "response",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json",
+        "Content-Length": "27"
+      },
+      "cookies": [],
+      "body": "eyJpbnZvaWNlcyI6W10sInBhZ2UiOjJ9"
+    }
+  }
+}
