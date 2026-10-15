@@ -509,7 +509,7 @@ object OIDCAuthToken {
                   .map(v => Left(v))
               case Right(user) =>
                 user.save(
-                  Duration(oauth2Config.sessionMaxAge, TimeUnit.MILLISECONDS)
+                  Duration(oauth2Config.sessionMaxAge, TimeUnit.SECONDS)
                 )
                 if (env.clusterConfig.mode == ClusterMode.Worker) {
                   env.clusterAgent.createSession(user)
@@ -568,7 +568,7 @@ object OIDCAuthToken {
               .map(v => Left(v))
           case Right(user) =>
             user.save(
-              Duration(oauth2Config.sessionMaxAge, TimeUnit.MILLISECONDS)
+              Duration(oauth2Config.sessionMaxAge, TimeUnit.SECONDS)
             )
             if (env.clusterConfig.mode == ClusterMode.Worker) {
               env.clusterAgent.createSession(user)
