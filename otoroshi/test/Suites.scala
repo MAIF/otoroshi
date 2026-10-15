@@ -217,7 +217,8 @@ class UnitTests
       new plugins.configs.QueryPluginConfigsSpec(),
       new plugins.configs.ApikeyPluginConfigsSpec(),
       new plugins.configs.OidcPluginConfigsSpec(),
-      new plugins.configs.ClientCredentialsPluginConfigsSpec()
+      new plugins.configs.ClientCredentialsPluginConfigsSpec(),
+      new plugins.configs.UsersPluginConfigsSpec()
     )
 
 class MapFilterTest
