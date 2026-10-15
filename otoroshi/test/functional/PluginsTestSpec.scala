@@ -83,6 +83,15 @@ class PluginsHardeningSpec extends PluginsTestSpecBase {
   }
 }
 
+// auth modules, backoffice logins and tooling: sbt "testOnly functional.AuthHardeningSpec"
+class AuthHardeningSpec extends PluginsTestSpecBase {
+  lazy val auth = new AuthHardeningTests(this)
+  s"auth modules and backoffice" should {
+    "serve the backoffice metrics to super admins only" in { auth.backofficeMetrics() }
+    "stop" in { auth.stop() }
+  }
+}
+
 // rights of a team scoped backoffice user: sbt "testOnly functional.BackofficeRightsSpec"
 class BackofficeRightsSpec extends PluginsTestSpecBase {
   s"backoffice" should {

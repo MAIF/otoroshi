@@ -10,7 +10,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import otoroshi.cluster.{ClusterMode, MemberView}
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, BackOfficeUser, HSAlgoSettings, SecComInfoTokenVersion}
+import otoroshi.models.{ApiKey, BackOfficeUser, HSAlgoSettings, RightsChecker, SecComInfoTokenVersion}
 import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
@@ -244,8 +244,11 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     }
   }
 
-  def backofficeMetrics() = BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
-    HealthController.fetchMetrics("json".some, true, false, None)
+  // the metrics of every route of every tenant
+  def backofficeMetrics() = BackOfficeActionAuth.async { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      HealthController.fetchMetrics("json".some, true, false, None).vfuture
+    }
   }
 
   def health() =
