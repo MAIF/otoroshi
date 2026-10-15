@@ -206,7 +206,8 @@ class UnitTests
       new plugins.configs.RobotPluginConfigsSpec(),
       new plugins.configs.GzipPluginConfigsSpec(),
       new plugins.configs.JwtPluginConfigsSpec(),
-      new plugins.configs.IzanamiPluginConfigsSpec()
+      new plugins.configs.IzanamiPluginConfigsSpec(),
+      new plugins.configs.BodySizePluginConfigsSpec()
     )
 
 class MapFilterTest
