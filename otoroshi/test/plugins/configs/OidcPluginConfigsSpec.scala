@@ -176,6 +176,18 @@ class OidcPluginConfigsSpec extends PluginConfigFormatSpec {
       roundTrip(format, OIDCAccessTokenConfig(enabled = false, atLeastOne = true, config = Some(thirdParty)))
     }
 
+    "round trip the default config" in {
+      roundTrip(format, OIDCAccessTokenConfig())
+    }
+
+    "round trip a config without third party config" in {
+      roundTrip(format, OIDCAccessTokenConfig(enabled = false, atLeastOne = true)).config mustBe None
+    }
+
+    "read a null third party config as no third party config" in {
+      readOk(format, Json.obj("enabled" -> true, "config" -> JsNull)).config mustBe None
+    }
+
     "round trip a third party config object" in {
       roundTrip(format, OIDCAccessTokenConfig(config = Some(thirdParty))).config mustBe Some(thirdParty)
     }

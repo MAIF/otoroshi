@@ -169,7 +169,8 @@ object OIDCAccessTokenConfig {
       OIDCAccessTokenConfig(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
         atLeastOne = json.select("atLeastOne").asOpt[Boolean].getOrElse(false),
-        config = json.select("config").asOpt[JsValue]
+        // a missing third party config is written as null, which must not read back as a config
+        config = json.select("config").asOpt[JsValue].filterNot(_ == JsNull)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
