@@ -1,0 +1,1593 @@
+{
+  "Version": {
+    "type": "object",
+    "description": "A version of otoroshi, as written and split into its parts",
+    "properties": {
+      "raw": {
+        "type": "string",
+        "description": "The version as written, before it is parsed (`18.0.0-dev`, `18.0.0-preview2`...)",
+        "example": "18.0.0-dev"
+      },
+      "major": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The first number of the version (`18` for `18.0.0-dev`), 0 when it cannot be read",
+        "example": 18
+      },
+      "minor": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The second number of the version (`0` for `18.0.0-dev`), 0 when it is absent or cannot be read",
+        "example": 0
+      },
+      "patch": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The third number of the version (`0` for `18.0.0-dev`), 0 when it is absent or cannot be read",
+        "example": 0
+      },
+      "build": {
+        "type": "integer",
+        "format": "int32",
+        "nullable": true,
+        "description": "The fourth number of the version, when it has one (`3` for `17.6.0.3`), null otherwise",
+        "example": null
+      },
+      "suffix": {
+        "type": "string",
+        "nullable": true,
+        "description": "The kind of pre-release of the version, null for a release",
+        "enum": [
+          "dev",
+          "snapshot",
+          "alpha",
+          "beta",
+          "preview",
+          "rc",
+          null
+        ],
+        "example": "dev"
+      },
+      "suffix_version": {
+        "type": "integer",
+        "format": "int32",
+        "nullable": true,
+        "description": "The number of the pre-release (`2` for `preview2`), null when it has none",
+        "example": null
+      },
+      "str": {
+        "type": "string",
+        "description": "The version written back from its parts: `<major>.<minor>.<patch>`, then `.<build>`, `-<suffix>` and `.<suffix_version>` when present, so `18.0.0-preview.2` for `18.0.0-preview2`",
+        "example": "18.0.0-dev"
+      },
+      "value": {
+        "type": "number",
+        "format": "double",
+        "description": "A number derived from the version: its digits put together (the pre-release number included), minus 0.5 for `dev` and `snapshot`, 0.4 for `alpha`, 0.3 for `beta`, 0.25 for `preview` or 0.2 for `rc` (`1799.5` for `18.0.0-dev`)",
+        "example": 1799.5
+      }
+    },
+    "example": {
+      "raw": "18.0.0-dev",
+      "major": 18,
+      "minor": 0,
+      "patch": 0,
+      "build": null,
+      "suffix": "dev",
+      "suffix_version": null,
+      "str": "18.0.0-dev",
+      "value": 1799.5
+    }
+  },
+  "NodeInfos": {
+    "type": "object",
+    "description": "What an otoroshi instance is: its cluster, its version, its runtime and its datastore",
+    "properties": {
+      "otoroshi_cluster_id": {
+        "type": "string",
+        "description": "The id of the otoroshi cluster (the `otoroshiId` of the global configuration)",
+        "example": "7bcab7ed5-9b9c-430e-acb5-2a42300b102c"
+      },
+      "otoroshi_version": {
+        "type": "string",
+        "description": "The version of otoroshi the instance runs, as written (the `raw` of `otoroshi_version_sem`)",
+        "example": "18.0.0-dev"
+      },
+      "otoroshi_version_sem": {
+        "$ref": "#/components/schemas/Version"
+      },
+      "java_version": {
+        "$ref": "#/components/schemas/JavaVersion"
+      },
+      "os": {
+        "$ref": "#/components/schemas/OS"
+      },
+      "backoffice_url": {
+        "type": "string",
+        "description": "The url of the backoffice of the instance, built from `app.rootScheme`, the backoffice subdomain (`app.backoffice.subdomain`), `app.domain` and the exposed port",
+        "example": "https://otoroshi.oto.tools:8443/bo/dashboard"
+      },
+      "datastore": {
+        "type": "string",
+        "description": "The kind of datastore of the instance, as set by `app.storage` (`lettuce` when not set): `inmemory`, `file`, `lettuce`, `redis`, `postgresql`, `cassandra`, `s3`, `http`...",
+        "example": "redis"
+      },
+      "env": {
+        "type": "string",
+        "description": "The environment of the instance, as set by `app.env` (`prod` when not set, `dev` for a development instance)",
+        "example": "prod"
+      }
+    },
+    "example": {
+      "otoroshi_cluster_id": "7bcab7ed5-9b9c-430e-acb5-2a42300b102c",
+      "otoroshi_version": "18.0.0-dev",
+      "otoroshi_version_sem": {
+        "raw": "18.0.0-dev",
+        "major": 18,
+        "minor": 0,
+        "patch": 0,
+        "build": null,
+        "suffix": "dev",
+        "suffix_version": null,
+        "str": "18.0.0-dev",
+        "value": 1799.5
+      },
+      "java_version": {
+        "version": "17.0.2",
+        "vendor": "Oracle Corporation"
+      },
+      "os": {
+        "name": "Linux",
+        "version": "6.8.0-45-generic",
+        "arch": "amd64"
+      },
+      "backoffice_url": "https://otoroshi.oto.tools:8443/bo/dashboard",
+      "datastore": "redis",
+      "env": "prod"
+    }
+  },
+  "AnonymousReportCount": {
+    "type": "object",
+    "description": "The number of entities of a kind, counted in the in-memory state of the instance that builds the report",
+    "properties": {
+      "count": {
+        "type": "integer",
+        "format": "int64",
+        "description": "How many entities of the kind the instance holds in its in-memory state",
+        "example": 8
+      }
+    },
+    "example": {
+      "count": 8
+    }
+  },
+  "AnonymousReportCountByKind": {
+    "type": "object",
+    "description": "The number of entities of a kind, and their number by sub kind (type, flag...), counted in the in-memory state of the instance that builds the report",
+    "properties": {
+      "count": {
+        "type": "integer",
+        "format": "int64",
+        "description": "How many entities of the kind the instance holds in its in-memory state",
+        "example": 22
+      },
+      "by_kind": {
+        "type": "object",
+        "description": "The number of entities by sub kind, the keys depending on the counted kind (see the property of `entities` that holds this object). A sub kind no entity has is absent",
+        "additionalProperties": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The number of entities of this sub kind"
+        },
+        "example": {
+          "oauth2": 10,
+          "basic": 11,
+          "ldap": 1
+        }
+      }
+    },
+    "example": {
+      "count": 22,
+      "by_kind": {
+        "oauth2": 10,
+        "basic": 11,
+        "ldap": 1
+      }
+    }
+  },
+  "AnonymousReportMinMaxAvg": {
+    "type": "object",
+    "description": "The smallest, the largest and the average of a number over entities, 0 when there is none",
+    "properties": {
+      "min": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The smallest value over the entities, 0 when there is none",
+        "example": 0
+      },
+      "max": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The largest value over the entities, 0 when there is none",
+        "example": 27
+      },
+      "avg": {
+        "type": "number",
+        "format": "double",
+        "description": "The average over the entities, rounded down (an integer division), 0 when there is none",
+        "example": 2
+      }
+    },
+    "example": {
+      "min": 0,
+      "max": 27,
+      "avg": 2
+    }
+  },
+  "AnonymousReportNode": {
+    "type": "object",
+    "description": "A member of the cluster as the anonymous report lists it: an excerpt of the member registered in the datastore, with the system statistics it last sent",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the member: `node_` and a random uuid generated when the member starts (`tmpnode_` and a random uuid for a worker that did not send its id)",
+        "example": "node_17bad625d-f161-44a3-9a90-0c4417a01fb0"
+      },
+      "os": {
+        "$ref": "#/components/schemas/OS"
+      },
+      "java_version": {
+        "$ref": "#/components/schemas/JavaVersion"
+      },
+      "version": {
+        "type": "string",
+        "description": "The version of otoroshi the member runs",
+        "example": "18.0.0-dev"
+      },
+      "type": {
+        "type": "string",
+        "description": "Whether the member is a `Leader` or a `Worker` of the cluster",
+        "enum": [
+          "Leader",
+          "Worker",
+          "Off"
+        ],
+        "example": "Leader"
+      },
+      "cpu_usage": {
+        "type": "number",
+        "format": "double",
+        "description": "The cpu usage of the process of the member, in percent",
+        "example": 9.02
+      },
+      "load_average": {
+        "type": "number",
+        "format": "double",
+        "description": "The load average of the system of the member over the last minute, negative when the system does not provide it",
+        "example": 7.92
+      },
+      "heap_used": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The heap memory used by the jvm of the member, in megabytes",
+        "example": 2550
+      },
+      "heap_size": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The heap memory the jvm of the member has reserved, in megabytes",
+        "example": 2788
+      },
+      "relay": {
+        "type": "boolean",
+        "description": "Whether the relay routing is enabled on the member (`otoroshi.cluster.relay.enabled`)",
+        "example": true
+      },
+      "tunnels": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of tunnels connected to the member: otoroshi instances of private networks that opened a tunnel to it to expose their services",
+        "example": 0
+      }
+    },
+    "example": {
+      "id": "node_17bad625d-f161-44a3-9a90-0c4417a01fb0",
+      "os": {
+        "name": "Linux",
+        "version": "6.8.0-45-generic",
+        "arch": "amd64"
+      },
+      "java_version": {
+        "version": "17.0.2",
+        "vendor": "Oracle Corporation"
+      },
+      "version": "18.0.0-dev",
+      "type": "Leader",
+      "cpu_usage": 9.02,
+      "load_average": 7.92,
+      "heap_used": 2550,
+      "heap_size": 2788,
+      "relay": true,
+      "tunnels": 0
+    }
+  },
+  "AnonymousReport": {
+    "type": "object",
+    "description": "The anonymous usage report of an otoroshi cluster, the one the anonymous reporting job posts every 6 hours (to `https://reporting.otoroshi.io/ingest` by default) when the anonymous reporting is enabled: its version, its runtime, the features it uses, its traffic, its members, and the number of entities of each kind, without any name nor configuration. The entities are counted in the in-memory state of the instance that builds the report",
+    "properties": {
+      "@timestamp": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the report was built, a timestamp in milliseconds",
+        "example": 1792094097918
+      },
+      "timestamp_str": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the report was built, an ISO 8601 date in the time zone of the instance",
+        "example": "2026-10-15T21:54:57.918+02:00"
+      },
+      "@id": {
+        "type": "string",
+        "description": "A random uuid generated for each report",
+        "example": "1d72b5dfd-e4f5-4dcd-a5a8-2cf3537cfc9e"
+      },
+      "otoroshi_cluster_id": {
+        "type": "string",
+        "description": "The id of the otoroshi cluster (the `otoroshiId` of the global configuration), the same in every report of the cluster",
+        "example": "7bcab7ed5-9b9c-430e-acb5-2a42300b102c"
+      },
+      "otoroshi_version": {
+        "type": "string",
+        "description": "The version of otoroshi the instance that builds the report runs, as written",
+        "example": "18.0.0-dev"
+      },
+      "otoroshi_version_sem": {
+        "$ref": "#/components/schemas/Version"
+      },
+      "java_version": {
+        "$ref": "#/components/schemas/JavaVersion"
+      },
+      "os": {
+        "$ref": "#/components/schemas/OS"
+      },
+      "datastore": {
+        "type": "string",
+        "description": "The kind of datastore of the instance, as set by `app.storage` (`lettuce` when not set)",
+        "example": "redis"
+      },
+      "env": {
+        "type": "string",
+        "description": "The environment of the instance, as set by `app.env` (`prod` when not set)",
+        "example": "prod"
+      },
+      "additional_data": {
+        "type": "object",
+        "description": "The additional data of a configuration of the anonymous reporting job set programmatically (by an application that embeds otoroshi), its expressions evaluated. `{}` otherwise, and always `{}` when the report is answered by the admin api",
+        "additionalProperties": true,
+        "example": {}
+      },
+      "features": {
+        "type": "object",
+        "description": "The features the global configuration of the cluster turns on",
+        "properties": {
+          "snow_monkey": {
+            "type": "boolean",
+            "description": "Whether the snow monkey (the chaos engineering of otoroshi) is enabled",
+            "example": false
+          },
+          "clever_cloud": {
+            "type": "boolean",
+            "description": "Whether the Clever Cloud settings are set in the global configuration",
+            "example": false
+          },
+          "kubernetes": {
+            "type": "boolean",
+            "description": "Whether a global plugin or a global job whose id contains `kube` is enabled in the global configuration (the kubernetes integration)",
+            "example": false
+          },
+          "elastic_read": {
+            "type": "boolean",
+            "description": "Whether the analytics are read from Elasticsearch (`elasticReadsConfig` of the global configuration is set)",
+            "example": false
+          },
+          "lets_encrypt": {
+            "type": "boolean",
+            "description": "Whether Let's Encrypt is enabled in the global configuration",
+            "example": true
+          },
+          "auto_certs": {
+            "type": "boolean",
+            "description": "Whether otoroshi generates certificates on the fly, during the tls handshake, for the domains it has none for (`autoCert.enabled` of the global configuration)",
+            "example": false
+          },
+          "wasmo": {
+            "type": "boolean",
+            "description": "Whether the wasmo settings (the server the wasm plugins are built by) are set in the global configuration",
+            "example": true
+          },
+          "wasm_manager": {
+            "type": "boolean",
+            "description": "Whether the wasmo settings are set (the former name of `wasmo`)",
+            "example": true
+          },
+          "backoffice_login": {
+            "type": "boolean",
+            "description": "Whether an auth module lets the admins log in to the backoffice on top of their otoroshi accounts (`backOfficeAuthRef` of the global configuration)",
+            "example": false
+          }
+        }
+      },
+      "stats": {
+        "type": "object",
+        "description": "The traffic of the cluster: the totals of its datastore, and the live rates of its members",
+        "properties": {
+          "calls": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The total number of calls handled by the cluster, read from the `global` counter of the datastore",
+            "example": 360087
+          },
+          "data_in": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The total number of bytes of the request bodies received, read from the `global` counter of the datastore",
+            "example": 11280598
+          },
+          "data_out": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The total number of bytes of the response bodies sent, read from the `global` counter of the datastore",
+            "example": 162326308
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "description": "The calls handled per second: the recent rate recorded in the datastore plus the rates the members last reported",
+            "example": 4
+          },
+          "duration": {
+            "type": "number",
+            "format": "double",
+            "description": "The mean duration of the recent calls, in milliseconds, averaged over the value of the datastore and the values the members last reported",
+            "example": 27.17
+          },
+          "overhead": {
+            "type": "number",
+            "format": "double",
+            "description": "The mean overhead of otoroshi on the recent calls (the time spent in otoroshi itself), in milliseconds, averaged like `duration`",
+            "example": 5.1
+          },
+          "data_in_rate": {
+            "type": "number",
+            "format": "double",
+            "description": "The bytes of request bodies received per second: the recent rate recorded in the datastore plus the rates the members last reported",
+            "example": 0
+          },
+          "data_out_rate": {
+            "type": "number",
+            "format": "double",
+            "description": "The bytes of response bodies sent per second: the recent rate recorded in the datastore plus the rates the members last reported",
+            "example": 1220
+          },
+          "concurrent_requests": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The number of requests being handled right now: the count of the instance plus the counts the members last reported",
+            "example": 1
+          }
+        }
+      },
+      "engine": {
+        "type": "object",
+        "description": "Whether the `ProxyEngine` global plugin, the former switch of the new proxy engine, is enabled in the global configuration",
+        "properties": {
+          "uses_new": {
+            "type": "boolean",
+            "description": "Whether the global plugins are enabled, with the `cp:otoroshi.next.proxy.ProxyEngine` plugin among them and its `NextGenProxyEngine` configuration enabled",
+            "example": true
+          },
+          "uses_new_full": {
+            "type": "boolean",
+            "description": "Whether `uses_new` is true and the `NextGenProxyEngine` configuration applies to every domain (`domains` holds `*` and `deny_domains` is empty)",
+            "example": true
+          }
+        }
+      },
+      "cluster": {
+        "type": "object",
+        "description": "The cluster of the instance: its mode and the members registered in the datastore",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "description": "The cluster mode of the instance that builds the report (`otoroshi.cluster.mode`), `Off` for a standalone instance",
+            "enum": [
+              "Leader",
+              "Worker",
+              "Off"
+            ],
+            "example": "Leader"
+          },
+          "all_nodes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of members registered in the datastore (a member expires when it is not seen for its timeout)",
+            "example": 1
+          },
+          "alive_nodes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of members seen within their timeout",
+            "example": 1
+          },
+          "leaders_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of registered members whose type is `Leader`",
+            "example": 1
+          },
+          "workers_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of registered members whose type is `Worker`",
+            "example": 0
+          },
+          "nodes": {
+            "type": "array",
+            "description": "The members registered in the datastore, with their runtime and the system statistics they last sent",
+            "items": {
+              "$ref": "#/components/schemas/AnonymousReportNode"
+            }
+          }
+        }
+      },
+      "generic_entities": {
+        "type": "object",
+        "description": "The number of entities of each kind the admin api serves, by `<group>/<plural name>` (the kinds of the admin extensions excluded)",
+        "additionalProperties": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The number of entities of this kind"
+        },
+        "example": {
+          "proxy.otoroshi.io/routes": 308,
+          "apim.otoroshi.io/apikeys": 75
+        }
+      },
+      "entities": {
+        "type": "object",
+        "description": "The number of entities of the main kinds, with details on their use",
+        "properties": {
+          "scripts": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCountByKind"
+              }
+            ],
+            "description": "The scripts (the plugins whose Scala code is stored in otoroshi and compiled at runtime), by plugin type: `app`, `transformer`, `validator`, `preroute`, `sink`, `listener`, `job`, `exporter`, `tunnel-handler`, `request-handler` or `composite`"
+          },
+          "routes": {
+            "type": "object",
+            "description": "The route entities, disabled ones included, and the number of plugins they configure",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "format": "int64",
+                "description": "The number of route entities, disabled ones included",
+                "example": 308
+              },
+              "plugins": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AnonymousReportMinMaxAvg"
+                  }
+                ],
+                "description": "The number of plugins configured on each route"
+              }
+            }
+          },
+          "router_routes": {
+            "type": "object",
+            "description": "The routes the router matches the requests against: the enabled routes, and the routes built from the route compositions and from the apis",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "format": "int64",
+                "description": "The number of routes the router knows, the ones built from the route compositions and the apis included",
+                "example": 311
+              },
+              "http_clients": {
+                "type": "object",
+                "description": "The number of router routes by http client used to call their backends, chosen with the metadata of the route",
+                "properties": {
+                  "ahc": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The routes that call their backends with the default http client: they set neither `otoroshi-core-use-akka-http-client` nor `otoroshi-core-use-netty-http-client` to `true` in their metadata",
+                    "example": 307
+                  },
+                  "akka": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The routes that call their backends with the pekko http client: their metadata `otoroshi-core-use-akka-http-client` is `true`",
+                    "example": 2
+                  },
+                  "netty": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The routes that call their backends with the netty http client: their metadata `otoroshi-core-use-netty-http-client` is `true`",
+                    "example": 2
+                  },
+                  "akka_ws": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The routes that open their websockets with the pekko http client: their metadata `otoroshi-core-use-akka-http-ws-client` is `true`",
+                    "example": 1
+                  }
+                }
+              },
+              "plugins": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AnonymousReportMinMaxAvg"
+                  }
+                ],
+                "description": "The number of plugins of each route the router knows"
+              }
+            }
+          },
+          "route_compositions": {
+            "type": "object",
+            "description": "The route compositions (entities grouping several routes, each with its own frontend and backend, under shared plugins)",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "format": "int64",
+                "description": "The number of route composition entities, disabled ones included",
+                "example": 0
+              },
+              "plugins": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AnonymousReportMinMaxAvg"
+                  }
+                ],
+                "description": "The number of plugins of the route compositions and of their routes"
+              },
+              "by_kind": {
+                "type": "object",
+                "description": "The number of route compositions by where their plugins are: `global` when none of their routes has plugins of its own, `local` when some have, `local_with_override` when one of them also overrides the plugins of the composition",
+                "additionalProperties": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "The number of route compositions of this kind"
+                },
+                "example": {}
+              }
+            }
+          },
+          "apikeys": {
+            "type": "object",
+            "description": "The api keys, the number of them that use each feature, and the number of entities they are authorized on",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "format": "int64",
+                "description": "The number of api keys, disabled ones included",
+                "example": 75
+              },
+              "by_kind": {
+                "type": "object",
+                "description": "The number of api keys that use each feature, an api key counting under every feature it uses",
+                "properties": {
+                  "disabled": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The api keys whose `enabled` flag is false",
+                    "example": 0
+                  },
+                  "with_rotation": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The api keys whose secret rotation is enabled (`rotation.enabled`)",
+                    "example": 0
+                  },
+                  "with_read_only": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The api keys flagged `readOnly`: they only allow calls with the `GET`, `HEAD` and `OPTIONS` methods",
+                    "example": 0
+                  },
+                  "with_client_id_only": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The api keys flagged `allowClientIdOnly`: they can be presented with their client id alone, on the routes that accept it",
+                    "example": 4
+                  },
+                  "with_constrained_services": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The api keys flagged `constrainedServicesOnly`: they are only accepted by the routes that constrain the api keys they accept (with tag or metadata based routing)",
+                    "example": 0
+                  },
+                  "with_meta": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The api keys with at least one metadata entry",
+                    "example": 63
+                  },
+                  "with_tags": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The api keys with at least one tag",
+                    "example": 27
+                  }
+                }
+              },
+              "authorized_on": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AnonymousReportMinMaxAvg"
+                  }
+                ],
+                "description": "The number of entities (service groups, routes, route compositions, apis) each api key is authorized on"
+              }
+            }
+          },
+          "jwt_verifiers": {
+            "type": "object",
+            "description": "The jwt verifier entities, by strategy and by kind of verification settings",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "format": "int64",
+                "description": "The number of jwt verifier entities, disabled ones included",
+                "example": 11
+              },
+              "by_strategy": {
+                "type": "object",
+                "description": "The number of jwt verifiers by strategy: `default_token`, `pass_through`, `sign` or `transform`",
+                "additionalProperties": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "The number of jwt verifiers with this strategy"
+                },
+                "example": {
+                  "pass_through": 11
+                }
+              },
+              "by_alg": {
+                "type": "object",
+                "description": "The number of jwt verifiers by kind of verification settings: `HSAlgoSettings` (hmac secret), `RSAlgoSettings`, `ESAlgoSettings` (public key), `JWKSAlgoSettings` (keys of a JWKS url), `RSAKPAlgoSettings`, `ESKPAlgoSettings` (key pair of a certificate) or `KidAlgoSettings` (the certificate named by the `kid` of the token)",
+                "additionalProperties": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "The number of jwt verifiers with this kind of verification settings"
+                },
+                "example": {
+                  "HSAlgoSettings": 5,
+                  "JWKSAlgoSettings": 4
+                }
+              }
+            }
+          },
+          "certificates": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCountByKind"
+              }
+            ],
+            "description": "The certificates, by flag: `auto_renew`, `client`, `keypair`, `exposed` and `revoked`. A certificate counts under each of its flags, and a flag no certificate has is absent"
+          },
+          "auth_modules": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCountByKind"
+              }
+            ],
+            "description": "The auth modules, by type: `basic`, `ldap`, `oauth2`, `oauth1`, `saml`, `wasm` or `workflow`"
+          },
+          "teams": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCount"
+              }
+            ],
+            "description": "The number of teams, the groups of entities of a tenant (organization) the rights of the admins are given on"
+          },
+          "tenants": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCount"
+              }
+            ],
+            "description": "The number of tenants (organizations), the top level partition of the entities and of the rights of the admins"
+          },
+          "service_groups": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCount"
+              }
+            ],
+            "description": "The number of service groups, the groups of routes an api key can be authorized on as a whole"
+          },
+          "data_exporters": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCountByKind"
+              }
+            ],
+            "description": "The data exporters, by type (`elastic`, `kafka`, `webhook`, `file`, `s3`...)"
+          },
+          "otoroshi_admins": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCountByKind"
+              }
+            ],
+            "description": "The admins stored in otoroshi, by type: `simple` (login and password) or `webauthn`"
+          },
+          "backoffice_sessions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCountByKind"
+              }
+            ],
+            "description": "The live sessions of the admins in the backoffice, by type of the auth module they logged in with, `simple` for an admin stored in otoroshi, or the id of the auth module when it no longer exists"
+          },
+          "private_apps_sessions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCountByKind"
+              }
+            ],
+            "description": "The live sessions of the users of the private apps (the routes protected by an auth module), by type of auth module, `unknown` when the module no longer exists"
+          },
+          "tcp_services": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnonymousReportCount"
+              }
+            ],
+            "description": "The number of tcp services, the entities that proxy raw tcp connections"
+          }
+        }
+      },
+      "plugins_usage": {
+        "type": "object",
+        "description": "The number of uses of each plugin, by plugin id: its occurrences in the plugins of the routes the router knows, plus the global plugins and the global scripts of the global configuration when they are enabled",
+        "additionalProperties": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The number of uses of this plugin"
+        },
+        "example": {
+          "cp:otoroshi.next.plugins.OverrideHost": 300
+        }
+      }
+    },
+    "example": {
+      "@timestamp": 1792094097918,
+      "timestamp_str": "2026-10-15T21:54:57.918+02:00",
+      "@id": "1d72b5dfd-e4f5-4dcd-a5a8-2cf3537cfc9e",
+      "otoroshi_cluster_id": "7bcab7ed5-9b9c-430e-acb5-2a42300b102c",
+      "otoroshi_version": "18.0.0-dev",
+      "otoroshi_version_sem": {
+        "raw": "18.0.0-dev",
+        "major": 18,
+        "minor": 0,
+        "patch": 0,
+        "build": null,
+        "suffix": "dev",
+        "suffix_version": null,
+        "str": "18.0.0-dev",
+        "value": 1799.5
+      },
+      "java_version": {
+        "version": "17.0.2",
+        "vendor": "Oracle Corporation"
+      },
+      "os": {
+        "name": "Linux",
+        "version": "6.8.0-45-generic",
+        "arch": "amd64"
+      },
+      "datastore": "redis",
+      "env": "prod",
+      "additional_data": {},
+      "features": {
+        "snow_monkey": false,
+        "clever_cloud": false,
+        "kubernetes": false,
+        "elastic_read": false,
+        "lets_encrypt": true,
+        "auto_certs": false,
+        "wasmo": true,
+        "wasm_manager": true,
+        "backoffice_login": false
+      },
+      "stats": {
+        "calls": 360087,
+        "data_in": 11280598,
+        "data_out": 162326308,
+        "rate": 4,
+        "duration": 27.17,
+        "overhead": 5.1,
+        "data_in_rate": 0,
+        "data_out_rate": 1220,
+        "concurrent_requests": 1
+      },
+      "engine": {
+        "uses_new": true,
+        "uses_new_full": true
+      },
+      "cluster": {
+        "mode": "Leader",
+        "all_nodes": 1,
+        "alive_nodes": 1,
+        "leaders_count": 1,
+        "workers_count": 0,
+        "nodes": [
+          {
+            "id": "node_17bad625d-f161-44a3-9a90-0c4417a01fb0",
+            "os": {
+              "name": "Linux",
+              "version": "6.8.0-45-generic",
+              "arch": "amd64"
+            },
+            "java_version": {
+              "version": "17.0.2",
+              "vendor": "Oracle Corporation"
+            },
+            "version": "18.0.0-dev",
+            "type": "Leader",
+            "cpu_usage": 9.02,
+            "load_average": 7.92,
+            "heap_used": 2550,
+            "heap_size": 2788,
+            "relay": true,
+            "tunnels": 0
+          }
+        ]
+      },
+      "generic_entities": {
+        "proxy.otoroshi.io/routes": 308,
+        "apim.otoroshi.io/apikeys": 75
+      },
+      "entities": {
+        "scripts": {
+          "count": 0,
+          "by_kind": {}
+        },
+        "routes": {
+          "count": 308,
+          "plugins": {
+            "min": 0,
+            "max": 27,
+            "avg": 2
+          }
+        },
+        "router_routes": {
+          "count": 311,
+          "http_clients": {
+            "ahc": 307,
+            "akka": 2,
+            "netty": 2,
+            "akka_ws": 1
+          },
+          "plugins": {
+            "min": 0,
+            "max": 27,
+            "avg": 2
+          }
+        },
+        "route_compositions": {
+          "count": 0,
+          "plugins": {
+            "min": 0,
+            "max": 0,
+            "avg": 0
+          },
+          "by_kind": {}
+        },
+        "apikeys": {
+          "count": 75,
+          "by_kind": {
+            "disabled": 0,
+            "with_rotation": 0,
+            "with_read_only": 0,
+            "with_client_id_only": 4,
+            "with_constrained_services": 0,
+            "with_meta": 63,
+            "with_tags": 27
+          },
+          "authorized_on": {
+            "min": 1,
+            "max": 4,
+            "avg": 1
+          }
+        },
+        "jwt_verifiers": {
+          "count": 11,
+          "by_strategy": {
+            "pass_through": 11
+          },
+          "by_alg": {
+            "HSAlgoSettings": 5,
+            "JWKSAlgoSettings": 4,
+            "RSAlgoSettings": 2
+          }
+        },
+        "certificates": {
+          "count": 12,
+          "by_kind": {
+            "auto_renew": 9,
+            "client": 1,
+            "keypair": 2,
+            "exposed": 1
+          }
+        },
+        "auth_modules": {
+          "count": 22,
+          "by_kind": {
+            "oauth2": 10,
+            "basic": 11,
+            "ldap": 1
+          }
+        },
+        "teams": {
+          "count": 3
+        },
+        "tenants": {
+          "count": 1
+        },
+        "service_groups": {
+          "count": 8
+        },
+        "data_exporters": {
+          "count": 2,
+          "by_kind": {
+            "elastic": 1,
+            "webhook": 1
+          }
+        },
+        "otoroshi_admins": {
+          "count": 3,
+          "by_kind": {
+            "simple": 2,
+            "webauthn": 1
+          }
+        },
+        "backoffice_sessions": {
+          "count": 2,
+          "by_kind": {
+            "simple": 1,
+            "oauth2": 1
+          }
+        },
+        "private_apps_sessions": {
+          "count": 5,
+          "by_kind": {
+            "oauth2": 5
+          }
+        },
+        "tcp_services": {
+          "count": 0
+        }
+      },
+      "plugins_usage": {
+        "cp:otoroshi.next.plugins.OverrideHost": 300,
+        "cp:otoroshi.next.plugins.ApikeyCalls": 75
+      }
+    }
+  },
+  "NodeHealth": {
+    "type": "object",
+    "description": "The health of an otoroshi instance and of its components",
+    "properties": {
+      "otoroshi": {
+        "type": "string",
+        "description": "The health of otoroshi: `healthy`, `unhealthy` when the datastore is unhealthy or the mean overhead of otoroshi on the recent calls is above `app.health.limit` (1000 milliseconds by default), `down` when the datastore is unreachable",
+        "enum": [
+          "healthy",
+          "unhealthy",
+          "down"
+        ],
+        "example": "healthy"
+      },
+      "datastore": {
+        "type": "string",
+        "description": "The health of the datastore, probed with a call to it: `healthy` when it answers, `unreachable` when the call fails, `unhealthy` when its driver reports it so",
+        "enum": [
+          "healthy",
+          "unhealthy",
+          "unreachable"
+        ],
+        "example": "healthy"
+      },
+      "proxy": {
+        "type": "object",
+        "description": "Whether the http handler of the instance processes a test request (`GET /otoroshi-engine-self-health-check` on the host `otoroshi-engine.self-health-check.local`)",
+        "properties": {
+          "initialized": {
+            "type": "boolean",
+            "description": "Always `true`: the test request needs no initialization",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "description": "`healthy` when the test request was processed, `down` when processing it failed",
+            "enum": [
+              "healthy",
+              "down"
+            ],
+            "example": "healthy"
+          }
+        },
+        "example": {
+          "initialized": true,
+          "status": "healthy"
+        }
+      },
+      "storage": {
+        "type": "object",
+        "description": "The health of the datastore again, in the shape of the other components",
+        "properties": {
+          "initialized": {
+            "type": "boolean",
+            "description": "Always `true`: the datastore probe needs no initialization",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "description": "The same value as `datastore`",
+            "enum": [
+              "healthy",
+              "unhealthy",
+              "unreachable"
+            ],
+            "example": "healthy"
+          }
+        },
+        "example": {
+          "initialized": true,
+          "status": "healthy"
+        }
+      },
+      "eventstore": {
+        "type": "object",
+        "description": "The health of the Elasticsearch cluster the analytics are read from (`elasticReadsConfig` of the global configuration), checked every 10 seconds",
+        "properties": {
+          "initialized": {
+            "type": "boolean",
+            "description": "Whether the event store was checked at least once",
+            "example": false
+          },
+          "status": {
+            "type": "string",
+            "description": "`healthy` when the last check reached Elasticsearch, `down` when it failed, `unknown` before the first check or when the analytics are not read from Elasticsearch",
+            "enum": [
+              "healthy",
+              "down",
+              "unknown"
+            ],
+            "example": "unknown"
+          }
+        },
+        "example": {
+          "initialized": false,
+          "status": "unknown"
+        }
+      },
+      "certificates": {
+        "type": "object",
+        "description": "Whether the certificates are loaded into the tls stack of the instance",
+        "properties": {
+          "initialized": {
+            "type": "boolean",
+            "description": "Whether the first load of the certificates is done",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "description": "`loaded` once the first load of the certificates is done, `loading` before",
+            "enum": [
+              "loaded",
+              "loading"
+            ],
+            "example": "loaded"
+          }
+        },
+        "example": {
+          "initialized": true,
+          "status": "loaded"
+        }
+      },
+      "scripts": {
+        "type": "object",
+        "description": "Whether the scripts (the plugins otoroshi compiles) are compiled",
+        "properties": {
+          "compiling": {
+            "type": "boolean",
+            "description": "Whether scripts are being compiled right now",
+            "example": false
+          },
+          "initialized": {
+            "type": "boolean",
+            "description": "Whether the first compilation of the scripts is done (always `true` when there is no script)",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "description": "`loaded` when `initialized` is `true`, `loading` otherwise",
+            "enum": [
+              "loaded",
+              "loading"
+            ],
+            "example": "loaded"
+          }
+        },
+        "example": {
+          "compiling": false,
+          "initialized": true,
+          "status": "loaded"
+        }
+      },
+      "cluster": {
+        "type": "object",
+        "description": "The health of the cluster, absent when the cluster mode is `Off`. A leader tells the health of its members (`health`), a worker its link to the leaders (`status`, `lastSync`, `worker`)",
+        "properties": {
+          "health": {
+            "type": "string",
+            "description": "On a leader, the worst health of the members: `healthy`, `notthathealthy` when a member was not seen for half its timeout, `unhealthy` for three quarters of it",
+            "enum": [
+              "healthy",
+              "notthathealthy",
+              "unhealthy"
+            ],
+            "example": "healthy"
+          },
+          "status": {
+            "type": "string",
+            "description": "On a worker, always `healthy`",
+            "enum": [
+              "healthy"
+            ],
+            "example": "healthy"
+          },
+          "lastSync": {
+            "type": "string",
+            "format": "date-time",
+            "description": "On a worker, when the state was last loaded from the leaders",
+            "example": "2026-10-15T21:54:57.918+02:00"
+          },
+          "worker": {
+            "type": "object",
+            "description": "On a worker, whether it loaded the state and can serve requests",
+            "properties": {
+              "status": {
+                "type": "string",
+                "description": "`loaded` when the worker has loaded the state from the leaders and can serve requests, `loading` otherwise",
+                "enum": [
+                  "loaded",
+                  "loading"
+                ],
+                "example": "loaded"
+              },
+              "initialized": {
+                "type": "boolean",
+                "description": "Whether the worker can serve requests",
+                "example": true
+              }
+            },
+            "example": {
+              "status": "loaded",
+              "initialized": true
+            }
+          }
+        },
+        "example": {
+          "health": "healthy"
+        }
+      }
+    },
+    "example": {
+      "otoroshi": "healthy",
+      "datastore": "healthy",
+      "proxy": {
+        "initialized": true,
+        "status": "healthy"
+      },
+      "storage": {
+        "initialized": true,
+        "status": "healthy"
+      },
+      "eventstore": {
+        "initialized": false,
+        "status": "unknown"
+      },
+      "certificates": {
+        "initialized": true,
+        "status": "loaded"
+      },
+      "scripts": {
+        "compiling": false,
+        "initialized": true,
+        "status": "loaded"
+      },
+      "cluster": {
+        "health": "healthy"
+      }
+    }
+  },
+  "NodeMetric": {
+    "type": "object",
+    "description": "A metric of an otoroshi instance, its fields depending on its type: a gauge has a `value`, a counter a `count`, a histogram a `count` and the statistics of its values, a meter a `count` and its rates, a timer all of them",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name of the metric without its tags (`jvm.memory.total.used`, `ng-proxy-state-refresh`...)",
+        "example": "otoroshi.core.proxy.handle-http-request"
+      },
+      "type": {
+        "type": "string",
+        "description": "The group of the metric: `gauges`, `counters`, `histograms`, `meters`, `timers`, or `metrics`, the group of every metric whatever its type, so most metrics show up twice. With a filter, the singular `gauge`, `counter`, `histogram`, `meter` or `timer`, and no `metrics` group",
+        "example": "timers"
+      },
+      "value": {
+        "description": "The value of a gauge: a number, a string, or an array",
+        "example": 2555904
+      },
+      "count": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of values recorded (histogram), of events (meter) or of calls (timer), or the value of a counter",
+        "example": 1250
+      },
+      "max": {
+        "type": "number",
+        "format": "double",
+        "description": "The largest of the values the histogram or the timer keeps (in `duration_units` for a timer)",
+        "example": 42.1
+      },
+      "mean": {
+        "type": "number",
+        "format": "double",
+        "description": "The mean of the values the histogram or the timer keeps (in `duration_units` for a timer)",
+        "example": 3.2
+      },
+      "min": {
+        "type": "number",
+        "format": "double",
+        "description": "The smallest of the values the histogram or the timer keeps (in `duration_units` for a timer)",
+        "example": 0.4
+      },
+      "p50": {
+        "type": "number",
+        "format": "double",
+        "description": "The median of the values the histogram or the timer keeps (in `duration_units` for a timer)",
+        "example": 2.1
+      },
+      "p75": {
+        "type": "number",
+        "format": "double",
+        "description": "The 75th percentile of the values",
+        "example": 3.4
+      },
+      "p95": {
+        "type": "number",
+        "format": "double",
+        "description": "The 95th percentile of the values",
+        "example": 8.9
+      },
+      "p98": {
+        "type": "number",
+        "format": "double",
+        "description": "The 98th percentile of the values",
+        "example": 12.5
+      },
+      "p99": {
+        "type": "number",
+        "format": "double",
+        "description": "The 99th percentile of the values",
+        "example": 18.2
+      },
+      "p999": {
+        "type": "number",
+        "format": "double",
+        "description": "The 99.9th percentile of the values",
+        "example": 40.3
+      },
+      "stddev": {
+        "type": "number",
+        "format": "double",
+        "description": "The standard deviation of the values the histogram or the timer keeps",
+        "example": 2.7
+      },
+      "m1_rate": {
+        "type": "number",
+        "format": "double",
+        "description": "The rate over the last minute (an exponentially weighted moving average), in `rate_units` for a timer, `units` for a meter",
+        "example": 0.18
+      },
+      "m5_rate": {
+        "type": "number",
+        "format": "double",
+        "description": "The rate over the last five minutes (an exponentially weighted moving average), in `rate_units` for a timer, `units` for a meter",
+        "example": 0.2
+      },
+      "m15_rate": {
+        "type": "number",
+        "format": "double",
+        "description": "The rate over the last fifteen minutes (an exponentially weighted moving average), in `rate_units` for a timer, `units` for a meter",
+        "example": 0.19
+      },
+      "mean_rate": {
+        "type": "number",
+        "format": "double",
+        "description": "The mean rate since the metric was created, in `rate_units` for a timer, `units` for a meter",
+        "example": 0.09
+      },
+      "units": {
+        "type": "string",
+        "description": "The unit of the rates of a meter, `events/second`",
+        "example": "events/second"
+      },
+      "duration_units": {
+        "type": "string",
+        "description": "The unit of the durations of a timer, `milliseconds`",
+        "example": "milliseconds"
+      },
+      "rate_units": {
+        "type": "string",
+        "description": "The unit of the rates of a timer, `calls/second`",
+        "example": "calls/second"
+      },
+      "metrics": {
+        "type": "object",
+        "description": "The gauges of a set of metrics registered as one metric, by name: the `attr` metric holds the attributes of the instance (`cluster.mode`, `jvm.heap.used`...)",
+        "additionalProperties": {
+          "type": "object",
+          "description": "A gauge of the set, its value in `value`",
+          "additionalProperties": true
+        },
+        "example": {
+          "cluster.mode": {
+            "value": "Leader"
+          },
+          "jvm.heap.used": {
+            "value": 2866
+          }
+        }
+      }
+    },
+    "example": {
+      "name": "otoroshi.core.proxy.handle-http-request",
+      "type": "timers",
+      "count": 1250,
+      "max": 42.1,
+      "mean": 3.2,
+      "min": 0.4,
+      "p50": 2.1,
+      "p75": 3.4,
+      "p95": 8.9,
+      "p98": 12.5,
+      "p99": 18.2,
+      "p999": 40.3,
+      "stddev": 2.7,
+      "m15_rate": 0.19,
+      "m1_rate": 0.18,
+      "m5_rate": 0.2,
+      "mean_rate": 0.09,
+      "duration_units": "milliseconds",
+      "rate_units": "calls/second"
+    }
+  },
+  "NodeRawMetrics": {
+    "type": "object",
+    "description": "The metrics of an otoroshi instance as the raw json export of its metric registry: every metric by name under `metrics`, and again by type under `gauges`, `counters`, `histograms`, `meters` and `timers`. The names end with their tags, like `ng-proxy-state-refresh {}`",
+    "properties": {
+      "version": {
+        "type": "string",
+        "description": "The version of the json format of a dropwizard registry: the registry otoroshi uses does not write it",
+        "example": "4.0.0"
+      },
+      "gauges": {
+        "type": "object",
+        "description": "The gauges by name, tags included, each with its `value`",
+        "additionalProperties": {
+          "type": "object",
+          "description": "A gauge, its value in `value`",
+          "additionalProperties": true
+        },
+        "example": {
+          "jvm.memory.total.used {}": {
+            "value": 3211129112
+          }
+        }
+      },
+      "counters": {
+        "type": "object",
+        "description": "The counters by name, tags included, each with its `count`",
+        "additionalProperties": {
+          "type": "object",
+          "description": "A counter, its value in `count`",
+          "additionalProperties": true
+        },
+        "example": {
+          "otoroshi.requests.total {}": {
+            "count": 1250
+          }
+        }
+      },
+      "histograms": {
+        "type": "object",
+        "description": "The histograms by name, tags included, each with its `count` and the statistics of its values",
+        "additionalProperties": {
+          "type": "object",
+          "description": "A histogram: its `count` and the statistics of its values",
+          "additionalProperties": true
+        },
+        "example": {
+          "ahc-total-connections {}": {
+            "count": 2,
+            "max": 4,
+            "mean": 3.5,
+            "min": 3,
+            "p50": 4,
+            "p75": 4,
+            "p95": 4,
+            "p98": 4,
+            "p99": 4,
+            "p999": 4,
+            "stddev": 0.5
+          }
+        }
+      },
+      "meters": {
+        "type": "object",
+        "description": "The meters by name, tags included, each with its `count` and its rates",
+        "additionalProperties": {
+          "type": "object",
+          "description": "A meter: its `count`, its rates and their `units`",
+          "additionalProperties": true
+        }
+      },
+      "timers": {
+        "type": "object",
+        "description": "The timers by name, tags included, each with its `count`, the statistics of its durations and its rates",
+        "additionalProperties": {
+          "type": "object",
+          "description": "A timer: its `count`, the statistics of its durations and its rates, and their units",
+          "additionalProperties": true
+        },
+        "example": {
+          "ng-proxy-state-refresh {}": {
+            "count": 4,
+            "max": 537,
+            "mean": 249.68,
+            "min": 110,
+            "p50": 137,
+            "p75": 229,
+            "p95": 537,
+            "p98": 537,
+            "p99": 537,
+            "p999": 537,
+            "stddev": 167.4,
+            "m15_rate": 0.6,
+            "m1_rate": 0.6,
+            "m5_rate": 0.6,
+            "mean_rate": 0.69,
+            "duration_units": "milliseconds",
+            "rate_units": "calls/second"
+          }
+        }
+      }
+    },
+    "additionalProperties": {
+      "type": "object",
+      "description": "Another group of metrics by name, like `metrics` that holds every metric whatever its type",
+      "additionalProperties": true
+    }
+  }
+}
