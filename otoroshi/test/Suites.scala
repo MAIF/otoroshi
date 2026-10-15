@@ -271,7 +271,8 @@ class UnitTests
       new entities.ApiPlanEntityFormatSpec(),
       new entities.ApiDocumentationEntityFormatSpec(),
       new entities.ApiSubscriptionEntityFormatSpec(),
-      new entities.DraftEntityFormatSpec()
+      new entities.DraftEntityFormatSpec(),
+      new entities.RouteTemplateEntityFormatSpec()
     )
 
 class MapFilterTest
