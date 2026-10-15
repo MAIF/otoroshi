@@ -1,0 +1,1673 @@
+{
+  "/api/cluster/live": {
+    "get": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Stream the health of the cluster",
+      "description": "Answers a server sent events stream that tells, every `every` milliseconds and for as long as the client stays connected, the number of members of the cluster, its health (the worst health of its members: `green` when a member was seen less than half its timeout ago, `orange` under three quarters of it, `red` beyond), and the bytes received from and sent to the workers. Any admin can call it. Only a cluster leader answers it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.liveCluster",
+      "parameters": [
+        {
+          "name": "every",
+          "in": "query",
+          "description": "The interval between two events, in milliseconds: 2000 by default, never less than 1000. A value that is not an integer is ignored",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1000,
+            "default": 2000,
+            "example": 5000
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The stream of the health of the cluster",
+          "content": {
+            "text/event-stream": {
+              "schema": {
+                "type": "string",
+                "description": "A server sent events stream: every `every` milliseconds, a `data:` line holding as json the number of members (`workers`), the health of the cluster (`health`: `green`, `orange` or `red`), and the bytes received from (`payloadIn`) and sent to (`payloadOut`) the workers, followed by an empty line",
+                "example": "data: {\"workers\":3,\"health\":\"green\",\"payloadIn\":1048576,\"payloadOut\":52428800}\n\n"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The token of the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`) is not valid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: this instance is not a cluster leader (its cluster mode is `Off` or `Worker`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/members": {
+    "get": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "List the members of the cluster",
+      "description": "Answers the instances the leaders know as members of the cluster: the leaders, and the workers that fetched the state or sent their quotas recently. Only a super admin can call it, and only a cluster leader answers it. Also served as `GET /apis/cluster`.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.getClusterMembers",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The instances the leaders know as members of the cluster, each with the `time` the leader answered at",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The members of the cluster, leaders and workers, in no particular order",
+                "items": {
+                  "$ref": "#/components/schemas/MemberView"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: this instance is not a cluster leader (its cluster mode is `Off` or `Worker`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Forget the members of the cluster",
+      "description": "Forgets every member of the cluster the leaders know. The members that are still alive register again the next time they fetch the state or send their quotas. Only a super admin can call it, and only a cluster leader answers it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.clearClusterMembers",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Every member has been forgotten: answers `{\"done\":true}`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: this instance is not a cluster leader (its cluster mode is `Off` or `Worker`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/login-tokens/{id}": {
+    "get": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Consume a login token",
+      "description": "Tells whether a login token exists, and deletes it: a login token can be used once. Login tokens are created by the login flow of a basic or an ldap auth module, and live five minutes. On a worker, the token is looked up locally, then on the leaders. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.isLoginTokenValid",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The value of the login token to check, as created by the login flow of a basic or an ldap auth module",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "2h9fK3xQ7mWz1LpR8vN4cT6yB0dS5jAe"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The login token exists, it has been deleted",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClusterToken"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The login token does not exist (or has expired), or the cluster api is not available: the cluster mode of this instance is `Off`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Create a login token",
+      "description": "Creates a login token with the value of the path, valid for five minutes. Workers call it on the leaders when a user logs in through them, so that the login can complete on any instance. On a worker, the token is created on the leaders. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.createLoginToken",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The value of the login token to create: workers pass the token they generated for the login flow",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "2h9fK3xQ7mWz1LpR8vN4cT6yB0dS5jAe"
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "Any json value: the body has to be json, but it is not read",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "description": "Any json value, not read",
+              "additionalProperties": true,
+              "example": {}
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "201": {
+          "description": "The login token exists for the next five minutes; the body holds its value",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClusterToken"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the body is not json",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: the cluster mode of this instance is `Off`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "This instance is a worker and the leaders did not create the token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/user-tokens/{id}": {
+    "get": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Consume a user token",
+      "description": "Answers the user a user token stands for, and deletes the token: a user token can be used once. User tokens are created when a basic or an ldap auth module authenticates a user with the `Authorization: Basic` header, and live five minutes. On a worker, the token is looked up locally, then on the leaders. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.getUserToken",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The value of the user token to read and delete: the login token of the login flow the user went through",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "2h9fK3xQ7mWz1LpR8vN4cT6yB0dS5jAe"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The user the token stood for. A worker answers the user it got from the leaders wrapped in a `token` field",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "The json of the user the auth module identified (wrapped in a `token` field when a worker answers)",
+                "additionalProperties": true,
+                "example": {
+                  "name": "John Doe",
+                  "email": "john.doe@oto.tools"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The user token does not exist (or has expired), or the cluster api is not available: the cluster mode of this instance is `Off`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/user-tokens": {
+    "post": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Create a user token",
+      "description": "Stores the user of the body under the token of the body, for five minutes. Workers call it on the leaders when a user logs in through them, so that the login can complete on any instance. On a worker, the token is created on the leaders. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.setUserToken",
+      "requestBody": {
+        "description": "The token and the user it stands for",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ClusterUserToken"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "201": {
+          "description": "The user is stored under the token for the next five minutes; the body holds the token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClusterToken"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the body is not json",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: the cluster mode of this instance is `Off`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body has no `token` or no `user` (answered as a server error), or this instance is a worker and the leaders did not create the token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/sessions/{id}": {
+    "get": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Read a session of a private apps user",
+      "description": "Answers the session of a user logged in to a private app, by its id. Workers call it on the leaders to find the sessions created through other instances. On a worker, the session is looked up locally, then on the leaders. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.isSessionValid",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The id of the session (its `randomId`)",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "Nf3kR9tWq2LmZ8xVb7Yc1Hd4Gp6Js0Ae5Uo3Ki9Tr2Wy8Qn1Mx7Bv4Cz6Dl0Fh2"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The session of the user, as a private apps user",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/security.otoroshi.io.AuthModuleUser"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The session does not exist (or has expired), or the cluster api is not available: the cluster mode of this instance is `Off`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/sessions": {
+    "post": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Create a session of a private apps user",
+      "description": "Stores the session of a user logged in to a private app, until its `expiredAt`. Workers call it on the leaders when a user logs in through them. On a worker, the session is created on the leaders. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.createSession",
+      "requestBody": {
+        "description": "The session of the user to store, as a private apps user",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/security.otoroshi.io.AuthModuleUser"
+                }
+              ],
+              "description": "The session to store, valid until its `expiredAt`",
+              "example": {
+                "_loc": {
+                  "tenant": "default",
+                  "teams": [
+                    "default"
+                  ]
+                },
+                "randomId": "Nf3kR9tWq2LmZ8xVb7Yc1Hd4Gp6Js0Ae5Uo3Ki9Tr2Wy8Qn1Mx7Bv4Cz6Dl0Fh2",
+                "name": "John Doe",
+                "email": "john.doe@oto.tools",
+                "authConfigId": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+                "profile": {
+                  "sub": "4f9c2d1e",
+                  "name": "John Doe",
+                  "email": "john.doe@oto.tools"
+                },
+                "token": {},
+                "realm": "global-oauth-auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+                "otoroshiData": null,
+                "createdAt": 1792094628000,
+                "expiredAt": 1893456000000,
+                "lastRefresh": 1792094628000,
+                "metadata": {},
+                "tags": []
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "201": {
+          "description": "The session, as stored, its `expiredAt` recomputed from the time left",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/security.otoroshi.io.AuthModuleUser"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not json, or it is not a session",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: the cluster mode of this instance is `Off`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "This instance is a worker and the leaders did not create the session",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/quotas": {
+    "put": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Apply the quotas updates of a worker",
+      "description": "Applies the quotas updates of the body, one json object per line: the calls of the api keys (`apkincr`), the traffic of the routes (`srvincr`), the counters of the custom quotas (`custquots`) and custom throttling (`custthrot`) plugins, and the statistics of the worker (`globstats`, that also registers the worker as a member). Workers call it on the leaders every `otoroshi.cluster.worker.quotas.pushEvery` milliseconds (2000 by default). The body is gzip compressed when the cluster compression is enabled (`otoroshi.cluster.compression` from 0 to 9), without a `Content-Encoding` header. Every line has to end with a new line, the last one included. A worker identifies itself with the `Otoroshi-Worker-*` headers (its name, id, version, java version, operating system, location, ports and relay routing settings). Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.updateState",
+      "parameters": [
+        {
+          "name": "budget",
+          "in": "query",
+          "description": "How long the leader may take to apply the updates, in milliseconds (2000 by default): beyond it, a warning is logged. Workers send their `otoroshi.cluster.worker.quotas.timeout`",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 2000
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Name",
+          "in": "header",
+          "description": "The name of the worker (`otoroshi.cluster.worker.name`): the leaders register the worker as a member under this name. A body with a known update and no such header is answered with a server error",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "otoroshi-worker-1"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Id",
+          "in": "header",
+          "description": "The id the worker generated when it started (`node_` followed by a uuid). A temporary `tmpnode_` id is used when absent",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "node_9a6c2b1e-5d3f-4c8a-b7e2-0f1d2c3b4a5e"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Version",
+          "in": "header",
+          "description": "The version of otoroshi the worker runs, `undefined` when absent",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "18.0.0"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Java-Version",
+          "in": "header",
+          "description": "The java virtual machine of the worker, as a json `JavaVersion`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "{\"version\":\"17.0.2\",\"vendor\":\"Oracle Corporation\"}"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Os",
+          "in": "header",
+          "description": "The operating system of the worker, as a json `OS`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "{\"name\":\"Linux\",\"version\":\"6.8.0-45-generic\",\"arch\":\"amd64\"}"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Location",
+          "in": "header",
+          "description": "The ip address of the worker (`otoroshi.cluster.selfAddress`, or the one it detected when it started), the `location` of the member; `--` when absent",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "10.0.12.34"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Http-Port",
+          "in": "header",
+          "description": "The exposed http port of the worker",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "example": 8080
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Https-Port",
+          "in": "header",
+          "description": "The exposed https port of the worker",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "example": 8443
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Internal-Http-Port",
+          "in": "header",
+          "description": "The http port the worker listens on",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "example": 8080
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Internal-Https-Port",
+          "in": "header",
+          "description": "The https port the worker listens on",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "example": 8443
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Relay-Routing",
+          "in": "header",
+          "description": "The relay routing settings of the worker, as a json `RelayRouting`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "{\"enabled\":false,\"leaderOnly\":false}"
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The quotas updates, one json object per line",
+        "required": true,
+        "content": {
+          "application/x-ndjson": {
+            "schema": {
+              "$ref": "#/components/schemas/ClusterQuotasUpdate"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Every line has been read and applied, the lines of an unknown type skipped: answers `{\"done\":true}`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: the cluster mode of this instance is `Off`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body could not be read: a line that is not json, a last line without a new line, a body that is not compressed as configured, a missing `Otoroshi-Worker-Name` header, or a `budget` that is not a number",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/state": {
+    "get": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Read the state of the cluster",
+      "description": "Answers the whole state the workers load from the leaders: every key of the datastore (except the audit and alert events, the admins, the backoffice sessions, the health checks and the statistics), one json object per line. A leader answers the copy of the state it refreshes on its own, and registers the caller as a worker member when it sends an `Otoroshi-Worker-Name` header. A worker identifies itself with the `Otoroshi-Worker-*` headers (its name, id, version, java version, operating system, location, ports and relay routing settings). A worker answers its own datastore. The body is gzip compressed when the cluster compression is enabled (`otoroshi.cluster.compression` from 0 to 9), without a `Content-Encoding` header. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.readState",
+      "parameters": [
+        {
+          "name": "budget",
+          "in": "query",
+          "description": "Read for compatibility, not used: a value that is not a number is answered as a server error",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 2000
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Name",
+          "in": "header",
+          "description": "The name of the worker (`otoroshi.cluster.worker.name`): the leaders register the worker as a member under this name. Without it, the leader answers the state without registering the caller",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "otoroshi-worker-1"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Id",
+          "in": "header",
+          "description": "The id the worker generated when it started (`node_` followed by a uuid). A temporary `tmpnode_` id is used when absent",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "node_9a6c2b1e-5d3f-4c8a-b7e2-0f1d2c3b4a5e"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Version",
+          "in": "header",
+          "description": "The version of otoroshi the worker runs, `undefined` when absent",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "18.0.0"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Java-Version",
+          "in": "header",
+          "description": "The java virtual machine of the worker, as a json `JavaVersion`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "{\"version\":\"17.0.2\",\"vendor\":\"Oracle Corporation\"}"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Os",
+          "in": "header",
+          "description": "The operating system of the worker, as a json `OS`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "{\"name\":\"Linux\",\"version\":\"6.8.0-45-generic\",\"arch\":\"amd64\"}"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Location",
+          "in": "header",
+          "description": "The ip address of the worker (`otoroshi.cluster.selfAddress`, or the one it detected when it started), the `location` of the member; `--` when absent",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "10.0.12.34"
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Http-Port",
+          "in": "header",
+          "description": "The exposed http port of the worker",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "example": 8080
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Https-Port",
+          "in": "header",
+          "description": "The exposed https port of the worker",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "example": 8443
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Internal-Http-Port",
+          "in": "header",
+          "description": "The http port the worker listens on",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "example": 8080
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Internal-Https-Port",
+          "in": "header",
+          "description": "The https port the worker listens on",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "example": 8443
+          }
+        },
+        {
+          "name": "Otoroshi-Worker-Relay-Routing",
+          "in": "header",
+          "description": "The relay routing settings of the worker, as a json `RelayRouting`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "{\"enabled\":false,\"leaderOnly\":false}"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The state, one entry of the datastore per line",
+          "headers": {
+            "Otoroshi-Leader-Node-Name": {
+              "description": "The name of the leader that answered",
+              "schema": {
+                "type": "string",
+                "example": "otoroshi-leader-1"
+              }
+            },
+            "Otoroshi-Leader-Node-Version": {
+              "description": "The version of otoroshi the leader runs",
+              "schema": {
+                "type": "string",
+                "example": "18.0.0"
+              }
+            },
+            "X-Data-Count": {
+              "description": "The number of lines of the state",
+              "schema": {
+                "type": "integer",
+                "format": "int64",
+                "example": 1250
+              }
+            },
+            "X-Data-Digest": {
+              "description": "The sha-256 digest of the lines of the state, before compression",
+              "schema": {
+                "type": "string",
+                "example": "3f2a9c1e8b7d6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f"
+              }
+            },
+            "X-Data-From": {
+              "description": "When the leader built the state, a timestamp in milliseconds",
+              "schema": {
+                "type": "integer",
+                "format": "int64",
+                "example": 1792094628000
+              }
+            },
+            "X-Data-Auto": {
+              "description": "Always `true`: the state comes from the cache the leader refreshes on its own",
+              "schema": {
+                "type": "string",
+                "example": "true"
+              }
+            }
+          },
+          "content": {
+            "application/x-ndjson": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageExportLine"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: the cluster mode of this instance is `Off`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "A port header is not a number, or `budget` is not a number",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/state/ws": {
+    "get": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Open the websocket of the state of the cluster",
+      "description": "Upgrades the connection to a websocket on which the leader pushes the state of the cluster, and the worker sends its quotas updates, instead of polling `GET /api/cluster/state` and `PUT /api/cluster/quotas` (used by the workers when `otoroshi.cluster.worker.useWs` is enabled). Every `otoroshi.cluster.worker.state.pollEvery` milliseconds, the leader sends a json message holding the state (`state`, the bytes of the lines of `GET /api/cluster/state` as an array of numbers), the name and the version of the leader (`node_name`, `node_version`), and the number of lines, the digest and the date of the state (`data_count`, `data_digest`, `data_from`); as a binary message when the cluster compression is enabled, as a text message otherwise. The worker sends text messages holding itself as a member (`member`, a `MemberView`) and an update (`payload`, a `ClusterQuotasUpdate`: only `apkincr`, `srvincr` and `globstats` are applied). Only a super admin can open it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.stateWs",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "101": {
+          "description": "The connection is upgraded to a websocket"
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they are not the ones of a super admin (answered without a body)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cluster/relay": {
+    "post": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "Route a relayed request",
+      "description": "Routes, as if this instance had received it, a request another instance of the cluster relays because only this one can reach the backend of its route (relay routing). The relayed request is described by the `Otoroshi-Relay-Routing-*` headers: its id, method, uri, client address, whether it came over https and has a body, its cookies, its client certificates (`Otoroshi-Relay-Routing-Certs-<index>`, PEM encoded) and its headers (`Otoroshi-Relay-Routing-Header-<name>`); the body is the body of the relayed request. The answer is the answer of the route, its headers renamed `Otoroshi-Relay-Routing-Response-Header-<name>`. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.relayRouting",
+      "parameters": [
+        {
+          "name": "Otoroshi-Relay-Routing-Id",
+          "in": "header",
+          "description": "The id of the relayed request, a number",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1792094628000123
+          }
+        },
+        {
+          "name": "Otoroshi-Relay-Routing-Method",
+          "in": "header",
+          "description": "The http method of the relayed request",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "GET"
+          }
+        },
+        {
+          "name": "Otoroshi-Relay-Routing-Uri",
+          "in": "header",
+          "description": "The uri (path and query) of the relayed request",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "/api/users?page=2"
+          }
+        },
+        {
+          "name": "Otoroshi-Relay-Routing-Remote-Addr",
+          "in": "header",
+          "description": "The ip address of the client of the relayed request",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "192.168.1.42"
+          }
+        },
+        {
+          "name": "Otoroshi-Relay-Routing-Secured",
+          "in": "header",
+          "description": "Whether the relayed request came over https",
+          "required": true,
+          "schema": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        {
+          "name": "Otoroshi-Relay-Routing-Has-Body",
+          "in": "header",
+          "description": "Whether the relayed request has a body",
+          "required": true,
+          "schema": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        {
+          "name": "Otoroshi-Relay-Routing-Cookies",
+          "in": "header",
+          "description": "The cookies of the relayed request, as a `Cookie` header",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "session=4f9c2d1e; theme=dark"
+          }
+        },
+        {
+          "name": "Otoroshi-Relay-Routing-Route-Name",
+          "in": "header",
+          "description": "The name of the route the request is relayed for, only logged",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "users-api"
+          }
+        },
+        {
+          "name": "Otoroshi-Relay-Routing-Caller-Name",
+          "in": "header",
+          "description": "The name of the instance that relays the request, only logged",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "otoroshi-worker-1"
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The body of the relayed request, if any",
+        "required": false,
+        "content": {
+          "*/*": {
+            "schema": {
+              "type": "string",
+              "format": "binary",
+              "description": "The body of the relayed request"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The answer of the route (with its own status, which can be any), its headers renamed `Otoroshi-Relay-Routing-Response-Header-<name>`",
+          "content": {
+            "*/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "description": "The body of the answer of the route"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: the cluster mode of this instance is `Off`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "A required `Otoroshi-Relay-Routing-*` header is missing or malformed (answered as a server error)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/cluster": {
+    "get": {
+      "tags": [
+        "cluster"
+      ],
+      "summary": "List the members of the cluster",
+      "description": "Answers the instances the leaders know as members of the cluster: the leaders, and the workers that fetched the state or sent their quotas recently. Only a super admin can call it, and only a cluster leader answers it. Also served as `GET /api/cluster/members`.",
+      "operationId": "otoroshi.controllers.adminapi.ClusterController.clusterMembers",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The instances the leaders know as members of the cluster, each with the `time` the leader answered at",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The members of the cluster, leaders and workers, in no particular order",
+                "items": {
+                  "$ref": "#/components/schemas/MemberView"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The cluster api is not available: this instance is not a cluster leader (its cluster mode is `Off` or `Worker`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
