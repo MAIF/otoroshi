@@ -339,6 +339,10 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       (written(format, minimal.copy(proxies = proxies)) \ "proxies").as[JsValue] mustBe Proxies.format.writes(proxies)
     }
 
+    "read a null kafka config as no kafka config" in {
+      readOk(format, Json.obj("kafkaConfig" -> JsNull)).kafkaConfig mustBe None
+    }
+
     "keep the security settings of the admin api on a round trip" in {
       val back = roundTrip(format, minimal.copy(apiReadOnly = true, u2fLoginOnly = true, maintenanceMode = true))
       back.apiReadOnly mustBe true

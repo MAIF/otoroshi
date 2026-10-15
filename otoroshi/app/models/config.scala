@@ -969,7 +969,8 @@ object GlobalConfig {
               case e                                 => None
             }
           },
-          kafkaConfig = (json \ "kafkaConfig").asOpt[JsValue].flatMap { config =>
+          // a missing kafka config is written as null, which must not read back as a kafka config without server
+          kafkaConfig = (json \ "kafkaConfig").asOpt[JsObject].flatMap { config =>
             KafkaConfig.format.reads(config).asOpt
           // (
           //   (config \ "servers").asOpt[Seq[String]].filter(_.nonEmpty),
