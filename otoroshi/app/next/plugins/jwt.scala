@@ -1025,7 +1025,7 @@ case class OAuth2TokenExchangeConfig(
   }
 
   def withExpressionLanguage(attrs: TypedMap)(using env: Env): OAuth2TokenExchangeConfig = {
-    OAuth2TokenExchangeConfig.format.reads(json.stringify.evaluateEl(attrs).parseJson) match {
+    OAuth2TokenExchangeConfig.format.reads(json.evaluateElOnStrings(attrs)) match {
       case JsError(errs)     =>
         OAuth2TokenExchange.logger.error(s"error while applying EL on OAuth2TokenExchangeConfig: ${errs}")
         this

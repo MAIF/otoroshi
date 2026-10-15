@@ -134,7 +134,7 @@ class OpenFGAValidator extends NgAccessValidator {
       .cachedConfig(internalName)(OpenFGAValidatorConfig.format)
       .getOrElse(OpenFGAValidatorConfig.default)
       .applyOn { config =>
-        val json = config.json.stringify.evaluateEl(ctx.attrs).parseJson
+        val json = config.json.evaluateElOnStrings(ctx.attrs)
         OpenFGAValidatorConfig.format.reads(json).get
       }
     val key  = conf.asKey

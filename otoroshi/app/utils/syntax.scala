@@ -329,6 +329,14 @@ object implicits {
   implicit class BetterJsValue(private val obj: JsValue)       extends AnyVal {
     def stringify: String                              = Json.stringify(obj)
     def prettify: String                               = Json.prettyPrint(obj)
+    // evaluates the expression language in each string of the json: a value coming from the request stays a string,
+    // where evaluating the stringified json let quotes and braces in that value rewrite the json itself
+    def evaluateElOnStrings(attrs: TypedMap)(using env: Env): JsValue = obj match {
+      case JsString(value)  => JsString(GlobalExpressionLanguage.apply(value, attrs, env))
+      case JsObject(fields) => JsObject(fields.map { case (key, value) => (key, BetterJsValue(value).evaluateElOnStrings(attrs)) })
+      case JsArray(values)  => JsArray(values.map(value => BetterJsValue(value).evaluateElOnStrings(attrs)))
+      case other            => other
+    }
     def select(name: String): JsLookupResult           = obj \ name
     def select(index: Int): JsLookupResult             = obj \ index
     def multiSelect(snakeCase: String): JsLookupResult = select(snakeToCamel(snakeCase)) match {

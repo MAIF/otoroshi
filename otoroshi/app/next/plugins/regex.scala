@@ -573,7 +573,7 @@ class RegexRequestHeadersRewriter extends NgRequestTransformer {
   )(using env: Env): Map[String, String] = {
     var headers = Map.empty[String, String] ++ originalHeaders
     rules.foreach { _rule =>
-      val rule = RegexHeaderReplacementRule.format.reads(_rule.json.stringify.evaluateEl(attrs).parseJson).get
+      val rule = RegexHeaderReplacementRule.format.reads(_rule.json.evaluateElOnStrings(attrs)).get
       headers.getIgnoreCase(rule.name).foreach { headerValue =>
         val p: Pattern     = Pattern.compile(rule.pattern, flagsBits(rule.flags))
         val m: Matcher     = p.matcher(headerValue)
@@ -641,7 +641,7 @@ class RegexResponseHeadersRewriter extends NgRequestTransformer {
   )(using env: Env): Map[String, String] = {
     var headers = Map.empty[String, String] ++ originalHeaders
     rules.foreach { _rule =>
-      val rule = RegexHeaderReplacementRule.format.reads(_rule.json.stringify.evaluateEl(attrs).parseJson).get
+      val rule = RegexHeaderReplacementRule.format.reads(_rule.json.evaluateElOnStrings(attrs)).get
       headers.getIgnoreCase(rule.name).foreach { headerValue =>
         val p: Pattern     = Pattern.compile(rule.pattern, flagsBits(rule.flags))
         val m: Matcher     = p.matcher(headerValue)

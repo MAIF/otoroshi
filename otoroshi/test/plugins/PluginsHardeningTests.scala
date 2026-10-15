@@ -24,7 +24,7 @@ import play.api.libs.json.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.duration.DurationInt
 
 // access control plugins that let requests through when they should not
@@ -319,6 +319,44 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     }
     deleteOtoroshiRoute(byName).futureValue
     deleteOtoroshiRoute(byRules).futureValue
+  }
+
+  // the expression language of the openfga config used to be evaluated on the stringified json: a request header
+  // could rewrite the json, the url of the check included
+  def openFgaElInjection(): Unit = {
+    val injectedCalls = new AtomicInteger(0)
+    val fga           = TargetService.full(None, "/", "application/json", _ => (200, """{"allowed":false}""", List.empty)).await()
+    val injected      = TargetService
+      .full(
+        None,
+        "/",
+        "application/json",
+        _ => {
+          injectedCalls.incrementAndGet()
+          (200, """{"allowed":true}""", List.empty)
+        }
+      )
+      .await()
+    val r             = route(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[OpenFGAValidator],
+        config = NgPluginInstanceConfig(
+          OpenFGAValidatorConfig(
+            url = s"http://127.0.0.1:${fga.port}",
+            storeId = "store",
+            modelId = "model",
+            tupleKey = Json.obj("user" -> "user:anne", "relation" -> "reader", "object" -> "doc:${req.headers.X-Doc}")
+          ).json.as[JsObject]
+        )
+      )
+    )
+    val header        =
+      s"""1"},"url":"http://127.0.0.1:${injected.port}","tuple_key":{"user":"u","relation":"r","object":"doc:1"""
+    withClue("a check with a tuple from a header ") { call(r, "/", "X-Doc" -> header) mustBe Status.UNAUTHORIZED }
+    withClue("checks sent to the url injected by a header ") { injectedCalls.get() mustBe 0 }
+    deleteOtoroshiRoute(r).futureValue
+    fga.stop()
+    injected.stop()
   }
 
   def stop(): Unit = backend.stop()
