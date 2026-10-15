@@ -169,7 +169,8 @@ class UnitTests
       new plugins.configs.HeadersPluginConfigsSpec(),
       new plugins.configs.WebsocketPluginConfigsSpec(),
       new plugins.configs.QuotasPluginConfigsSpec(),
-      new plugins.configs.RegexPluginConfigsSpec()
+      new plugins.configs.RegexPluginConfigsSpec(),
+      new plugins.configs.HmacPluginConfigsSpec()
     )
 
 class MapFilterTest
