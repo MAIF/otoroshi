@@ -612,9 +612,14 @@ object ApiKey {
             apiRef = (json \ "apiRef").asOpt[JsObject].flatMap(o => ApiRef.format.reads(o).asOpt),
             plugins = (json \ "plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt),
             tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            // read entry by entry: one value that is not a string must not drop the whole map, and with it the
+            // access rights of the apikey. such a value is kept as its json text
             metadata = (json \ "metadata")
-              .asOpt[Map[String, String]]
-              .map(m => m.filter(_._1.nonEmpty))
+              .asOpt[JsObject]
+              .map(_.value.collect {
+                case (key, JsString(value)) if key.nonEmpty => (key, value)
+                case (key, value) if key.nonEmpty           => (key, Json.stringify(value))
+              }.toMap)
               .getOrElse(Map.empty[String, String])
           )
       } map { case sd =>

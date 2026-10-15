@@ -874,11 +874,24 @@ class ApikeyEntityFormatSpec extends EntityFormatSpec {
       readOk(format, minimalJson ++ Json.obj("plugins" -> Json.arr(plugin.json))).plugins mustBe None
     }
 
-    "ignore all the metadata, the admin api rights included, when one value is not a string" in {
+    "keep the admin api rights when another metadata value is not a string" in {
       readOk(
         format,
         minimalJson ++ Json.obj("metadata" -> Json.obj(ApiKey.accessRightsMetadataKey -> rightsJson, "count" -> 1))
-      ).metadata mustBe Map.empty
+      ).metadata mustBe Map(ApiKey.accessRightsMetadataKey -> rightsJson, "count" -> "1")
+    }
+
+    "keep a metadata value that is not a string as its json text" in {
+      val rights = Json.arr(Json.obj("tenant" -> "tenant-1:r", "teams" -> Json.arr("team-1:r")))
+      val back   = readOk(
+        format,
+        minimalJson ++ Json.obj("metadata" -> Json.obj(ApiKey.accessRightsMetadataKey -> rights, "enabled" -> true, "owner" -> "ops"))
+      )
+      back.metadata mustBe Map(ApiKey.accessRightsMetadataKey -> Json.stringify(rights), "enabled" -> "true", "owner" -> "ops")
+    }
+
+    "read metadata given as something else than an object as no metadata" in {
+      readOk(format, minimalJson ++ Json.obj("metadata" -> Json.arr("a"))).metadata mustBe Map.empty
     }
 
     "drop the metadata whose key is empty" in {
