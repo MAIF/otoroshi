@@ -343,6 +343,27 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       readOk(format, Json.obj("kafkaConfig" -> JsNull)).kafkaConfig mustBe None
     }
 
+    "read a null wasmo settings as no wasmo settings" in {
+      readOk(format, Json.obj("wasmoSettings" -> JsNull)).wasmoSettings mustBe None
+    }
+
+    "read the legacy wasm manager settings when there is no wasmo settings" in {
+      val back = readOk(format, Json.obj("wasmManagerSettings" -> Json.obj("url" -> "http://legacy:5001", "clientId" -> "legacy")))
+      back.wasmoSettings.map(_.settings.url) mustBe Some("http://legacy:5001")
+      back.wasmoSettings.map(_.settings.clientId) mustBe Some("legacy")
+    }
+
+    "prefer the wasmo settings over the legacy wasm manager settings" in {
+      val back = readOk(
+        format,
+        Json.obj(
+          "wasmoSettings"       -> Json.obj("url" -> "http://wasmo:5001"),
+          "wasmManagerSettings" -> Json.obj("url" -> "http://legacy:5001")
+        )
+      )
+      back.wasmoSettings.map(_.settings.url) mustBe Some("http://wasmo:5001")
+    }
+
     "keep the security settings of the admin api on a round trip" in {
       val back = roundTrip(format, minimal.copy(apiReadOnly = true, u2fLoginOnly = true, maintenanceMode = true))
       back.apiReadOnly mustBe true

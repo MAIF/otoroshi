@@ -775,21 +775,12 @@ object GlobalConfig {
 
     def readWasmoSettings(json: JsValue): Option[TlsWasmoSettings] = {
       if (json.atPath("wasmoSettings.settings").isEmpty) {
-        val wasmoSettings: JsResult[WasmoSettings]       = WasmoSettings.format.reads(
-          (json \ "wasmoSettings")
-            .asOpt[JsValue]
-            .getOrElse(JsNull)
-        )
-        val wasmManagerSettings: JsResult[WasmoSettings] = WasmoSettings.format
-          .reads(
-            (json \ "wasmManagerSettings")
-              .asOpt[JsValue]
-              .getOrElse(JsNull)
-          )
-
-        wasmoSettings
-          .map(r => r.some)
-          .getOrElse(wasmManagerSettings.map(r => r.some).getOrElse(None))
+        // a missing wasmo config is written as null, which must not read back as a wasmo on localhost. the legacy
+        // wasmManagerSettings key is only read when there is no wasmoSettings
+        (json \ "wasmoSettings")
+          .asOpt[JsObject]
+          .orElse((json \ "wasmManagerSettings").asOpt[JsObject])
+          .flatMap(obj => WasmoSettings.format.reads(obj).asOpt)
           .map(value => TlsWasmoSettings(settings = value))
       } else {
         TlsWasmoSettings.format.reads(
