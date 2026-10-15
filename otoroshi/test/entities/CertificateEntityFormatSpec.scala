@@ -365,15 +365,26 @@ class CertificateEntityFormatSpec extends EntityFormatSpec {
       readOk(format, minimalJson ++ Json.obj("privateKey" -> 42)).privateKey mustBe ""
     }
 
-    "read flags given as strings as false" in {
+    "read flags given as strings" in {
       val back = readOk(
         format,
         minimalJson ++ Json.obj("revoked" -> "true", "exposed" -> "true", "ca" -> "true", "client" -> "true")
       )
+      back.revoked mustBe true
+      back.exposed mustBe true
+      back.ca mustBe true
+      back.client mustBe true
+    }
+
+    "read flags given as false strings as false" in {
+      val back = readOk(format, minimalJson ++ Json.obj("revoked" -> "false", "exposed" -> "FALSE", "ca" -> "no"))
       back.revoked mustBe false
       back.exposed mustBe false
       back.ca mustBe false
-      back.client mustBe false
+    }
+
+    "read a revoked flag given as a string with spaces or upper case letters" in {
+      readOk(format, minimalJson ++ Json.obj("revoked" -> " TRUE ")).revoked mustBe true
     }
 
     "ignore subject alternative names given as a single string" in {
