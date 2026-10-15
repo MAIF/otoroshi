@@ -267,7 +267,8 @@ class UnitTests
       new entities.CorazaConfigEntityFormatSpec(),
       new entities.CertificateEntityFormatSpec(),
       new entities.JwtVerifierEntityFormatSpec(),
-      new entities.ApiEntityFormatSpec()
+      new entities.ApiEntityFormatSpec(),
+      new entities.ApiPlanEntityFormatSpec()
     )
 
 class MapFilterTest
