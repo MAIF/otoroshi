@@ -959,7 +959,7 @@ object CustomTimeouts {
         CustomTimeouts(
           path = (json \ "path").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
           connectionTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(10000),
-          idleTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(60000),
+          idleTimeout = (json \ "idleTimeout").asOpt[Long].getOrElse(60000),
           callAndStreamTimeout = (json \ "callAndStreamTimeout").asOpt[Long].getOrElse(1.hour.toMillis),
           callTimeout = (json \ "callTimeout").asOpt[Long].getOrElse(30000),
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000)

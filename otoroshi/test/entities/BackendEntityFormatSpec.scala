@@ -175,6 +175,15 @@ class BackendEntityFormatSpec extends EntityFormatSpec {
       fullCustomTimeouts.legacy mustBe CustomTimeouts("/slow/*", 1000, 2000, 3000, 4000, 5000)
       NgCustomTimeouts.fromLegacy(fullCustomTimeouts.legacy) mustBe fullCustomTimeouts
     }
+
+    "round trip the legacy custom timeouts with their own idle timeout" in {
+      val legacy = CustomTimeouts("/slow/*", 1000, 2000, 3000, 4000, 5000)
+      CustomTimeouts.format.reads(CustomTimeouts.format.writes(legacy)).get mustBe legacy
+    }
+
+    "read the idle timeout of the legacy custom timeouts from its own key" in {
+      CustomTimeouts.format.reads(Json.obj("connectionTimeout" -> 1000, "idleTimeout" -> 2000)).get.idleTimeout mustBe 2000L
+    }
   }
 
   "NgCacheConnectionSettings and NgOverflowStrategy" should {
