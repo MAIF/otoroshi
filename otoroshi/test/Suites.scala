@@ -236,7 +236,8 @@ class UnitTests
       new plugins.configs.RestrictionsPluginConfigsSpec(),
       new plugins.configs.DaikokuPluginConfigsSpec(),
       new plugins.configs.ApiManagementPluginConfigsSpec(),
-      new plugins.configs.OAuthPluginConfigsSpec()
+      new plugins.configs.OAuthPluginConfigsSpec(),
+      new plugins.configs.HttpSignaturePluginConfigsSpec()
     )
 
 class MapFilterTest
