@@ -1,0 +1,2131 @@
+{
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/apikeys/{clientId}/quotas": {
+    "get": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Read the remaining quotas of an api key of an api",
+      "description": "Answers the calls the api key consumed in the current throttling window, day and month, the calls it is allowed to make, and the calls it has left. The admin behind the credentials has to be able to read the api and the api key. Only an api key authorized on the id of the api as on a service descriptor (`service_<apiId>` in its `authorizedEntities`) is found: an api key authorized on the api itself (`api_<apiId>`) or minted by one of its plans is answered as not found.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.apiKeyQuotasOfApi",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "clientId",
+          "in": "path",
+          "description": "The client id of the api key",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "kx8e4lq2v9twb3hd"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The quotas of the api key: the calls it is allowed, the calls it made and the calls it has left for the current throttling window, day and month",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemainingQuotas"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot read the api or the api key",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The api does not exist, the api key does not exist, or the api key is not authorized on the api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Reset the quotas of an api key of an api",
+      "description": "Sets back to zero the calls the api key consumed in the current throttling window, day and month, and answers its quotas once reset. The api key has to be authorized on the api, directly or through one of the groups of the api. The admin behind the credentials has to be able to write the api and the api key. An audit event is sent.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.resetApiKeyQuotasOfApi",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "clientId",
+          "in": "path",
+          "description": "The client id of the api key",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "kx8e4lq2v9twb3hd"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The quotas of the api key, once reset",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemainingQuotas"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot write the api or the api key",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The api does not exist, the api key does not exist, or the api key is not authorized on the api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/apikeys/{clientId}": {
+    "get": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Read an api key of an api",
+      "description": "Answers the api key, if it is authorized on the api: directly (`api_<apiId>` in its `authorizedEntities`, or minted by one of the plans of the api), or through one of the groups of the api. The admin behind the credentials has to be able to read the api and the api key. An audit event is sent.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.apiKeyOfApi",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "clientId",
+          "in": "path",
+          "description": "The client id of the api key",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "kx8e4lq2v9twb3hd"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The api key, as an api key entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apim.otoroshi.io.Apikey"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot read the api or the api key",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The api does not exist, the api key does not exist, or the api key is not authorized on the api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "put": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Update an api key of an api",
+      "description": "Replaces the api key with the one of the body, if the current api key is authorized on the api (directly or through one of the groups of the api). The `clientId` of the body has to be the one of the path. Nothing checks that the new api key is still authorized on the api. The body goes through the entity validators of the admin. The admin behind the credentials has to be able to write the api, the current api key and the new one. An audit event and an `ApiKeyUpdatedAlert` alert are sent.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.updateApiKeyOfApi",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "clientId",
+          "in": "path",
+          "description": "The client id of the api key",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "kx8e4lq2v9twb3hd"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The api key, all of it",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/apim.otoroshi.io.Apikey"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The api key, once updated",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apim.otoroshi.io.Apikey"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, it is not an api key (`Bad ApiKey format`), its `clientId` is not the one of the path, or the entity validators of the admin refuse it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiKeyValidationError"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot write the api or the api key",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The api does not exist, the api key does not exist, or the api key is not authorized on the api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Change some fields of an api key of an api",
+      "description": "Applies the json patch (RFC 6902) of the body to the api key, if it is authorized on the api (directly or through one of the groups of the api). The patched api key has to keep its `clientId`, and goes through the entity validators of the admin. The admin behind the credentials has to be able to write the api, the current api key and the patched one. An audit event and an `ApiKeyUpdatedAlert` alert are sent.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.patchApiKeyOfApi",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "clientId",
+          "in": "path",
+          "description": "The client id of the api key",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "kx8e4lq2v9twb3hd"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The json patch (RFC 6902) to apply to the api key",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JsonPatch"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The api key, once patched",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apim.otoroshi.io.Apikey"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, the patched api key is not an api key (`Bad ApiKey format`), its `clientId` changed, or the entity validators of the admin refuse it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiKeyValidationError"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot write the api or the api key",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The api does not exist, the api key does not exist, or the api key is not authorized on the api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Delete an api key of an api",
+      "description": "Deletes the api key, if it is authorized on the api (directly or through one of the groups of the api). The admin behind the credentials has to be able to write the api and the api key. An audit event and an `ApiKeyDeletedAlert` alert are sent.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.deleteApiKeyOfApi",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "clientId",
+          "in": "path",
+          "description": "The client id of the api key",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "kx8e4lq2v9twb3hd"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The api key is deleted: the body is always `{\"deleted\": true}`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiKeyDeletion"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot write the api or the api key",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The api does not exist, the api key does not exist, or the api key is not authorized on the api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/apikeys": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Create an api key authorized on an api",
+      "description": "Creates the api key of the body, authorized on the api: `api_<apiId>` is added to its `authorizedEntities`, and so is `group_<authorizedGroup>` when the body holds the legacy `authorizedGroup` field. A `clientId` (16 characters) and a `clientSecret` (64 characters) are generated when the body has none. The body goes through the entity validators of the admin. The admin behind the credentials has to be able to write the api and the new api key. An audit event and an `ApiKeyCreatedAlert` alert are sent.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.createApiKeyOfApi",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The api key to create. Its `clientId` and `clientSecret` are generated when absent, its `authorizedEntities` get the api",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/apim.otoroshi.io.Apikey"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "The api key, as created",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apim.otoroshi.io.Apikey"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, it is not an api key (`Bad ApiKey format`, a `clientName` is required), an api key with this `clientId` already exists, or the entity validators of the admin refuse it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiKeyValidationError"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot write the api or the new api key",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api has this id (`Entity with id '<apiId>' not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "get": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "List the api keys of an api",
+      "description": "Answers the api keys authorized on the entity with this id, directly or through one of its groups, that the admin behind the credentials can read. With at least one of the `clientId`, `name`, `group` and `enabled` filters, only the api keys matching one of them (they are not combined) are answered, and the `page` and `pageSize` parameters paginate them; without filter every api key is answered. The entity is looked up among the routes, the route compositions and the legacy service descriptors, not among the apis: the id of an api is answered as not found. An audit event is sent.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.apiKeysOfApi",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The id of the entity whose api keys are listed. Meant to be the `id` of an api, it is looked up among the routes, the route compositions and the legacy service descriptors (see the description)",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "clientId",
+          "in": "query",
+          "description": "Keeps the api key with this client id",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "kx8e4lq2v9twb3hd"
+          }
+        },
+        {
+          "name": "name",
+          "in": "query",
+          "description": "Keeps the api keys with this `clientName`",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "my-consumer"
+          }
+        },
+        {
+          "name": "group",
+          "in": "query",
+          "description": "Keeps the api keys authorized on the group with this id",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "default"
+          }
+        },
+        {
+          "name": "enabled",
+          "in": "query",
+          "description": "Keeps the api keys enabled (`true`) or disabled (`false`)",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "description": "The page to answer, starting at 1, when a filter is given. 1 when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "example": 1
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "description": "The number of api keys of a page, when a filter is given. Every api key is answered when absent",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "example": 20
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The api keys authorized on the entity that the admin behind the credentials can read, as an array of api key entities (a page of the matching ones when a filter is given)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The api keys authorized on the entity",
+                "items": {
+                  "$ref": "#/components/schemas/apim.otoroshi.io.Apikey"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No route, route composition or service descriptor has this id",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{id}/live": {
+    "get": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Read the live statistics of an api",
+      "description": "Answers the statistics of the routes the api exposes (its routes when it is published or deprecated, and the routes of its draft when the testing of the draft is enabled), added up: the calls, the calls per second, the average durations and overheads. An api that exposes no route answers zeros. An id that is not the one of an api, but of another entity the admin can read (a route, a route composition, a draft), answers an empty object. The admin behind the credentials has to be able to read the api: an id that is not the one of an api, a route, a route composition or a draft is refused with a 403. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.liveStats",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "every",
+          "in": "query",
+          "description": "When present, the statistics are streamed as server sent events, one every `every` milliseconds, until the client closes the connection. When absent, they are answered once, as json",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "example": 2000
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The statistics of the routes of the api: once as json without the `every` parameter, as a server sent events stream with it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiLiveStats"
+              }
+            },
+            "text/event-stream": {
+              "schema": {
+                "type": "string",
+                "description": "A server sent events stream: every `every` milliseconds, a `data:` line holding the statistics as json (an `ApiLiveStats` object) followed by an empty line",
+                "example": "data: {\"calls\":1250,\"dataIn\":0,\"dataOut\":0,\"rate\":3.5,\"duration\":42.17,\"overhead\":1.8}\n\n"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or `every` is not an integer",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot read it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{id}/_start": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Publish an api and enable its routes",
+      "description": "Enables every route of the api and sets its state to `published`, whatever its state was, without a deployment. The body is not read. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.start",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The routes of the api are enabled and its state is `published`. The answer has no body"
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api has this id, but another entity (a route, a route composition or a draft) does"
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{id}/_stop": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Disable every route of an api",
+      "description": "Disables every route of the api. Its state is set to `published` too, like when it is started, whatever its state was. The body is not read. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.stop",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The routes of the api are disabled (its state is set to `published`). The answer has no body"
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api has this id, but another entity (a route, a route composition or a draft) does"
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{id}/routes/{routeId}": {
+    "get": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Read a route of an api as a route",
+      "description": "Answers one of the `routes` of the api as the route otoroshi serves for it: its frontend under the domain and the context path of the api, its backend (one of the `backends` of the api, or a stored backend), and the plugins of its flow. A route the api does not hold, or whose backend does not exist, is answered with a 200 holding the error `route not found`. The admin behind the credentials has to be able to read the api. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.getRoute",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "routeId",
+          "in": "path",
+          "description": "The id of the route, one of the `routes` of the api",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "route_list_users"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The route, or the error `route not found` when the api does not hold it or its backend does not exist",
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "The route, or the error `route not found`",
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/proxy.otoroshi.io.Route"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot read it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api has this id, but another entity (a route, a route composition or a draft) does",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/_openapi": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Build an api from an openapi document",
+      "description": "Fetches the openapi (or swagger) document at the url of the body, json or yaml, and builds an api from it, without saving it: its name, description and version come from the `info` of the document, a route per path (its methods, named after the summary of its first operation), and one backend whose targets are the `servers` of the document, reached on `backendHostname` at `backendPath`. The api is in the `staging` state. The url is fetched by otoroshi, so the admin behind the credentials has to be able to write an entity at the location (`_loc`) of the body.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.fromOpenapi",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "Where the openapi document is, and where the api will be exposed",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiFromOpenApiRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The api built from the document, not saved",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apis.otoroshi.io.Api"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, or one of its fields is missing (`missing values`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot write an entity at the location of the body",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/http-client-settings/_template": {
+    "get": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Read the default http client settings of an api backend",
+      "description": "Answers the default settings of the http client of a backend (retries, timeouts, ...), the ones a new entry of the `clients_backend_config` of an api starts with. The api is neither read nor checked: any id answers the same settings.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.getHttpClientSettings",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of an api. Neither read nor checked: any value answers the same settings",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The default settings of the http client of a backend (retries, timeouts, circuit breaker...), the same for every api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NgClientConfig"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/deployments": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Deploy the draft of an api",
+      "description": "Replaces the api with its draft: everything comes from the draft except the id, the documentation and the clients, which are the ones of the api, and the routes, whose ids get the `_prod` suffix. A draft in the `staging` state is published, otherwise the api keeps its state; an api in a state that cannot be deployed (a removed api) is refused. The deployment of the body, with a slim definition of the draft instead of its `apiDefinition`, becomes the first of the `deployments` of the api, which keeps the last five. An `ApiDeploymentEvent` analytics event is sent. The admin behind the credentials has to be able to write the api.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.createNewVersion",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The deployment. Its `id` is generated and its `at` is now when absent; its `apiDefinition` is required but replaced by a slim definition of the deployed draft",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiDeployment"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "The api, once deployed",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apis.otoroshi.io.Api"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, it is not a deployment (`bad entity`), the api cannot be deployed from its state (`invalid_deploy_transition`), or it could not be saved",
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "Why the deployment was refused",
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ApiDeployTransitionError"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api has this id (but another entity does), the api has no draft, or its draft cannot be read as an api"
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/plans/{planId}/subscriptions/preview-update": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "List the subscriptions a change of a plan impacts",
+      "description": "Answers the subscriptions of the plan of the body (the ones whose `plan_ref` is its `id`), the ones a change of this plan would update, without changing anything. With `version=Draft`, the draft subscriptions are answered instead of the live ones. The plan of the path is not read: only the `id` of the plan of the body is. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.listImpactedSubscriptions",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "planId",
+          "in": "path",
+          "description": "The id of the plan, one of the `plans` of the api",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "plan_free_tier"
+          }
+        },
+        {
+          "name": "version",
+          "in": "query",
+          "description": "`Draft` works on the draft of the api and on the draft subscriptions, the ones the backoffice edits before a deployment. Any other value, or no value, works on the live api and on its subscriptions",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "Draft"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The plan, with the changes to preview",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiPlan"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The subscriptions the change of the plan of the body would update, live or draft ones, as an array of api subscription entities",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The subscriptions of the plan, live or draft ones",
+                "items": {
+                  "$ref": "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, or it is not an object (`wrong plan format`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/plans/{planId}/close": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Close a plan of an api",
+      "description": "Deletes the subscriptions of the plan (the draft ones with `version=Draft`). The api itself is not changed: removing the plan from its `plans` is left to an update of the api. The api has to be enabled, and neither deprecated nor removed. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.closePlan",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "planId",
+          "in": "path",
+          "description": "The id of the plan, one of the `plans` of the api",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "plan_free_tier"
+          }
+        },
+        {
+          "name": "version",
+          "in": "query",
+          "description": "`Draft` works on the draft of the api and on the draft subscriptions, the ones the backoffice edits before a deployment. Any other value, or no value, works on the live api and on its subscriptions",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "Draft"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "Not read, but it has to be json",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "description": "Not read: any json object, `{}` for instance",
+              "additionalProperties": true,
+              "example": {}
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The subscriptions of the plan are deleted",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, the api is disabled (`api is disabled`), deprecated or removed (`api is deprecated`, `api is removed`), or it has no such plan (`plan not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api (no draft of an api with `version=Draft`) has this id"
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/plans/{planId}/subscribe": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Subscribe to a plan of an api",
+      "description": "Saves the subscription of the body, in the `pending` state, as a draft subscription with `version=Draft`. The api of the path has to be enabled, neither deprecated nor removed, and the plan of the path published. The subscription is then checked against its own `api_ref` and `plan_ref`: the api has to be in the `staging` or `published` state, the plan in the `staging` or `published` state, and the `subscription_kind` has to be the access mode of the plan. For an `apikey` or an `oauth2-local` plan, an api key is minted from the plan and referenced in the `token_refs` of the subscription. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.subscribe",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "planId",
+          "in": "path",
+          "description": "The id of the plan, one of the `plans` of the api",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "plan_free_tier"
+          }
+        },
+        {
+          "name": "version",
+          "in": "query",
+          "description": "`Draft` works on the draft of the api and on the draft subscriptions, the ones the backoffice edits before a deployment. Any other value, or no value, works on the live api and on its subscriptions",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "Draft"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The subscription to save, as an api subscription entity. Its `status` is replaced by `pending`, and its `api_ref`, `plan_ref` and `subscription_kind` are checked against the api and the plan they reference",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The subscription is saved in the `pending` state, with the api key minted for it when its plan needs one: the body is `{\"done\": true}`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json or not a subscription (`wrong subscription format`), the api or the plan cannot be subscribed to (`api is disabled`, `plan not found`, `plan is not published`, `wrong status api`, `wrong status plan`, ...), or the subscription could not be saved",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api (no draft of an api with `version=Draft`) has this id"
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/subscriptions/{subId}/confirm": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Confirm a subscription to an api",
+      "description": "Sets the state of the subscription to `enabled` (of the draft subscription with `version=Draft`). The api has to be enabled, neither deprecated nor removed, and the plan of the subscription published. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.confirmSubscription",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "subId",
+          "in": "path",
+          "description": "The `id` of the subscription to confirm (of the draft subscription with `version=Draft`), as listed by `GET /apis/apis.otoroshi.io/v1/apisubscriptions`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api-subscription_dev_d3147f0b-3709-4284-aff0-02c98b4eacec"
+          }
+        },
+        {
+          "name": "version",
+          "in": "query",
+          "description": "`Draft` works on the draft of the api and on the draft subscriptions, the ones the backoffice edits before a deployment. Any other value, or no value, works on the live api and on its subscriptions",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "Draft"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "Not read, but it has to be json",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "description": "Not read: any json object, `{}` for instance",
+              "additionalProperties": true,
+              "example": {}
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "description": "The subscription is now `enabled`. The answer has no body"
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, the api is disabled, deprecated or removed, the plan of the subscription is not a published plan of the api (`invalid plan`), or the subscription could not be saved",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No subscription has this id (`subscription not found`). When no api (no draft of an api with `version=Draft`) has the id of the path, the answer has no body",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/apis.otoroshi.io/v1/apis/{apiId}/duplicate": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Copy an api into a new staging api",
+      "description": "Saves a copy of the api with a new id (`api_<uuid>`), in the `staging` state, without deployments, with the context path and the version of the body (`/vnew` and `vnew` when absent), and with the `copy_from_api` metadata holding the id of the original api. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.duplicate",
+      "parameters": [
+        {
+          "name": "apiId",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "What changes in the copy",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiDuplicationRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The copy is saved, in the `staging` state: the body holds its new id",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiDuplicationResult"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not valid json, or the copy could not be saved (`failed to duplicate API`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api has this id, but another entity (a route, a route composition or a draft) does"
+        },
+        "415": {
+          "description": "The body is not sent with an `application/json` (or `text/json`) content type",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
