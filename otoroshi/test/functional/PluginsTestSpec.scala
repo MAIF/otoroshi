@@ -87,6 +87,7 @@ class PluginsHardeningSpec extends PluginsTestSpecBase {
 class AuthHardeningSpec extends PluginsTestSpecBase {
   lazy val auth = new AuthHardeningTests(this)
   s"auth modules and backoffice" should {
+    "only accept the otoroshi hosts as webauthn origins" in { auth.webAuthnOrigin() }
     "serve the backoffice metrics to super admins only" in { auth.backofficeMetrics() }
     "not let read only users use the url fetching tooling" in { auth.backofficeTooling() }
     "stop" in { auth.stop() }

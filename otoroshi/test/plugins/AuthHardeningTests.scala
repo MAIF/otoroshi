@@ -1,6 +1,7 @@
 package plugins
 
 import functional.{PluginsTestSpecBase, TargetService}
+import otoroshi.auth.WebAuthnSupport
 import otoroshi.models.*
 import play.api.http.Status
 import play.api.libs.crypto.CookieSignerProvider
@@ -49,6 +50,14 @@ class AuthHardeningTests(parent: PluginsTestSpecBase) {
       .withMethod(method)
       .execute()
       .futureValue
+  }
+
+  // the origin of a webauthn ceremony comes from the browser, any page sharing the rp id could relay a ceremony
+  def webAuthnOrigin(): Unit = {
+    WebAuthnSupport.originAllowed(s"http://${env.backOfficeHost}:9999")(using env) mustBe true
+    WebAuthnSupport.originAllowed(s"https://${env.privateAppsHost}")(using env) mustBe true
+    WebAuthnSupport.originAllowed("https://another-page.oto.tools")(using env) mustBe false
+    WebAuthnSupport.originAllowed("not an origin")(using env) mustBe false
   }
 
   // the metrics of every route of every tenant used to be served to any backoffice user

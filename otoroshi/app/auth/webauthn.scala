@@ -194,6 +194,15 @@ object WebAuthnSupport {
       .build
   }
 
+  // the origin comes from the browser: only the hosts otoroshi serves its own pages from (backoffice, private apps) are
+  // accepted, a page on another subdomain sharing the rp id could relay a ceremony otherwise
+  def originAllowed(origin: String)(using env: Env): Boolean = {
+    Try(Uri(origin).authority.host.address()).toOption.exists { host =>
+      host == env.backOfficeHost || host == env.privateAppsHost || env.backofficeDomains.contains(host) ||
+      env.privateAppsDomains.contains(host)
+    }
+  }
+
   // the ceremony options, as stored by `registrationStart` / `loginStart`
   private def pendingRequest(rawRequest: JsValue): String = Json.stringify((rawRequest \ "request").as[JsValue])
 
@@ -259,8 +268,9 @@ object WebAuthnSupport {
     val requestId = (body \ "requestId").as[String]
     val response  = Json.stringify((body \ "webauthn").as[JsValue])
     consumeRequest(requestId).map {
-      case None             => Left("bad request")
-      case Some(rawRequest) =>
+      case None                              => Left("bad request")
+      case Some(_) if !originAllowed(origin) => Left("bad request")
+      case Some(rawRequest)                  =>
         Try {
           val request = PublicKeyCredentialCreationOptions.fromJson(pendingRequest(rawRequest))
           val pkc     = PublicKeyCredential.parseRegistrationResponseJson(response)
@@ -312,8 +322,9 @@ object WebAuthnSupport {
     val requestId = (body \ "requestId").as[String]
     val response  = Json.stringify((body \ "webauthn").as[JsValue])
     consumeRequest(requestId).map {
-      case None             => Left("bad request")
-      case Some(rawRequest) =>
+      case None                              => Left("bad request")
+      case Some(_) if !originAllowed(origin) => Left("bad request")
+      case Some(rawRequest)                  =>
         Try {
           val request = AssertionRequest.fromJson(pendingRequest(rawRequest))
           val pkc     = PublicKeyCredential.parseAssertionResponseJson(response)
