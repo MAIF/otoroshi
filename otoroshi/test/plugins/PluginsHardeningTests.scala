@@ -27,6 +27,8 @@ import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
+import play.api.test.FakeRequest
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -565,6 +567,31 @@ class PluginsHardeningTests(parent: PluginsTestSpecBase) {
     }
     withClue("a signature with created ") { call(r, "/api", signed(withCreated = true)*) mustBe Status.OK }
     withClue("a signature without created ") { call(r, "/api", signed(withCreated = false)*) must not be Status.OK }
+    deleteOtoroshiRoute(r).futureValue
+  }
+
+  // on a route, the service of a registration used to be chosen by the body, and a glob sent as registration id
+  // matched every registration of the global endpoints
+  def discoveryRegistration(): Unit = {
+    val r        = route(NgPluginInstance(plugin = NgPluginHelper.pluginId[NgDiscoverySelfRegistrationTransformer]))
+    val response = ws
+      .url(s"http://127.0.0.1:$port/discovery/_register")
+      .withHttpHeaders("Host" -> r.frontend.domains.head.domain, "Content-Type" -> "application/json")
+      .post(Json.stringify(Json.obj("serviceId" -> "another-route", "host" -> "127.0.0.1:1234", "scheme" -> "http")))
+      .futureValue
+    withClue(s"registration ${response.body} ") {
+      response.status mustBe Status.OK
+      (response.json \ "serviceId").as[String] mustBe r.id
+    }
+    val config   = otoroshi.plugins.discovery.SelfRegistrationConfig(Json.obj())
+    val ec       = env.otoroshiExecutionContext
+    val glob     = otoroshi.plugins.discovery.DiscoveryHelper
+      .unregister("*", None, FakeRequest(), config)(using env, ec)
+      .futureValue
+    withClue("a glob as registration id ") { glob.header.status mustBe Status.BAD_REQUEST }
+    withClue("the registrations of the route ") {
+      otoroshi.plugins.discovery.DiscoveryHelper.getTargetsFor(r.id, config)(using env, ec).futureValue must not be empty
+    }
     deleteOtoroshiRoute(r).futureValue
   }
 

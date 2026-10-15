@@ -75,6 +75,9 @@ class PluginsHardeningSpec extends PluginsTestSpecBase {
     "bound the replay of an hmac signature when asked" in { hardening.hmacReplay() }
     "refuse a present token in the jwt signer when asked" in { hardening.jwtSignerFailIfPresent() }
     "require created when an http signature max age is set" in { hardening.httpSignatureWithoutCreated() }
+    "keep a discovery registration on its route and refuse a glob as registration id" in {
+      hardening.discoveryRegistration()
+    }
     "stop" in { hardening.stop() }
   }
 }
