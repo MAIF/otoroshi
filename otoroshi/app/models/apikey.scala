@@ -431,10 +431,10 @@ case class ApiKey(
     s"${prefix}_${signature}"
   }
 
+  // like the next secret in isValid, the next bearer is only valid while the secret is rotating
   def checkBearer(value: String): Boolean = {
-    val bearer       = toBearer()
-    lazy val bearer2 = toNextBearer()
-    Signatures.constantTimeEquals(value, bearer) || Signatures.constantTimeEquals(value, bearer2)
+    Signatures.constantTimeEquals(value, toBearer()) ||
+    (rotation.enabled && rotation.nextSecret.isDefined && Signatures.constantTimeEquals(value, toNextBearer()))
   }
 }
 

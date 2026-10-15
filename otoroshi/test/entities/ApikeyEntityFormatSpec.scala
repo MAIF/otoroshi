@@ -951,10 +951,29 @@ class ApikeyEntityFormatSpec extends EntityFormatSpec {
       full.checkBearer(full.toBearer() + "0") mustBe false
     }
 
-    // unlike isValid, checkBearer does not look at the rotation flag
-    "be checked against the next secret even when the rotation is disabled" in {
+    "not be checked against the next secret when the rotation is disabled" in {
       val apikey = minimal.copy(rotation = ApiKeyRotation(enabled = false, nextSecret = Some("secret-2")))
+      apikey.checkBearer(minimal.copy(clientSecret = "secret-2").toBearer()) mustBe false
+      apikey.checkBearer(apikey.toBearer()) mustBe true
+    }
+
+    "be checked against the next secret while the rotation is enabled" in {
+      val apikey = minimal.copy(rotation = ApiKeyRotation(enabled = true, nextSecret = Some("secret-2")))
       apikey.checkBearer(minimal.copy(clientSecret = "secret-2").toBearer()) mustBe true
+      apikey.checkBearer(apikey.toBearer()) mustBe true
+    }
+
+    "be checked against the current secret only when there is no next secret" in {
+      val apikey = minimal.copy(rotation = ApiKeyRotation(enabled = true, nextSecret = None))
+      apikey.checkBearer(apikey.toBearer()) mustBe true
+      apikey.checkBearer(minimal.copy(clientSecret = "secret-2").toBearer()) mustBe false
+    }
+
+    "accept the next bearer exactly when isValid accepts the next secret" in {
+      Seq(true, false).foreach { enabled =>
+        val apikey = minimal.copy(rotation = ApiKeyRotation(enabled = enabled, nextSecret = Some("secret-2")))
+        apikey.checkBearer(minimal.copy(clientSecret = "secret-2").toBearer()) mustBe apikey.isValid("secret-2")
+      }
     }
 
     "be added to the json of the apikey" in {
