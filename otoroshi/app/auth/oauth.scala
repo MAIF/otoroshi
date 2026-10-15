@@ -525,8 +525,11 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         }
       )(using writeableOf_urlEncodedSimpleForm)
     }
-    // TODO: check status code
-    future1.map(_.json)
+    // an error of the token endpoint is not a token
+    future1.flatMap { response =>
+      if (response.status >= 200 && response.status < 300) response.json.vfuture
+      else Future.failed(new RuntimeException(s"the token endpoint answered ${response.status}"))
+    }
   }
 
   def refreshTheToken(
@@ -559,8 +562,11 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
       )(using writeableOf_urlEncodedSimpleForm)
     }
-    // TODO: check status code
-    future1.map(_.json)
+    // an error of the token endpoint is not a token
+    future1.flatMap { response =>
+      if (response.status >= 200 && response.status < 300) response.json.vfuture
+      else Future.failed(new RuntimeException(s"the token endpoint answered ${response.status}"))
+    }
   }
 
   def getUserInfoRaw(accessToken: String, config: GlobalConfig)(using
