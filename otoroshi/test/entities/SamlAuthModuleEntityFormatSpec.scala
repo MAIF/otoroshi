@@ -375,7 +375,7 @@ class SamlAuthModuleEntityFormatSpec extends EntityFormatSpec {
       readOk(format, mandatory).nameIDFormat mustBe NameIDFormat.Unspecified
     }
 
-    "read no email attribute name when it is missing, not the Email default of the case class" in {
+    "read no email attribute name when it is missing, the Email attribute being read then" in {
       minimal.emailAttributeName mustBe Some("Email")
       readOk(format, mandatory).emailAttributeName mustBe None
     }

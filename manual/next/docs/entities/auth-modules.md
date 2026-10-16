@@ -225,6 +225,7 @@ If you want to secure an app or your Otoroshi UI with this provider, you can che
 * `Encryption KeyPair`: the keypair used to sign/verify assertions
 * `Name ID Format`: SP and IdP usually communicate each other about a subject. That subject should be identified through a NAME-IDentifier, which should be in some format so that It is easy for the other party to identify it based on the Format
 * `Use NameID format as email`: use NameID format as email. If disabled, the email will be search from the attributes
+* `Name of email attribute`: the attribute holding the email when the NameID is not used as email, `Email` when not set
 * `URL issuer`: provide the URL to the IdP's who will issue the security token
 * `Validate Signature`: enable/disable signature validation of SAML responses
 * `Validate Assertions Signature`: should SAML Assertions to be decrypted ?

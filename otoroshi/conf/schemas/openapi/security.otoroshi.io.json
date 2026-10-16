@@ -1604,7 +1604,7 @@
       "emailAttributeName": {
         "type": "string",
         "nullable": true,
-        "description": "The attribute of the assertion holding the email of the user, when `usedNameIDAsEmail` is false",
+        "description": "The attribute of the assertion holding the email of the user, when `usedNameIDAsEmail` is false. `Email` when missing",
         "example": "Email"
       },
       "adminEntityValidatorsOverride": {

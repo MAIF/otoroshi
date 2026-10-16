@@ -206,7 +206,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
               if (authConfig.usedNameIDAsEmail)
                 assertion.getSubject.getNameID.getValue
               else
-                attributes.get("Email").map(_.head).getOrElse("no.name@oto.tools")
+                attributes.get(authConfig.emailAttributeName.getOrElse("Email")).map(_.head).getOrElse("no.name@oto.tools")
 
             val name = attributes.get("Name").map(_.head).getOrElse("No name")
 
@@ -335,7 +335,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
               if (authConfig.usedNameIDAsEmail)
                 assertion.getSubject.getNameID.getValue
               else
-                attributes.get("Email").map(_.head).getOrElse("no.name@oto.tools")
+                attributes.get(authConfig.emailAttributeName.getOrElse("Email")).map(_.head).getOrElse("no.name@oto.tools")
 
             val name = attributes.get("Name").map(_.head).getOrElse("No name")
 
