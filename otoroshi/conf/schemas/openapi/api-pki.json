@@ -322,7 +322,7 @@
       },
       "serialNumberLng": {
         "type": "integer",
-        "description": "The serial number of the certificate, as a number. It can be greater than a 64 bits integer",
+        "description": "The serial number of the certificate, as a number. It can be greater than a 64 bits integer: `serialNumber` holds the exact value, as a json or yaml reader that keeps 34 significant digits, like the one of otoroshi, rounds the larger ones (a serial number has up to 49 digits)",
         "example": 8922432013914401082
       },
       "sigAlgName": {
