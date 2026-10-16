@@ -31,7 +31,7 @@
       },
       "initWithNewEngine": {
         "type": "boolean",
-        "description": "Whether the instance was initialized for the proxy engine of the routes: its first start created the route that exposes the backoffice and the admin api. Informative once the instance has started. `true` for a new instance, `false` when absent"
+        "description": "Whether the instance was initialized for the proxy engine of the routes: its first start created the route that exposes the backoffice and the admin api. Informative once the instance has started. `true` for a new instance and when absent"
       },
       "maintenanceMode": {
         "type": "boolean",

@@ -927,7 +927,7 @@ object GlobalConfig {
         GlobalConfig(
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
           anonymousReporting = (json \ "anonymousReporting").asOpt[Boolean].getOrElse(false),
-          initWithNewEngine = (json \ "initWithNewEngine").asOpt[Boolean].getOrElse(false),
+          initWithNewEngine = (json \ "initWithNewEngine").asOpt[Boolean].getOrElse(true),
           enableEmbeddedMetrics = (json \ "enableEmbeddedMetrics").asOpt[Boolean].getOrElse(true),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),

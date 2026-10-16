@@ -492,9 +492,9 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       back.backOfficeAuthRef mustBe None
     }
 
-    "read a missing new engine flag as false while a new config enables it" in {
+    "read a missing new engine flag as on, like a new config" in {
       GlobalConfig().initWithNewEngine mustBe true
-      readOk(format, Json.obj()).initWithNewEngine mustBe false
+      readOk(format, Json.obj()).initWithNewEngine mustBe true
     }
 
     "give no right to the admins and users without rights on a new config" in {
