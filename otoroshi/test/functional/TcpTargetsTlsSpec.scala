@@ -19,8 +19,8 @@ import scala.concurrent.duration.*
 import scala.util.Try
 
 // the tls of a tcp service: it terminates the tls of its clients when asked to, and calls its targets over tls when
-// they ask for it (otoroshi is then the tls client of the target), except in passthrough where the tls of the client
-// goes through as is
+// they ask for it, the fallback target of the sni routing included (otoroshi is then the tls client of the target),
+// except in passthrough where the tls of the client goes through as is
 class TcpTargetsTlsSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -241,6 +241,36 @@ class TcpTargetsTlsSpec extends OtoroshiSpec {
         Seq(service, otherHost, sameHost).foreach(s => env.datastores.tcpServiceDataStore.delete(s.id).futureValue)
         untrusted.stop()
         trusted.stop()
+      }
+    }
+    "call the fallback target of the sni routing over tls when it asks for it" in {
+      given env: Env = otoroshiComponents.env
+      val echoServer = new EchoServer(Some(echoServerContext()))
+      val port       = TargetService.freePort
+      val service    = TcpService(
+        enabled = true,
+        tls = TlsMode.Enabled,
+        sni = SniSettings(
+          enabled = true,
+          forwardIfNoMatch = true,
+          forwardsTo = TcpTarget("localhost", Some("127.0.0.1"), echoServer.port, tls = true)
+        ),
+        clientAuth = ClientAuth.None,
+        port = port,
+        rules = Seq(TcpRule("other.oto.tools", Seq(TcpTarget("localhost", Some("127.0.0.1"), 1, tls = false)))),
+        tags = Seq.empty,
+        metadata = Map.empty
+      )
+      env.datastores.tcpServiceDataStore.set(service).futureValue
+      try {
+        awaitListening(port)
+        // an sni that no rule of the service matches
+        echo(() => tlsClient(port, Some("fallback.oto.tools")), "hello through the fallback") mustBe Some(
+          "hello through the fallback"
+        )
+      } finally {
+        env.datastores.tcpServiceDataStore.delete(service.id).futureValue
+        echoServer.stop()
       }
     }
     "let the tls of its clients go through in passthrough, whatever the tls of its targets" in {

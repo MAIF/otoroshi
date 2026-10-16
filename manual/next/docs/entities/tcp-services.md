@@ -84,7 +84,7 @@ SNI allows Otoroshi to select different targets based on the hostname in the TLS
 | `forwardsTo.host` | string |     | Default target hostname (when no SNI match) |
 | `forwardsTo.ip` | string |     | Default target IP address |
 | `forwardsTo.port` | number |     | Default target port |
-| `forwardsTo.tls` | boolean | `false` | Use TLS to connect to the default target |
+| `forwardsTo.tls` | boolean | `false` | Use TLS to connect to the default target. Ignored in `PassThrough` mode, where the TLS of the client goes through as is |
 
 ## Rules
 

@@ -482,16 +482,9 @@ object TcpService {
                   connectTo(target, service)
                 }
                 case None if service.sni.forwardIfNoMatch => {
-                  val target        = service.sni.forwardsTo
-                  val remoteAddress = target.ip match {
-                    case Some(ip) =>
-                      new InetSocketAddress(
-                        InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
-                        target.port
-                      )
-                    case None     => new InetSocketAddress(target.host, target.port)
-                  }
-                  Tcp().outgoingConnection(remoteAddress)
+                  val target = service.sni.forwardsTo
+                  targetRef.set(target)
+                  connectTo(target, service)
                 }
                 case None                                 => {
                   Flow[ByteString].flatMapConcat(_ => Source.failed(new RuntimeException("No domain matches")))
