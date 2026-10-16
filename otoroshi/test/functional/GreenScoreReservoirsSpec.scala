@@ -9,7 +9,8 @@ import otoroshi.greenscore.RouteReservoirs
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
-// the metrics of the dynamic green score of a route: the calls are a rate of calls per second
+// the metrics of the dynamic green score of a route: the calls are a rate of calls per second, the other metrics
+// the values of a call, also when a worker sends the sums of the calls of a push
 class GreenScoreReservoirsSpec extends AnyWordSpec with Matchers {
 
   private class ManualClock extends Clock {
@@ -32,6 +33,15 @@ class GreenScoreReservoirsSpec extends AnyWordSpec with Matchers {
       // the rate is computed once more than 5 seconds went by, from the calls of those 5 seconds
       clock.nanos.set(TimeUnit.SECONDS.toNanos(6))
       reservoirs.callsPerSecond mustBe 120.0 +- 0.001
+    }
+    "read the values of a call from the sums a worker sends" in {
+      val clock      = new ManualClock
+      val reservoirs = RouteReservoirs(calls = new Meter(clock))
+      reservoirs.update(incr(calls = 10, duration = 50, dataIn = 1000))
+      reservoirs.duration.getSnapshot.getMean mustBe 5.0
+      reservoirs.dataIn.getSnapshot.getMean mustBe 100.0
+      clock.nanos.set(TimeUnit.SECONDS.toNanos(6))
+      reservoirs.callsPerSecond mustBe 2.0 +- 0.001
     }
   }
 }

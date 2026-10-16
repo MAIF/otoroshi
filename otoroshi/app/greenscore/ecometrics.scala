@@ -162,14 +162,16 @@ case class RouteReservoirs(
     headersIn: UniformReservoir = new UniformReservoir()
 ) {
   def update(routeCallIncr: RouteCallIncr) = {
-    overhead.update(routeCallIncr.overhead.get())
-    duration.update(routeCallIncr.duration.get())
-    backendDuration.update(routeCallIncr.backendDuration.get())
+    // the increments a worker sends hold the sums of the calls of a push: the value of a call is their mean
+    val count = math.max(routeCallIncr.calls.get(), 1L)
+    overhead.update(routeCallIncr.overhead.get() / count)
+    duration.update(routeCallIncr.duration.get() / count)
+    backendDuration.update(routeCallIncr.backendDuration.get() / count)
 
-    dataIn.update(routeCallIncr.dataIn.get())
-    dataOut.update(routeCallIncr.dataOut.get())
-    headersIn.update(routeCallIncr.headersIn.get())
-    headersOut.update(routeCallIncr.headersOut.get())
+    dataIn.update(routeCallIncr.dataIn.get() / count)
+    dataOut.update(routeCallIncr.dataOut.get() / count)
+    headersIn.update(routeCallIncr.headersIn.get() / count)
+    headersOut.update(routeCallIncr.headersOut.get() / count)
     calls.mark(routeCallIncr.calls.get())
   }
 
