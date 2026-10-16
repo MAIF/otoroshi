@@ -3,7 +3,7 @@ package functional
 import com.sun.net.httpserver.HttpServer
 import otoroshi.env.Env
 import otoroshi.events.ExportResult
-import otoroshi.models.{GlobalConfig, HttpCallSettings}
+import otoroshi.models.{GlobalConfig, HttpCallSettings, NewRelicCallSettings}
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
@@ -16,8 +16,8 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
 
-// the calls of the http exporters: any 2xx status is a success, `${events.nd_prettify}` is each event pretty printed
-// and the cookies of the http exporter are sent
+// the calls of the http exporters: any 2xx status is a success, `${events.nd_prettify}` is each event pretty printed,
+// the cookies of the http exporter are sent and the hostname of the new relic exporter is the one of its logs
 class HttpDataExportersSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
@@ -76,6 +76,27 @@ class HttpDataExportersSpec extends OtoroshiSpec {
         .call(events, httpConfig, globalConfig)
         .futureValue
       received.get()._2 must include("session=abc")
+    }
+    "write the hostname of the new relic exporter in its logs" in {
+      given env: Env             = otoroshiComponents.env
+      given ec: ExecutionContext = env.otoroshiExecutionContext
+      val settings               = NewRelicCallSettings(
+        url = s"http://127.0.0.1:${server.getAddress.getPort}/logs",
+        headers = Map.empty,
+        token = None,
+        logtype = None,
+        service = None,
+        hostname = Some("otoroshi-node-1"),
+        timeout = 10.seconds,
+        tlsConfig = NgTlsConfig()
+      )
+      val config                 = env.datastores.dataExporterConfigDataStore.template(Some("newrelic"))
+      settings.call(events, config, globalConfig).futureValue mustBe ExportResult.ExportResultSuccess
+      (Json.parse(received.get()._1) \ 0 \ "common" \ "hostname").as[String] mustBe "otoroshi-node-1"
+      // without hostname, the host called
+      val unset                  = settings.copy(hostname = None).call(events, config, globalConfig).futureValue
+      unset mustBe ExportResult.ExportResultSuccess
+      (Json.parse(received.get()._1) \ 0 \ "common" \ "hostname").as[String] mustBe "backend.oto.tools"
     }
     "shutdown" in {
       server.stop(0)

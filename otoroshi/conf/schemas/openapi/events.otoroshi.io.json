@@ -5840,7 +5840,7 @@
       },
       "hostname": {
         "type": "string",
-        "description": "Not used, the `hostname` of the logs is the host called. Not written when unset",
+        "description": "The `hostname` of the logs, the host called when unset. Not written when unset",
         "example": "otoroshi-prod"
       }
     },

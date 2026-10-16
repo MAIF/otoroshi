@@ -505,7 +505,7 @@ case class NewRelicCallSettings(
                 "common" -> Json.obj(
                   "service"  -> service.getOrElse("otoroshi").json,
                   "logtype"  -> logtype.orElse(evt.select("@type").asOptString).getOrElse("accesslogs").json,
-                  "hostname" -> evt.at("to.host").asOptString.getOrElse("--").json
+                  "hostname" -> hostname.orElse(evt.at("to.host").asOptString).getOrElse("--").json
                 ),
                 "logs"   -> Json.obj(
                   "timestamp" -> (System.currentTimeMillis() / 1000).json,
