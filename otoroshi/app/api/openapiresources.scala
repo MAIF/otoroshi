@@ -154,7 +154,16 @@ object OpenApiResourcePaths {
     "400" -> error("The content type is not application/x-ndjson, or the credentials are missing")
   )
 
-  // the responses of the operation, then the errors every operation can answer that it does not describe itself
+  private val deprecationHeader: JsObject = Json.obj(
+    "Otoroshi-Api-Deprecated" -> Json.obj(
+      "description" -> "`yes`: the kind of entity is deprecated, it will be removed in a later version",
+      "schema"      -> Json.obj("type" -> "string", "enum" -> Json.arr("yes"))
+    )
+  )
+
+  // the responses of the operation, then the errors every operation can answer that it does not describe itself.
+  // the operations of a deprecated entity are flagged deprecated, and the ones that answer through the result of the
+  // generic api (`warns`) send the Otoroshi-Api-Deprecated header on success
   private def operation(
       resource: Resource,
       id: String,
@@ -162,19 +171,26 @@ object OpenApiResourcePaths {
       description: String,
       parameters: Seq[JsObject],
       responses: Seq[(String, JsObject)],
-      body: Option[JsObject] = None
+      body: Option[JsObject] = None,
+      warns: Boolean = true
   ): JsObject = {
-    val all = responses ++ errors(resource).filterNot(e => responses.exists(_._1 == e._1))
+    val deprecated = resource.version.deprecated
+    val all        = (responses ++ errors(resource).filterNot(e => responses.exists(_._1 == e._1))).map {
+      case (status, r) if deprecated && warns && status.startsWith("2") =>
+        status -> (r ++ Json.obj("headers" -> ((r \ "headers").asOpt[JsObject].getOrElse(Json.obj()) ++ deprecationHeader)))
+      case other                                                        => other
+    }
     Json
       .obj(
         "tags"        -> Json.arr(resource.singularName, resource.group),
         "summary"     -> summary,
-        "description" -> description,
+        "description" -> (if (deprecated) s"Deprecated: the ${resource.pluralName} will be removed in a later version. $description" else description),
         "operationId" -> s"${resource.group}.${resource.kind}.$id",
         "parameters"  -> JsArray(parameters),
         "security"    -> security,
         "responses"   -> JsObject(all.sortBy(_._1))
-      ) ++ body.map(b => Json.obj("requestBody" -> b)).getOrElse(Json.obj())
+      ) ++ body.map(b => Json.obj("requestBody" -> b)).getOrElse(Json.obj()) ++
+      (if (deprecated) Json.obj("deprecated" -> true) else Json.obj())
   }
 
   def paths(resource: Resource): Map[String, JsObject] = {
@@ -242,7 +258,8 @@ object OpenApiResourcePaths {
           s"Delete every $single",
           s"Deletes every $single the credentials can write.",
           Seq.empty,
-          Seq("204" -> response(s"The $plural are deleted"))
+          Seq("204" -> response(s"The $plural are deleted")),
+          warns = false
         )
       )
     )
@@ -387,7 +404,8 @@ object OpenApiResourcePaths {
           Seq(
             "200" -> response(s"A new $single", json(entity(resource))),
             "404" -> error(s"The kind of entity does not exist, or has no template")
-          )
+          ),
+          warns = false
         )
       )
     )
@@ -402,7 +420,8 @@ object OpenApiResourcePaths {
           s"Describe the $plural",
           s"Answers the json schema of a $single. The schemas it references are under its `components.schemas` field.",
           Seq.empty,
-          Seq("200" -> response(s"The json schema of a $single", json(ref("JsonSchema"))))
+          Seq("200" -> response(s"The json schema of a $single", json(ref("JsonSchema")))),
+          warns = false
         )
       )
     )
@@ -420,7 +439,8 @@ object OpenApiResourcePaths {
             s"Creates the $plural of the body, one per line.",
             Seq(groupingParameter),
             bulkResponses(resource, s"The $plural are processed"),
-            Some(ndjsonBody(s"The $plural to create, one json $single per line", entity(resource)))
+            Some(ndjsonBody(s"The $plural to create, one json $single per line", entity(resource))),
+            warns = false
           )
         ),
         (
@@ -433,7 +453,8 @@ object OpenApiResourcePaths {
             s"Replaces the $plural of the body, one per line, each one by its `$idField`.",
             Seq(groupingParameter),
             bulkResponses(resource, s"The $plural are processed"),
-            Some(ndjsonBody(s"The $plural that replace the stored ones, one json $single per line", entity(resource)))
+            Some(ndjsonBody(s"The $plural that replace the stored ones, one json $single per line", entity(resource))),
+            warns = false
           )
         ),
         (
@@ -456,7 +477,8 @@ object OpenApiResourcePaths {
                   )
                 )
               )
-            )
+            ),
+            warns = false
           )
         ),
         (
@@ -469,7 +491,8 @@ object OpenApiResourcePaths {
             s"Deletes the $plural of the body, one per line.",
             Seq(groupingParameter),
             bulkResponses(resource, s"The $plural are processed"),
-            Some(ndjsonBody(s"The $plural to delete, one per line", idLine(resource)))
+            Some(ndjsonBody(s"The $plural to delete, one per line", idLine(resource))),
+            warns = false
           )
         )
       )

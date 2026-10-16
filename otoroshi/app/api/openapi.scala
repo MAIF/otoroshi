@@ -88,9 +88,9 @@ object OpenApi {
 
     val finalDoc = cache.getOrElseUpdate(
       s"singleton$cacheSuffix", {
+        // the deprecated entities are still served: they are described, their operations flagged deprecated
         val resources                      = (if (coreOnly) env.allResources.coreResources else env.allResources.resources)
           .filter(_.version.served)
-          .filterNot(_.version.deprecated)
         val handWritten                    = OpenApiSchemas.all(env)
         // an entity carries its schema and the schemas it references (OpenApiSchemas.bundle), the ones of third
         // party extensions that carry none are described by reflection on their class
