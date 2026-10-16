@@ -680,12 +680,12 @@ class NgProxyState(env: Env) {
                                    )
                                  })
                              } else Seq.empty[NgRoute].vfuture
-      apisRoutes          <- Future.sequence(apis.map(_.toRoutes)).map(_.flatten)
       _                   <- env.adminExtensions.syncStates()
     } yield {
       env.proxyState.updateGlobalConfig(gc)
       env.proxyState.updateRawRoutes(routes)
-      env.proxyState.updateRoutes(newRoutes ++ croutes ++ apisRoutes)
+      // newRoutes already holds the enabled routes of the apis, built with their secrets filled
+      env.proxyState.updateRoutes(newRoutes ++ croutes)
       env.proxyState.updateBackends(backends)
       env.proxyState.updateApikeys(apikeys)
       env.proxyState.updateCertificates(certs)
