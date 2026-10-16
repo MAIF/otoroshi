@@ -897,7 +897,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Read the live statistics of an api",
-      "description": "Answers the statistics of the routes the api exposes (its routes when it is published or deprecated, and the routes of its draft when the testing of the draft is enabled), added up: the calls, the calls per second, the average durations and overheads. An api that exposes no route answers zeros. An id that is not the one of an api, but of another entity the admin can read (a route, a route composition, a draft), answers an empty object. The admin behind the credentials has to be able to read the api: an id that is not the one of an api, a route, a route composition or a draft is not found. An audit event is sent.",
+      "description": "Answers the statistics of the routes the api exposes (its routes when it is published or deprecated, and the routes of its draft when the testing of the draft is enabled), the calls, the data in and out and the calls per second added up, the durations and overheads averaged over the calls of the routes. An api that exposes no route answers zeros. An id that is not the one of an api, but of another entity the admin can read (a route, a route composition, a draft), answers an empty object. The admin behind the credentials has to be able to read the api: an id that is not the one of an api, a route, a route composition or a draft is not found. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.liveStats",
       "parameters": [
         {

@@ -122,15 +122,21 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
       }
     }
 
+  // the calls, the data and the rates of the routes add up. their duration and overhead are averages per call: the
+  // ones of the api are their averages weighted by the calls of each route
   def foldStats(stats: Seq[RouteStats]) = {
-    stats.foldLeft(RouteStats()) { case (acc, item) =>
+    val summed = stats.foldLeft(RouteStats()) { case (acc, item) =>
       acc.copy(
         calls = acc.calls + item.calls,
+        dataIn = acc.dataIn + item.dataIn,
+        dataOut = acc.dataOut + item.dataOut,
         rate = acc.rate + item.rate,
-        duration = acc.duration + item.duration,
-        overhead = acc.overhead + item.overhead
+        duration = acc.duration + item.duration * item.calls,
+        overhead = acc.overhead + item.overhead * item.calls
       )
     }
+    if (summed.calls == 0) summed.copy(duration = 0.0, overhead = 0.0)
+    else summed.copy(duration = summed.duration / summed.calls, overhead = summed.overhead / summed.calls)
   }
 
   def getStatsOfRoute(route: NgRoute) = {
