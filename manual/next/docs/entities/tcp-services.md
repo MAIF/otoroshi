@@ -21,7 +21,7 @@ A key feature of TCP services is the ability to route connections using TLS Serv
 - **TLS termination** (`Enabled`): Otoroshi terminates TLS, reads the SNI hostname, selects the appropriate certificate from its dynamic certificate store, and opens a new connection (optionally with TLS) to the matched backend.
 - **TLS passthrough** (`PassThrough`): Otoroshi extracts the SNI hostname from the initial TLS ClientHello packet without terminating TLS, then forwards the entire encrypted connection to the matched backend. The backend handles TLS termination. This is useful when backends must manage their own certificates or when end-to-end encryption is required.
 
-When SNI is not enabled, each TCP service must bind to a unique port. When SNI is enabled, multiple routing rules can coexist on the same port, each matching a different domain pattern via regex.
+When SNI is not enabled, each TCP service must bind to a unique port. When SNI is enabled, multiple routing rules can coexist on the same port, each matching a different domain pattern, where `*` matches any characters.
 
 ### Key features
 
@@ -92,7 +92,7 @@ For any listening TCP proxy, you can define multiple routing rules based on SNI 
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `domain` | string | Regex pattern to match against the domain name |
+| `domain` | string | Pattern the whole domain name has to match: `*` matches any characters, a `.` is a literal dot (`*.oto.tools`, `read-*`) |
 | `targets` | array of object | List of targets for this rule |
 | `targets[].host` | string | Target hostname |
 | `targets[].ip` | string | Target IP address |
@@ -123,7 +123,7 @@ For any listening TCP proxy, you can define multiple routing rules based on SNI 
   },
   "rules": [
     {
-      "domain": ".*read.*",
+      "domain": "*read*",
       "targets": [
         {
           "host": "postgres-replica.internal",
