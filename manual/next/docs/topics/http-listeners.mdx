@@ -28,7 +28,7 @@ The configuration of an HTTP listener uses the following properties:
 | `exposedPort` | number | same as `port` | The externally visible port (useful behind load balancers, proxies, or in containers) |
 | `host` | string | `0.0.0.0` | The network interface the listener binds to. Use `0.0.0.0` for all interfaces or `127.0.0.1` for localhost only |
 | `accessLog` | boolean | `false` | Enable access logging for this listener |
-| `clientAuth` | string | `None` | mTLS client authentication mode: `None`, `Want` (optional), or `Need` (required) |
+| `clientAuth` | string | `None` | mTLS client authentication mode: `None`, `Want` (optional), `Need` (required), or `Dynamic` (the `clientAuth` of the TLS settings of the global configuration) |
 
 ### JSON example
 
@@ -312,7 +312,7 @@ HTTP/3 runs over the QUIC protocol (UDP). It requires TLS to be enabled (`tls: t
 Each listener manages its own TLS context with:
 
 * **Dynamic certificate selection**: Otoroshi automatically selects the right certificate based on SNI (Server Name Indication)
-* **Independent mTLS settings**: each listener can have different `clientAuth` settings (`None`, `Want`, `Need`)
+* **Independent mTLS settings**: each listener can have different `clientAuth` settings (`None`, `Want`, `Need`, `Dynamic`)
 * **Shared cipher suites and TLS protocols**: inherited from the global Otoroshi TLS configuration (`otoroshi.ssl.cipherSuites` and `otoroshi.ssl.protocols`)
 
 ## Routing behavior summary

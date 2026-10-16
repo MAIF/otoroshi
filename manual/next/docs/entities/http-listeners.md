@@ -60,7 +60,7 @@ You can find all HTTP listeners [here](http://otoroshi.oto.tools:8080/bo/dashboa
 | `exposedPort` | number | `7890` | The externally exposed port (useful behind a load balancer or in a container) |
 | `host` | string | `0.0.0.0` | The host address to bind to |
 | `accessLog` | boolean | `false` | Enable access logging for this listener |
-| `clientAuth` | string | `None` | mTLS client authentication mode: `None`, `Want`, or `Need` |
+| `clientAuth` | string | `None` | mTLS client authentication mode: `None`, `Want`, `Need`, or `Dynamic` (the `clientAuth` of the TLS settings of the global configuration) |
 
 ### Client authentication modes
 
