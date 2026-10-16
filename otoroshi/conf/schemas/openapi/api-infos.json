@@ -214,14 +214,14 @@
       "avg": {
         "type": "number",
         "format": "double",
-        "description": "The average over the entities, rounded down (an integer division), 0 when there is none",
-        "example": 2
+        "description": "The average over the entities, 0 when there is none",
+        "example": 2.4
       }
     },
     "example": {
       "min": 0,
       "max": 27,
-      "avg": 2
+      "avg": 2.4
     }
   },
   "AnonymousReportNode": {

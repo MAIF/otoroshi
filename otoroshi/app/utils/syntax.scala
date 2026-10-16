@@ -724,7 +724,7 @@ object implicits {
         val sum = seq.map(f).foldLeft(0) { case (a, b) =>
           a + b
         }
-        sum / seq.size
+        sum.toDouble / seq.size
       }
     }
 
