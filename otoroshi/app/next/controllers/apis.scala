@@ -292,8 +292,11 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
-  def getHttpClientSettings(apiId: String) = ApiAction.async { _ =>
-    Ok(NgClientConfig.default.json).future
+  // the default settings of a client: the api is not read, only the access to it is checked
+  def getHttpClientSettings(apiId: String) = ApiAction.async { ctx =>
+    ctx.canReadService(apiId) {
+      Ok(NgClientConfig.default.json).future
+    }
   }
 
   private def validateApi(api: Api): Either[Result, Api] = {

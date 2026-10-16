@@ -1370,7 +1370,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Read the default http client settings of an api backend",
-      "description": "Answers the default settings of the http client of a backend (retries, timeouts, ...), the ones a new entry of the `clients_backend_config` of an api starts with. The api is neither read nor checked: any id answers the same settings.",
+      "description": "Answers the default settings of the http client of a backend (retries, timeouts, ...), the ones a new entry of the `clients_backend_config` of an api starts with. The api is not read, only the access to it is checked: every api answers the same settings.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.getHttpClientSettings",
       "parameters": [
         {
@@ -1412,6 +1412,26 @@
         },
         "401": {
           "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot read the entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No entity has this id",
           "content": {
             "application/json": {
               "schema": {

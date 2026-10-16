@@ -88,6 +88,10 @@ class ApiManagementSpec extends OtoroshiSpec {
         (resp.json \ "error").asOpt[String] must not be empty
       }
     }
+    "check the access to the api in the template of its http client" in {
+      call("GET", s"$apis/api-that-does-not-exist/http-client-settings/_template").status mustBe 404
+      ok(call("GET", s"$apis/api-mgmt-a/http-client-settings/_template"))
+    }
     "shutdown" in {
       stopAll()
     }
