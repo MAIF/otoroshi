@@ -785,13 +785,15 @@ class OpenApiConformanceSpec(configurationSpec: => Configuration) extends Otoros
     }
   }
 
-  // what an entity needs to be created
+  // what an entity needs to be created. the template of an admin has no password, one has to be set
   private def prepared(resource: Resource, body: JsObject): JsObject =
     if (resource.group == "apis.otoroshi.io" && resource.pluralName == "apisubscriptions")
       parentApi match {
         case Left(err)          => fail(err)
         case Right((api, plan)) => body ++ Json.obj("api_ref" -> api, "plan_ref" -> plan, "subscription_kind" -> "apikey")
       }
+    else if (resource.group == "security.otoroshi.io" && resource.pluralName == "admins")
+      body ++ Json.obj("password" -> "an-admin-password")
     else body
 
   private def idOf(resource: Resource, js: JsValue): Option[String] = Try(resource.access.extractIdJson(js)).toOption.filter(_.nonEmpty)

@@ -51,6 +51,7 @@ import java.util.Base64
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import org.mindrot.jbcrypt.BCrypt
 
 // the json of the wrapper is the one of the global config, so is its schema
 @io.swagger.v3.oas.annotations.media.Schema(implementation = classOf[GlobalConfig])
@@ -877,6 +878,13 @@ class OtoroshiResources(env: Env) {
         env.datastores.simpleAdminDataStore.extractId,
         json => json.select("username").asString,
         () => "username",
+        // no default password: the admin created from the template as it is would be refused until one is set.
+        // rawPassword gives one, hashed, like the template of the legacy api
+        tmpl = (v, p, ctx) =>
+          env.datastores.simpleAdminDataStore
+            .template(env)
+            .copy(password = p.get("rawPassword").map(raw => BCrypt.hashpw(raw, BCrypt.gensalt())).getOrElse(""))
+            .json,
         canCreate = true,
         canUpdate = false,
         canDelete = true,

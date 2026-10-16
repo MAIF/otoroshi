@@ -4097,8 +4097,7 @@
       },
       "password": {
         "type": "string",
-        "minLength": 1,
-        "description": "The bcrypt hash of the password of the admin. A password sent in clear is hashed before it is stored, a bcrypt hash is stored as is. An empty password is refused",
+        "description": "The bcrypt hash of the password of the admin. A password sent in clear is hashed before it is stored, a bcrypt hash is stored as is. An empty password is refused: the template has none, set one or give `rawPassword` to the template",
         "example": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
       },
       "label": {

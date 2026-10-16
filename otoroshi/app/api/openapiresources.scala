@@ -372,6 +372,15 @@ object OpenApiResourcePaths {
           Json.obj("type" -> "string")
         )
       )
+    } else if (kind == "SimpleAdminUser") {
+      Seq(
+        parameter(
+          "rawPassword",
+          "query",
+          s"The password of the $single, written hashed in the template. Without it the template has no password, and has to be given one before it is created",
+          Json.obj("type" -> "string")
+        )
+      )
     } else Seq.empty
 
     val count = ops(

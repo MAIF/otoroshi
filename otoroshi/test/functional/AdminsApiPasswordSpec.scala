@@ -66,6 +66,19 @@ class AdminsApiPasswordSpec extends OtoroshiSpec {
         otoroshiApiCall("DELETE", s"$path/$username").futureValue
       }
     }
+    "serve a template without password, or with the hash of the raw password given" in {
+      val (template, status) = otoroshiApiCall("GET", s"$path/_template").futureValue
+      status mustBe 200
+      (template \ "password").as[String] mustBe ""
+      // created as it is, the admin of the template is refused until a password is set
+      val username       = "from-template@oto.tools"
+      val created        = template.as[JsObject] ++ Json.obj("username" -> username)
+      otoroshiApiCall("POST", path, Some(created)).futureValue._2 mustBe 400
+      val (withRaw, _)   = otoroshiApiCall("GET", s"$path/_template?rawPassword=a-raw-password").futureValue
+      val hash           = (withRaw \ "password").as[String]
+      BCryptHelper.isHash(hash) mustBe true
+      BCryptHelper.checkpw("a-raw-password", hash) mustBe true
+    }
     "shutdown" in {
       stopAll()
     }
