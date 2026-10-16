@@ -1148,7 +1148,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Read a route of an api as a route",
-      "description": "Answers one of the `routes` of the api as the route otoroshi serves for it: its frontend under the domain and the context path of the api, its backend (one of the `backends` of the api, or a stored backend), and the plugins of its flow. A route the api does not hold, or whose backend does not exist, is answered with a 200 holding the error `route not found`. The admin behind the credentials has to be able to read the api. An audit event is sent.",
+      "description": "Answers one of the `routes` of the api as the route otoroshi serves for it: its frontend under the domain and the context path of the api, its backend (one of the `backends` of the api, or a stored backend), and the plugins of its flow. A route the api does not hold, or whose backend does not exist, is not found. The admin behind the credentials has to be able to read the api. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.getRoute",
       "parameters": [
         {
@@ -1179,7 +1179,7 @@
       ],
       "responses": {
         "200": {
-          "description": "The route, or the error `route not found` when the api does not hold it or its backend does not exist",
+          "description": "The route",
           "content": {
             "application/json": {
               "schema": {
@@ -1227,7 +1227,7 @@
           }
         },
         "404": {
-          "description": "No api has this id, but another entity (a route, a route composition or a draft) does",
+          "description": "No api has this id while another entity does (`api not found`), or the api does not hold the route, or the backend of the route does not exist (`route not found`)",
           "content": {
             "application/json": {
               "schema": {

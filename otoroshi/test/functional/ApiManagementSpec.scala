@@ -73,6 +73,9 @@ class ApiManagementSpec extends OtoroshiSpec {
     "read the quotas of the api keys of an api" in {
       ok(call("GET", s"$apis/api-mgmt-a/apikeys/${keyOf("sub-a")}/quotas"))
     }
+    "answer not found for a route an api does not hold" in {
+      call("GET", s"$apis/api-mgmt-a/routes/route-that-does-not-exist").status mustBe 404
+    }
     "shutdown" in {
       stopAll()
     }

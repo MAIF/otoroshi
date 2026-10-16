@@ -270,18 +270,17 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
         env.datastores.apiDataStore
           .findById(apiId)
           .flatMap {
+            // a route the api does not have is not found, like an api that does not exist
             case Some(api) =>
-              api.routes
-                .find(_.id == routeId)
-                .map(route =>
+              api.routes.find(_.id == routeId) match {
+                case None        => Results.NotFound(notFoundMessage).vfuture
+                case Some(route) =>
                   api.routeToNgRoute(route).map {
-                    case Some(route) => route.json
-                    case None        => notFoundMessage
+                    case Some(route) => Ok(route.json)
+                    case None        => Results.NotFound(notFoundMessage)
                   }
-                )
-                .getOrElse(notFoundMessage.vfuture)
-                .map(data => Ok(data))
-            case None      => Results.NotFound(notFoundMessage).vfuture
+              }
+            case None      => Results.NotFound(Json.obj("error" -> "api not found")).vfuture
           }
       }
     }
