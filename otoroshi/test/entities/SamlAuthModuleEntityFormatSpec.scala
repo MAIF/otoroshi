@@ -366,14 +366,13 @@ class SamlAuthModuleEntityFormatSpec extends EntityFormatSpec {
     "read the defaults of a module with only its mandatory fields" in {
       readOk(format, mandatory) mustBe minimal.copy(
         desc = "--",
-        nameIDFormat = NameIDFormat.Transient,
         emailAttributeName = None
       )
     }
 
-    "read a transient name id format when it is missing, not the unspecified default of the case class" in {
+    "read an unspecified name id format when it is missing, like a new module" in {
       minimal.nameIDFormat mustBe NameIDFormat.Unspecified
-      readOk(format, mandatory).nameIDFormat mustBe NameIDFormat.Transient
+      readOk(format, mandatory).nameIDFormat mustBe NameIDFormat.Unspecified
     }
 
     "read no email attribute name when it is missing, not the Email default of the case class" in {

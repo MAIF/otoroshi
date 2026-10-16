@@ -1568,7 +1568,7 @@
       },
       "nameIDFormat": {
         "type": "string",
-        "description": "The format of the name id asked to the identity provider. `transient` when missing, `unspecified` when unknown",
+        "description": "The format of the name id asked to the identity provider. `unspecified` when missing or unknown",
         "enum": [
           "unspecified",
           "persistent",

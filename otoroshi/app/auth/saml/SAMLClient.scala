@@ -424,8 +424,8 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           validateSignature = (json \ "validateSignature").as[Boolean],
           nameIDFormat = (json \ "nameIDFormat")
             .asOpt[String]
-            .map(n => NameIDFormat(n).getOrElse(NameIDFormat.Transient))
-            .getOrElse(NameIDFormat.Transient),
+            .map(n => NameIDFormat(n).getOrElse(NameIDFormat.Unspecified))
+            .getOrElse(NameIDFormat.Unspecified),
           validateAssertions = (json \ "validateAssertions").as[Boolean],
           validateConditions = (json \ "validateConditions").asOpt[Boolean].getOrElse(true),
           clockSkewSeconds = (json \ "clockSkewSeconds").asOpt[Long].getOrElse(60L),
