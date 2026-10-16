@@ -2368,10 +2368,11 @@ object CertificateData {
       "ca"              -> (cert.getBasicConstraints != -1),
       "client"          -> client,
       "subAltNames"     -> JsArray(altNames.map(JsString.apply)),
+      // the der encoded values of the extensions, as hexadecimal bytes: they are binary
       "cExtensions"     -> JsArray(
         Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).toSeq.map { oid =>
           val ext: String =
-            Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
+            Option(cert.getExtensionValue(oid)).map(bytes => Hex.encodeHexString(bytes).toUpperCase.grouped(2).mkString(":")).getOrElse("--")
           Json.obj(
             "oid"   -> oid,
             "value" -> ext
@@ -2381,7 +2382,7 @@ object CertificateData {
       "ncExtensions"    -> JsArray(
         Option(cert.getNonCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).toSeq.map { oid =>
           val ext: String =
-            Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
+            Option(cert.getExtensionValue(oid)).map(bytes => Hex.encodeHexString(bytes).toUpperCase.grouped(2).mkString(":")).getOrElse("--")
           Json.obj(
             "oid"   -> oid,
             "value" -> ext

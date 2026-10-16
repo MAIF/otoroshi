@@ -285,13 +285,13 @@
       },
       "value": {
         "type": "string",
-        "description": "The raw DER encoded value of the extension, its bytes read as an utf-8 string: the readable parts (a dns name) show through, the others are unreadable",
-        "example": "\u0004\u00110\u000f�\rapi.oto.tools"
+        "description": "The DER encoded value of the extension, as its bytes in uppercase hexadecimal separated by colons",
+        "example": "04:11:30:0F:82:0D:61:70:69:2E:6F:74:6F:2E:74:6F:6F:6C:73"
       }
     },
     "example": {
       "oid": "2.5.29.17",
-      "value": "\u0004\u00110\u000f�\rapi.oto.tools"
+      "value": "04:11:30:0F:82:0D:61:70:69:2E:6F:74:6F:2E:74:6F:6F:6C:73"
     }
   },
   "CertificateData": {
@@ -420,7 +420,7 @@
         "example": [
           {
             "oid": "2.5.29.19",
-            "value": "\u0004\u00050\u0003\u0001\u0001�"
+            "value": "04:05:30:03:01:01:FF"
           }
         ]
       },
@@ -433,7 +433,7 @@
         "example": [
           {
             "oid": "2.5.29.17",
-            "value": "\u0004\u00110\u000f�\rapi.oto.tools"
+            "value": "04:11:30:0F:82:0D:61:70:69:2E:6F:74:6F:2E:74:6F:6F:6C:73"
           }
         ]
       }
