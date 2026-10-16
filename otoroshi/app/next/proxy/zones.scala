@@ -92,7 +92,10 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
       val clientId: String               =
         if (useLeader) env.clusterConfig.leader.clientId
         else member.relay.exposition.clientId.getOrElse(env.backOfficeApiKeyClientId)
-      val clientSecret: String           = env.proxyState.apikey(clientId).map(_.clientSecret).getOrElse("secret")
+      // the secret a member exposes for its relay, or the one of its api key
+      val clientSecret: String           = (if (useLeader) None else member.relay.exposition.clientSecret)
+        .orElse(env.proxyState.apikey(clientId).map(_.clientSecret))
+        .getOrElse("secret")
       val ct: Option[String]             = req.headers.toSimpleMap.getIgnoreCase("Content-Type")
       val cl: Option[String]             = req.headers.toSimpleMap.getIgnoreCase("Content-Length")
       val host: String                   = if (useLeader) env.clusterConfig.leader.host else member.relay.exposition.hostname

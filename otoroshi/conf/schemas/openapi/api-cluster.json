@@ -111,7 +111,7 @@
       },
       "clientSecret": {
         "type": "string",
-        "description": "The client secret declared with `clientId` (`otoroshi.cluster.relay.exposition.clientSecret`). Not used by the relayed calls: the calling instance takes the secret of the api key `clientId` from its own state",
+        "description": "The client secret declared with `clientId` (`otoroshi.cluster.relay.exposition.clientSecret`): the calls relayed to this instance send it, or, when it is not set, the secret of the api key `clientId` in the state of the calling instance",
         "example": "admin-api-apikey-secret"
       },
       "ipAddress": {
