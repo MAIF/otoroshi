@@ -222,6 +222,58 @@ trait RedisLike {
   def rawGet(key: String): Future[Option[Any]]
 }
 
+// writes the lines of a full ndjson export (DataStores.fullNdJsonExport) in a RedisLike: `k` is the key, `w` its type,
+// `v` its value (the members of a hash, list or set are their raw strings) and `t` the absolute timestamp it expires
+// at, in milliseconds, or -1 when it does not expire
+object RedisLikeNdJsonImport {
+
+  private def raw(value: JsValue): String = value match {
+    case JsString(str) => str
+    case other         => Json.stringify(other)
+  }
+
+  // lpushPutsLastFirst: whether a lpush of several values puts the last one first, like redis does. the members of a
+  // list are then pushed reversed, to keep the order of the export. setString writes a string or a counter
+  def importLine(
+      redis: RedisLike,
+      json: JsValue,
+      lpushPutsLastFirst: Boolean,
+      setString: (String, String) => Future[Any]
+  )(using
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Unit] = {
+    val key       = (json \ "k").as[String]
+    val value     = (json \ "v").as[JsValue]
+    val what      = (json \ "w").as[String]
+    val expiresAt = (json \ "t").asOpt[Long].getOrElse(-1L)
+    val ttl       = expiresAt - System.currentTimeMillis()
+    if (expiresAt > -1L && ttl <= 0L) {
+      // expired since the export
+      FastFuture.successful(())
+    } else {
+      (what match {
+        case "counter" => setString(key, raw(value))
+        case "string"  => setString(key, raw(value))
+        case "hash"    =>
+          Source(value.as[JsObject].value.toList)
+            .mapAsync(1)(v => redis.hset(key, v._1, raw(v._2)))
+            .runWith(Sink.ignore)
+        case "list"    =>
+          val members = value.as[JsArray].value.toSeq.map(raw)
+          if (members.isEmpty) FastFuture.successful(0L)
+          else redis.lpush(key, (if (lpushPutsLastFirst) members.reverse else members)*)
+        case "set"     =>
+          val members = value.as[JsArray].value.toSeq.map(raw)
+          if (members.isEmpty) FastFuture.successful(0L) else redis.sadd(key, members*)
+        case _         => FastFuture.successful(0L)
+      }).flatMap { _ =>
+        if (expiresAt > -1L) redis.pexpire(key, ttl).map(_ => ()) else FastFuture.successful(())
+      }
+    }
+  }
+}
+
 trait OptimizedRedisLike {
   def findAllOptimized(kind: String, kindKey: String): Future[Seq[JsValue]]
   def serviceDescriptors_findByHost(

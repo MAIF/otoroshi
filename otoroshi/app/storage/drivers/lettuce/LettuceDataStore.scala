@@ -43,6 +43,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicReference
 import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ExecutionContext, Future}
+import otoroshi.storage.RedisLikeNdJsonImport
 
 class LettuceDataStores(
     configuration: Configuration,
@@ -449,29 +450,9 @@ class LettuceDataStores(
       .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
-          .mapAsync(1) { json =>
-            val key   = (json \ "k").as[String]
-            val value = (json \ "v").as[JsValue]
-            val pttl  = (json \ "t").as[Long]
-            val what  = (json \ "w").as[String]
-            (what match {
-              case "counter" => redis.set(key, value.as[Long].toString)
-              case "string"  => redis.set(key, value.as[String])
-              case "hash"    =>
-                Source(value.as[JsObject].value.toList)
-                  .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
-                  .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
-              case _         => FastFuture.successful(0L)
-            }).flatMap { _ =>
-              if (pttl > -1L) {
-                redis.pexpire(key, pttl)
-              } else {
-                FastFuture.successful(true)
-              }
-            }
-          }
+          .mapAsync(1)(json =>
+            RedisLikeNdJsonImport.importLine(redis, json, lpushPutsLastFirst = true, setString = redis.set(_, _))
+          )
           .runWith(Sink.ignore)
           .map(_ => ())
       }
