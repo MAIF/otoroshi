@@ -9,7 +9,7 @@ import play.api.libs.ws.{readableAsString, WSAuthScheme, WSResponse}
 
 import scala.concurrent.ExecutionContext
 
-// the events the admin api reads: the audit events filtered then paginated
+// the events the admin api reads: the audit events filtered then paginated and one per line in ndjson
 class EventsAndStatsSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
@@ -38,6 +38,10 @@ class EventsAndStatsSpec extends OtoroshiSpec {
       ids(admin("/api/audit/events?filter.kind=spec-odd&page=2&pageSize=2")) mustBe Seq("event-1")
       // without filter too
       admin("/api/audit/events?page=1&pageSize=2").json.as[Seq[JsObject]].size mustBe 2
+      // one event per line
+      val ndjson = admin("/api/audit/events?filter.kind=spec-odd", "Accept" -> "application/x-ndjson").body[String]
+      ndjson.split("\n").toSeq.map(l => (Json.parse(l) \ "@id").as[String]) mustBe Seq("event-5", "event-3", "event-1")
+      ndjson must endWith("\n")
     }
     "shutdown" in {
       stopAll()

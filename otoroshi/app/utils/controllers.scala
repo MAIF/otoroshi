@@ -213,7 +213,7 @@ trait AdminApiHelper {
         if (!ctx.request.accepts("application/json") && ctx.request.accepts("application/x-ndjson")) {
           Ok.sendEntity(
             HttpEntity.Streamed(
-              data = Source(finalItems.map(writeEntity).map(e => e.stringify.byteString).toList),
+              data = Source(finalItems.map(writeEntity).map(e => s"${e.stringify}\n".byteString).toList),
               contentLength = None,
               contentType = "application/x-ndjson".some
             )
