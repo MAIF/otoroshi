@@ -1979,7 +1979,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Confirm a subscription to an api",
-      "description": "Sets the state of the subscription to `enabled` (of the draft subscription with `version=Draft`). The api has to be enabled, neither deprecated nor removed, and the plan of the subscription published. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "description": "Sets the state of the subscription to `enabled` (of the draft subscription with `version=Draft`). The api keys of a live subscription are updated from its plan and enabled with it. The api has to be enabled, neither deprecated nor removed, and the plan of the subscription published. The admin behind the credentials has to be able to write the api. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.confirmSubscription",
       "parameters": [
         {

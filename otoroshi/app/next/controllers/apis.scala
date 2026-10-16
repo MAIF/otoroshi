@@ -609,7 +609,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                 env.datastores.draftsDataStore.set(updated)
             }
           } else {
-            env.datastores.apiSubscriptionDataStore.set(subscription.copy(status = ApiSubscriptionEnabled))
+            // through the validation of an update, like the admin api: the api keys of the subscription follow its
+            // status, a key created disabled is enabled with it
+            val enabled = subscription.copy(status = ApiSubscriptionEnabled)
+            ApiSubscription.validate(enabled.apiRef, enabled, WriteAction.Update, isDraft = false).flatMap {
+              case Left(_)    => false.future
+              case Right(sub) => env.datastores.apiSubscriptionDataStore.set(sub)
+            }
           }
 
         findApi().flatMap {

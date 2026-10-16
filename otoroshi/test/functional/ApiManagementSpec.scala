@@ -77,6 +77,13 @@ class ApiManagementSpec extends OtoroshiSpec {
       val subs = ok(call("POST", s"$apis/api-mgmt-a/plans/plan-x/subscriptions/preview-update", Some(Json.obj())))
       subs.as[Seq[JsObject]].map(s => (s \ "id").as[String]) mustBe Seq("sub-a")
     }
+    "enable the api key of a subscription it confirms" in {
+      val key = keyOf("sub-a")
+      (ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$key")) \ "enabled").as[Boolean] mustBe false
+      ok(call("POST", s"$apis/api-mgmt-a/subscriptions/sub-a/confirm", Some(Json.obj())), 204)
+      (ok(call("GET", s"/apis/apis.otoroshi.io/v1/apisubscriptions/sub-a")) \ "status").as[String] mustBe "enabled"
+      (ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$key")) \ "enabled").as[Boolean] mustBe true
+    }
     "close a plan, deleting its subscriptions and their api keys, in its api only" in {
       val key = keyOf("sub-a")
       ok(call("POST", s"$apis/api-mgmt-a/plans/plan-x/close", Some(Json.obj())))
