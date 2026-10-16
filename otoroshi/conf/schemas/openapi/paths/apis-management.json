@@ -1579,7 +1579,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "List the subscriptions a change of a plan impacts",
-      "description": "Answers the subscriptions of the plan of the body (the ones whose `plan_ref` is its `id`), the ones a change of this plan would update, without changing anything. With `version=Draft`, the draft subscriptions are answered instead of the live ones. The plan of the path is not read: only the `id` of the plan of the body is. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "description": "Answers the subscriptions of the plan of the path in the api of the path, the ones a change of this plan would update, without changing anything. The body is the plan as it would be changed: its `id` is not read. With `version=Draft`, the draft subscriptions are answered instead of the live ones. The admin behind the credentials has to be able to write the api. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.listImpactedSubscriptions",
       "parameters": [
         {
@@ -1631,7 +1631,7 @@
       },
       "responses": {
         "200": {
-          "description": "The subscriptions the change of the plan of the body would update, live or draft ones, as an array of api subscription entities",
+          "description": "The subscriptions the change of the plan would update, live or draft ones, as an array of api subscription entities",
           "content": {
             "application/json": {
               "schema": {

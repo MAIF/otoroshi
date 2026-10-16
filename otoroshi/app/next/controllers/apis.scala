@@ -410,7 +410,9 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
           env.datastores.draftsDataStore
             .streamedFindAndMat(
-              _.content.selectAsOptString("plan_ref").getOrElse("") == plan.id,
+              draft =>
+                draft.content.selectAsOptString("plan_ref").getOrElse("") == plan.id &&
+                draft.content.selectAsOptString("api_ref").getOrElse("") == apiId,
               fetchSize = 50,
               page = page
             )(using ec, env.otoroshiMaterializer, env)
@@ -430,7 +432,11 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
           implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
           env.datastores.apiSubscriptionDataStore
-            .streamedFindAndMat(_.planRef == plan.id, fetchSize = 50, page = page)(using ec, env.otoroshiMaterializer, env)
+            .streamedFindAndMat(sub => sub.planRef == plan.id && sub.apiRef == apiId, fetchSize = 50, page = page)(using
+              ec,
+              env.otoroshiMaterializer,
+              env
+            )
             .flatMap { subscriptions =>
               if (subscriptions.isEmpty) {
                 subscriptions.vfuture
@@ -444,9 +450,10 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
             }
         }
 
+        // the body is the plan as it would be changed, the subscriptions are the ones of the plan of the path in the api
         ctx.request.body
           .asOpt[JsObject]
-          .map(ApiPlan.apply)
+          .map(body => ApiPlan(body ++ Json.obj("id" -> planId)))
           .toRight(BadRequest(Json.obj("error" -> "wrong plan format"))) match {
           case Left(err)              => err.vfuture
           case Right(plan) if isDraft =>

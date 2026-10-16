@@ -73,6 +73,10 @@ class ApiManagementSpec extends OtoroshiSpec {
     "read the quotas of the api keys of an api" in {
       ok(call("GET", s"$apis/api-mgmt-a/apikeys/${keyOf("sub-a")}/quotas"))
     }
+    "only preview the subscriptions of the plan of the path in the api of the path" in {
+      val subs = ok(call("POST", s"$apis/api-mgmt-a/plans/plan-x/subscriptions/preview-update", Some(Json.obj())))
+      subs.as[Seq[JsObject]].map(s => (s \ "id").as[String]) mustBe Seq("sub-a")
+    }
     "keep the state of an api it stops" in {
       createApi("api-mgmt-staging", "staging")
       ok(call("POST", s"$apis/api-mgmt-staging/_stop"))
