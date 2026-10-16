@@ -57,6 +57,9 @@ class WorkflowJob(ref: String, config: WorkflowJobConfig) extends Job {
 
   private val logger = Logger("otoroshi-workflow-job")
 
+  // the settings the job is scheduled with
+  def settings: WorkflowJobConfig = config
+
   override def core: Boolean                     = true
   override def name: String                      = "Workflow Job"
   override def description: Option[String]       = "this job execute any given Workflow plugin".some

@@ -745,6 +745,18 @@ class JobManager(env: Env) {
       registeredJobs.remove(job.uniqueId)
     }
   }
+
+  // stops the job registered with the id of this one and registers this one in its place, to schedule a job again
+  // when its settings change
+  def replaceJob(job: Job): Unit = {
+    if (JobManager.logger.isDebugEnabled)
+      JobManager.logger.debug(s"Replacing job '${job.name}' with id '${job.uniqueId}'")
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      registeredJobs.get(job.uniqueId).foreach(_.stop(config, env))
+      registeredJobs.remove(job.uniqueId)
+      registerJob(job)
+    }
+  }
 }
 
 object DefaultJob extends Job {

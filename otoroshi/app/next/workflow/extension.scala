@@ -631,9 +631,15 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
     val currentIds: Seq[String] = workflows.filter(_.job.enabled).map { workflow =>
       val actualJob        = new WorkflowJob(workflow.id, workflow.job)
       val uniqueId: String = actualJob.uniqueId.id
-      if (!handledJobs.contains(uniqueId)) {
-        handledJobs.put(uniqueId, actualJob)
-        env.jobManager.registerJob(actualJob)
+      handledJobs.get(uniqueId) match {
+        case None                                                   =>
+          handledJobs.put(uniqueId, actualJob)
+          env.jobManager.registerJob(actualJob)
+        // the job of the workflow changed: it is scheduled again with its new settings
+        case Some(job: WorkflowJob) if job.settings != workflow.job =>
+          handledJobs.put(uniqueId, actualJob)
+          env.jobManager.replaceJob(actualJob)
+        case _                                                      => ()
       }
       uniqueId
     }

@@ -379,9 +379,15 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
     val currentIds: Seq[String] = catalogs.filter(c => c.enabled && c.scheduling.enabled).map { catalog =>
       val actualJob        = new RemoteCatalogJob(catalog.id, catalog.scheduling)
       val uniqueId: String = actualJob.uniqueId.id
-      if (!handledJobs.contains(uniqueId)) {
-        handledJobs.put(uniqueId, actualJob)
-        env.jobManager.registerJob(actualJob)
+      handledJobs.get(uniqueId) match {
+        case None                                                             =>
+          handledJobs.put(uniqueId, actualJob)
+          env.jobManager.registerJob(actualJob)
+        // the scheduling of the catalog changed: it is scheduled again with its new settings
+        case Some(job: RemoteCatalogJob) if job.settings != catalog.scheduling =>
+          handledJobs.put(uniqueId, actualJob)
+          env.jobManager.replaceJob(actualJob)
+        case _                                                                => ()
       }
       uniqueId
     }
@@ -398,6 +404,9 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
 class RemoteCatalogJob(ref: String, config: RemoteCatalogScheduling) extends Job {
 
   private val logger = Logger("otoroshi-remote-catalog-job")
+
+  // the settings the job is scheduled with
+  def settings: RemoteCatalogScheduling = config
 
   override def core: Boolean                                               = true
   override def name: String                                                = "Remote Catalog Job"
