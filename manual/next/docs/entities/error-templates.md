@@ -34,7 +34,7 @@ You can find all error templates [here](http://otoroshi.oto.tools:8080/bo/dashbo
 * `template50x`: the HTML template used for 5xx server error responses
 * `templateBuild`: the HTML template displayed when the service is under construction
 * `templateMaintenance`: the HTML template displayed when the service is in maintenance mode
-* `genericTemplates`: a map of cause-specific templates. The key is a cause identifier (e.g., `errors.service.not.found`) and supports regex patterns for matching. These templates take priority over the generic `template40x`/`template50x` templates
+* `genericTemplates`: a map of cause-specific templates. The key is a cause identifier (e.g., `errors.service.not.found`) or a wildcard pattern matching cause identifiers, where `*` matches any characters and a `.` is a literal dot (e.g., `errors.service.*`). These templates take priority over the generic `template40x`/`template50x` templates
 * `messages`: a map of custom messages. Keys can be `message-{status}` (e.g., `message-404`) for status-specific messages or cause identifiers (e.g., `errors.service.not.found`) for cause-specific messages
 
 ## Template variables
@@ -51,7 +51,7 @@ All HTML templates support the following placeholder variables that are replaced
 
 When Otoroshi renders an error page, it selects the template in the following order:
 
-1. A matching entry in `genericTemplates` (exact match on cause id, then regex match)
+1. A matching entry in `genericTemplates` (exact match on cause id, then wildcard pattern match)
 2. `templateMaintenance` if the cause is `errors.service.in.maintenance`
 3. `templateBuild` if the cause is `errors.service.under.construction`
 4. `template40x` for 4xx status codes
