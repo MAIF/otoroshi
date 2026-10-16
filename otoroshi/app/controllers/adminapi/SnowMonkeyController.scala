@@ -7,9 +7,9 @@ import otoroshi.models.SnowMonkeyConfig
 import otoroshi.models.RightsChecker
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsError, JsSuccess, Json}
+import play.api.libs.json.{JsArray, JsError, JsNull, JsResult, JsSuccess, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import otoroshi.utils.json.JsonPatchHelpers.patchJson
+import otoroshi.utils.json.JsonPatchHelpers.patchJsonSafe
 
 class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
@@ -140,9 +140,12 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(using
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { globalConfig =>
           val currentSnowMonkeyConfigJson = globalConfig.snowMonkeyConfig.asJson
-          val newSnowMonkeyConfigJson     = patchJson(ctx.request.body, currentSnowMonkeyConfigJson)
-          SnowMonkeyConfig.fromJsonSafe(newSnowMonkeyConfigJson) match {
-            case JsError(e)                        => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).future
+          val patched                     = patchJsonSafe(ctx.request.body, currentSnowMonkeyConfigJson)
+          val newSnowMonkeyConfigJson     = patched.getOrElse(JsNull)
+          // a patch that cannot be applied must not save the defaults of the snow monkey
+          patched.fold[JsResult[SnowMonkeyConfig]](JsError(_), SnowMonkeyConfig.fromJsonSafe) match {
+            case JsError(e)                        =>
+              BadRequest(Json.obj("error" -> patched.swap.getOrElse("Bad SnowMonkeyConfig format"))).future
             case JsSuccess(newSnowMonkeyConfig, _) => {
               val event: AdminApiEvent = AdminApiEvent(
                 env.snowflakeGenerator.nextIdStr(),

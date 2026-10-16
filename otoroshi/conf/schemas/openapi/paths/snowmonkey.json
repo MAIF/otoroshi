@@ -416,7 +416,7 @@
         "snowmonkey"
       ],
       "summary": "Patch the settings of the snow monkey",
-      "description": "Applies the json patch (RFC 6902) of the body to the settings of the snow monkey, saves them in the global configuration, and answers them. A patch that cannot be applied (an operation on a path that does not exist, a failed `test`) resets every setting of the snow monkey to its default value. An audit event (`PATCH_SNOWMONKEY_CONFIG`) and an alert are sent. Only a super admin can call it.",
+      "description": "Applies the json patch (RFC 6902) of the body to the settings of the snow monkey, saves them in the global configuration, and answers them. A body that is not a json patch, or a patch that cannot be applied (an operation on a path that does not exist, a failed `test`), is refused and leaves the settings as they are. An audit event (`PATCH_SNOWMONKEY_CONFIG`) and an alert are sent. Only a super admin can call it.",
       "operationId": "otoroshi.controllers.adminapi.SnowMonkeyController.patchSnowMonkey",
       "requestBody": {
         "description": "The json patch to apply to the settings of the snow monkey",
@@ -463,7 +463,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body is not json, or the patched settings are not the settings of a snow monkey",
+          "description": "The credentials are missing, the body is not a json patch, the patch cannot be applied, or the patched settings are not the settings of a snow monkey",
           "content": {
             "application/json": {
               "schema": {

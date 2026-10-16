@@ -15,6 +15,20 @@ object JsonPatchHelpers {
   import diffson.playJson.DiffsonProtocol.*
   import play.api.libs.json.*
 
+  // the patched document, or why the body is not a json patch or cannot be applied to the document. patchJson answers
+  // JsNull for a patch that cannot be applied, which reads as a default entity for some of them
+  def patchJsonSafe(patchOps: JsValue, document: JsValue): Either[String, JsValue] = {
+    diffson.playJson.DiffsonProtocol.JsonPatchFormat.reads(patchOps) match {
+      case JsError(_)          => Left("the body is not a json patch")
+      case JsSuccess(patch, _) =>
+        patch.apply(document) match {
+          case JsSuccess(value, _) => Right(value)
+          case JsError(errors)     =>
+            Left(s"the patch cannot be applied: ${errors.flatMap(_._2).flatMap(_.messages).mkString(", ")}")
+        }
+    }
+  }
+
   def patchJson(patchOps: JsValue, document: JsValue): JsValue = {
     val patch = diffson.playJson.DiffsonProtocol.JsonPatchFormat.reads(patchOps).get
     patch.apply(document) match {
