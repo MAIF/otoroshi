@@ -20,6 +20,7 @@ import play.api.libs.json.*
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
@@ -157,6 +158,9 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using 
       }
       settings match {
         case Left(err) => BadRequest(Json.obj("error" -> err)).future
+        // an uri that cannot be read is answered like a database that cannot be reached
+        case Right(s) if s.uri.exists(uri => Try(PgConnectOptions.fromUri(uri)).isFailure) =>
+          BadRequest(Json.obj("ok" -> false, "error" -> "the uri is not a postgresql connection uri")).future
         case Right(s)  =>
           val opts = s.uri match {
             case Some(uri) => PgConnectOptions.fromUri(uri)

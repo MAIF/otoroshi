@@ -220,10 +220,11 @@ object AnonymousReportingJob {
               "java_version" -> json.select("javaVersion").asValue,
               "version"      -> json.select("version").asValue,
               "type"         -> json.select("type").asValue,
-              "cpu_usage"    -> json.select("stats").select("cpu_usage").asValue,
-              "load_average" -> json.select("stats").select("load_average").asValue,
-              "heap_used"    -> json.select("stats").select("heap_used").asValue,
-              "heap_size"    -> json.select("stats").select("heap_size").asValue,
+              // a member registered before it sent its first stats has none
+              "cpu_usage"    -> json.select("stats").select("cpu_usage").asOpt[JsValue].getOrElse(JsNull).as[JsValue],
+              "load_average" -> json.select("stats").select("load_average").asOpt[JsValue].getOrElse(JsNull).as[JsValue],
+              "heap_used"    -> json.select("stats").select("heap_used").asOpt[JsValue].getOrElse(JsNull).as[JsValue],
+              "heap_size"    -> json.select("stats").select("heap_size").asOpt[JsValue].getOrElse(JsNull).as[JsValue],
               "relay"        -> JsBoolean(json.select("relay").select("enabled").asOpt[Boolean].getOrElse(false)),
               "tunnels"      -> JsNumber(BigDecimal(json.select("tunnels").asOpt[JsArray].map(_.value.size).getOrElse(0)))
               // "live_threads" -> json.select("stats").select("live_threads").asValue,

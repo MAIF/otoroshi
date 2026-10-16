@@ -110,7 +110,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), or the body, when it is not ndjson, is not a json object",
           "content": {
             "application/json": {
               "schema": {
@@ -150,7 +150,7 @@
           }
         },
         "500": {
-          "description": "The body could not be imported: it is not json, a line of the ndjson body is not json or has no new line, or an entity cannot be read. The datastore may be left partly imported",
+          "description": "The body could not be imported: a line of the ndjson body is not json, or an entity cannot be read. The datastore may be left partly imported",
           "content": {
             "application/json": {
               "schema": {
@@ -215,7 +215,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), or the file, when it is not ndjson, is not a json object",
           "content": {
             "application/json": {
               "schema": {
@@ -255,7 +255,7 @@
           }
         },
         "500": {
-          "description": "The file could not be imported: it is not json (answered as a server error), a line of the ndjson file is not json or has no new line, or an entity cannot be read. The datastore may be left partly imported",
+          "description": "The file could not be imported: a line of the ndjson file is not json, or an entity cannot be read. The datastore may be left partly imported",
           "content": {
             "application/json": {
               "schema": {

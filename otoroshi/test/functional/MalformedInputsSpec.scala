@@ -52,6 +52,13 @@ class MalformedInputsSpec extends OtoroshiSpec {
       relay.body[String] must include("Otoroshi-Relay-Routing-Id")
       mustBe400(call("POST", "/api/cluster/user-tokens", Some("{}")))
     }
+    "answer null statistics for a member that sent none" in {
+      // a worker that asked for the state is a member, before it sent any statistics
+      val state = call("GET", "/api/cluster/state", headers = Seq("Otoroshi-Worker-Name" -> "a-worker-without-stats"))
+      withClue(state.status)(state.status mustBe 200)
+      val infos = call("GET", "/api/infos?full=true")
+      withClue(infos.body[String])(infos.status mustBe 200)
+    }
     "refuse the malformed calls of the pki" in {
       given env: Env = otoroshiComponents.env
       val deadline   = System.currentTimeMillis() + 60000L
@@ -65,6 +72,12 @@ class MalformedInputsSpec extends OtoroshiSpec {
       mustBe400(call("POST", s"$sign?duration=not-a-number", Some("not pem"), contentType = "text/plain"))
       mustBe400(call("POST", sign, Some("not pem"), contentType = "text/plain"))
       mustBe400(call("POST", "/api/pki/certs/_letencrypt", Some("not json"), contentType = "text/plain"))
+    }
+    "refuse the malformed calls of the analytics and the imports" in {
+      mustBe400(call("POST", "/api/analytics/_test-connection", Some(Json.obj("uri" -> "not an uri").stringify)))
+      // nothing is imported
+      mustBe400(call("POST", "/api/otoroshi.json", Some("[]")))
+      mustBe400(call("POST", "/api/import", Some("not json"), contentType = "text/plain"))
     }
     "shutdown" in {
       stopAll()

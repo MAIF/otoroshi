@@ -73,16 +73,6 @@
               }
             }
           }
-        },
-        "500": {
-          "description": "With `full=true`, a member of the cluster has not sent its statistics yet (a worker registered by `GET /api/cluster/state` before its first quotas update): the report cannot be built",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
         }
       }
     }

@@ -257,25 +257,29 @@
       "cpu_usage": {
         "type": "number",
         "format": "double",
-        "description": "The cpu usage of the process of the member, in percent",
+        "nullable": true,
+        "description": "The cpu usage of the process of the member, in percent. Null until the member sent its first stats",
         "example": 9.02
       },
       "load_average": {
         "type": "number",
         "format": "double",
-        "description": "The load average of the system of the member over the last minute, negative when the system does not provide it",
+        "nullable": true,
+        "description": "The load average of the system of the member over the last minute, negative when the system does not provide it. Null until the member sent its first stats",
         "example": 7.92
       },
       "heap_used": {
         "type": "integer",
         "format": "int64",
-        "description": "The heap memory used by the jvm of the member, in megabytes",
+        "nullable": true,
+        "description": "The heap memory used by the jvm of the member, in megabytes. Null until the member sent its first stats",
         "example": 2550
       },
       "heap_size": {
         "type": "integer",
         "format": "int64",
-        "description": "The heap memory the jvm of the member has reserved, in megabytes",
+        "nullable": true,
+        "description": "The heap memory the jvm of the member has reserved, in megabytes. Null until the member sent its first stats",
         "example": 2788
       },
       "relay": {

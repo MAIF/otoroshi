@@ -1011,7 +1011,9 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(u
   }
 
   def tunnelEndpoint() = WebSocket.acceptOrResult[Message, Message] { request =>
-    if (tunnelsEnabled) {
+    if (tunnelsEnabled && request.getQueryString("tunnel_id").isEmpty) {
+      Left(Results.BadRequest(Json.obj("error" -> "missing tunnel_id"))).vfuture
+    } else if (tunnelsEnabled) {
       val tunnelId: String         = request.getQueryString("tunnel_id").get
       val reversePingPong: Boolean = request.getQueryString("pong_ping").getOrElse("false") == "true"
       validateRequest(request).flatMap {

@@ -13,6 +13,9 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 
+import scala.concurrent.Future
+import scala.util.Try
+
 class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
@@ -99,7 +102,7 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(usi
           case Some("application/x-ndjson") => {
             val body   = FileIO.fromPath(ctx.request.body.path)
             val source = body
-              .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false))
+              .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
               .map(v => Json.parse(v.utf8String))
             env.datastores
               .fullNdJsonImport(source)
@@ -109,13 +112,17 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(usi
           }
           case _                            => {
             val source = scala.io.Source.fromFile(ctx.request.body.path.toFile, "utf-8").getLines().mkString("\n")
-            val json   = Json.parse(source).as[JsObject]
-            env.datastores.globalConfigDataStore
-              .fullImport(json)
-              .map(_ => Ok(Json.obj("done" -> true)))
-              .recover { case e =>
-                InternalServerError(Json.obj("error" -> e.getMessage))
-              }
+            // a body that is not a json object is refused before anything is imported
+            Try(Json.parse(source)).toOption.collect { case obj: JsObject => obj } match {
+              case None       => Future.successful(BadRequest(Json.obj("error" -> "the body is not a json object")))
+              case Some(json) =>
+                env.datastores.globalConfigDataStore
+                  .fullImport(json)
+                  .map(_ => Ok(Json.obj("done" -> true)))
+                  .recover { case e =>
+                    InternalServerError(Json.obj("error" -> e.getMessage))
+                  }
+            }
           }
         }
       }
@@ -127,7 +134,7 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(usi
         ctx.request.contentType match {
           case Some("application/x-ndjson") => {
             val source = ctx.request.body
-              .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false))
+              .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
               .map(v => Json.parse(v.utf8String))
             env.datastores
               .fullNdJsonImport(source)
@@ -137,10 +144,14 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(usi
           }
           case _                            => {
             ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
-              val json = Json.parse(body.utf8String).as[JsObject]
-              env.datastores.globalConfigDataStore
-                .fullImport(json)
-                .map(_ => Ok(Json.obj("done" -> true)))
+              // a body that is not a json object is refused before anything is imported
+              Try(Json.parse(body.utf8String)).toOption.collect { case obj: JsObject => obj } match {
+                case None       => Future.successful(BadRequest(Json.obj("error" -> "the body is not a json object")))
+                case Some(json) =>
+                  env.datastores.globalConfigDataStore
+                    .fullImport(json)
+                    .map(_ => Ok(Json.obj("done" -> true)))
+              }
             } recover { case e =>
               InternalServerError(Json.obj("error" -> e.getMessage))
             }

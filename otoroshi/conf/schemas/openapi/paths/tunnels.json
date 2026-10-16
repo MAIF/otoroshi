@@ -158,7 +158,7 @@
           "description": "The connection is upgraded to a websocket"
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), or the `tunnel_id` query parameter is missing",
           "content": {
             "application/json": {
               "schema": {
@@ -189,16 +189,6 @@
         },
         "429": {
           "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
-        },
-        "500": {
-          "description": "The `tunnel_id` query parameter is missing (answered as a server error)",
           "content": {
             "application/json": {
               "schema": {
