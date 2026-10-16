@@ -163,9 +163,11 @@ object HealthController {
         ),
         "scripts"      -> (scripts.json.as[JsObject] ++ Json.obj("status" -> scriptsReady))
       ) ++ cluster
+      // the cluster part of the payload is informative. a worker is healthy once it got the state of the cluster
+      // (workerReady), and stays so when the leaders go away as it keeps serving the state it has. a leader works on
+      // the datastore and does not depend on the health of its workers
       val err              = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
         (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||
-        (payload \ "cluster").asOpt[String].orElse(Some("healthy")).exists(v => v != "healthy") ||
         engineRes.header.status != 200 ||
         !scripts.initialized ||
         !workerReady ||
