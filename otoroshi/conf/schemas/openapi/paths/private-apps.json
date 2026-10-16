@@ -186,5 +186,94 @@
         }
       }
     }
+  },
+  "/api/apps-sessions-module/{id}": {
+    "delete": {
+      "tags": [
+        "private-apps"
+      ],
+      "summary": "Log out every user of an auth module",
+      "description": "Discards every private apps session opened through the auth module with this id: each of its users has to log in again on the next call of a route protected by this module. An admin alert and an audit event record it. Nothing happens when the admin api is read only.",
+      "operationId": "otoroshi.controllers.adminapi.UsersController.discardPrivateAppsSessionFor",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The id of the auth module whose sessions are discarded",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "auth_mod_keycloak"
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "`done` is true when the sessions are discarded, false when the admin api is read only",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a tenant admin, or cannot write this auth module",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No auth module has this id",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
