@@ -488,6 +488,15 @@ class OpenApiConformanceSpec(configurationSpec: => Configuration) extends Otoros
           }
         )
       }
+      "be flagged deprecated when its entity is" in {
+        resources.find(res => genericOperations(res).exists(_ == (op.method, op.path))) match {
+          case None      => succeed
+          case Some(res) =>
+            withClue(s"${res.group}/${res.pluralName} deprecated: ${res.version.deprecated}") {
+              (op.json \ "deprecated").asOpt[Boolean].getOrElse(false) mustBe res.version.deprecated
+            }
+        }
+      }
       "document the error of a call without credentials" in {
         val secured = (op.json \ "security").asOpt[Seq[JsObject]].exists(_.nonEmpty)
         if (secured && !op.documentedStatuses.contains("401")) fail("secured but no 401 response")
@@ -500,7 +509,7 @@ class OpenApiConformanceSpec(configurationSpec: => Configuration) extends Otoros
   // ---------------------------------------------------------------------------------------------------------------
 
   private val resources: Seq[Resource] =
-    env.allResources.coreResources.filter(_.version.served).filterNot(_.version.deprecated).sortBy(r => (r.group, r.pluralName))
+    env.allResources.coreResources.filter(_.version.served).sortBy(r => (r.group, r.pluralName))
 
   private def basePath(r: Resource): String = s"/apis/${r.group}/${r.version.name}/${r.pluralName}"
 
@@ -1068,6 +1077,15 @@ class OpenApiConformanceSpec(configurationSpec: => Configuration) extends Otoros
         val c = call("POST", base, Some("application/json" -> "[]"), accept = documentedAccept(o))
         c.status mustBe 400
         assertNoViolation(o.name, conformance(o, c))
+      }
+      "say whether it is deprecated as documented" in {
+        val c = ws
+          .url(s"http://127.0.0.1:$port$base")
+          .withHttpHeaders("Host" -> adminHost, "Accept" -> "application/json")
+          .withAuth(clientId, clientSecret, WSAuthScheme.BASIC)
+          .get()
+          .futureValue
+        c.header("Otoroshi-Api-Deprecated") mustBe (if (resource.version.deprecated) Some("yes") else None)
       }
       "leave no entity behind" in {
         cleanup()
