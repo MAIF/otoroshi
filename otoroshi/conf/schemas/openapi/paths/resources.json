@@ -1,0 +1,71 @@
+{
+  "/api/new/resources": {
+    "post": {
+      "tags": [
+        "resources"
+      ],
+      "summary": "Build complete entities from partial definitions",
+      "description": "Merges each definition of the body with the template of its kind, and answers the complete entities, ready to be created through the api. Nothing is stored. The kind is read from the `kind` field, a group and a kind (`proxy.otoroshi.io/Route`) or a legacy kind (`Route`, `ApiKey`, `DataExporter`...); a kubernetes like definition (with a `spec` field) is read from its `spec`. A legacy service descriptor is converted to a route. A definition that cannot be built is answered with its error in place of the entity.",
+      "operationId": "otoroshi.controllers.adminapi.TemplatesController.initiateResources",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The definitions to build",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ResourcesToBuild"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The entities built: a single one for a single definition (an object, or a yaml document), a list otherwise",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuiltResources"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The body holds no `content`, its yaml cannot be read, or the credentials are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
