@@ -284,7 +284,12 @@ class TunnelAgent(env: Env) {
         // println(s"handling request ${requestId}")
         val url               = obj.select("url").asString
         val addr              = obj.select("addr").asString
-        val secured           = obj.select("secured").asOpt[Boolean].getOrElse(false)
+        // a boolean, or the string older leaders write
+        val secured           = obj
+          .select("secured")
+          .asOpt[Boolean]
+          .orElse(obj.select("secured").asOpt[String].flatMap(_.toBooleanOption))
+          .getOrElse(false)
         val hasBody           = obj.select("hasBody").asOpt[Boolean].getOrElse(false)
         val version           = obj.select("version").asString
         val method            = obj.select("method").asString
@@ -594,40 +599,42 @@ class TunnelManager(env: Env) {
     } else {
       val requestId: String = TunnelActor.genRequestId(env) // legit !
       if (logger.isDebugEnabled) logger.debug(s"forwarding request for '${tunnelId}' - ${requestId} to ${member.name}")
-      val requestJson       = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
-      val url               = Uri(env.clusterConfig.leader.urls.head)
-      val ipAddress         = member.location
-      val service           = env.proxyState.route(env.backOfficeServiceId).get //[REMOVE SERVICEDESC] env.proxyState.service(env.backOfficeServiceId).get
-      env.Ws
-        .akkaUrlWithTarget(
-          s"${url.toString()}/api/tunnels/${tunnelId}/relay",
-          Target(
-            host = url.authority.toString(),
-            scheme = url.scheme,
-            ipAddress = ipAddress.some
-          )
-        )
-        .withMethod("POST")
-        .withRequestTimeout(service.backend.client.globalTimeout.milliseconds)
-        .withHttpHeaders(
-          env.Headers.OtoroshiClientId     -> env.clusterConfig.leader.clientId,
-          env.Headers.OtoroshiClientSecret -> env.clusterConfig.leader.clientSecret,
-          "Content-Type"                   -> "application/json",
-          "Host"                           -> env.clusterConfig.leader.host,
-          "Accept"                         -> "application/json"
-        )
-        .withBody(requestJson)
-        .execute()
-        .map { resp =>
-          if (resp.status == 200) {
-            TunnelActor.responseToResult(resp.json)
-          } else {
-            logger.error(
-              s"error while forwarding tunnel request to '${tunnelId}' - ${resp.status} - ${resp.headers} - ${resp.body}"
+      TunnelActor.requestToJson(request, addr, secured, requestId)(using ec, env.otoroshiMaterializer).flatMap { json =>
+        val requestJson       = json.stringify.byteString
+        val url               = Uri(env.clusterConfig.leader.urls.head)
+        val ipAddress         = member.location
+        val service           = env.proxyState.route(env.backOfficeServiceId).get //[REMOVE SERVICEDESC] env.proxyState.service(env.backOfficeServiceId).get
+        env.Ws
+          .akkaUrlWithTarget(
+            s"${url.toString()}/api/tunnels/${tunnelId}/relay",
+            Target(
+              host = url.authority.toString(),
+              scheme = url.scheme,
+              ipAddress = ipAddress.some
             )
-            Results.InternalServerError(Json.obj("error" -> s"error while handling request"))
+          )
+          .withMethod("POST")
+          .withRequestTimeout(service.backend.client.globalTimeout.milliseconds)
+          .withHttpHeaders(
+            env.Headers.OtoroshiClientId     -> env.clusterConfig.leader.clientId,
+            env.Headers.OtoroshiClientSecret -> env.clusterConfig.leader.clientSecret,
+            "Content-Type"                   -> "application/json",
+            "Host"                           -> env.clusterConfig.leader.host,
+            "Accept"                         -> "application/json"
+          )
+          .withBody(requestJson)
+          .execute()
+          .map { resp =>
+            if (resp.status == 200) {
+              TunnelActor.responseToResult(resp.json)
+            } else {
+              logger.error(
+                s"error while forwarding tunnel request to '${tunnelId}' - ${resp.status} - ${resp.headers} - ${resp.body}"
+              )
+              Results.InternalServerError(Json.obj("error" -> s"error while handling request"))
+            }
           }
-        }
+      }
     }
   }
 
@@ -644,23 +651,24 @@ class TunnelManager(env: Env) {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     implicit val ev: otoroshi.env.Env = env
     val requestId: String = TunnelActor.genRequestId(env) // legit
-    val requestJson       = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
-
-    leaderConnections.get(member.location) match {
-      case Some(conn) =>
-        if (logger.isDebugEnabled) logger.debug("sending ws")
-        conn.push(requestJson, requestId)
-      case None       =>
-        if (logger.isDebugEnabled) logger.debug("connecting ws")
-        new LeaderConnection(
-          tunnelId,
-          member,
-          env,
-          c => leaderConnections.put(member.location, c),
-          c => leaderConnections.remove(c.location)
-        )
-          .connect(0L)
-          .push(requestJson, requestId)
+    TunnelActor.requestToJson(request, addr, secured, requestId).flatMap { json =>
+      val requestJson = json.stringify.byteString
+      leaderConnections.get(member.location) match {
+        case Some(conn) =>
+          if (logger.isDebugEnabled) logger.debug("sending ws")
+          conn.push(requestJson, requestId)
+        case None       =>
+          if (logger.isDebugEnabled) logger.debug("connecting ws")
+          new LeaderConnection(
+            tunnelId,
+            member,
+            env,
+            c => leaderConnections.put(member.location, c),
+            c => leaderConnections.remove(c.location)
+          )
+            .connect(0L)
+            .push(requestJson, requestId)
+      }
     }
   }
 }
@@ -1142,16 +1150,29 @@ object TunnelActor {
     }
   }
 
-  def requestToJson(request: NgPluginHttpRequest, addr: String, secured: Boolean, requestId: String): JsValue = {
-    (request.json.asObject ++ Json.obj(
-      "path"       -> request.relativeUri,
-      "request_id" -> requestId,
-      "type"       -> "request",
-      "addr"       -> addr,
-      "secured"    -> secured.toString,
-      "hasBody"    -> request.hasBody,
-      "version"    -> request.version
-    ))
+  // the request sent through a tunnel, with its body, encoded in base64, and its client certificates as pem, the way the
+  // agent reads them
+  def requestToJson(request: NgPluginHttpRequest, addr: String, secured: Boolean, requestId: String)(using
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[JsValue] = {
+    request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
+      request.json.asObject ++ Json.obj(
+        "path"              -> request.relativeUri,
+        "request_id"        -> requestId,
+        "type"              -> "request",
+        "addr"              -> addr,
+        "secured"           -> secured,
+        "hasBody"           -> request.hasBody,
+        "version"           -> request.version,
+        "client_cert_chain" -> request
+          .clientCertificateChain()
+          .map(chain => JsArray(chain.map(cert => JsString(otoroshi.ssl.SSLImplicits.EnhancedX509Certificate(cert).asPem))))
+          .getOrElse(JsNull)
+          .as[JsValue],
+        "body"              -> body.encodeBase64.utf8String
+      )
+    }
   }
 
   def responseToResult(response: JsValue): Result = {
@@ -1231,10 +1252,17 @@ class TunnelActor(
     val requestId: String = TunnelActor.genRequestId(env) // legit
     if (logger.isDebugEnabled)
       logger.debug(s"sending request to remote location through tunnel '${tunnelId}' - ${requestId}")
-    val requestJson       = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
     val promise           = Promise.apply[Result]()
     awaitingResponse.put(requestId, promise)
-    out ! BinaryMessage(requestJson)
+    // sent once the body of the request is read
+    TunnelActor
+      .requestToJson(request, addr, secured, requestId)(using env.otoroshiExecutionContext, env.otoroshiMaterializer)
+      .map(json => out ! BinaryMessage(json.stringify.byteString))(using env.otoroshiExecutionContext)
+      .failed
+      .foreach { e =>
+        awaitingResponse.remove(requestId)
+        promise.tryFailure(e)
+      }(using env.otoroshiExecutionContext)
     promise.future
   }
 
