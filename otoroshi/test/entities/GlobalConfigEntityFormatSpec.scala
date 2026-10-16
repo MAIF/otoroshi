@@ -548,11 +548,12 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       back.proxies mustBe Proxies()
     }
 
-    "read a missing auto cert as allowing every domain, while a new config allows none" in {
+    "read a missing auto cert as allowing no domain, like a new config" in {
       AutoCert().allowed mustBe empty
       val autoCert = readOk(format, Json.obj()).autoCert
       autoCert.enabled mustBe false
-      autoCert.allowed mustBe Seq("*")
+      autoCert.allowed mustBe empty
+      readOk(format, Json.obj("autoCert" -> Json.obj("enabled" -> true))).autoCert.allowed mustBe empty
     }
 
     "read missing tls settings without strict backend validation, while a new config has it" in {
@@ -924,8 +925,8 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, AutoCert(enabled = true, caRef = Some("ca-1"), allowed = Seq("*.oto.tools"), notAllowed = Seq("a.oto.tools"), replyNicely = true))
     }
 
-    "read an empty object as allowing every domain" in {
-      readOk(format, Json.obj()) mustBe AutoCert(allowed = Seq("*"))
+    "read an empty object as allowing no domain" in {
+      readOk(format, Json.obj()) mustBe AutoCert()
     }
 
     "read an empty allowed list as allowing no domain" in {

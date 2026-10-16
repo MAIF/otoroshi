@@ -2042,7 +2042,7 @@
       },
       "allowed": {
         "type": "array",
-        "description": "The domains a certificate can be generated for, `*` matching anything. Empty for a new instance, `[\"*\"]` (every domain) when absent",
+        "description": "The domains a certificate can be generated for, `*` matching anything. Empty, no domain, for a new instance and when absent",
         "items": {
           "type": "string",
           "description": "A domain or a domain pattern",

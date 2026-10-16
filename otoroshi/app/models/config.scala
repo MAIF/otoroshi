@@ -464,7 +464,7 @@ object AutoCert {
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           replyNicely = (json \ "replyNicely").asOpt[Boolean].getOrElse(false),
           caRef = (json \ "caRef").asOpt[String],
-          allowed = (json \ "allowed").asOpt[Seq[String]].getOrElse(Seq("*")),
+          allowed = (json \ "allowed").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           notAllowed = (json \ "notAllowed").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       } match {
