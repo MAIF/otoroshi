@@ -1088,7 +1088,7 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
     "only list the drafts of the caller's own scope" in {
       createDraft("rights-draft-own", tenant.value)
       createDraft("rights-draft-other", "other-tenant")
-      val (body, status) = call("GET", "/apis/proxy.otoroshi.io/v1/drafts/rights-draft", scopedUser)
+      val (body, status) = call("GET", "/apis/proxy.otoroshi.io/v1/drafts/_kind/rights-draft", scopedUser)
       status mustBe 200
       val ids = body.as[Seq[JsObject]].map(d => (d \ "id").as[String])
       withClue(s"drafts: $ids ") {
