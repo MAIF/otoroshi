@@ -2410,7 +2410,8 @@ object Api {
     override def reads(json: JsValue): JsResult[Api] = Try {
       Api(
         location = otoroshi.models.EntityLocation.readFromKey(json),
-        kind = (json \ "kind").asOpt[String].getOrElse("Api"),
+        // the admin api answers the kind with its group, `apis.otoroshi.io/Api`: a put of what a get answered keeps `Api`
+        kind = (json \ "kind").asOpt[String].map(_.split("/").last).getOrElse("Api"),
         id = (json \ "id").asString,
         name = (json \ "name").asString,
         description = (json \ "description").asString,

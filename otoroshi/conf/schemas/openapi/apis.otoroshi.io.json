@@ -18,7 +18,7 @@
       },
       "kind": {
         "type": "string",
-        "description": "The kind of the entity, `Api` by default. The value sent is kept as is, the admin api answers `apis.otoroshi.io/Api` in its place",
+        "description": "The kind of the entity, `Api` by default. The admin api answers `apis.otoroshi.io/Api` in its place, and the group of a kind sent as `apis.otoroshi.io/Api` is dropped",
         "example": "Api"
       },
       "id": {

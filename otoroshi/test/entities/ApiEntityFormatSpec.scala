@@ -278,6 +278,10 @@ class ApiEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, full.copy(kind = "ApiV2")).kind mustBe "ApiV2"
     }
 
+    "read the kind the admin api answers, with its group, without the group" in {
+      readOk(format, written(format, full) ++ Json.obj("kind" -> "apis.otoroshi.io/Api")).kind mustBe "Api"
+    }
+
     "round trip an api with several routes, backends and flows in order" in {
       val api = full.copy(
         routes = Seq(route.copy(id = "r2"), route, route.copy(id = "r0")),
