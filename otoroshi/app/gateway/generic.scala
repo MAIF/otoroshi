@@ -1322,7 +1322,7 @@ object ReverseProxyHelper {
           val zeros                  =
             ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
           val characters: ByteString =
-            if (!globalConfig.middleFingers) middleFingers else zeros
+            if (globalConfig.middleFingers) middleFingers else zeros
           val expected: Long         = (gigas / characters.size) + 1L
           FastFuture
             .successful(
