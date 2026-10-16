@@ -30,7 +30,9 @@
     "api-private-apps.json",
     "api-events.json",
     "api-cluster.json",
-    "api-tunnels.json"
+    "api-tunnels.json",
+    "api-certificates.json",
+    "api-resources.json"
   ],
   "paths": [
     "paths/import-export.json",
@@ -46,7 +48,10 @@
     "paths/plugins.json",
     "paths/documentation.json",
     "paths/entities.json",
-    "paths/private-apps.json"
+    "paths/private-apps.json",
+    "paths/apikeys.json",
+    "paths/certificates.json",
+    "paths/resources.json"
   ],
   "tags": {
     "pki": "Generate keys, certificate signing requests, certificates and certificate authorities, and read certificates",
@@ -61,6 +66,7 @@
     "documentation": "The documents that describe the admin api, the workflows and the plugins",
     "entities": "The links between the entities of otoroshi",
     "private-apps": "The sessions of the users of the private apps",
-    "stats": "The live and the past statistics of the traffic"
+    "stats": "The live and the past statistics of the traffic",
+    "resources": "Build complete entities from partial definitions (json or yaml), ready to be created through the api"
   }
 }
