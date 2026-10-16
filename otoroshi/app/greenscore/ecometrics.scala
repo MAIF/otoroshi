@@ -1,6 +1,6 @@
 package otoroshi.greenscore
 
-import com.codahale.metrics.UniformReservoir
+import com.codahale.metrics.{Meter, UniformReservoir}
 import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
 import otoroshi.greenscore.EcoMetrics.{colorFromScore, letterFromScore, MAX_GREEN_SCORE_NOTE}
 import otoroshi.utils.cache.types.UnboundedTrieMap
@@ -62,7 +62,7 @@ case class DynamicTripleBounds(
       overhead.incr(reservoirs.overhead.getSnapshot.getMean.toInt, thresholds.overhead),
       duration.incr(reservoirs.duration.getSnapshot.getMean.toInt, thresholds.duration),
       backendDuration.incr(reservoirs.backendDuration.getSnapshot.getMean.toInt, thresholds.backendDuration),
-      calls.incr(reservoirs.calls.getSnapshot.getMean.toInt, thresholds.calls),
+      calls.incr(reservoirs.callsPerSecond.toInt, thresholds.calls),
       dataIn.incr(reservoirs.dataIn.getSnapshot.getMean.toInt, thresholds.dataIn),
       dataOut.incr(reservoirs.dataOut.getSnapshot.getMean.toInt, thresholds.dataOut),
       headersOut.incr(reservoirs.headersOut.getSnapshot.getMean.toInt, thresholds.headersOut),
@@ -128,7 +128,7 @@ object ScalingRouteReservoirs {
       reservoirs.overhead.getSnapshot.getMean.toLong.toFloat,
       reservoirs.duration.getSnapshot.getMean.toLong.toFloat,
       reservoirs.backendDuration.getSnapshot.getMean.toLong.toFloat,
-      reservoirs.calls.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.callsPerSecond.toLong.toFloat,
       reservoirs.dataIn.getSnapshot.getMean.toLong.toFloat,
       reservoirs.dataOut.getSnapshot.getMean.toLong.toFloat,
       reservoirs.headersOut.getSnapshot.getMean.toLong.toFloat,
@@ -142,7 +142,7 @@ object ScalingRouteReservoirs {
       duration = 1 - this.scalingReservoir(reservoirs.duration.getSnapshot.getMean, thresholds.duration.poor),
       backendDuration =
         1 - this.scalingReservoir(reservoirs.backendDuration.getSnapshot.getMean, thresholds.backendDuration.poor),
-      calls = 1 - this.scalingReservoir(reservoirs.calls.getSnapshot.getMean, thresholds.calls.poor),
+      calls = 1 - this.scalingReservoir(reservoirs.callsPerSecond, thresholds.calls.poor),
       dataIn = 1 - this.scalingReservoir(reservoirs.dataIn.getSnapshot.getMean, thresholds.dataIn.poor),
       dataOut = 1 - this.scalingReservoir(reservoirs.dataOut.getSnapshot.getMean, thresholds.dataOut.poor),
       headersOut = 1 - this.scalingReservoir(reservoirs.headersOut.getSnapshot.getMean, thresholds.headersOut.poor),
@@ -155,7 +155,7 @@ case class RouteReservoirs(
     overhead: UniformReservoir = new UniformReservoir(),
     duration: UniformReservoir = new UniformReservoir(),
     backendDuration: UniformReservoir = new UniformReservoir(),
-    calls: UniformReservoir = new UniformReservoir(),
+    calls: Meter = new Meter(),
     dataIn: UniformReservoir = new UniformReservoir(),
     headersOut: UniformReservoir = new UniformReservoir(),
     dataOut: UniformReservoir = new UniformReservoir(),
@@ -170,8 +170,11 @@ case class RouteReservoirs(
     dataOut.update(routeCallIncr.dataOut.get())
     headersIn.update(routeCallIncr.headersIn.get())
     headersOut.update(routeCallIncr.headersOut.get())
-    calls.update(routeCallIncr.calls.get())
+    calls.mark(routeCallIncr.calls.get())
   }
+
+  // the calls of the route by second, over the last minute
+  def callsPerSecond: Double = calls.getOneMinuteRate
 
   def json(): JsValue = Json.obj(
     "overhead"        -> overhead.getSnapshot.getMean,
@@ -181,7 +184,7 @@ case class RouteReservoirs(
     "dataOut"         -> dataOut.getSnapshot.getMean,
     "headersIn"       -> headersIn.getSnapshot.getMean,
     "headersOut"      -> headersOut.getSnapshot.getMean,
-    "calls"           -> calls.getSnapshot.getMean
+    "calls"           -> callsPerSecond
   )
 }
 

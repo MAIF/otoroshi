@@ -395,7 +395,7 @@
             "$ref": "#/components/schemas/TripleBounds"
           }
         ],
-        "description": "The bounds of the calls metric, where each call of the route counts for 1. 5, 10, 15 by default"
+        "description": "The bounds of the rate of calls of the route, in calls per second over the last minute. 5, 10, 15 by default"
       },
       "dataIn": {
         "allOf": [
