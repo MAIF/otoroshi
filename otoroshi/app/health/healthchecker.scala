@@ -179,6 +179,9 @@ object HealthCheckLogic {
             hce.toAnalytics()
             hce.pushToRedis()
             if ((desc.healthCheck.blockOnRed || env.healtCheckBlockOnRed) && health.contains("RED")) {
+              // left out of the load balancing right away, like an unreachable target, not when the local cache is
+              // loaded again
+              HealthCheckLogic.badHealth.put(target.asCleanTarget, ())
               env.datastores.rawDataStore.set(
                 s"${env.storageRoot}:targets:bad-health:${target.asCleanTarget}",
                 ByteString(DateTime.now().toString()),
