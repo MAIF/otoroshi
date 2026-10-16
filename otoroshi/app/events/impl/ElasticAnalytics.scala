@@ -1777,7 +1777,11 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         .getOrElse(Seq.empty).toSeq
         .map { o =>
           Json.obj(
-            "name" -> s"${(o \ "key").as[JsValue]}",
+            // the key of a string term, without the quotes of its json
+            "name" -> ((o \ "key").as[JsValue] match {
+              case JsString(key) => key
+              case key           => key.toString
+            }),
             "y"    -> (o \ "doc_count").asOpt[JsValue]
           )
         }

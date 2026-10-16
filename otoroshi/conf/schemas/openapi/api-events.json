@@ -654,7 +654,7 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "description": "What the slice counts (a status code, the name of a route), written as json: a name keeps its double quotes",
+                    "description": "What the slice counts (a status code, the name of a route)",
                     "example": "200"
                   },
                   "y": {

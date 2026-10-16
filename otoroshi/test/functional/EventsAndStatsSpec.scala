@@ -2,6 +2,7 @@ package functional
 
 import com.sun.net.httpserver.HttpServer
 import otoroshi.env.Env
+import otoroshi.events.impl.ElasticReadsAnalytics
 import otoroshi.models.ElasticAnalyticsConfig
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
@@ -16,7 +17,8 @@ import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters.*
 
 // the events and the statistics the admin api reads: the audit events filtered then paginated, one per line in ndjson,
-// the fields of an event as written in its json and the pages of the health of the routes
+// the fields of an event as written in its json, the pages of the health of the routes and the names of the slices of a
+// pie chart
 class EventsAndStatsSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
@@ -130,6 +132,12 @@ class EventsAndStatsSpec extends OtoroshiSpec {
       searched("/api/status/global") mustBe Seq("status-route-1", "status-route-2", "status-route-3")
       searched("/api/status/global?page=1&pageSize=2") mustBe Seq("status-route-1", "status-route-2")
       searched("/api/status/global?page=2&pageSize=2") mustBe Seq("status-route-3")
+    }
+    "name the slices of a pie chart without the quotes of their json" in {
+      given env: Env             = otoroshiComponents.env
+      given ec: ExecutionContext = env.otoroshiExecutionContext
+      val pie                    = new ElasticReadsAnalytics(elasticConfig, env).piechart("@service", None, None, None).futureValue
+      (pie \ "series" \ 0 \ "data").as[Seq[JsObject]].map(s => (s \ "name").as[String]) mustBe Seq("my-route", "200")
     }
     "shutdown" in {
       elastic.stop(0)
