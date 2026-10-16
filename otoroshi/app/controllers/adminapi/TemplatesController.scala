@@ -472,12 +472,16 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
           if (!classOf[Product].isAssignableFrom(clazz) || visited.contains(clazz)) {
             List(Nil)
           } else {
+            // the jvm name of a field like `@id` is `$atid`, a name that keeps a `$` is the one of a field the
+            // compiler adds, like the value of a lazy val
             val fields = clazz.getDeclaredFields.toList
               .filterNot(f => f.isSynthetic || java.lang.reflect.Modifier.isStatic(f.getModifiers))
+              .map(f => (f, scala.reflect.NameTransformer.decode(f.getName)))
+              .filterNot(_._2.contains("$"))
             if (fields.isEmpty) List(Nil)
             else
-              fields.flatMap { f =>
-                rec(elementClass(f.getGenericType), visited + clazz).map(f.getName :: _)
+              fields.flatMap { case (f, name) =>
+                rec(elementClass(f.getGenericType), visited + clazz).map(name :: _)
               }
           }
         }

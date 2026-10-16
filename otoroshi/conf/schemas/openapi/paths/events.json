@@ -1178,7 +1178,7 @@
         "events"
       ],
       "summary": "List the fields of a kind of event",
-      "description": "Answers the paths of the fields of a kind of event, sorted, the fields of the nested objects written with dots (`data.dataIn`). They are read from the Scala class of the event, the names of its fields as the jvm holds them. The backoffice suggests them in the filters and the projections of the data exporters.",
+      "description": "Answers the paths of the fields of a kind of event, sorted, the fields of the nested objects written with dots (`data.dataIn`). They are read from the Scala class of the event, the names of its fields as they are written in its json (`@id`, `@timestamp`). The backoffice suggests them in the filters and the projections of the data exporters.",
       "operationId": "otoroshi.controllers.adminapi.TemplatesController.templateSpec",
       "parameters": [
         {
