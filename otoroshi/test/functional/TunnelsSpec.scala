@@ -152,6 +152,20 @@ class TunnelsSpec extends OtoroshiSpec {
         (resp.json \ "body").as[String] mustBe "hello through the tunnel"
       }
     }
+    "keep the cookies the backend sets" in {
+      val resp = call(cookie = None, body = None)
+      withClue(resp.body[String]) {
+        resp.status mustBe 200
+        resp.headers.getOrElse("Set-Cookie", Seq.empty).mkString(" ") must include("from_backend=yes")
+      }
+    }
+    "keep the cookies of the client" in {
+      val resp = call(cookie = Some("from_client=yes"), body = None)
+      withClue(resp.body[String]) {
+        resp.status mustBe 200
+        (resp.json \ "cookies").as[String] must include("from_client=yes")
+      }
+    }
     "shutdown" in {
       agent.foreach(_.stop())
       backend.stop(0)

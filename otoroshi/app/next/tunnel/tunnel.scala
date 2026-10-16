@@ -91,12 +91,13 @@ class TunnelPlugin extends NgBackendCall {
     env.tunnelManager.sendRequest(tunnelId, ctx.request, ctx.rawRequest.remoteAddress, ctx.rawRequest.theSecured).map {
       result =>
         if (logger.isDebugEnabled) logger.debug(s"response from tunnel '${tunnelId}'")
-        val setCookieHeader: Seq[WSCookie] = result.header.headers
+        // the cookies the agent sends apart from the headers, and the set-cookie header of an older agent
+        val setCookieHeader: Seq[WSCookie] = (result.newCookies ++ result.header.headers
           .getIgnoreCase("Set-Cookie")
           .map { sc =>
             env.defaultCookieHeaderEncoding.decodeSetCookieHeader(sc)
           }
-          .getOrElse(Seq.empty).toSeq
+          .getOrElse(Seq.empty)).toSeq
           .map(_.wsCookie)
         if (logger.isDebugEnabled) logger.debug(s"response status '${result.header.status}'")
         Right(
@@ -297,20 +298,7 @@ class TunnelAgent(env: Env) {
         val cookies           = obj
           .select("cookies")
           .asOpt[Seq[JsObject]]
-          .map { arr =>
-            arr.map { c =>
-              Cookie(
-                name = c.select("name").asString,
-                value = c.select("value").asString,
-                maxAge = c.select("maxAge").asOpt[Int],
-                path = c.select("path").asString,
-                domain = c.select("domain").asOpt[String],
-                secure = c.select("secure").asOpt[Boolean].getOrElse(false),
-                httpOnly = c.select("httpOnly").asOpt[Boolean].getOrElse(false),
-                sameSite = None
-              )
-            }
-          }
+          .map(_.map(TunnelActor.cookieFromJson))
           .getOrElse(Seq.empty).toSeq
         val certs             = obj.select("client_cert_chain").asOpt[Seq[String]].map(_.map(_.trim.toCertificate))
         val body              = obj.select("body").asOpt[String].map(b => ByteString(b).decodeBase64) match {
@@ -1125,18 +1113,18 @@ object TunnelActor {
   ): Future[JsValue] = {
     val ct      = result.body.contentType
     val cl      = result.body.contentLength
-    val cookies = result.header.headers
-      .getIgnoreCase("Cookie")
-      .map { c =>
-        env.defaultCookieHeaderEncoding.decodeCookieHeader(c)
-      }
-      .getOrElse(Seq.empty).toSeq
+    // the cookies the answer sets: the ones of the result, and the ones of a set-cookie header, sent apart from the
+    // headers so that they are set once
+    val cookies = result.newCookies ++ result.header.headers
+      .getIgnoreCase("Set-Cookie")
+      .map(env.defaultCookieHeaderEncoding.decodeSetCookieHeader)
+      .getOrElse(Seq.empty)
     result.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { br =>
       Json.obj(
         "request_id" -> requestId,
         "type"       -> "response",
         "status"     -> result.header.status,
-        "headers"    -> (result.header.headers ++ Map
+        "headers"    -> (result.header.headers.filterNot(_._1.equalsIgnoreCase("Set-Cookie")) ++ Map
           .empty[String, String]
           .applyOnWithOpt(ct) { case (headers, ctype) =>
             headers ++ Map("Content-Type" -> ctype)
@@ -1175,6 +1163,18 @@ object TunnelActor {
     }
   }
 
+  // a cookie of a request or of an answer: camel case or snake case keys, a path that may be null
+  def cookieFromJson(c: JsObject): Cookie = Cookie(
+    name = c.select("name").asString,
+    value = c.select("value").asString,
+    maxAge = c.select("maxAge").asOpt[Int].orElse(c.select("max_age").asOpt[Int]),
+    path = c.select("path").asOpt[String].getOrElse("/"),
+    domain = c.select("domain").asOpt[String],
+    secure = c.select("secure").asOpt[Boolean].getOrElse(false),
+    httpOnly = c.select("httpOnly").asOpt[Boolean].orElse(c.select("http_only").asOpt[Boolean]).getOrElse(false),
+    sameSite = None
+  )
+
   def responseToResult(response: JsValue): Result = {
     val status                             = response.select("status").asInt
     val headers                            = response.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -1182,20 +1182,7 @@ object TunnelActor {
     val cookies: Seq[Cookie]               = response
       .select("cookies")
       .asOpt[Seq[JsObject]]
-      .map { arr =>
-        arr.map { c =>
-          Cookie(
-            name = c.select("name").asString,
-            value = c.select("value").asString,
-            maxAge = c.select("maxAge").asOpt[Int],
-            path = c.select("path").asString,
-            domain = c.select("domain").asOpt[String],
-            secure = c.select("secure").asOpt[Boolean].getOrElse(false),
-            httpOnly = c.select("httpOnly").asOpt[Boolean].getOrElse(false),
-            sameSite = None
-          )
-        }
-      }
+      .map(_.map(TunnelActor.cookieFromJson))
       .getOrElse(Seq.empty).toSeq
     val body                               = response.select("body").asOpt[String].map(b => ByteString(b).decodeBase64) match {
       case None    => Source.empty[ByteString]
