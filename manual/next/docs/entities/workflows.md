@@ -64,12 +64,18 @@ A workflow can optionally be scheduled as a periodic job:
 | Property | Type | Description |
 |----------|------|-------------|
 | `enabled` | boolean | Whether the job scheduling is enabled |
-| `cron` | string | A cron expression defining when the workflow should run (e.g., `*/5 * * * * ?` for every 5 seconds) |
-| `config` | object | Additional job configuration |
+| `kind` | string | When the workflow runs: `ScheduledEvery` (after `initial_delay`, then every `interval`), `Cron` (on `cron_expression`) or `ScheduledOnce` (once, after `initial_delay`) |
+| `instantiation` | string | Where it runs: `OneInstancePerOtoroshiInstance`, `OneInstancePerOtoroshiWorkerInstance`, `OneInstancePerOtoroshiLeaderInstance` or `OneInstancePerOtoroshiCluster` |
+| `initial_delay` | number | Delay (ms) before the first run |
+| `interval` | number | Delay (ms) between two runs, for `ScheduledEvery` |
+| `cron_expression` | string | A cron expression with seconds, for `Cron` (e.g., `0 */5 * * * ?` for every 5 minutes) |
+| `config` | object | The input of the workflow at each run |
+
+`kind` and `instantiation` are required: a job without one of them is read as a disabled job.
 
 ## Node types
 
-Workflows are composed of nodes. Each node has a type that determines its behavior:
+Workflows are composed of nodes. Each node has a `kind` that determines its behavior, and the nodes of a `workflow` node are its `steps`. A node can store its result in the memory of the workflow under the name given by `result`, read back with `${name}` or `${name.some.path}`:
 
 ### Control flow
 
@@ -108,7 +114,7 @@ Workflows are composed of nodes. Each node has a type that determines its behavi
 
 ## Built-in functions
 
-Workflows provide a rich set of built-in functions that can be called from `call` nodes:
+Workflows provide a rich set of built-in functions that can be called from `call` nodes. Their names are prefixed with `core.` (e.g., `core.http_client`):
 
 | Category | Functions | Description |
 |----------|-----------|-------------|
@@ -138,33 +144,35 @@ Here is a simple workflow that fetches data from an HTTP endpoint and logs the r
   "tags": ["example"],
   "metadata": {},
   "config": {
-    "type": "workflow",
-    "nodes": [
+    "kind": "workflow",
+    "steps": [
       {
-        "type": "call",
-        "id": "fetch_data",
-        "function": "http_client",
+        "kind": "call",
+        "function": "core.http_client",
         "args": {
           "url": "https://api.example.com/data",
           "method": "GET",
           "headers": {
             "Accept": "application/json"
           }
-        }
+        },
+        "result": "data"
       },
       {
-        "type": "call",
-        "id": "log_result",
-        "function": "log",
+        "kind": "call",
+        "function": "core.log",
         "args": {
-          "message": "${nodes.fetch_data.response.body}"
+          "message": "data fetched",
+          "params": ["${data.body_json}"]
         }
       }
     ]
   },
   "job": {
     "enabled": false,
-    "cron": "0 */5 * * * ?",
+    "kind": "Cron",
+    "instantiation": "OneInstancePerOtoroshiCluster",
+    "cron_expression": "0 */5 * * * ?",
     "config": {}
   },
   "functions": {},
@@ -186,25 +194,26 @@ A workflow that periodically checks the health of all backends:
   "tags": ["monitoring"],
   "metadata": {},
   "config": {
-    "type": "workflow",
-    "nodes": [
+    "kind": "workflow",
+    "steps": [
       {
-        "type": "call",
-        "id": "get_backends",
-        "function": "state_get_all",
+        "kind": "call",
+        "function": "core.state_get_all",
         "args": {
-          "entity": "backends"
-        }
+          "name": "backends",
+          "group": "proxy.otoroshi.io",
+          "version": "v1"
+        },
+        "result": "backends"
       },
       {
-        "type": "foreach",
-        "id": "check_each",
-        "array": "${nodes.get_backends.result}",
+        "kind": "foreach",
+        "values": "${backends}",
         "node": {
-          "type": "call",
-          "function": "http_client",
+          "kind": "call",
+          "function": "core.http_client",
           "args": {
-            "url": "${item.backend.targets[0].hostname}",
+            "url": "http://${foreach_value.backend.targets.0.hostname}:${foreach_value.backend.targets.0.port}/health",
             "method": "GET",
             "timeout": 5000
           }
@@ -214,7 +223,9 @@ A workflow that periodically checks the health of all backends:
   },
   "job": {
     "enabled": true,
-    "cron": "0 * * * * ?",
+    "kind": "Cron",
+    "instantiation": "OneInstancePerOtoroshiCluster",
+    "cron_expression": "0 * * * * ?",
     "config": {}
   }
 }
