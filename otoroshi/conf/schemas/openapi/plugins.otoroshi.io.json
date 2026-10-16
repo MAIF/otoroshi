@@ -591,5 +591,553 @@
         "name": "scheduler"
       }
     }
+  },
+  "plugins.otoroshi.io.Script": {
+    "description": "A plugin of the legacy engine written in scala and compiled by otoroshi at runtime. Deprecated: the plugins of the new engine, and the wasm plugins, replace it",
+    "type": "object",
+    "properties": {
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The tenant (organization) and the teams of the script, checked against the rights of the admins"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the script, referenced by the routes and the global configuration that use it",
+        "example": "script_my_transformer"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the script, displayed in the backoffice",
+        "example": "My transformer"
+      },
+      "desc": {
+        "type": "string",
+        "description": "A free text describing what the script does",
+        "example": "Adds a header to every request"
+      },
+      "code": {
+        "type": "string",
+        "description": "The scala code of the script: a class extending the base class of its `type`, compiled when the script is saved",
+        "example": "class MyTransformer extends RequestTransformer {}"
+      },
+      "type": {
+        "type": "string",
+        "description": "What the script is: `app`, `transformer` (the default), `validator` (access validator), `preroute`, `sink`, `listener` (event listener), `job`, `exporter` (data exporter), `request-handler`, `tunnel-handler` or `composite`. An unknown type reads as `transformer`",
+        "enum": [
+          "app",
+          "transformer",
+          "validator",
+          "preroute",
+          "sink",
+          "listener",
+          "job",
+          "exporter",
+          "tunnel-handler",
+          "request-handler",
+          "composite"
+        ],
+        "example": "transformer"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free metadata of the script, as string keys and values",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "owner": "team-a"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the script, used to sort and find it in the backoffice",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "prod"
+        }
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "script_dev_8e2e2998-5f2c-435a-afb2-3e9ac2490e28",
+      "name": "New request transformer",
+      "desc": "New request transformer",
+      "code": "import org.apache.pekko.stream.Materializer\nimport otoroshi.env.Env\nimport otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}\nimport otoroshi.script.*\nimport play.api.Logger\nimport play.api.mvc.{Result, Results}\nimport scala.util.*\nimport scala.concurrent.{ExecutionContext, Future}\nimport otoroshi.utils.syntax.implicits.*\n\n/**\n * Your own request transformer\n */\nclass MyTransformer extends RequestTransformer {\n\n  val logger = Logger(\"my-transformer\")\n\n  override def transformRequestWithCtx(\n    ctx: TransformerRequestContext\n  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {\n    logger.info(s\"Request incoming with id: ${ctx.snowflake}\")\n    // Here add a new header to the request between otoroshi and the target\n    Right(ctx.otoroshiRequest.copy(\n      headers = ctx.otoroshiRequest.headers + (\"Hello\" -> \"World\")\n    )).future\n  }\n}\n\n// don't forget to return an instance of the transformer to make it work\nnew MyTransformer()\n           ",
+      "type": "transformer",
+      "metadata": {},
+      "tags": []
+    }
+  },
+  "plugins.otoroshi.io.WasmPlugin": {
+    "description": "A wasm plugin: a webassembly module and the way to run it, that the wasm plugins of the routes, of the apis and of the global configuration reference by its id instead of repeating its configuration",
+    "type": "object",
+    "properties": {
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The tenant (organization) and the teams of the wasm plugin, checked against the rights of the admins"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the wasm plugin, the reference the wasm plugins of the routes use (`Local` source kind)",
+        "example": "wasm-plugin_my_validator"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the wasm plugin, displayed in the backoffice",
+        "example": "My validator"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing what the wasm plugin does",
+        "example": "Checks the api key of the calls against a remote registry"
+      },
+      "config": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WasmConfig"
+          }
+        ],
+        "description": "The webassembly module and how it runs. A missing config reads as the default one"
+      },
+      "steps": {
+        "type": "array",
+        "description": "The steps of a route the plugin can be used at, to offer it in the backoffice. A step otoroshi does not know is left out",
+        "items": {
+          "type": "string",
+          "description": "A step of the proxy engine",
+          "enum": [
+            "Router",
+            "Sink",
+            "PreRoute",
+            "ValidateAccess",
+            "TransformRequest",
+            "TransformResponse",
+            "MatchRoute",
+            "HandlesTunnel",
+            "HandlesRequest",
+            "CallBackend",
+            "Job",
+            "DataExporterFilter",
+            "DataExporterTransform"
+          ],
+          "example": "ValidateAccess"
+        }
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free metadata of the wasm plugin, as string keys and values",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "owner": "team-a"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the wasm plugin, used to sort and find it in the backoffice",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "prod"
+        }
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "wasm-plugin_dev_bd9b47ba-9451-4f99-8f55-787b91e07d61",
+      "name": "New wasm plugin",
+      "description": "New wasm plugin",
+      "config": {
+        "source": {
+          "kind": "Unknown",
+          "path": "",
+          "opts": {}
+        },
+        "memoryPages": 50,
+        "functionName": null,
+        "config": {},
+        "allowedHosts": [],
+        "allowedPaths": {},
+        "wasi": false,
+        "opa": false,
+        "httpWasm": false,
+        "authorizations": {
+          "httpAccess": false,
+          "proxyHttpCallTimeout": 5000,
+          "globalDataStoreAccess": {
+            "read": false,
+            "write": false
+          },
+          "pluginDataStoreAccess": {
+            "read": false,
+            "write": false
+          },
+          "globalMapAccess": {
+            "read": false,
+            "write": false
+          },
+          "pluginMapAccess": {
+            "read": false,
+            "write": false
+          },
+          "proxyStateAccess": false,
+          "configurationAccess": false
+        },
+        "instances": 1,
+        "killOptions": {
+          "immortal": false,
+          "max_calls": 2147483647,
+          "max_memory_usage": 0,
+          "max_avg_call_duration": 0,
+          "max_unused_duration": 300000
+        },
+        "isJS": false
+      },
+      "steps": [],
+      "metadata": {},
+      "tags": []
+    }
+  },
+  "WasmVmKillOptions": {
+    "type": "object",
+    "description": "When an instance of a wasm module is killed and replaced by a fresh one, to bound the memory and the state it accumulates",
+    "properties": {
+      "immortal": {
+        "type": "boolean",
+        "description": "The instance is never killed"
+      },
+      "max_calls": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of calls after which the instance is killed. 2147483647 (no limit) when absent",
+        "example": 2147483647
+      },
+      "max_memory_usage": {
+        "type": "number",
+        "format": "double",
+        "description": "The ratio of its memory the instance can use before it is killed, between 0 and 1. 0 (no limit) when absent",
+        "minimum": 0,
+        "maximum": 1,
+        "example": 0.0
+      },
+      "max_avg_call_duration": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The average duration of the calls, in milliseconds, above which the instance is killed. 0 (no limit) when absent",
+        "example": 0
+      },
+      "max_unused_duration": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The time without any call, in milliseconds, after which the instance is killed. 300000 (5 minutes) when absent",
+        "example": 300000
+      }
+    },
+    "example": {
+      "immortal": false,
+      "max_calls": 2147483647,
+      "max_memory_usage": 0,
+      "max_avg_call_duration": 0,
+      "max_unused_duration": 300000
+    }
+  },
+  "WasmConfig": {
+    "type": "object",
+    "description": "A webassembly module and the way otoroshi runs it: where its wasm comes from, the function to call, what the module is allowed to reach, and how many instances run it",
+    "properties": {
+      "source": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WasmSource"
+          }
+        ],
+        "description": "Where the wasm of the module comes from. The legacy `compiler_source` (a wasmo plugin) and `raw_source` (an url, `file://`, `base64://`, `entity://` or `local://`) keys are read when it is absent"
+      },
+      "memoryPages": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The memory of an instance, in pages of 64 KiB. 100 when absent",
+        "example": 50
+      },
+      "functionName": {
+        "type": "string",
+        "nullable": true,
+        "description": "The function of the module to call. Each kind of plugin calls its own default function when null",
+        "example": "execute"
+      },
+      "config": {
+        "type": "object",
+        "description": "The configuration handed to the module, as string keys and values",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A configuration value"
+        },
+        "example": {
+          "registry": "https://registry.oto.tools"
+        }
+      },
+      "allowedHosts": {
+        "type": "array",
+        "description": "The hosts the module can call with the http request function of its runtime (the `allowed_hosts` of the extism manifest)",
+        "items": {
+          "type": "string",
+          "description": "A host, `*` matching any",
+          "example": "registry.oto.tools"
+        }
+      },
+      "allowedPaths": {
+        "type": "object",
+        "description": "The directories of the host the module can reach through wasi (the `allowed_paths` of the extism manifest): the path on the host as key, the path the module sees as value",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The path the module sees"
+        },
+        "example": {
+          "/var/otoroshi/data": "/data"
+        }
+      },
+      "wasi": {
+        "type": "boolean",
+        "description": "Run the module with the wasi support: files, environment, http calls through the allowed hosts"
+      },
+      "opa": {
+        "type": "boolean",
+        "description": "The module is an open policy agent policy compiled to wasm, evaluated as such"
+      },
+      "httpWasm": {
+        "type": "boolean",
+        "description": "The module implements the http-wasm abi (http handlers), called as such"
+      },
+      "authorizations": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WasmAuthorizations"
+          }
+        ],
+        "description": "What the module can reach in otoroshi. The legacy `accesses` key is read when it is absent"
+      },
+      "instances": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of instances of the module kept to serve the calls in parallel",
+        "example": 1
+      },
+      "killOptions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WasmVmKillOptions"
+          }
+        ],
+        "description": "When an instance of the module is killed and replaced by a fresh one"
+      },
+      "isJS": {
+        "type": "boolean",
+        "description": "The module is javascript compiled to wasm (javy), run with its runtime"
+      }
+    },
+    "example": {
+      "source": {
+        "kind": "Unknown",
+        "path": "",
+        "opts": {}
+      },
+      "memoryPages": 50,
+      "functionName": null,
+      "config": {},
+      "allowedHosts": [],
+      "allowedPaths": {},
+      "wasi": false,
+      "opa": false,
+      "httpWasm": false,
+      "authorizations": {
+        "httpAccess": false,
+        "proxyHttpCallTimeout": 5000,
+        "globalDataStoreAccess": {
+          "read": false,
+          "write": false
+        },
+        "pluginDataStoreAccess": {
+          "read": false,
+          "write": false
+        },
+        "globalMapAccess": {
+          "read": false,
+          "write": false
+        },
+        "pluginMapAccess": {
+          "read": false,
+          "write": false
+        },
+        "proxyStateAccess": false,
+        "configurationAccess": false
+      },
+      "instances": 1,
+      "killOptions": {
+        "immortal": false,
+        "max_calls": 2147483647,
+        "max_memory_usage": 0,
+        "max_avg_call_duration": 0,
+        "max_unused_duration": 300000
+      },
+      "isJS": false
+    }
+  },
+  "WasmSource": {
+    "type": "object",
+    "description": "Where the wasm of a module comes from",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "description": "The kind of source: `Base64` (the module itself, base64 encoded, in `path`), `Http` (an url), `Wasmo` (a plugin built by the wasmo of the global configuration), `Local` (another wasm plugin, by id), `File` (a file of the host), `ClassPath` (a resource of the classpath of otoroshi), `Unknown` when none. Read whatever its case, `wasmmanager` being read as `Wasmo`",
+        "enum": [
+          "Unknown",
+          "Base64",
+          "Http",
+          "Wasmo",
+          "Local",
+          "File",
+          "ClassPath"
+        ],
+        "example": "Http"
+      },
+      "path": {
+        "type": "string",
+        "description": "The module, where to find it: the base64 module, the url, the wasmo plugin name, the id of the wasm plugin, the file path or the classpath resource, depending on the kind",
+        "example": "https://wasm.oto.tools/my-validator.wasm"
+      },
+      "opts": {
+        "type": "object",
+        "description": "The options of the source. `Http`: `method`, `headers`, `timeout` (milliseconds), `followRedirect`, `proxy` and `tls`. `Wasmo`: `follow_redirect` and `timeout` (milliseconds)",
+        "additionalProperties": true,
+        "example": {
+          "timeout": 5000
+        }
+      }
+    },
+    "example": {
+      "kind": "Http",
+      "path": "https://wasm.oto.tools/my-validator.wasm",
+      "opts": {
+        "timeout": 5000
+      }
+    }
+  },
+  "WasmDataRights": {
+    "type": "object",
+    "description": "A read and a write right",
+    "properties": {
+      "read": {
+        "type": "boolean",
+        "description": "The data can be read"
+      },
+      "write": {
+        "type": "boolean",
+        "description": "The data can be written"
+      }
+    },
+    "example": {
+      "read": true,
+      "write": false
+    }
+  },
+  "WasmAuthorizations": {
+    "type": "object",
+    "description": "What a wasm module can reach in otoroshi through the functions of the host. Everything is denied by default",
+    "properties": {
+      "httpAccess": {
+        "type": "boolean",
+        "description": "The module can make http calls through otoroshi"
+      },
+      "proxyHttpCallTimeout": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The timeout of these http calls, in milliseconds",
+        "example": 5000
+      },
+      "globalDataStoreAccess": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WasmDataRights"
+          }
+        ],
+        "description": "Access to the whole datastore of otoroshi"
+      },
+      "pluginDataStoreAccess": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WasmDataRights"
+          }
+        ],
+        "description": "Access to the keys of the datastore of the plugin only"
+      },
+      "globalMapAccess": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WasmDataRights"
+          }
+        ],
+        "description": "Access to the in memory map shared by every plugin"
+      },
+      "pluginMapAccess": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WasmDataRights"
+          }
+        ],
+        "description": "Access to the in memory map of the plugin only"
+      },
+      "proxyStateAccess": {
+        "type": "boolean",
+        "description": "The module can read the state of the proxy: routes, backends, api keys, certificates..."
+      },
+      "configurationAccess": {
+        "type": "boolean",
+        "description": "The module can read the configuration of otoroshi"
+      }
+    },
+    "example": {
+      "httpAccess": false,
+      "proxyHttpCallTimeout": 5000,
+      "globalDataStoreAccess": {
+        "read": false,
+        "write": false
+      },
+      "pluginDataStoreAccess": {
+        "read": false,
+        "write": false
+      },
+      "globalMapAccess": {
+        "read": false,
+        "write": false
+      },
+      "pluginMapAccess": {
+        "read": false,
+        "write": false
+      },
+      "proxyStateAccess": false,
+      "configurationAccess": false
+    }
   }
 }
