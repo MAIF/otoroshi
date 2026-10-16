@@ -202,14 +202,14 @@
       }
     }
   },
-  "/apis/proxy.otoroshi.io/v1/drafts/{kind}": {
+  "/apis/proxy.otoroshi.io/v1/drafts/_kind/{kind}": {
     "get": {
       "tags": [
         "draft",
         "proxy.otoroshi.io"
       ],
       "summary": "List the drafts whose id starts with a prefix",
-      "description": "Answers the drafts whose id starts with the value of the path, and whose drafted entity (its `content`) the admin behind the credentials can read. The id of a draft is the id of the entity it drafts, so a prefix lists the drafts of a kind of entity, `api_` for the drafts of the apis for instance; the id of a draft lists that draft, along with the drafts whose id starts with it. This route shadows the generic GET of a draft by id (`/apis/proxy.otoroshi.io/v1/drafts/{id}`), which cannot be reached: a draft is read through this list.",
+      "description": "Answers the drafts whose id starts with the value of the path, and whose drafted entity (its `content`) the admin behind the credentials can read. The id of a draft is the id of the entity it drafts, so a prefix lists the drafts of a kind of entity, `api_` for the drafts of the apis for instance; the id of a draft lists that draft, along with the drafts whose id starts with it.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.findAllByKind",
       "parameters": [
         {

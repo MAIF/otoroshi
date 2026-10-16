@@ -645,7 +645,7 @@ GET     /apis/cluster                                         otoroshi.controlle
 POST     /apis/proxy.otoroshi.io/v1/routes/_from_service_descriptor   otoroshi.next.controllers.adminapi.NgRoutesController.fromServiceDescriptor()
 
 GET     /apis/proxy.otoroshi.io/v1/drafts/:id/live             otoroshi.next.controllers.adminapi.ApisController.draftLiveStats(id, every: Option[Int])
-GET     /apis/proxy.otoroshi.io/v1/drafts/:kind                otoroshi.next.controllers.adminapi.ApisController.findAllByKind(kind)
+GET     /apis/proxy.otoroshi.io/v1/drafts/_kind/:kind          otoroshi.next.controllers.adminapi.ApisController.findAllByKind(kind)
 GET     /apis/apis.otoroshi.io/v1/apis/:id/live                otoroshi.next.controllers.adminapi.ApisController.liveStats(id, every: Option[Int])
 POST    /apis/apis.otoroshi.io/v1/apis/:id/_start              otoroshi.next.controllers.adminapi.ApisController.start(id)
 POST    /apis/apis.otoroshi.io/v1/apis/:id/_stop               otoroshi.next.controllers.adminapi.ApisController.stop(id)

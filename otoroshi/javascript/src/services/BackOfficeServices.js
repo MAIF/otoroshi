@@ -2133,7 +2133,7 @@ const fetchWrapperNextWithGroup = (group, url, method = 'GET', body) => {
 };
 
 export const findDraftsByKind = (kind) => {
-  return fetch(`/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${kind}`, {
+  return fetch(`/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/_kind/${kind}`, {
     credentials: 'include',
   }).then((r) => r.json());
 };

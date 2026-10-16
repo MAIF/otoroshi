@@ -56,6 +56,16 @@ class GenericApiErrorsSpec extends OtoroshiSpec {
           }
       }
     }
+    "reach the generic operations of the drafts, and list the drafts of a kind" in {
+      val drafts = "/apis/proxy.otoroshi.io/v1/drafts"
+      Seq("_count", "_schema", "_template").foreach { op =>
+        withClue(op)(call("GET", s"$drafts/$op").status mustBe 200)
+      }
+      call("GET", s"$drafts/draft_that_does_not_exist").status mustBe 404
+      val byKind = call("GET", s"$drafts/_kind/draft_that_does_not_exist")
+      byKind.status mustBe 200
+      byKind.json mustBe Json.arr()
+    }
     "serve its documentation through the admin api host" in {
       val resp = call("GET", "/apis/openapi.json")
       withClue(resp.body[String].take(500))(resp.status mustBe 200)
