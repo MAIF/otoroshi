@@ -3,8 +3,11 @@ package functional
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.storage.drivers.inmemory.InMemoryDataStores
+import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
+import play.api.libs.ws.DefaultBodyWritables.*
+import play.api.libs.ws.{readableAsString, WSAuthScheme}
 
 import scala.concurrent.duration.*
 
@@ -48,6 +51,48 @@ class NdJsonExportImportSpec extends OtoroshiSpec {
       )
       redis.lrange(s"$prefix:list", 0, -1).futureValue.map(_.utf8String) mustBe Seq("first", "second", "third")
       redis.smembers(s"$prefix:set").futureValue.map(_.utf8String).toSet mustBe Set("one", "two")
+    }
+    "be refused, through the api, with a line that is not a line of an export, leaving the datastore as it is" in {
+      given env: Env = otoroshiComponents.env
+      given ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+      val redis = env.datastores.asInstanceOf[InMemoryDataStores].redis
+      val kept  = s"${env.storageRoot}:ndjson-test:kept"
+      redis.set(kept, "still here").futureValue
+      val good  = Json.obj("k" -> s"${env.storageRoot}:ndjson-test:imported", "v" -> "x", "t" -> -1, "w" -> "string").stringify
+      Seq(
+        ("/api/otoroshi.json", "Content-Type", s"$good\nnot json"),
+        ("/api/import", "X-Content-Type", s"$good\n${Json.obj("k" -> "only a key").stringify}\n")
+      ).foreach { case (path, header, body) =>
+        val resp = ws
+          .url(s"http://127.0.0.1:$port$path")
+          .withHttpHeaders("Host" -> "otoroshi-api.oto.tools", header -> "application/x-ndjson")
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .post(body)
+          .futureValue
+        withClue(s"$path: ${resp.body[String]}") {
+          resp.status mustBe 400
+          resp.body[String] must include("line 2")
+        }
+        redis.get(kept).futureValue.map(_.utf8String) mustBe Some("still here")
+      }
+    }
+    "import back, through the api, the export the api answers" in {
+      given env: Env = otoroshiComponents.env
+      given ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+      val redis  = env.datastores.asInstanceOf[InMemoryDataStores].redis
+      val kept   = s"${env.storageRoot}:ndjson-test:exported"
+      redis.set(kept, "exported").futureValue
+      def api(method: String) = ws
+        .url(s"http://127.0.0.1:$port/api/otoroshi.json")
+        .withHttpHeaders("Host" -> "otoroshi-api.oto.tools")
+        .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+        .withMethod(method)
+      val exported = api("GET").addHttpHeaders("Accept" -> "application/x-ndjson").execute().futureValue
+      exported.status mustBe 200
+      redis.del(kept).futureValue
+      val imported = api("POST").addHttpHeaders("Content-Type" -> "application/x-ndjson").withBody(exported.body[String]).execute().futureValue
+      withClue(imported.body[String])(imported.status mustBe 200)
+      redis.get(kept).futureValue.map(_.utf8String) mustBe Some("exported")
     }
     "shutdown" in {
       stopAll()

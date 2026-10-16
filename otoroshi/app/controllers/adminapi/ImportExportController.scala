@@ -1,7 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import org.apache.pekko.stream.scaladsl.{FileIO, Framing}
+import org.apache.pekko.stream.scaladsl.{FileIO, Framing, Sink, Source}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit, OtoroshiExportAlert}
@@ -9,10 +9,11 @@ import otoroshi.models.RightsChecker
 import otoroshi.next.extensions.FooAdminExtension
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsNumber, JsObject, Json}
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
+import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
 
+import java.nio.file.{Files, Path}
 import scala.concurrent.Future
 import scala.util.Try
 
@@ -23,6 +24,38 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(usi
   implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-import-export-api")
+
+  // the lines of an ndjson file, with their number, the blank ones left out
+  private def ndjsonLines(file: Path): Source[(ByteString, Long), ?] =
+    FileIO
+      .fromPath(file)
+      .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, allowTruncation = true))
+      .zipWithIndex
+      .filterNot(_._1.utf8String.trim.isEmpty)
+
+  // a line of a full ndjson export: its key, its type, its value, and when it expires
+  private def isExportLine(line: ByteString): Boolean = Try(Json.parse(line.utf8String)).toOption.exists { json =>
+    (json \ "k").asOpt[String].isDefined && (json \ "w").asOpt[String].isDefined && (json \ "v").isDefined &&
+    (json \ "t").toOption.forall(_.isInstanceOf[JsNumber])
+  }
+
+  // the import empties the datastore before it writes the lines: the whole file is read first, a line that is not a
+  // line of an export refuses the import and leaves the datastore as it is
+  private def importNdJsonFile(file: Path): Future[Result] =
+    ndjsonLines(file)
+      .collect { case (line, index) if !isExportLine(line) => index + 1 }
+      .runWith(Sink.headOption)
+      .flatMap {
+        case Some(lineNumber) =>
+          Future.successful(BadRequest(Json.obj("error" -> s"line $lineNumber is not a line of an otoroshi export")))
+        case None             =>
+          env.datastores
+            .fullNdJsonImport(ndjsonLines(file).map { case (line, _) => Json.parse(line.utf8String) })
+            .map(_ => Ok(Json.obj("done" -> true)))
+            .recover { case e =>
+              InternalServerError(Json.obj("error" -> e.getMessage))
+            }
+      }
 
   lazy val sourceBodyParser = BodyParser("Import/Export BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -99,17 +132,7 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(usi
     ApiAction.async(parse.temporaryFile) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.headers.get("X-Content-Type") match {
-          case Some("application/x-ndjson") => {
-            val body   = FileIO.fromPath(ctx.request.body.path)
-            val source = body
-              .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
-              .map(v => Json.parse(v.utf8String))
-            env.datastores
-              .fullNdJsonImport(source)
-              .map(_ => Ok(Json.obj("done" -> true))) recover { case e =>
-              InternalServerError(Json.obj("error" -> e.getMessage))
-            }
-          }
+          case Some("application/x-ndjson") => importNdJsonFile(ctx.request.body.path)
           case _                            => {
             val source = scala.io.Source.fromFile(ctx.request.body.path.toFile, "utf-8").getLines().mkString("\n")
             // a body that is not a json object is refused before anything is imported
@@ -133,14 +156,12 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(usi
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.contentType match {
           case Some("application/x-ndjson") => {
-            val source = ctx.request.body
-              .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
-              .map(v => Json.parse(v.utf8String))
-            env.datastores
-              .fullNdJsonImport(source)
-              .map(_ => Ok(Json.obj("done" -> true))) recover { case e =>
-              InternalServerError(Json.obj("error" -> e.getMessage))
-            }
+            // the body is written to a file to be read twice: checked, then imported
+            val file = Files.createTempFile("otoroshi-import-", ".ndjson")
+            ctx.request.body
+              .runWith(FileIO.toPath(file))
+              .flatMap(_ => importNdJsonFile(file))
+              .andThen { case _ => Files.deleteIfExists(file) }
           }
           case _                            => {
             ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
