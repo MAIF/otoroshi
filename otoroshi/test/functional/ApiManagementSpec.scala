@@ -73,6 +73,11 @@ class ApiManagementSpec extends OtoroshiSpec {
     "read the quotas of the api keys of an api" in {
       ok(call("GET", s"$apis/api-mgmt-a/apikeys/${keyOf("sub-a")}/quotas"))
     }
+    "keep the state of an api it stops" in {
+      createApi("api-mgmt-staging", "staging")
+      ok(call("POST", s"$apis/api-mgmt-staging/_stop"))
+      (ok(call("GET", s"$apis/api-mgmt-staging")) \ "state").as[String] mustBe "staging"
+    }
     "answer not found for a route an api does not hold" in {
       call("GET", s"$apis/api-mgmt-a/routes/route-that-does-not-exist").status mustBe 404
     }

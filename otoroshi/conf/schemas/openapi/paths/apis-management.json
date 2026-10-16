@@ -1072,7 +1072,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Disable every route of an api",
-      "description": "Disables every route of the api. Its state is set to `published` too, like when it is started, whatever its state was. The body is not read. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "description": "Disables every route of the api. Its state is kept: an api in `staging` stays in `staging`. The body is not read. The admin behind the credentials has to be able to write the api. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.stop",
       "parameters": [
         {
@@ -1093,7 +1093,7 @@
       ],
       "responses": {
         "200": {
-          "description": "The routes of the api are disabled (its state is set to `published`). The answer has no body"
+          "description": "The routes of the api are disabled. The answer has no body"
         },
         "400": {
           "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",

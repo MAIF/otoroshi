@@ -220,7 +220,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     env.datastores.apiDataStore.findById(apiId).flatMap {
       case Some(api) =>
         env.datastores.apiDataStore
-          .set(api.copy(state = ApiPublished, routes = api.routes.map(route => route.copy(enabled = newStatus))))
+          // starting an api publishes it, stopping it only disables its routes: a staging api stays in staging
+          .set(
+            api.copy(
+              state = if (newStatus) ApiPublished else api.state,
+              routes = api.routes.map(route => route.copy(enabled = newStatus))
+            )
+          )
           .flatMap(_ => Results.Ok.future)
       case None      => Results.NotFound.future
     }
