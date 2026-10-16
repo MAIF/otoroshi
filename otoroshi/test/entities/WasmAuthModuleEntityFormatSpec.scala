@@ -99,7 +99,7 @@ class WasmAuthModuleEntityFormatSpec extends EntityFormatSpec {
     }
 
     "read the defaults of a module with only an id and a name" in {
-      readOk(format, Json.obj("id" -> "auth_mod_wasm", "name" -> "Wasm")) mustBe minimal.copy(description = "--")
+      readOk(format, Json.obj("id" -> "auth_mod_wasm", "name" -> "Wasm")) mustBe minimal.copy(description = "--", clientSideSessionEnabled = false)
     }
 
     "not read a module without id" in {
@@ -137,7 +137,7 @@ class WasmAuthModuleEntityFormatSpec extends EntityFormatSpec {
     "fall back to the defaults for values of the wrong type" in {
       val back = readOk(format, Json.obj("id" -> "a", "name" -> "b", "sessionMaxAge" -> "60", "clientSideSessionEnabled" -> 0))
       back.sessionMaxAge mustBe 86400
-      back.clientSideSessionEnabled mustBe true
+      back.clientSideSessionEnabled mustBe false
     }
 
     "drop the user validators that cannot be read" in {
@@ -177,6 +177,10 @@ class WasmAuthModuleEntityFormatSpec extends EntityFormatSpec {
       default.clientSideSessionEnabled mustBe false
       default.wasmRef mustBe None
       roundTrip(format, default)
+    }
+
+    "read a missing client side session as off, like a new module" in {
+      readOk(format, Json.obj("id" -> "a", "name" -> "b")).clientSideSessionEnabled mustBe false
     }
   }
 }

@@ -2066,7 +2066,7 @@
       },
       "clientSideSessionEnabled": {
         "type": "boolean",
-        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. True when missing"
+        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. False when missing, as for a new module"
       },
       "sessionCookieValues": {
         "allOf": [
@@ -2236,7 +2236,7 @@
       },
       "clientSideSessionEnabled": {
         "type": "boolean",
-        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. True when missing"
+        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. False when missing, as for a new module"
       },
       "sessionCookieValues": {
         "allOf": [

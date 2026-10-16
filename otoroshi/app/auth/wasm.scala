@@ -54,7 +54,7 @@ object WasmAuthModuleConfig {
         id = (json \ "id").as[String],
         name = (json \ "name").as[String],
         description = (json \ "description").asOpt[String].orElse((json \ "desc").asOpt[String]).getOrElse("--"),
-        clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(true),
+        clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(false),
         sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,

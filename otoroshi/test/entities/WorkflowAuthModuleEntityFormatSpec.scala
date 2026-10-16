@@ -85,7 +85,7 @@ class WorkflowAuthModuleEntityFormatSpec extends EntityFormatSpec {
     }
 
     "read the defaults of a module with only an id and a name" in {
-      readOk(format, Json.obj("id" -> "auth_mod_workflow", "name" -> "Workflow")) mustBe minimal.copy(description = "--")
+      readOk(format, Json.obj("id" -> "auth_mod_workflow", "name" -> "Workflow")) mustBe minimal.copy(description = "--", clientSideSessionEnabled = false)
     }
 
     "not read a module without id" in {
@@ -150,6 +150,10 @@ class WorkflowAuthModuleEntityFormatSpec extends EntityFormatSpec {
       default.clientSideSessionEnabled mustBe false
       default.workflowRef mustBe None
       roundTrip(format, default)
+    }
+
+    "read a missing client side session as off, like a new module" in {
+      readOk(format, Json.obj("id" -> "a", "name" -> "b")).clientSideSessionEnabled mustBe false
     }
   }
 }
