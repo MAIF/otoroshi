@@ -304,12 +304,13 @@ object SnowMonkeyConfig {
           stopTime = (json \ "stopTime")
             .asOpt[LocalTime](using play.api.libs.json.JodaReads.DefaultJodaLocalTimeReads)
             .getOrElse(LocalTime.parse("23:59:59")),
+          // the defaults of a new config: swapped, the outage duration is drawn in a negative range and fails
           outageDurationFrom = (json \ "outageDurationFrom")
             .asOpt[FiniteDuration](using durationFmt)
-            .getOrElse(FiniteDuration(1, TimeUnit.HOURS)),
+            .getOrElse(FiniteDuration(10, TimeUnit.MINUTES)),
           outageDurationTo = (json \ "outageDurationTo")
             .asOpt[FiniteDuration](using durationFmt)
-            .getOrElse(FiniteDuration(10, TimeUnit.MINUTES)),
+            .getOrElse(FiniteDuration(60, TimeUnit.MINUTES)),
           targetGroups = (json \ "targetGroups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           chaosConfig = (json \ "chaosConfig")
             .asOpt[ChaosConfig](using ChaosConfig._fmt)

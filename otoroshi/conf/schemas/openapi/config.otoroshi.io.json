@@ -1504,13 +1504,13 @@
       "outageDurationFrom": {
         "type": "integer",
         "format": "int64",
-        "description": "The shortest duration of an outage, in milliseconds. 600000 (10 minutes) for a new instance, 3600000 (1 hour) when absent",
+        "description": "The shortest duration of an outage, in milliseconds. Defaults to 600000 (10 minutes)",
         "example": 600000
       },
       "outageDurationTo": {
         "type": "integer",
         "format": "int64",
-        "description": "The longest duration of an outage, in milliseconds. 3600000 (1 hour) for a new instance, 600000 (10 minutes) when absent",
+        "description": "The longest duration of an outage, in milliseconds. Defaults to 3600000 (1 hour)",
         "example": 3600000
       },
       "targetGroups": {

@@ -724,8 +724,8 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
 
     "read the snow monkey defaults of an empty snow monkey config" in {
       val back = readOk(format, Json.obj("snowMonkeyConfig" -> Json.obj())).snowMonkeyConfig
-      back.outageDurationFrom mustBe 1.hour
-      back.outageDurationTo mustBe 10.minutes
+      back.outageDurationFrom mustBe 10.minutes
+      back.outageDurationTo mustBe 1.hour
       back.chaosConfig mustBe ChaosConfig(enabled = true, None, None, None, None)
     }
 
