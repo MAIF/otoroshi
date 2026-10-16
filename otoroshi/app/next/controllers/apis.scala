@@ -748,9 +748,14 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
         body.selectAsOptString("backendPath")
       ) match {
         case (Some(domain), Some(openapi), Some(contextPath), Some(backendHostname), Some(backendPath)) =>
-          Api
-            .fromOpenApi(domain, openapi, contextPath, backendHostname, backendPath)
+          // an openapi that cannot be fetched (an url that is not valid or cannot be reached) or read is a bad request
+          scala.util
+            .Try(Api.fromOpenApi(domain, openapi, contextPath, backendHostname, backendPath))
+            .fold(Future.failed, identity)
             .map(service => Ok(service.json))
+            .recover { case scala.util.control.NonFatal(e) =>
+              BadRequest(Json.obj("error" -> s"cannot read the openapi: ${e.getMessage}"))
+            }
         case _                                                                                          => BadRequest(Json.obj("error" -> "missing values")).vfuture
       }
     }

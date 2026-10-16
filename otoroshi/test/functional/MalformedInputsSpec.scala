@@ -79,6 +79,19 @@ class MalformedInputsSpec extends OtoroshiSpec {
       mustBe400(call("POST", "/api/otoroshi.json", Some("[]")))
       mustBe400(call("POST", "/api/import", Some("not json"), contentType = "text/plain"))
     }
+    "refuse the malformed calls of the api keys and the openapi of an api" in {
+      mustBe400(call("GET", "/apis/apis.otoroshi.io/v1/apis/an-api/apikeys?page=one"))
+      mustBe400(call("GET", "/apis/apis.otoroshi.io/v1/apis/an-api/apikeys?enabled=maybe"))
+      mustBe400(call("POST", "/apis/apis.otoroshi.io/v1/apis/an-api/apikeys", Some("[]")))
+      val openapi = Json.obj(
+        "domain"          -> "openapi.oto.tools",
+        "openapi"         -> "not an url",
+        "contextPath"     -> "/",
+        "backendHostname" -> "localhost",
+        "backendPath"     -> "/"
+      )
+      mustBe400(call("POST", "/apis/apis.otoroshi.io/v1/apis/_openapi", Some(openapi.stringify)))
+    }
     "refuse the paging and ranges that are not numbers, and filter on any field" in {
       Seq(
         "/api/audit/events?page=one",

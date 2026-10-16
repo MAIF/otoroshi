@@ -473,7 +473,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body is not valid json, the patched api key is not an api key (`Bad ApiKey format`), its `clientId` changed, or the entity validators of the admin refuse it",
+          "description": "The credentials are missing, the body is not a json patch, the patch cannot be applied, the patched api key is not an api key (`Bad ApiKey format`), its `clientId` changed, or the entity validators of the admin refuse it",
           "content": {
             "application/json": {
               "schema": {
@@ -682,7 +682,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body is not valid json, it is not an api key (`Bad ApiKey format`, a `clientName` is required), an api key with this `clientId` already exists, or the entity validators of the admin refuse it",
+          "description": "The credentials are missing, the body is not a json object, it is not an api key (`Bad ApiKey format`, a `clientName` is required), an api key with this `clientId` already exists, or the entity validators of the admin refuse it",
           "content": {
             "application/json": {
               "schema": {
@@ -848,7 +848,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), `page` or `pageSize` is not a number, or `enabled` is not a boolean",
           "content": {
             "application/json": {
               "schema": {
@@ -1287,7 +1287,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body is not valid json, or one of its fields is missing (`missing values`)",
+          "description": "The credentials are missing, the body is not valid json, one of its fields is missing (`missing values`), or the openapi cannot be fetched (an url that is not valid or cannot be reached) or read",
           "content": {
             "application/json": {
               "schema": {

@@ -22,7 +22,7 @@ import play.api.libs.json.*
 import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, RequestHeader, Result, Results}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
-import otoroshi.utils.json.JsonPatchHelpers.patchJson
+import otoroshi.utils.json.JsonPatchHelpers.patchJsonSafe
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -163,14 +163,28 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
 
   def createApiKeyOfRoute(routeId: String) = {
     ApiAction.async(parse.json) { ctx =>
-      createApiKey(ctx, routeId, isRoute = true)
+      withObjectBody(ctx)(createApiKey(ctx, routeId, isRoute = true))
     }
   }
 
   def createApiKeyOfApi(apiId: String) = {
     ApiAction.async(parse.json) { ctx =>
-      createApiKey(ctx, apiId, isRoute = false)
+      withObjectBody(ctx)(createApiKey(ctx, apiId, isRoute = false))
     }
+  }
+
+  // the body of an api key is a json object
+  private def withObjectBody(ctx: ApiActionContext[JsValue])(f: => Future[Result]): Future[Result] =
+    if (ctx.request.body.isInstanceOf[JsObject]) f
+    else BadRequest(Json.obj("error" -> "the body is not a json object")).vfuture
+
+  // the paging parameters are numbers, enabled is a boolean
+  private def withReadableQuery(ctx: ApiActionContext[AnyContent])(f: => Future[Result]): Future[Result] = {
+    val notReadable =
+      Seq("page", "pageSize").filter(name => ctx.request.getQueryString(name).exists(_.toIntOption.isEmpty)) ++
+      Seq("enabled").filter(name => ctx.request.getQueryString(name).exists(_.toBooleanOption.isEmpty))
+    if (notReadable.isEmpty) f
+    else BadRequest(Json.obj("error" -> s"cannot read the query parameters: ${notReadable.mkString(", ")}")).vfuture
   }
 
   private def createApiKey(ctx: ApiActionContext[JsValue], id: String, isRoute: Boolean) =
@@ -327,8 +341,10 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             ).asFuture
           case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)  => {
             val currentApiKeyJson = apiKey.toJson
-            val newApiKeyJson     = patchJson(ctx.request.body, currentApiKeyJson)
-            ctx.validateEntity(newApiKeyJson, "apikey") match {
+            // a body that is not a json patch, or a patch that cannot be applied, is a bad request
+            val patched           = patchJsonSafe(ctx.request.body, currentApiKeyJson)
+            val newApiKeyJson     = patched.getOrElse(JsNull)
+            patched.fold[Either[JsValue, JsValue]](error => Left(JsString(error)), ctx.validateEntity(_, "apikey")) match {
               case Left(errs) => BadRequest(Json.obj("error" -> "Bad ApiKey format", "details" -> errs)).asFuture
               case Right(_)   => {
                 ApiKey.fromJsonSafe(newApiKeyJson) match {
@@ -404,13 +420,13 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
 
   def apiKeysOfRoute(routeId: String) = {
     ApiAction.async { ctx =>
-      apiKeys(ctx, routeId, isRoute = true)
+      withReadableQuery(ctx)(apiKeys(ctx, routeId, isRoute = true))
     }
   }
 
   def apiKeysOfApi(apiId: String) = {
     ApiAction.async { ctx =>
-      apiKeys(ctx, apiId, isRoute = false)
+      withReadableQuery(ctx)(apiKeys(ctx, apiId, isRoute = false))
     }
   }
 
