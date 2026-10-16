@@ -713,9 +713,14 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       )
     }
 
-    "replace wasmo settings without tls config by the default ones" in {
-      val back = readOk(format, Json.obj("wasmoSettings" -> Json.obj("settings" -> Json.obj("url" -> "http://wasmo:5001"))))
-      back.wasmoSettings mustBe Some(TlsWasmoSettings())
+    "keep wasmo settings without tls config, with the default tls config" in {
+      val back = readOk(
+        format,
+        Json.obj("wasmoSettings" -> Json.obj("settings" -> Json.obj("url" -> "http://wasmo:5001", "clientId" -> "mine")))
+      )
+      back.wasmoSettings.map(_.settings.url) mustBe Some("http://wasmo:5001")
+      back.wasmoSettings.map(_.settings.clientId) mustBe Some("mine")
+      back.wasmoSettings.map(_.tlsConfig) mustBe Some(MtlsConfig())
     }
 
     "read the snow monkey defaults of an empty snow monkey config" in {
@@ -1343,8 +1348,9 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       roundTrip(GlobalConfig._fmt, config).wasmoSettings.flatMap(_.settings.tlsConfig) mustBe Some(tls)
     }
 
-    "not read settings without tls config" in {
-      readError(format, Json.obj("settings" -> WasmoSettings().json))
+    "read settings without tls config with the default tls config" in {
+      val settings = WasmoSettings(url = "http://wasmo:5001")
+      readOk(format, Json.obj("settings" -> settings.json)) mustBe TlsWasmoSettings(settings, MtlsConfig())
     }
 
     "not read a tls config without settings" in {

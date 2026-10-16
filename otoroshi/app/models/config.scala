@@ -666,7 +666,8 @@ object TlsWasmoSettings {
       Try {
         TlsWasmoSettings(
           settings = readSettings((json \ "settings").as[JsValue]).get,
-          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](using MtlsConfig.format)
+          // a missing tls config must not drop the settings of wasmo
+          tlsConfig = MtlsConfig.read((json \ "tlsConfig").asOpt[JsValue])
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
