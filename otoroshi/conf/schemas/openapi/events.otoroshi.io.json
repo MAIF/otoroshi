@@ -5595,7 +5595,7 @@
       },
       "body": {
         "type": "string",
-        "description": "The template of the body of the call, sent once its placeholders are replaced: `${events}` or `${events.stringify}` by the events as a json array, `${events.prettify}` and `${events.nd_prettify}` by the same array pretty printed, `${events.nd_stringify}` by the json of each event separated by an empty line, `${events.length}` by their number, `${now}` by the current timestamp in milliseconds, `${now_epoch}` by the current timestamp in seconds and `${now_str}` by the current date. Empty when absent",
+        "description": "The template of the body of the call, sent once its placeholders are replaced: `${events}` or `${events.stringify}` by the events as a json array, `${events.prettify}` by the same array pretty printed, `${events.nd_stringify}` by the json of each event separated by an empty line, `${events.nd_prettify}` by the pretty printed json of each event separated by an empty line, `${events.length}` by their number, `${now}` by the current timestamp in milliseconds, `${now_epoch}` by the current timestamp in seconds and `${now_str}` by the current date. Empty when absent",
         "example": "${events.nd_stringify}"
       },
       "timeout": {

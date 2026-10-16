@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
 
-// the calls of the http exporters: any 2xx status is a success
+// the calls of the http exporters: any 2xx status is a success and `${events.nd_prettify}` is each event pretty printed
 class HttpDataExportersSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
@@ -61,6 +61,12 @@ class HttpDataExportersSpec extends OtoroshiSpec {
       given ec: ExecutionContext = env.otoroshiExecutionContext
       val result                 = httpSettings(body = "x").call(events, httpConfig, globalConfig).futureValue
       result mustBe ExportResult.ExportResultSuccess
+    }
+    "send each event pretty printed for ${events.nd_prettify}" in {
+      given env: Env             = otoroshiComponents.env
+      given ec: ExecutionContext = env.otoroshiExecutionContext
+      httpSettings(body = "${events.nd_prettify}").call(events, httpConfig, globalConfig).futureValue
+      received.get()._1 mustBe events.map(_.prettify).mkString("\n\n")
     }
     "shutdown" in {
       server.stop(0)

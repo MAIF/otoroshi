@@ -216,7 +216,7 @@ case class HttpCallSettings(
         str.replace("${events.nd_stringify}", events.map(_.stringify).mkString("\n\n"))
       }
       .applyOnIf(body.contains("${events.nd_prettify}")) { str =>
-        str.replace("${events.nd_prettify}", JsArray(events).prettify)
+        str.replace("${events.nd_prettify}", events.map(_.prettify).mkString("\n\n"))
       }
       .applyOnIf(body.contains("${events.length}")) { str =>
         str.replace("${events.length}", events.length.toString)
