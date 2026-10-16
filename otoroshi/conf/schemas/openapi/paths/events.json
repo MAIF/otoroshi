@@ -5,13 +5,13 @@
         "events"
       ],
       "summary": "List the audit events",
-      "description": "Answers the latest audit events otoroshi keeps in its datastore, the most recent first: at most 1001 of them, the datastore itself keeping the `maxLogsSize` latest ones of the global configuration.\n\nEach `filter.<field>=<value>` query parameter keeps the events whose top level `field` holds the value: a string equal to it, a boolean or a number equal to it once parsed, or an array holding it. The filters apply to the page given by `page` and `pageSize`.\n\nThe events are answered as a json array, or as ndjson (one event per line) when the `Accept` header asks for `application/x-ndjson` and not for json. The call is itself audited (`ACCESS_AUDIT_EVENTS`). Super admins only.",
+      "description": "Answers the latest audit events otoroshi keeps in its datastore, the most recent first: at most 1001 of them, the datastore itself keeping the `maxLogsSize` latest ones of the global configuration.\n\nEach `filter.<field>=<value>` query parameter keeps the events whose top level `field` holds the value: a string equal to it, a boolean or a number equal to it once parsed, or an array holding it. `page` and `pageSize` give the page of the events the filters keep.\n\nThe events are answered as a json array, or as ndjson (one event per line) when the `Accept` header asks for `application/x-ndjson` and not for json. The call is itself audited (`ACCESS_AUDIT_EVENTS`). Super admins only.",
       "operationId": "otoroshi.controllers.adminapi.EventsController.auditEvents",
       "parameters": [
         {
           "name": "page",
           "in": "query",
-          "description": "The page to answer, starting at 1. Only applied when at least one `filter.<field>` parameter is given",
+          "description": "The page to answer, starting at 1",
           "required": false,
           "schema": {
             "type": "integer",
@@ -23,7 +23,7 @@
         {
           "name": "pageSize",
           "in": "query",
-          "description": "The number of events of a page. Every event is answered when absent. Only applied when at least one `filter.<field>` parameter is given",
+          "description": "The number of events of a page. Every event is answered when absent",
           "required": false,
           "schema": {
             "type": "integer",
@@ -105,13 +105,13 @@
         "events"
       ],
       "summary": "List the alert events",
-      "description": "Answers the latest alert events otoroshi keeps in its datastore, the most recent first: at most 1001 of them, the datastore itself keeping the `maxLogsSize` latest ones of the global configuration.\n\nEach `filter.<field>=<value>` query parameter keeps the events whose top level `field` holds the value: a string equal to it, a boolean or a number equal to it once parsed, or an array holding it. The filters apply to the page given by `page` and `pageSize`.\n\nThe events are answered as a json array, or as ndjson (one event per line) when the `Accept` header asks for `application/x-ndjson` and not for json. The call is itself audited (`ACCESS_ALERT_EVENTS`). Super admins only.",
+      "description": "Answers the latest alert events otoroshi keeps in its datastore, the most recent first: at most 1001 of them, the datastore itself keeping the `maxLogsSize` latest ones of the global configuration.\n\nEach `filter.<field>=<value>` query parameter keeps the events whose top level `field` holds the value: a string equal to it, a boolean or a number equal to it once parsed, or an array holding it. `page` and `pageSize` give the page of the events the filters keep.\n\nThe events are answered as a json array, or as ndjson (one event per line) when the `Accept` header asks for `application/x-ndjson` and not for json. The call is itself audited (`ACCESS_ALERT_EVENTS`). Super admins only.",
       "operationId": "otoroshi.controllers.adminapi.EventsController.alertEvents",
       "parameters": [
         {
           "name": "page",
           "in": "query",
-          "description": "The page to answer, starting at 1. Only applied when at least one `filter.<field>` parameter is given",
+          "description": "The page to answer, starting at 1",
           "required": false,
           "schema": {
             "type": "integer",
@@ -123,7 +123,7 @@
         {
           "name": "pageSize",
           "in": "query",
-          "description": "The number of events of a page. Every event is answered when absent. Only applied when at least one `filter.<field>` parameter is given",
+          "description": "The number of events of a page. Every event is answered when absent",
           "required": false,
           "schema": {
             "type": "integer",

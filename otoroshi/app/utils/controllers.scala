@@ -144,7 +144,9 @@ trait AdminApiHelper {
         .flatMap(_.toIntOption)
         .getOrElse(Int.MaxValue)
 
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
+    // in a long, as every entity is on the first page when no page size is given
+    val paginationPosition = math.min(math.max(paginationPage - 1, 0).toLong * paginationPageSize, Int.MaxValue.toLong).toInt
+    val paginationEnd      = math.min(paginationPosition.toLong + paginationPageSize, Int.MaxValue.toLong).toInt
     val prefix             = filterPrefix
     val filters            = ctx.request.queryString
       .view.mapValues(_.last).toMap
@@ -159,10 +161,10 @@ trait AdminApiHelper {
       case Left(error)     => error.left
       case Right(entities) => {
         sendAuditAndAlert(audit)
-        val jsonElements =
-          entities.slice(paginationPosition, paginationPosition + paginationPageSize).map(e => (e, writeEntity(e)))
-        if (hasFilters) {
-          jsonElements
+        // the page is a page of the entities the filters keep
+        val matching = if (hasFilters) {
+          entities
+            .map(e => (e, writeEntity(e)))
             .filter { case (_, elem) =>
               // a field the element lacks, or a value of another type than the field, does not match
               filters.forall { case (key, value) =>
@@ -183,10 +185,10 @@ trait AdminApiHelper {
               }
             }
             .map(_._1)
-            .right
         } else {
-          entities.right
+          entities
         }
+        matching.slice(paginationPosition, paginationEnd).right
       }
     }
   }
