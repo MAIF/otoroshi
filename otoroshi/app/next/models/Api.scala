@@ -376,7 +376,7 @@ trait ApiAccessModeConfiguration {
 
 case class KeylessAccessModeConfiguration(
   expr: Option[String] = None,
-  createIfMissing: Boolean = false
+  createIfMissing: Boolean = true
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Keyless
 }
@@ -402,7 +402,7 @@ object KeylessAccessModeConfiguration {
 case class JWTAccessModeConfiguration(
     verifier: Option[String] = None,
     clientIdPath: Option[String] = Some("client_id"),
-    createIfMissing: Boolean = false,
+    createIfMissing: Boolean = true,
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.JWT
 }
@@ -431,7 +431,7 @@ case class MtlsAccessModeConfiguration(
     regexSubjectDNs: Seq[String] = Seq.empty,
     regexIssuerDNs: Seq[String] = Seq.empty,
     clientIdField: Option[String] = None,
-    createIfMissing: Boolean = false
+    createIfMissing: Boolean = true
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Mtls
 }
@@ -463,7 +463,7 @@ case class OAuth2RemoteAccessModeConfiguration(
     clientIdPath: Option[String] = Some("client_id"),
     fetchUser: Boolean = false,
     userMetadataKey: String = "user_profile",
-    createIfMissing: Boolean = false
+    createIfMissing: Boolean = true
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Remote
 }

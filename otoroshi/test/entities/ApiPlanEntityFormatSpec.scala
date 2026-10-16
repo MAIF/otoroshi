@@ -340,7 +340,7 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
     }
 
     "write a missing expression as null" in {
-      format.writes(KeylessAccessModeConfiguration()) mustBe Json.obj("expr" -> JsNull, "create_if_missing" -> false)
+      format.writes(KeylessAccessModeConfiguration()) mustBe Json.obj("expr" -> JsNull, "create_if_missing" -> true)
     }
 
     "round trip a configuration" in {
@@ -351,8 +351,8 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, KeylessAccessModeConfiguration())
     }
 
-    "read an empty object as creating the missing consumers, unlike the constructor default" in {
-      KeylessAccessModeConfiguration().createIfMissing mustBe false
+    "read an empty object as creating the missing consumers, like the constructor default" in {
+      KeylessAccessModeConfiguration().createIfMissing mustBe true
       readOk(format, Json.obj()) mustBe KeylessAccessModeConfiguration(None, createIfMissing = true)
     }
   }
@@ -362,7 +362,7 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
     val format = JWTAccessModeConfiguration.fmt
 
     "default to the client_id claim" in {
-      JWTAccessModeConfiguration() mustBe JWTAccessModeConfiguration(None, Some("client_id"), createIfMissing = false)
+      JWTAccessModeConfiguration() mustBe JWTAccessModeConfiguration(None, Some("client_id"), createIfMissing = true)
     }
 
     "write a configuration" in {

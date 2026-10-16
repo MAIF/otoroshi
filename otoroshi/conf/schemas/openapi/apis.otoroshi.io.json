@@ -797,7 +797,7 @@
       },
       "create_if_missing": {
         "type": "boolean",
-        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. Defaults to `true` when the configuration does not say, a plan without any configuration does not store them"
+        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. `true` when the configuration does not say, and for a plan without any configuration"
       }
     },
     "example": {
@@ -957,7 +957,7 @@
       },
       "create_if_missing": {
         "type": "boolean",
-        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. Defaults to `true` when the configuration does not say, a plan without any configuration does not store them"
+        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. `true` when the configuration does not say, and for a plan without any configuration"
       }
     },
     "example": {
@@ -1000,7 +1000,7 @@
       },
       "create_if_missing": {
         "type": "boolean",
-        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. Defaults to `true` when the configuration does not say, a plan without any configuration does not store them"
+        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. `true` when the configuration does not say, and for a plan without any configuration"
       }
     },
     "example": {
@@ -1064,7 +1064,7 @@
       },
       "create_if_missing": {
         "type": "boolean",
-        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. Defaults to `true` when the configuration does not say, a plan without any configuration does not store them"
+        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. `true` when the configuration does not say, and for a plan without any configuration"
       }
     },
     "example": {
