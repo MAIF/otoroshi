@@ -251,7 +251,15 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
           }
         }
       }
-      case None             => FastFuture.failed(new ServiceNotFoundException(serviceId))
+      case None             =>
+        // an api is neither a service descriptor nor a route: its keys are the ones authorized on it, or on its groups
+        env.datastores.apiDataStore.findById(serviceId).flatMap {
+          case Some(api) =>
+            env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+              keys.filter(key => key.authorizedOnApi(api.id) || key.authorizedOnOneGroupFrom(api.groups))
+            }
+          case None      => FastFuture.failed(new ServiceNotFoundException(serviceId))
+        }
     }
   }
 

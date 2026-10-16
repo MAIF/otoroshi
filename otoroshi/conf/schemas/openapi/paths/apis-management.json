@@ -749,7 +749,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "List the api keys of an api",
-      "description": "Answers the api keys authorized on the entity with this id, directly or through one of its groups, that the admin behind the credentials can read. With at least one of the `clientId`, `name`, `group` and `enabled` filters, only the api keys matching one of them (they are not combined) are answered, and the `page` and `pageSize` parameters paginate them; without filter every api key is answered. The entity is looked up among the routes, the route compositions and the legacy service descriptors, not among the apis: the id of an api is answered as not found. An audit event is sent.",
+      "description": "Answers the api keys authorized on the entity with this id, directly or through one of its groups, that the admin behind the credentials can read. With at least one of the `clientId`, `name`, `group` and `enabled` filters, only the api keys matching one of them (they are not combined) are answered, and the `page` and `pageSize` parameters paginate them; without filter every api key is answered. The entity is looked up among the legacy service descriptors, the routes, the route compositions and the apis: the api keys of an api are the ones authorized on it (`api_<apiId>`, or minted by one of its plans) or on one of its groups. An audit event is sent.",
       "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.apiKeysOfApi",
       "parameters": [
         {
@@ -868,7 +868,7 @@
           }
         },
         "404": {
-          "description": "No route, route composition or service descriptor has this id",
+          "description": "No service descriptor, route, route composition or api has this id",
           "content": {
             "application/json": {
               "schema": {
