@@ -718,6 +718,7 @@ object SAMLSignatureAlgorithm {
       case "rsa_sha256" => Some(RSA_SHA256)
       case "rsa_sha1"   => Some(RSA_SHA1)
       case "dsa_sha1"   => Some(DSA_SHA1)
+      case _            => None
     }
   }
 }
@@ -746,6 +747,7 @@ object SAMLCanocalizationMethod {
     name.toLowerCase.trim match {
       case "exclusive"     => Some(Exclusive)
       case "with_comments" => Some(ExclusiveWithComments)
+      case _               => None
     }
   }
 }

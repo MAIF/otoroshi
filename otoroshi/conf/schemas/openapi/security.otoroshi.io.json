@@ -2672,7 +2672,7 @@
     "properties": {
       "algorithm": {
         "type": "string",
-        "description": "The signature algorithm. `rsa_sha256` when missing, another value is refused",
+        "description": "The signature algorithm, read without case. `rsa_sha256` when missing or unknown",
         "enum": [
           "rsa_sha256",
           "rsa_sha512",
@@ -2683,7 +2683,7 @@
       },
       "canocalizationMethod": {
         "type": "string",
-        "description": "The canonicalization method of the XML signatures: `exclusive` (exclusive canonicalization without comments) or `with_comments`. `exclusive` when missing, another value is refused",
+        "description": "The canonicalization method of the XML signatures: `exclusive` (exclusive canonicalization without comments) or `with_comments`, read without case. `exclusive` when missing or unknown",
         "enum": [
           "exclusive",
           "with_comments"

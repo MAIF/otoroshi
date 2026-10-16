@@ -75,8 +75,8 @@ class SamlAuthModuleEntityFormatSpec extends EntityFormatSpec {
       SAMLSignatureAlgorithm("dsa_sha1") mustBe Some(SAMLSignatureAlgorithm.DSA_SHA1)
     }
 
-    "throw on an unknown algorithm instead of returning none" in {
-      a[MatchError] must be thrownBy SAMLSignatureAlgorithm("hmac")
+    "return none for an unknown algorithm" in {
+      SAMLSignatureAlgorithm("hmac") mustBe None
     }
 
     "read every canonicalization method" in {
@@ -84,8 +84,8 @@ class SamlAuthModuleEntityFormatSpec extends EntityFormatSpec {
       SAMLCanocalizationMethod("WITH_COMMENTS") mustBe Some(SAMLCanocalizationMethod.ExclusiveWithComments)
     }
 
-    "throw on an unknown canonicalization method instead of returning none" in {
-      a[MatchError] must be thrownBy SAMLCanocalizationMethod("inclusive")
+    "return none for an unknown canonicalization method" in {
+      SAMLCanocalizationMethod("inclusive") mustBe None
     }
   }
 
@@ -191,12 +191,12 @@ class SamlAuthModuleEntityFormatSpec extends EntityFormatSpec {
       readOk(format, Json.obj()) mustBe SAMLSignature(SAMLSignatureAlgorithm.RSA_SHA256, SAMLCanocalizationMethod.Exclusive)
     }
 
-    "not read an unknown algorithm" in {
-      readError(format, Json.obj("algorithm" -> "hmac"))
+    "read an unknown algorithm as rsa sha256" in {
+      readOk(format, Json.obj("algorithm" -> "hmac")).algorithm mustBe SAMLSignatureAlgorithm.RSA_SHA256
     }
 
-    "not read an unknown canonicalization method" in {
-      readError(format, Json.obj("canocalizationMethod" -> "inclusive"))
+    "read an unknown canonicalization method as exclusive" in {
+      readOk(format, Json.obj("canocalizationMethod" -> "inclusive")).canocalizationMethod mustBe SAMLCanocalizationMethod.Exclusive
     }
   }
 
@@ -421,8 +421,8 @@ class SamlAuthModuleEntityFormatSpec extends EntityFormatSpec {
       back.singleLogoutProtocolBinding mustBe SAMLProtocolBinding.Redirect
     }
 
-    "not read a module with an unknown signature algorithm" in {
-      readError(format, mandatory ++ Json.obj("signature" -> Json.obj("algorithm" -> "hmac")))
+    "read a module with an unknown signature algorithm as signing with rsa sha256" in {
+      readOk(format, mandatory ++ Json.obj("signature" -> Json.obj("algorithm" -> "hmac"))).signature.algorithm mustBe SAMLSignatureAlgorithm.RSA_SHA256
     }
 
     "ignore validating certificates given as a single string" in {
