@@ -40,7 +40,9 @@ class OpenApiSchemasSpec extends OtoroshiSpec {
         }
       }
       // a sealed trait written as a string must not be described as an object
-      (schemas \ "OutageStrategy" \ "type").asOpt[String] mustBe Some("string")
+      val outageStrategy = schemas \ "SnowMonkeyConfig" \ "properties" \ "outageStrategy"
+      (outageStrategy \ "type").asOpt[String] mustBe Some("string")
+      (outageStrategy \ "enum").asOpt[Seq[String]] mustBe Some(Seq("OneServicePerGroup", "AllServicesPerGroup"))
       // scala collections must only be described by their items, not by their bean properties
       Json.stringify(spec) must not include "traversableAgain"
     }
