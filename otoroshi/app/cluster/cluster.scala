@@ -3628,8 +3628,9 @@ object ClusterLeaderUpdateMessage       {
         .map(_ => ())
     }
 
+    // relayed as a throttling, with its ttl, not as a quota
     override def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {
-      env.clusterAgent.incrementCustomQuota(expr, group, calls.get()).vfuture
+      env.clusterAgent.incrementCustomThrottling(expr, group, calls.get(), ttl).vfuture
     }
   }
 
