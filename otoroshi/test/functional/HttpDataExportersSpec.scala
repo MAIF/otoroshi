@@ -8,7 +8,7 @@ import otoroshi.next.models.NgTlsConfig
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
-import play.api.libs.ws.WSCookie
+import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 
 import java.net.InetSocketAddress
 import java.nio.charset.StandardCharsets
@@ -16,7 +16,8 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
 
-// the calls of the http exporters: any 2xx status is a success and `${events.nd_prettify}` is each event pretty printed
+// the calls of the http exporters: any 2xx status is a success, `${events.nd_prettify}` is each event pretty printed
+// and the cookies of the http exporter are sent
 class HttpDataExportersSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
@@ -67,6 +68,14 @@ class HttpDataExportersSpec extends OtoroshiSpec {
       given ec: ExecutionContext = env.otoroshiExecutionContext
       httpSettings(body = "${events.nd_prettify}").call(events, httpConfig, globalConfig).futureValue
       received.get()._1 mustBe events.map(_.prettify).mkString("\n\n")
+    }
+    "send the cookies of the http exporter" in {
+      given env: Env             = otoroshiComponents.env
+      given ec: ExecutionContext = env.otoroshiExecutionContext
+      httpSettings(body = "x", cookies = Seq(DefaultWSCookie(name = "session", value = "abc")))
+        .call(events, httpConfig, globalConfig)
+        .futureValue
+      received.get()._2 must include("session=abc")
     }
     "shutdown" in {
       server.stop(0)

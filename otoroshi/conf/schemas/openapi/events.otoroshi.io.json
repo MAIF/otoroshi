@@ -5534,7 +5534,7 @@
       },
       "cookies": {
         "type": "array",
-        "description": "Cookies of the call. They are kept with the settings, but the exporter does not send them with its calls",
+        "description": "Cookies sent with the calls",
         "items": {
           "type": "object",
           "description": "A cookie of the call",

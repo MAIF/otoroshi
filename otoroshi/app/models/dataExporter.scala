@@ -226,6 +226,7 @@ case class HttpCallSettings(
       .withRequestTimeout(timeout)
       .withMethod(method)
       .withHttpHeaders(headers.toSeq*)
+      .withCookies(cookies*)
       .withBody(finalBody)
       .execute()
       .map { resp =>
