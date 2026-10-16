@@ -16,7 +16,7 @@
       },
       "date": {
         "type": "string",
-        "description": "When the export was made, as `yyyy-MM-dd hh:mm:ss` (a 12 hours clock, without am or pm)",
+        "description": "When the export was made, as `yyyy-MM-dd HH:mm:ss` (a 24 hours clock)",
         "example": "2026-10-15 10:03:48"
       },
       "stats": {

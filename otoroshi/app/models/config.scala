@@ -1334,7 +1334,7 @@ case class OtoroshiExport(
     Json.obj(
       "label"              -> "Otoroshi export",
       "dateRaw"            -> DateTime.now(),
-      "date"               -> DateTime.now().toString("yyyy-MM-dd hh:mm:ss"),
+      "date"               -> DateTime.now().toString("yyyy-MM-dd HH:mm:ss"),
       "stats"              -> Json.obj(
         "calls"   -> calls,
         "dataIn"  -> dataIn,
