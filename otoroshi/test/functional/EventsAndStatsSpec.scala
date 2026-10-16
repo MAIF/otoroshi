@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer
 import otoroshi.env.Env
 import otoroshi.events.impl.ElasticReadsAnalytics
 import otoroshi.models.ElasticAnalyticsConfig
+import otoroshi.next.analytics.models.{UserAlert, UserDashboard}
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
@@ -17,8 +18,8 @@ import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters.*
 
 // the events and the statistics the admin api reads: the audit events filtered then paginated, one per line in ndjson,
-// the fields of an event as written in its json, the pages of the health of the routes and the names of the slices of a
-// pie chart
+// the fields of an event as written in its json, the pages of the health of the routes, the names of the slices of a
+// pie chart and the id of an alert or a dashboard read without one
 class EventsAndStatsSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
@@ -138,6 +139,10 @@ class EventsAndStatsSpec extends OtoroshiSpec {
       given ec: ExecutionContext = env.otoroshiExecutionContext
       val pie                    = new ElasticReadsAnalytics(elasticConfig, env).piechart("@service", None, None, None).futureValue
       (pie \ "series" \ 0 \ "data").as[Seq[JsObject]].map(s => (s \ "name").as[String]) mustBe Seq("my-route", "200")
+    }
+    "generate the id of an alert or a dashboard read without one" in {
+      UserAlert.format.reads(Json.obj()).get.id must fullyMatch regex "alert_[0-9a-f-]+"
+      UserDashboard.format.reads(Json.obj()).get.id must fullyMatch regex "dashboard_[0-9a-f-]+"
     }
     "shutdown" in {
       elastic.stop(0)

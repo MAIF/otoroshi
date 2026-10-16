@@ -79,7 +79,7 @@ object UserDashboard {
         id = (json \ "id")
           .asOpt[String]
           .filterNot(_.isEmpty)
-          .getOrElse(IdGenerator.namedId("dashboard", IdGenerator.uuid)),
+          .getOrElse(s"dashboard_${IdGenerator.uuid}"),
         name = (json \ "name").asOpt[String].getOrElse(""),
         description = (json \ "description").asOpt[String].getOrElse(""),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
