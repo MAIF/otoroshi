@@ -1,0 +1,139 @@
+{
+  "ResourcesToBuild": {
+    "type": "object",
+    "description": "The definitions of the entities to build",
+    "required": [
+      "content"
+    ],
+    "properties": {
+      "content": {
+        "description": "The definitions: a list of definitions, a single definition, or yaml (several documents separated by `---` lines)",
+        "oneOf": [
+          {
+            "type": "array",
+            "description": "A list of definitions",
+            "items": {
+              "$ref": "#/components/schemas/ResourceDefinition"
+            }
+          },
+          {
+            "$ref": "#/components/schemas/ResourceDefinition"
+          },
+          {
+            "type": "string",
+            "description": "Yaml definitions, one document per entity",
+            "example": "kind: proxy.otoroshi.io/Route\nname: my-route\nfrontend:\n  domains:\n    - my-route.oto.tools\n---\nkind: apim.otoroshi.io/Apikey\nclientName: my-key\n"
+          }
+        ],
+        "example": "kind: proxy.otoroshi.io/Route\nname: my-route\nfrontend:\n  domains:\n    - my-route.oto.tools\n---\nkind: apim.otoroshi.io/Apikey\nclientName: my-key\n"
+      }
+    },
+    "example": {
+      "content": "kind: proxy.otoroshi.io/Route\nname: my-route\nfrontend:\n  domains:\n    - my-route.oto.tools\n---\nkind: apim.otoroshi.io/Apikey\nclientName: my-key\n"
+    }
+  },
+  "ResourceDefinition": {
+    "type": "object",
+    "description": "A partial definition of an entity: its `kind` and the fields that differ from its template, or a kubernetes like resource holding them in its `spec`",
+    "additionalProperties": true,
+    "example": {
+      "kind": "proxy.otoroshi.io/Route",
+      "name": "my-route",
+      "frontend": {
+        "domains": [
+          "my-route.oto.tools"
+        ]
+      }
+    }
+  },
+  "BuiltResources": {
+    "type": "object",
+    "description": "The entities built from the definitions",
+    "properties": {
+      "created": {
+        "description": "The entity built for a single definition, or the entities built for a list of definitions (and for yaml documents), in their order",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BuiltResourceOutcome"
+          },
+          {
+            "type": "array",
+            "description": "The entities built, in the order of the definitions",
+            "items": {
+              "$ref": "#/components/schemas/BuiltResourceOutcome"
+            }
+          }
+        ]
+      }
+    },
+    "example": {
+      "created": [
+        {
+          "kind": "proxy.otoroshi.io/Route",
+          "resource": {
+            "id": "route_7e2b7a31",
+            "name": "my-route"
+          }
+        }
+      ]
+    }
+  },
+  "BuiltResourceOutcome": {
+    "description": "An entity built, or the error of its definition",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/BuiltResource"
+      },
+      {
+        "$ref": "#/components/schemas/BuiltResourceError"
+      }
+    ]
+  },
+  "BuiltResource": {
+    "type": "object",
+    "description": "An entity built from its definition",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "description": "The kind of the entity, as read from its definition (a service descriptor becomes `proxy.otoroshi.io/Route`)",
+        "example": "proxy.otoroshi.io/Route"
+      },
+      "resource": {
+        "type": "object",
+        "description": "The complete entity: the template of its kind merged with its definition. Its schema is the one of its kind",
+        "additionalProperties": true,
+        "example": {
+          "id": "route_7e2b7a31",
+          "name": "my-route"
+        }
+      }
+    },
+    "example": {
+      "kind": "proxy.otoroshi.io/Route",
+      "resource": {
+        "id": "route_7e2b7a31",
+        "name": "my-route"
+      }
+    }
+  },
+  "BuiltResourceError": {
+    "type": "object",
+    "description": "A definition that could not be built",
+    "properties": {
+      "error": {
+        "type": "string",
+        "description": "Why it could not be built: an unknown kind, or a definition its format refuses",
+        "example": "resource kind 'Unknown' unknown"
+      },
+      "name": {
+        "type": "string",
+        "description": "The `name` of the definition, `Unknown` when it has none",
+        "example": "my-route"
+      }
+    },
+    "example": {
+      "error": "resource kind 'Unknown' unknown",
+      "name": "my-route"
+    }
+  }
+}

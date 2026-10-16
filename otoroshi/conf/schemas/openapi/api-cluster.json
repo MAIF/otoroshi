@@ -1,0 +1,755 @@
+{
+  "JavaVersion": {
+    "type": "object",
+    "description": "The java virtual machine an otoroshi instance runs on",
+    "properties": {
+      "version": {
+        "type": "string",
+        "description": "The version of the java virtual machine (its `java.version` system property). The leaders put the major version of their own java when a worker does not send it",
+        "example": "17.0.2"
+      },
+      "vendor": {
+        "type": "string",
+        "description": "The vendor of the java virtual machine (its `java.vendor` system property), `--` when a worker does not send it",
+        "example": "Oracle Corporation"
+      }
+    },
+    "example": {
+      "version": "17.0.2",
+      "vendor": "Oracle Corporation"
+    }
+  },
+  "OS": {
+    "type": "object",
+    "description": "The operating system an otoroshi instance runs on",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name of the operating system (the `os.name` system property), `undefined` when a worker does not send it",
+        "example": "Linux"
+      },
+      "version": {
+        "type": "string",
+        "description": "The version of the kernel or of the operating system (the `os.version` system property), `undefined` when a worker does not send it",
+        "example": "6.8.0-45-generic"
+      },
+      "arch": {
+        "type": "string",
+        "description": "The architecture of the processor as java names it (the `os.arch` system property, like `amd64` or `aarch64`), `undefined` when a worker does not send it",
+        "example": "amd64"
+      }
+    },
+    "example": {
+      "name": "Linux",
+      "version": "6.8.0-45-generic",
+      "arch": "amd64"
+    }
+  },
+  "InstanceLocation": {
+    "type": "object",
+    "description": "Where an otoroshi instance runs, as declared in its configuration (`otoroshi.cluster.relay.location`). The relay routing uses it to pick the instances that can reach a backend",
+    "properties": {
+      "provider": {
+        "type": "string",
+        "description": "The cloud provider or hosting of the instance (`otoroshi.cluster.relay.location.provider` or `otoroshi.instance.provider`, `local` by default). Matched against the `otoroshi-deployment-providers` metadata of a route",
+        "example": "aws"
+      },
+      "zone": {
+        "type": "string",
+        "description": "The availability zone of the instance (`otoroshi.cluster.relay.location.zone` or `otoroshi.instance.zone`, `local` by default). Matched against the `otoroshi-deployment-zones` metadata of a route",
+        "example": "eu-west-3a"
+      },
+      "region": {
+        "type": "string",
+        "description": "The region of the instance (`otoroshi.cluster.relay.location.region` or `otoroshi.instance.region`, `local` by default). Matched against the `otoroshi-deployment-regions` metadata of a route",
+        "example": "eu-west-3"
+      },
+      "datacenter": {
+        "type": "string",
+        "description": "The datacenter of the instance (`otoroshi.cluster.relay.location.datacenter` or `otoroshi.instance.dc`, `local` by default). Matched against the `otoroshi-deployment-dcs` metadata of a route",
+        "example": "paris"
+      },
+      "rack": {
+        "type": "string",
+        "description": "The rack of the instance (`otoroshi.cluster.relay.location.rack` or `otoroshi.instance.rack`, `local` by default). Matched against the `otoroshi-deployment-racks` metadata of a route",
+        "example": "rack-1"
+      }
+    },
+    "example": {
+      "provider": "aws",
+      "zone": "eu-west-3a",
+      "region": "eu-west-3",
+      "datacenter": "paris",
+      "rack": "rack-1"
+    }
+  },
+  "InstanceExposition": {
+    "type": "object",
+    "description": "How the other instances of the cluster reach an otoroshi instance to relay calls to it",
+    "properties": {
+      "urls": {
+        "type": "array",
+        "description": "The base urls the other instances call to relay a request to the instance (`<url>/api/cluster/relay`), used one after the other (`otoroshi.cluster.relay.exposition.urls`)",
+        "items": {
+          "type": "string",
+          "description": "A url of the instance",
+          "example": "https://worker-1.oto.tools:8443"
+        },
+        "example": [
+          "https://worker-1.oto.tools:8443"
+        ]
+      },
+      "hostname": {
+        "type": "string",
+        "description": "The host name of the admin api of the instance, sent as the `Host` of the relayed calls",
+        "example": "otoroshi-api.oto.tools"
+      },
+      "clientId": {
+        "type": "string",
+        "description": "The client id of the api key the other instances use to call the instance (`otoroshi.cluster.relay.exposition.clientId`). Absent when they use the api key of the backoffice",
+        "example": "admin-api-apikey-id"
+      },
+      "clientSecret": {
+        "type": "string",
+        "description": "The client secret declared with `clientId` (`otoroshi.cluster.relay.exposition.clientSecret`). Not used by the relayed calls: the calling instance takes the secret of the api key `clientId` from its own state",
+        "example": "admin-api-apikey-secret"
+      },
+      "ipAddress": {
+        "type": "string",
+        "description": "The ip address used to reach the instance, instead of resolving the host of its urls",
+        "example": "10.0.12.34"
+      },
+      "tls": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MtlsConfig"
+          }
+        ],
+        "description": "The mtls settings of the relayed calls made to the instance (`otoroshi.cluster.relay.exposition.tls`), absent when they are not enabled"
+      }
+    },
+    "example": {
+      "urls": [
+        "https://worker-1.oto.tools:8443"
+      ],
+      "hostname": "otoroshi-api.oto.tools"
+    }
+  },
+  "RelayRouting": {
+    "type": "object",
+    "description": "The relay routing settings of an otoroshi instance (`otoroshi.cluster.relay`): whether the calls to a route can be relayed to another instance of the cluster that can reach its backend. The members listed by the leaders always show `enabled` true and `leaderOnly` false, whatever the configuration of the instance",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the instance relays the calls to a route whose deployment location (the `otoroshi-deployment-*` metadata of the route) does not match its own `location`, instead of calling the backend itself",
+        "example": false
+      },
+      "leaderOnly": {
+        "type": "boolean",
+        "description": "On a worker, whether the calls to relay are sent to the leaders (`otoroshi.cluster.leader.urls`) instead of an instance whose location matches the route",
+        "example": false
+      },
+      "location": {
+        "$ref": "#/components/schemas/InstanceLocation"
+      },
+      "exposition": {
+        "$ref": "#/components/schemas/InstanceExposition"
+      }
+    },
+    "example": {
+      "enabled": false,
+      "leaderOnly": false,
+      "location": {
+        "provider": "aws",
+        "zone": "eu-west-3a",
+        "region": "eu-west-3",
+        "datacenter": "paris",
+        "rack": "rack-1"
+      },
+      "exposition": {
+        "urls": [
+          "https://worker-1.oto.tools:8443"
+        ],
+        "hostname": "otoroshi-api.oto.tools"
+      }
+    }
+  },
+  "GlobalStatusUpdate": {
+    "type": "object",
+    "description": "The statistics an otoroshi instance of a cluster gives the leaders: its resources and its traffic. Workers send them as the last line of their quotas updates, the leaders compute their own, and the leaders keep them as the `stats` of the member",
+    "properties": {
+      "typ": {
+        "type": "string",
+        "description": "Selects the statistics of the sender (`globstats`): the leaders register the sender as a member of the cluster with these statistics",
+        "enum": [
+          "globstats"
+        ],
+        "example": "globstats"
+      },
+      "cpu_usage": {
+        "type": "number",
+        "format": "double",
+        "description": "The cpu usage of the process of the instance, in percent of the cpu of the machine. 0 when the java virtual machine does not tell it",
+        "example": 12.5
+      },
+      "load_average": {
+        "type": "number",
+        "format": "double",
+        "description": "The system load average of the machine of the instance over the last minute, negative when the system does not provide it",
+        "example": 1.42
+      },
+      "heap_used": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The heap memory used by the java virtual machine, in megabytes",
+        "example": 512
+      },
+      "heap_size": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The heap memory currently allocated by the java virtual machine, used and free, in megabytes",
+        "example": 1024
+      },
+      "live_threads": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of live threads of the java virtual machine, daemon threads included",
+        "example": 87
+      },
+      "live_peak_threads": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The highest number of live threads of the java virtual machine since it started",
+        "example": 102
+      },
+      "daemon_threads": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of live daemon threads of the java virtual machine",
+        "example": 54
+      },
+      "counters": {
+        "type": "object",
+        "description": "The number of requests the instance received since it started: `requests` for all of them, and one counter per protocol (`http`, `https`, `h2`, `h2c`, `h3`, `ws`, `wss`, `grpc`, `grpcs`), present once a request used it",
+        "additionalProperties": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The number of requests counted, since the instance started"
+        },
+        "example": {
+          "requests": 15230,
+          "http": 2310,
+          "https": 12480,
+          "h2": 410,
+          "ws": 30
+        }
+      },
+      "rate": {
+        "type": "number",
+        "format": "double",
+        "description": "The number of calls per second over all the routes, from the statistics of the instance",
+        "example": 41.25
+      },
+      "duration": {
+        "type": "number",
+        "format": "double",
+        "description": "The mean duration of the calls over all the routes, in milliseconds",
+        "example": 23.4
+      },
+      "overhead": {
+        "type": "number",
+        "format": "double",
+        "description": "The mean overhead of otoroshi on the calls over all the routes, in milliseconds",
+        "example": 1.8
+      },
+      "dataInRate": {
+        "type": "number",
+        "format": "double",
+        "description": "The number of bytes received per second over all the routes, from the statistics of the instance",
+        "example": 1024.0
+      },
+      "dataOutRate": {
+        "type": "number",
+        "format": "double",
+        "description": "The number of bytes sent per second over all the routes, from the statistics of the instance",
+        "example": 20480.0
+      },
+      "concurrentHandledRequests": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of requests the instance is handling when it builds the statistics",
+        "example": 4
+      }
+    },
+    "example": {
+      "typ": "globstats",
+      "cpu_usage": 12.5,
+      "load_average": 1.42,
+      "heap_used": 512,
+      "heap_size": 1024,
+      "live_threads": 87,
+      "live_peak_threads": 102,
+      "daemon_threads": 54,
+      "counters": {
+        "requests": 15230,
+        "http": 2310,
+        "https": 12480,
+        "h2": 410,
+        "ws": 30
+      },
+      "rate": 41.25,
+      "duration": 23.4,
+      "overhead": 1.8,
+      "dataInRate": 1024.0,
+      "dataOutRate": 20480.0,
+      "concurrentHandledRequests": 4
+    }
+  },
+  "MemberView": {
+    "type": "object",
+    "description": "An otoroshi instance member of a cluster, as known by the leaders: the leaders register themselves every few seconds, and register each worker that fetches the state or sends its quotas. A member is forgotten once its `timeout` has elapsed since it was last seen",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id the instance generates when it starts (`node_` followed by a uuid). A worker that sends no `Otoroshi-Worker-Id` header gets a temporary `tmpnode_` id",
+        "example": "node_9a6c2b1e-5d3f-4c8a-b7e2-0f1d2c3b4a5e"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the instance in the cluster (`otoroshi.cluster.leader.name` or `otoroshi.cluster.worker.name`, generated when absent). The leaders store the members by name: two instances with the same name are seen as one",
+        "example": "otoroshi-worker-1"
+      },
+      "version": {
+        "type": "string",
+        "description": "The version of otoroshi the instance runs, `undefined` when a worker does not send it",
+        "example": "18.0.0"
+      },
+      "javaVersion": {
+        "$ref": "#/components/schemas/JavaVersion"
+      },
+      "os": {
+        "$ref": "#/components/schemas/OS"
+      },
+      "location": {
+        "type": "string",
+        "description": "The ip address of the instance (`otoroshi.cluster.selfAddress`, or the one detected when it starts), `--` when a worker does not send it. Tunnels use it to reach the instance a tunnel is connected to",
+        "example": "10.0.12.34"
+      },
+      "httpPort": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The exposed http port of the instance",
+        "example": 8080
+      },
+      "httpsPort": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The exposed https port of the instance",
+        "example": 8443
+      },
+      "internalHttpPort": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The http port the instance listens on",
+        "example": 8080
+      },
+      "internalHttpsPort": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The https port the instance listens on",
+        "example": 8443
+      },
+      "lastSeen": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the instance was last seen by the leaders, a timestamp in milliseconds",
+        "example": 1792094628000
+      },
+      "timeout": {
+        "type": "integer",
+        "format": "int64",
+        "description": "How long after it was last seen the instance is forgotten, in milliseconds: 120000 for a leader, `otoroshi.cluster.worker.retries` times `otoroshi.cluster.worker.state.pollEvery` for a worker (30000 by default). Its health gets `orange` past half of it, `red` past three quarters",
+        "example": 30000
+      },
+      "type": {
+        "type": "string",
+        "description": "Whether the instance is a `Leader` or a `Worker` of the cluster (`Off` when the stored value is unknown)",
+        "enum": [
+          "Leader",
+          "Worker",
+          "Off"
+        ],
+        "example": "Worker"
+      },
+      "stats": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GlobalStatusUpdate"
+          }
+        ],
+        "description": "The last statistics the instance sent, `{}` before the first ones"
+      },
+      "relay": {
+        "$ref": "#/components/schemas/RelayRouting"
+      },
+      "tunnels": {
+        "type": "array",
+        "description": "The ids of the tunnels connected to the instance (`GET /api/tunnels/register`). The workers send theirs only through the websocket of the state",
+        "items": {
+          "type": "string",
+          "description": "The id of a tunnel connected to the instance",
+          "example": "datacenter-paris"
+        },
+        "example": [
+          "datacenter-paris"
+        ]
+      },
+      "time": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the leader answered, a timestamp in milliseconds: only in the answers of the members listing, to compare with `lastSeen`",
+        "example": 1792094630512
+      }
+    },
+    "example": {
+      "id": "node_9a6c2b1e-5d3f-4c8a-b7e2-0f1d2c3b4a5e",
+      "name": "otoroshi-worker-1",
+      "version": "18.0.0",
+      "javaVersion": {
+        "version": "17.0.2",
+        "vendor": "Oracle Corporation"
+      },
+      "os": {
+        "name": "Linux",
+        "version": "6.8.0-45-generic",
+        "arch": "amd64"
+      },
+      "location": "10.0.12.34",
+      "httpPort": 8080,
+      "httpsPort": 8443,
+      "internalHttpPort": 8080,
+      "internalHttpsPort": 8443,
+      "lastSeen": 1792094628000,
+      "timeout": 30000,
+      "type": "Worker",
+      "stats": {
+        "typ": "globstats",
+        "cpu_usage": 12.5,
+        "load_average": 1.42,
+        "heap_used": 512,
+        "heap_size": 1024,
+        "live_threads": 87,
+        "live_peak_threads": 102,
+        "daemon_threads": 54,
+        "counters": {
+          "requests": 15230,
+          "http": 2310,
+          "https": 12480,
+          "h2": 410,
+          "ws": 30
+        },
+        "rate": 41.25,
+        "duration": 23.4,
+        "overhead": 1.8,
+        "dataInRate": 1024.0,
+        "dataOutRate": 20480.0,
+        "concurrentHandledRequests": 4
+      },
+      "relay": {
+        "enabled": false,
+        "leaderOnly": false,
+        "location": {
+          "provider": "aws",
+          "zone": "eu-west-3a",
+          "region": "eu-west-3",
+          "datacenter": "paris",
+          "rack": "rack-1"
+        },
+        "exposition": {
+          "urls": [
+            "https://worker-1.oto.tools:8443"
+          ],
+          "hostname": "otoroshi-api.oto.tools"
+        }
+      },
+      "tunnels": [],
+      "time": 1792094630512
+    }
+  },
+  "ClusterToken": {
+    "type": "object",
+    "description": "A login or a user token known by the leaders of the cluster",
+    "properties": {
+      "token": {
+        "type": "string",
+        "description": "The value of the token: the login token checked or created, or the token a user was stored under",
+        "example": "2h9fK3xQ7mWz1LpR8vN4cT6yB0dS5jAe"
+      }
+    },
+    "example": {
+      "token": "2h9fK3xQ7mWz1LpR8vN4cT6yB0dS5jAe"
+    }
+  },
+  "ClusterUserToken": {
+    "type": "object",
+    "description": "A user token: the user an auth module identified, kept for the login flow that follows",
+    "required": [
+      "token",
+      "user"
+    ],
+    "properties": {
+      "token": {
+        "type": "string",
+        "description": "The value the user is stored under: the login token of the login flow, that the callback of the auth module reads the user with",
+        "example": "2h9fK3xQ7mWz1LpR8vN4cT6yB0dS5jAe"
+      },
+      "user": {
+        "type": "object",
+        "description": "The user the token stands for: the json of the user the auth module identified (a basic or an ldap user, for a private app or for the backoffice)",
+        "additionalProperties": true,
+        "example": {
+          "name": "John Doe",
+          "email": "john.doe@oto.tools"
+        }
+      }
+    },
+    "example": {
+      "token": "2h9fK3xQ7mWz1LpR8vN4cT6yB0dS5jAe",
+      "user": {
+        "name": "John Doe",
+        "email": "john.doe@oto.tools"
+      }
+    }
+  },
+  "ApikeyCallIncr": {
+    "type": "object",
+    "description": "A quotas update: the calls an api key made on a worker since its last update. The leaders add them to the quotas of the api key, an unknown api key is ignored",
+    "required": [
+      "typ",
+      "apk"
+    ],
+    "properties": {
+      "typ": {
+        "type": "string",
+        "description": "Selects the calls of an api key (`apkincr`): the leaders add `i` to the quotas of the api key",
+        "enum": [
+          "apkincr"
+        ],
+        "example": "apkincr"
+      },
+      "apk": {
+        "type": "string",
+        "description": "The client id of the api key the calls were made with",
+        "example": "v0stmnfeqy9fqbqh"
+      },
+      "i": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls to add to the quotas of the api key. Defaults to 0",
+        "example": 12
+      }
+    },
+    "example": {
+      "typ": "apkincr",
+      "apk": "v0stmnfeqy9fqbqh",
+      "i": 12
+    }
+  },
+  "RouteCallIncr": {
+    "type": "object",
+    "description": "A quotas update: the traffic of a route on a worker since its last update. The leaders add the calls and the bytes to the statistics of the route (when the embedded metrics of the global configuration are enabled), and give the whole update to the green score extension when it is enabled. A route the leaders do not know is ignored",
+    "required": [
+      "typ",
+      "srv"
+    ],
+    "properties": {
+      "typ": {
+        "type": "string",
+        "description": "Selects the traffic of a route (`srvincr`): the leaders add it to the statistics of the route",
+        "enum": [
+          "srvincr"
+        ],
+        "example": "srvincr"
+      },
+      "srv": {
+        "type": "string",
+        "description": "The id of the route the calls went through. Workers also send a line with `global` for the sum of the traffic of all their routes",
+        "example": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+      },
+      "c": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls to the route. Defaults to 0",
+        "example": 12
+      },
+      "di": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of bytes received from the clients. Defaults to 0",
+        "example": 2048
+      },
+      "do": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of bytes sent to the clients. Defaults to 0",
+        "example": 40960
+      },
+      "oh": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The cumulated overhead of otoroshi, in milliseconds. Defaults to 0",
+        "example": 18
+      },
+      "du": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The cumulated duration of the calls, in milliseconds. Defaults to 0",
+        "example": 240
+      },
+      "bdu": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The cumulated duration of the calls minus the time spent in their backend call step, in milliseconds, as workers compute it. Defaults to 0",
+        "example": 222
+      },
+      "hi": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of bytes of the request headers received. Workers always send 0. Defaults to 0",
+        "example": 4096
+      },
+      "ho": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of bytes of the response headers sent. Workers always send 0. Defaults to 0",
+        "example": 3072
+      }
+    },
+    "example": {
+      "typ": "srvincr",
+      "srv": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10",
+      "c": 12,
+      "di": 2048,
+      "do": 40960,
+      "oh": 18,
+      "du": 240,
+      "bdu": 222,
+      "hi": 4096,
+      "ho": 3072
+    }
+  },
+  "CustomQuotasIncr": {
+    "type": "object",
+    "description": "A quotas update: the calls counted by a `Custom quotas` plugin on a worker since its last update. The leaders add them to the daily and monthly counters of the plugin for this expression and group",
+    "required": [
+      "typ",
+      "e",
+      "g"
+    ],
+    "properties": {
+      "typ": {
+        "type": "string",
+        "description": "Selects the calls counted by a `Custom quotas` plugin (`custquots`): the leaders add them to its counters",
+        "enum": [
+          "custquots"
+        ],
+        "example": "custquots"
+      },
+      "e": {
+        "type": "string",
+        "description": "The `expression` of the plugin once evaluated (`${req.ip}` by default): the value the calls are counted by, like the ip address of the client",
+        "example": "192.168.1.42"
+      },
+      "g": {
+        "type": "string",
+        "description": "The group of the counter once evaluated: the `group` expression of the plugin, the id of the route when absent and `perRoute` is set, `global` otherwise",
+        "example": "global"
+      },
+      "c": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls to add to the counters. Defaults to 0",
+        "example": 5
+      }
+    },
+    "example": {
+      "typ": "custquots",
+      "e": "192.168.1.42",
+      "g": "global",
+      "c": 5
+    }
+  },
+  "CustomThrottlingIncr": {
+    "type": "object",
+    "description": "A quotas update: the calls counted by a `Custom throttling` plugin on a worker since its last update. The leaders add them to the counter of the current throttling window for this expression and group",
+    "required": [
+      "typ",
+      "e",
+      "g"
+    ],
+    "properties": {
+      "typ": {
+        "type": "string",
+        "description": "Selects the calls counted by a `Custom throttling` plugin (`custthrot`): the leaders add them to its counter",
+        "enum": [
+          "custthrot"
+        ],
+        "example": "custthrot"
+      },
+      "e": {
+        "type": "string",
+        "description": "The `expression` of the plugin once evaluated (`${req.ip}` by default): the value the calls are counted by, like the ip address of the client",
+        "example": "192.168.1.42"
+      },
+      "g": {
+        "type": "string",
+        "description": "The group of the counter once evaluated: the `group` expression of the plugin, the id of the route when absent and `perRoute` is set, `global` otherwise",
+        "example": "global"
+      },
+      "c": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls to add to the counter. Defaults to 0",
+        "example": 5
+      },
+      "t": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The duration of the throttling window, in milliseconds: `app.throttlingWindow` seconds (10 by default). Defaults to 0",
+        "example": 10000
+      }
+    },
+    "example": {
+      "typ": "custthrot",
+      "e": "192.168.1.42",
+      "g": "global",
+      "c": 5,
+      "t": 10000
+    }
+  },
+  "ClusterQuotasUpdate": {
+    "description": "A line of the quotas updates a worker sends to the leaders, its `typ` telling what it updates. A line of another type is ignored",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/GlobalStatusUpdate"
+      },
+      {
+        "$ref": "#/components/schemas/ApikeyCallIncr"
+      },
+      {
+        "$ref": "#/components/schemas/RouteCallIncr"
+      },
+      {
+        "$ref": "#/components/schemas/CustomQuotasIncr"
+      },
+      {
+        "$ref": "#/components/schemas/CustomThrottlingIncr"
+      }
+    ],
+    "example": {
+      "typ": "apkincr",
+      "apk": "v0stmnfeqy9fqbqh",
+      "i": 12
+    }
+  }
+}

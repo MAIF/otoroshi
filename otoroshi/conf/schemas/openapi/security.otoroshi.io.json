@@ -1,0 +1,4211 @@
+{
+  "security.otoroshi.io.AdminSession": {
+    "type": "object",
+    "description": "The session of a user logged in to the backoffice. It is created when the user logs in, and removed when it logs out or when it expires: the api reads and deletes them, it does not create nor update them",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "randomId": {
+        "type": "string",
+        "description": "The id of the session, a random token",
+        "example": "Nf3kR9tWq2LmZ8xVb7Yc1Hd4Gp6Js0Ae5Uo3Ki9Tr2Wy8Qn1Mx7Bv4Cz6Dl0Fh2"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the user, read from the profile given by the identity provider, or the login (`username`) of an otoroshi admin. Shown in the list of the admin sessions of the backoffice",
+        "example": "John Doe"
+      },
+      "email": {
+        "type": "string",
+        "description": "The email of the user, or the login of an otoroshi admin: the `allowedUsers` and `deniedUsers` of the module are checked against it, and the `rightsOverride` and `adminEntityValidatorsOverride` of the module are keyed by it",
+        "example": "john.doe@oto.tools"
+      },
+      "authConfigId": {
+        "type": "string",
+        "description": "The id of the auth module the user logged in with, `none` for an otoroshi admin (login and password or WebAuthn). `none` when missing",
+        "example": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "profile": {
+        "type": "object",
+        "description": "The profile of the user given by the identity provider. Its shape depends on the provider. `{}` when missing",
+        "additionalProperties": true,
+        "example": {
+          "sub": "4f9c2d1e",
+          "name": "John Doe",
+          "email": "john.doe@oto.tools",
+          "email_verified": true
+        }
+      },
+      "token": {
+        "type": "object",
+        "description": "The tokens given by the identity provider (access token, refresh token...). Its shape depends on the provider. `{}` when missing",
+        "additionalProperties": true,
+        "example": {
+          "access_token": "eyJhbGciOiJSUzI1NiJ9.e30.c2lnbmF0dXJl",
+          "refresh_token": "eyJhbGciOiJIUzI1NiJ9.e30.c2lnbmF0dXJl",
+          "token_type": "Bearer",
+          "expires_in": 300
+        }
+      },
+      "simpleLogin": {
+        "type": "boolean",
+        "description": "Whether the user is an otoroshi admin that logged in with its login and password, not through an auth module: logging out then only deletes the session, without going through the auth module of the backoffice. False for a WebAuthn login. True when missing"
+      },
+      "createdAt": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the session was created, a timestamp in milliseconds. Now when missing",
+        "example": 1760000000000
+      },
+      "expiredAt": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the session expires, a timestamp in milliseconds. Now when missing",
+        "example": 1760086400000
+      },
+      "lastRefresh": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the tokens of the session were last refreshed, a timestamp in milliseconds. Now when missing",
+        "example": 1760000000000
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the session, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {}
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the session. The built-in login flows leave it empty, a wasm or a workflow auth module sets it in the user it answers",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sso"
+        },
+        "example": [
+          "sso"
+        ]
+      },
+      "rights": {
+        "type": "array",
+        "description": "The rights of the user on the tenants (organizations) and teams of otoroshi. `[{\"tenant\": \"*:rw\", \"teams\": [\"*:rw\"]}]` makes a super admin",
+        "items": {
+          "$ref": "#/components/schemas/UserRight"
+        },
+        "example": [
+          {
+            "tenant": "default:rw",
+            "teams": [
+              "default:rw"
+            ]
+          }
+        ]
+      },
+      "adminEntityValidators": {
+        "type": "object",
+        "description": "The validators the entities written by the user have to pass, by entity kind",
+        "additionalProperties": {
+          "type": "array",
+          "description": "The validators of an entity kind, keyed by the singular name of the kind (`route`, `apikey`, `certificate`...) or `all` for every kind. Every validator has to pass for the entity to be written",
+          "items": {
+            "$ref": "#/components/schemas/JsonValidator"
+          }
+        },
+        "example": {
+          "route": [
+            {
+              "kind": "json-path-validator",
+              "path": "$.frontend.domains[0]",
+              "value": "Wildcard(*.oto.tools)",
+              "error": "routes can only be exposed on oto.tools"
+            }
+          ]
+        }
+      }
+    },
+    "required": [
+      "randomId",
+      "name",
+      "email"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "randomId": "Nf3kR9tWq2LmZ8xVb7Yc1Hd4Gp6Js0Ae5Uo3Ki9Tr2Wy8Qn1Mx7Bv4Cz6Dl0Fh2",
+      "name": "John Doe",
+      "email": "john.doe@oto.tools",
+      "authConfigId": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "profile": {
+        "sub": "4f9c2d1e",
+        "name": "John Doe",
+        "email": "john.doe@oto.tools",
+        "email_verified": true
+      },
+      "token": {
+        "access_token": "eyJhbGciOiJSUzI1NiJ9.e30.c2lnbmF0dXJl",
+        "refresh_token": "eyJhbGciOiJIUzI1NiJ9.e30.c2lnbmF0dXJl",
+        "token_type": "Bearer",
+        "expires_in": 300
+      },
+      "simpleLogin": false,
+      "createdAt": 1760000000000,
+      "expiredAt": 1760086400000,
+      "lastRefresh": 1760000000000,
+      "metadata": {},
+      "tags": [],
+      "rights": [
+        {
+          "tenant": "default:rw",
+          "teams": [
+            "default:rw"
+          ]
+        }
+      ],
+      "adminEntityValidators": {}
+    }
+  },
+  "security.otoroshi.io.AuthModule": {
+    "type": "object",
+    "description": "An auth module: how the users log in to the private apps (the routes using the `Authentication` plugin) or to the backoffice. Its `type` selects the identity provider: in memory users (`basic`), OAuth2 / OpenID Connect (`oauth2`), LDAP (`ldap`), SAML v2 (`saml`), OAuth 1.0a (`oauth1`), or a login flow implemented by a wasm plugin (`wasm`) or a workflow (`workflow`). The template of a type is served by `_template?type=<type>`",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/BasicAuthModuleConfig"
+      },
+      {
+        "$ref": "#/components/schemas/GenericOauth2ModuleConfig"
+      },
+      {
+        "$ref": "#/components/schemas/LdapAuthModuleConfig"
+      },
+      {
+        "$ref": "#/components/schemas/SamlAuthModuleConfig"
+      },
+      {
+        "$ref": "#/components/schemas/Oauth1ModuleConfig"
+      },
+      {
+        "$ref": "#/components/schemas/WasmAuthModuleConfig"
+      },
+      {
+        "$ref": "#/components/schemas/WorkflowAuthModuleConfig"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "basic": "#/components/schemas/BasicAuthModuleConfig",
+        "oauth2": "#/components/schemas/GenericOauth2ModuleConfig",
+        "ldap": "#/components/schemas/LdapAuthModuleConfig",
+        "saml": "#/components/schemas/SamlAuthModuleConfig",
+        "oauth1": "#/components/schemas/Oauth1ModuleConfig",
+        "wasm": "#/components/schemas/WasmAuthModuleConfig",
+        "workflow": "#/components/schemas/WorkflowAuthModuleConfig"
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "oauth2",
+      "id": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "name": "Keycloak",
+      "desc": "Login with the Keycloak of the company",
+      "clientSideSessionEnabled": true,
+      "sessionMaxAge": 86400,
+      "userValidators": [],
+      "remoteValidators": [],
+      "clientId": "otoroshi",
+      "clientSecret": "${vault://local/keycloak-client-secret}",
+      "authorizeUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/auth",
+      "tokenUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/token",
+      "userInfoUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/userinfo",
+      "introspectionUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/token/introspect",
+      "loginUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/auth",
+      "logoutUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/logout",
+      "scope": "openid profile email name",
+      "claims": "email name",
+      "useCookie": false,
+      "useJson": false,
+      "pkce": {
+        "enabled": true,
+        "algorithm": "S256"
+      },
+      "noWildcardRedirectURI": true,
+      "readProfileFromToken": false,
+      "accessTokenField": "access_token",
+      "jwtVerifier": null,
+      "nameField": "name",
+      "emailField": "email",
+      "apiKeyMetaField": "apkMeta",
+      "apiKeyTagsField": "apkTags",
+      "otoroshiDataField": "app_metadata|otoroshi_data",
+      "callbackUrl": "http://privateapps.oto.tools:8080/privateapps/generic/callback",
+      "oidConfig": "https://keycloak.oto.tools/realms/master/.well-known/openid-configuration",
+      "mtlsConfig": {
+        "certs": [],
+        "trustedCerts": [],
+        "mtls": false,
+        "loose": false,
+        "trustAll": false
+      },
+      "proxy": null,
+      "extraMetadata": {},
+      "metadata": {},
+      "tags": [],
+      "refreshTokens": false,
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": true
+      },
+      "superAdmins": false,
+      "rightsOverride": {},
+      "dataOverride": {},
+      "otoroshiRightsField": "otoroshi_rights",
+      "allowedUsers": [],
+      "deniedUsers": [],
+      "adminEntityValidatorsOverride": {}
+    }
+  },
+  "BasicAuthModuleConfig": {
+    "type": "object",
+    "description": "An in memory auth module: its users and their passwords are stored in the module itself",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "type": {
+        "type": "string",
+        "description": "The type of the auth module, `basic` for an in memory auth module",
+        "enum": [
+          "basic"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the auth module, named by the `module` of the `Authentication` plugin of the routes, the `modules` of the `Multi Authentication` plugin, or the `backOfficeAuthRef` of the global configuration",
+        "example": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the auth module, shown in the backoffice and on the login page of the routes that offer several auth modules (`Multi Authentication` plugin)",
+        "example": "Company SSO"
+      },
+      "desc": {
+        "type": "string",
+        "description": "The description of the auth module. `--` when missing",
+        "example": "Login with the company identity provider"
+      },
+      "basicAuth": {
+        "type": "boolean",
+        "description": "Also accept the credentials of an `Authorization: Basic` header, without going through the login page. False when missing"
+      },
+      "webauthn": {
+        "type": "boolean",
+        "description": "Let the users log in with a WebAuthn device (security key, biometrics). False when missing"
+      },
+      "clientSideSessionEnabled": {
+        "type": "boolean",
+        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. True when missing"
+      },
+      "sessionMaxAge": {
+        "type": "integer",
+        "format": "int32",
+        "description": "How long a session lasts, in seconds. 86400 (a day) when missing",
+        "example": 3600
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the auth module, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "owner": "security-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the auth module, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sso"
+        },
+        "example": [
+          "sso"
+        ]
+      },
+      "users": {
+        "type": "array",
+        "description": "The users that can log in through the module, with their email, their bcrypt hashed password, their profile data and their rights in the backoffice. Empty when missing",
+        "items": {
+          "$ref": "#/components/schemas/BasicAuthUser"
+        },
+        "example": [
+          {
+            "name": "John Doe",
+            "password": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+            "email": "john.doe@oto.tools",
+            "metadata": {
+              "department": "sales"
+            },
+            "tags": [],
+            "webauthn": null,
+            "rights": [
+              {
+                "tenant": "default:rw",
+                "teams": [
+                  "default:rw"
+                ]
+              }
+            ],
+            "adminEntityValidators": {}
+          }
+        ]
+      },
+      "sessionCookieValues": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SessionCookieValues"
+          }
+        ],
+        "description": "The `HttpOnly` and `Secure` flags of the session cookies set on the private apps once a user has logged in through the module. Both true when missing"
+      },
+      "userValidators": {
+        "type": "array",
+        "description": "The checks of the profile of a user that logs in. Every check has to pass for the user to get in",
+        "items": {
+          "$ref": "#/components/schemas/JsonPathValidator"
+        },
+        "example": [
+          {
+            "kind": "json-path-validator",
+            "path": "$.profile.groups",
+            "value": "Contains(admins)",
+            "error": "the user is not a member of the admins group"
+          }
+        ]
+      },
+      "allowedUsers": {
+        "type": "array",
+        "description": "The users allowed to log in, by email. Everybody when empty",
+        "items": {
+          "type": "string",
+          "description": "A user allowed to log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "Wildcard(*@oto.tools)"
+        },
+        "example": [
+          "Wildcard(*@oto.tools)"
+        ]
+      },
+      "deniedUsers": {
+        "type": "array",
+        "description": "The users that cannot log in, by email",
+        "items": {
+          "type": "string",
+          "description": "A user that cannot log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "john.doe@oto.tools"
+        },
+        "example": [
+          "Regex(.*@partner\\.com)"
+        ]
+      },
+      "remoteValidators": {
+        "type": "array",
+        "description": "The remote services that validate a user that logs in. Every service has to accept the user",
+        "items": {
+          "$ref": "#/components/schemas/RemoteUserValidatorSettings"
+        },
+        "example": [
+          {
+            "url": "https://users.oto.tools/api/users/_validate",
+            "headers": {
+              "Authorization": "Bearer xxxxx"
+            },
+            "timeout": 5000,
+            "tls_settings": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ]
+      }
+    },
+    "required": [
+      "type",
+      "id",
+      "name"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "basic",
+      "id": "auth_mod_8f2d6c1a-7b3e-4c9d-a5f0-2e1b3c4d5e6f",
+      "name": "In memory users",
+      "desc": "The users of the team",
+      "basicAuth": false,
+      "webauthn": false,
+      "clientSideSessionEnabled": true,
+      "sessionMaxAge": 86400,
+      "metadata": {},
+      "tags": [],
+      "users": [
+        {
+          "name": "John Doe",
+          "password": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+          "email": "john.doe@oto.tools",
+          "metadata": {
+            "department": "sales"
+          },
+          "tags": [],
+          "webauthn": null,
+          "rights": [
+            {
+              "tenant": "default:rw",
+              "teams": [
+                "default:rw"
+              ]
+            }
+          ],
+          "adminEntityValidators": {}
+        }
+      ],
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": true
+      },
+      "userValidators": [],
+      "allowedUsers": [],
+      "deniedUsers": [],
+      "remoteValidators": []
+    }
+  },
+  "GenericOauth2ModuleConfig": {
+    "type": "object",
+    "description": "An OAuth2 / OpenID Connect auth module: the users log in on an identity provider (Keycloak, Auth0, Azure AD...) through the authorization code flow",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "type": {
+        "type": "string",
+        "description": "The type of the auth module, `oauth2` for an OAuth2 / OpenID Connect auth module. The legacy `oauth2-global` is read too, and written `oauth2`",
+        "enum": [
+          "oauth2"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the auth module, named by the `module` of the `Authentication` plugin of the routes, the `modules` of the `Multi Authentication` plugin, or the `backOfficeAuthRef` of the global configuration",
+        "example": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the auth module, shown in the backoffice and on the login page of the routes that offer several auth modules (`Multi Authentication` plugin)",
+        "example": "Company SSO"
+      },
+      "desc": {
+        "type": "string",
+        "description": "The description of the auth module. `--` when missing",
+        "example": "Login with the company identity provider"
+      },
+      "clientSideSessionEnabled": {
+        "type": "boolean",
+        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. True when missing"
+      },
+      "sessionMaxAge": {
+        "type": "integer",
+        "format": "int32",
+        "description": "How long a session lasts, in seconds. 86400 (a day) when missing",
+        "example": 3600
+      },
+      "userValidators": {
+        "type": "array",
+        "description": "The checks of the profile of a user that logs in. Every check has to pass for the user to get in",
+        "items": {
+          "$ref": "#/components/schemas/JsonPathValidator"
+        },
+        "example": [
+          {
+            "kind": "json-path-validator",
+            "path": "$.profile.groups",
+            "value": "Contains(admins)",
+            "error": "the user is not a member of the admins group"
+          }
+        ]
+      },
+      "remoteValidators": {
+        "type": "array",
+        "description": "The remote services that validate a user that logs in. Every service has to accept the user",
+        "items": {
+          "$ref": "#/components/schemas/RemoteUserValidatorSettings"
+        },
+        "example": [
+          {
+            "url": "https://users.oto.tools/api/users/_validate",
+            "headers": {
+              "Authorization": "Bearer xxxxx"
+            },
+            "timeout": 5000,
+            "tls_settings": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ]
+      },
+      "clientId": {
+        "type": "string",
+        "description": "The client id of otoroshi on the identity provider. `client` when missing",
+        "example": "otoroshi"
+      },
+      "clientSecret": {
+        "type": "string",
+        "description": "The client secret of otoroshi on the identity provider. It can be a vault reference like `${vault://local/client-secret}`. `secret` when missing",
+        "example": "${vault://local/keycloak-client-secret}"
+      },
+      "authorizeUrl": {
+        "type": "string",
+        "description": "The authorization endpoint of the identity provider",
+        "example": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/auth"
+      },
+      "tokenUrl": {
+        "type": "string",
+        "description": "The token endpoint of the identity provider, called to exchange the authorization code for the tokens",
+        "example": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/token"
+      },
+      "userInfoUrl": {
+        "type": "string",
+        "description": "The userinfo endpoint of the identity provider, called to get the profile of the user",
+        "example": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/userinfo"
+      },
+      "introspectionUrl": {
+        "type": "string",
+        "description": "The token introspection endpoint (RFC 7662) of the identity provider, used to check opaque access tokens",
+        "example": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/token/introspect"
+      },
+      "loginUrl": {
+        "type": "string",
+        "description": "The url the users are redirected to in order to log in, usually the authorization endpoint",
+        "example": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/auth"
+      },
+      "logoutUrl": {
+        "type": "string",
+        "description": "The url the users are redirected to when they log out, the client id being added to it. Nothing is called when empty",
+        "example": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/logout"
+      },
+      "scope": {
+        "type": "string",
+        "description": "The scopes asked to the identity provider, separated by spaces. `openid profile email name` when missing",
+        "example": "openid profile email"
+      },
+      "claims": {
+        "type": "string",
+        "description": "The `claims` parameter sent to the identity provider, not sent when empty. `email name` when missing",
+        "example": "email name"
+      },
+      "useCookie": {
+        "type": "boolean",
+        "description": "Keep the route the user comes from in a cookie instead of a query parameter of the redirect uri, for the identity providers that refuse query parameters in redirect uris. False when missing"
+      },
+      "useJson": {
+        "type": "boolean",
+        "description": "Send the payloads of the calls to the token, userinfo and introspection endpoints as json instead of form urlencoded. False when missing"
+      },
+      "pkce": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PKCEConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "The PKCE settings of the authorization code flow, null to not use PKCE"
+      },
+      "noWildcardRedirectURI": {
+        "type": "boolean",
+        "description": "Send the callback url as is as the redirect uri, without query parameters, as OAuth 2.1 requires. False when missing"
+      },
+      "readProfileFromToken": {
+        "type": "boolean",
+        "description": "Read the profile of the user from the claims of the access token, verified with `jwtVerifier`, instead of calling the userinfo endpoint. Only used when `jwtVerifier` is set. False when missing"
+      },
+      "accessTokenField": {
+        "type": "string",
+        "description": "The field of the answer of the token endpoint holding the access token. `access_token` when missing",
+        "example": "access_token"
+      },
+      "jwtVerifier": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AlgoSettings"
+          }
+        ],
+        "nullable": true,
+        "description": "How the signature of the access tokens of the identity provider is verified when the profile of the user is read from them (`readProfileFromToken`), null when the profile comes from the userinfo endpoint"
+      },
+      "nameField": {
+        "type": "string",
+        "description": "The field of the profile holding the name of the user. `name` when missing",
+        "example": "name"
+      },
+      "emailField": {
+        "type": "string",
+        "description": "The field of the profile holding the email of the user. `email` when missing",
+        "example": "email"
+      },
+      "apiKeyMetaField": {
+        "type": "string",
+        "description": "The field of the profile holding the metadata of the api keys the user creates (client credentials). `apkMeta` when missing",
+        "example": "apkMeta"
+      },
+      "apiKeyTagsField": {
+        "type": "string",
+        "description": "The field of the profile holding the tags of the api keys the user creates (client credentials). `apkTags` when missing",
+        "example": "apkTags"
+      },
+      "otoroshiDataField": {
+        "type": "string",
+        "description": "The path of the field of the profile holding the otoroshi data of the user (sent to the backends), the parts of the path being separated by `|`. `app_metadata | otoroshi_data` when missing",
+        "example": "app_metadata|otoroshi_data"
+      },
+      "callbackUrl": {
+        "type": "string",
+        "description": "The url the identity provider redirects the users to once logged in: the callback of the private apps, or the one of the backoffice (`/backoffice/auth0/callback`)",
+        "example": "http://privateapps.oto.tools:8080/privateapps/generic/callback"
+      },
+      "oidConfig": {
+        "type": "string",
+        "nullable": true,
+        "description": "The url of the OpenID Connect discovery document of the identity provider (ending with `.well-known/openid-configuration`), null when the endpoints are set by hand",
+        "example": "https://keycloak.oto.tools/realms/master/.well-known/openid-configuration"
+      },
+      "mtlsConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MtlsConfig"
+          }
+        ],
+        "description": "The tls settings of the calls to the identity provider"
+      },
+      "proxy": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The http proxy of the calls to the identity provider, null to use the auth proxy of the global configuration"
+      },
+      "extraMetadata": {
+        "type": "object",
+        "description": "A json object merged into the otoroshi data of the users that log in, sent to the backends of the private apps",
+        "additionalProperties": true,
+        "example": {
+          "source": "sso"
+        }
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the auth module, free key/value pairs. They are copied to the sessions of the users that log in to the private apps",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "owner": "security-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the auth module, to search and sort it. They are copied to the sessions of the users that log in to the private apps",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sso"
+        },
+        "example": [
+          "sso"
+        ]
+      },
+      "refreshTokens": {
+        "type": "boolean",
+        "description": "Refresh the access token of the users with their refresh token when it expires. False when missing"
+      },
+      "sessionCookieValues": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SessionCookieValues"
+          }
+        ],
+        "description": "The `HttpOnly` and `Secure` flags of the session cookies set on the private apps once a user has logged in through the module. Both true when missing"
+      },
+      "superAdmins": {
+        "type": "boolean",
+        "description": "Give super admin rights to every user that logs in to the backoffice. When false, the rights come from `rightsOverride`, then from the `otoroshiRightsField` of the profile, then from the location of the module. True when missing, for the modules written before the field existed"
+      },
+      "rightsOverride": {
+        "type": "object",
+        "description": "The rights given to some users in the backoffice, by email. They replace the rights the user gets otherwise",
+        "additionalProperties": {
+          "type": "array",
+          "description": "The rights of the user. `[{\"tenant\": \"*:rw\", \"teams\": [\"*:rw\"]}]` makes a super admin",
+          "items": {
+            "$ref": "#/components/schemas/UserRight"
+          },
+          "example": [
+            {
+              "tenant": "default:rw",
+              "teams": [
+                "default:rw"
+              ]
+            }
+          ]
+        },
+        "example": {
+          "john.doe@oto.tools": [
+            {
+              "tenant": "*:rw",
+              "teams": [
+                "*:rw"
+              ]
+            }
+          ]
+        }
+      },
+      "dataOverride": {
+        "type": "object",
+        "description": "The otoroshi data of some users, by email: merged into the otoroshi data of the user sent to the backends of the private apps",
+        "additionalProperties": {
+          "type": "object",
+          "description": "The otoroshi data of the user, any json object",
+          "additionalProperties": true
+        },
+        "example": {
+          "john.doe@oto.tools": {
+            "employee_id": "42"
+          }
+        }
+      },
+      "otoroshiRightsField": {
+        "type": "string",
+        "description": "The field of the profile holding the rights of the user in the backoffice. `otoroshi_rights` when missing",
+        "example": "otoroshi_rights"
+      },
+      "allowedUsers": {
+        "type": "array",
+        "description": "The users allowed to log in, by email. Everybody when empty",
+        "items": {
+          "type": "string",
+          "description": "A user allowed to log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "Wildcard(*@oto.tools)"
+        },
+        "example": [
+          "Wildcard(*@oto.tools)"
+        ]
+      },
+      "deniedUsers": {
+        "type": "array",
+        "description": "The users that cannot log in, by email",
+        "items": {
+          "type": "string",
+          "description": "A user that cannot log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "john.doe@oto.tools"
+        },
+        "example": [
+          "Regex(.*@partner\\.com)"
+        ]
+      },
+      "adminEntityValidatorsOverride": {
+        "type": "object",
+        "description": "The validators the entities written in the backoffice by some users have to pass, by email of the user, then by entity kind",
+        "additionalProperties": {
+          "type": "object",
+          "description": "The validators of the entities written by the user, keyed by the singular name of the entity kind or `all`",
+          "additionalProperties": {
+            "type": "array",
+            "description": "The validators of an entity kind, keyed by the singular name of the kind (`route`, `apikey`, `certificate`...) or `all` for every kind. Every validator has to pass for the entity to be written",
+            "items": {
+              "$ref": "#/components/schemas/JsonValidator"
+            }
+          },
+          "example": {
+            "route": [
+              {
+                "kind": "json-path-validator",
+                "path": "$.frontend.domains[0]",
+                "value": "Wildcard(*.oto.tools)",
+                "error": "routes can only be exposed on oto.tools"
+              }
+            ]
+          }
+        },
+        "example": {
+          "john.doe@oto.tools": {
+            "route": [
+              {
+                "kind": "json-path-validator",
+                "path": "$.frontend.domains[0]",
+                "value": "Wildcard(*.oto.tools)",
+                "error": "routes can only be exposed on oto.tools"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "required": [
+      "type",
+      "id",
+      "name"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "oauth2",
+      "id": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "name": "Keycloak",
+      "desc": "Login with the Keycloak of the company",
+      "clientSideSessionEnabled": true,
+      "sessionMaxAge": 86400,
+      "userValidators": [],
+      "remoteValidators": [],
+      "clientId": "otoroshi",
+      "clientSecret": "${vault://local/keycloak-client-secret}",
+      "authorizeUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/auth",
+      "tokenUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/token",
+      "userInfoUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/userinfo",
+      "introspectionUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/token/introspect",
+      "loginUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/auth",
+      "logoutUrl": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/logout",
+      "scope": "openid profile email name",
+      "claims": "email name",
+      "useCookie": false,
+      "useJson": false,
+      "pkce": {
+        "enabled": true,
+        "algorithm": "S256"
+      },
+      "noWildcardRedirectURI": true,
+      "readProfileFromToken": false,
+      "accessTokenField": "access_token",
+      "jwtVerifier": null,
+      "nameField": "name",
+      "emailField": "email",
+      "apiKeyMetaField": "apkMeta",
+      "apiKeyTagsField": "apkTags",
+      "otoroshiDataField": "app_metadata|otoroshi_data",
+      "callbackUrl": "http://privateapps.oto.tools:8080/privateapps/generic/callback",
+      "oidConfig": "https://keycloak.oto.tools/realms/master/.well-known/openid-configuration",
+      "mtlsConfig": {
+        "certs": [],
+        "trustedCerts": [],
+        "mtls": false,
+        "loose": false,
+        "trustAll": false
+      },
+      "proxy": null,
+      "extraMetadata": {},
+      "metadata": {},
+      "tags": [],
+      "refreshTokens": false,
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": true
+      },
+      "superAdmins": false,
+      "rightsOverride": {},
+      "dataOverride": {},
+      "otoroshiRightsField": "otoroshi_rights",
+      "allowedUsers": [],
+      "deniedUsers": [],
+      "adminEntityValidatorsOverride": {}
+    }
+  },
+  "LdapAuthModuleConfig": {
+    "type": "object",
+    "description": "An LDAP auth module: the users log in with their credentials of an LDAP directory (Active Directory, OpenLDAP...)",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "type": {
+        "type": "string",
+        "description": "The type of the auth module, `ldap` for an LDAP auth module",
+        "enum": [
+          "ldap"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the auth module, named by the `module` of the `Authentication` plugin of the routes, the `modules` of the `Multi Authentication` plugin, or the `backOfficeAuthRef` of the global configuration",
+        "example": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the auth module, shown in the backoffice and on the login page of the routes that offer several auth modules (`Multi Authentication` plugin)",
+        "example": "Company SSO"
+      },
+      "desc": {
+        "type": "string",
+        "description": "The description of the auth module. `--` when missing",
+        "example": "Login with the company identity provider"
+      },
+      "basicAuth": {
+        "type": "boolean",
+        "description": "Also accept the credentials of an `Authorization: Basic` header, without going through the login page. False when missing"
+      },
+      "allowEmptyPassword": {
+        "type": "boolean",
+        "description": "Accept an empty password, for the directories that allow anonymous binds. False when missing"
+      },
+      "clientSideSessionEnabled": {
+        "type": "boolean",
+        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. True when missing"
+      },
+      "sessionMaxAge": {
+        "type": "integer",
+        "format": "int32",
+        "description": "How long a session lasts, in seconds. 86400 (a day) when missing",
+        "example": 3600
+      },
+      "userValidators": {
+        "type": "array",
+        "description": "The checks of the profile of a user that logs in. Every check has to pass for the user to get in",
+        "items": {
+          "$ref": "#/components/schemas/JsonPathValidator"
+        },
+        "example": [
+          {
+            "kind": "json-path-validator",
+            "path": "$.profile.groups",
+            "value": "Contains(admins)",
+            "error": "the user is not a member of the admins group"
+          }
+        ]
+      },
+      "remoteValidators": {
+        "type": "array",
+        "description": "The remote services that validate a user that logs in. Every service has to accept the user",
+        "items": {
+          "$ref": "#/components/schemas/RemoteUserValidatorSettings"
+        },
+        "example": [
+          {
+            "url": "https://users.oto.tools/api/users/_validate",
+            "headers": {
+              "Authorization": "Bearer xxxxx"
+            },
+            "timeout": 5000,
+            "tls_settings": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ]
+      },
+      "serverUrls": {
+        "type": "array",
+        "description": "The urls of the LDAP servers, tried in turn when one does not answer. A legacy `serverUrl` string is read as a single url",
+        "items": {
+          "type": "string",
+          "description": "The url of an LDAP server",
+          "example": "ldap://ldap.forumsys.com:389"
+        },
+        "example": [
+          "ldap://ldap.forumsys.com:389"
+        ]
+      },
+      "searchBase": {
+        "type": "string",
+        "description": "The base DN of the searches of users and groups",
+        "example": "dc=example,dc=com"
+      },
+      "userBase": {
+        "type": "string",
+        "nullable": true,
+        "description": "The DN, relative to `searchBase`, under which the users are searched. Null to search the whole `searchBase`",
+        "example": "ou=people"
+      },
+      "groupFilters": {
+        "type": "array",
+        "description": "The groups whose members can log in, with the rights they get. Every user found can log in when empty. A legacy `groupFilter` string is read as one group for each team of the module",
+        "items": {
+          "$ref": "#/components/schemas/GroupFilter"
+        },
+        "example": [
+          {
+            "group": "(&(objectClass=groupOfUniqueNames)(ou=chemists))",
+            "team": "default",
+            "tenant": "default:rw"
+          }
+        ]
+      },
+      "searchFilter": {
+        "type": "string",
+        "description": "The LDAP filter finding the user, `${username}` being replaced by the login typed by the user",
+        "example": "(uid=${username})"
+      },
+      "adminUsername": {
+        "type": "string",
+        "nullable": true,
+        "description": "The DN of the account binding to the directory to search the users, null for an anonymous bind",
+        "example": "cn=read-only-admin,dc=example,dc=com"
+      },
+      "adminPassword": {
+        "type": "string",
+        "nullable": true,
+        "description": "The password of `adminUsername`, null for an anonymous bind. It can be a vault reference like `${vault://local/ldap-password}`",
+        "example": "${vault://local/ldap-admin-password}"
+      },
+      "nameField": {
+        "type": "string",
+        "description": "The attribute holding the name of the user",
+        "example": "cn"
+      },
+      "emailField": {
+        "type": "string",
+        "description": "The attribute holding the email of the user",
+        "example": "mail"
+      },
+      "metadataField": {
+        "type": "string",
+        "nullable": true,
+        "description": "The attribute holding the otoroshi data of the user, as a json object. Null when there is none",
+        "example": "otoroshiData"
+      },
+      "extraMetadata": {
+        "type": "object",
+        "description": "A json object merged into the otoroshi data of the users that log in, sent to the backends of the private apps",
+        "additionalProperties": true,
+        "example": {
+          "source": "sso"
+        }
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the auth module, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "owner": "security-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the auth module, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sso"
+        },
+        "example": [
+          "sso"
+        ]
+      },
+      "sessionCookieValues": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SessionCookieValues"
+          }
+        ],
+        "description": "The `HttpOnly` and `Secure` flags of the session cookies set on the private apps once a user has logged in through the module. Both true when missing"
+      },
+      "superAdmins": {
+        "type": "boolean",
+        "description": "Give super admin rights to every user that logs in to the backoffice. False when missing"
+      },
+      "extractProfile": {
+        "type": "boolean",
+        "description": "Put the attributes of the user in its profile. False when missing"
+      },
+      "extractProfileFilter": {
+        "type": "array",
+        "description": "The regexes of the attributes put in the profile when `extractProfile` is true. Every attribute when empty",
+        "items": {
+          "type": "string",
+          "description": "A regex of attribute names",
+          "example": "mail|cn|uid"
+        },
+        "example": [
+          "mail|cn|uid"
+        ]
+      },
+      "extractProfileFilterNot": {
+        "type": "array",
+        "description": "The regexes of the attributes left out of the profile when `extractProfile` is true",
+        "items": {
+          "type": "string",
+          "description": "A regex of attribute names",
+          "example": "userPassword"
+        },
+        "example": [
+          "userPassword"
+        ]
+      },
+      "rightsOverride": {
+        "type": "object",
+        "description": "The rights given to some users in the backoffice, by email. They replace the rights the user gets otherwise",
+        "additionalProperties": {
+          "type": "array",
+          "description": "The rights of the user. `[{\"tenant\": \"*:rw\", \"teams\": [\"*:rw\"]}]` makes a super admin",
+          "items": {
+            "$ref": "#/components/schemas/UserRight"
+          },
+          "example": [
+            {
+              "tenant": "default:rw",
+              "teams": [
+                "default:rw"
+              ]
+            }
+          ]
+        },
+        "example": {
+          "john.doe@oto.tools": [
+            {
+              "tenant": "*:rw",
+              "teams": [
+                "*:rw"
+              ]
+            }
+          ]
+        }
+      },
+      "dataOverride": {
+        "type": "object",
+        "description": "The otoroshi data of some users, by email: merged into the otoroshi data of the user sent to the backends of the private apps",
+        "additionalProperties": {
+          "type": "object",
+          "description": "The otoroshi data of the user, any json object",
+          "additionalProperties": true
+        },
+        "example": {
+          "john.doe@oto.tools": {
+            "employee_id": "42"
+          }
+        }
+      },
+      "allowedUsers": {
+        "type": "array",
+        "description": "The users allowed to log in, by email. Everybody when empty",
+        "items": {
+          "type": "string",
+          "description": "A user allowed to log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "Wildcard(*@oto.tools)"
+        },
+        "example": [
+          "Wildcard(*@oto.tools)"
+        ]
+      },
+      "deniedUsers": {
+        "type": "array",
+        "description": "The users that cannot log in, by email",
+        "items": {
+          "type": "string",
+          "description": "A user that cannot log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "john.doe@oto.tools"
+        },
+        "example": [
+          "Regex(.*@partner\\.com)"
+        ]
+      },
+      "groupRights": {
+        "type": "object",
+        "description": "Virtual groups giving rights in the backoffice to some users, by name of group",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/GroupRights"
+        },
+        "example": {
+          "ops": {
+            "rights": [
+              {
+                "tenant": "default:rw",
+                "teams": [
+                  "ops:rw"
+                ]
+              }
+            ],
+            "users": [
+              "john.doe@oto.tools"
+            ]
+          }
+        }
+      },
+      "adminEntityValidatorsOverride": {
+        "type": "object",
+        "description": "The validators the entities written in the backoffice by some users have to pass, by email of the user, then by entity kind",
+        "additionalProperties": {
+          "type": "object",
+          "description": "The validators of the entities written by the user, keyed by the singular name of the entity kind or `all`",
+          "additionalProperties": {
+            "type": "array",
+            "description": "The validators of an entity kind, keyed by the singular name of the kind (`route`, `apikey`, `certificate`...) or `all` for every kind. Every validator has to pass for the entity to be written",
+            "items": {
+              "$ref": "#/components/schemas/JsonValidator"
+            }
+          },
+          "example": {
+            "route": [
+              {
+                "kind": "json-path-validator",
+                "path": "$.frontend.domains[0]",
+                "value": "Wildcard(*.oto.tools)",
+                "error": "routes can only be exposed on oto.tools"
+              }
+            ]
+          }
+        },
+        "example": {
+          "john.doe@oto.tools": {
+            "route": [
+              {
+                "kind": "json-path-validator",
+                "path": "$.frontend.domains[0]",
+                "value": "Wildcard(*.oto.tools)",
+                "error": "routes can only be exposed on oto.tools"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "required": [
+      "type",
+      "id",
+      "name",
+      "searchBase",
+      "searchFilter",
+      "nameField",
+      "emailField"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "ldap",
+      "id": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "name": "Company directory",
+      "desc": "Login with the LDAP directory of the company",
+      "basicAuth": false,
+      "allowEmptyPassword": false,
+      "clientSideSessionEnabled": true,
+      "sessionMaxAge": 86400,
+      "userValidators": [],
+      "remoteValidators": [],
+      "serverUrls": [
+        "ldap://ldap.forumsys.com:389"
+      ],
+      "searchBase": "dc=example,dc=com",
+      "userBase": null,
+      "groupFilters": [
+        {
+          "group": "(&(objectClass=groupOfUniqueNames)(ou=chemists))",
+          "team": "default",
+          "tenant": "default:rw"
+        }
+      ],
+      "searchFilter": "(uid=${username})",
+      "adminUsername": "cn=read-only-admin,dc=example,dc=com",
+      "adminPassword": "${vault://local/ldap-admin-password}",
+      "nameField": "cn",
+      "emailField": "mail",
+      "metadataField": null,
+      "extraMetadata": {},
+      "metadata": {},
+      "tags": [],
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": true
+      },
+      "superAdmins": false,
+      "extractProfile": false,
+      "extractProfileFilter": [],
+      "extractProfileFilterNot": [],
+      "rightsOverride": {},
+      "dataOverride": {},
+      "allowedUsers": [],
+      "deniedUsers": [],
+      "groupRights": {},
+      "adminEntityValidatorsOverride": {}
+    }
+  },
+  "SamlAuthModuleConfig": {
+    "type": "object",
+    "description": "A SAML v2 auth module: the users log in on a SAML identity provider (ADFS, Shibboleth, Keycloak...)",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "type": {
+        "type": "string",
+        "description": "The type of the auth module, `saml` for a SAML v2 auth module",
+        "enum": [
+          "saml"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the auth module, named by the `module` of the `Authentication` plugin of the routes, the `modules` of the `Multi Authentication` plugin, or the `backOfficeAuthRef` of the global configuration",
+        "example": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the auth module, shown in the backoffice and on the login page of the routes that offer several auth modules (`Multi Authentication` plugin)",
+        "example": "Company SSO"
+      },
+      "desc": {
+        "type": "string",
+        "description": "The description of the auth module. `--` when missing",
+        "example": "Login with the company identity provider"
+      },
+      "sessionMaxAge": {
+        "type": "integer",
+        "format": "int32",
+        "description": "How long a session lasts, in seconds. 86400 (a day) when missing",
+        "example": 3600
+      },
+      "clientSideSessionEnabled": {
+        "type": "boolean",
+        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. True when missing"
+      },
+      "userValidators": {
+        "type": "array",
+        "description": "The checks of the profile of a user that logs in. Every check has to pass for the user to get in",
+        "items": {
+          "$ref": "#/components/schemas/JsonPathValidator"
+        },
+        "example": [
+          {
+            "kind": "json-path-validator",
+            "path": "$.profile.groups",
+            "value": "Contains(admins)",
+            "error": "the user is not a member of the admins group"
+          }
+        ]
+      },
+      "remoteValidators": {
+        "type": "array",
+        "description": "The remote services that validate a user that logs in. Every service has to accept the user",
+        "items": {
+          "$ref": "#/components/schemas/RemoteUserValidatorSettings"
+        },
+        "example": [
+          {
+            "url": "https://users.oto.tools/api/users/_validate",
+            "headers": {
+              "Authorization": "Bearer xxxxx"
+            },
+            "timeout": 5000,
+            "tls_settings": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ]
+      },
+      "allowedUsers": {
+        "type": "array",
+        "description": "The users allowed to log in, by email. Everybody when empty",
+        "items": {
+          "type": "string",
+          "description": "A user allowed to log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "Wildcard(*@oto.tools)"
+        },
+        "example": [
+          "Wildcard(*@oto.tools)"
+        ]
+      },
+      "deniedUsers": {
+        "type": "array",
+        "description": "The users that cannot log in, by email",
+        "items": {
+          "type": "string",
+          "description": "A user that cannot log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "john.doe@oto.tools"
+        },
+        "example": [
+          "Regex(.*@partner\\.com)"
+        ]
+      },
+      "singleSignOnUrl": {
+        "type": "string",
+        "description": "The single sign on url of the identity provider",
+        "example": "https://keycloak.oto.tools/realms/master/protocol/saml"
+      },
+      "singleLogoutUrl": {
+        "type": "string",
+        "nullable": true,
+        "description": "The single logout url of the identity provider, null when it has none",
+        "example": "https://keycloak.oto.tools/realms/master/protocol/saml"
+      },
+      "credentials": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SAMLCredentials"
+          }
+        ],
+        "description": "The keys signing the requests and decrypting the assertions"
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the auth module, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sso"
+        },
+        "example": [
+          "sso"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the auth module, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "owner": "security-team"
+        }
+      },
+      "extraMetadata": {
+        "type": "object",
+        "description": "A json object merged into the otoroshi data of the users that log in, sent to the backends of the private apps",
+        "additionalProperties": true,
+        "example": {
+          "source": "sso"
+        }
+      },
+      "sessionCookieValues": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SessionCookieValues"
+          }
+        ],
+        "description": "The `HttpOnly` and `Secure` flags of the session cookies set on the private apps once a user has logged in through the module. Both true when missing"
+      },
+      "issuer": {
+        "type": "string",
+        "description": "The issuer (entity id) otoroshi presents to the identity provider",
+        "example": "otoroshi"
+      },
+      "validatingCertificates": {
+        "type": "array",
+        "description": "The certificates of the identity provider checking the signatures of its responses and assertions",
+        "items": {
+          "type": "string",
+          "description": "A certificate in PEM format, or only its base64 content as found in the metadata of the identity provider",
+          "example": "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n-----END CERTIFICATE-----"
+        },
+        "example": [
+          "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n-----END CERTIFICATE-----"
+        ]
+      },
+      "validateSignature": {
+        "type": "boolean",
+        "description": "Check the signature of the responses of the identity provider"
+      },
+      "validateAssertions": {
+        "type": "boolean",
+        "description": "Check the signature of the assertions of the identity provider"
+      },
+      "validateConditions": {
+        "type": "boolean",
+        "description": "Check the conditions of the assertions: their validity window, their audience, their recipient and the request they answer. True when missing"
+      },
+      "clockSkewSeconds": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The clock difference accepted with the identity provider when checking the validity window of the assertions, in seconds. 60 when missing",
+        "example": 30
+      },
+      "signature": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SAMLSignature"
+          }
+        ],
+        "description": "How the requests sent to the identity provider are signed"
+      },
+      "nameIDFormat": {
+        "type": "string",
+        "description": "The format of the name id asked to the identity provider. `transient` when missing, `unspecified` when unknown",
+        "enum": [
+          "unspecified",
+          "persistent",
+          "transient",
+          "kerberos",
+          "entity",
+          "emailAddress"
+        ],
+        "example": "persistent"
+      },
+      "ssoProtocolBinding": {
+        "type": "string",
+        "description": "The protocol binding of the login requests: `redirect` (HTTP-Redirect) or `post` (HTTP-POST). The SAML binding urns are read too. `redirect` when missing or unknown",
+        "enum": [
+          "redirect",
+          "post"
+        ],
+        "example": "post"
+      },
+      "singleLogoutProtocolBinding": {
+        "type": "string",
+        "description": "The protocol binding of the logout requests: `redirect` (HTTP-Redirect) or `post` (HTTP-POST). The SAML binding urns are read too. `redirect` when missing or unknown",
+        "enum": [
+          "redirect",
+          "post"
+        ],
+        "example": "post"
+      },
+      "usedNameIDAsEmail": {
+        "type": "boolean",
+        "description": "Use the name id of the assertion as the email of the user. When false, the email is read from the attribute `emailAttributeName`. True when missing"
+      },
+      "emailAttributeName": {
+        "type": "string",
+        "nullable": true,
+        "description": "The attribute of the assertion holding the email of the user, when `usedNameIDAsEmail` is false",
+        "example": "Email"
+      },
+      "adminEntityValidatorsOverride": {
+        "type": "object",
+        "description": "The validators the entities written in the backoffice by some users have to pass, by email of the user, then by entity kind",
+        "additionalProperties": {
+          "type": "object",
+          "description": "The validators of the entities written by the user, keyed by the singular name of the entity kind or `all`",
+          "additionalProperties": {
+            "type": "array",
+            "description": "The validators of an entity kind, keyed by the singular name of the kind (`route`, `apikey`, `certificate`...) or `all` for every kind. Every validator has to pass for the entity to be written",
+            "items": {
+              "$ref": "#/components/schemas/JsonValidator"
+            }
+          },
+          "example": {
+            "route": [
+              {
+                "kind": "json-path-validator",
+                "path": "$.frontend.domains[0]",
+                "value": "Wildcard(*.oto.tools)",
+                "error": "routes can only be exposed on oto.tools"
+              }
+            ]
+          }
+        },
+        "example": {
+          "john.doe@oto.tools": {
+            "route": [
+              {
+                "kind": "json-path-validator",
+                "path": "$.frontend.domains[0]",
+                "value": "Wildcard(*.oto.tools)",
+                "error": "routes can only be exposed on oto.tools"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "required": [
+      "type",
+      "id",
+      "name",
+      "singleSignOnUrl",
+      "credentials",
+      "issuer",
+      "validateSignature",
+      "validateAssertions",
+      "signature"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "saml",
+      "id": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "name": "Company SAML",
+      "desc": "Login with the SAML identity provider of the company",
+      "sessionMaxAge": 86400,
+      "clientSideSessionEnabled": true,
+      "userValidators": [],
+      "remoteValidators": [],
+      "allowedUsers": [],
+      "deniedUsers": [],
+      "singleSignOnUrl": "https://keycloak.oto.tools/realms/master/protocol/saml",
+      "singleLogoutUrl": "https://keycloak.oto.tools/realms/master/protocol/saml",
+      "credentials": {
+        "signingKey": {
+          "certificate": null,
+          "privateKey": null,
+          "certId": null,
+          "useOtoroshiCertificate": false
+        },
+        "encryptionKey": {
+          "certificate": null,
+          "privateKey": null,
+          "certId": null,
+          "useOtoroshiCertificate": false
+        },
+        "signedDocuments": false,
+        "encryptedAssertions": false
+      },
+      "tags": [],
+      "metadata": {},
+      "extraMetadata": {},
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": true
+      },
+      "issuer": "otoroshi",
+      "validatingCertificates": [
+        "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n-----END CERTIFICATE-----"
+      ],
+      "validateSignature": true,
+      "validateAssertions": true,
+      "validateConditions": true,
+      "clockSkewSeconds": 60,
+      "signature": {
+        "algorithm": "rsa_sha256",
+        "canocalizationMethod": "exclusive"
+      },
+      "nameIDFormat": "unspecified",
+      "ssoProtocolBinding": "redirect",
+      "singleLogoutProtocolBinding": "redirect",
+      "usedNameIDAsEmail": true,
+      "emailAttributeName": "Email",
+      "adminEntityValidatorsOverride": {}
+    }
+  },
+  "Oauth1ModuleConfig": {
+    "type": "object",
+    "description": "An OAuth 1.0a auth module: the users log in on a provider that has not moved to OAuth2",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "type": {
+        "type": "string",
+        "description": "The type of the auth module, `oauth1` for an OAuth 1.0a auth module",
+        "enum": [
+          "oauth1"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the auth module, named by the `module` of the `Authentication` plugin of the routes, the `modules` of the `Multi Authentication` plugin, or the `backOfficeAuthRef` of the global configuration",
+        "example": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the auth module, shown in the backoffice and on the login page of the routes that offer several auth modules (`Multi Authentication` plugin)",
+        "example": "Company SSO"
+      },
+      "desc": {
+        "type": "string",
+        "description": "The description of the auth module. `--` when missing",
+        "example": "Login with the company identity provider"
+      },
+      "consumerKey": {
+        "type": "string",
+        "description": "The consumer key of otoroshi on the provider",
+        "example": "xxxxxxxx"
+      },
+      "consumerSecret": {
+        "type": "string",
+        "description": "The consumer secret of otoroshi on the provider. It can be a vault reference like `${vault://local/secret}`",
+        "example": "${vault://local/clevercloud-consumer-secret}"
+      },
+      "requestTokenURL": {
+        "type": "string",
+        "description": "The url otoroshi calls with `httpMethod` to get a request token, the first step of the login: the user is then redirected to `authorizeURL` with it",
+        "example": "https://api.clever-cloud.com/v2/oauth/request_token"
+      },
+      "authorizeURL": {
+        "type": "string",
+        "description": "The url the users are redirected to in order to log in",
+        "example": "https://api.clever-cloud.com/v2/oauth/authorize"
+      },
+      "profileURL": {
+        "type": "string",
+        "description": "The url giving the profile of the user. `https://api.clever-cloud.com/v2/self` when missing",
+        "example": "https://api.clever-cloud.com/v2/self"
+      },
+      "accessTokenURL": {
+        "type": "string",
+        "description": "The url otoroshi calls with `httpMethod` once the user is back from the provider, to exchange the request token and its verifier for an access token",
+        "example": "https://api.clever-cloud.com/v2/oauth/access_token"
+      },
+      "callbackURL": {
+        "type": "string",
+        "description": "The url the provider redirects the users to once logged in. `http://otoroshi.oto.tools:9999/backoffice/auth0/callback` when missing",
+        "example": "http://privateapps.oto.tools:8080/privateapps/generic/callback"
+      },
+      "clientSideSessionEnabled": {
+        "type": "boolean",
+        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. True when missing"
+      },
+      "sessionMaxAge": {
+        "type": "integer",
+        "format": "int32",
+        "description": "How long a session lasts, in seconds. 86400 (a day) when missing",
+        "example": 3600
+      },
+      "userValidators": {
+        "type": "array",
+        "description": "The checks of the profile of a user that logs in. Every check has to pass for the user to get in",
+        "items": {
+          "$ref": "#/components/schemas/JsonPathValidator"
+        },
+        "example": [
+          {
+            "kind": "json-path-validator",
+            "path": "$.profile.groups",
+            "value": "Contains(admins)",
+            "error": "the user is not a member of the admins group"
+          }
+        ]
+      },
+      "remoteValidators": {
+        "type": "array",
+        "description": "The remote services that validate a user that logs in. Every service has to accept the user",
+        "items": {
+          "$ref": "#/components/schemas/RemoteUserValidatorSettings"
+        },
+        "example": [
+          {
+            "url": "https://users.oto.tools/api/users/_validate",
+            "headers": {
+              "Authorization": "Bearer xxxxx"
+            },
+            "timeout": 5000,
+            "tls_settings": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the auth module, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "owner": "security-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the auth module, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sso"
+        },
+        "example": [
+          "sso"
+        ]
+      },
+      "rightsOverride": {
+        "type": "object",
+        "description": "The rights given to some users in the backoffice, by email. They replace the rights the user gets otherwise",
+        "additionalProperties": {
+          "type": "array",
+          "description": "The rights of the user. `[{\"tenant\": \"*:rw\", \"teams\": [\"*:rw\"]}]` makes a super admin",
+          "items": {
+            "$ref": "#/components/schemas/UserRight"
+          },
+          "example": [
+            {
+              "tenant": "default:rw",
+              "teams": [
+                "default:rw"
+              ]
+            }
+          ]
+        },
+        "example": {
+          "john.doe@oto.tools": [
+            {
+              "tenant": "*:rw",
+              "teams": [
+                "*:rw"
+              ]
+            }
+          ]
+        }
+      },
+      "httpMethod": {
+        "type": "string",
+        "description": "The http method of the calls getting the request token and the access token. `post` when missing or unknown",
+        "enum": [
+          "post",
+          "get"
+        ],
+        "example": "get"
+      },
+      "sessionCookieValues": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SessionCookieValues"
+          }
+        ],
+        "description": "The `HttpOnly` and `Secure` flags of the session cookies set on the private apps once a user has logged in through the module. Both true when missing"
+      },
+      "allowedUsers": {
+        "type": "array",
+        "description": "The users allowed to log in, by email. Everybody when empty",
+        "items": {
+          "type": "string",
+          "description": "A user allowed to log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "Wildcard(*@oto.tools)"
+        },
+        "example": [
+          "Wildcard(*@oto.tools)"
+        ]
+      },
+      "deniedUsers": {
+        "type": "array",
+        "description": "The users that cannot log in, by email",
+        "items": {
+          "type": "string",
+          "description": "A user that cannot log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "john.doe@oto.tools"
+        },
+        "example": [
+          "Regex(.*@partner\\.com)"
+        ]
+      },
+      "adminEntityValidatorsOverride": {
+        "type": "object",
+        "description": "The validators the entities written in the backoffice by some users have to pass, by email of the user, then by entity kind",
+        "additionalProperties": {
+          "type": "object",
+          "description": "The validators of the entities written by the user, keyed by the singular name of the entity kind or `all`",
+          "additionalProperties": {
+            "type": "array",
+            "description": "The validators of an entity kind, keyed by the singular name of the kind (`route`, `apikey`, `certificate`...) or `all` for every kind. Every validator has to pass for the entity to be written",
+            "items": {
+              "$ref": "#/components/schemas/JsonValidator"
+            }
+          },
+          "example": {
+            "route": [
+              {
+                "kind": "json-path-validator",
+                "path": "$.frontend.domains[0]",
+                "value": "Wildcard(*.oto.tools)",
+                "error": "routes can only be exposed on oto.tools"
+              }
+            ]
+          }
+        },
+        "example": {
+          "john.doe@oto.tools": {
+            "route": [
+              {
+                "kind": "json-path-validator",
+                "path": "$.frontend.domains[0]",
+                "value": "Wildcard(*.oto.tools)",
+                "error": "routes can only be exposed on oto.tools"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "required": [
+      "type",
+      "id",
+      "name",
+      "consumerKey",
+      "consumerSecret",
+      "requestTokenURL",
+      "authorizeURL",
+      "accessTokenURL"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "oauth1",
+      "id": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "name": "Clever Cloud",
+      "desc": "Login with a Clever Cloud account",
+      "consumerKey": "xxxxxxxx",
+      "consumerSecret": "${vault://local/clevercloud-consumer-secret}",
+      "requestTokenURL": "https://api.clever-cloud.com/v2/oauth/request_token",
+      "authorizeURL": "https://api.clever-cloud.com/v2/oauth/authorize",
+      "profileURL": "https://api.clever-cloud.com/v2/self",
+      "accessTokenURL": "https://api.clever-cloud.com/v2/oauth/access_token",
+      "callbackURL": "http://privateapps.oto.tools:8080/privateapps/generic/callback",
+      "clientSideSessionEnabled": true,
+      "sessionMaxAge": 86400,
+      "userValidators": [],
+      "remoteValidators": [],
+      "metadata": {},
+      "tags": [],
+      "rightsOverride": {},
+      "httpMethod": "post",
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": true
+      },
+      "allowedUsers": [],
+      "deniedUsers": [],
+      "adminEntityValidatorsOverride": {}
+    }
+  },
+  "WasmAuthModuleConfig": {
+    "type": "object",
+    "description": "A wasm auth module: the login flow is implemented by a wasm plugin",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "type": {
+        "type": "string",
+        "description": "The type of the auth module, `wasm` for a wasm auth module",
+        "enum": [
+          "wasm"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the auth module, named by the `module` of the `Authentication` plugin of the routes, the `modules` of the `Multi Authentication` plugin, or the `backOfficeAuthRef` of the global configuration",
+        "example": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the auth module, shown in the backoffice and on the login page of the routes that offer several auth modules (`Multi Authentication` plugin)",
+        "example": "Company SSO"
+      },
+      "desc": {
+        "type": "string",
+        "description": "The description of the auth module. A `description` key is read first. `--` when missing",
+        "example": "Login with the custom flow of the company"
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the auth module, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sso"
+        },
+        "example": [
+          "sso"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the auth module, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "owner": "security-team"
+        }
+      },
+      "sessionMaxAge": {
+        "type": "integer",
+        "format": "int32",
+        "description": "How long a session lasts, in seconds. 86400 (a day) when missing",
+        "example": 3600
+      },
+      "clientSideSessionEnabled": {
+        "type": "boolean",
+        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. True when missing"
+      },
+      "sessionCookieValues": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SessionCookieValues"
+          }
+        ],
+        "description": "The `HttpOnly` and `Secure` flags of the session cookies set on the private apps once a user has logged in through the module. Both true when missing"
+      },
+      "userValidators": {
+        "type": "array",
+        "description": "The checks of the profile of a user that logs in. Every check has to pass for the user to get in",
+        "items": {
+          "$ref": "#/components/schemas/JsonPathValidator"
+        },
+        "example": [
+          {
+            "kind": "json-path-validator",
+            "path": "$.profile.groups",
+            "value": "Contains(admins)",
+            "error": "the user is not a member of the admins group"
+          }
+        ]
+      },
+      "remoteValidators": {
+        "type": "array",
+        "description": "The remote services that validate a user that logs in. Every service has to accept the user",
+        "items": {
+          "$ref": "#/components/schemas/RemoteUserValidatorSettings"
+        },
+        "example": [
+          {
+            "url": "https://users.oto.tools/api/users/_validate",
+            "headers": {
+              "Authorization": "Bearer xxxxx"
+            },
+            "timeout": 5000,
+            "tls_settings": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ]
+      },
+      "allowedUsers": {
+        "type": "array",
+        "description": "The users allowed to log in, by email. Everybody when empty",
+        "items": {
+          "type": "string",
+          "description": "A user allowed to log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "Wildcard(*@oto.tools)"
+        },
+        "example": [
+          "Wildcard(*@oto.tools)"
+        ]
+      },
+      "deniedUsers": {
+        "type": "array",
+        "description": "The users that cannot log in, by email",
+        "items": {
+          "type": "string",
+          "description": "A user that cannot log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "john.doe@oto.tools"
+        },
+        "example": [
+          "Regex(.*@partner\\.com)"
+        ]
+      },
+      "wasmRef": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the wasm plugin implementing the login flow, null when none is set yet",
+        "example": "wasm-plugin_custom-login"
+      }
+    },
+    "required": [
+      "type",
+      "id",
+      "name"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "wasm",
+      "id": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "name": "Custom wasm login",
+      "desc": "Login with the custom flow of the company",
+      "tags": [],
+      "metadata": {},
+      "sessionMaxAge": 86400,
+      "clientSideSessionEnabled": true,
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": true
+      },
+      "userValidators": [],
+      "remoteValidators": [],
+      "allowedUsers": [],
+      "deniedUsers": [],
+      "wasmRef": "wasm-plugin_custom-login"
+    }
+  },
+  "WorkflowAuthModuleConfig": {
+    "type": "object",
+    "description": "A workflow auth module: the login flow is implemented by a workflow",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "type": {
+        "type": "string",
+        "description": "The type of the auth module, `workflow` for a workflow auth module",
+        "enum": [
+          "workflow"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the auth module, named by the `module` of the `Authentication` plugin of the routes, the `modules` of the `Multi Authentication` plugin, or the `backOfficeAuthRef` of the global configuration",
+        "example": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the auth module, shown in the backoffice and on the login page of the routes that offer several auth modules (`Multi Authentication` plugin)",
+        "example": "Company SSO"
+      },
+      "desc": {
+        "type": "string",
+        "description": "The description of the auth module. A `description` key is read first. `--` when missing",
+        "example": "Login with the custom flow of the company"
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the auth module, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sso"
+        },
+        "example": [
+          "sso"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the auth module, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "owner": "security-team"
+        }
+      },
+      "sessionMaxAge": {
+        "type": "integer",
+        "format": "int32",
+        "description": "How long a session lasts, in seconds. 86400 (a day) when missing",
+        "example": 3600
+      },
+      "clientSideSessionEnabled": {
+        "type": "boolean",
+        "description": "Also keep the session of the users of the private apps in an encrypted cookie, so that a session missing from the datastore of otoroshi (not synchronized yet on an instance of the cluster, lost by a restart) is restored from it. True when missing"
+      },
+      "sessionCookieValues": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SessionCookieValues"
+          }
+        ],
+        "description": "The `HttpOnly` and `Secure` flags of the session cookies set on the private apps once a user has logged in through the module. Both true when missing"
+      },
+      "userValidators": {
+        "type": "array",
+        "description": "The checks of the profile of a user that logs in. Every check has to pass for the user to get in",
+        "items": {
+          "$ref": "#/components/schemas/JsonPathValidator"
+        },
+        "example": [
+          {
+            "kind": "json-path-validator",
+            "path": "$.profile.groups",
+            "value": "Contains(admins)",
+            "error": "the user is not a member of the admins group"
+          }
+        ]
+      },
+      "remoteValidators": {
+        "type": "array",
+        "description": "The remote services that validate a user that logs in. Every service has to accept the user",
+        "items": {
+          "$ref": "#/components/schemas/RemoteUserValidatorSettings"
+        },
+        "example": [
+          {
+            "url": "https://users.oto.tools/api/users/_validate",
+            "headers": {
+              "Authorization": "Bearer xxxxx"
+            },
+            "timeout": 5000,
+            "tls_settings": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ]
+      },
+      "allowedUsers": {
+        "type": "array",
+        "description": "The users allowed to log in, by email. Everybody when empty",
+        "items": {
+          "type": "string",
+          "description": "A user allowed to log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "Wildcard(*@oto.tools)"
+        },
+        "example": [
+          "Wildcard(*@oto.tools)"
+        ]
+      },
+      "deniedUsers": {
+        "type": "array",
+        "description": "The users that cannot log in, by email",
+        "items": {
+          "type": "string",
+          "description": "A user that cannot log in. An email, or a pattern: `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `Not(x)`, `ContainedIn(a, b)` or `NotContainedIn(a, b)`",
+          "example": "john.doe@oto.tools"
+        },
+        "example": [
+          "Regex(.*@partner\\.com)"
+        ]
+      },
+      "workflowRef": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the workflow implementing the login flow, null when none is set yet",
+        "example": "workflow_custom-login"
+      }
+    },
+    "required": [
+      "type",
+      "id",
+      "name"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "workflow",
+      "id": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "name": "Custom workflow login",
+      "desc": "Login with the custom flow of the company",
+      "tags": [],
+      "metadata": {},
+      "sessionMaxAge": 86400,
+      "clientSideSessionEnabled": true,
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": true
+      },
+      "userValidators": [],
+      "remoteValidators": [],
+      "allowedUsers": [],
+      "deniedUsers": [],
+      "workflowRef": "workflow_custom-login"
+    }
+  },
+  "BasicAuthUser": {
+    "type": "object",
+    "description": "A user of an in memory auth module",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The display name of the user, the `name` of its profile and of its sessions, shown in the lists of sessions of the backoffice",
+        "example": "John Doe"
+      },
+      "password": {
+        "type": "string",
+        "description": "The bcrypt hash of the password of the user. The api stores the value as sent: send a bcrypt hash",
+        "example": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+      },
+      "email": {
+        "type": "string",
+        "description": "The email of the user, the login it uses",
+        "example": "john.doe@oto.tools"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the user, any json object: part of its profile, and its otoroshi data sent to the backends of the private apps",
+        "additionalProperties": true,
+        "example": {
+          "department": "sales"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the user, written in its profile (`profile.tags`) where the user validators of the module can check them",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sales"
+        },
+        "example": [
+          "sales"
+        ]
+      },
+      "webauthn": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WebAuthnDetails"
+          }
+        ],
+        "nullable": true,
+        "description": "The WebAuthn devices of the user, used when the module enables the WebAuthn login, null when it has none"
+      },
+      "rights": {
+        "type": "array",
+        "description": "The rights of the user on the tenants (organizations) and teams of otoroshi when it logs in to the backoffice. Missing rights are no rights, unless `superAdminWhenNoRights` of the global configuration is on. `[{\"tenant\": \"*:rw\", \"teams\": [\"*:rw\"]}]` makes a super admin",
+        "items": {
+          "$ref": "#/components/schemas/UserRight"
+        },
+        "example": [
+          {
+            "tenant": "default:rw",
+            "teams": [
+              "default:rw"
+            ]
+          }
+        ]
+      },
+      "adminEntityValidators": {
+        "type": "object",
+        "description": "The validators the entities written by this user through the backoffice have to pass, by entity kind",
+        "additionalProperties": {
+          "type": "array",
+          "description": "The validators of an entity kind, keyed by the singular name of the kind (`route`, `apikey`, `certificate`...) or `all` for every kind. Every validator has to pass for the entity to be written",
+          "items": {
+            "$ref": "#/components/schemas/JsonValidator"
+          }
+        },
+        "example": {
+          "route": [
+            {
+              "kind": "json-path-validator",
+              "path": "$.frontend.domains[0]",
+              "value": "Wildcard(*.oto.tools)",
+              "error": "routes can only be exposed on oto.tools"
+            }
+          ]
+        }
+      }
+    },
+    "required": [
+      "name",
+      "password",
+      "email"
+    ],
+    "example": {
+      "name": "John Doe",
+      "password": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+      "email": "john.doe@oto.tools",
+      "metadata": {
+        "department": "sales"
+      },
+      "tags": [],
+      "webauthn": null,
+      "rights": [
+        {
+          "tenant": "default:rw",
+          "teams": [
+            "default:rw"
+          ]
+        }
+      ],
+      "adminEntityValidators": {}
+    }
+  },
+  "WebAuthnDetails": {
+    "type": "object",
+    "description": "The WebAuthn devices of a user of an in memory auth module",
+    "properties": {
+      "handle": {
+        "type": "string",
+        "description": "The WebAuthn user handle of the user",
+        "example": "ZWhLc0p0dWZUbE1nQ0xSWQ"
+      },
+      "credentials": {
+        "type": "object",
+        "description": "The registered WebAuthn credentials of the user, keyed by credential id, each one being the json of the registration",
+        "additionalProperties": true,
+        "example": {
+          "AbCdEf0123": {
+            "keyId": {
+              "id": "AbCdEf0123",
+              "type": "public-key"
+            }
+          }
+        }
+      }
+    },
+    "required": [
+      "handle"
+    ],
+    "example": {
+      "handle": "ZWhLc0p0dWZUbE1nQ0xSWQ",
+      "credentials": {}
+    }
+  },
+  "PKCEConfig": {
+    "type": "object",
+    "description": "The PKCE extension (RFC 7636) of the authorization code flow",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Use PKCE in the authorization code flow. False when missing"
+      },
+      "algorithm": {
+        "type": "string",
+        "description": "The code challenge method: `S256` (the SHA-256 hash of the code verifier) or `plain`. Any other value is used as `plain`. `S256` when missing",
+        "enum": [
+          "S256",
+          "plain"
+        ],
+        "example": "S256"
+      }
+    },
+    "example": {
+      "enabled": true,
+      "algorithm": "S256"
+    }
+  },
+  "GroupFilter": {
+    "type": "object",
+    "description": "An LDAP group whose members can log in, with the tenant (organization) and the team their rights apply to",
+    "properties": {
+      "group": {
+        "type": "string",
+        "description": "The LDAP filter selecting the group, searched under `searchBase`. Empty when missing",
+        "example": "(&(objectClass=groupOfUniqueNames)(ou=chemists))"
+      },
+      "team": {
+        "type": "string",
+        "description": "The team the members of the group get access to. Empty when missing",
+        "example": "default"
+      },
+      "tenant": {
+        "type": "string",
+        "description": "The tenant (organization) the members of the group get access to, followed by the access level they get on the tenant and on the team: `<tenant>:r`, `<tenant>:rw` or `<tenant>:not`. `*:rw` when missing",
+        "example": "default:rw"
+      }
+    },
+    "example": {
+      "group": "(&(objectClass=groupOfUniqueNames)(ou=chemists))",
+      "team": "default",
+      "tenant": "default:rw"
+    }
+  },
+  "GroupRights": {
+    "type": "object",
+    "description": "A virtual group of an LDAP auth module: rights added to some users",
+    "properties": {
+      "rights": {
+        "type": "array",
+        "description": "The rights added to the users of the group. `[{\"tenant\": \"*:rw\", \"teams\": [\"*:rw\"]}]` makes a super admin",
+        "items": {
+          "$ref": "#/components/schemas/UserRight"
+        },
+        "example": [
+          {
+            "tenant": "default:rw",
+            "teams": [
+              "default:rw"
+            ]
+          }
+        ]
+      },
+      "users": {
+        "type": "array",
+        "description": "The emails of the users of the group",
+        "items": {
+          "type": "string",
+          "description": "The email of a user",
+          "example": "john.doe@oto.tools"
+        },
+        "example": [
+          "john.doe@oto.tools"
+        ]
+      }
+    },
+    "example": {
+      "rights": [
+        {
+          "tenant": "default:rw",
+          "teams": [
+            "ops:rw"
+          ]
+        }
+      ],
+      "users": [
+        "john.doe@oto.tools"
+      ]
+    }
+  },
+  "SAMLCredentials": {
+    "type": "object",
+    "description": "The keys of a SAML auth module: to sign the requests it sends to the identity provider, and to decrypt the assertions it receives",
+    "properties": {
+      "signingKey": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SAMLCredential"
+          }
+        ],
+        "description": "The key signing the requests sent to the identity provider"
+      },
+      "encryptionKey": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SAMLCredential"
+          }
+        ],
+        "description": "The key decrypting the encrypted assertions of the identity provider"
+      },
+      "signedDocuments": {
+        "type": "boolean",
+        "description": "Sign the requests sent to the identity provider with `signingKey`. False when missing"
+      },
+      "encryptedAssertions": {
+        "type": "boolean",
+        "description": "The assertions of the identity provider are encrypted, they are decrypted with `encryptionKey`. False when missing"
+      }
+    },
+    "required": [
+      "signingKey",
+      "encryptionKey"
+    ],
+    "example": {
+      "signingKey": {
+        "certificate": null,
+        "privateKey": null,
+        "certId": "saml-signing-cert",
+        "useOtoroshiCertificate": true
+      },
+      "encryptionKey": {
+        "certificate": null,
+        "privateKey": null,
+        "certId": null,
+        "useOtoroshiCertificate": false
+      },
+      "signedDocuments": true,
+      "encryptedAssertions": false
+    }
+  },
+  "SAMLCredential": {
+    "type": "object",
+    "description": "A certificate and its private key used by a SAML auth module: given in PEM format, or taken from a certificate of otoroshi",
+    "properties": {
+      "certificate": {
+        "type": "string",
+        "nullable": true,
+        "description": "The certificate in PEM format, null when it is taken from otoroshi",
+        "example": "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n-----END CERTIFICATE-----"
+      },
+      "privateKey": {
+        "type": "string",
+        "nullable": true,
+        "description": "The private key of the certificate in PEM format, null when it is taken from otoroshi",
+        "example": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj\n-----END PRIVATE KEY-----"
+      },
+      "certId": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the certificate of otoroshi to use when `useOtoroshiCertificate` is true",
+        "example": "saml-signing-cert"
+      },
+      "useOtoroshiCertificate": {
+        "type": "boolean",
+        "description": "Use the certificate of otoroshi `certId` instead of `certificate` and `privateKey`. False when missing"
+      }
+    },
+    "example": {
+      "certificate": null,
+      "privateKey": null,
+      "certId": "saml-signing-cert",
+      "useOtoroshiCertificate": true
+    }
+  },
+  "SAMLSignature": {
+    "type": "object",
+    "description": "How the requests of a SAML auth module are signed",
+    "properties": {
+      "algorithm": {
+        "type": "string",
+        "description": "The signature algorithm. `rsa_sha256` when missing, another value is refused",
+        "enum": [
+          "rsa_sha256",
+          "rsa_sha512",
+          "rsa_sha1",
+          "dsa_sha1"
+        ],
+        "example": "rsa_sha512"
+      },
+      "canocalizationMethod": {
+        "type": "string",
+        "description": "The canonicalization method of the XML signatures: `exclusive` (exclusive canonicalization without comments) or `with_comments`. `exclusive` when missing, another value is refused",
+        "enum": [
+          "exclusive",
+          "with_comments"
+        ],
+        "example": "exclusive"
+      }
+    },
+    "example": {
+      "algorithm": "rsa_sha256",
+      "canocalizationMethod": "exclusive"
+    }
+  },
+  "SessionCookieValues": {
+    "type": "object",
+    "description": "The flags of the session cookie otoroshi sets once a user is logged in through the auth module",
+    "properties": {
+      "httpOnly": {
+        "type": "boolean",
+        "description": "Set the `HttpOnly` flag on the session cookie, so that the scripts of the pages cannot read it. True when missing"
+      },
+      "secure": {
+        "type": "boolean",
+        "description": "Set the `Secure` flag on the session cookie, so that browsers only send it over https. True when missing"
+      }
+    },
+    "example": {
+      "httpOnly": true,
+      "secure": true
+    }
+  },
+  "RemoteUserValidatorSettings": {
+    "type": "object",
+    "description": "A remote service that validates the users logging in through an auth module: otoroshi posts it `{\"user\": ..., \"auth_module\": ..., \"route\": ...}` (`service_descriptor` instead of `route` for the backoffice) and lets the user in when it answers 200 with `{\"valid\": true}`. Otherwise the `reason` of the answer (`{\"display\": ..., \"internal\": ...}`) is the error",
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "The url otoroshi posts the user to",
+        "example": "https://users.oto.tools/api/users/_validate"
+      },
+      "headers": {
+        "type": "object",
+        "description": "The http headers sent with the call",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Authorization": "Bearer xxxxx"
+        }
+      },
+      "timeout": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The timeout of the call, in milliseconds. 10000 when missing",
+        "example": 5000
+      },
+      "tls_settings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgTlsConfig"
+          }
+        ],
+        "description": "The tls settings of the call to the remote service: the certificates it trusts and the client certificate it presents (mtls). The default settings when missing"
+      }
+    },
+    "required": [
+      "url"
+    ],
+    "example": {
+      "url": "https://users.oto.tools/api/users/_validate",
+      "headers": {
+        "Authorization": "Bearer xxxxx"
+      },
+      "timeout": 5000,
+      "tls_settings": {
+        "certs": [],
+        "trusted_certs": [],
+        "enabled": false,
+        "loose": false,
+        "trust_all": false
+      }
+    }
+  },
+  "JsonPathValidator": {
+    "type": "object",
+    "description": "A check of a json document: the value found at a json path of the document is compared to an expected value. It checks the profile of a logged in user (user validators of auth modules) or the json of an entity an admin writes (admin entity validators)",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "description": "The kind of the validator, always `json-path-validator`. A validator without kind is read as a json path validator",
+        "enum": [
+          "json-path-validator"
+        ]
+      },
+      "path": {
+        "type": "string",
+        "description": "The json path (https://goessner.net/articles/JsonPath/) of the checked value in the document, like `$.profile.email`. A filter path like `[?(@.enabled == true)]` with a `true` value passes when it selects something",
+        "example": "$.profile.groups"
+      },
+      "value": {
+        "description": "The expected value: any json value, compared as is to the value found at the path. A string can hold an operator instead: `IsDefined()` and `NotDefined()` check the presence of the path, `Not(x)`, `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `StartsWith(x)`, `DontStartsWith(x)`, `ContainedIn(a, b)`, `NotContainedIn(a, b)`, `JsonContains(x)` and `JsonContainsNot(x)` check a string, `Size(n)`, `SizeNot(n)`, `SizeGt(n)`, `SizeGte(n)`, `SizeLt(n)`, `SizeLte(n)`, `Contains(x)`, `Contains(Regex(x))` and `Contains(Wildcard(x))` check an array",
+        "example": "Contains(admins)"
+      },
+      "error": {
+        "type": "string",
+        "nullable": true,
+        "description": "The error message given when the check fails, null for the generic message",
+        "example": "the user is not a member of the admins group"
+      }
+    },
+    "required": [
+      "path",
+      "value"
+    ],
+    "example": {
+      "kind": "json-path-validator",
+      "path": "$.profile.groups",
+      "value": "Contains(admins)",
+      "error": "the user is not a member of the admins group"
+    }
+  },
+  "JsonValidator": {
+    "type": "object",
+    "description": "A check of the json of an entity written by an admin, through the admin api or the backoffice. Its `kind` selects how it checks: a json path (`json-path-validator`, the default when the kind is missing), a wasm plugin (`wasm-plugin-validator`) or an OPA policy (`opa-plugin-validator`)",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/JsonPathValidator"
+      },
+      {
+        "$ref": "#/components/schemas/WasmPluginValidator"
+      },
+      {
+        "$ref": "#/components/schemas/OpaPluginValidator"
+      }
+    ],
+    "example": {
+      "kind": "json-path-validator",
+      "path": "$.frontend.domains[0]",
+      "value": "Wildcard(*.oto.tools)",
+      "error": "routes can only be exposed on oto.tools"
+    }
+  },
+  "WasmPluginValidator": {
+    "type": "object",
+    "description": "A check of a json document delegated to a wasm plugin: its `validate` function receives the document and answers `{\"result\": true}` when the document is valid",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "description": "The kind of the validator, always `wasm-plugin-validator`",
+        "enum": [
+          "wasm-plugin-validator"
+        ]
+      },
+      "ref": {
+        "type": "string",
+        "description": "The id of the wasm plugin that checks the document",
+        "example": "wasm-plugin_entity-validator"
+      },
+      "error": {
+        "type": "string",
+        "nullable": true,
+        "description": "The error message given when the check fails, null for the generic message",
+        "example": "the entity is not valid"
+      }
+    },
+    "required": [
+      "kind",
+      "ref"
+    ],
+    "example": {
+      "kind": "wasm-plugin-validator",
+      "ref": "wasm-plugin_entity-validator",
+      "error": "the entity is not valid"
+    }
+  },
+  "OpaPluginValidator": {
+    "type": "object",
+    "description": "A check of a json document delegated to an Open Policy Agent policy compiled to wasm: the document is valid when the `result` of the policy is true",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "description": "The kind of the validator, always `opa-plugin-validator`",
+        "enum": [
+          "opa-plugin-validator"
+        ]
+      },
+      "ref": {
+        "type": "string",
+        "description": "The id of the wasm plugin holding the OPA policy",
+        "example": "wasm-plugin_entity-policy"
+      },
+      "error": {
+        "type": "string",
+        "nullable": true,
+        "description": "The error message given when the check fails, null for the generic message",
+        "example": "the entity is refused by the policy"
+      }
+    },
+    "required": [
+      "kind",
+      "ref"
+    ],
+    "example": {
+      "kind": "opa-plugin-validator",
+      "ref": "wasm-plugin_entity-policy",
+      "error": "the entity is refused by the policy"
+    }
+  },
+  "UserRight": {
+    "type": "object",
+    "description": "The rights of a user on a tenant (organization) and on some of its teams",
+    "properties": {
+      "tenant": {
+        "type": "string",
+        "description": "The tenant (organization) the right applies to, followed by its access level: `<tenant>:r` (read only), `<tenant>:rw` (read and write) or `<tenant>:not` (no access). `*` stands for every tenant. A value without level is read as `rw`, the api always writes the level, in lower case",
+        "example": "default:rw"
+      },
+      "teams": {
+        "type": "array",
+        "description": "The teams of the tenant (organization) the right applies to, each one followed by its access level the same way: `<team>:r`, `<team>:rw` or `<team>:not`, `*` standing for every team of the tenant",
+        "items": {
+          "type": "string",
+          "description": "A team followed by its access level",
+          "example": "default:rw"
+        },
+        "example": [
+          "default:rw",
+          "ops:r"
+        ]
+      }
+    },
+    "required": [
+      "tenant",
+      "teams"
+    ],
+    "example": {
+      "tenant": "default:rw",
+      "teams": [
+        "default:rw",
+        "ops:r"
+      ]
+    }
+  },
+  "security.otoroshi.io.AuthModuleUser": {
+    "type": "object",
+    "description": "The session of a user logged in to a private app (a route using the `Authentication` plugin) through an auth module. It is created when the user logs in, and removed when it logs out or when it expires: the api reads and deletes them, it does not create nor update them",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "randomId": {
+        "type": "string",
+        "description": "The id of the session, a random token",
+        "example": "Nf3kR9tWq2LmZ8xVb7Yc1Hd4Gp6Js0Ae5Uo3Ki9Tr2Wy8Qn1Mx7Bv4Cz6Dl0Fh2"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the user, read from the profile given by the identity provider (the `nameField` of the module for instance), shown in the list of the private apps sessions of the backoffice",
+        "example": "John Doe"
+      },
+      "email": {
+        "type": "string",
+        "description": "The email of the user, read from its profile: the `allowedUsers` and `deniedUsers` of the module are checked against it, and the `dataOverride` of the module is keyed by it",
+        "example": "john.doe@oto.tools"
+      },
+      "authConfigId": {
+        "type": "string",
+        "description": "The id of the auth module the user logged in with. `none` when missing",
+        "example": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "profile": {
+        "type": "object",
+        "description": "The profile of the user given by the identity provider, checked by the user validators of the module. Its shape depends on the provider",
+        "additionalProperties": true,
+        "example": {
+          "sub": "4f9c2d1e",
+          "name": "John Doe",
+          "email": "john.doe@oto.tools",
+          "email_verified": true
+        }
+      },
+      "token": {
+        "type": "object",
+        "description": "The tokens given by the identity provider (access token, refresh token...). Its shape depends on the provider. `{}` when missing",
+        "additionalProperties": true,
+        "example": {
+          "access_token": "eyJhbGciOiJSUzI1NiJ9.e30.c2lnbmF0dXJl",
+          "refresh_token": "eyJhbGciOiJIUzI1NiJ9.e30.c2lnbmF0dXJl",
+          "token_type": "Bearer",
+          "expires_in": 300
+        }
+      },
+      "realm": {
+        "type": "string",
+        "description": "The realm of the session: the type and the id of its auth module, also the suffix of its cookie. `none` when missing",
+        "example": "global-oauth-auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d"
+      },
+      "otoroshiData": {
+        "nullable": true,
+        "description": "The otoroshi data of the user sent to the backends of the private apps (in the otoroshi claim): any json value, usually an object, null when the user has none",
+        "example": {
+          "employee_id": "42",
+          "source": "sso"
+        }
+      },
+      "createdAt": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the session was created, a timestamp in milliseconds",
+        "example": 1760000000000
+      },
+      "expiredAt": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the session expires, a timestamp in milliseconds",
+        "example": 1760086400000
+      },
+      "lastRefresh": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the tokens of the session were last refreshed, a timestamp in milliseconds",
+        "example": 1760000000000
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the session, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {}
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the session: the tags of the auth module for an OAuth2 / OpenID Connect login, the ones the plugin or the workflow answers for a wasm or a workflow module, none for the other modules",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "sso"
+        },
+        "example": [
+          "sso"
+        ]
+      }
+    },
+    "required": [
+      "randomId",
+      "name",
+      "email",
+      "profile",
+      "createdAt",
+      "expiredAt",
+      "lastRefresh"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "randomId": "Nf3kR9tWq2LmZ8xVb7Yc1Hd4Gp6Js0Ae5Uo3Ki9Tr2Wy8Qn1Mx7Bv4Cz6Dl0Fh2",
+      "name": "John Doe",
+      "email": "john.doe@oto.tools",
+      "authConfigId": "auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "profile": {
+        "sub": "4f9c2d1e",
+        "name": "John Doe",
+        "email": "john.doe@oto.tools",
+        "email_verified": true
+      },
+      "token": {
+        "access_token": "eyJhbGciOiJSUzI1NiJ9.e30.c2lnbmF0dXJl",
+        "refresh_token": "eyJhbGciOiJIUzI1NiJ9.e30.c2lnbmF0dXJl",
+        "token_type": "Bearer",
+        "expires_in": 300
+      },
+      "realm": "global-oauth-auth_mod_0b1f7c5e-1d2a-4a8e-9d0f-6c3b2a1e4f5d",
+      "otoroshiData": {
+        "employee_id": "42",
+        "source": "sso"
+      },
+      "createdAt": 1760000000000,
+      "expiredAt": 1760086400000,
+      "lastRefresh": 1760000000000,
+      "metadata": {},
+      "tags": []
+    }
+  },
+  "security.otoroshi.io.JwtVerifier": {
+    "type": "object",
+    "description": "A jwt verifier: it finds a jwt token in the requests (`source`), verifies its signature (`algoSettings`) and its claims, then sends it to the backend as is, signed again or transformed (`strategy`). Routes use it through the `JwtVerification` plugin",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "type": {
+        "type": "string",
+        "description": "The kind of verifier, always `global` for the verifiers of the admin api. Not read, always written",
+        "enum": [
+          "global"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the jwt verifier, listed in the `verifiers` of the `JwtVerification` plugins of the routes that use it",
+        "example": "jwt_verifier_6f1c2e8a-3b4d-4f5e-9a7b-1c2d3e4f5a6b"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the jwt verifier, shown and searched in the list of the jwt verifiers of the backoffice",
+        "example": "Keycloak tokens"
+      },
+      "desc": {
+        "type": "string",
+        "description": "The description of the verifier. `--` when missing",
+        "example": "Verifies the access tokens issued by the Keycloak of the company"
+      },
+      "strict": {
+        "type": "boolean",
+        "description": "Refuse the requests without token (400 `error.expected.token.not.found`). When false they go through unchecked. False when missing (the template of the api sets it to true)"
+      },
+      "source": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JwtTokenLocation"
+          }
+        ],
+        "description": "Where the token is found in the requests"
+      },
+      "algoSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AlgoSettings"
+          }
+        ],
+        "description": "How the signature of the token is verified. For the `DefaultToken` strategy, how the generated token is signed"
+      },
+      "strategy": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/VerifierStrategy"
+          }
+        ],
+        "description": "What the verifier does with the token"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the verifier, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "owner": "security-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the jwt verifier, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "keycloak"
+        },
+        "example": [
+          "keycloak"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "source",
+      "algoSettings",
+      "strategy"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "global",
+      "id": "jwt_verifier_6f1c2e8a-3b4d-4f5e-9a7b-1c2d3e4f5a6b",
+      "name": "Keycloak tokens",
+      "desc": "Verifies the access tokens issued by the Keycloak of the company",
+      "strict": true,
+      "source": {
+        "type": "InHeader",
+        "name": "Authorization",
+        "remove": "Bearer "
+      },
+      "algoSettings": {
+        "type": "JWKSAlgoSettings",
+        "url": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/certs",
+        "timeout": 2000,
+        "headers": {},
+        "ttl": 3600000,
+        "kty": "RSA",
+        "proxy": null,
+        "tls_config": {
+          "certs": [],
+          "trustedCerts": [],
+          "mtls": false,
+          "loose": false,
+          "trustAll": false
+        },
+        "mtlsConfig": {
+          "certs": [],
+          "trustedCerts": [],
+          "mtls": false,
+          "loose": false,
+          "trustAll": false
+        }
+      },
+      "strategy": {
+        "type": "PassThrough",
+        "verificationSettings": {
+          "fields": {
+            "iss": "https://keycloak.oto.tools/realms/master"
+          },
+          "arrayFields": {}
+        }
+      },
+      "metadata": {
+        "owner": "security-team"
+      },
+      "tags": [
+        "keycloak"
+      ]
+    }
+  },
+  "JwtTokenLocation": {
+    "type": "object",
+    "description": "Where a jwt token is in a request: a header (`InHeader`), a query parameter (`InQueryParam`) or a cookie (`InCookie`)",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/InQueryParam"
+      },
+      {
+        "$ref": "#/components/schemas/InHeader"
+      },
+      {
+        "$ref": "#/components/schemas/InCookie"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "InQueryParam": "#/components/schemas/InQueryParam",
+        "InHeader": "#/components/schemas/InHeader",
+        "InCookie": "#/components/schemas/InCookie"
+      }
+    },
+    "example": {
+      "type": "InHeader",
+      "name": "X-JWT-Token",
+      "remove": ""
+    }
+  },
+  "InQueryParam": {
+    "type": "object",
+    "description": "A jwt token read from a query parameter of the request",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The location of the token, always `InQueryParam`",
+        "enum": [
+          "InQueryParam"
+        ]
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the query parameter holding the token",
+        "example": "access_token"
+      }
+    },
+    "required": [
+      "type",
+      "name"
+    ],
+    "example": {
+      "type": "InQueryParam",
+      "name": "access_token"
+    }
+  },
+  "InHeader": {
+    "type": "object",
+    "description": "A jwt token read from a header of the request. When otoroshi writes a token (signed or transformed), it is written in the same header, prefixed by `remove`",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The location of the token, always `InHeader`",
+        "enum": [
+          "InHeader"
+        ]
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the header holding the token",
+        "example": "Authorization"
+      },
+      "remove": {
+        "type": "string",
+        "description": "A text removed from the value of the header to get the token, like `Bearer ` (with its trailing space). Empty when missing",
+        "example": "Bearer "
+      }
+    },
+    "required": [
+      "type",
+      "name"
+    ],
+    "example": {
+      "type": "InHeader",
+      "name": "Authorization",
+      "remove": "Bearer "
+    }
+  },
+  "InCookie": {
+    "type": "object",
+    "description": "A jwt token read from a cookie of the request",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The location of the token, always `InCookie`",
+        "enum": [
+          "InCookie"
+        ]
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the cookie holding the token",
+        "example": "jwt-token"
+      }
+    },
+    "required": [
+      "type",
+      "name"
+    ],
+    "example": {
+      "type": "InCookie",
+      "name": "jwt-token"
+    }
+  },
+  "AlgoSettings": {
+    "type": "object",
+    "description": "How the signature of a jwt token is verified, or how a token is signed. Its `type` selects the algorithm and where the keys come from: a shared secret (`HSAlgoSettings`), PEM keys (`RSAlgoSettings`, `ESAlgoSettings`), a key pair of a certificate of otoroshi (`RSAKPAlgoSettings`, `ESKPAlgoSettings`), the key pair matching the `kid` of the token (`KidAlgoSettings`) or a remote JSON Web Key Set (`JWKSAlgoSettings`)",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/HSAlgoSettings"
+      },
+      {
+        "$ref": "#/components/schemas/RSAlgoSettings"
+      },
+      {
+        "$ref": "#/components/schemas/ESAlgoSettings"
+      },
+      {
+        "$ref": "#/components/schemas/JWKSAlgoSettings"
+      },
+      {
+        "$ref": "#/components/schemas/RSAKPAlgoSettings"
+      },
+      {
+        "$ref": "#/components/schemas/ESKPAlgoSettings"
+      },
+      {
+        "$ref": "#/components/schemas/KidAlgoSettings"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "HSAlgoSettings": "#/components/schemas/HSAlgoSettings",
+        "RSAlgoSettings": "#/components/schemas/RSAlgoSettings",
+        "ESAlgoSettings": "#/components/schemas/ESAlgoSettings",
+        "JWKSAlgoSettings": "#/components/schemas/JWKSAlgoSettings",
+        "RSAKPAlgoSettings": "#/components/schemas/RSAKPAlgoSettings",
+        "ESKPAlgoSettings": "#/components/schemas/ESKPAlgoSettings",
+        "KidAlgoSettings": "#/components/schemas/KidAlgoSettings"
+      }
+    },
+    "example": {
+      "type": "HSAlgoSettings",
+      "size": 512,
+      "secret": "secret",
+      "base64": false
+    }
+  },
+  "HSAlgoSettings": {
+    "type": "object",
+    "description": "Tokens signed with HMAC and SHA-2 (`HS256`, `HS384`, `HS512`) using a shared secret",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The algorithm settings, always `HSAlgoSettings`",
+        "enum": [
+          "HSAlgoSettings"
+        ]
+      },
+      "size": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The size of the SHA-2 hash of the algorithm, in bits: 256, 384 or 512 (`HS256`, `HS384`, `HS512`)",
+        "enum": [
+          256,
+          384,
+          512
+        ],
+        "example": 256
+      },
+      "secret": {
+        "type": "string",
+        "description": "The shared secret. It can be a vault reference like `${vault://local/jwt-secret}`, or an expression like `${env.JWT_SECRET}` or `${config.jwt.secret}`",
+        "example": "${vault://local/jwt-secret}"
+      },
+      "base64": {
+        "type": "boolean",
+        "description": "The secret is base64 encoded, it is decoded before use. False when missing"
+      }
+    },
+    "required": [
+      "type",
+      "size",
+      "secret"
+    ],
+    "example": {
+      "type": "HSAlgoSettings",
+      "size": 512,
+      "secret": "secret",
+      "base64": false
+    }
+  },
+  "RSAlgoSettings": {
+    "type": "object",
+    "description": "Tokens signed with RSA and SHA-2 (`RS256`, `RS384`, `RS512`) using the keys given in PEM format",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The algorithm settings, always `RSAlgoSettings`",
+        "enum": [
+          "RSAlgoSettings"
+        ]
+      },
+      "size": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The size of the SHA-2 hash of the algorithm, in bits: 256, 384 or 512 (`RS256`, `RS384`, `RS512` for instance)",
+        "enum": [
+          256,
+          384,
+          512
+        ],
+        "example": 256
+      },
+      "publicKey": {
+        "type": "string",
+        "description": "The RSA public key in PEM format, used to verify the tokens. It can be a vault reference like `${vault://local/jwt-public-key}`, or an expression like `${env.JWT_PUBLIC_KEY}`",
+        "example": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo\n-----END PUBLIC KEY-----"
+      },
+      "privateKey": {
+        "type": "string",
+        "nullable": true,
+        "description": "The RSA private key in PEM format, only needed to sign tokens (re-signing strategies, default token), null otherwise",
+        "example": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj\n-----END PRIVATE KEY-----"
+      }
+    },
+    "required": [
+      "type",
+      "size",
+      "publicKey"
+    ],
+    "example": {
+      "type": "RSAlgoSettings",
+      "size": 256,
+      "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo\n-----END PUBLIC KEY-----",
+      "privateKey": null
+    }
+  },
+  "ESAlgoSettings": {
+    "type": "object",
+    "description": "Tokens signed with ECDSA and SHA-2 (`ES256`, `ES384`, `ES512`) using the keys given in PEM format",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The algorithm settings, always `ESAlgoSettings`",
+        "enum": [
+          "ESAlgoSettings"
+        ]
+      },
+      "size": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The size of the SHA-2 hash of the algorithm, in bits: 256, 384 or 512 (`ES256`, `ES384`, `ES512`)",
+        "enum": [
+          256,
+          384,
+          512
+        ],
+        "example": 256
+      },
+      "publicKey": {
+        "type": "string",
+        "description": "The EC public key in PEM format, used to verify the tokens. It can be a vault reference like `${vault://local/jwt-public-key}`, or an expression like `${env.JWT_PUBLIC_KEY}`",
+        "example": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\n-----END PUBLIC KEY-----"
+      },
+      "privateKey": {
+        "type": "string",
+        "nullable": true,
+        "description": "The EC private key in PEM format, only needed to sign tokens (re-signing strategies, default token), null otherwise",
+        "example": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2\n-----END PRIVATE KEY-----"
+      }
+    },
+    "required": [
+      "type",
+      "size",
+      "publicKey"
+    ],
+    "example": {
+      "type": "ESAlgoSettings",
+      "size": 256,
+      "publicKey": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\n-----END PUBLIC KEY-----",
+      "privateKey": null
+    }
+  },
+  "JWKSAlgoSettings": {
+    "type": "object",
+    "description": "Tokens verified with the public keys of a remote JSON Web Key Set, like the `jwks_uri` of an OpenID Connect provider. The key is chosen by the `kid` of the token. The key set is cached for `ttl` milliseconds. Only verifies tokens, it cannot sign them",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The algorithm settings, always `JWKSAlgoSettings`",
+        "enum": [
+          "JWKSAlgoSettings"
+        ]
+      },
+      "url": {
+        "type": "string",
+        "description": "The url of the JSON Web Key Set",
+        "example": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/certs"
+      },
+      "timeout": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The timeout of the call fetching the key set, in milliseconds. 2000 when missing",
+        "example": 5000
+      },
+      "headers": {
+        "type": "object",
+        "description": "The http headers sent with the call fetching the key set",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Authorization": "Bearer xxxxx"
+        }
+      },
+      "ttl": {
+        "type": "integer",
+        "format": "int64",
+        "description": "How long the fetched key set is cached, in milliseconds. 3600000 (one hour) when missing",
+        "example": 600000
+      },
+      "kty": {
+        "type": "string",
+        "description": "The type of the keys of the key set (`RSA` or `EC` to verify RSA or ECDSA signatures). `RSA` when missing",
+        "enum": [
+          "RSA",
+          "EC",
+          "oct",
+          "OKP"
+        ],
+        "example": "RSA"
+      },
+      "proxy": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The http proxy used to fetch the key set, null to use the jwk proxy of the global configuration"
+      },
+      "tls_config": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MtlsConfig"
+          }
+        ],
+        "readOnly": true,
+        "description": "A copy of `mtlsConfig`, written for the older clients. It is only read when `mtlsConfig` and `tlsConfig` are missing"
+      },
+      "mtlsConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MtlsConfig"
+          }
+        ],
+        "description": "The tls settings of the call fetching the key set. The legacy `tlsConfig` and `tls_config` keys are read when it is missing"
+      }
+    },
+    "required": [
+      "type",
+      "url"
+    ],
+    "example": {
+      "type": "JWKSAlgoSettings",
+      "url": "https://keycloak.oto.tools/realms/master/protocol/openid-connect/certs",
+      "timeout": 2000,
+      "headers": {},
+      "ttl": 3600000,
+      "kty": "RSA",
+      "proxy": null,
+      "tls_config": {
+        "certs": [],
+        "trustedCerts": [],
+        "mtls": false,
+        "loose": false,
+        "trustAll": false
+      },
+      "mtlsConfig": {
+        "certs": [],
+        "trustedCerts": [],
+        "mtls": false,
+        "loose": false,
+        "trustAll": false
+      }
+    }
+  },
+  "RSAKPAlgoSettings": {
+    "type": "object",
+    "description": "Tokens signed with RSA and SHA-2 (`RS256`, `RS384`, `RS512`) using the key pair of a certificate of otoroshi",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The algorithm settings, always `RSAKPAlgoSettings`",
+        "enum": [
+          "RSAKPAlgoSettings"
+        ]
+      },
+      "size": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The size of the SHA-2 hash of the algorithm, in bits: 256, 384 or 512 (`RS256`, `RS384`, `RS512` for instance)",
+        "enum": [
+          256,
+          384,
+          512
+        ],
+        "example": 256
+      },
+      "certId": {
+        "type": "string",
+        "description": "The id of the certificate holding the RSA key pair. Its id is also the `kid` of the tokens otoroshi signs",
+        "example": "otoroshi-jwt-signing"
+      }
+    },
+    "required": [
+      "type",
+      "size",
+      "certId"
+    ],
+    "example": {
+      "type": "RSAKPAlgoSettings",
+      "size": 256,
+      "certId": "otoroshi-jwt-signing"
+    }
+  },
+  "ESKPAlgoSettings": {
+    "type": "object",
+    "description": "Tokens signed with ECDSA and SHA-2 (`ES256`, `ES384`, `ES512`) using the key pair of a certificate of otoroshi",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The algorithm settings, always `ESKPAlgoSettings`",
+        "enum": [
+          "ESKPAlgoSettings"
+        ]
+      },
+      "size": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The size of the SHA-2 hash of the algorithm, in bits: 256, 384 or 512 (`ES256`, `ES384`, `ES512`)",
+        "enum": [
+          256,
+          384,
+          512
+        ],
+        "example": 256
+      },
+      "certId": {
+        "type": "string",
+        "description": "The id of the certificate holding the EC key pair. Its id is also the `kid` of the tokens otoroshi signs",
+        "example": "otoroshi-jwt-signing-ec"
+      }
+    },
+    "required": [
+      "type",
+      "size",
+      "certId"
+    ],
+    "example": {
+      "type": "ESKPAlgoSettings",
+      "size": 256,
+      "certId": "otoroshi-jwt-signing-ec"
+    }
+  },
+  "KidAlgoSettings": {
+    "type": "object",
+    "description": "Tokens verified with the key pair of the certificate of otoroshi whose id is the `kid` of the token. Only verifies tokens, it cannot sign them",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The algorithm settings, always `KidAlgoSettings`",
+        "enum": [
+          "KidAlgoSettings"
+        ]
+      },
+      "onlyExposedCerts": {
+        "type": "boolean",
+        "description": "Only use the key pairs of the certificates that are `exposed`, whose public keys otoroshi serves in its jwks (`/.well-known/otoroshi/security/jwks.json`). When false, any key pair of otoroshi can verify a token. False when missing"
+      }
+    },
+    "required": [
+      "type"
+    ],
+    "example": {
+      "type": "KidAlgoSettings",
+      "onlyExposedCerts": true
+    }
+  },
+  "VerifierStrategy": {
+    "type": "object",
+    "description": "What a jwt verifier does with the token of a request. Its `type` selects it: verify the token and send it unchanged (`PassThrough`), verify it and sign it again (`Sign`), verify it, rewrite it and sign it again (`Transform`), or generate a token when the request has none (`DefaultToken`)",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/DefaultToken"
+      },
+      {
+        "$ref": "#/components/schemas/PassThrough"
+      },
+      {
+        "$ref": "#/components/schemas/Sign"
+      },
+      {
+        "$ref": "#/components/schemas/Transform"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "DefaultToken": "#/components/schemas/DefaultToken",
+        "PassThrough": "#/components/schemas/PassThrough",
+        "Sign": "#/components/schemas/Sign",
+        "Transform": "#/components/schemas/Transform"
+      }
+    },
+    "example": {
+      "type": "PassThrough",
+      "verificationSettings": {
+        "fields": {},
+        "arrayFields": {}
+      }
+    }
+  },
+  "DefaultToken": {
+    "type": "object",
+    "description": "Generates a token when the request has none. In strict mode the token is signed with the `algoSettings` of the verifier and written in its `source`, and a request already holding a token is refused. Otherwise a request without token goes through without one, and a request holding one has it verified",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The strategy, always `DefaultToken`",
+        "enum": [
+          "DefaultToken"
+        ]
+      },
+      "strict": {
+        "type": "boolean",
+        "description": "Generate the token for the requests without one, and refuse the requests that already hold one. True when missing"
+      },
+      "token": {
+        "type": "object",
+        "description": "The claims of the generated token. The string values can hold expressions like `${apikey.clientName}`, `${token.jti}`, `${token.iat}`, `${token.nbf}`, `${token.exp}` (in a minute), `${token.iss}` (`Otoroshi`), `${token.sub}` (the `clientName` of the api key, or the email of the user, `anonymous` otherwise) and `${token.aud}` (`backend`) giving default values. The `iat`, `nbf` and `exp` claims are converted to numbers",
+        "additionalProperties": true,
+        "example": {
+          "iss": "Otoroshi",
+          "sub": "${token.sub}",
+          "exp": "${token.exp}",
+          "gateway": "otoroshi"
+        }
+      },
+      "verificationSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/VerificationSettings"
+          }
+        ],
+        "description": "The claims a token found in the request has to hold"
+      }
+    },
+    "required": [
+      "type",
+      "verificationSettings"
+    ],
+    "example": {
+      "type": "DefaultToken",
+      "strict": true,
+      "token": {
+        "iss": "Otoroshi",
+        "sub": "${token.sub}",
+        "exp": "${token.exp}"
+      },
+      "verificationSettings": {
+        "fields": {},
+        "arrayFields": {}
+      }
+    }
+  },
+  "PassThrough": {
+    "type": "object",
+    "description": "Verifies the token of the request (signature and claims) and sends it unchanged to the backend",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The strategy, always `PassThrough`",
+        "enum": [
+          "PassThrough"
+        ]
+      },
+      "verificationSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/VerificationSettings"
+          }
+        ],
+        "description": "The claims the token has to hold"
+      }
+    },
+    "required": [
+      "type",
+      "verificationSettings"
+    ],
+    "example": {
+      "type": "PassThrough",
+      "verificationSettings": {
+        "fields": {
+          "iss": "https://keycloak.oto.tools/realms/master"
+        },
+        "arrayFields": {}
+      }
+    }
+  },
+  "Sign": {
+    "type": "object",
+    "description": "Verifies the token of the request with the `algoSettings` of the verifier, then signs it again with other algorithm settings before sending it to the backend",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The strategy, always `Sign`",
+        "enum": [
+          "Sign"
+        ]
+      },
+      "verificationSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/VerificationSettings"
+          }
+        ],
+        "description": "The claims the token has to hold"
+      },
+      "algoSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AlgoSettings"
+          }
+        ],
+        "description": "How the token sent to the backend is signed"
+      }
+    },
+    "required": [
+      "type",
+      "verificationSettings",
+      "algoSettings"
+    ],
+    "example": {
+      "type": "Sign",
+      "verificationSettings": {
+        "fields": {},
+        "arrayFields": {}
+      },
+      "algoSettings": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "${vault://local/backend-secret}",
+        "base64": false
+      }
+    }
+  },
+  "Transform": {
+    "type": "object",
+    "description": "Verifies the token of the request with the `algoSettings` of the verifier, rewrites its claims, then signs it again with other algorithm settings and sends it to the backend at another location",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "The strategy, always `Transform`",
+        "enum": [
+          "Transform"
+        ]
+      },
+      "verificationSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/VerificationSettings"
+          }
+        ],
+        "description": "The claims the token has to hold"
+      },
+      "transformSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TransformSettings"
+          }
+        ],
+        "description": "How the token is rewritten, and where it is sent"
+      },
+      "algoSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AlgoSettings"
+          }
+        ],
+        "description": "How the token sent to the backend is signed"
+      }
+    },
+    "required": [
+      "type",
+      "verificationSettings",
+      "transformSettings",
+      "algoSettings"
+    ],
+    "example": {
+      "type": "Transform",
+      "verificationSettings": {
+        "fields": {},
+        "arrayFields": {}
+      },
+      "transformSettings": {
+        "location": {
+          "type": "InHeader",
+          "name": "X-Backend-Token",
+          "remove": ""
+        },
+        "mappingSettings": {
+          "map": {},
+          "values": {
+            "gateway": "otoroshi"
+          },
+          "remove": []
+        }
+      },
+      "algoSettings": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "${vault://local/backend-secret}",
+        "base64": false
+      }
+    }
+  },
+  "VerificationSettings": {
+    "type": "object",
+    "description": "The claims a jwt token has to hold, on top of a valid signature",
+    "properties": {
+      "fields": {
+        "type": "object",
+        "description": "The expected values of the claims of the token, keyed by claim name. `iss`, `aud`, `sub` and `jti` are compared to their value, other claims accept the operators `Regex(x)`, `RegexNot(x)`, `Wildcard(x)`, `WildcardNot(x)`, `Contains(x)`, `ContainsNot(x)`, `ContainsOneOf(a, b)`, `ContainsNotOneOf(a, b)`, `ContainsAll(a, b)`... The values can hold expressions like `${req.headers.X-Tenant}`",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The expected value of the claim"
+        },
+        "example": {
+          "iss": "https://keycloak.oto.tools/realms/master",
+          "email": "Wildcard(*@oto.tools)"
+        }
+      },
+      "arrayFields": {
+        "type": "object",
+        "description": "The values an array claim of the token has to contain, keyed by claim name. Several values are separated by commas, the claim has to contain all of them",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value, or the comma separated values, the array claim has to contain"
+        },
+        "example": {
+          "roles": "user, admin"
+        }
+      }
+    },
+    "example": {
+      "fields": {
+        "iss": "https://keycloak.oto.tools/realms/master"
+      },
+      "arrayFields": {
+        "roles": "admin"
+      }
+    }
+  },
+  "TransformSettings": {
+    "type": "object",
+    "description": "Where the transformed jwt token is sent to the backend, and how its claims are rewritten",
+    "properties": {
+      "location": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JwtTokenLocation"
+          }
+        ],
+        "description": "Where the transformed token is written in the request sent to the backend"
+      },
+      "mappingSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MappingSettings"
+          }
+        ],
+        "description": "How the claims of the token are rewritten"
+      }
+    },
+    "required": [
+      "location"
+    ],
+    "example": {
+      "location": {
+        "type": "InHeader",
+        "name": "X-Backend-Token",
+        "remove": ""
+      },
+      "mappingSettings": {
+        "map": {
+          "preferred_username": "username"
+        },
+        "values": {
+          "gateway": "otoroshi"
+        },
+        "remove": []
+      }
+    }
+  },
+  "MappingSettings": {
+    "type": "object",
+    "description": "How the claims of a jwt token are rewritten before the token is signed again",
+    "properties": {
+      "map": {
+        "type": "object",
+        "description": "The claims to rename: the name of a claim of the token, mapped to its new name",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The new name of the claim"
+        },
+        "example": {
+          "preferred_username": "username"
+        }
+      },
+      "values": {
+        "type": "object",
+        "description": "The claims added to the token, by name. The string values can hold expressions like `${apikey.clientName}` or `${token.sub}`",
+        "additionalProperties": true,
+        "example": {
+          "gateway": "otoroshi",
+          "user": "${token.email}"
+        }
+      },
+      "remove": {
+        "type": "array",
+        "description": "The names of the claims removed from the token",
+        "items": {
+          "type": "string",
+          "description": "The name of a claim",
+          "example": "internal_id"
+        },
+        "example": [
+          "internal_id"
+        ]
+      }
+    },
+    "example": {
+      "map": {
+        "preferred_username": "username"
+      },
+      "values": {
+        "gateway": "otoroshi"
+      },
+      "remove": [
+        "internal_id"
+      ]
+    }
+  },
+  "security.otoroshi.io.SimpleAdminUser": {
+    "type": "object",
+    "description": "An admin of otoroshi logging in to the backoffice with a login and a password",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "username": {
+        "type": "string",
+        "description": "The login of the admin, usually its email. It is the id of the admin",
+        "example": "jane.doe@oto.tools"
+      },
+      "password": {
+        "type": "string",
+        "description": "The bcrypt hash of the password of the admin. The api stores the value as sent: send a bcrypt hash",
+        "example": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+      },
+      "label": {
+        "type": "string",
+        "description": "The display name of the admin, shown in the list of the admins of the backoffice and written as the `name` of the profile of its sessions",
+        "example": "Jane Doe"
+      },
+      "createdAt": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the admin was created, a timestamp in milliseconds. Now when missing",
+        "example": 1760000000000
+      },
+      "type": {
+        "type": "string",
+        "description": "The kind of admin, always `SIMPLE` (login and password) for the admins of this api. `SIMPLE` when missing",
+        "enum": [
+          "SIMPLE"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the admin, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "team": "ops"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the admin, to search and sort it. They are not copied to its sessions",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "ops"
+        },
+        "example": [
+          "ops"
+        ]
+      },
+      "rights": {
+        "type": "array",
+        "description": "The rights of the admin on the tenants (organizations) and teams of otoroshi. An admin cannot be given more rights than the one writing it. Missing rights are no rights, unless `superAdminWhenNoRights` of the global configuration is on. `[{\"tenant\": \"*:rw\", \"teams\": [\"*:rw\"]}]` makes a super admin",
+        "items": {
+          "$ref": "#/components/schemas/UserRight"
+        },
+        "example": [
+          {
+            "tenant": "default:rw",
+            "teams": [
+              "default:rw"
+            ]
+          }
+        ]
+      },
+      "adminEntityValidators": {
+        "type": "object",
+        "description": "The validators the entities written by this admin have to pass, by entity kind",
+        "additionalProperties": {
+          "type": "array",
+          "description": "The validators of an entity kind, keyed by the singular name of the kind (`route`, `apikey`, `certificate`...) or `all` for every kind. Every validator has to pass for the entity to be written",
+          "items": {
+            "$ref": "#/components/schemas/JsonValidator"
+          }
+        },
+        "example": {
+          "route": [
+            {
+              "kind": "json-path-validator",
+              "path": "$.frontend.domains[0]",
+              "value": "Wildcard(*.oto.tools)",
+              "error": "routes can only be exposed on oto.tools"
+            }
+          ]
+        }
+      }
+    },
+    "required": [
+      "username",
+      "password",
+      "label"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "username": "jane.doe@oto.tools",
+      "password": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+      "label": "Jane Doe",
+      "createdAt": 1760000000000,
+      "type": "SIMPLE",
+      "metadata": {},
+      "tags": [],
+      "rights": [
+        {
+          "tenant": "default:rw",
+          "teams": [
+            "default:rw"
+          ]
+        }
+      ],
+      "adminEntityValidators": {}
+    }
+  }
+}

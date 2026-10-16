@@ -1,0 +1,2662 @@
+{
+  "config.otoroshi.io.GlobalConfig": {
+    "description": "The global configuration of otoroshi: the single, instance wide settings that apply to every request and to the whole instance (quotas, ip filtering, tls, analytics, alerts, global plugins, proxies, templates of the new entities...). It is a singleton, always read and written under the id `global`: it can be read and updated, not created nor deleted. A change applies at once to every instance of the cluster. The fields absent from a body take the value given in their description, which can differ from the one of a new instance (the template)",
+    "type": "object",
+    "properties": {
+      "tags": {
+        "type": "array",
+        "description": "The tags of the global configuration, free labels to search and organize the entities. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "production"
+        }
+      },
+      "letsEncryptSettings": {
+        "$ref": "#/components/schemas/LetsEncryptSettings"
+      },
+      "lines": {
+        "type": "array",
+        "deprecated": true,
+        "description": "The lines (environments, like `prod` or `preprod`) of the instance. Only used by the removed service descriptors, kept for compatibility. `[\"prod\"]` when absent",
+        "items": {
+          "type": "string",
+          "description": "The name of a line",
+          "example": "prod"
+        }
+      },
+      "anonymousReporting": {
+        "type": "boolean",
+        "description": "Send anonymous statistics about the instance (number of entities, enabled features, versions) to the otoroshi team, when the anonymous reporting is also enabled in the configuration of the instance (`otoroshi.anonymous-reporting.enabled`). `false` when absent"
+      },
+      "initWithNewEngine": {
+        "type": "boolean",
+        "description": "Whether the instance was initialized for the proxy engine of the routes: its first start created the route that exposes the backoffice and the admin api. Informative once the instance has started. `true` for a new instance, `false` when absent"
+      },
+      "maintenanceMode": {
+        "type": "boolean",
+        "description": "Put every route in maintenance: every proxied request is answered with a 503 error instead of being forwarded, except the ones to the backoffice and the ones of the routes that turn the legacy checks off (metadata `otoroshi-core-apply-legacy-checks: false`). `false` when absent"
+      },
+      "enableEmbeddedMetrics": {
+        "type": "boolean",
+        "description": "Compute the live metrics of the routes (calls, data in and out, durations) and store them in the datastore, for the backoffice. It performs many writes in the datastore. `true` when absent"
+      },
+      "streamEntityOnly": {
+        "type": "boolean",
+        "deprecated": true,
+        "description": "Not used anymore, the bodies are always streamed. Kept for compatibility. `true` when absent"
+      },
+      "autoLinkToDefaultGroup": {
+        "type": "boolean",
+        "deprecated": true,
+        "description": "Add a new service descriptor without group to the default group. Only used by the removed service descriptors, kept for compatibility. `true` when absent"
+      },
+      "limitConcurrentRequests": {
+        "type": "boolean",
+        "description": "Limit the number of requests handled at the same time by each instance to maxConcurrentRequests, the requests above being answered with a 429 error. Recommended for resilience. `false` when absent"
+      },
+      "maxConcurrentRequests": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The maximum number of requests handled at the same time by each instance. Above it, an audit event and an alert are sent, and the requests are refused with a 429 error when limitConcurrentRequests is true. 1000 when absent",
+        "example": 1000
+      },
+      "maxHttp10ResponseSize": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The maximum size, in bytes, of a response to an HTTP/1.0 request: such a response is held in memory, the bytes above the limit are dropped. Choose it so that maxConcurrentRequests times maxHttp10ResponseSize fits in the memory of the process. 4194304 (4 MB) when absent",
+        "example": 4194304
+      },
+      "useCircuitBreakers": {
+        "type": "boolean",
+        "readOnly": true,
+        "deprecated": true,
+        "description": "Always `true` and ignored on input: the circuit breakers are set on the backends of the routes since the service descriptors were removed"
+      },
+      "apiReadOnly": {
+        "type": "boolean",
+        "description": "Freeze the datastore: the admin api and the backoffice refuse every call that is not a GET. It can then only be turned off directly in the datastore. The panic mode of the backoffice turns it on. `false` when absent"
+      },
+      "u2fLoginOnly": {
+        "type": "boolean",
+        "description": "Disable the login to the backoffice through the auth module of backOfficeAuthRef: the admins log in with their otoroshi account only (login, password and their WebAuthn device when they have one). `false` when absent"
+      },
+      "superAdminWhenNoRights": {
+        "type": "boolean",
+        "description": "Give the super admin rights to an admin or a user of the backoffice that has no rights at all. `false` for a new instance, `true` when absent (the instances that predate the flag, where missing rights meant super admin rights): turn it off before going live"
+      },
+      "trustXForwarded": {
+        "type": "boolean",
+        "description": "Read the client address, the protocol and the host of the original request from the headers set by the reverse proxies in front of otoroshi (see trustedProxies and clientAddressHeader). When false, the address, protocol and host of the connection are used. `true` when absent"
+      },
+      "trustedProxies": {
+        "type": "array",
+        "description": "The reverse proxies allowed to tell otoroshi who the client is: ip addresses, CIDR ranges or patterns where `*` matches anything. They are added to the ones given at startup (`OTOROSHI_OPTIONS_TRUSTED_PROXIES`, `OTOROSHI_TRUSTED_PROXIES`, `CC_REVERSE_PROXY_IPS`). When the list is not empty, the loopback is trusted too and the forwarded headers of anyone else are ignored; when it is empty, the forwarded headers of anyone are trusted. A single string is read as a one entry list, the entries that are not strings are left out",
+        "items": {
+          "type": "string",
+          "description": "An address, a CIDR range or a pattern. An entry can hold a comma separated list, like a vault reference to an environment variable",
+          "example": "10.0.0.0/8"
+        }
+      },
+      "clientAddressHeader": {
+        "type": "string",
+        "description": "The header the client address is read from: `X-Forwarded-For`, `Forwarded`, or any header holding the address like `X-Real-IP`. It must be one the reverse proxies build or overwrite. `OTOROSHI_OPTIONS_CLIENT_ADDRESS_HEADER` wins over this value when it is set. `X-Forwarded-For` when absent or blank",
+        "example": "X-Forwarded-For"
+      },
+      "useLegacyClientIpAddress": {
+        "type": "boolean",
+        "description": "Temporary way back to the resolution of the client address used before the trusted proxies: the leftmost `X-Forwarded-For` entry, whoever sent it, when trustXForwarded is true, the address of the connection otherwise. Also turned on by `OTOROSHI_OPTIONS_USE_LEGACY_CLIENT_IP_ADDRESS=true`. Will be removed. `false` when absent"
+      },
+      "ipFiltering": {
+        "$ref": "#/components/schemas/IpFiltering"
+      },
+      "throttlingQuota": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The maximum number of requests otoroshi handles, all clients together, during each throttling window (`app.throttlingWindow`, 10 seconds by default). The requests above are answered with a 429 error. 10000000 when absent",
+        "example": 100000
+      },
+      "perIpThrottlingQuota": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The maximum number of requests otoroshi handles for one client address during each throttling window (`app.throttlingWindow`, 10 seconds by default), unless the address has a quota of its own. The requests above are answered with a 429 error. 10000000 when absent",
+        "example": 500
+      },
+      "analyticsWebhooks": {
+        "type": "array",
+        "description": "Legacy: the webhooks every analytics event is posted to. Prefer the data exporters. A list holding a webhook that cannot be read reads as empty",
+        "items": {
+          "$ref": "#/components/schemas/Webhook"
+        }
+      },
+      "alertsWebhooks": {
+        "type": "array",
+        "description": "Legacy: the webhooks every alert event is posted to. Prefer the data exporters. A list holding a webhook that cannot be read reads as empty",
+        "items": {
+          "$ref": "#/components/schemas/Webhook"
+        }
+      },
+      "elasticWritesConfigs": {
+        "type": "array",
+        "description": "Legacy: the Elasticsearch clusters every analytics event is written to. Prefer the data exporters. A list holding a config that cannot be read reads as empty",
+        "items": {
+          "$ref": "#/components/schemas/ElasticAnalyticsConfig"
+        }
+      },
+      "elasticReadsConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ElasticAnalyticsConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "The Elasticsearch cluster the analytics shown by the backoffice and served by the analytics api are read from. null: no analytics are read. A config without any url reads as null"
+      },
+      "alertsEmails": {
+        "type": "array",
+        "description": "The email addresses the alerts are sent to, through the mailer of mailerSettings. Empty when absent",
+        "items": {
+          "type": "string",
+          "format": "email",
+          "description": "An email address",
+          "example": "ops@oto.tools"
+        }
+      },
+      "logAnalyticsOnServer": {
+        "type": "boolean",
+        "description": "Also write every analytics event to the logs of the instance. `false` when absent"
+      },
+      "useAkkaHttpClient": {
+        "type": "boolean",
+        "description": "Use the Pekko (formerly Akka) http client for the http calls of otoroshi, the calls to the backends included, instead of the default client. `false` when absent"
+      },
+      "endlessIpAddresses": {
+        "type": "array",
+        "description": "The client addresses answered with an endless response, about 128 GB of zeros or of middle finger emojis (see middleFingers), to waste the time of the bots: ip addresses, CIDR ranges or patterns where `*` matches anything. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "An address, a CIDR range or a pattern",
+          "example": "203.0.113.0/24"
+        }
+      },
+      "statsdConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/StatsdConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "The StatsD (or Datadog) agent the metrics of otoroshi are pushed to. null: none. A config without host or port reads as null"
+      },
+      "kafkaConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/KafkaConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "Legacy: the Kafka cluster every analytics and audit event is sent to. Prefer the data exporters. null: none. A config that cannot be read reads as null"
+      },
+      "backOfficeAuthRef": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the auth module the admins can log in to the backoffice with, on top of their otoroshi accounts. null: none",
+        "example": "auth_mod_dev_abd76844-b222-4a80-9999-b098ff020f78"
+      },
+      "mailerSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailerSettings"
+          }
+        ],
+        "nullable": true,
+        "description": "The mailer otoroshi sends its emails with: the alerts to alertsEmails, the links of the users of the private apps... null: no email is sent. A config that cannot be read reads as null"
+      },
+      "cleverSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CleverCloudSettings"
+          }
+        ],
+        "nullable": true,
+        "description": "The credentials of the Clever Cloud api, to expose the applications of a Clever Cloud organization. null: none"
+      },
+      "maxWebhookSize": {
+        "type": "integer",
+        "format": "int32",
+        "deprecated": true,
+        "description": "Not used anymore: the number of events posted at once to the analytics webhooks is set by `app.webhooks.size`. 100 when absent",
+        "example": 100
+      },
+      "middleFingers": {
+        "type": "boolean",
+        "description": "Selects what the endless responses sent to endlessIpAddresses are made of: zeros, or middle finger emojis. `false` when absent"
+      },
+      "maxLogsSize": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The maximum number of alert events and of audit events kept in the datastore, the older ones being dropped. 10000 when absent, `app.events.maxSize` (100 by default) for a new instance",
+        "example": 10000
+      },
+      "otoroshiId": {
+        "type": "string",
+        "description": "The unique id of the instance (of the whole cluster), set at its first start from `otoroshi.instance.instanceId` or to a random uuid. Sent with the anonymous reporting. A random `otoroshi_<uuid>` when absent",
+        "example": "65fe2ae2-3ec4-4c65-9922-86601aa63ae8"
+      },
+      "snowMonkeyConfig": {
+        "$ref": "#/components/schemas/SnowMonkeyConfig"
+      },
+      "scripts": {
+        "$ref": "#/components/schemas/GlobalScripts"
+      },
+      "geolocationSettings": {
+        "$ref": "#/components/schemas/GeolocationSettings"
+      },
+      "userAgentSettings": {
+        "$ref": "#/components/schemas/UserAgentSettings"
+      },
+      "autoCert": {
+        "$ref": "#/components/schemas/AutoCert"
+      },
+      "tlsSettings": {
+        "$ref": "#/components/schemas/TlsSettings"
+      },
+      "quotasSettings": {
+        "$ref": "#/components/schemas/QuotasAlmostExceededSettings"
+      },
+      "plugins": {
+        "$ref": "#/components/schemas/Plugins"
+      },
+      "proxies": {
+        "$ref": "#/components/schemas/Proxies"
+      },
+      "wasmoSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TlsWasmoSettings"
+          }
+        ],
+        "nullable": true,
+        "description": "The wasmo server the wasm plugins are built by and fetched from. null: none. The legacy wasmManagerSettings key is read when wasmoSettings is absent or null"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the global configuration: free string keys and values. Empty when absent",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "owner": "platform-team"
+        }
+      },
+      "env": {
+        "type": "object",
+        "description": "Free json shared with the whole instance: read by the `local` vault (`vault://local/path/to/value`, a json pointer in this object), by the expression language (`${global_config.env.path}`, when `otoroshi.elSettings.allowGlobalConfigAccess` is true) and handed to the jobs. `{}` when absent",
+        "additionalProperties": true,
+        "example": {
+          "backends": {
+            "billing_url": "https://billing.internal.oto.tools"
+          }
+        }
+      },
+      "extensions": {
+        "type": "object",
+        "description": "Settings stored in the global configuration by the admin extensions, each one under a key of its own (usually its id). `{}` when absent",
+        "additionalProperties": {
+          "description": "The settings of an admin extension, any json value"
+        }
+      },
+      "templates": {
+        "$ref": "#/components/schemas/DefaultTemplates"
+      },
+      "id": {
+        "type": "string",
+        "readOnly": true,
+        "enum": [
+          "global"
+        ],
+        "description": "The id of the global configuration, always `global`: the global configuration is a singleton. The admin api adds it to the global configuration it answers after an update, and ignores it on input"
+      }
+    },
+    "example": {
+      "tags": [],
+      "letsEncryptSettings": {
+        "enabled": false,
+        "server": "acme://letsencrypt.org/staging",
+        "emails": [],
+        "contacts": [],
+        "publicKey": "",
+        "privateKey": "",
+        "preferredChain": null,
+        "renewalPercentage": 20,
+        "renewBeforeDays": null,
+        "deleteOldCertificatesAfterRenewal": false
+      },
+      "lines": [
+        "prod"
+      ],
+      "anonymousReporting": false,
+      "initWithNewEngine": true,
+      "maintenanceMode": false,
+      "enableEmbeddedMetrics": true,
+      "streamEntityOnly": true,
+      "autoLinkToDefaultGroup": true,
+      "limitConcurrentRequests": false,
+      "maxConcurrentRequests": 1000,
+      "maxHttp10ResponseSize": 4194304,
+      "useCircuitBreakers": true,
+      "apiReadOnly": false,
+      "u2fLoginOnly": false,
+      "superAdminWhenNoRights": false,
+      "trustXForwarded": true,
+      "trustedProxies": [
+        "10.0.0.0/8"
+      ],
+      "clientAddressHeader": "X-Forwarded-For",
+      "useLegacyClientIpAddress": false,
+      "ipFiltering": {
+        "whitelist": [],
+        "blacklist": [
+          "192.168.1.66"
+        ],
+        "blacklistMatchesForwardedChain": false
+      },
+      "throttlingQuota": 100000,
+      "perIpThrottlingQuota": 500,
+      "analyticsWebhooks": [],
+      "alertsWebhooks": [],
+      "elasticWritesConfigs": [],
+      "elasticReadsConfig": null,
+      "alertsEmails": [
+        "ops@oto.tools"
+      ],
+      "logAnalyticsOnServer": false,
+      "useAkkaHttpClient": false,
+      "endlessIpAddresses": [],
+      "statsdConfig": null,
+      "kafkaConfig": null,
+      "backOfficeAuthRef": null,
+      "mailerSettings": {
+        "type": "console"
+      },
+      "cleverSettings": null,
+      "maxWebhookSize": 100,
+      "middleFingers": false,
+      "maxLogsSize": 100,
+      "otoroshiId": "65fe2ae2-3ec4-4c65-9922-86601aa63ae8",
+      "snowMonkeyConfig": {
+        "enabled": false,
+        "outageStrategy": "OneServicePerGroup",
+        "includeUserFacingDescriptors": false,
+        "dryRun": false,
+        "timesPerDay": 1,
+        "startTime": "09:00:00.000",
+        "stopTime": "23:59:59.000",
+        "outageDurationFrom": 600000,
+        "outageDurationTo": 3600000,
+        "targetGroups": [],
+        "chaosConfig": {
+          "enabled": true,
+          "largeRequestFaultConfig": null,
+          "largeResponseFaultConfig": null,
+          "latencyInjectionFaultConfig": {
+            "ratio": 0.2,
+            "from": 500,
+            "to": 5000
+          },
+          "badResponsesFaultConfig": {
+            "ratio": 0.2,
+            "responses": [
+              {
+                "status": 502,
+                "body": "{\"error\":\"Nihonzaru everywhere ...\"}",
+                "headers": {
+                  "Content-Type": "application/json"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "scripts": {
+        "enabled": false,
+        "transformersRefs": [],
+        "transformersConfig": {},
+        "validatorRefs": [],
+        "validatorConfig": {},
+        "preRouteRefs": [],
+        "preRouteConfig": {},
+        "sinkRefs": [],
+        "sinkConfig": {},
+        "jobRefs": [],
+        "jobConfig": {}
+      },
+      "geolocationSettings": {
+        "type": "none"
+      },
+      "userAgentSettings": {
+        "enabled": false
+      },
+      "autoCert": {
+        "enabled": false,
+        "replyNicely": false,
+        "caRef": null,
+        "allowed": [],
+        "notAllowed": []
+      },
+      "tlsSettings": {
+        "defaultDomain": null,
+        "randomIfNotFound": false,
+        "includeJdkCaServer": true,
+        "includeJdkCaClient": true,
+        "trustedCAsServer": [],
+        "bannedAlpnProtocols": {},
+        "clientAuth": "None",
+        "strictBackendServerValidation": true
+      },
+      "quotasSettings": {
+        "enabled": false,
+        "dailyQuotasThreshold": 0.8,
+        "monthlyQuotasThreshold": 0.8
+      },
+      "plugins": {
+        "enabled": true,
+        "refs": [
+          "cp:otoroshi.next.proxy.ProxyEngine"
+        ],
+        "config": {
+          "NextGenProxyEngine": {
+            "enabled": true,
+            "debug": false,
+            "debug_headers": false,
+            "domains": [
+              "*"
+            ],
+            "routing_strategy": "tree"
+          },
+          "ng": [
+            {
+              "config": {
+                "expiration": 3600000,
+                "default_key_pair": "otoroshi-jwt-signing",
+                "domain": "*",
+                "secure": true
+              },
+              "debug": false,
+              "enabled": true,
+              "exclude": [],
+              "include": [],
+              "plugin": "cp:otoroshi.next.plugins.NgClientCredentials"
+            }
+          ]
+        },
+        "excluded": []
+      },
+      "proxies": {
+        "alertEmails": null,
+        "eventsWebhooks": null,
+        "clevercloud": null,
+        "services": null,
+        "auth": null,
+        "authority": null,
+        "jwk": null,
+        "elastic": null
+      },
+      "wasmoSettings": null,
+      "metadata": {},
+      "env": {},
+      "extensions": {},
+      "templates": {
+        "route": {},
+        "service": {},
+        "backend": {},
+        "target": {},
+        "descriptor": {},
+        "apikey": {},
+        "group": {},
+        "template": {},
+        "verifier": {},
+        "authConfig": {},
+        "certificate": {},
+        "script": {},
+        "draft": {},
+        "api": {},
+        "tcpService": {},
+        "dataExporter": {},
+        "tenant": {},
+        "team": {},
+        "apiSubscription": {},
+        "routeTemplate": {},
+        "userDashboardTemplate": {},
+        "userAlertTemplate": {}
+      },
+      "id": "global"
+    }
+  },
+  "LetsEncryptSettings": {
+    "description": "The settings of the ACME client otoroshi uses to order and renew certificates from Let's Encrypt, or from any ACME server",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Order and renew certificates through ACME. `false` when absent"
+      },
+      "server": {
+        "type": "string",
+        "description": "The ACME directory: `acme://letsencrypt.org` for the Let's Encrypt production server, `acme://letsencrypt.org/staging` for its staging server (whose certificates no browser trusts), or the https url of the directory of any ACME server. `acme://letsencrypt.org/staging` when absent",
+        "example": "acme://letsencrypt.org"
+      },
+      "emails": {
+        "type": "array",
+        "description": "The email addresses of the ACME account, added to its contacts as `mailto:` urls: the ACME server sends them the notices about the account and its certificates. The blank entries are left out",
+        "items": {
+          "type": "string",
+          "format": "email",
+          "description": "An email address",
+          "example": "admin@oto.tools"
+        }
+      },
+      "contacts": {
+        "type": "array",
+        "description": "Other contact urls of the ACME account, like `mailto:` urls. The blank entries are left out",
+        "items": {
+          "type": "string",
+          "description": "A contact url",
+          "example": "mailto:admin@oto.tools"
+        }
+      },
+      "publicKey": {
+        "type": "string",
+        "description": "The public key of the ACME account, PEM encoded. When the keys are empty, otoroshi generates an RSA 2048 key pair at the first order and saves it here. Empty when absent",
+        "example": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo\n...\n-----END PUBLIC KEY-----"
+      },
+      "privateKey": {
+        "type": "string",
+        "description": "The private key of the ACME account, PEM encoded (PKCS#8). When the keys are empty, otoroshi generates an RSA 2048 key pair at the first order and saves it here. Empty when absent",
+        "example": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj\n...\n-----END PRIVATE KEY-----"
+      },
+      "preferredChain": {
+        "type": "string",
+        "nullable": true,
+        "description": "The common name of the root certificate of the chain to deliver, when the ACME server offers several chains. null or blank: the default chain of the server",
+        "example": "ISRG Root X1"
+      },
+      "renewalPercentage": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 100,
+        "description": "Renew a certificate once less than this percentage of its total lifetime remains. A value out of 1 to 100 reads as 20, the default",
+        "example": 20
+      },
+      "renewBeforeDays": {
+        "type": "integer",
+        "format": "int32",
+        "nullable": true,
+        "minimum": 1,
+        "description": "Renew a certificate this number of days before it expires. It takes precedence over renewalPercentage, which degrades on short lived certificates. null: renewalPercentage applies. A value below 1 reads as null",
+        "example": 30
+      },
+      "deleteOldCertificatesAfterRenewal": {
+        "type": "boolean",
+        "description": "Delete the previous certificate after a successful renewal, and the copies left by the previous renewals, instead of keeping a copy named `[UNTIL EXPIRATION]` until it expires. Only applies to the Let's Encrypt certificates. `false` when absent"
+      }
+    },
+    "example": {
+      "enabled": true,
+      "server": "acme://letsencrypt.org",
+      "emails": [
+        "admin@oto.tools"
+      ],
+      "contacts": [
+        "mailto:admin@oto.tools"
+      ],
+      "publicKey": "",
+      "privateKey": "",
+      "preferredChain": null,
+      "renewalPercentage": 20,
+      "renewBeforeDays": 30,
+      "deleteOldCertificatesAfterRenewal": false
+    }
+  },
+  "IpFiltering": {
+    "description": "The client addresses allowed or refused on every request, before any route is looked for. An entry is an ip address (v4 or v6), a CIDR range (`10.0.0.0/8`) or a pattern where `*` matches anything (`192.168.1.*`). In each list, a single string is read as a one entry list and the entries that are not strings are left out",
+    "type": "object",
+    "properties": {
+      "whitelist": {
+        "type": "array",
+        "description": "The addresses allowed to call otoroshi. When the list is not empty, a client whose address matches no entry is refused with a 403 error. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "An address, a CIDR range or a pattern",
+          "example": "10.0.0.0/8"
+        }
+      },
+      "blacklist": {
+        "type": "array",
+        "description": "The addresses refused with a 403 error. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "An address, a CIDR range or a pattern",
+          "example": "192.168.1.66"
+        }
+      },
+      "blacklistMatchesForwardedChain": {
+        "type": "boolean",
+        "description": "Also refuse a request when a blacklisted address appears anywhere in the proxy chain of the client address header, not only when it is the resolved client address. Only applies while trustXForwarded is true. The client writes part of that chain, so it never applies to the whitelist. `false` when absent"
+      }
+    },
+    "example": {
+      "whitelist": [],
+      "blacklist": [
+        "192.168.1.66",
+        "203.0.113.0/24"
+      ],
+      "blacklistMatchesForwardedChain": false
+    }
+  },
+  "Webhook": {
+    "description": "A webhook otoroshi posts events to, as json arrays of events",
+    "type": "object",
+    "required": [
+      "url"
+    ],
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "The url the events are posted to",
+        "example": "https://events.oto.tools/otoroshi"
+      },
+      "headers": {
+        "type": "object",
+        "description": "The http headers added to each call, for instance to authenticate it. Empty when absent",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Authorization": "Bearer 2c1d7a6e4f"
+        }
+      },
+      "mtlsConfig": {
+        "$ref": "#/components/schemas/MtlsConfig"
+      }
+    },
+    "example": {
+      "url": "https://events.oto.tools/otoroshi",
+      "headers": {
+        "Authorization": "Bearer 2c1d7a6e4f"
+      },
+      "mtlsConfig": {
+        "certs": [],
+        "trustedCerts": [],
+        "mtls": false,
+        "loose": false,
+        "trustAll": false
+      }
+    }
+  },
+  "ElasticAnalyticsConfig": {
+    "description": "The connection to an Elasticsearch (or OpenSearch) cluster: the cluster events are written to, or the one the analytics are read from. A config without any url cannot be read",
+    "type": "object",
+    "properties": {
+      "clusterUri": {
+        "type": "string",
+        "nullable": true,
+        "readOnly": true,
+        "description": "The first entry of uris, written for the clients of the legacy single url setting. On input it is still read, and added to uris",
+        "example": "http://localhost:9200"
+      },
+      "uris": {
+        "type": "array",
+        "minItems": 1,
+        "description": "The urls of the nodes of the cluster. An entry can hold a comma separated list of urls",
+        "items": {
+          "type": "string",
+          "description": "The url of a node",
+          "example": "http://localhost:9200"
+        }
+      },
+      "index": {
+        "type": "string",
+        "nullable": true,
+        "description": "The name of the index, or the prefix of the indexes when indexSettings.clientSide is true. null: `otoroshi-events`. Blank reads as null",
+        "example": "otoroshi-events"
+      },
+      "type": {
+        "type": "string",
+        "nullable": true,
+        "description": "The type of the documents, only needed by the Elasticsearch versions before 7. null: `event`. Blank reads as null",
+        "example": "event"
+      },
+      "user": {
+        "type": "string",
+        "nullable": true,
+        "description": "The user of the basic authentication on the cluster. null: no authentication. Blank reads as null",
+        "example": "otoroshi"
+      },
+      "password": {
+        "type": "string",
+        "nullable": true,
+        "description": "The password of the basic authentication on the cluster. Blank reads as null",
+        "example": "secret"
+      },
+      "headers": {
+        "type": "object",
+        "description": "The http headers added to each call to the cluster, for instance an api key. Empty when absent",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Authorization": "ApiKey b3Rvcm9zaGk6c2VjcmV0"
+        }
+      },
+      "indexSettings": {
+        "$ref": "#/components/schemas/IndexSettings"
+      },
+      "mtlsConfig": {
+        "$ref": "#/components/schemas/MtlsConfig"
+      },
+      "applyTemplate": {
+        "type": "boolean",
+        "description": "Create or update the index template of otoroshi on the cluster before writing to it. `true` when absent"
+      },
+      "version": {
+        "type": "string",
+        "nullable": true,
+        "description": "The version of the cluster. null or blank: it is asked to the cluster",
+        "example": "8.11.0"
+      },
+      "maxBulkSize": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The maximum number of events written by one bulk call. 100 when absent",
+        "example": 100
+      },
+      "sendWorkers": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of bulk calls sent in parallel. 4 when absent",
+        "example": 4
+      }
+    },
+    "example": {
+      "clusterUri": "http://localhost:9200",
+      "uris": [
+        "http://localhost:9200"
+      ],
+      "index": "otoroshi-events",
+      "type": null,
+      "user": "otoroshi",
+      "password": "secret",
+      "headers": {},
+      "indexSettings": {
+        "action": "index",
+        "clientSide": true,
+        "interval": "Day",
+        "numberOfShards": 1,
+        "numberOfReplicas": 1
+      },
+      "mtlsConfig": {
+        "certs": [],
+        "trustedCerts": [],
+        "mtls": false,
+        "loose": false,
+        "trustAll": false
+      },
+      "applyTemplate": true,
+      "version": null,
+      "maxBulkSize": 100,
+      "sendWorkers": 4
+    }
+  },
+  "IndexSettings": {
+    "description": "How the events are indexed in Elasticsearch",
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "description": "The action of the bulk calls: `index`, or `create` to write to a data stream. `index` when absent",
+        "example": "index"
+      },
+      "clientSide": {
+        "type": "boolean",
+        "description": "Let otoroshi spread the events over one index per time interval, named `<index>-<date>`, instead of writing everything to a single index (for instance one rolled over by an ILM policy, or a data stream). `true` when absent"
+      },
+      "interval": {
+        "type": "string",
+        "enum": [
+          "Day",
+          "Week",
+          "Month",
+          "Year"
+        ],
+        "description": "The time interval each index covers, when clientSide is true. Read without case, an absent or unknown value reads as `Day`",
+        "example": "Day"
+      },
+      "numberOfShards": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of primary shards of the indexes, set by the index template. 1 when absent",
+        "example": 1
+      },
+      "numberOfReplicas": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of replicas of each shard, set by the index template. 1 when absent",
+        "example": 1
+      }
+    },
+    "example": {
+      "action": "index",
+      "clientSide": true,
+      "interval": "Day",
+      "numberOfShards": 1,
+      "numberOfReplicas": 1
+    }
+  },
+  "StatsdConfig": {
+    "description": "The StatsD agent, or Datadog agent, the metrics of otoroshi are pushed to",
+    "type": "object",
+    "required": [
+      "host",
+      "port"
+    ],
+    "properties": {
+      "host": {
+        "type": "string",
+        "description": "The host name or the ip address of the agent the metrics are sent to, their names prefixed with `otoroshi`. A config with an empty host reads as null",
+        "example": "localhost"
+      },
+      "port": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The port the agent listens on, usually 8125",
+        "example": 8125
+      },
+      "datadog": {
+        "type": "boolean",
+        "description": "The agent is a Datadog agent: the metrics are sent with the extensions of Datadog. `false` when absent"
+      }
+    },
+    "example": {
+      "host": "localhost",
+      "port": 8125,
+      "datadog": false
+    }
+  },
+  "KafkaConfig": {
+    "description": "The connection to a Kafka cluster otoroshi sends events to",
+    "type": "object",
+    "properties": {
+      "servers": {
+        "type": "array",
+        "description": "The bootstrap servers of the cluster. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "A server, as `host:port`",
+          "example": "localhost:29092"
+        }
+      },
+      "keyPass": {
+        "type": "string",
+        "nullable": true,
+        "description": "The password of the keystore and of the truststore, for the `SSL` and `SASL_SSL` protocols when mtlsConfig is not used. null: none",
+        "example": "secret"
+      },
+      "keystore": {
+        "type": "string",
+        "nullable": true,
+        "description": "The path of the JKS keystore holding the client certificate, for the `SSL` and `SASL_SSL` protocols when mtlsConfig is not used. null: none",
+        "example": "/opt/otoroshi/kafka/keystore.jks"
+      },
+      "truststore": {
+        "type": "string",
+        "nullable": true,
+        "description": "The path of the JKS truststore holding the certificates trusted to validate the brokers, for the `SSL` and `SASL_SSL` protocols when mtlsConfig is not used. null: none",
+        "example": "/opt/otoroshi/kafka/truststore.jks"
+      },
+      "topic": {
+        "type": "string",
+        "description": "The topic the events are sent to. `otoroshi-events` when absent",
+        "example": "otoroshi-events"
+      },
+      "sendEvents": {
+        "type": "boolean",
+        "description": "Send the events to the cluster, for the legacy kafkaConfig of the global configuration: when false the connection is set up but nothing is sent. The data exporters always send their events. `false` when absent"
+      },
+      "hostValidation": {
+        "type": "boolean",
+        "description": "Check that the certificates of the brokers match their host names, with the `SSL` and `SASL_SSL` protocols. `true` when absent"
+      },
+      "mtlsConfig": {
+        "$ref": "#/components/schemas/MtlsConfig"
+      },
+      "securityProtocol": {
+        "type": "string",
+        "enum": [
+          "PLAINTEXT",
+          "SSL",
+          "SASL_PLAINTEXT",
+          "SASL_SSL"
+        ],
+        "description": "The protocol used to talk to the brokers: `PLAINTEXT`, `SSL` (with the certificates of mtlsConfig, or with keystore and truststore), `SASL_PLAINTEXT` or `SASL_SSL` (authenticated with saslConfig). `PLAINTEXT` when absent",
+        "example": "SASL_SSL"
+      },
+      "saslConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SaslConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "The SASL credentials, for the `SASL_PLAINTEXT` and `SASL_SSL` protocols. null: none"
+      },
+      "properties": {
+        "type": "object",
+        "nullable": true,
+        "description": "Properties of the Kafka client set on top of the ones otoroshi computes. null: none",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the property"
+        },
+        "example": {
+          "compression.type": "gzip"
+        }
+      }
+    },
+    "example": {
+      "servers": [
+        "localhost:29092"
+      ],
+      "keyPass": null,
+      "keystore": null,
+      "truststore": null,
+      "topic": "otoroshi-events",
+      "sendEvents": true,
+      "hostValidation": true,
+      "mtlsConfig": {
+        "certs": [],
+        "trustedCerts": [],
+        "mtls": false,
+        "loose": false,
+        "trustAll": false
+      },
+      "securityProtocol": "SASL_SSL",
+      "saslConfig": {
+        "username": "otoroshi",
+        "password": "secret",
+        "mechanism": "SCRAM-SHA-512",
+        "jaasConfig": null
+      },
+      "properties": null
+    }
+  },
+  "SaslConfig": {
+    "description": "The SASL authentication of a Kafka client",
+    "type": "object",
+    "properties": {
+      "username": {
+        "type": "string",
+        "description": "The SASL user. `foo` when absent",
+        "example": "otoroshi"
+      },
+      "password": {
+        "type": "string",
+        "description": "The SASL password. `bar` when absent",
+        "example": "secret"
+      },
+      "mechanism": {
+        "type": "string",
+        "description": "The SASL mechanism: `PLAIN`, `SCRAM-SHA-256` or `SCRAM-SHA-512`, or any mechanism of the Kafka client given with its jaasConfig. `PLAIN` when absent",
+        "example": "SCRAM-SHA-512"
+      },
+      "jaasConfig": {
+        "type": "string",
+        "nullable": true,
+        "description": "The JAAS configuration of the login module, used instead of the one built from username, password and mechanism. Only used with the `SASL_SSL` protocol. null: built from username, password and mechanism",
+        "example": "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"otoroshi\" password=\"secret\";"
+      }
+    },
+    "example": {
+      "username": "otoroshi",
+      "password": "secret",
+      "mechanism": "SCRAM-SHA-512",
+      "jaasConfig": null
+    }
+  },
+  "MailerSettings": {
+    "description": "The mailer emails are sent with, selected by its `type`. An absent type reads as `none`, an unknown one as `console`",
+    "type": "object",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConsoleMailerSettings"
+      },
+      {
+        "$ref": "#/components/schemas/NoneMailerSettings"
+      },
+      {
+        "$ref": "#/components/schemas/GenericMailerSettings"
+      },
+      {
+        "$ref": "#/components/schemas/MailgunSettings"
+      },
+      {
+        "$ref": "#/components/schemas/MailjetSettings"
+      },
+      {
+        "$ref": "#/components/schemas/SendgridSettings"
+      },
+      {
+        "$ref": "#/components/schemas/ScalewayTEMSettings"
+      },
+      {
+        "$ref": "#/components/schemas/MailPaceSettings"
+      }
+    ],
+    "example": {
+      "type": "mailgun",
+      "eu": true,
+      "apiKey": "key-3ax6xnjp29jd6fds4gc373sgvjxteol0",
+      "domain": "mg.oto.tools",
+      "to": [
+        {
+          "name": "Ops team",
+          "email": "ops@oto.tools"
+        }
+      ]
+    }
+  },
+  "ConsoleMailerSettings": {
+    "description": "A mailer that only writes the emails to the logs of otoroshi, for tests",
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "console"
+        ],
+        "description": "The type of the mailer, `console`"
+      }
+    },
+    "example": {
+      "type": "console"
+    }
+  },
+  "NoneMailerSettings": {
+    "description": "No mailer: the emails are dropped",
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "none"
+        ],
+        "description": "The type of the mailer, `none`"
+      }
+    },
+    "example": {
+      "type": "none"
+    }
+  },
+  "GenericMailerSettings": {
+    "description": "A mailer calling an http api of your own: each email is posted as a json object with its `from`, `to`, `subject` and `html` fields",
+    "type": "object",
+    "required": [
+      "type",
+      "url"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "generic"
+        ],
+        "description": "The type of the mailer, `generic`"
+      },
+      "url": {
+        "type": "string",
+        "description": "The url the emails are posted to",
+        "example": "https://mailer.internal.oto.tools/emails"
+      },
+      "headers": {
+        "type": "object",
+        "description": "The http headers added to each call, for instance to authenticate it. Empty when absent",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Authorization": "Bearer 2c1d7a6e4f"
+        }
+      },
+      "to": {
+        "type": "array",
+        "description": "The recipients of the events, when the mailer is the one of a data exporter. Empty when absent",
+        "items": {
+          "$ref": "#/components/schemas/EmailLocation"
+        }
+      }
+    },
+    "example": {
+      "type": "generic",
+      "url": "https://mailer.internal.oto.tools/emails",
+      "headers": {
+        "Authorization": "Bearer 2c1d7a6e4f"
+      },
+      "to": [
+        {
+          "name": "Ops team",
+          "email": "ops@oto.tools"
+        }
+      ]
+    }
+  },
+  "MailgunSettings": {
+    "description": "A mailer sending the emails through the api of Mailgun",
+    "type": "object",
+    "required": [
+      "type",
+      "apiKey",
+      "domain"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "mailgun"
+        ],
+        "description": "The type of the mailer, `mailgun`"
+      },
+      "eu": {
+        "type": "boolean",
+        "description": "Use the european api of Mailgun (`api.eu.mailgun.net`) instead of the american one. `false` when absent"
+      },
+      "apiKey": {
+        "type": "string",
+        "description": "The api key of the Mailgun account",
+        "example": "key-3ax6xnjp29jd6fds4gc373sgvjxteol0"
+      },
+      "domain": {
+        "type": "string",
+        "description": "The sending domain of the Mailgun account",
+        "example": "mg.oto.tools"
+      },
+      "to": {
+        "type": "array",
+        "description": "The recipients of the events, when the mailer is the one of a data exporter. Empty when absent",
+        "items": {
+          "$ref": "#/components/schemas/EmailLocation"
+        }
+      }
+    },
+    "example": {
+      "type": "mailgun",
+      "eu": true,
+      "apiKey": "key-3ax6xnjp29jd6fds4gc373sgvjxteol0",
+      "domain": "mg.oto.tools",
+      "to": [
+        {
+          "name": "Ops team",
+          "email": "ops@oto.tools"
+        }
+      ]
+    }
+  },
+  "MailjetSettings": {
+    "description": "A mailer sending the emails through the api of Mailjet",
+    "type": "object",
+    "required": [
+      "type",
+      "apiKeyPublic",
+      "apiKeyPrivate"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "mailjet"
+        ],
+        "description": "The type of the mailer, `mailjet`"
+      },
+      "apiKeyPublic": {
+        "type": "string",
+        "description": "The public api key of the Mailjet account",
+        "example": "7a1f2c3d4e5f60718293a4b5c6d7e8f9"
+      },
+      "apiKeyPrivate": {
+        "type": "string",
+        "description": "The private api key (secret key) of the Mailjet account",
+        "example": "0f9e8d7c6b5a49382716a5b4c3d2e1f0"
+      },
+      "to": {
+        "type": "array",
+        "description": "The recipients of the events, when the mailer is the one of a data exporter. Empty when absent",
+        "items": {
+          "$ref": "#/components/schemas/EmailLocation"
+        }
+      }
+    },
+    "example": {
+      "type": "mailjet",
+      "apiKeyPublic": "7a1f2c3d4e5f60718293a4b5c6d7e8f9",
+      "apiKeyPrivate": "0f9e8d7c6b5a49382716a5b4c3d2e1f0",
+      "to": [
+        {
+          "name": "Ops team",
+          "email": "ops@oto.tools"
+        }
+      ]
+    }
+  },
+  "SendgridSettings": {
+    "description": "A mailer sending the emails through the api of SendGrid",
+    "type": "object",
+    "required": [
+      "type",
+      "apiKey"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "sendgrid"
+        ],
+        "description": "The type of the mailer, `sendgrid`"
+      },
+      "apiKey": {
+        "type": "string",
+        "description": "The api key of the SendGrid account",
+        "example": "my-sendgrid-api-key"
+      },
+      "to": {
+        "type": "array",
+        "description": "The recipients of the events, when the mailer is the one of a data exporter. Empty when absent",
+        "items": {
+          "$ref": "#/components/schemas/EmailLocation"
+        }
+      }
+    },
+    "example": {
+      "type": "sendgrid",
+      "apiKey": "my-sendgrid-api-key",
+      "to": [
+        {
+          "name": "Ops team",
+          "email": "ops@oto.tools"
+        }
+      ]
+    }
+  },
+  "ScalewayTEMSettings": {
+    "description": "A mailer sending the emails through Transactional Email, the email api of Scaleway",
+    "type": "object",
+    "required": [
+      "type",
+      "secretKey",
+      "projectId"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "scaleway"
+        ],
+        "description": "The type of the mailer, `scaleway`"
+      },
+      "secretKey": {
+        "type": "string",
+        "description": "The secret key of the Scaleway api key",
+        "example": "8c0b6e3e-0d1f-4d2b-9a8e-3f1c2b4a5d6e"
+      },
+      "projectId": {
+        "type": "string",
+        "description": "The id of the Scaleway project the emails are sent from",
+        "example": "1f2e3d4c-5b6a-4978-8695-a4b3c2d1e0f9"
+      },
+      "region": {
+        "type": "string",
+        "description": "The Scaleway region of the api. `fr-par` when absent or blank",
+        "example": "fr-par"
+      },
+      "to": {
+        "type": "array",
+        "description": "The recipients of the events, when the mailer is the one of a data exporter. Empty when absent",
+        "items": {
+          "$ref": "#/components/schemas/EmailLocation"
+        }
+      }
+    },
+    "example": {
+      "type": "scaleway",
+      "secretKey": "8c0b6e3e-0d1f-4d2b-9a8e-3f1c2b4a5d6e",
+      "projectId": "1f2e3d4c-5b6a-4978-8695-a4b3c2d1e0f9",
+      "region": "fr-par",
+      "to": [
+        {
+          "name": "Ops team",
+          "email": "ops@oto.tools"
+        }
+      ]
+    }
+  },
+  "MailPaceSettings": {
+    "description": "A mailer sending the emails through the api of MailPace",
+    "type": "object",
+    "required": [
+      "type",
+      "serverToken"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "mailpace"
+        ],
+        "description": "The type of the mailer, `mailpace`"
+      },
+      "serverToken": {
+        "type": "string",
+        "description": "The api token of the MailPace server (domain) the emails are sent from",
+        "example": "c9a2b6f1-4d3e-4b8a-9f7c-2e1d0a5b6c7d"
+      },
+      "to": {
+        "type": "array",
+        "description": "The recipients of the events, when the mailer is the one of a data exporter. Empty when absent",
+        "items": {
+          "$ref": "#/components/schemas/EmailLocation"
+        }
+      }
+    },
+    "example": {
+      "type": "mailpace",
+      "serverToken": "c9a2b6f1-4d3e-4b8a-9f7c-2e1d0a5b6c7d",
+      "to": [
+        {
+          "name": "Ops team",
+          "email": "ops@oto.tools"
+        }
+      ]
+    }
+  },
+  "EmailLocation": {
+    "description": "The recipient of an email. A plain string is read too, as the address used both as name and email",
+    "type": "object",
+    "required": [
+      "name",
+      "email"
+    ],
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The display name of the recipient, sent along with the address (`name <email>`) by the mailers that support it",
+        "example": "Ops team"
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "description": "The address the emails are delivered to",
+        "example": "ops@oto.tools"
+      }
+    },
+    "example": {
+      "name": "Ops team",
+      "email": "ops@oto.tools"
+    }
+  },
+  "CleverCloudSettings": {
+    "description": "The OAuth 1.0 credentials of a Clever Cloud application, used to call the api of Clever Cloud on an organization. The settings read as null unless all their fields are set and not empty",
+    "type": "object",
+    "required": [
+      "consumerKey",
+      "consumerSecret",
+      "token",
+      "secret",
+      "orgaId"
+    ],
+    "properties": {
+      "consumerKey": {
+        "type": "string",
+        "description": "The consumer key of the OAuth 1.0 application",
+        "example": "f6d2a1c9b8e74e3a9c1d"
+      },
+      "consumerSecret": {
+        "type": "string",
+        "description": "The consumer secret of the OAuth 1.0 application",
+        "example": "9b8a7c6d5e4f3a2b1c0d"
+      },
+      "token": {
+        "type": "string",
+        "description": "The OAuth 1.0 access token of the Clever Cloud user the api is called as, sent as `oauth_token`",
+        "example": "4e5f6a7b8c9d0e1f2a3b"
+      },
+      "secret": {
+        "type": "string",
+        "description": "The secret of the access token, used with the consumer secret to sign the calls",
+        "example": "1a2b3c4d5e6f7a8b9c0d"
+      },
+      "orgaId": {
+        "type": "string",
+        "description": "The id of the Clever Cloud organization",
+        "example": "orga_3f6a9c2e-7b1d-4e8a-9c5f-2d4b6a8c0e1f"
+      }
+    },
+    "example": {
+      "consumerKey": "f6d2a1c9b8e74e3a9c1d",
+      "consumerSecret": "9b8a7c6d5e4f3a2b1c0d",
+      "token": "4e5f6a7b8c9d0e1f2a3b",
+      "secret": "1a2b3c4d5e6f7a8b9c0d",
+      "orgaId": "orga_3f6a9c2e-7b1d-4e8a-9c5f-2d4b6a8c0e1f"
+    }
+  },
+  "SnowMonkeyConfig": {
+    "description": "The settings of the snow monkey, the chaos engineering tool of otoroshi: each day, during its time window, it puts routes in outage, injecting faults (latency, errors, large bodies) in their traffic",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the snow monkey runs. Set by the start and stop operations of the snow monkey api. `false` when absent"
+      },
+      "outageStrategy": {
+        "type": "string",
+        "enum": [
+          "OneServicePerGroup",
+          "AllServicesPerGroup"
+        ],
+        "description": "How the routes are put in outage: `OneServicePerGroup` picks one route of each group at a time, `AllServicesPerGroup` puts every route of a group in outage. An absent or unknown value reads as `OneServicePerGroup`",
+        "example": "OneServicePerGroup"
+      },
+      "includeUserFacingDescriptors": {
+        "type": "boolean",
+        "description": "Also put in outage the routes flagged as user facing. `false` when absent"
+      },
+      "dryRun": {
+        "type": "boolean",
+        "description": "Only record the outages, without injecting any fault in the traffic. `false` when absent"
+      },
+      "timesPerDay": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "description": "The number of outages of each group per day, spread over the time window. 1 when absent",
+        "example": 1
+      },
+      "startTime": {
+        "type": "string",
+        "pattern": "^([01][0-9]|2[0-3])(:[0-5][0-9](:[0-5][0-9](\\.[0-9]{1,3})?)?)?$",
+        "description": "The time of day the window of the snow monkey opens at, in the time zone of the instance. Written as `HH:mm:ss.SSS`, `HH:mm` and `HH:mm:ss` are read too. `09:00:00.000` when absent",
+        "example": "09:00:00.000"
+      },
+      "stopTime": {
+        "type": "string",
+        "pattern": "^([01][0-9]|2[0-3])(:[0-5][0-9](:[0-5][0-9](\\.[0-9]{1,3})?)?)?$",
+        "description": "The time of day the window of the snow monkey closes at, in the time zone of the instance. Written as `HH:mm:ss.SSS`, `HH:mm` and `HH:mm:ss` are read too. `23:59:59.000` when absent",
+        "example": "23:59:59.000"
+      },
+      "outageDurationFrom": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The shortest duration of an outage, in milliseconds. 600000 (10 minutes) for a new instance, 3600000 (1 hour) when absent",
+        "example": 600000
+      },
+      "outageDurationTo": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The longest duration of an outage, in milliseconds. 3600000 (1 hour) for a new instance, 600000 (10 minutes) when absent",
+        "example": 3600000
+      },
+      "targetGroups": {
+        "type": "array",
+        "description": "The ids of the groups whose routes can be put in outage. Empty: every group",
+        "items": {
+          "type": "string",
+          "description": "The id of a group",
+          "example": "default"
+        }
+      },
+      "chaosConfig": {
+        "$ref": "#/components/schemas/ChaosConfig"
+      }
+    },
+    "example": {
+      "enabled": false,
+      "outageStrategy": "OneServicePerGroup",
+      "includeUserFacingDescriptors": false,
+      "dryRun": false,
+      "timesPerDay": 1,
+      "startTime": "09:00:00.000",
+      "stopTime": "23:59:59.000",
+      "outageDurationFrom": 600000,
+      "outageDurationTo": 3600000,
+      "targetGroups": [],
+      "chaosConfig": {
+        "enabled": true,
+        "largeRequestFaultConfig": null,
+        "largeResponseFaultConfig": null,
+        "latencyInjectionFaultConfig": {
+          "ratio": 0.2,
+          "from": 500,
+          "to": 5000
+        },
+        "badResponsesFaultConfig": {
+          "ratio": 0.2,
+          "responses": [
+            {
+              "status": 502,
+              "body": "{\"error\":\"Nihonzaru everywhere ...\"}",
+              "headers": {
+                "Content-Type": "application/json"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "ChaosConfig": {
+    "description": "The faults the snow monkey injects in the traffic of a route in outage. Each fault is set, or null when it is not injected. A fault that cannot be read reads as null. Absent from a snow monkey config, it reads as enabled without any fault",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Inject the faults. `false` when absent"
+      },
+      "largeRequestFaultConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/LargeRequestFaultConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "Make the requests sent to the backends larger. null: not injected"
+      },
+      "largeResponseFaultConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/LargeResponseFaultConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "Make the responses sent to the clients larger. null: not injected"
+      },
+      "latencyInjectionFaultConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/LatencyInjectionFaultConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "Delay the responses. null: not injected"
+      },
+      "badResponsesFaultConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BadResponsesFaultConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "Answer error responses instead of calling the backends. null: not injected"
+      }
+    },
+    "example": {
+      "enabled": true,
+      "largeRequestFaultConfig": {
+        "ratio": 0.1,
+        "additionalRequestSize": 1048576
+      },
+      "largeResponseFaultConfig": null,
+      "latencyInjectionFaultConfig": {
+        "ratio": 0.2,
+        "from": 500,
+        "to": 5000
+      },
+      "badResponsesFaultConfig": {
+        "ratio": 0.2,
+        "responses": [
+          {
+            "status": 502,
+            "body": "{\"error\":\"Nihonzaru everywhere ...\"}",
+            "headers": {
+              "Content-Type": "application/json"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "LargeRequestFaultConfig": {
+    "description": "A fault of the snow monkey that adds bytes to the body of the requests sent to the backends",
+    "type": "object",
+    "required": [
+      "ratio",
+      "additionalRequestSize"
+    ],
+    "properties": {
+      "ratio": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "The share of the requests affected by the fault, between 0 and 1",
+        "example": 0.1
+      },
+      "additionalRequestSize": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of bytes added to the body of an affected request",
+        "example": 1048576
+      }
+    },
+    "example": {
+      "ratio": 0.1,
+      "additionalRequestSize": 1048576
+    }
+  },
+  "LargeResponseFaultConfig": {
+    "description": "A fault of the snow monkey that adds bytes to the body of the responses sent to the clients",
+    "type": "object",
+    "required": [
+      "ratio",
+      "additionalResponseSize"
+    ],
+    "properties": {
+      "ratio": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "The share of the requests affected by the fault, between 0 and 1",
+        "example": 0.1
+      },
+      "additionalResponseSize": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of bytes added to the body of an affected response",
+        "example": 1048576
+      }
+    },
+    "example": {
+      "ratio": 0.1,
+      "additionalResponseSize": 1048576
+    }
+  },
+  "LatencyInjectionFaultConfig": {
+    "description": "A fault of the snow monkey that delays the responses by a random duration",
+    "type": "object",
+    "required": [
+      "ratio",
+      "from",
+      "to"
+    ],
+    "properties": {
+      "ratio": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "The share of the requests affected by the fault, between 0 and 1",
+        "example": 0.2
+      },
+      "from": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The shortest delay added to an affected request, in milliseconds",
+        "example": 500
+      },
+      "to": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The longest delay added to an affected request, in milliseconds",
+        "example": 5000
+      }
+    },
+    "example": {
+      "ratio": 0.2,
+      "from": 500,
+      "to": 5000
+    }
+  },
+  "BadResponsesFaultConfig": {
+    "description": "A fault of the snow monkey that answers an error response, picked at random, instead of calling the backend",
+    "type": "object",
+    "required": [
+      "ratio",
+      "responses"
+    ],
+    "properties": {
+      "ratio": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "The share of the requests affected by the fault, between 0 and 1",
+        "example": 0.2
+      },
+      "responses": {
+        "type": "array",
+        "description": "The responses an affected request can get",
+        "items": {
+          "$ref": "#/components/schemas/BadResponse"
+        }
+      }
+    },
+    "example": {
+      "ratio": 0.2,
+      "responses": [
+        {
+          "status": 502,
+          "body": "{\"error\":\"Nihonzaru everywhere ...\"}",
+          "headers": {
+            "Content-Type": "application/json"
+          }
+        }
+      ]
+    }
+  },
+  "BadResponse": {
+    "description": "An error response answered by the snow monkey",
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The http status of the response. A string holding a number is read too. 500 when absent",
+        "example": 502
+      },
+      "body": {
+        "type": "string",
+        "description": "The body of the response. `{\"error\":\"...\"}` when absent",
+        "example": "{\"error\":\"Nihonzaru everywhere ...\"}"
+      },
+      "headers": {
+        "type": "object",
+        "description": "The http headers of the response. Empty when absent",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    "example": {
+      "status": 502,
+      "body": "{\"error\":\"Nihonzaru everywhere ...\"}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  "GlobalScripts": {
+    "description": "Deprecated: the legacy scripts run on every request (transformers, validators, pre routings, sinks) and the legacy jobs. Use the plugins of the routes and the global plugins of plugins instead",
+    "type": "object",
+    "deprecated": true,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Run the global scripts. `false` when absent"
+      },
+      "transformersRefs": {
+        "type": "array",
+        "description": "The ids of the request transformer scripts run on every request. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "The id of a script, or `cp:` followed by the class name of a plugin of the classpath",
+          "example": "cp:otoroshi.plugins.hmac.HMACCallerPlugin"
+        }
+      },
+      "transformersConfig": {
+        "type": "object",
+        "description": "The configuration of the transformers, any json object: each script reads the key it expects. `{}` when absent",
+        "additionalProperties": true,
+        "example": {
+          "HMACCallerPlugin": {
+            "secret": "my-hmac-secret",
+            "algo": "HMAC-SHA512"
+          }
+        }
+      },
+      "validatorRefs": {
+        "type": "array",
+        "description": "The ids of the access validator scripts run on every request. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "The id of a script, or `cp:` followed by the class name of a plugin of the classpath",
+          "example": "cp:otoroshi.plugins.hmac.HMACValidator"
+        }
+      },
+      "validatorConfig": {
+        "type": "object",
+        "description": "The configuration of the validators, any json object: each script reads the key it expects. `{}` when absent",
+        "additionalProperties": true,
+        "example": {
+          "HMACAccessValidator": {
+            "secret": "my-hmac-secret"
+          }
+        }
+      },
+      "preRouteRefs": {
+        "type": "array",
+        "description": "The ids of the pre routing scripts run on every request. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "The id of a script, or `cp:` followed by the class name of a plugin of the classpath",
+          "example": "cp:otoroshi.plugins.jwt.JwtUserExtractor"
+        }
+      },
+      "preRouteConfig": {
+        "type": "object",
+        "description": "The configuration of the pre routings, any json object: each script reads the key it expects. `{}` when absent",
+        "additionalProperties": true
+      },
+      "sinkRefs": {
+        "type": "array",
+        "description": "The ids of the request sink scripts, which answer the requests that match no route. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "The id of a script, or `cp:` followed by the class name of a plugin of the classpath",
+          "example": "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator"
+        }
+      },
+      "sinkConfig": {
+        "type": "object",
+        "description": "The configuration of the sinks, any json object: each script reads the key it expects. `{}` when absent",
+        "additionalProperties": true
+      },
+      "jobRefs": {
+        "type": "array",
+        "description": "The ids of the job scripts run by the instance. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "The id of a script, or `cp:` followed by the class name of a job of the classpath",
+          "example": "cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob"
+        }
+      },
+      "jobConfig": {
+        "type": "object",
+        "description": "The configuration of the jobs, any json object: each job reads the key it expects. `{}` when absent",
+        "additionalProperties": true
+      }
+    },
+    "example": {
+      "enabled": false,
+      "transformersRefs": [],
+      "transformersConfig": {},
+      "validatorRefs": [],
+      "validatorConfig": {},
+      "preRouteRefs": [],
+      "preRouteConfig": {},
+      "sinkRefs": [],
+      "sinkConfig": {},
+      "jobRefs": [],
+      "jobConfig": {}
+    }
+  },
+  "GeolocationSettings": {
+    "description": "How the addresses of the clients are geolocated, selected by `type`: the location is added to the analytics events. An unknown type, or settings that cannot be read, read as `none`",
+    "type": "object",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/NoneGeolocationSettings"
+      },
+      {
+        "$ref": "#/components/schemas/MaxmindGeolocationSettings"
+      },
+      {
+        "$ref": "#/components/schemas/IpStackGeolocationSettings"
+      }
+    ],
+    "example": {
+      "type": "maxmind",
+      "path": "/opt/otoroshi/geoip/GeoLite2-City.mmdb",
+      "enabled": true
+    }
+  },
+  "NoneGeolocationSettings": {
+    "description": "No geolocation of the clients",
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "none"
+        ],
+        "description": "The type of the geolocation, `none`"
+      }
+    },
+    "example": {
+      "type": "none"
+    }
+  },
+  "MaxmindGeolocationSettings": {
+    "description": "The geolocation of the clients in a MaxMind city database (GeoLite2 or GeoIP2), loaded in memory",
+    "type": "object",
+    "required": [
+      "type",
+      "path"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "maxmind"
+        ],
+        "description": "The type of the geolocation, `maxmind`"
+      },
+      "path": {
+        "type": "string",
+        "description": "Where the database is loaded from: the path of a `.mmdb` file, or the http(s) url of a `.mmdb` file, of a `.zip` archive or of a `.tar.gz` archive holding it. Settings without a path read as `none`",
+        "example": "/opt/otoroshi/geoip/GeoLite2-City.mmdb"
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Geolocate the clients. `false` when absent"
+      }
+    },
+    "example": {
+      "type": "maxmind",
+      "path": "/opt/otoroshi/geoip/GeoLite2-City.mmdb",
+      "enabled": true
+    }
+  },
+  "IpStackGeolocationSettings": {
+    "description": "The geolocation of the clients through the api of ipstack",
+    "type": "object",
+    "required": [
+      "type",
+      "apikey"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "ipstack"
+        ],
+        "description": "The type of the geolocation, `ipstack`"
+      },
+      "apikey": {
+        "type": "string",
+        "description": "The access key of the ipstack account. Settings without an access key read as `none`",
+        "example": "86a3a7f6b2e94c1d8f0e5b7a9c2d4e6f"
+      },
+      "timeout": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The timeout of a call to the api of ipstack, in milliseconds. 2000 when absent",
+        "example": 2000
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Geolocate the clients. `false` when absent"
+      }
+    },
+    "example": {
+      "type": "ipstack",
+      "apikey": "86a3a7f6b2e94c1d8f0e5b7a9c2d4e6f",
+      "timeout": 2000,
+      "enabled": true
+    }
+  },
+  "UserAgentSettings": {
+    "description": "The extraction of the details of the user agent of the clients (browser, operating system, device), added to the analytics events",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Parse the user agent of every request. It takes memory. `false` when absent"
+      }
+    },
+    "example": {
+      "enabled": true
+    }
+  },
+  "AutoCert": {
+    "description": "The certificates otoroshi generates on the fly, during the tls handshake, for the domains it has no certificate for",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Generate a certificate, signed by the CA of caRef, for an allowed domain without certificate. `false` when absent"
+      },
+      "replyNicely": {
+        "type": "boolean",
+        "description": "For a domain that is not allowed, still accept the tls connection with a generated certificate and answer an error page, instead of failing the handshake. `false` when absent"
+      },
+      "caRef": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the CA certificate the generated certificates are signed by",
+        "example": "otoroshi-intermediate-ca"
+      },
+      "allowed": {
+        "type": "array",
+        "description": "The domains a certificate can be generated for, `*` matching anything. Empty for a new instance, `[\"*\"]` (every domain) when absent",
+        "items": {
+          "type": "string",
+          "description": "A domain or a domain pattern",
+          "example": "*.oto.tools"
+        }
+      },
+      "notAllowed": {
+        "type": "array",
+        "description": "The domains no certificate is generated for, even when they match allowed, `*` matching anything. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "A domain or a domain pattern",
+          "example": "admin.oto.tools"
+        }
+      }
+    },
+    "example": {
+      "enabled": true,
+      "replyNicely": true,
+      "caRef": "otoroshi-intermediate-ca",
+      "allowed": [
+        "*.oto.tools"
+      ],
+      "notAllowed": [
+        "admin.oto.tools"
+      ]
+    }
+  },
+  "TlsSettings": {
+    "description": "The tls settings of the instance: the certificate used when none matches the domain of a connection, the CAs trusted on both sides, and the client authentication",
+    "type": "object",
+    "properties": {
+      "defaultDomain": {
+        "type": "string",
+        "nullable": true,
+        "description": "The domain whose certificate is used when no certificate matches the domain (SNI) of a tls connection. null or blank: none",
+        "example": "www.oto.tools"
+      },
+      "randomIfNotFound": {
+        "type": "boolean",
+        "description": "When no certificate matches the domain of a connection, nor defaultDomain, use the first available certificate. `false` when absent"
+      },
+      "includeJdkCaServer": {
+        "type": "boolean",
+        "description": "Trust the CAs of the JDK to validate the client certificates of the incoming connections, and propose them in the certificate request of the handshake. `true` when absent"
+      },
+      "includeJdkCaClient": {
+        "type": "boolean",
+        "description": "Trust the CAs of the JDK to validate the certificates of the servers otoroshi calls (backends, identity providers...). `true` when absent"
+      },
+      "trustedCAsServer": {
+        "type": "array",
+        "description": "The ids of the CA certificates trusted to validate the client certificates of the incoming connections, the only CAs proposed in the certificate request of the handshake. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "The id of a CA certificate",
+          "example": "otoroshi-intermediate-ca"
+        }
+      },
+      "bannedAlpnProtocols": {
+        "type": "object",
+        "description": "The ALPN protocols never negotiated for some domains: the key is the domain (SNI) of the tls connection. Empty when absent",
+        "additionalProperties": {
+          "type": "array",
+          "description": "The ALPN protocols refused for the domain",
+          "items": {
+            "type": "string",
+            "description": "The id of an ALPN protocol, like `h2` or `http/1.1`",
+            "example": "h2"
+          }
+        },
+        "example": {
+          "legacy.oto.tools": [
+            "h2"
+          ]
+        }
+      },
+      "clientAuth": {
+        "type": "string",
+        "enum": [
+          "None",
+          "Want",
+          "Need"
+        ],
+        "description": "Whether the clients are asked for a certificate during the tls handshake, on the listeners whose client authentication is `Dynamic` (the default of `otoroshi.ssl.fromOutside.clientAuth`): `None` never, `Want` asked but optional, `Need` required. Read without case, `Dynamic`, an absent or an unknown value reads as `None`",
+        "example": "Want"
+      },
+      "strictBackendServerValidation": {
+        "type": "boolean",
+        "description": "Strictly validate the certificates of the backend servers on the mTLS calls (targets with a tls config enabled): the untrusted certificates and the ones whose host name does not match are refused, and trustAll takes precedence. Only used when `otoroshi.ssl.trust.strictBackendServerValidation` is `global` (the default). `true` for a new instance, `false` when absent, to keep the historical permissive behavior of the existing configs"
+      }
+    },
+    "example": {
+      "defaultDomain": "www.oto.tools",
+      "randomIfNotFound": false,
+      "includeJdkCaServer": true,
+      "includeJdkCaClient": true,
+      "trustedCAsServer": [
+        "otoroshi-intermediate-ca"
+      ],
+      "bannedAlpnProtocols": {
+        "legacy.oto.tools": [
+          "h2"
+        ]
+      },
+      "clientAuth": "Want",
+      "strictBackendServerValidation": true
+    }
+  },
+  "QuotasAlmostExceededSettings": {
+    "description": "The alerts sent when the consumption of an api key gets close to its daily or monthly quota",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Send an alert when the consumption of an api key crosses a threshold. `false` when absent"
+      },
+      "dailyQuotasThreshold": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "The share of its daily quota an api key consumes before an alert is sent, between 0 and 1. 0.8 when absent",
+        "example": 0.8
+      },
+      "monthlyQuotasThreshold": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "The share of its monthly quota an api key consumes before an alert is sent, between 0 and 1. 0.8 when absent",
+        "example": 0.8
+      }
+    },
+    "example": {
+      "enabled": true,
+      "dailyQuotasThreshold": 0.8,
+      "monthlyQuotasThreshold": 0.9
+    }
+  },
+  "Plugins": {
+    "description": "The global plugins, run on every request: the legacy plugins of refs, and, through config, the plugins of the proxy engine and its settings",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Run the legacy plugins of refs on every request. `false` when absent"
+      },
+      "refs": {
+        "type": "array",
+        "description": "The ids of the legacy plugins run on every request. A new instance runs the proxy engine of the routes, `cp:otoroshi.next.proxy.ProxyEngine`. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "The id of a plugin: `cp:` followed by its class name for a plugin of the classpath",
+          "example": "cp:otoroshi.next.proxy.ProxyEngine"
+        }
+      },
+      "config": {
+        "type": "object",
+        "description": "The configuration of the global plugins, any json object. `ng` holds the plugins of the proxy engine run on every request (a list of plugin instances, like the plugins of a route), `NextGenProxyEngine` the settings of the proxy engine, `incoming_request_validators` the validators of every incoming request, and the other keys the configuration of the legacy plugins of refs, under their configuration root. `{}` when absent",
+        "additionalProperties": true,
+        "example": {
+          "NextGenProxyEngine": {
+            "enabled": true,
+            "debug": false,
+            "debug_headers": false,
+            "domains": [
+              "*"
+            ],
+            "routing_strategy": "tree"
+          },
+          "ng": []
+        }
+      },
+      "excluded": {
+        "type": "array",
+        "description": "The regular expressions of the paths of the requests the legacy plugins of refs are not run on. An entry `only:<plugin id>:<regex>` only excludes that plugin. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "A regular expression matching the whole path of a request, or `only:<plugin id>:<regex>`",
+          "example": "/health"
+        }
+      }
+    },
+    "example": {
+      "enabled": true,
+      "refs": [
+        "cp:otoroshi.next.proxy.ProxyEngine"
+      ],
+      "config": {
+        "NextGenProxyEngine": {
+          "enabled": true,
+          "debug": false,
+          "debug_headers": false,
+          "domains": [
+            "*"
+          ],
+          "routing_strategy": "tree"
+        },
+        "ng": []
+      },
+      "excluded": []
+    }
+  },
+  "Proxies": {
+    "description": "The http proxies the calls of otoroshi go through, one per kind of call. null: the calls are direct. A proxy without host or port reads as null",
+    "type": "object",
+    "properties": {
+      "alertEmails": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The proxy of the calls to the apis of the mailers"
+      },
+      "eventsWebhooks": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The proxy of the calls to the webhooks of the events"
+      },
+      "clevercloud": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The proxy of the calls to the api of Clever Cloud"
+      },
+      "services": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The proxy of the calls to the backends of the routes, of their health checks and of the traffic mirroring"
+      },
+      "auth": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The proxy of the calls to the identity providers of the auth modules (OAuth2, OIDC)"
+      },
+      "authority": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The proxy of the calls to the remote validation authorities (client certificate validators, external validations)"
+      },
+      "jwk": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The proxy of the calls fetching the JWKS of the jwt verifiers"
+      },
+      "elastic": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "nullable": true,
+        "description": "The proxy of the calls to Elasticsearch"
+      }
+    },
+    "example": {
+      "alertEmails": null,
+      "eventsWebhooks": null,
+      "clevercloud": null,
+      "services": {
+        "host": "proxy.oto.tools",
+        "port": 3128,
+        "protocol": "http",
+        "principal": null,
+        "password": null,
+        "ntlmDomain": null,
+        "encoding": null,
+        "nonProxyHosts": [
+          "*.internal.oto.tools"
+        ]
+      },
+      "auth": null,
+      "authority": null,
+      "jwk": null,
+      "elastic": null
+    }
+  },
+  "TlsWasmoSettings": {
+    "description": "The connection to a wasmo server, the builder of the wasm plugins otoroshi fetches and runs. The legacy flat form, the settings alone, is read too",
+    "type": "object",
+    "required": [
+      "settings",
+      "tlsConfig"
+    ],
+    "properties": {
+      "settings": {
+        "$ref": "#/components/schemas/WasmoSettings"
+      },
+      "tlsConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MtlsConfig"
+          }
+        ],
+        "description": "The tls settings of the calls to wasmo, used when the tlsConfig of settings is null or not enabled. A config with `settings` but without `tlsConfig` reads as the default wasmo settings, the given settings being dropped"
+      }
+    },
+    "example": {
+      "settings": {
+        "url": "https://wasmo.oto.tools",
+        "clientId": "wasmo-apikey-id",
+        "clientSecret": "wasmo-apikey-secret",
+        "legacyAuth": false,
+        "pluginsFilter": "*",
+        "tlsConfig": null
+      },
+      "tlsConfig": {
+        "certs": [],
+        "trustedCerts": [],
+        "mtls": false,
+        "loose": false,
+        "trustAll": false
+      }
+    }
+  },
+  "WasmoSettings": {
+    "description": "The address and the credentials of a wasmo server",
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "The url of the wasmo server. `http://localhost:5001` when absent",
+        "example": "https://wasmo.oto.tools"
+      },
+      "clientId": {
+        "type": "string",
+        "description": "The client id otoroshi authenticates on wasmo with. `admin-api-apikey-id` when absent",
+        "example": "wasmo-apikey-id"
+      },
+      "clientSecret": {
+        "type": "string",
+        "description": "The client secret otoroshi authenticates on wasmo with. `admin-api-apikey-secret` when absent",
+        "example": "wasmo-apikey-secret"
+      },
+      "legacyAuth": {
+        "type": "boolean",
+        "description": "Authenticate with the legacy `Otoroshi-User` header, a jwt signed with clientId, instead of a basic authentication with clientId and clientSecret. `false` when absent"
+      },
+      "pluginsFilter": {
+        "type": "string",
+        "nullable": true,
+        "description": "The kind of the plugins listed from wasmo, sent in the `kind` header of the calls, `*` for every kind. `*` when absent; null is kept and lists every kind too",
+        "example": "*"
+      },
+      "tlsConfig": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WasmoTlsConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "The tls settings of the calls to wasmo, read from tlsConfig, tls or tls_config. null: the tlsConfig of the enclosing wasmo settings applies"
+      }
+    },
+    "example": {
+      "url": "https://wasmo.oto.tools",
+      "clientId": "wasmo-apikey-id",
+      "clientSecret": "wasmo-apikey-secret",
+      "legacyAuth": false,
+      "pluginsFilter": "*",
+      "tlsConfig": null
+    }
+  },
+  "WasmoTlsConfig": {
+    "description": "The tls settings of the calls to a wasmo server (the tls config of the wasm4s library)",
+    "type": "object",
+    "properties": {
+      "certs": {
+        "type": "array",
+        "description": "The ids of the certificates presented as client certificates. A single id given as `certId` or `cert_id` is read too. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "The id of a certificate",
+          "example": "otoroshi-client-cert"
+        }
+      },
+      "trusted_certs": {
+        "type": "array",
+        "description": "The ids of the certificates trusted to validate the certificate of the server. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "The id of a certificate",
+          "example": "otoroshi-intermediate-ca"
+        }
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Use these tls settings for the calls. `false` when absent"
+      },
+      "loose": {
+        "type": "boolean",
+        "description": "Do not check the host name of the certificate of the server. `false` when absent"
+      },
+      "trust_all": {
+        "type": "boolean",
+        "description": "Trust any certificate of the server. For tests only. `false` when absent"
+      }
+    },
+    "example": {
+      "certs": [
+        "otoroshi-client-cert"
+      ],
+      "trusted_certs": [
+        "otoroshi-intermediate-ca"
+      ],
+      "enabled": true,
+      "loose": false,
+      "trust_all": false
+    }
+  },
+  "DefaultTemplates": {
+    "description": "Json objects deep merged into the template the api serves for each kind of new entity (the `_template` operations, the new entities of the backoffice), to give the new entities of the instance defaults of their own. A null or empty template leaves the template unchanged. A string holding the json of the whole object is read too",
+    "type": "object",
+    "properties": {
+      "route": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new routes",
+        "example": {
+          "metadata": {
+            "owner": "platform-team"
+          }
+        }
+      },
+      "service": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new route compositions"
+      },
+      "backend": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new backends"
+      },
+      "target": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Not used yet: no template of a target reads it"
+      },
+      "descriptor": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "deprecated": true,
+        "description": "Merged into the template of the removed service descriptors, kept for compatibility"
+      },
+      "apikey": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new api keys",
+        "example": {
+          "throttlingQuota": 100
+        }
+      },
+      "group": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new service groups"
+      },
+      "template": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Not used yet: no template of an error template reads it"
+      },
+      "verifier": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new jwt verifiers"
+      },
+      "authConfig": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new auth modules"
+      },
+      "certificate": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new certificates"
+      },
+      "script": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new scripts and of the new wasm plugins"
+      },
+      "draft": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new drafts"
+      },
+      "api": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new apis"
+      },
+      "tcpService": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new tcp services"
+      },
+      "dataExporter": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new data exporters",
+        "example": {
+          "bufferSize": 10000
+        }
+      },
+      "tenant": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new organizations (tenants)"
+      },
+      "team": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new teams"
+      },
+      "apiSubscription": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new api subscriptions"
+      },
+      "routeTemplate": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new route templates"
+      },
+      "userDashboardTemplate": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new user dashboards"
+      },
+      "userAlertTemplate": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "Merged into the template of the new user alerts"
+      }
+    },
+    "example": {
+      "route": {
+        "metadata": {
+          "owner": "platform-team"
+        }
+      },
+      "service": {},
+      "backend": {},
+      "target": {},
+      "descriptor": {},
+      "apikey": {
+        "throttlingQuota": 100
+      },
+      "group": {},
+      "template": {},
+      "verifier": {},
+      "authConfig": {},
+      "certificate": {},
+      "script": {},
+      "draft": {},
+      "api": {},
+      "tcpService": {},
+      "dataExporter": {},
+      "tenant": {},
+      "team": {},
+      "apiSubscription": {},
+      "routeTemplate": {},
+      "userDashboardTemplate": {},
+      "userAlertTemplate": {}
+    }
+  }
+}

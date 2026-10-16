@@ -1,0 +1,18 @@
+{
+  "EntityGraph": {
+    "type": "object",
+    "description": "The entities that use an entity. Empty for the kinds of entities that are not supported",
+    "properties": {
+      "routes": {
+        "type": "array",
+        "description": "The routes, among the ones the admin behind the credentials can read, whose plugin configurations contain the id of the jwt verifier, as route entities. Only answered for a jwt verifier",
+        "items": {
+          "$ref": "#/components/schemas/proxy.otoroshi.io.Route"
+        }
+      }
+    },
+    "example": {
+      "routes": []
+    }
+  }
+}

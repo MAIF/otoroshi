@@ -1,0 +1,634 @@
+{
+  "/apis/openapi.json": {
+    "get": {
+      "tags": [
+        "documentation"
+      ],
+      "summary": "Read the openapi document of the admin api (json)",
+      "description": "Answers the openapi 3.0.3 document of the admin api: the operations of the generic api of every kind of entity, the other operations of the admin api, and their schemas. The document is computed once and cached. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.openapiJson",
+      "parameters": [
+        {
+          "name": "version",
+          "in": "query",
+          "description": "The version written in the `info` of the document, instead of the version of otoroshi",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "18.0.0"
+          }
+        },
+        {
+          "name": "extension_group",
+          "in": "query",
+          "description": "Only describes the paths of the generic api of a group of entities (`/apis/<group>`), with the tags and the schemas they use",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "proxy.otoroshi.io"
+          }
+        },
+        {
+          "name": "core",
+          "in": "query",
+          "description": "`true` only describes otoroshi and the admin extensions shipped with it, leaving out the entities of the third party admin extensions",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The openapi 3.0.3 document of the admin api, in json",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenApiDocument"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No path of the document belongs to the group `extension_group`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/openapi.yaml": {
+    "get": {
+      "tags": [
+        "documentation"
+      ],
+      "summary": "Read the openapi document of the admin api (yaml)",
+      "description": "Answers the openapi 3.0.3 document of the admin api: the operations of the generic api of every kind of entity, the other operations of the admin api, and their schemas. The document is computed once and cached. The same document as `GET /apis/openapi.json`, in yaml. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.openapiYaml",
+      "parameters": [
+        {
+          "name": "version",
+          "in": "query",
+          "description": "The version written in the `info` of the document, instead of the version of otoroshi",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "18.0.0"
+          }
+        },
+        {
+          "name": "extension_group",
+          "in": "query",
+          "description": "Only describes the paths of the generic api of a group of entities (`/apis/<group>`), with the tags and the schemas they use",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "proxy.otoroshi.io"
+          }
+        },
+        {
+          "name": "core",
+          "in": "query",
+          "description": "`true` only describes otoroshi and the admin extensions shipped with it, leaving out the entities of the third party admin extensions",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The openapi 3.0.3 document of the admin api, in yaml (served as `application/yaml`)",
+          "content": {
+            "application/yaml": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenApiDocument"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No path of the document belongs to the group `extension_group`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/openapi.yml": {
+    "get": {
+      "tags": [
+        "documentation"
+      ],
+      "summary": "Read the openapi document of the admin api (yaml)",
+      "description": "Answers the openapi 3.0.3 document of the admin api: the operations of the generic api of every kind of entity, the other operations of the admin api, and their schemas. The document is computed once and cached. The same document as `GET /apis/openapi.json`, in yaml. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.openapiYml",
+      "parameters": [
+        {
+          "name": "version",
+          "in": "query",
+          "description": "The version written in the `info` of the document, instead of the version of otoroshi",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "18.0.0"
+          }
+        },
+        {
+          "name": "extension_group",
+          "in": "query",
+          "description": "Only describes the paths of the generic api of a group of entities (`/apis/<group>`), with the tags and the schemas they use",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "proxy.otoroshi.io"
+          }
+        },
+        {
+          "name": "core",
+          "in": "query",
+          "description": "`true` only describes otoroshi and the admin extensions shipped with it, leaving out the entities of the third party admin extensions",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The openapi 3.0.3 document of the admin api, in yaml (served as `application/yaml`)",
+          "content": {
+            "application/yaml": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenApiDocument"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No path of the document belongs to the group `extension_group`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/workflows/doc.json": {
+    "get": {
+      "tags": [
+        "documentation"
+      ],
+      "summary": "Read the documentation of the workflows (json)",
+      "description": "Answers the documentation of what the workflows can use: the categories of nodes, the nodes, the functions and the operators, with their input schemas and examples. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.workflowDescriptorJson",
+      "parameters": [
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The categories, nodes, functions and operators of the workflows, in json",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowDescriptor"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/workflows/doc.yaml": {
+    "get": {
+      "tags": [
+        "documentation"
+      ],
+      "summary": "Read the documentation of the workflows (yaml)",
+      "description": "Answers the documentation of what the workflows can use: the categories of nodes, the nodes, the functions and the operators, with their input schemas and examples. The same document as `GET /apis/workflows/doc.json`, in yaml. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.workflowDescriptorYaml",
+      "parameters": [
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The categories, nodes, functions and operators of the workflows, in yaml (served as `text/yaml`)",
+          "content": {
+            "text/yaml": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowDescriptor"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/workflows/doc.yml": {
+    "get": {
+      "tags": [
+        "documentation"
+      ],
+      "summary": "Read the documentation of the workflows (yaml)",
+      "description": "Answers the documentation of what the workflows can use: the categories of nodes, the nodes, the functions and the operators, with their input schemas and examples. The same document as `GET /apis/workflows/doc.json`, in yaml. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.workflowDescriptorYml",
+      "parameters": [
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The categories, nodes, functions and operators of the workflows, in yaml (served as `text/yaml`)",
+          "content": {
+            "text/yaml": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowDescriptor"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/workflows/doc.md": {
+    "get": {
+      "tags": [
+        "documentation"
+      ],
+      "summary": "Read the documentation of the workflows (markdown)",
+      "description": "Answers the documentation of what the workflows can use: the categories of nodes, the nodes, the functions and the operators, with their input schemas and examples. Written in markdown, the page `GET /apis/workflows/doc` renders it. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.workflowDescriptorMarkdown",
+      "parameters": [
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The documentation of the workflows, in markdown (served as `text/plain`)",
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "description": "A markdown document",
+                "example": "# Workflows\n\n## Nodes\n"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/entities": {
+    "get": {
+      "tags": [
+        "documentation"
+      ],
+      "summary": "List the kinds of entities",
+      "description": "Answers the kinds of entities the generic api serves on `/apis/<group>/<version>/<plural_name>`, the ones of the admin extensions included, with the json schema of each version. The schemas the hand written schemas do not cover are computed by reflection on the class of the entity, which takes time on the first call.",
+      "operationId": "otoroshi.api.GenericApiController.entities",
+      "parameters": [
+        {
+          "name": "schema",
+          "in": "query",
+          "description": "`false` answers the schemas without computing the missing ones: only the hand written schemas of the core entities, `null` for the other ones",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The version of otoroshi and every kind of entity the generic api serves, with the json schema of its version",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiResources"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

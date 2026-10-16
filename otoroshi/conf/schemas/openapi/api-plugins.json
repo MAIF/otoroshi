@@ -1,0 +1,374 @@
+{
+  "NgStep": {
+    "type": "string",
+    "description": "A step of the handling of a request where a plugin runs: `Sink` (answers the requests no route matches), `PreRoute`, `ValidateAccess`, `TransformRequest`, `CallBackend`, `TransformResponse`, `MatchRoute` (decides whether a route matches), `Router`, `HandlesTunnel`, `HandlesRequest` (handles the whole request). `Job`, `DataExporterFilter` and `DataExporterTransform` are the steps of the plugins that are jobs or that filter and transform the events of the data exporters",
+    "enum": [
+      "Router",
+      "Sink",
+      "PreRoute",
+      "ValidateAccess",
+      "TransformRequest",
+      "TransformResponse",
+      "MatchRoute",
+      "HandlesTunnel",
+      "HandlesRequest",
+      "CallBackend",
+      "Job",
+      "DataExporterFilter",
+      "DataExporterTransform"
+    ],
+    "example": "ValidateAccess"
+  },
+  "PluginDescription": {
+    "type": "object",
+    "description": "A plugin of the proxy engine that can be added to a route",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the plugin, to use as the `plugin` of a route plugin: `cp:` followed by the name of its class",
+        "example": "cp:otoroshi.next.plugins.ApikeyCalls"
+      },
+      "name": {
+        "type": "string",
+        "description": "The readable name of the plugin, the one the route designer of the backoffice shows and searches on",
+        "example": "Apikeys"
+      },
+      "description": {
+        "type": "string",
+        "nullable": true,
+        "description": "What the plugin does, `null` when it has no description",
+        "example": "This plugin expects to find an apikey to allow the request to pass"
+      },
+      "default_config": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "The configuration the plugin uses by default, `null` when it has none",
+        "example": {
+          "validate": true,
+          "mandatory": true,
+          "pass_with_user": false,
+          "wipe_backend_request": true,
+          "update_quotas": true
+        }
+      },
+      "config_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The form that edits the configuration of the plugin in the backoffice: the form generated from its configuration class (see `GET /api/forms`), merged with the one the plugin declares. Empty when it has none",
+        "example": {
+          "mandatory": {
+            "label": "mandatory",
+            "type": "bool"
+          }
+        }
+      },
+      "config_flow": {
+        "type": "array",
+        "description": "The names of the fields of the configuration form, in the order the backoffice shows them",
+        "items": {
+          "type": "string",
+          "description": "The name of a field"
+        },
+        "example": [
+          "validate",
+          "mandatory",
+          "pass_with_user",
+          "wipe_backend_request",
+          "update_quotas"
+        ]
+      },
+      "no_js_form": {
+        "type": "boolean",
+        "description": "Whether the plugin has no form of its own in the javascript of the backoffice: the backoffice then edits its configuration with the form of `config_schema` and `config_flow`"
+      },
+      "plugin_type": {
+        "type": "string",
+        "description": "The kind of plugin, always `ng` (a plugin of the proxy engine)",
+        "enum": [
+          "ng"
+        ]
+      },
+      "plugin_visibility": {
+        "type": "string",
+        "description": "Who can use the plugin, always `userland` here: the internal plugins are left out",
+        "enum": [
+          "userland"
+        ]
+      },
+      "plugin_categories": {
+        "type": "array",
+        "description": "The categories of the plugin, see `GET /api/plugins/categories`",
+        "items": {
+          "type": "string",
+          "description": "A category"
+        },
+        "example": [
+          "AccessControl"
+        ]
+      },
+      "plugin_steps": {
+        "type": "array",
+        "description": "The steps of the handling of a request where the plugin runs (see `GET /api/plugins/steps`)",
+        "items": {
+          "$ref": "#/components/schemas/NgStep"
+        },
+        "example": [
+          "ValidateAccess"
+        ]
+      },
+      "plugin_tags": {
+        "type": "array",
+        "description": "Free tags the plugin declares, empty for the plugins shipped with otoroshi",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "example": [
+          "custom"
+        ]
+      },
+      "plugin_multi_inst": {
+        "type": "boolean",
+        "description": "Whether a route can hold the plugin several times"
+      },
+      "plugin_backend_call_delegates": {
+        "type": "boolean",
+        "description": "Whether the plugin, when it calls the backend itself, can delegate the call to the usual backend call of otoroshi"
+      },
+      "on_request": {
+        "type": "boolean",
+        "description": "Whether the plugin acts on the request on its way to the backend: a pre route, an access validator, a route matcher, a request sink, a tunnel handler, a transformer of the request, or a websocket plugin of the client messages"
+      },
+      "on_response": {
+        "type": "boolean",
+        "description": "Whether the plugin acts on the response on its way back to the client: a transformer of the response or of the errors, a websocket plugin of the backend messages, or a plugin of another kind (a backend call for instance) than the ones that only act on the request"
+      }
+    },
+    "example": {
+      "id": "cp:otoroshi.next.plugins.ApikeyCalls",
+      "name": "Apikeys",
+      "description": "This plugin expects to find an apikey to allow the request to pass",
+      "default_config": {
+        "validate": true,
+        "mandatory": true,
+        "pass_with_user": false,
+        "wipe_backend_request": true,
+        "update_quotas": true
+      },
+      "config_schema": {
+        "mandatory": {
+          "label": "mandatory",
+          "type": "bool"
+        }
+      },
+      "config_flow": [
+        "validate",
+        "mandatory",
+        "pass_with_user",
+        "wipe_backend_request",
+        "update_quotas"
+      ],
+      "no_js_form": false,
+      "plugin_type": "ng",
+      "plugin_visibility": "userland",
+      "plugin_categories": [
+        "AccessControl"
+      ],
+      "plugin_steps": [
+        "MatchRoute",
+        "ValidateAccess",
+        "TransformRequest"
+      ],
+      "plugin_tags": [],
+      "plugin_multi_inst": true,
+      "plugin_backend_call_delegates": false,
+      "on_request": true,
+      "on_response": false
+    }
+  },
+  "Form": {
+    "type": "object",
+    "description": "A form of the backoffice that edits a configuration class, generated from the openapi description of the class",
+    "properties": {
+      "schema": {
+        "type": "object",
+        "description": "The fields of the form, by name",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/FormField"
+        },
+        "example": {
+          "certificate": {
+            "label": "certificate",
+            "type": "string"
+          },
+          "useOtoroshiCertificate": {
+            "label": "useOtoroshiCertificate",
+            "type": "bool"
+          }
+        }
+      },
+      "flow": {
+        "type": "array",
+        "description": "The names of the fields, in the order the form shows them, the nested forms last",
+        "items": {
+          "type": "string",
+          "description": "The name of a field"
+        },
+        "example": [
+          "useOtoroshiCertificate",
+          "certificate"
+        ]
+      }
+    },
+    "example": {
+      "schema": {
+        "certificate": {
+          "label": "certificate",
+          "type": "string"
+        },
+        "useOtoroshiCertificate": {
+          "label": "useOtoroshiCertificate",
+          "type": "bool"
+        }
+      },
+      "flow": [
+        "useOtoroshiCertificate",
+        "certificate"
+      ]
+    }
+  },
+  "FormField": {
+    "type": "object",
+    "description": "A field of a form of the backoffice",
+    "properties": {
+      "label": {
+        "type": "string",
+        "description": "The label of the field, its name",
+        "example": "header_name"
+      },
+      "type": {
+        "type": "string",
+        "description": "The input that edits the field: `string`, `number`, `bool`, `array`, `object` (a map), `form` (a nested form, see `schema`), `select` (see `props.options`), `code` (a json editor), or `unknown type` when the type could not be guessed",
+        "enum": [
+          "string",
+          "number",
+          "bool",
+          "array",
+          "object",
+          "form",
+          "select",
+          "code",
+          "unknown type"
+        ],
+        "example": "string"
+      },
+      "props": {
+        "type": "object",
+        "description": "The settings of a `select` or a `code` input: its label, the values a `select` offers, the language of a `code` editor and whether it only shows the editor",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The label of the input, the name of the field",
+            "example": "kind"
+          },
+          "options": {
+            "type": "array",
+            "description": "The values a `select` offers",
+            "items": {
+              "type": "string",
+              "description": "A value"
+            },
+            "example": [
+              "simple",
+              "webauthn"
+            ]
+          },
+          "editorOnly": {
+            "type": "boolean",
+            "description": "Whether a `code` input only shows the editor"
+          },
+          "mode": {
+            "type": "string",
+            "description": "The language of a `code` input",
+            "example": "json"
+          }
+        },
+        "example": {
+          "label": "kind",
+          "options": [
+            "simple",
+            "webauthn"
+          ]
+        }
+      },
+      "collapsable": {
+        "type": "boolean",
+        "description": "Whether a nested form can be collapsed"
+      },
+      "collapsed": {
+        "type": "boolean",
+        "description": "Whether a nested form starts collapsed"
+      },
+      "array": {
+        "type": "boolean",
+        "description": "Whether the field holds an array of values of its type"
+      },
+      "format": {
+        "type": "string",
+        "nullable": true,
+        "description": "The format of the items of an array: `form` when they are objects (see `schema`), `null` otherwise",
+        "example": "form"
+      },
+      "schema": {
+        "type": "object",
+        "description": "The fields of a nested form, or of the items of an array of objects, by name",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/FormField"
+        },
+        "example": {
+          "enabled": {
+            "label": "enabled",
+            "type": "bool"
+          },
+          "header_name": {
+            "label": "header_name",
+            "type": "string"
+          }
+        }
+      },
+      "flow": {
+        "type": "array",
+        "description": "The names of the fields of a nested form, or of the items of an array of objects, in the order the form shows them",
+        "items": {
+          "type": "string",
+          "description": "The name of a field"
+        },
+        "example": [
+          "enabled",
+          "header_name"
+        ]
+      }
+    },
+    "example": {
+      "label": "basic",
+      "type": "form",
+      "collapsable": true,
+      "collapsed": true,
+      "schema": {
+        "enabled": {
+          "label": "enabled",
+          "type": "bool"
+        },
+        "header_name": {
+          "label": "header_name",
+          "type": "string"
+        }
+      },
+      "flow": [
+        "enabled",
+        "header_name"
+      ]
+    }
+  }
+}

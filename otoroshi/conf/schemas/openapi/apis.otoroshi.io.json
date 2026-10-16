@@ -1,0 +1,2532 @@
+{
+  "apis.otoroshi.io.Api": {
+    "description": "An api: the routes, the backends, the plugin flows, the consumer plans and the documentation of a service exposed under one domain and one context path, with a lifecycle (`staging`, `published`, `deprecated`, `removed`). Otoroshi turns each of its routes into a route of the proxy engine: the domain and the context path of the api in front of the path of the route, the access plugins of its published plans added to the flow of the route",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description"
+    ],
+    "properties": {
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The tenant (organization) and the teams of the api, against which the rights of the admins are checked"
+      },
+      "kind": {
+        "type": "string",
+        "description": "The kind of the entity, `Api` by default. The value sent is kept as is, the admin api answers `apis.otoroshi.io/Api` in its place",
+        "example": "Api"
+      },
+      "id": {
+        "type": "string",
+        "description": "The id of the api, unique among the apis",
+        "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the api, shown in the backoffice, written as `@service` in its `ApiDeploymentEvent` events, and available as `${api.name}` in the `clientNamePattern` of the api keys of its plans",
+        "example": "Users API"
+      },
+      "description": {
+        "type": "string",
+        "description": "The description of the api, also given to the routes built from it",
+        "example": "Manage the users of the platform"
+      },
+      "domain": {
+        "type": "string",
+        "description": "The domain the api is exposed on: the routes of the api match it, followed by the context path and by the path of the route. Defaults to an empty string",
+        "example": "api.oto.tools"
+      },
+      "contextPath": {
+        "type": "string",
+        "description": "The path prefix of every route of the api, between the domain and the path of the route. Defaults to an empty string",
+        "example": "/v1"
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "description": "Free key/value metadata of the api, also given to the routes built from it with `Otoroshi-Api-Ref` holding the id of the api",
+        "example": {
+          "team": "platform"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "description": "Free tags of the api, also given to the routes built from it",
+        "example": [
+          "users"
+        ]
+      },
+      "visibility": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiVisibility"
+          }
+        ],
+        "description": "How the api is shown in a developer portal. Defaults to `public`"
+      },
+      "owner": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserRef"
+          }
+        ],
+        "description": "The owner of the api. Defaults to the reference `owner`"
+      },
+      "members": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/UserRef"
+        },
+        "description": "The users or the teams that work on the api with its owner. An entry without `ref` is left out"
+      },
+      "version": {
+        "type": "string",
+        "description": "The current version of the api, written in the `ApiDeploymentEvent` of each of its deployments. Defaults to `0.0.1`",
+        "example": "1.0.0"
+      },
+      "debug_flow": {
+        "type": "boolean",
+        "description": "Whether the execution report of each call to the routes of the api holds the input and the output of every plugin. Defaults to `false`"
+      },
+      "capture": {
+        "type": "boolean",
+        "description": "Whether the routes of the api emit a `TrafficCaptureEvent` for each call, with the bodies of the request and of the response, to export with a data exporter. Defaults to `false`"
+      },
+      "export_reporting": {
+        "type": "boolean",
+        "description": "Whether the routes of the api emit the report of the execution of each call as a `RequestFlowReport` event, to export with a data exporter. It costs cpu and memory. Defaults to `false`"
+      },
+      "groups": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The id of a service group"
+        },
+        "description": "The ids of the service groups the routes of the api belong to, on top of a group of their own (`virtual_group_for_<api id>`), for instance to authorize api keys on them",
+        "example": [
+          "default"
+        ]
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "staging",
+          "published",
+          "deprecated",
+          "removed"
+        ],
+        "description": "The lifecycle state of the api: `staging` while it is designed, only its draft routes are served (when its testing is enabled); `published`, its routes are served; `deprecated`, its routes are still served but its subscriptions can no longer be created nor updated; `removed`, nothing is served. An api is created in `staging` and goes to `published` through a deployment of its draft. An unknown value is read as `staging`, the default",
+        "example": "staging"
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the api is served at all: disabled, neither its production routes nor its draft routes are served. Defaults to `true`"
+      },
+      "blueprint": {
+        "type": "string",
+        "enum": [
+          "REST",
+          "GraphQL",
+          "gRPC",
+          "Http",
+          "Websocket"
+        ],
+        "description": "The kind of api, it does not change how otoroshi serves it. An unknown value is refused. Defaults to `REST`",
+        "example": "REST"
+      },
+      "plans": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiPlan"
+        },
+        "description": "The consumer plans of the api: who can call it and how. The access plugins of the published plans are added to every route of the api, the plugins of a plan apply to the calls of its consumers. An entry that is not an object is left out"
+      },
+      "routes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiRoute"
+        },
+        "description": "The routes of the api. A route that cannot be read is left out"
+      },
+      "backends": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiBackend"
+        },
+        "description": "The backends of the api, referenced by its routes. A backend that cannot be read is left out"
+      },
+      "flows": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiFlows"
+        },
+        "description": "The plugin chains of the api, referenced by its routes and by its plans. A flow that cannot be read is left out"
+      },
+      "clients_backend_config": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiBackendClient"
+        },
+        "description": "The http client settings of the api, referenced by its backends. Written with the default client `default_backend_client` alone when empty"
+      },
+      "documentation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentation"
+          }
+        ],
+        "nullable": true,
+        "description": "The documentation of the api for a developer portal, `null` when the api has none"
+      },
+      "deployments": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiDeployment"
+        },
+        "description": "The last five deployments of the api, the most recent first. Otoroshi adds one each time a draft of the api is deployed"
+      },
+      "versions": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A version"
+        },
+        "description": "A free list of the versions of the api, stored as it is sent: otoroshi does not read it, `version` holding the current version. The template holds `0.0.1`, an empty list when missing",
+        "example": [
+          "0.0.1",
+          "1.0.0"
+        ]
+      },
+      "testing": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiTesting"
+          }
+        ],
+        "description": "The testing of the draft of the api"
+      },
+      "clients": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiClient"
+        },
+        "description": "The consumers of the api, the owners of its subscriptions"
+      },
+      "hooks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiStateHook"
+        },
+        "description": "The hooks of the lifecycle of the api. Otoroshi stores them, it does not call them itself"
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "kind": "Api",
+      "id": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974",
+      "name": "Users API",
+      "description": "Manage the users of the platform",
+      "domain": "api.oto.tools",
+      "contextPath": "/v1",
+      "metadata": {
+        "team": "platform"
+      },
+      "tags": [
+        "users"
+      ],
+      "visibility": {
+        "kind": "public",
+        "config": {}
+      },
+      "owner": {
+        "ref": "owner",
+        "config": {}
+      },
+      "members": [],
+      "version": "0.0.1",
+      "debug_flow": false,
+      "capture": false,
+      "export_reporting": false,
+      "groups": [],
+      "state": "staging",
+      "enabled": true,
+      "blueprint": "REST",
+      "plans": [
+        {
+          "id": "plan_free_tier",
+          "name": "Free tier",
+          "description": "Free access with an api key, rate limited",
+          "status": "published",
+          "access_mode_configuration_type": "apikey",
+          "access_mode_configuration": {
+            "clientNamePattern": "${api.name} - ${plan.name}",
+            "description": "An api key of the free tier",
+            "authorizedGroup": null,
+            "authorizedEntities": [],
+            "authorizations": [],
+            "enabled": true,
+            "readOnly": false,
+            "allowClientIdOnly": false,
+            "constrainedServicesOnly": false,
+            "restrictions": {
+              "enabled": false,
+              "allowLast": true,
+              "allowed": [],
+              "forbidden": [],
+              "notFound": []
+            },
+            "rotation": {
+              "enabled": false,
+              "rotationEvery": 744,
+              "gracePeriod": 168,
+              "nextSecret": null
+            },
+            "validUntil": null,
+            "tags": [
+              "free-tier"
+            ],
+            "metadata": {
+              "tier": "free"
+            }
+          },
+          "rateLimiting": {
+            "strategy": {
+              "id": "LegacyThrottlingStrategyConfig",
+              "quota": {
+                "window": 10000000,
+                "daily": 10000000,
+                "monthly": 10000000
+              }
+            }
+          },
+          "plugins": {
+            "plugins": [],
+            "overrides": false,
+            "flow_ref": null
+          },
+          "validation": {
+            "kind": "auto",
+            "config": {}
+          },
+          "visibility": {
+            "kind": "public",
+            "config": {}
+          },
+          "pricing": {
+            "id": "pricing_free",
+            "enabled": false,
+            "name": "Free",
+            "price": 0,
+            "currency": "EUR",
+            "params": {}
+          },
+          "tags": [],
+          "metadata": {}
+        }
+      ],
+      "routes": [
+        {
+          "id": "route_list_users",
+          "enabled": true,
+          "name": "List users",
+          "frontend": {
+            "domains": [
+              "/users"
+            ],
+            "strip_path": true,
+            "exact": false,
+            "headers": {},
+            "cookies": {},
+            "query": {},
+            "methods": [
+              "GET"
+            ]
+          },
+          "backend": "api_backend_dev_3acedc5c-fd6d-4fae-a37b-54e076a1084d",
+          "flow_ref": "default_plugin_chain"
+        }
+      ],
+      "backends": [
+        {
+          "id": "api_backend_dev_3acedc5c-fd6d-4fae-a37b-54e076a1084d",
+          "name": "default_backend",
+          "backend": {
+            "targets": [
+              {
+                "id": "target_1",
+                "hostname": "request.otoroshi.io",
+                "port": 443,
+                "tls": true,
+                "weight": 1,
+                "backup": false,
+                "predicate": {
+                  "type": "AlwaysMatch"
+                },
+                "protocol": "HTTP/1.1",
+                "ip_address": null,
+                "tls_config": {
+                  "certs": [],
+                  "trusted_certs": [],
+                  "enabled": false,
+                  "loose": false,
+                  "trust_all": false
+                }
+              }
+            ],
+            "root": "/",
+            "rewrite": false,
+            "load_balancing": {
+              "type": "RoundRobin"
+            },
+            "client": {
+              "retries": 1,
+              "max_errors": 20,
+              "retry_initial_delay": 50,
+              "backoff_factor": 2,
+              "call_timeout": 30000,
+              "call_and_stream_timeout": 120000,
+              "connection_timeout": 10000,
+              "idle_timeout": 60000,
+              "global_timeout": 30000,
+              "sample_interval": 2000,
+              "proxy": {},
+              "custom_timeouts": [],
+              "cache_connection_settings": {
+                "enabled": false,
+                "queue_size": 2048
+              }
+            },
+            "health_check": null
+          },
+          "client": "default_backend_client"
+        }
+      ],
+      "flows": [
+        {
+          "id": "default_plugin_chain",
+          "name": "default_plugin_chain",
+          "plugins": [
+            {
+              "enabled": true,
+              "debug": false,
+              "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+              "include": [],
+              "exclude": [],
+              "config": {},
+              "bound_listeners": []
+            }
+          ]
+        }
+      ],
+      "clients_backend_config": [
+        {
+          "id": "default_backend_client",
+          "name": "default_backend_client",
+          "client": {
+            "retries": 1,
+            "max_errors": 20,
+            "retry_initial_delay": 50,
+            "backoff_factor": 2,
+            "call_timeout": 30000,
+            "call_and_stream_timeout": 120000,
+            "connection_timeout": 10000,
+            "idle_timeout": 60000,
+            "global_timeout": 30000,
+            "sample_interval": 2000,
+            "proxy": {},
+            "custom_timeouts": [],
+            "cache_connection_settings": {
+              "enabled": false,
+              "queue_size": 2048
+            }
+          }
+        }
+      ],
+      "documentation": null,
+      "deployments": [],
+      "versions": [
+        "0.0.1"
+      ],
+      "testing": {
+        "enabled": false,
+        "headerKey": "X-OTOROSHI-TESTING",
+        "headerValue": "e072893e7-f05e-4cdd-8b2e-a64ac01c3e2d"
+      },
+      "clients": [
+        {
+          "id": "client_acme",
+          "name": "ACME Corp",
+          "description": "The developer account of ACME Corp",
+          "tags": [],
+          "metadata": {
+            "contact": "dev@acme.com"
+          }
+        }
+      ],
+      "hooks": []
+    }
+  },
+  "ApiVisibility": {
+    "description": "How an api is shown in a developer portal, with a free configuration for the portal",
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "public",
+          "semi_public",
+          "private",
+          "custom"
+        ],
+        "description": "The visibility of the api: `public`, `semi_public`, `private`, or `custom` when its configuration says who sees it. An unknown value is read as `private`, a missing one as `public`",
+        "example": "public"
+      },
+      "config": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The configuration of the visibility, for the portal that shows the api. Defaults to an empty object"
+      }
+    },
+    "example": {
+      "kind": "semi_public",
+      "config": {}
+    }
+  },
+  "UserRef": {
+    "description": "A reference to a user or to a team, with a free configuration. Otoroshi stores it, it does not resolve it",
+    "type": "object",
+    "required": [
+      "ref"
+    ],
+    "properties": {
+      "ref": {
+        "type": "string",
+        "description": "The reference of the user or of the team, for instance its id or its email",
+        "example": "john.doe@oto.tools"
+      },
+      "config": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "A free configuration attached to the reference, for instance the role of a member. Defaults to an empty object",
+        "example": {
+          "role": "maintainer"
+        }
+      }
+    },
+    "example": {
+      "ref": "john.doe@oto.tools",
+      "config": {
+        "role": "maintainer"
+      }
+    }
+  },
+  "ApiStateHook": {
+    "description": "A hook of the lifecycle of an api: a reference and its configuration. Otoroshi stores it, it does not call it itself",
+    "type": "object",
+    "properties": {
+      "ref": {
+        "type": "string",
+        "description": "The reference of the hook. Defaults to an empty string",
+        "example": "notify-on-publish"
+      },
+      "config": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The configuration of the hook. Defaults to an empty object"
+      }
+    },
+    "example": {
+      "ref": "notify-on-publish",
+      "config": {}
+    }
+  },
+  "ApiPlan": {
+    "description": "A consumer plan of an api: how its consumers are identified (its access mode), how they are rate limited, the plugins applied to their calls, how their subscriptions are validated and what they cost. Whatever the access mode, a consumer is an api key: the ones of the `apikey` and `oauth2-local` plans are minted for the subscriptions, the other modes mint one for each consumer seen at call time. A plan is stored as it is sent, the fields below being the ones otoroshi reads",
+    "type": "object",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the plan, unique in the api. The subscriptions reference it in `plan_ref`",
+        "example": "plan_free_tier"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the plan, shown in the backoffice and available as `${plan.name}` in the `clientNamePattern` of the api keys minted for it",
+        "example": "Free tier"
+      },
+      "description": {
+        "type": "string",
+        "description": "The description of the plan. Defaults to `No description`",
+        "example": "Free access with an api key, rate limited"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "staging",
+          "published",
+          "deprecated",
+          "closed"
+        ],
+        "description": "The lifecycle state of the plan: `staging` while it is designed, `published` when its access mode applies to the routes of the api, `deprecated` when it accepts no new subscription, `closed` when its `apikey` and `oauth2-local` subscriptions are deleted, with their api keys, on their next update. Subscriptions can be created on a plan in `staging` or `published` only. Read case insensitively, an unknown value is read as `closed`. Defaults to `published`",
+        "example": "published"
+      },
+      "access_mode_configuration_type": {
+        "type": "string",
+        "enum": [
+          "keyless",
+          "apikey",
+          "jwt",
+          "mtls",
+          "oauth2-local",
+          "oauth2-remote"
+        ],
+        "description": "How the consumers of the plan are identified: `keyless` by an expression evaluated on the call (the ip address by default), `apikey` by an api key, `jwt` by a claim of a jwt token, `mtls` by a client certificate, `oauth2-local` by a token otoroshi issues itself through the client credentials flow, `oauth2-remote` by a token checked against the OAuth2 settings of an auth module. It gives the shape of `access_mode_configuration`. Defaults to `keyless`, an unknown value adds no access plugin",
+        "example": "apikey"
+      },
+      "access_mode_configuration": {
+        "$ref": "#/components/schemas/ApiAccessModeConfiguration"
+      },
+      "rateLimiting": {
+        "type": "object",
+        "description": "The rate limiting of the consumers of the plan. Also read from `rate_limiting`. Without a strategy the plan uses the legacy one with the default quotas, the one an api key created by hand gets",
+        "properties": {
+          "strategy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThrottlingStrategyConfig"
+              }
+            ],
+            "description": "The throttling strategy of every consumer of the plan, whether it got its api key through a subscription or at call time. A strategy that cannot be read is replaced by the legacy one with the default quotas"
+          }
+        },
+        "example": {
+          "strategy": {
+            "id": "LegacyThrottlingStrategyConfig",
+            "quota": {
+              "window": 10000000,
+              "daily": 10000000,
+              "monthly": 10000000
+            }
+          }
+        }
+      },
+      "plugins": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiPlanPlugins"
+          }
+        ],
+        "description": "The plugins applied to the calls of the consumers of the plan, on top of the flow of the route"
+      },
+      "validation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiPlanValidation"
+          }
+        ],
+        "description": "How the subscriptions to the plan are validated. Defaults to `auto`"
+      },
+      "visibility": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiPlanVisibility"
+          }
+        ],
+        "description": "How the plan is shown in a developer portal. Defaults to `public`"
+      },
+      "pricing": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiPricing"
+          }
+        ],
+        "description": "What the plan costs, for a developer portal to show: otoroshi stores it, it does not charge the consumers"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "description": "The tags of the plan, given to the api keys of its consumers unless the plan has an `apikey` access mode configuration, whose tags are used instead",
+        "example": [
+          "free-tier"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "description": "The metadata of the plan, given to the api keys of its consumers unless the plan has an `apikey` access mode configuration, whose metadata are used instead",
+        "example": {
+          "tier": "free"
+        }
+      }
+    },
+    "example": {
+      "id": "plan_free_tier",
+      "name": "Free tier",
+      "description": "Free access with an api key, rate limited",
+      "status": "published",
+      "access_mode_configuration_type": "apikey",
+      "access_mode_configuration": {
+        "clientNamePattern": "${api.name} - ${plan.name}",
+        "description": "An api key of the free tier",
+        "authorizedGroup": null,
+        "authorizedEntities": [],
+        "authorizations": [],
+        "enabled": true,
+        "readOnly": false,
+        "allowClientIdOnly": false,
+        "constrainedServicesOnly": false,
+        "restrictions": {
+          "enabled": false,
+          "allowLast": true,
+          "allowed": [],
+          "forbidden": [],
+          "notFound": []
+        },
+        "rotation": {
+          "enabled": false,
+          "rotationEvery": 744,
+          "gracePeriod": 168,
+          "nextSecret": null
+        },
+        "validUntil": null,
+        "tags": [
+          "free-tier"
+        ],
+        "metadata": {
+          "tier": "free"
+        }
+      },
+      "rateLimiting": {
+        "strategy": {
+          "id": "LegacyThrottlingStrategyConfig",
+          "quota": {
+            "window": 10000000,
+            "daily": 10000000,
+            "monthly": 10000000
+          }
+        }
+      },
+      "plugins": {
+        "plugins": [],
+        "overrides": false,
+        "flow_ref": null
+      },
+      "validation": {
+        "kind": "auto",
+        "config": {}
+      },
+      "visibility": {
+        "kind": "public",
+        "config": {}
+      },
+      "pricing": {
+        "id": "pricing_free",
+        "enabled": false,
+        "name": "Free",
+        "price": 0,
+        "currency": "EUR",
+        "params": {}
+      },
+      "tags": [],
+      "metadata": {}
+    }
+  },
+  "ApiAccessModeConfiguration": {
+    "description": "The configuration of the access mode of a plan. Its shape depends on the `access_mode_configuration_type` of the plan: `KeylessAccessModeConfiguration` for `keyless`, `ApikeyAccessModeConfiguration` for `apikey`, `JWTAccessModeConfiguration` for `jwt`, `MtlsAccessModeConfiguration` for `mtls`, `OAuth2AccessModeConfiguration` for `oauth2-local` and `OAuth2RemoteAccessModeConfiguration` for `oauth2-remote`. A configuration that cannot be read for the access mode of the plan is ignored, the access mode then runs with its defaults",
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/KeylessAccessModeConfiguration"
+      },
+      {
+        "$ref": "#/components/schemas/ApikeyAccessModeConfiguration"
+      },
+      {
+        "$ref": "#/components/schemas/JWTAccessModeConfiguration"
+      },
+      {
+        "$ref": "#/components/schemas/MtlsAccessModeConfiguration"
+      },
+      {
+        "$ref": "#/components/schemas/OAuth2AccessModeConfiguration"
+      },
+      {
+        "$ref": "#/components/schemas/OAuth2RemoteAccessModeConfiguration"
+      }
+    ],
+    "example": {
+      "expr": "${req.ip}",
+      "create_if_missing": true
+    }
+  },
+  "KeylessAccessModeConfiguration": {
+    "description": "The access mode `keyless`: no credential is asked, the consumer of a call is identified by an expression evaluated on the call, and gets an api key of its own built from the plan",
+    "type": "object",
+    "properties": {
+      "expr": {
+        "type": "string",
+        "nullable": true,
+        "description": "The expression language template giving the identity of the consumer of a call. `null` for `${req.ip}`, one consumer per ip address. A value missing from the call resolves to `no-header-<field>` and puts every such caller on the same quota: an empty default (`${req.headers.x-consumer:}`) has them rejected instead",
+        "example": "${req.headers.x-consumer-id}"
+      },
+      "create_if_missing": {
+        "type": "boolean",
+        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. Defaults to `true` when the configuration does not say, a plan without any configuration does not store them"
+      }
+    },
+    "example": {
+      "expr": "${req.ip}",
+      "create_if_missing": true
+    }
+  },
+  "ApikeyAccessModeConfiguration": {
+    "description": "The access mode `apikey`: the consumers call with an api key, minted for each subscription to the plan from this template",
+    "type": "object",
+    "properties": {
+      "clientNamePattern": {
+        "type": "string",
+        "nullable": true,
+        "description": "The expression language template of the name of the api keys, evaluated with the api (`${api.id}`, `${api.name}`) and the plan (`${plan.id}`, `${plan.name}`). `null` for a random name",
+        "example": "${api.name} - ${plan.name}"
+      },
+      "description": {
+        "type": "string",
+        "nullable": true,
+        "description": "The description of the api keys, `null` for an empty one",
+        "example": "An api key of the free tier"
+      },
+      "authorizedGroup": {
+        "type": "string",
+        "nullable": true,
+        "description": "Written from `authorizedEntities` for the clients of older versions: the id of the first service group among them, `null` when there is none. Read back as one more authorized group",
+        "example": "default"
+      },
+      "authorizedEntities": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A prefixed id: `group_<id>`, `route_<id>`, `api_<id>`, `route-composition_<id>` or `service_<id>`. An id without a known prefix is a service group id"
+        },
+        "description": "The entities the api keys are authorized on, as prefixed ids. The api keys minted for the subscriptions are authorized on the api only, whatever this list holds",
+        "example": [
+          "api_api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+        ]
+      },
+      "authorizations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/EntityIdentifier"
+        },
+        "description": "The same entities as `authorizedEntities`, written as objects. Read too, prefixed ids being accepted in place of the objects"
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the api keys are enabled. Written `false` once `validUntil` is past. The api keys of the subscriptions are disabled when their subscription is, whatever this flag says. Defaults to `true`"
+      },
+      "readOnly": {
+        "type": "boolean",
+        "description": "Whether the api keys are read only: only the `GET`, `HEAD` and `OPTIONS` calls are allowed. Defaults to `false`"
+      },
+      "allowClientIdOnly": {
+        "type": "boolean",
+        "description": "Whether the api keys can be sent with their client id only, without their secret. Defaults to `false`"
+      },
+      "constrainedServicesOnly": {
+        "type": "boolean",
+        "description": "Whether the api keys only match the routes that declare api key routing constraints. Defaults to `false`"
+      },
+      "restrictions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Restrictions"
+          }
+        ],
+        "description": "The restrictions of the api keys: the paths and the methods they are allowed, forbidden or not found on"
+      },
+      "rotation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiKeyRotation"
+          }
+        ],
+        "description": "The automatic rotation of the secret of the api keys"
+      },
+      "validUntil": {
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "description": "The date after which the api keys are disabled, a timestamp in milliseconds. `null` for none",
+        "example": 1823628715286
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "description": "The tags of the api keys, the tags of the subscription being added to them",
+        "example": [
+          "free-tier"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "description": "The metadata of the api keys, the metadata of the subscription being added to them. Empty keys are left out",
+        "example": {
+          "tier": "free"
+        }
+      }
+    },
+    "example": {
+      "clientNamePattern": "${api.name} - ${plan.name}",
+      "description": "An api key of the free tier",
+      "authorizedGroup": null,
+      "authorizedEntities": [],
+      "authorizations": [],
+      "enabled": true,
+      "readOnly": false,
+      "allowClientIdOnly": false,
+      "constrainedServicesOnly": false,
+      "restrictions": {
+        "enabled": false,
+        "allowLast": true,
+        "allowed": [],
+        "forbidden": [],
+        "notFound": []
+      },
+      "rotation": {
+        "enabled": false,
+        "rotationEvery": 744,
+        "gracePeriod": 168,
+        "nextSecret": null
+      },
+      "validUntil": null,
+      "tags": [
+        "free-tier"
+      ],
+      "metadata": {
+        "tier": "free"
+      }
+    }
+  },
+  "JWTAccessModeConfiguration": {
+    "description": "The access mode `jwt`: the consumers call with a jwt token, the consumer being the client id read from a claim of the token. Each consumer gets an api key of its own built from the plan",
+    "type": "object",
+    "properties": {
+      "verifier": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the jwt verifier that checks the tokens",
+        "example": "jwt_verifier_dev_users"
+      },
+      "client_id_path": {
+        "type": "string",
+        "nullable": true,
+        "description": "The claim of the token holding the client id of the consumer, a json path such as `$.azp` works too. `null` for `client_id`",
+        "example": "client_id"
+      },
+      "create_if_missing": {
+        "type": "boolean",
+        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. Defaults to `true` when the configuration does not say, a plan without any configuration does not store them"
+      }
+    },
+    "example": {
+      "verifier": "jwt_verifier_dev_users",
+      "client_id_path": "client_id",
+      "create_if_missing": true
+    }
+  },
+  "MtlsAccessModeConfiguration": {
+    "description": "The access mode `mtls`: the consumers call with a tls client certificate, the consumer being read from its subject. Each consumer gets an api key of its own built from the plan",
+    "type": "object",
+    "properties": {
+      "regex_subject_dns": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A regular expression on the subject dn"
+        },
+        "description": "The regular expressions the subject dn of the client certificate may match. A certificate matching one of them, or one of `regex_issuer_dns`, is accepted. Both lists empty, any trusted certificate is",
+        "example": [
+          "CN=.*,OU=partners,O=Otoroshi"
+        ]
+      },
+      "regex_issuer_dns": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A regular expression on the issuer dn"
+        },
+        "description": "The regular expressions the issuer dn of the client certificate may match",
+        "example": [
+          "CN=Otoroshi Partners CA,O=Otoroshi"
+        ]
+      },
+      "client_id_field": {
+        "type": "string",
+        "nullable": true,
+        "description": "The attribute of the subject dn holding the client id of the consumer (`UID`, `CN`...). `null`, the identity is derived from the whole subject and the serial number of the certificate. A certificate without that attribute is rejected",
+        "example": "CN"
+      },
+      "create_if_missing": {
+        "type": "boolean",
+        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. Defaults to `true` when the configuration does not say, a plan without any configuration does not store them"
+      }
+    },
+    "example": {
+      "regex_subject_dns": [
+        "CN=.*,OU=partners,O=Otoroshi"
+      ],
+      "regex_issuer_dns": [],
+      "client_id_field": "CN",
+      "create_if_missing": true
+    }
+  },
+  "OAuth2AccessModeConfiguration": {
+    "description": "The access mode `oauth2-local`: the consumers exchange the api key of their subscription for a token through the OAuth2 client credentials flow of otoroshi, and call with it. Otoroshi stores these settings, the token endpoint (the `NgClientCredentialTokenEndpoint` plugin) has a configuration of its own",
+    "type": "object",
+    "required": [
+      "default_key_pair",
+      "expiration"
+    ],
+    "properties": {
+      "default_key_pair": {
+        "type": "string",
+        "description": "The id of the certificate (a key pair) that signs the tokens",
+        "example": "otoroshi-jwt-signing"
+      },
+      "expiration": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The lifetime of the tokens, in milliseconds",
+        "example": 3600000
+      }
+    },
+    "example": {
+      "default_key_pair": "otoroshi-jwt-signing",
+      "expiration": 3600000
+    }
+  },
+  "OAuth2RemoteAccessModeConfiguration": {
+    "description": "The access mode `oauth2-remote`: the consumers call with a token of an OAuth2 / OIDC provider, checked against the settings of an auth module, the consumer being the client id read from a claim of the token. Each consumer gets an api key of its own built from the plan",
+    "type": "object",
+    "properties": {
+      "verifier": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the auth module whose OAuth2 / OIDC settings check the tokens",
+        "example": "auth_mod_dev_keycloak"
+      },
+      "client_id_path": {
+        "type": "string",
+        "nullable": true,
+        "description": "The claim of the token holding the client id of the consumer (`client_id`, `azp` or `cid` depending on the provider). `null` for `client_id`",
+        "example": "azp"
+      },
+      "fetch_user": {
+        "type": "boolean",
+        "description": "Whether the userinfo endpoint of the module is called to store the profile of the holder of the token in a metadata of the api key. The call stays a consumer call, no user session is attached to it. Defaults to `false`"
+      },
+      "user_metadata_key": {
+        "type": "string",
+        "description": "The metadata of the api key holding the profile of the user. Defaults to `user_profile`",
+        "example": "user_profile"
+      },
+      "create_if_missing": {
+        "type": "boolean",
+        "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. Defaults to `true` when the configuration does not say, a plan without any configuration does not store them"
+      }
+    },
+    "example": {
+      "verifier": "auth_mod_dev_keycloak",
+      "client_id_path": "azp",
+      "fetch_user": false,
+      "user_metadata_key": "user_profile",
+      "create_if_missing": true
+    }
+  },
+  "ApiPlanPlugins": {
+    "description": "The plugins a plan applies to the calls of its consumers: the plugins of a flow of the api, extended with a chain of its own",
+    "type": "object",
+    "properties": {
+      "plugins": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NgPluginInstance"
+        },
+        "description": "The plugins of the plan, in the format of the plugins of a route. They extend the flow named by `flow_ref` when there is one. Defaults to an empty list"
+      },
+      "overrides": {
+        "type": "boolean",
+        "description": "Whether the plugins of the plan replace the plugins of the route instead of extending them. The pre route and access validation plugins that already ran are kept, as are the global plugins. Defaults to `false`"
+      },
+      "flow_ref": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of a flow of the api whose plugins the plan applies before its own. `null`, or an empty string, for none",
+        "example": "default_plugin_chain"
+      }
+    },
+    "example": {
+      "plugins": [
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+          "include": [],
+          "exclude": [],
+          "config": {
+            "headers": {
+              "X-Plan": "${apikey.api.plan}"
+            }
+          },
+          "bound_listeners": [],
+          "plugin_index": {
+            "transform_response": 1
+          }
+        }
+      ],
+      "overrides": false,
+      "flow_ref": "default_plugin_chain"
+    }
+  },
+  "ApiPlanValidation": {
+    "description": "How the subscriptions to a plan are validated, with a free configuration. Otoroshi stores it for the developer portal that handles the subscriptions, it does not run the validation itself",
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "manual",
+          "webhook",
+          "workflow",
+          "wasm",
+          "custom"
+        ],
+        "description": "The validation of the subscriptions: `auto` (accepted at once), `manual`, `webhook`, `workflow`, `wasm` or `custom`. Read case insensitively, an unknown value is read as `manual`. Defaults to `auto`",
+        "example": "manual"
+      },
+      "config": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The configuration of the validation, for instance the url of a webhook. Defaults to an empty object",
+        "example": {
+          "url": "https://hooks.oto.tools/subscriptions"
+        }
+      }
+    },
+    "example": {
+      "kind": "auto",
+      "config": {}
+    }
+  },
+  "ApiPlanVisibility": {
+    "description": "How a plan is shown in a developer portal, with a free configuration for the portal",
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "public",
+          "semi_public",
+          "private",
+          "custom"
+        ],
+        "description": "The visibility of the plan: `public`, `semi_public`, `private`, or `custom` when its configuration says who sees it. An unknown value is read as `private`, a missing one as `public`",
+        "example": "public"
+      },
+      "config": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The configuration of the visibility, for the portal that shows the plan. Defaults to an empty object"
+      }
+    },
+    "example": {
+      "kind": "private",
+      "config": {}
+    }
+  },
+  "ApiPricing": {
+    "description": "What a plan costs, shown in a developer portal. Otoroshi does not charge the consumers itself",
+    "type": "object",
+    "required": [
+      "id",
+      "enabled",
+      "name",
+      "price",
+      "currency"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "An id of the pricing, stored as it is sent: otoroshi does not use it",
+        "example": "pricing_premium"
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the plan is charged"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the offer the pricing describes, shown with its price in a developer portal",
+        "example": "Premium"
+      },
+      "price": {
+        "type": "number",
+        "format": "double",
+        "description": "The price of the plan, in `currency`",
+        "example": 49.9
+      },
+      "currency": {
+        "type": "string",
+        "description": "The code of the currency of the price (ISO 4217)",
+        "example": "EUR"
+      },
+      "params": {
+        "description": "Free parameters of the pricing, any json value (for instance the billing period). Defaults to an empty object",
+        "example": {
+          "period": "monthly"
+        }
+      }
+    },
+    "example": {
+      "id": "pricing_premium",
+      "enabled": true,
+      "name": "Premium",
+      "price": 49.9,
+      "currency": "EUR",
+      "params": {
+        "period": "monthly"
+      }
+    }
+  },
+  "ApiRoute": {
+    "description": "A route of an api: the requests it matches (its frontend), the backend it forwards them to and the flow of plugins they go through. Otoroshi turns it into a route of the proxy engine, the domain and the context path of the api in front of its paths",
+    "type": "object",
+    "required": [
+      "id",
+      "backend"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the route, unique in the api",
+        "example": "route_list_users"
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the route is served. Defaults to `true`"
+      },
+      "name": {
+        "type": "string",
+        "nullable": true,
+        "description": "The name of the route, `null` for none. The route of the proxy engine is named after it, its methods and its paths",
+        "example": "List users"
+      },
+      "frontend": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgFrontend"
+          }
+        ],
+        "description": "The requests the route matches. Only the path of each of its domains is used: it comes after the domain and the context path of the api"
+      },
+      "backend": {
+        "type": "string",
+        "description": "The id of the backend the route forwards to: a stored backend, searched first, or a backend of the api. A route whose backend cannot be found is not served",
+        "example": "api_backend_dev_3acedc5c-fd6d-4fae-a37b-54e076a1084d"
+      },
+      "flow_ref": {
+        "type": "string",
+        "description": "The id of the flow of the api whose plugins the route runs. Also read from `plugin_chain`. A route whose flow cannot be found runs no plugin. Defaults to an empty string",
+        "example": "default_plugin_chain"
+      }
+    },
+    "example": {
+      "id": "route_list_users",
+      "enabled": true,
+      "name": "List users",
+      "frontend": {
+        "domains": [
+          "/users"
+        ],
+        "strip_path": true,
+        "exact": false,
+        "headers": {},
+        "cookies": {},
+        "query": {},
+        "methods": [
+          "GET"
+        ]
+      },
+      "backend": "api_backend_dev_3acedc5c-fd6d-4fae-a37b-54e076a1084d",
+      "flow_ref": "default_plugin_chain"
+    }
+  },
+  "ApiBackend": {
+    "description": "A backend of an api: the targets its routes forward to, with the http client settings of one of the backend clients of the api",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "backend"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the backend, unique in the api. The routes reference it in `backend`",
+        "example": "api_backend_dev_3acedc5c-fd6d-4fae-a37b-54e076a1084d"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the backend, shown in the backoffice. The routes of the api reference the backend by its `id`, not by its name",
+        "example": "default_backend"
+      },
+      "backend": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgBackend"
+          }
+        ],
+        "description": "The targets of the backend and how they are reached. Its `client` settings are replaced by the ones of the backend client named by `client` when the routes are built"
+      },
+      "client": {
+        "type": "string",
+        "description": "The id of the backend client (an entry of `clients_backend_config`) whose http client settings the backend uses, the default settings when it cannot be found. Defaults to `default_backend_client`",
+        "example": "default_backend_client"
+      }
+    },
+    "example": {
+      "id": "api_backend_dev_3acedc5c-fd6d-4fae-a37b-54e076a1084d",
+      "name": "default_backend",
+      "backend": {
+        "targets": [
+          {
+            "id": "target_1",
+            "hostname": "request.otoroshi.io",
+            "port": 443,
+            "tls": true,
+            "weight": 1,
+            "backup": false,
+            "predicate": {
+              "type": "AlwaysMatch"
+            },
+            "protocol": "HTTP/1.1",
+            "ip_address": null,
+            "tls_config": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ],
+        "root": "/",
+        "rewrite": false,
+        "load_balancing": {
+          "type": "RoundRobin"
+        },
+        "client": {
+          "retries": 1,
+          "max_errors": 20,
+          "retry_initial_delay": 50,
+          "backoff_factor": 2,
+          "call_timeout": 30000,
+          "call_and_stream_timeout": 120000,
+          "connection_timeout": 10000,
+          "idle_timeout": 60000,
+          "global_timeout": 30000,
+          "sample_interval": 2000,
+          "proxy": {},
+          "custom_timeouts": [],
+          "cache_connection_settings": {
+            "enabled": false,
+            "queue_size": 2048
+          }
+        },
+        "health_check": null
+      },
+      "client": "default_backend_client"
+    }
+  },
+  "ApiBackendClient": {
+    "description": "Http client settings of an api, shared by the backends that reference them",
+    "type": "object",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the backend client, unique in the api. The backends reference it in `client`",
+        "example": "default_backend_client"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the backend client, shown in the backoffice. The backends reference it by its `id`, not by its name",
+        "example": "default_backend_client"
+      },
+      "client": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgClientConfig"
+          }
+        ],
+        "description": "The http client settings: timeouts, retries, connection pool... The default settings when missing or invalid"
+      }
+    },
+    "example": {
+      "id": "default_backend_client",
+      "name": "default_backend_client",
+      "client": {
+        "retries": 1,
+        "max_errors": 20,
+        "retry_initial_delay": 50,
+        "backoff_factor": 2,
+        "call_timeout": 30000,
+        "call_and_stream_timeout": 120000,
+        "connection_timeout": 10000,
+        "idle_timeout": 60000,
+        "global_timeout": 30000,
+        "sample_interval": 2000,
+        "proxy": {},
+        "custom_timeouts": [],
+        "cache_connection_settings": {
+          "enabled": false,
+          "queue_size": 2048
+        }
+      }
+    }
+  },
+  "ApiFlows": {
+    "description": "A flow of an api: a named chain of plugins, run by the routes and the plans that reference it",
+    "type": "object",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the flow, unique in the api. The routes reference it in `flow_ref`, the plans in `plugins.flow_ref`",
+        "example": "default_plugin_chain"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the flow, shown in the backoffice. The routes and the plans reference it by its `id`, not by its name",
+        "example": "default_plugin_chain"
+      },
+      "plugins": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NgPluginInstance"
+        },
+        "description": "The plugins of the flow, in the format of the plugins of a route. Defaults to an empty list"
+      }
+    },
+    "example": {
+      "id": "default_plugin_chain",
+      "name": "default_plugin_chain",
+      "plugins": [
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+          "include": [],
+          "exclude": [],
+          "config": {},
+          "bound_listeners": []
+        }
+      ]
+    }
+  },
+  "ApiDocumentation": {
+    "description": "The documentation of an api for a developer portal: its pages, its navigation, its logo, its banner, and a remote documentation to merge with it",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the documentation is shown. Defaults to `true`"
+      },
+      "source": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationSource"
+          }
+        ],
+        "nullable": true,
+        "description": "A remote documentation merged with this one, `null` for none"
+      },
+      "home": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationResource"
+          }
+        ],
+        "description": "The home page of the documentation. Defaults to an empty resource"
+      },
+      "logo": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationResource"
+          }
+        ],
+        "description": "The logo of the api. Defaults to an empty resource"
+      },
+      "references": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiDocumentationResourceRef"
+        },
+        "description": "Links to the references of the api"
+      },
+      "resources": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiDocumentationResource"
+        },
+        "description": "The pages and the files of the documentation"
+      },
+      "navigation": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiDocumentationSidebar"
+        },
+        "description": "The sidebars of the documentation site, each one shown on the pages of its `path` with its links and its categories of links"
+      },
+      "redirections": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiDocumentationRedirection"
+        },
+        "description": "The redirections between the paths of the documentation"
+      },
+      "footer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationResource"
+          }
+        ],
+        "nullable": true,
+        "description": "The footer of the documentation, `null` for none"
+      },
+      "search": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationSearch"
+          }
+        ],
+        "description": "The search in the documentation. Defaults to an enabled search"
+      },
+      "banner": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationResource"
+          }
+        ],
+        "nullable": true,
+        "description": "The banner of the documentation, `null` for none"
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "description": "Free key/value metadata of the documentation",
+        "example": {
+          "audience": "partners"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "description": "Free tags of the documentation",
+        "example": [
+          "public"
+        ]
+      }
+    },
+    "example": {
+      "enabled": true,
+      "source": null,
+      "home": {
+        "path": [
+          "getting-started"
+        ],
+        "title": "Getting started",
+        "description": "How to get an api key and make a first call",
+        "content_type": "text/markdown",
+        "text_content": "# Getting started\n\nSubscribe to a plan to get an api key, then call `https://api.oto.tools/v1/users` with it.",
+        "site_page": true
+      },
+      "logo": {
+        "url": "https://docs.oto.tools/assets/users-api-logo.png",
+        "content_type": "image/png"
+      },
+      "references": [
+        {
+          "title": "OpenAPI specification",
+          "description": "The openapi document of the api",
+          "link": "https://api.oto.tools/v1/openapi.json"
+        }
+      ],
+      "resources": [],
+      "navigation": [
+        {
+          "label": "Documentation",
+          "path": [
+            "docs"
+          ],
+          "items": [
+            {
+              "kind": "link",
+              "label": "Getting started",
+              "link": "/getting-started"
+            },
+            {
+              "kind": "category",
+              "label": "Guides",
+              "links": [
+                {
+                  "label": "Authentication",
+                  "link": "/guides/authentication"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "redirections": [
+        {
+          "from": "/start",
+          "to": "/getting-started"
+        }
+      ],
+      "footer": null,
+      "search": {
+        "enabled": true
+      },
+      "banner": null,
+      "metadata": {},
+      "tags": []
+    }
+  },
+  "ApiDocumentationSource": {
+    "description": "A remote documentation: otoroshi fetches it (a documentation in the same json format) and merges it with the local one. The lists of both are concatenated, the remote footer and banner win over the local ones, and every other field but the source comes from the remote documentation. When it does not answer a `200` with a documentation, the api has none",
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "The url of the remote documentation. The relative urls of the resources (starting with `.`) are resolved against it. Without it nothing is fetched",
+        "example": "https://docs.oto.tools/apis/users/documentation.json"
+      },
+      "headers": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A header value"
+        },
+        "description": "The http headers sent to fetch the remote documentation",
+        "example": {
+          "Authorization": "Bearer xxxxx"
+        }
+      },
+      "timeout": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The timeout of the call, in milliseconds. Defaults to `30000`",
+        "example": 30000
+      },
+      "follow_redirects": {
+        "type": "boolean",
+        "description": "Whether the redirections are followed. Defaults to `true`"
+      }
+    },
+    "example": {
+      "url": "https://docs.oto.tools/apis/users/documentation.json",
+      "headers": {
+        "Authorization": "Bearer xxxxx"
+      },
+      "timeout": 30000,
+      "follow_redirects": true
+    }
+  },
+  "ApiDocumentationResource": {
+    "description": "A resource of a documentation: a page or a file, its content given inline (as text, json or base64) or fetched from a url. Otoroshi stores it as it is sent, for the developer portal that shows it",
+    "type": "object",
+    "properties": {
+      "path": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A segment of the path"
+            },
+            "description": "The segments of the path"
+          },
+          {
+            "type": "string",
+            "description": "The path as a single string"
+          }
+        ],
+        "description": "The path of the resource in the documentation, as segments or as a single string",
+        "example": [
+          "getting-started"
+        ]
+      },
+      "title": {
+        "type": "string",
+        "description": "The title of the page or of the file, for the developer portal to show. Optional",
+        "example": "Getting started"
+      },
+      "description": {
+        "type": "string",
+        "description": "A short text about the page or the file, for the developer portal to show with its title. Optional",
+        "example": "How to get an api key and make a first call"
+      },
+      "content_type": {
+        "type": "string",
+        "description": "The content type of the content of the resource. Defaults to `text/markdown`",
+        "example": "text/markdown"
+      },
+      "text_content": {
+        "type": "string",
+        "description": "The content of the resource, as text",
+        "example": "# Getting started\n\nSubscribe to a plan to get an api key, then call `https://api.oto.tools/v1/users` with it."
+      },
+      "css_icon_class": {
+        "type": "string",
+        "description": "The css class of the icon of the resource",
+        "example": "fas fa-book"
+      },
+      "json_content": {
+        "description": "The content of the resource, as json. Any json value, `null` standing for none",
+        "example": {
+          "openapi": "3.0.3"
+        }
+      },
+      "base64_content": {
+        "type": "string",
+        "format": "byte",
+        "description": "The content of the resource, encoded in base64, for a binary file",
+        "example": "iVBORw0KGgo="
+      },
+      "site_page": {
+        "type": "boolean",
+        "description": "Whether the resource is a page of the documentation site. Defaults to `false`"
+      },
+      "transform": {
+        "type": "string",
+        "description": "The name of a transformation for the developer portal to apply to the content of the resource. Otoroshi stores it, it does not apply it"
+      },
+      "transform_wrapper": {
+        "type": "string",
+        "description": "The wrapper of the transformation of the content of the resource, for the developer portal. Otoroshi stores it, it does not use it"
+      },
+      "url": {
+        "type": "string",
+        "description": "The url the content of the resource is fetched from. A url starting with `.` is relative to the url of the source of the documentation",
+        "example": "./getting-started.md"
+      },
+      "http_headers": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A header value"
+        },
+        "description": "The http headers sent to fetch the content",
+        "example": {
+          "Accept": "text/markdown"
+        }
+      },
+      "http_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The timeout of the call that fetches the content, in milliseconds. Defaults to `30000`",
+        "example": 30000
+      },
+      "http_follow_redirects": {
+        "type": "boolean",
+        "description": "Whether the call that fetches the content follows the redirections. Defaults to `true`"
+      }
+    },
+    "example": {
+      "path": [
+        "getting-started"
+      ],
+      "title": "Getting started",
+      "description": "How to get an api key and make a first call",
+      "content_type": "text/markdown",
+      "text_content": "# Getting started\n\nSubscribe to a plan to get an api key, then call `https://api.oto.tools/v1/users` with it.",
+      "site_page": true
+    }
+  },
+  "ApiDocumentationResourceRef": {
+    "description": "A link to a reference of an api, for instance its openapi document",
+    "type": "object",
+    "required": [
+      "title",
+      "link"
+    ],
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "The text of the link to the reference. Required",
+        "example": "OpenAPI specification"
+      },
+      "description": {
+        "type": "string",
+        "description": "A short text shown with the link to the reference. Optional",
+        "example": "The openapi document of the api"
+      },
+      "link": {
+        "type": "string",
+        "description": "The url the link leads to: the openapi document of the api, a guide, a status page... Required",
+        "example": "https://api.oto.tools/v1/openapi.json"
+      },
+      "icon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationResource"
+          }
+        ],
+        "description": "The icon shown next to the link to the reference: a documentation resource holding an image or a css icon class (`css_icon_class`). Optional"
+      }
+    },
+    "example": {
+      "title": "OpenAPI specification",
+      "description": "The openapi document of the api",
+      "link": "https://api.oto.tools/v1/openapi.json"
+    }
+  },
+  "ApiDocumentationSidebar": {
+    "description": "A sidebar of a documentation: its links and its categories of links",
+    "type": "object",
+    "properties": {
+      "label": {
+        "type": "string",
+        "description": "The label of the sidebar. Defaults to an empty string",
+        "example": "Documentation"
+      },
+      "path": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A segment of the path"
+            },
+            "description": "The segments of the path"
+          },
+          {
+            "type": "string",
+            "description": "The path as a single string"
+          }
+        ],
+        "description": "The path the sidebar is shown on, as segments or as a single string",
+        "example": [
+          "docs"
+        ]
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/ApiDocumentationSidebarCategory"
+            },
+            {
+              "$ref": "#/components/schemas/ApiDocumentationSidebarLink"
+            }
+          ],
+          "description": "An entry of the sidebar, a category when its `kind` is `category`, a link otherwise"
+        },
+        "description": "The entries of the sidebar: links, and categories of links"
+      },
+      "icon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationResource"
+          }
+        ],
+        "description": "The icon shown next to the label of the sidebar: a documentation resource holding an image or a css icon class (`css_icon_class`). Optional"
+      }
+    },
+    "example": {
+      "label": "Documentation",
+      "path": [
+        "docs"
+      ],
+      "items": [
+        {
+          "kind": "link",
+          "label": "Getting started",
+          "link": "/getting-started"
+        },
+        {
+          "kind": "category",
+          "label": "Guides",
+          "links": [
+            {
+              "label": "Authentication",
+              "link": "/guides/authentication"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "ApiDocumentationSidebarCategory": {
+    "description": "A category of a sidebar of a documentation: a label over a list of links",
+    "type": "object",
+    "required": [
+      "kind"
+    ],
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "category"
+        ],
+        "description": "The kind of the entry, `category`",
+        "example": "category"
+      },
+      "label": {
+        "type": "string",
+        "description": "The label of the category. Defaults to `No label`",
+        "example": "Guides"
+      },
+      "icon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationResource"
+          }
+        ],
+        "description": "The icon shown next to the label of the category: a documentation resource holding an image or a css icon class (`css_icon_class`). Optional"
+      },
+      "links": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ApiDocumentationSidebarLink"
+        },
+        "description": "The links listed under the label of the category, in this order. Empty when missing"
+      }
+    },
+    "example": {
+      "kind": "category",
+      "label": "Guides",
+      "links": [
+        {
+          "label": "Authentication",
+          "link": "/guides/authentication"
+        }
+      ]
+    }
+  },
+  "ApiDocumentationSidebarLink": {
+    "description": "A link of a sidebar of a documentation",
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "link"
+        ],
+        "description": "The kind of the entry, `link`, the default",
+        "example": "link"
+      },
+      "label": {
+        "type": "string",
+        "description": "The label of the link. Defaults to `No label`",
+        "example": "Getting started"
+      },
+      "icon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiDocumentationResource"
+          }
+        ],
+        "description": "The icon shown next to the label of the link: a documentation resource holding an image or a css icon class (`css_icon_class`). Optional"
+      },
+      "link": {
+        "type": "string",
+        "description": "The path or the url the link leads to. Defaults to `#`",
+        "example": "/getting-started"
+      }
+    },
+    "example": {
+      "kind": "link",
+      "label": "Getting started",
+      "link": "/getting-started"
+    }
+  },
+  "ApiDocumentationRedirection": {
+    "description": "A redirection between two paths of a documentation",
+    "type": "object",
+    "required": [
+      "from",
+      "to"
+    ],
+    "properties": {
+      "from": {
+        "type": "string",
+        "description": "The path of the documentation that is redirected, the old path of a moved page for instance. Required",
+        "example": "/start"
+      },
+      "to": {
+        "type": "string",
+        "description": "The path or the url it is redirected to",
+        "example": "/getting-started"
+      }
+    },
+    "example": {
+      "from": "/start",
+      "to": "/getting-started"
+    }
+  },
+  "ApiDocumentationSearch": {
+    "description": "The search in a documentation: otoroshi only stores whether the developer portal offers it",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the documentation can be searched. Defaults to `true`"
+      }
+    },
+    "example": {
+      "enabled": true
+    }
+  },
+  "ApiDeployment": {
+    "description": "A deployment of an api: a snapshot of what a deploy of its draft put in production, kept for audit and rollback",
+    "type": "object",
+    "required": [
+      "apiRef",
+      "owner",
+      "apiDefinition"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the deployment, generated when missing",
+        "example": "api_deployment_dev_0b3c5e1a-3f0e-4c58-9a51-7d1f2e6b9c40"
+      },
+      "apiRef": {
+        "type": "string",
+        "description": "The id of the deployed api, the one holding the deployment in its `deployments`. Also the `apiRef` of the `ApiDeploymentEvent` sent for the deployment",
+        "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+      },
+      "owner": {
+        "type": "string",
+        "description": "Who deployed the api: the name or the id of the admin, or the `created_by` metadata of the api for the deploys of a remote catalog",
+        "example": "admin@otoroshi.io"
+      },
+      "at": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the api was deployed, a timestamp in milliseconds. Defaults to the time it is read",
+        "example": 1792092715286
+      },
+      "apiDefinition": {
+        "type": "object",
+        "description": "The design that was deployed: the fields of the api locked in production. It is kept as it is sent",
+        "properties": {
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiRoute"
+            },
+            "description": "The routes that were deployed, in the format of the `routes` of the api"
+          },
+          "backends": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiBackend"
+            },
+            "description": "The backends that were deployed, in the format of the `backends` of the api"
+          },
+          "flows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiFlows"
+            },
+            "description": "The flows that were deployed, in the format of the `flows` of the api"
+          },
+          "documentation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiDocumentation"
+              }
+            ],
+            "nullable": true,
+            "description": "The documentation of the api, `null` for none"
+          }
+        },
+        "example": {
+          "routes": [],
+          "backends": [],
+          "flows": [
+            {
+              "id": "default_plugin_chain",
+              "name": "default_plugin_chain",
+              "plugins": [
+                {
+                  "enabled": true,
+                  "debug": false,
+                  "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+                  "include": [],
+                  "exclude": [],
+                  "config": {},
+                  "bound_listeners": []
+                }
+              ]
+            }
+          ],
+          "documentation": null
+        }
+      },
+      "version": {
+        "type": "string",
+        "description": "The version of the api that was deployed. Defaults to `0.0.1`",
+        "example": "1.0.0"
+      }
+    },
+    "example": {
+      "id": "api_deployment_dev_0b3c5e1a-3f0e-4c58-9a51-7d1f2e6b9c40",
+      "apiRef": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974",
+      "owner": "admin@otoroshi.io",
+      "at": 1792092715286,
+      "apiDefinition": {
+        "routes": [
+          {
+            "id": "route_list_users",
+            "enabled": true,
+            "name": "List users",
+            "frontend": {
+              "domains": [
+                "/users"
+              ],
+              "strip_path": true,
+              "exact": false,
+              "headers": {},
+              "cookies": {},
+              "query": {},
+              "methods": [
+                "GET"
+              ]
+            },
+            "backend": "api_backend_dev_3acedc5c-fd6d-4fae-a37b-54e076a1084d",
+            "flow_ref": "default_plugin_chain"
+          }
+        ],
+        "backends": [
+          {
+            "id": "api_backend_dev_3acedc5c-fd6d-4fae-a37b-54e076a1084d",
+            "name": "default_backend",
+            "backend": {
+              "targets": [
+                {
+                  "id": "target_1",
+                  "hostname": "request.otoroshi.io",
+                  "port": 443,
+                  "tls": true,
+                  "weight": 1,
+                  "backup": false,
+                  "predicate": {
+                    "type": "AlwaysMatch"
+                  },
+                  "protocol": "HTTP/1.1",
+                  "ip_address": null,
+                  "tls_config": {
+                    "certs": [],
+                    "trusted_certs": [],
+                    "enabled": false,
+                    "loose": false,
+                    "trust_all": false
+                  }
+                }
+              ],
+              "root": "/",
+              "rewrite": false,
+              "load_balancing": {
+                "type": "RoundRobin"
+              },
+              "client": {
+                "retries": 1,
+                "max_errors": 20,
+                "retry_initial_delay": 50,
+                "backoff_factor": 2,
+                "call_timeout": 30000,
+                "call_and_stream_timeout": 120000,
+                "connection_timeout": 10000,
+                "idle_timeout": 60000,
+                "global_timeout": 30000,
+                "sample_interval": 2000,
+                "proxy": {},
+                "custom_timeouts": [],
+                "cache_connection_settings": {
+                  "enabled": false,
+                  "queue_size": 2048
+                }
+              },
+              "health_check": null
+            },
+            "client": "default_backend_client"
+          }
+        ],
+        "flows": [
+          {
+            "id": "default_plugin_chain",
+            "name": "default_plugin_chain",
+            "plugins": [
+              {
+                "enabled": true,
+                "debug": false,
+                "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+                "include": [],
+                "exclude": [],
+                "config": {},
+                "bound_listeners": []
+              }
+            ]
+          }
+        ],
+        "documentation": null
+      },
+      "version": "1.0.0"
+    }
+  },
+  "ApiTesting": {
+    "description": "The testing of the draft of an api: when enabled, otoroshi also serves the routes of the last saved draft of the api, to the calls that carry a secret header",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the routes of the draft are served. Defaults to `false`"
+      },
+      "headerKey": {
+        "type": "string",
+        "description": "The name of the header the calls to the routes of the draft carry. Defaults to `X-OTOROSHI-TESTING`",
+        "example": "X-OTOROSHI-TESTING"
+      },
+      "headerValue": {
+        "type": "string",
+        "description": "The value the header holds, a secret generated at random when missing",
+        "example": "e072893e7-f05e-4cdd-8b2e-a64ac01c3e2d"
+      }
+    },
+    "example": {
+      "enabled": false,
+      "headerKey": "X-OTOROSHI-TESTING",
+      "headerValue": "e072893e7-f05e-4cdd-8b2e-a64ac01c3e2d"
+    }
+  },
+  "ApiClient": {
+    "description": "A consumer of an api, the owner of subscriptions to its plans",
+    "type": "object",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the client, unique in the api. The subscriptions reference it in `owner_ref`",
+        "example": "client_acme"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the client, shown in the backoffice. The subscriptions reference the client by its `id`, not by its name",
+        "example": "ACME Corp"
+      },
+      "description": {
+        "type": "string",
+        "nullable": true,
+        "description": "The description of the client, `null` for none",
+        "example": "The developer account of ACME Corp"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "description": "Free tags of the client",
+        "example": [
+          "partner"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "description": "Free key/value metadata of the client",
+        "example": {
+          "contact": "dev@acme.com"
+        }
+      }
+    },
+    "example": {
+      "id": "client_acme",
+      "name": "ACME Corp",
+      "description": "The developer account of ACME Corp",
+      "tags": [],
+      "metadata": {
+        "contact": "dev@acme.com"
+      }
+    }
+  },
+  "apis.otoroshi.io.ApiSubscription": {
+    "description": "A subscription of a consumer to a plan of an api. A subscription to an `apikey` or an `oauth2-local` plan is given an api key built from the plan, referenced in `token_refs`; the other access modes build their consumer at call time. A subscription is written only when its api is in `staging` or `published` and holds its plan, and is created only on a plan in `staging` or `published`, of the access mode of the subscription",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description",
+      "dates",
+      "owner_ref",
+      "plan_ref",
+      "api_ref",
+      "subscription_kind"
+    ],
+    "properties": {
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The tenant (organization) and the teams of the subscription, against which the rights of the admins are checked"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the subscription, kept in the `apiRef` (`sub`) of the api keys minted for it. The template generates `api-subscription_<uuid>`, with the environment of otoroshi before the uuid outside of `prod`",
+        "example": "api-subscription_dev_d3147f0b-3709-4284-aff0-02c98b4eacec"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the subscription, shown in the backoffice. The api keys minted for it are not named after it but by the `clientNamePattern` of the plan",
+        "example": "ACME Corp free tier"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the subscription, shown in the backoffice. The api keys minted for it get the description of the plan instead",
+        "example": "The subscription of ACME Corp to the free tier"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "description": "Free tags of the subscription, given to its api keys",
+        "example": [
+          "partner"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "description": "Free key/value metadata of the subscription, given to its api keys",
+        "example": {
+          "contract": "acme-2026-001"
+        }
+      },
+      "status": {
+        "type": "string",
+        "description": "The status of the subscription: `pending` until it is confirmed, `enabled`, `disabled` (its api keys are disabled) or `deprecated`. Any other value is kept as a custom status. Defaults to `disabled`",
+        "example": "enabled"
+      },
+      "dates": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiSubscriptionDates"
+          }
+        ],
+        "description": "The dates of the lifecycle of the subscription"
+      },
+      "owner_ref": {
+        "type": "string",
+        "description": "The id of the client of the api (an entry of its `clients`) that owns the subscription",
+        "example": "client_acme"
+      },
+      "plan_ref": {
+        "type": "string",
+        "description": "The id of the plan of the api the subscription is made to",
+        "example": "plan_free_tier"
+      },
+      "payment_ref": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Free information about the payment of the subscription, for instance its reference in a billing system. Defaults to an empty object",
+        "example": {
+          "invoice": "INV-2026-0042"
+        }
+      },
+      "api_ref": {
+        "type": "string",
+        "description": "The id of the api the subscription is made to",
+        "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+      },
+      "subscription_kind": {
+        "type": "string",
+        "enum": [
+          "apikey",
+          "mtls",
+          "keyless",
+          "oauth2-local",
+          "oauth2-remote",
+          "jwt"
+        ],
+        "description": "The access mode of the subscription, the one of its plan (checked on creation). Read case insensitively, an unknown value is refused",
+        "example": "apikey"
+      },
+      "token_refs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "description": "A credential of the subscription. Otoroshi writes `{\"apikey\": \"<client id>\"}` for the api key it minted, and keeps the api keys referenced that way in sync with the plan",
+          "properties": {
+            "apikey": {
+              "type": "string",
+              "description": "The client id of an api key of the subscription",
+              "example": "kx8e4lq2v9twb3hd"
+            }
+          },
+          "additionalProperties": true,
+          "example": {
+            "apikey": "kx8e4lq2v9twb3hd"
+          }
+        },
+        "description": "The credentials of the subscription. Otoroshi keeps every entry as it is sent"
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "api-subscription_dev_d3147f0b-3709-4284-aff0-02c98b4eacec",
+      "name": "ACME Corp free tier",
+      "description": "The subscription of ACME Corp to the free tier",
+      "tags": [],
+      "metadata": {
+        "contract": "acme-2026-001"
+      },
+      "status": "enabled",
+      "dates": {
+        "created_at": 1792092715286,
+        "processed_at": 1792092715286,
+        "started_at": 1792092715286,
+        "paused_at": 1792092715286,
+        "ending_at": 1823628715286,
+        "closed_at": 1792092715286
+      },
+      "owner_ref": "client_acme",
+      "plan_ref": "plan_free_tier",
+      "payment_ref": {},
+      "api_ref": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974",
+      "subscription_kind": "apikey",
+      "token_refs": [
+        {
+          "apikey": "kx8e4lq2v9twb3hd"
+        }
+      ]
+    }
+  },
+  "ApiSubscriptionDates": {
+    "description": "The dates of the lifecycle of a subscription, timestamps in milliseconds. A missing date is read as the current time",
+    "type": "object",
+    "properties": {
+      "created_at": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the subscription was created",
+        "example": 1792092715286
+      },
+      "processed_at": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the subscription was processed",
+        "example": 1792092715286
+      },
+      "started_at": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the subscription started",
+        "example": 1792092715286
+      },
+      "paused_at": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the subscription was paused",
+        "example": 1792092715286
+      },
+      "ending_at": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the subscription ends",
+        "example": 1823628715286
+      },
+      "closed_at": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the subscription was closed",
+        "example": 1792092715286
+      }
+    },
+    "example": {
+      "created_at": 1792092715286,
+      "processed_at": 1792092715286,
+      "started_at": 1792092715286,
+      "paused_at": 1792092715286,
+      "ending_at": 1823628715286,
+      "closed_at": 1792092715286
+    }
+  }
+}

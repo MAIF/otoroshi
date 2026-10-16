@@ -1,0 +1,290 @@
+{
+  "organize.otoroshi.io.Organization": {
+    "type": "object",
+    "description": "An organization, also called a tenant: the top level partition of otoroshi. Every entity belongs to one organization (its `_loc.tenant`), and admins are granted rights per organization and team. The same entities are served as `organizations` and as `tenants`",
+    "required": [
+      "id"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the organization, the value of `_loc.tenant` of its entities. It is lowercased and trimmed when read",
+        "example": "acme"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the organization, for humans. Defaults to the id",
+        "example": "ACME Corp."
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the organization, shown and searched in the list of the organizations of the backoffice. Empty when absent",
+        "example": "The organization of the ACME teams"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the organization",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "cost-center": "cc-42"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the organization, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "prod"
+        },
+        "example": [
+          "prod"
+        ]
+      },
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "readOnly": true,
+        "description": "The location of the organization, written by otoroshi from its id: an organization is in itself, with no team. It is not read back"
+      }
+    },
+    "example": {
+      "id": "acme",
+      "name": "ACME Corp.",
+      "description": "The organization of the ACME teams",
+      "metadata": {
+        "cost-center": "cc-42"
+      },
+      "tags": [
+        "customer"
+      ],
+      "_loc": {
+        "tenant": "acme",
+        "teams": []
+      }
+    }
+  },
+  "organize.otoroshi.io.ServiceGroup": {
+    "type": "object",
+    "description": "A service group: a set of routes, apis and route compositions that api keys can be authorized on as a whole. A route belongs to the groups listed in its `groups`, an api key authorized on a group can call all of them",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The id of the group, referenced by the `groups` of the routes and the authorizations of the api keys (`group_<id>`)",
+        "example": "group_dev_ddb6f401-71a9-4727-83f3-bd5fc0bc9591"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the group, shown and searched in the list of the service groups of the backoffice",
+        "example": "billing-apis"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the group, shown and searched in the list of the service groups of the backoffice. Empty when absent",
+        "example": "The apis of the billing domain"
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the group, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "prod"
+        },
+        "example": [
+          "prod"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the group",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "domain": "billing"
+        }
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "group_dev_ddb6f401-71a9-4727-83f3-bd5fc0bc9591",
+      "name": "billing-apis",
+      "description": "The apis of the billing domain",
+      "tags": [
+        "billing"
+      ],
+      "metadata": {
+        "domain": "billing"
+      }
+    }
+  },
+  "organize.otoroshi.io.Team": {
+    "type": "object",
+    "description": "A team of an organization: a partition of the entities of the organization (their `_loc.teams`). Admins are granted rights per organization and team",
+    "required": [
+      "id",
+      "tenant"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the team, the value listed in `_loc.teams` of its entities. It is lowercased and trimmed when read, and unique within its organization",
+        "example": "payments"
+      },
+      "tenant": {
+        "type": "string",
+        "description": "The id of the tenant (organization) the team belongs to. It is lowercased and trimmed when read",
+        "example": "default"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the team, for humans. Defaults to the id",
+        "example": "Payments"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the team, shown and searched in the list of the teams of the backoffice. Empty when absent",
+        "example": "The team running the payment apis"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the team",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "slack": "#payments"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the team, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "prod"
+        },
+        "example": [
+          "prod"
+        ]
+      },
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "readOnly": true,
+        "description": "The location of the team, written by otoroshi from its tenant (organization) and its id: a team is in its organization and in itself. It is not read back"
+      }
+    },
+    "example": {
+      "id": "payments",
+      "tenant": "default",
+      "name": "Payments",
+      "description": "The team running the payment apis",
+      "metadata": {
+        "slack": "#payments"
+      },
+      "tags": [],
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "payments"
+        ]
+      }
+    }
+  },
+  "organize.otoroshi.io.Tenant": {
+    "type": "object",
+    "description": "An organization, also called a tenant: the top level partition of otoroshi. Every entity belongs to one organization (its `_loc.tenant`), and admins are granted rights per organization and team. The same entities are served as `organizations` and as `tenants`",
+    "required": [
+      "id"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the organization, the value of `_loc.tenant` of its entities. It is lowercased and trimmed when read",
+        "example": "acme"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the organization, for humans. Defaults to the id",
+        "example": "ACME Corp."
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the organization, shown and searched in the list of the organizations of the backoffice. Empty when absent",
+        "example": "The organization of the ACME teams"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the organization",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "cost-center": "cc-42"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the organization, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "prod"
+        },
+        "example": [
+          "prod"
+        ]
+      },
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "readOnly": true,
+        "description": "The location of the organization, written by otoroshi from its id: an organization is in itself, with no team. It is not read back"
+      }
+    },
+    "example": {
+      "id": "acme",
+      "name": "ACME Corp.",
+      "description": "The organization of the ACME teams",
+      "metadata": {
+        "cost-center": "cc-42"
+      },
+      "tags": [
+        "customer"
+      ],
+      "_loc": {
+        "tenant": "acme",
+        "teams": []
+      }
+    }
+  }
+}

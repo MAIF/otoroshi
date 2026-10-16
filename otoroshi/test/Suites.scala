@@ -339,6 +339,12 @@ class TlsAsyncRebuildTests
       new TlsAsyncRebuildSpec(Configurations.InMemoryConfiguration)
     )
 
+// the openapi document of the admin api checked against a running otoroshi, see openapi.OpenApiConformanceSpec
+class OpenApiConformanceTests
+    extends Suites(
+      new openapi.OpenApiConformanceSpec(Configurations.InMemoryConfiguration)
+    )
+
 class ApiPlanMtlsTests
     extends Suites(
       new ApiPlanMtlsSpec(Configurations.InMemoryConfiguration)

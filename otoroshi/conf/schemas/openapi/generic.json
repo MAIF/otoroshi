@@ -1,0 +1,406 @@
+{
+  "ApiEntityKind": {
+    "type": "object",
+    "description": "What the admin api adds to an entity it answers",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "description": "The group and the kind of the entity, for instance `proxy.otoroshi.io/Route`. It is ignored when the entity is sent back",
+        "readOnly": true,
+        "example": "proxy.otoroshi.io/Route"
+      }
+    }
+  },
+  "ErrorResponse": {
+    "type": "object",
+    "description": "An error answered by the admin api",
+    "properties": {
+      "error": {
+        "type": "string",
+        "description": "The error, as a short code or as a message",
+        "example": "not_found"
+      },
+      "error_description": {
+        "description": "What went wrong: a message, the messages of the validation, or the errors of the fields that could not be read",
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "A message"
+          },
+          {
+            "type": "array",
+            "description": "The messages of the validation",
+            "items": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/schemas/FieldErrors"
+          }
+        ]
+      },
+      "kind": {
+        "type": "string",
+        "description": "The group and the kind of the entity the call was about",
+        "example": "proxy.otoroshi.io/Route"
+      },
+      "Otoroshi-Error": {
+        "type": "string",
+        "description": "The error, when the call is refused before reaching the admin api: missing or wrong credentials, exceeded quotas",
+        "example": "no apikey"
+      }
+    },
+    "example": {
+      "error": "not_found",
+      "error_description": "resource not found",
+      "kind": "proxy.otoroshi.io/Route"
+    }
+  },
+  "FieldErrors": {
+    "type": "object",
+    "description": "The fields of an entity that could not be read, by path (`obj.<path>`, `obj` for the entity itself)",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "description": "The group and the kind of the entity the call was about, added by the admin api to the errors it answers",
+        "example": "proxy.otoroshi.io/Route"
+      }
+    },
+    "additionalProperties": {
+      "type": "array",
+      "description": "The errors of the field",
+      "items": {
+        "type": "object",
+        "description": "An error of the field",
+        "properties": {
+          "msg": {
+            "type": "array",
+            "description": "The message keys of the error, like `error.path.missing` (the field is absent) or `error.expected.jsstring` (the field does not hold a string)",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "error.path.missing"
+            ]
+          },
+          "args": {
+            "type": "array",
+            "description": "The arguments of the message keys, like the expected value of a constraint. Usually empty",
+            "items": {
+              "type": "string"
+            },
+            "example": []
+          }
+        }
+      }
+    },
+    "example": {
+      "obj.name": [
+        {
+          "msg": [
+            "error.path.missing"
+          ],
+          "args": []
+        }
+      ]
+    }
+  },
+  "BadEntityResponse": {
+    "description": "Why an entity was refused: an error, or the errors of the fields that could not be read",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ErrorResponse"
+      },
+      {
+        "$ref": "#/components/schemas/FieldErrors"
+      }
+    ]
+  },
+  "EntityCount": {
+    "type": "object",
+    "description": "The answer of the `_count` operation of an entity: how many entities of the kind the credentials can read",
+    "properties": {
+      "count": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of entities the credentials can read",
+        "example": 42
+      },
+      "kind": {
+        "type": "string",
+        "description": "The group and the kind of the entities counted",
+        "example": "proxy.otoroshi.io/Route"
+      }
+    }
+  },
+  "JsonSchema": {
+    "type": "object",
+    "description": "A json schema. The schemas it references are under its `components.schemas` field",
+    "additionalProperties": true
+  },
+  "JsonPatch": {
+    "type": "array",
+    "description": "A json patch (RFC 6902): the operations to apply, in order",
+    "items": {
+      "$ref": "#/components/schemas/JsonPatchOperation"
+    },
+    "example": [
+      {
+        "op": "replace",
+        "path": "/name",
+        "value": "my new name"
+      },
+      {
+        "op": "add",
+        "path": "/tags/-",
+        "value": "prod"
+      }
+    ]
+  },
+  "JsonPatchOperation": {
+    "type": "object",
+    "description": "An operation of a json patch (RFC 6902)",
+    "required": [
+      "op",
+      "path"
+    ],
+    "properties": {
+      "op": {
+        "type": "string",
+        "description": "What the operation does (RFC 6902): `add`, `remove` or `replace` the value at `path`, `move` or `copy` the value at `from` to `path`, or `test` that the value at `path` equals `value`",
+        "enum": [
+          "add",
+          "remove",
+          "replace",
+          "move",
+          "copy",
+          "test"
+        ],
+        "example": "replace"
+      },
+      "path": {
+        "type": "string",
+        "description": "The json pointer (RFC 6901) of the value the operation applies to",
+        "example": "/name"
+      },
+      "from": {
+        "type": "string",
+        "description": "The json pointer of the value to move or to copy, for the `move` and `copy` operations",
+        "example": "/description"
+      },
+      "value": {
+        "description": "The value to add, to replace with, or to test, for the `add`, `replace` and `test` operations",
+        "nullable": true,
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "A string"
+          },
+          {
+            "type": "number",
+            "description": "A number"
+          },
+          {
+            "type": "boolean",
+            "description": "A boolean"
+          },
+          {
+            "type": "array",
+            "description": "An array",
+            "items": {
+              "description": "An item",
+              "nullable": true
+            }
+          },
+          {
+            "type": "object",
+            "description": "An object",
+            "additionalProperties": true
+          }
+        ]
+      }
+    }
+  },
+  "FieldsPatch": {
+    "type": "array",
+    "description": "The fields to change and their new value. A value given as a string is read as json when it is `null`, `true`, `false`, a number, an object or an array",
+    "items": {
+      "type": "object",
+      "description": "A field and its new value",
+      "required": [
+        "path",
+        "value"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "The path of the field to change, its keys separated by dots (`frontend.domains`, `metadata.owner`). The objects missing along the path are created",
+          "example": "frontend.domains"
+        },
+        "value": {
+          "description": "The new value of the field, replacing the current one. A string holding `null`, `true`, `false`, a number, a json object or a json array is read as that json value",
+          "nullable": true,
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "A string, read as json when it is one"
+            },
+            {
+              "type": "number",
+              "description": "A number"
+            },
+            {
+              "type": "boolean",
+              "description": "A boolean"
+            },
+            {
+              "type": "array",
+              "description": "An array",
+              "items": {
+                "description": "An item",
+                "nullable": true
+              }
+            },
+            {
+              "type": "object",
+              "description": "An object",
+              "additionalProperties": true
+            }
+          ]
+        }
+      }
+    },
+    "example": [
+      {
+        "path": "name",
+        "value": "my new name"
+      }
+    ]
+  },
+  "FormPatch": {
+    "type": "object",
+    "description": "The fields to change, by dotted path, and their new value. A value is read as json when it is `null`, `true`, `false`, a number, an object or an array",
+    "additionalProperties": {
+      "type": "string",
+      "description": "The new value of the field"
+    },
+    "example": {
+      "name": "my new name",
+      "enabled": "false"
+    }
+  },
+  "BulkOperationOutcome": {
+    "description": "The outcome of a line of a bulk operation",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/BulkOperationResult"
+      },
+      {
+        "$ref": "#/components/schemas/BulkOperationError"
+      }
+    ]
+  },
+  "BulkOperationResult": {
+    "type": "object",
+    "description": "An entity processed by a bulk operation",
+    "required": [
+      "status",
+      "id",
+      "id_field"
+    ],
+    "properties": {
+      "status": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The http status of the operation on this entity",
+        "example": 201
+      },
+      "created": {
+        "type": "boolean",
+        "description": "`true` when the entity was created"
+      },
+      "updated": {
+        "type": "boolean",
+        "description": "`true` when the entity was updated"
+      },
+      "deleted": {
+        "type": "boolean",
+        "description": "`true` when the entity was deleted"
+      },
+      "id": {
+        "type": "string",
+        "description": "The id of the entity created, updated or deleted, read from the field named by `id_field`",
+        "example": "route_1234"
+      },
+      "id_field": {
+        "type": "string",
+        "description": "The field holding the id of the entity",
+        "example": "id"
+      }
+    }
+  },
+  "BulkOperationError": {
+    "type": "object",
+    "description": "A line a bulk operation refused. A refusal of the validation of an entity holds its http status under `http_status_code` instead of `status`",
+    "required": [
+      "error"
+    ],
+    "properties": {
+      "status": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The http status the line would get as a single call: 404 when the entity to update does not exist, 400 otherwise (a line that cannot be read, an entity the credentials cannot change, an entity to patch or to delete that does not exist)",
+        "example": 400
+      },
+      "error": {
+        "type": "string",
+        "description": "The error, as a short code, like `bad_entity`, or `bad_request` when the validation of the entity refused it",
+        "example": "bad_entity"
+      },
+      "error_description": {
+        "description": "Why the line was refused: a message, the messages of the validation, the errors of the fields that could not be read, or the error of the lookup of the entity",
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "A message"
+          },
+          {
+            "type": "array",
+            "description": "The messages of the validation",
+            "items": {
+              "type": "string"
+            }
+          },
+          {
+            "type": "object",
+            "description": "The errors of the fields that could not be read, or the error of the lookup",
+            "additionalProperties": true
+          }
+        ]
+      },
+      "entity": {
+        "description": "The line refused. For a bulk patch whose entity is not found, the patch of the line",
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "The line refused",
+            "additionalProperties": true
+          },
+          {
+            "type": "array",
+            "description": "The patch of the line",
+            "items": {
+              "$ref": "#/components/schemas/JsonPatchOperation"
+            }
+          }
+        ]
+      },
+      "http_status_code": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The http status of the refusal, when the validation of the entity refused it",
+        "example": 400
+      }
+    }
+  }
+}

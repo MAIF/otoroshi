@@ -1,0 +1,595 @@
+{
+  "plugins.otoroshi.io.Workflow": {
+    "description": "A workflow of the workflows extension: a json tree of nodes (function calls, control flow, data transformations) that otoroshi runs on demand through the api, as a scheduled job, or from a route through the workflow plugins (backend, request and response transformers)",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description"
+    ],
+    "properties": {
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The tenant (organization) and the teams the workflow belongs to. The default tenant and team when absent"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the workflow, used to call it, to schedule it and to reference it from a plugin or from another workflow",
+        "example": "workflow_929e63fcf-f98a-4737-9cc1-bfae80ea2d1c"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the workflow, shown and searched in the list of the workflows of the backoffice",
+        "example": "Greet and log"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing what the workflow does, shown and searched in the list of the workflows of the backoffice",
+        "example": "Greets the name given as input and logs the greeting"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the workflow, with string values. The admin api stores the date of the last write of the entity under `created_at` or `updated_at`",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of a metadata"
+        },
+        "example": {
+          "owner": "platform-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the workflow, to sort and search the workflows",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "example": [
+          "example"
+        ]
+      },
+      "config": {
+        "type": "object",
+        "description": "The root node of the workflow, run with the input of the workflow (available to the nodes as `workflow_input`). A node is a json object whose `kind` selects what it does, its other fields depend on its kind: a `workflow` node runs its `steps` (an array of nodes) in sequence, a `call` node calls the function named by `function` with its `args`, `if`, `switch`, `foreach`, `map`, `filter`, `flatmap`, `parallel`, `while`, `try`, `jump` and `async` nodes hold other nodes. The strings of a node can read the memory of the run with `${<name>}` or `${<name>.<path>}`, and objects with a single key starting with `$` are operators (`$mem_ref`, `$str_concat`, `$eq`, ...). An empty object when absent",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The id of the node, shown in the logs, the errors and the debugger of the run. A random id when absent",
+            "example": "main"
+          },
+          "kind": {
+            "type": "string",
+            "description": "The kind of the node: `workflow`, `call`, `assign`, `value`, `if`, `switch`, `foreach`, `map`, `filter`, `flatmap`, `parallel`, `while`, `try`, `jump`, `async`, `wait`, `error`, `pause`, `end` or `breakpoint`, or the kind of a node registered by an extension. A node of an unknown kind does nothing",
+            "example": "workflow"
+          },
+          "description": {
+            "type": "string",
+            "description": "What the node does, for the readers of the workflow",
+            "example": "Greets the input name then logs the greeting"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the node runs, true when absent. A disabled node is skipped and returns null"
+          },
+          "breakpoint": {
+            "type": "boolean",
+            "description": "Whether the debugger of the editor pauses the run before this node, false when absent"
+          },
+          "result": {
+            "type": "string",
+            "description": "The name of the memory slot the result of the node is stored in, for the next nodes to read it with `${<name>}`",
+            "example": "call_res"
+          },
+          "returned": {
+            "description": "A json value that replaces the output of the node, its operators applied first (for instance `{\"$mem_ref\": {\"name\": \"call_res\"}}` returns the content of the memory slot `call_res`)",
+            "example": {
+              "$mem_ref": {
+                "name": "call_res"
+              }
+            }
+          }
+        },
+        "additionalProperties": true,
+        "example": {
+          "id": "main",
+          "kind": "workflow",
+          "description": "Greets the input name then logs the greeting",
+          "steps": [
+            {
+              "id": "hello",
+              "kind": "call",
+              "function": "core.hello",
+              "args": {
+                "name": "${workflow_input.name}"
+              },
+              "result": "call_res"
+            },
+            {
+              "id": "log",
+              "kind": "call",
+              "function": "self.log_greeting",
+              "args": {
+                "greeting": "${call_res}"
+              }
+            }
+          ],
+          "returned": {
+            "$mem_ref": {
+              "name": "call_res"
+            }
+          }
+        }
+      },
+      "test_payload": {
+        "type": "object",
+        "description": "The input sent to the workflow when it is run from the editor of the backoffice, available to the nodes as `workflow_input`. Free json object, `{\"name\": \"foo\"}` when absent",
+        "additionalProperties": true,
+        "example": {
+          "name": "foo"
+        }
+      },
+      "orphans": {
+        "type": "object",
+        "description": "The nodes of the editor canvas that are not connected to the tree of the workflow, kept with the edges between them so that the editor shows them again. They are never run",
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "description": "The nodes that are not connected to the tree of the workflow",
+            "items": {
+              "type": "object",
+              "description": "A workflow node (the same shape as `config`) with its place on the canvas",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The id of the node, that the `source` and `target` of the edges name",
+                  "example": "log_error"
+                },
+                "kind": {
+                  "type": "string",
+                  "description": "The kind of the node, as in `config`",
+                  "example": "call"
+                },
+                "position": {
+                  "type": "object",
+                  "description": "The position of the node on the canvas, in pixels",
+                  "properties": {
+                    "x": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "The horizontal position, in pixels",
+                      "example": 480
+                    },
+                    "y": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "The vertical position, in pixels",
+                      "example": 160
+                    }
+                  },
+                  "example": {
+                    "x": 480,
+                    "y": 160
+                  }
+                }
+              },
+              "additionalProperties": true,
+              "example": {
+                "id": "log_error",
+                "kind": "call",
+                "function": "core.log",
+                "args": {
+                  "message": "something went wrong"
+                },
+                "position": {
+                  "x": 480,
+                  "y": 160
+                }
+              }
+            },
+            "example": [
+              {
+                "id": "log_error",
+                "kind": "call",
+                "function": "core.log",
+                "args": {
+                  "message": "something went wrong"
+                },
+                "position": {
+                  "x": 480,
+                  "y": 160
+                }
+              }
+            ]
+          },
+          "edges": {
+            "type": "array",
+            "description": "The edges of the canvas that start from or end at an orphan node",
+            "items": {
+              "type": "object",
+              "description": "An edge of the editor canvas between two nodes. Free json object, the editor writes the fields below",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The id of the edge on the canvas, generated by the editor",
+                  "example": "edge-log_error-end"
+                },
+                "source": {
+                  "type": "string",
+                  "description": "The id of the node the edge starts from",
+                  "example": "log_error"
+                },
+                "target": {
+                  "type": "string",
+                  "description": "The id of the node the edge ends at",
+                  "example": "end"
+                },
+                "sourceHandle": {
+                  "type": "string",
+                  "description": "The handle of the source node the edge starts from",
+                  "example": "output-log_error"
+                },
+                "targetHandle": {
+                  "type": "string",
+                  "description": "The handle of the target node the edge ends at",
+                  "example": "input-end"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "The kind of edge drawn by the editor",
+                  "example": "customEdge"
+                },
+                "animated": {
+                  "type": "boolean",
+                  "description": "Whether the editor animates the edge"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": [
+              {
+                "id": "edge-log_error-end",
+                "source": "log_error",
+                "target": "end",
+                "sourceHandle": "output-log_error",
+                "targetHandle": "input-end",
+                "type": "customEdge",
+                "animated": true
+              }
+            ]
+          }
+        },
+        "example": {
+          "nodes": [],
+          "edges": []
+        }
+      },
+      "job": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WorkflowJobConfig"
+          }
+        ],
+        "description": "Runs the workflow as a job of otoroshi: once, at a fixed interval or on a cron expression. Not scheduled when absent"
+      },
+      "functions": {
+        "type": "object",
+        "description": "The functions of the workflow, by name: nodes a `call` node of the workflow runs with `\"function\": \"self.<name>\"`, the arguments of the call being available to the function as `function_args`. Empty when absent",
+        "additionalProperties": {
+          "type": "object",
+          "description": "The node run when the function is called, the same shape as `config`",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "The id of the root node of the function, shown in the logs, the errors and the debugger of the run",
+              "example": "log_greeting"
+            },
+            "kind": {
+              "type": "string",
+              "description": "The kind of the node, as in `config`",
+              "example": "call"
+            }
+          },
+          "additionalProperties": true
+        },
+        "example": {
+          "log_greeting": {
+            "id": "log_greeting",
+            "kind": "call",
+            "function": "core.log",
+            "args": {
+              "message": "${function_args.greeting}"
+            }
+          }
+        }
+      },
+      "notes": {
+        "type": "array",
+        "description": "The notes placed on the canvas of the editor. They are not part of the workflow, and a note without `id`, `kind`, `position` or `measured` makes otoroshi drop every note",
+        "items": {
+          "type": "object",
+          "description": "A note of the editor canvas: a text box with its colors, its place and its size",
+          "required": [
+            "position",
+            "measured",
+            "id",
+            "kind"
+          ],
+          "properties": {
+            "content": {
+              "type": "string",
+              "description": "The text of the note, empty when absent",
+              "example": "Runs every day at 8 am"
+            },
+            "color": {
+              "type": "string",
+              "description": "The background color of the note, a css color, `var(--bg-color_level3)` when absent",
+              "example": "#fcdc00"
+            },
+            "titleColor": {
+              "type": "string",
+              "description": "The color of the text of the note, a css color, `#fff` when absent",
+              "example": "#000000"
+            },
+            "position": {
+              "type": "object",
+              "description": "The position of the note on the canvas, in pixels",
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "The horizontal position, in pixels",
+                  "example": 320
+                },
+                "y": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "The vertical position, in pixels",
+                  "example": -80
+                }
+              },
+              "example": {
+                "x": 320,
+                "y": -80
+              }
+            },
+            "measured": {
+              "type": "object",
+              "description": "The size of the note on the canvas, in pixels",
+              "properties": {
+                "width": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "The width of the note, in pixels",
+                  "example": 200
+                },
+                "height": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "The height of the note, in pixels",
+                  "example": 120
+                }
+              },
+              "example": {
+                "width": 200,
+                "height": 120
+              }
+            },
+            "id": {
+              "type": "string",
+              "description": "The id of the note on the canvas",
+              "example": "note_1"
+            },
+            "kind": {
+              "type": "string",
+              "description": "The kind of the canvas node, `note` for a note",
+              "example": "note"
+            }
+          },
+          "example": {
+            "content": "Runs every day at 8 am",
+            "color": "#fcdc00",
+            "titleColor": "#000000",
+            "position": {
+              "x": 320,
+              "y": -80
+            },
+            "measured": {
+              "width": 200,
+              "height": 120
+            },
+            "id": "note_1",
+            "kind": "note"
+          }
+        },
+        "example": [
+          {
+            "content": "Runs every day at 8 am",
+            "color": "#fcdc00",
+            "titleColor": "#000000",
+            "position": {
+              "x": 320,
+              "y": -80
+            },
+            "measured": {
+              "width": 200,
+              "height": 120
+            },
+            "id": "note_1",
+            "kind": "note"
+          }
+        ]
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "workflow_929e63fcf-f98a-4737-9cc1-bfae80ea2d1c",
+      "name": "Greet and log",
+      "description": "Greets the name given as input and logs the greeting",
+      "metadata": {
+        "owner": "platform-team"
+      },
+      "tags": [
+        "example"
+      ],
+      "config": {
+        "id": "main",
+        "kind": "workflow",
+        "description": "Greets the input name then logs the greeting",
+        "steps": [
+          {
+            "id": "hello",
+            "kind": "call",
+            "function": "core.hello",
+            "args": {
+              "name": "${workflow_input.name}"
+            },
+            "result": "call_res"
+          },
+          {
+            "id": "log",
+            "kind": "call",
+            "function": "self.log_greeting",
+            "args": {
+              "greeting": "${call_res}"
+            }
+          }
+        ],
+        "returned": {
+          "$mem_ref": {
+            "name": "call_res"
+          }
+        }
+      },
+      "test_payload": {
+        "name": "foo"
+      },
+      "orphans": {
+        "nodes": [],
+        "edges": []
+      },
+      "job": {
+        "enabled": true,
+        "kind": "Cron",
+        "instantiation": "OneInstancePerOtoroshiCluster",
+        "initial_delay": null,
+        "interval": null,
+        "cron_expression": "0 0 8 * * ?",
+        "config": {
+          "name": "scheduler"
+        }
+      },
+      "functions": {
+        "log_greeting": {
+          "id": "log_greeting",
+          "kind": "call",
+          "function": "core.log",
+          "args": {
+            "message": "${function_args.greeting}"
+          }
+        }
+      },
+      "notes": [
+        {
+          "content": "Runs every day at 8 am",
+          "color": "#fcdc00",
+          "titleColor": "#000000",
+          "position": {
+            "x": 320,
+            "y": -80
+          },
+          "measured": {
+            "width": 200,
+            "height": 120
+          },
+          "id": "note_1",
+          "kind": "note"
+        }
+      ]
+    }
+  },
+  "WorkflowJobConfig": {
+    "description": "How a workflow runs as a job of otoroshi, and the input of each run. The job is scheduled as soon as the workflow is saved with `enabled` true, and stopped when it is disabled or deleted. A job without `kind` or `instantiation` is read as the default job (disabled)",
+    "type": "object",
+    "required": [
+      "kind",
+      "instantiation"
+    ],
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the workflow is scheduled as a job, false when absent"
+      },
+      "kind": {
+        "type": "string",
+        "description": "When the job runs: `ScheduledOnce` once after `initial_delay`, `ScheduledEvery` after `initial_delay` then every `interval`, `Cron` on `cron_expression`, `Autonomous` once after `initial_delay`. Read without case, an unknown value is read as `ScheduledEvery`",
+        "enum": [
+          "ScheduledOnce",
+          "ScheduledEvery",
+          "Cron",
+          "Autonomous"
+        ],
+        "example": "ScheduledEvery"
+      },
+      "instantiation": {
+        "type": "string",
+        "description": "Where the job runs in a cluster: `OneInstancePerOtoroshiInstance` on every instance, `OneInstancePerOtoroshiWorkerInstance` on every worker, `OneInstancePerOtoroshiLeaderInstance` on every leader, `OneInstancePerOtoroshiCluster` on a single instance of the cluster. Read without case, an unknown value is read as `OneInstancePerOtoroshiInstance`",
+        "enum": [
+          "OneInstancePerOtoroshiInstance",
+          "OneInstancePerOtoroshiWorkerInstance",
+          "OneInstancePerOtoroshiLeaderInstance",
+          "OneInstancePerOtoroshiCluster"
+        ],
+        "example": "OneInstancePerOtoroshiCluster"
+      },
+      "initial_delay": {
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "description": "The delay before the first run, in milliseconds. No delay when null",
+        "example": 10000
+      },
+      "interval": {
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "description": "The delay between two runs of a `ScheduledEvery` job, in milliseconds. A `ScheduledEvery` job without interval only runs once",
+        "example": 60000
+      },
+      "cron_expression": {
+        "type": "string",
+        "nullable": true,
+        "description": "The quartz cron expression (seconds, minutes, hours, day of month, month, day of week) of a `Cron` job",
+        "example": "0 */5 * * * ?"
+      },
+      "config": {
+        "type": "object",
+        "description": "The input of the workflow on each run of the job, available to the nodes as `workflow_input`. Free json object, empty when absent",
+        "additionalProperties": true,
+        "example": {
+          "name": "scheduler"
+        }
+      }
+    },
+    "example": {
+      "enabled": true,
+      "kind": "ScheduledEvery",
+      "instantiation": "OneInstancePerOtoroshiCluster",
+      "initial_delay": 10000,
+      "interval": 60000,
+      "cron_expression": null,
+      "config": {
+        "name": "scheduler"
+      }
+    }
+  }
+}

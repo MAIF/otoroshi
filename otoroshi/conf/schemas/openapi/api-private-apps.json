@@ -1,0 +1,22 @@
+{
+  "PrivateAppsSession": {
+    "type": "object",
+    "description": "A session that lets a user of an auth module update their profile for 10 minutes",
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "description": "The ciphered id of the session, encoded in url safe base64",
+        "example": "q0rQd2hCp1Zg8zN2pW8V8s3F1R2xvN0x5c2d4b2VmZ2hpamtsbW5vcA=="
+      },
+      "host": {
+        "type": "string",
+        "description": "The scheme, host and port of the private apps: `<host>/privateapps/profile?session=<sessionId>` is the page where the user updates their profile",
+        "example": "http://privateapps.oto.tools:8080"
+      }
+    },
+    "example": {
+      "sessionId": "q0rQd2hCp1Zg8zN2pW8V8s3F1R2xvN0x5c2d4b2VmZ2hpamtsbW5vcA==",
+      "host": "http://privateapps.oto.tools:8080"
+    }
+  }
+}

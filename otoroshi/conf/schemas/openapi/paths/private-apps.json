@@ -1,0 +1,279 @@
+{
+  "/api/privateapps/sessions/{id}/{username}": {
+    "post": {
+      "tags": [
+        "private-apps"
+      ],
+      "summary": "Create a session to update a user profile",
+      "description": "Creates a session of 10 minutes for the user `username` of the auth module `id`, and answers the link to the page where the user updates their profile: `<host>/privateapps/profile?session=<sessionId>`. The profile page lets the user change their name and their password, and register a webauthn device; it only works for a user of an in memory auth module with webauthn enabled. The credentials have to be able to write the auth module. The user is not checked.",
+      "operationId": "otoroshi.controllers.PrivateAppsController.registerSession",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The id of the in memory auth module the user belongs to: the `id` of an auth module entity, as listed by `GET /apis/security.otoroshi.io/v1/auth-modules`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "auth_mod_4b9a3f2c-1d2e-4f5a-8b7c-9d0e1f2a3b4c"
+          }
+        },
+        {
+          "name": "username",
+          "in": "path",
+          "description": "The email of the user, its login in the auth module (the `email` of one of its `users`). It is not checked: the session is created for any value",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "john.doe@oto.tools"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The session was created: its ciphered id, and the scheme, host and port of the private apps that serve the profile page",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivateAppsSession"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The auth module does not exist, or the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/privateapps/sessions/send/{id}/{username}": {
+    "post": {
+      "tags": [
+        "private-apps"
+      ],
+      "summary": "Send a user the link to update their profile",
+      "description": "Creates a session of 10 minutes for the user `username` of the auth module `id`, like `POST /api/privateapps/sessions/{id}/{username}`, then emails the user the link to the page where they update their profile, with the mailer of the global configuration (no email is sent without one). The profile page lets the user change their name and their password, and register a webauthn device; it only works for a user of an in memory auth module with webauthn enabled. The credentials have to be able to write the auth module.",
+      "operationId": "otoroshi.controllers.PrivateAppsController.sendSelfUpdateLink",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The id of the in memory auth module the user belongs to: the `id` of an auth module entity, as listed by `GET /apis/security.otoroshi.io/v1/auth-modules`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "auth_mod_4b9a3f2c-1d2e-4f5a-8b7c-9d0e1f2a3b4c"
+          }
+        },
+        {
+          "name": "username",
+          "in": "path",
+          "description": "The email of the user, its login in the auth module (the `email` of one of its `users`). The email is sent to this address",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "john.doe@oto.tools"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The session was created and the link emailed to the user, as `{\"done\": true}`. The same answer is given when the global configuration has no mailer and nothing is sent",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the auth module is not an in memory auth module with webauthn enabled",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The auth module does not exist, or the credentials cannot write it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The auth module has no user with this email",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/apps-sessions-module/{id}": {
+    "delete": {
+      "tags": [
+        "private-apps"
+      ],
+      "summary": "Log out every user of an auth module",
+      "description": "Discards every private apps session opened through the auth module with this id: each of its users has to log in again on the next call of a route protected by this module. An admin alert and an audit event record it. Nothing happens when the admin api is read only.",
+      "operationId": "otoroshi.controllers.adminapi.UsersController.discardPrivateAppsSessionFor",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The id of the auth module whose sessions are discarded",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "auth_mod_keycloak"
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "`done` is true when the sessions are discarded, false when the admin api is read only",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a tenant admin, or cannot write this auth module",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No auth module has this id",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

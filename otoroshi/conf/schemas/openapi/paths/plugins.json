@@ -1,0 +1,548 @@
+{
+  "/api/plugins/categories": {
+    "get": {
+      "tags": [
+        "plugins"
+      ],
+      "summary": "List the categories of the plugins",
+      "description": "Answers the categories of the plugins of the proxy engine, the built-in ones and the ones the plugins declare, sorted by name. The backoffice groups the plugins by category.",
+      "operationId": "otoroshi.next.controllers.NgPluginsController.categories",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The names of the categories, sorted by name regardless of case",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The names of the categories",
+                "items": {
+                  "type": "string",
+                  "description": "The name of a category"
+                },
+                "example": [
+                  "AccessControl",
+                  "Authentication",
+                  "Classic",
+                  "Cookies",
+                  "Custom",
+                  "Experimental",
+                  "Headers"
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/plugins/steps": {
+    "get": {
+      "tags": [
+        "plugins"
+      ],
+      "summary": "List the steps of the plugins",
+      "description": "Answers the steps of the handling of a request where the plugins of a route run, in the order the backoffice shows them.",
+      "operationId": "otoroshi.next.controllers.NgPluginsController.steps",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The steps where the plugins of a route can run, `Job` and the steps of the data exporters left out",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The steps of the handling of a request, in the order the backoffice shows them",
+                "items": {
+                  "$ref": "#/components/schemas/NgStep"
+                },
+                "example": [
+                  "Router",
+                  "Sink",
+                  "PreRoute",
+                  "ValidateAccess",
+                  "TransformRequest",
+                  "TransformResponse",
+                  "MatchRoute",
+                  "HandlesTunnel",
+                  "HandlesRequest",
+                  "CallBackend"
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/plugins/all": {
+    "get": {
+      "tags": [
+        "plugins"
+      ],
+      "summary": "List the plugins",
+      "description": "Answers the plugins of the proxy engine that can be added to a route, the internal ones left out: their id, description, default configuration, configuration form, categories and steps. `GET /apis/plugins.json` answers the same list publicly.",
+      "operationId": "otoroshi.next.controllers.NgPluginsController.plugins",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The plugins that can be added to a route, with their default configuration and their configuration form",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PluginDescription"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/forms": {
+    "get": {
+      "tags": [
+        "plugins"
+      ],
+      "summary": "List the forms of the configuration classes",
+      "description": "Answers the forms the backoffice uses to edit the configuration classes of otoroshi (the configurations of the plugins, of the auth modules, ...), by name of class. They are generated from the openapi description of the classes.",
+      "operationId": "otoroshi.next.controllers.NgPluginsController.forms",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The forms, by name of class",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "The forms, by name of class",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/Form"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/forms/_single": {
+    "get": {
+      "tags": [
+        "plugins"
+      ],
+      "summary": "Read the form of a configuration class",
+      "description": "Answers the form the backoffice uses to edit a configuration class of otoroshi.",
+      "operationId": "otoroshi.next.controllers.NgPluginsController.form",
+      "parameters": [
+        {
+          "name": "name",
+          "in": "query",
+          "description": "The name of the class, as a key of `GET /api/forms`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "otoroshi.next.plugins.ApikeyCalls"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The form of the class: its fields and their order",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Form"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "`name` is missing, or no form has this name",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/plugins.json": {
+    "get": {
+      "tags": [
+        "plugins"
+      ],
+      "summary": "List the plugins (json)",
+      "description": "Answers the plugins of the proxy engine that can be added to a route, the internal ones left out, like `GET /api/plugins/all`. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.pluginsJson",
+      "parameters": [
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The plugins that can be added to a route, with their default configuration and their configuration form, in json",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PluginDescription"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/plugins.yaml": {
+    "get": {
+      "tags": [
+        "plugins"
+      ],
+      "summary": "List the plugins (yaml)",
+      "description": "Answers the plugins of the proxy engine that can be added to a route, the internal ones left out, like `GET /apis/plugins.json` but in yaml. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.pluginsYaml",
+      "parameters": [
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The plugins that can be added to a route, with their default configuration and their configuration form, in yaml (served as `text/yaml`)",
+          "content": {
+            "text/yaml": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PluginDescription"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/apis/plugins.yml": {
+    "get": {
+      "tags": [
+        "plugins"
+      ],
+      "summary": "List the plugins (yaml)",
+      "description": "Answers the plugins of the proxy engine that can be added to a route, the internal ones left out, like `GET /apis/plugins.json` but in yaml. This documentation endpoint is public on the backoffice host. When the `otoroshi.doc-resources.accessKey` setting is set (outside of the dev mode), it requires the basic credentials `doc:<accessKey>`, or the `doc_secret` query parameter. On the host of the admin api, it is served through the route of the admin api and requires its credentials.",
+      "operationId": "otoroshi.api.GenericApiController.pluginsYml",
+      "parameters": [
+        {
+          "name": "doc_secret",
+          "in": "query",
+          "description": "The access key of the documentation (`otoroshi.doc-resources.accessKey`), or the base64 encoding of `doc:<accessKey>`, when it is set",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The plugins that can be added to a route, with their default configuration and their configuration form, in yaml (served as `text/yaml`)",
+          "content": {
+            "text/yaml": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PluginDescription"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "On the host of the admin api, the credentials of the admin api are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The access key of the documentation is set and neither the basic credentials nor `doc_secret` give it, or, on the host of the admin api, the credentials of the admin api are wrong",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "On the host of the admin api, the quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

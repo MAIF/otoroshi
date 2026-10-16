@@ -1,0 +1,201 @@
+{
+  "ServiceDescriptor": {
+    "type": "object",
+    "description": "A legacy service descriptor, the way otoroshi 17 and older described a service. Its main fields are described here, the other ones (headers, security, client settings, canary, plugins, ...) are read the way otoroshi 17 wrote them. Every field is optional: the template of a new descriptor gives the missing ones",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the descriptor, kept as the id of the route",
+        "example": "service_8b6e2f1a-3c4d-4e5f-9a0b-7c1d2e3f4a5b"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the descriptor, given to the converted route",
+        "example": "my-service"
+      },
+      "description": {
+        "type": "string",
+        "description": "The description of the descriptor, given to the converted route",
+        "example": "The users service"
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the descriptor serves calls",
+        "example": true
+      },
+      "groups": {
+        "type": "array",
+        "description": "The ids of the service groups of the descriptor",
+        "items": {
+          "type": "string",
+          "description": "The id of a service group"
+        },
+        "example": [
+          "default"
+        ]
+      },
+      "env": {
+        "type": "string",
+        "description": "The environment of the descriptor, part of its legacy domain (`<subdomain>.<env>.<domain>`, without the env when it is `prod`)",
+        "example": "prod"
+      },
+      "domain": {
+        "type": "string",
+        "description": "The domain of the legacy domain of the descriptor",
+        "example": "oto.tools"
+      },
+      "subdomain": {
+        "type": "string",
+        "description": "The subdomain of the legacy domain of the descriptor",
+        "example": "users"
+      },
+      "hosts": {
+        "type": "array",
+        "description": "The hosts the descriptor matches, besides the legacy domain built from `subdomain`, `env` and `domain` (unless `handleLegacyDomain` is false). Each host, followed by each of the `paths` (by `matchingRoot`, or `/`, when there is none), becomes a domain of the converted route",
+        "items": {
+          "type": "string",
+          "description": "A host"
+        },
+        "example": [
+          "users.oto.tools"
+        ]
+      },
+      "paths": {
+        "type": "array",
+        "description": "The path prefixes the descriptor matches on each of its hosts. Each of them, after each host, becomes a domain of the converted route",
+        "items": {
+          "type": "string",
+          "description": "A path"
+        },
+        "example": [
+          "/api"
+        ]
+      },
+      "matchingRoot": {
+        "type": "string",
+        "nullable": true,
+        "description": "The path prefix the descriptor matches, removed from the forwarded path",
+        "example": "/api"
+      },
+      "stripPath": {
+        "type": "boolean",
+        "description": "Whether the matched path is removed from the forwarded path",
+        "example": true
+      },
+      "root": {
+        "type": "string",
+        "description": "The path prefix of the calls forwarded to the targets",
+        "example": "/"
+      },
+      "targets": {
+        "type": "array",
+        "description": "The targets the calls are forwarded to",
+        "items": {
+          "type": "object",
+          "description": "A target of the descriptor. Its other fields (protocol, predicate, ip address, mtls configuration, backup, ...) are read the way otoroshi 17 wrote them",
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "The host of the target, with its port if any",
+              "example": "users.internal:8080"
+            },
+            "scheme": {
+              "type": "string",
+              "description": "The scheme of the target, `https` by default",
+              "example": "http"
+            },
+            "weight": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The weight of the target in the load balancing, 1 by default",
+              "example": 1
+            }
+          },
+          "additionalProperties": true,
+          "example": {
+            "host": "users.internal:8080",
+            "scheme": "http",
+            "weight": 1
+          }
+        }
+      },
+      "publicPatterns": {
+        "type": "array",
+        "description": "The regular expressions of the paths that need no api key",
+        "items": {
+          "type": "string",
+          "description": "A regular expression of paths"
+        },
+        "example": [
+          "/health"
+        ]
+      },
+      "privatePatterns": {
+        "type": "array",
+        "description": "The regular expressions of the paths that need an api key even when they match a public pattern",
+        "items": {
+          "type": "string",
+          "description": "A regular expression of paths"
+        },
+        "example": []
+      },
+      "forceHttps": {
+        "type": "boolean",
+        "description": "Whether http calls are redirected to https",
+        "example": false
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value pairs attached to the descriptor, given to the converted route along with the `otoroshi-core-` keys that keep its legacy settings (`otoroshi-core-legacy`, `otoroshi-core-env`...)",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of a metadata"
+        },
+        "example": {
+          "owner": "team-users"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the descriptor, given to the converted route with an `env:<env>` tag added",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "example": [
+          "users"
+        ]
+      }
+    },
+    "additionalProperties": true,
+    "example": {
+      "id": "service_8b6e2f1a-3c4d-4e5f-9a0b-7c1d2e3f4a5b",
+      "name": "my-service",
+      "enabled": true,
+      "groups": [
+        "default"
+      ],
+      "hosts": [
+        "users.oto.tools"
+      ],
+      "paths": [
+        "/api"
+      ],
+      "stripPath": true,
+      "root": "/",
+      "targets": [
+        {
+          "host": "users.internal:8080",
+          "scheme": "http",
+          "weight": 1
+        }
+      ],
+      "publicPatterns": [
+        "/health"
+      ],
+      "metadata": {
+        "owner": "team-users"
+      }
+    }
+  }
+}

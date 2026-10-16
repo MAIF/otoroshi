@@ -1,0 +1,750 @@
+{
+  "apim.otoroshi.io.Apikey": {
+    "type": "object",
+    "description": "An api key: the credentials (a client id and a client secret) a client presents to call the routes and apis it is authorized on, with its quotas, its path restrictions and the rotation of its secret. The api also writes `bearer`, a token holding the same credentials",
+    "required": [
+      "clientId",
+      "clientSecret",
+      "clientName"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "clientId": {
+        "type": "string",
+        "description": "The id of the api key, sent by the clients as `client_id`. 16 random lowercase alphanumerical characters when otoroshi generates it, but any non blank string unique among the api keys is accepted",
+        "example": "v0stmnfeqy9fqbqh"
+      },
+      "clientSecret": {
+        "type": "string",
+        "description": "The secret of the api key, sent by the clients as `client_secret`. 64 random lowercase alphanumerical characters when otoroshi generates it, but any non blank string is accepted",
+        "example": "0o07w2s891kstlttvgxdhb26sb8l6p3qgp9l4gc9qmp2og0nxbtbhqwmncutn6dr"
+      },
+      "clientName": {
+        "type": "string",
+        "description": "The name of the api key, for humans. It must not be blank",
+        "example": "acme-mobile-app"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the api key, shown in its form of the backoffice. Empty when absent. An api key minted for the plan of an api gets the description of the plan",
+        "example": "The apikey of the mobile application of ACME"
+      },
+      "authorizedGroup": {
+        "type": "string",
+        "nullable": true,
+        "description": "Legacy view of the authorizations: the id of the first service group of `authorizations`, null when there is none. When read, the group is added to the authorizations",
+        "example": "default"
+      },
+      "authorizedEntities": {
+        "type": "array",
+        "description": "Legacy view of the authorizations: each entity as a prefixed id, `group_<id>` for a service group, `route_<id>` for a route, `api_<id>` for an api, `route-composition_<id>` for a route composition, `service_<id>` for a service descriptor. An id without a known prefix is a service group id. When read, the entities are added to the authorizations",
+        "items": {
+          "type": "string",
+          "description": "A prefixed id of an entity",
+          "example": "group_default"
+        },
+        "example": [
+          "group_default"
+        ]
+      },
+      "authorizations": {
+        "type": "array",
+        "description": "The entities the api key can call: service groups (and then all their routes), routes, apis and route compositions. The union of `authorizations`, `authorizedEntities` and `authorizedGroup` is read, and the three are written from it. A prefixed id (`route_<id>`, see `authorizedEntities`) is read too",
+        "items": {
+          "$ref": "#/components/schemas/EntityIdentifier"
+        },
+        "example": [
+          {
+            "kind": "group",
+            "id": "default"
+          }
+        ]
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the api key can be used. It is written false once `validUntil` is past. Defaults to true"
+      },
+      "readOnly": {
+        "type": "boolean",
+        "description": "When true, the api key only allows calls with the GET, HEAD and OPTIONS methods"
+      },
+      "allowClientIdOnly": {
+        "type": "boolean",
+        "description": "When true, the api key can be presented with its client id only, without its secret, on the routes that accept the client id alone"
+      },
+      "throttlingStrategy": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ThrottlingStrategyConfig"
+          }
+        ],
+        "nullable": true,
+        "description": "How the calls of the api key are counted. When set, the quotas of the strategy replace `throttlingQuota`, `dailyQuota` and `monthlyQuota`. When null, the default strategy of otoroshi counts them with those quotas"
+      },
+      "throttlingQuota": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls allowed per throttling window (10 seconds by default, `app.throttlingWindow`). Defaults to 10000000",
+        "example": 1000
+      },
+      "dailyQuota": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls allowed per day. Defaults to 10000000",
+        "example": 1000000
+      },
+      "monthlyQuota": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls allowed per month. Defaults to 10000000",
+        "example": 30000000
+      },
+      "constrainedServicesOnly": {
+        "type": "boolean",
+        "description": "When true, the api key can only be used on the routes that constrain the api keys they accept (with tag or metadata based routing)"
+      },
+      "restrictions": {
+        "$ref": "#/components/schemas/Restrictions"
+      },
+      "rotation": {
+        "$ref": "#/components/schemas/ApiKeyRotation"
+      },
+      "apiRef": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiRef"
+          }
+        ],
+        "nullable": true,
+        "description": "The api, plan and subscription the api key was minted for, when it comes from the subscription to a plan of an api (`apis.otoroshi.io`): it then gets the plugins of the plan. Null otherwise"
+      },
+      "plugins": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgPluginsWithOverride"
+          }
+        ],
+        "nullable": true,
+        "description": "Plugins run on the calls made with the api key, after the plugins of its plan if any. Null when there is none"
+      },
+      "validUntil": {
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "description": "The date the api key expires at, a timestamp in milliseconds. Once past, the api key is disabled. Null when it never expires",
+        "example": 1924992000000
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the api key. The routes can accept or refuse an api key on its tags",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "mobile"
+        },
+        "example": [
+          "mobile"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the api key. The routes can accept or refuse an api key on its metadata, and `otoroshi-access-rights` holds the rights of the api key on the admin api. A value that is not a string is read as its json text",
+        "additionalProperties": {
+          "type": "string",
+          "description": "A metadata value"
+        },
+        "example": {
+          "partner": "acme"
+        }
+      },
+      "bearer": {
+        "type": "string",
+        "description": "A bearer token standing for the credentials of the api key, that clients can send in an `Authorization: Bearer` header instead of the id and the secret: `otoapk_<clientId>_<signature>`, the signature being the HMAC-SHA256 of `otoapk_<clientId>` keyed with the secret. Computed by otoroshi, not read back",
+        "readOnly": true,
+        "example": "otoapk_v0stmnfeqy9fqbqh_d5a155e13ab2d8c1fb42d4ee9217ded6a571e0029f7e7031bb5bfdda468b09c7"
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "clientId": "v0stmnfeqy9fqbqh",
+      "clientSecret": "0o07w2s891kstlttvgxdhb26sb8l6p3qgp9l4gc9qmp2og0nxbtbhqwmncutn6dr",
+      "clientName": "acme-mobile-app",
+      "description": "The apikey of the mobile application of ACME",
+      "authorizedGroup": "default",
+      "authorizedEntities": [
+        "group_default",
+        "route_route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+      ],
+      "authorizations": [
+        {
+          "kind": "group",
+          "id": "default"
+        },
+        {
+          "kind": "route",
+          "id": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+        }
+      ],
+      "enabled": true,
+      "readOnly": false,
+      "allowClientIdOnly": false,
+      "throttlingStrategy": null,
+      "throttlingQuota": 1000,
+      "dailyQuota": 1000000,
+      "monthlyQuota": 30000000,
+      "constrainedServicesOnly": false,
+      "restrictions": {
+        "enabled": true,
+        "allowLast": true,
+        "allowed": [],
+        "forbidden": [
+          {
+            "method": "GET",
+            "path": "/admin/.*",
+            "authorized_entity": null
+          }
+        ],
+        "notFound": []
+      },
+      "rotation": {
+        "enabled": true,
+        "rotationEvery": 744,
+        "gracePeriod": 168,
+        "nextSecret": null
+      },
+      "apiRef": null,
+      "plugins": null,
+      "validUntil": null,
+      "tags": [
+        "mobile"
+      ],
+      "metadata": {
+        "partner": "acme"
+      },
+      "bearer": "otoapk_v0stmnfeqy9fqbqh_d5a155e13ab2d8c1fb42d4ee9217ded6a571e0029f7e7031bb5bfdda468b09c7"
+    }
+  },
+  "EntityIdentifier": {
+    "type": "object",
+    "description": "An entity an api key is authorized on, or a restriction applies to",
+    "required": [
+      "id"
+    ],
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "group",
+          "route",
+          "api",
+          "route-composition",
+          "service"
+        ],
+        "description": "The kind of the entity: a service group, a route, an api, a route composition or a service descriptor. An unknown or missing kind is read as `group`",
+        "example": "route"
+      },
+      "id": {
+        "type": "string",
+        "description": "The id of the entity, without the prefix of `authorizedEntities`: the `id` of the service group, route, api, route composition or service descriptor",
+        "example": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+      }
+    },
+    "example": {
+      "kind": "route",
+      "id": "route_dev_b1d3a6a0-4c55-4c6a-a1f0-5a3c9b3e2f10"
+    }
+  },
+  "Restrictions": {
+    "type": "object",
+    "description": "Restrictions on the paths an api key can call. With `allowLast` true, the calls matching a `notFound` path are answered 404, the ones matching a `forbidden` path 403, and the others pass. With `allowLast` false, the calls matching an `allowed` path pass, then the ones matching a `notFound` path are answered 404, the ones matching a `forbidden` path 403, and all the others 404",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the restrictions are applied. Defaults to false"
+      },
+      "allowLast": {
+        "type": "boolean",
+        "description": "When true, only the `notFound` and `forbidden` paths are checked and everything else is allowed. When false, only the `allowed` paths can be called. Defaults to true"
+      },
+      "allowed": {
+        "type": "array",
+        "description": "The paths the api key can call, checked first when `allowLast` is false. A path that cannot be read is dropped",
+        "items": {
+          "$ref": "#/components/schemas/RestrictionPath"
+        },
+        "example": [
+          {
+            "method": "*",
+            "path": "/api/.*",
+            "authorized_entity": null
+          }
+        ]
+      },
+      "forbidden": {
+        "type": "array",
+        "description": "The paths answered 403. A path that cannot be read is dropped",
+        "items": {
+          "$ref": "#/components/schemas/RestrictionPath"
+        },
+        "example": [
+          {
+            "method": "GET",
+            "path": "/admin/.*",
+            "authorized_entity": null
+          }
+        ]
+      },
+      "notFound": {
+        "type": "array",
+        "description": "The paths answered 404, as if they did not exist. A path that cannot be read is dropped",
+        "items": {
+          "$ref": "#/components/schemas/RestrictionPath"
+        },
+        "example": [
+          {
+            "method": "*",
+            "path": "/internal/.*",
+            "authorized_entity": null
+          }
+        ]
+      }
+    },
+    "example": {
+      "enabled": true,
+      "allowLast": true,
+      "allowed": [],
+      "forbidden": [
+        {
+          "method": "GET",
+          "path": "/admin/.*",
+          "authorized_entity": null
+        }
+      ],
+      "notFound": [
+        {
+          "method": "*",
+          "path": "/internal/.*",
+          "authorized_entity": null
+        }
+      ]
+    }
+  },
+  "RestrictionPath": {
+    "type": "object",
+    "description": "A path of the restrictions of an api key",
+    "required": [
+      "method",
+      "path"
+    ],
+    "properties": {
+      "method": {
+        "type": "string",
+        "description": "The http method the restriction applies to, case insensitive, or `*` for every method",
+        "example": "GET"
+      },
+      "path": {
+        "type": "string",
+        "description": "A regular expression the call has to match: on its path when it starts with `/`, on its domain followed by its path otherwise",
+        "example": "/admin/.*"
+      },
+      "authorized_entity": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityIdentifier"
+          }
+        ],
+        "nullable": true,
+        "description": "The entity the restriction is limited to: a route (or service descriptor) by id, an api, or a service group the api key is authorized on and the route belongs to. Null for every entity"
+      }
+    },
+    "example": {
+      "method": "GET",
+      "path": "/admin/.*",
+      "authorized_entity": null
+    }
+  },
+  "ApiKeyRotation": {
+    "type": "object",
+    "description": "The automatic rotation of the secret of an api key: once the rotation period is over, a new secret is generated (`nextSecret`), both secrets are accepted during the grace period, then the new one replaces the old one",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the secret rotates. Defaults to false"
+      },
+      "rotationEvery": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The lifetime of a secret, in hours. Defaults to 744 (31 days)",
+        "example": 744
+      },
+      "gracePeriod": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The duration during which the old and the new secrets are both accepted, in hours. Defaults to 168 (7 days)",
+        "example": 168
+      },
+      "nextSecret": {
+        "type": "string",
+        "nullable": true,
+        "description": "The next secret, generated at the start of the grace period. Null outside of it",
+        "example": "ftz6x3sb0kkgv8ra4ehqxc9wnl25jmyd7uo1pi0r4m8kzqvhe62sbt3ylgw9acfn"
+      },
+      "bearer": {
+        "type": "string",
+        "description": "The bearer token built with the next secret (see the `bearer` of the api key), written by the api while the secret rotates (when `nextSecret` is set). Not read back",
+        "readOnly": true,
+        "example": "otoapk_v0stmnfeqy9fqbqh_9b52f3f6f5f74b0c8c2f0e1b1d4a5c6e7f8091a2b3c4d5e6f708192a3b4c5d6e"
+      }
+    },
+    "example": {
+      "enabled": true,
+      "rotationEvery": 744,
+      "gracePeriod": 168,
+      "nextSecret": null
+    }
+  },
+  "ApiRef": {
+    "type": "object",
+    "description": "The api, plan and subscription an api key was minted for: the api key is authorized on the api and runs the plugins of the plan",
+    "required": [
+      "api",
+      "plan",
+      "sub"
+    ],
+    "properties": {
+      "api": {
+        "type": "string",
+        "description": "The id of the api (`apis.otoroshi.io`) the api key was minted for. The api key is authorized on it, even when `authorizations` does not name it",
+        "example": "api_dev_6f0a3c1e-1b0a-4f25-9d6e-0c0e9c2a3b4d"
+      },
+      "plan": {
+        "type": "string",
+        "description": "The id of the plan of the api the api key was minted for, whose plugins run on the calls made with the api key",
+        "example": "gold"
+      },
+      "sub": {
+        "type": "string",
+        "description": "The id of the subscription to the plan (`apis.otoroshi.io/v1/apisubscriptions`) that minted the api key",
+        "example": "api-subscription_dev_2a8e6b54-0f1c-4d0b-8b4d-3f6c1f4e9a77"
+      }
+    },
+    "example": {
+      "api": "api_dev_6f0a3c1e-1b0a-4f25-9d6e-0c0e9c2a3b4d",
+      "plan": "gold",
+      "sub": "api-subscription_dev_2a8e6b54-0f1c-4d0b-8b4d-3f6c1f4e9a77"
+    }
+  },
+  "NgPluginsWithOverride": {
+    "type": "object",
+    "description": "A chain of plugins brought by an api key",
+    "properties": {
+      "plugins": {
+        "type": "array",
+        "description": "The plugins, run in this order",
+        "items": {
+          "$ref": "#/components/schemas/NgPluginInstance"
+        },
+        "example": [
+          {
+            "enabled": true,
+            "debug": false,
+            "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersIn",
+            "include": [],
+            "exclude": [],
+            "config": {
+              "headers": {
+                "X-Partner": "acme"
+              }
+            },
+            "bound_listeners": []
+          }
+        ]
+      },
+      "overrides": {
+        "type": "boolean",
+        "description": "When true, the plugins replace the plugins of the route, except the pre route and access validation ones already run. When false, they run after the plugins of the route. Defaults to false"
+      }
+    },
+    "example": {
+      "plugins": [
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersIn",
+          "include": [],
+          "exclude": [],
+          "config": {
+            "headers": {
+              "X-Partner": "acme"
+            }
+          },
+          "bound_listeners": []
+        }
+      ],
+      "overrides": false
+    }
+  },
+  "ThrottlingStrategyConfig": {
+    "description": "How the calls of an api key (or of a plan) are counted against its quotas, selected by `id`",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/LegacyThrottlingStrategyConfig"
+      },
+      {
+        "$ref": "#/components/schemas/LocalTokensBucketStrategyConfig"
+      },
+      {
+        "$ref": "#/components/schemas/FixedWindowStrategyConfig"
+      },
+      {
+        "$ref": "#/components/schemas/DistributedRedisThrottlingStrategyConfig"
+      },
+      {
+        "$ref": "#/components/schemas/LuaDistributedRedisThrottlingStrategyConfig"
+      }
+    ],
+    "example": {
+      "quota": {
+        "window": 1000,
+        "daily": 1000000,
+        "monthly": 30000000
+      },
+      "id": "LegacyThrottlingStrategyConfig"
+    }
+  },
+  "LegacyThrottlingStrategyConfig": {
+    "type": "object",
+    "description": "The default strategy: the calls are counted in the datastore of otoroshi, per throttling window, day and month",
+    "required": [
+      "quota",
+      "id"
+    ],
+    "properties": {
+      "quota": {
+        "$ref": "#/components/schemas/AllowedQuota"
+      },
+      "id": {
+        "type": "string",
+        "enum": [
+          "LegacyThrottlingStrategyConfig"
+        ],
+        "description": "Selects the default strategy: the calls are counted in the datastore of otoroshi, per throttling window, day and month",
+        "example": "LegacyThrottlingStrategyConfig"
+      }
+    },
+    "example": {
+      "quota": {
+        "window": 1000,
+        "daily": 1000000,
+        "monthly": 30000000
+      },
+      "id": "LegacyThrottlingStrategyConfig"
+    }
+  },
+  "LocalTokensBucketStrategyConfig": {
+    "type": "object",
+    "description": "A token bucket local to each otoroshi instance: a call takes a token, the bucket holds at most `capacity` tokens and is refilled with `refillRequestedTokens` tokens every `refillRequestIntervalMs` milliseconds. The daily and monthly quotas are counted too",
+    "required": [
+      "id"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "enum": [
+          "LocalTokensBucketStrategyConfig"
+        ],
+        "description": "Selects the token bucket strategy: a bucket of tokens local to each otoroshi instance, refilled at a fixed rate",
+        "example": "LocalTokensBucketStrategyConfig"
+      },
+      "bucketKey": {
+        "type": "string",
+        "description": "The key of the bucket the calls are counted in, an expression language string evaluated on each call (for instance `${req.ip}`). It is only used when the strategy is the config of a rate limiting plugin: the strategy of an api key or of a plan counts the calls of the api key. A random uuid when missing",
+        "example": "${req.ip}"
+      },
+      "capacity": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The maximum number of tokens of the bucket, the size of a burst. Defaults to 300",
+        "example": 300
+      },
+      "refillRequestIntervalMs": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The delay between two refills of the bucket, in milliseconds. Defaults to 50",
+        "example": 50
+      },
+      "refillRequestedTokens": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of tokens added by a refill. Defaults to 50",
+        "example": 50
+      },
+      "quota": {
+        "$ref": "#/components/schemas/AllowedQuota"
+      }
+    },
+    "example": {
+      "id": "LocalTokensBucketStrategyConfig",
+      "bucketKey": "${req.ip}",
+      "capacity": 300,
+      "refillRequestIntervalMs": 50,
+      "refillRequestedTokens": 50,
+      "quota": {
+        "window": 1000,
+        "daily": 1000000,
+        "monthly": 30000000
+      }
+    }
+  },
+  "FixedWindowStrategyConfig": {
+    "type": "object",
+    "description": "A fixed window counter local to each otoroshi instance: at most `quota.window` calls per window of `windowDurationMs` milliseconds. The daily and monthly quotas are counted too",
+    "required": [
+      "id",
+      "quota"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "enum": [
+          "FixedWindowStrategyConfig"
+        ],
+        "description": "Selects the fixed window strategy: a counter local to each otoroshi instance, reset at the end of each window",
+        "example": "FixedWindowStrategyConfig"
+      },
+      "quota": {
+        "$ref": "#/components/schemas/AllowedQuota"
+      },
+      "windowDurationMs": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The duration of a window, in milliseconds. Defaults to 10000",
+        "example": 10000
+      },
+      "bucketKey": {
+        "type": "string",
+        "nullable": true,
+        "description": "The key of the bucket the calls are counted in, an expression language string evaluated on each call (for instance `${req.ip}`). It is only used when the strategy is the config of a rate limiting plugin: the strategy of an api key or of a plan counts the calls of the api key",
+        "example": "${req.ip}"
+      }
+    },
+    "example": {
+      "id": "FixedWindowStrategyConfig",
+      "quota": {
+        "window": 1000,
+        "daily": 1000000,
+        "monthly": 30000000
+      },
+      "windowDurationMs": 10000,
+      "bucketKey": null
+    }
+  },
+  "DistributedRedisThrottlingStrategyConfig": {
+    "type": "object",
+    "description": "The calls are counted in a dedicated Redis shared by all the otoroshi instances (the rate limiter Redis of the configuration), so that the quotas hold for the whole cluster",
+    "required": [
+      "id",
+      "quota"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "enum": [
+          "DistributedRedisThrottlingStrategyConfig"
+        ],
+        "description": "Selects the distributed strategy: the calls are counted in the rate limiter Redis shared by all the otoroshi instances",
+        "example": "DistributedRedisThrottlingStrategyConfig"
+      },
+      "quota": {
+        "$ref": "#/components/schemas/AllowedQuota"
+      },
+      "bucketKey": {
+        "type": "string",
+        "nullable": true,
+        "description": "The key of the bucket the calls are counted in, an expression language string evaluated on each call (for instance `${req.ip}`). It is only used when the strategy is the config of a rate limiting plugin: the strategy of an api key or of a plan counts the calls of the api key",
+        "example": "${req.ip}"
+      }
+    },
+    "example": {
+      "id": "DistributedRedisThrottlingStrategyConfig",
+      "quota": {
+        "window": 1000,
+        "daily": 1000000,
+        "monthly": 30000000
+      },
+      "bucketKey": null
+    }
+  },
+  "LuaDistributedRedisThrottlingStrategyConfig": {
+    "type": "object",
+    "description": "Like `DistributedRedisThrottlingStrategyConfig`, the calls being counted atomically by a Lua script run by the Redis shared by all the otoroshi instances",
+    "required": [
+      "id",
+      "quota"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "enum": [
+          "LuaDistributedRedisThrottlingStrategyConfig"
+        ],
+        "description": "Selects the atomic distributed strategy: the calls are counted by a Lua script run by the rate limiter Redis shared by all the otoroshi instances",
+        "example": "LuaDistributedRedisThrottlingStrategyConfig"
+      },
+      "quota": {
+        "$ref": "#/components/schemas/AllowedQuota"
+      },
+      "bucketKey": {
+        "type": "string",
+        "nullable": true,
+        "description": "The key of the bucket the calls are counted in, an expression language string evaluated on each call (for instance `${req.ip}`). It is only used when the strategy is the config of a rate limiting plugin: the strategy of an api key or of a plan counts the calls of the api key",
+        "example": "${req.ip}"
+      }
+    },
+    "example": {
+      "id": "LuaDistributedRedisThrottlingStrategyConfig",
+      "quota": {
+        "window": 1000,
+        "daily": 1000000,
+        "monthly": 30000000
+      },
+      "bucketKey": null
+    }
+  },
+  "AllowedQuota": {
+    "type": "object",
+    "description": "The numbers of calls a throttling strategy allows per window, per day and per month. A missing quota is 10000000 calls",
+    "properties": {
+      "window": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls allowed per window of the strategy (the throttling window, or `windowDurationMs`). Not used by the token bucket strategy. Defaults to 10000000",
+        "example": 1000
+      },
+      "daily": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls allowed per day. Defaults to 10000000",
+        "example": 1000000
+      },
+      "monthly": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The number of calls allowed per month. Defaults to 10000000",
+        "example": 30000000
+      }
+    },
+    "example": {
+      "window": 1000,
+      "daily": 1000000,
+      "monthly": 30000000
+    }
+  }
+}

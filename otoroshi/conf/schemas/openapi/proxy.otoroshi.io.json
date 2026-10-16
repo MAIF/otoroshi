@@ -1,0 +1,2742 @@
+{
+  "proxy.otoroshi.io.Backend": {
+    "description": "A backend stored on its own, that several routes and apis share through their `backend_ref`. Changing it changes the backend of every route that references it",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "backend"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the backend, the value of the `backend_ref` of the routes using it",
+        "example": "backend_users_service"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the backend, shown in the backoffice, where a route picks the stored backend it references",
+        "example": "Users service"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the backend, shown under its name where a route picks the stored backend it references",
+        "example": "The instances of the users service"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "users"
+        },
+        "description": "Free tags to search, sort and group the backends, also used by automation tools",
+        "example": [
+          "users"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "description": "Free key/value pairs attached to the backend",
+        "example": {
+          "owner": "team-users"
+        }
+      },
+      "backend": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgBackend"
+          }
+        ],
+        "description": "The targets the requests are forwarded to, and how otoroshi calls them"
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "backend_users_service",
+      "name": "Users service",
+      "description": "The instances of the users service",
+      "tags": [
+        "users"
+      ],
+      "metadata": {
+        "owner": "team-users"
+      },
+      "backend": {
+        "targets": [
+          {
+            "id": "users-service-1",
+            "hostname": "users-1.internal.oto.tools",
+            "port": 8080,
+            "tls": false,
+            "weight": 1,
+            "backup": false,
+            "predicate": {
+              "type": "AlwaysMatch"
+            },
+            "protocol": "HTTP/1.1",
+            "ip_address": null,
+            "tls_config": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          },
+          {
+            "id": "users-service-2",
+            "hostname": "users-2.internal.oto.tools",
+            "port": 8080,
+            "tls": false,
+            "weight": 1,
+            "backup": true,
+            "predicate": {
+              "type": "AlwaysMatch"
+            },
+            "protocol": "HTTP/1.1",
+            "ip_address": null,
+            "tls_config": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ],
+        "root": "/",
+        "rewrite": false,
+        "load_balancing": {
+          "type": "RoundRobin"
+        },
+        "client": {
+          "retries": 1,
+          "max_errors": 20,
+          "retry_initial_delay": 50,
+          "backoff_factor": 2,
+          "call_timeout": 30000,
+          "call_and_stream_timeout": 120000,
+          "connection_timeout": 10000,
+          "idle_timeout": 60000,
+          "global_timeout": 30000,
+          "sample_interval": 2000,
+          "proxy": {},
+          "custom_timeouts": [
+            {
+              "path": "/api/users/_export*",
+              "call_timeout": 120000,
+              "call_and_stream_timeout": 300000,
+              "connection_timeout": 5000,
+              "idle_timeout": 120000,
+              "global_timeout": 120000
+            }
+          ],
+          "cache_connection_settings": {
+            "enabled": false,
+            "queue_size": 2048
+          }
+        },
+        "health_check": {
+          "enabled": true,
+          "url": "/health",
+          "timeout": 2000,
+          "healthyStatuses": [
+            200
+          ],
+          "unhealthyStatuses": [
+            500,
+            502,
+            503
+          ],
+          "blockOnRed": true,
+          "logicCheck": false,
+          "healthyRegexChecks": [
+            "\"status\"\\s*:\\s*\"UP\""
+          ],
+          "unhealthyRegexChecks": []
+        }
+      }
+    }
+  },
+  "proxy.otoroshi.io.Draft": {
+    "description": "The draft of an entity being edited in the backoffice (an api for instance): the version of the entity not published yet, kept apart from the live one. A draft has the id of the entity it is the draft of",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the draft, the id of the entity it is the draft of",
+        "example": "api_users_v2"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the draft, usually the name of the entity",
+        "example": "Users API"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the draft, usually the one of the drafted entity: a draft subscription saved by the admin api gets the description of the subscription",
+        "example": "The next version of the users api"
+      },
+      "content": {
+        "description": "The draft version of the entity, as the json the entity writes. Any json value is accepted, an empty object when missing",
+        "example": {
+          "id": "api_users_v2",
+          "name": "Users API",
+          "version": "2.0.0"
+        }
+      },
+      "kind": {
+        "type": "string",
+        "description": "The kind of the entity the draft is about: the prefix of its id, `api` for an api for instance. Empty when missing",
+        "example": "api"
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "description": "Free key/value pairs attached to the draft",
+        "example": {
+          "owner": "team-users"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "users"
+        },
+        "description": "Free tags to search, sort and group the drafts",
+        "example": [
+          "users"
+        ]
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "api_users_v2",
+      "name": "Users API",
+      "description": "The next version of the users api",
+      "content": {
+        "id": "api_users_v2",
+        "name": "Users API",
+        "version": "2.0.0"
+      },
+      "kind": "api",
+      "metadata": {},
+      "tags": [
+        "users"
+      ]
+    }
+  },
+  "proxy.otoroshi.io.ErrorTemplate": {
+    "description": "The html pages otoroshi answers instead of its own error pages when a call to a route fails (4xx and 5xx errors, maintenance, build mode). A client asking for json gets a json error instead. The error template of id `global` applies to every route without one of its own",
+    "type": "object",
+    "required": [
+      "serviceId",
+      "template40x",
+      "template50x",
+      "templateBuild",
+      "templateMaintenance"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "serviceId": {
+        "type": "string",
+        "description": "The id of the route the error template applies to, which is also the id of the error template. `global` for the error template of every route without one of its own",
+        "example": "route_users_api"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the error template, the `serviceId` when missing",
+        "example": "Users API errors"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the error template, the `serviceId` when missing",
+        "example": "The branded error pages of the users api"
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "description": "Free key/value pairs attached to the error template",
+        "example": {
+          "owner": "team-users"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "users"
+        },
+        "description": "Free tags to search, sort and group the error templates",
+        "example": [
+          "users"
+        ]
+      },
+      "template40x": {
+        "type": "string",
+        "description": "The html page answered for the 4xx errors (401, 403, 404...). The placeholders `${status}`, `${message}`, `${cause}`, `${otoroshiMessage}` and `${errorId}` are replaced by the details of the error",
+        "example": "<html><body><h1>${status}</h1><p>${message}</p><small>${errorId}</small></body></html>"
+      },
+      "template50x": {
+        "type": "string",
+        "description": "The html page answered for the 5xx errors (502, 503...), and for the errors no other template covers. The placeholders `${status}`, `${message}`, `${cause}`, `${otoroshiMessage}` and `${errorId}` are replaced by the details of the error",
+        "example": "<html><body><h1>Something went wrong</h1><p>${message}</p><small>${errorId}</small></body></html>"
+      },
+      "templateBuild": {
+        "type": "string",
+        "description": "The html page answered while the route is under construction (cause `errors.service.under.construction`). The placeholders `${status}`, `${message}`, `${cause}`, `${otoroshiMessage}` and `${errorId}` are replaced by the details of the error",
+        "example": "<html><body><h1>Coming soon</h1></body></html>"
+      },
+      "templateMaintenance": {
+        "type": "string",
+        "description": "The html page answered while the route is in maintenance (cause `errors.service.in.maintenance`). The placeholders `${status}`, `${message}`, `${cause}`, `${otoroshiMessage}` and `${errorId}` are replaced by the details of the error",
+        "example": "<html><body><h1>Under maintenance, back soon</h1></body></html>"
+      },
+      "genericTemplates": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The html page answered for the matching causes. The placeholders `${status}`, `${message}`, `${cause}`, `${otoroshiMessage}` and `${errorId}` are replaced by the details of the error"
+        },
+        "description": "The html pages answered for some causes of error, by cause id. A key is a cause id (like `errors.service.not.found`) or a pattern of cause ids where `*` is a wildcard. These pages take precedence over the other templates",
+        "example": {
+          "errors.service.not.found": "<html><body><h1>No such page</h1></body></html>"
+        }
+      },
+      "messages": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The message"
+        },
+        "description": "Messages replacing the ones of otoroshi in the pages and in the json errors. A key is `message-<status>` (like `message-404`) to replace the message of the errors of a status, or a cause id (like `errors.service.not.found`) to replace the cause",
+        "example": {
+          "message-404": "This page does not exist"
+        }
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "serviceId": "route_users_api",
+      "name": "Users API errors",
+      "description": "The branded error pages of the users api",
+      "metadata": {},
+      "tags": [
+        "users"
+      ],
+      "template40x": "<html><body><h1>${status}</h1><p>${message}</p><small>${errorId}</small></body></html>",
+      "template50x": "<html><body><h1>Something went wrong</h1><p>${message}</p><small>${errorId}</small></body></html>",
+      "templateBuild": "<html><body><h1>Coming soon</h1></body></html>",
+      "templateMaintenance": "<html><body><h1>Under maintenance, back soon</h1></body></html>",
+      "genericTemplates": {
+        "errors.service.not.found": "<html><body><h1>No such page</h1></body></html>"
+      },
+      "messages": {
+        "message-404": "This page does not exist",
+        "errors.service.in.maintenance": "The users api is in maintenance"
+      }
+    }
+  },
+  "proxy.otoroshi.io.Route": {
+    "description": "A routing rule of the proxy: the requests it matches (its frontend), where they are forwarded (its backend), and the plugins applied along the way",
+    "type": "object",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the route, written as `@serviceId` in the analytics events of its calls. An api key is authorized on the route with `route_<id>` in its `authorizedEntities`. The template generates `route_<uuid>`",
+        "example": "route_users_api"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the route, shown in the backoffice and written as `@service` in the analytics events of its calls",
+        "example": "Users API"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the route, shown in the list of the routes of the backoffice. Not used by the proxy. Empty when missing",
+        "example": "The public api of the users service"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "users"
+        },
+        "description": "Free tags to search, sort and group the routes, also used by automation tools",
+        "example": [
+          "users"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "description": "Free key/value pairs attached to the route. Some keys, starting with `otoroshi-core-` or `otoroshi-deployment-`, are read by otoroshi and change how it handles the route (see the documentation of the routes)",
+        "example": {
+          "owner": "team-users"
+        }
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the route is served. A disabled route is ignored by the router. Defaults to `true`"
+      },
+      "debug_flow": {
+        "type": "boolean",
+        "description": "Whether the execution report of each call holds the input and the output of every step and plugin, to debug the route. Defaults to `false`"
+      },
+      "export_reporting": {
+        "type": "boolean",
+        "description": "Whether the execution report of each call is sent as a `RequestFlowReport` event to the data exporters. Defaults to `false`"
+      },
+      "capture": {
+        "type": "boolean",
+        "description": "Whether each call generates a `TrafficCaptureEvent` holding the request and the response, bodies included, for the data exporters. Use with care. Defaults to `false`"
+      },
+      "groups": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The id of a service group",
+          "example": "default"
+        },
+        "description": "The ids of the service groups the route belongs to. An api key authorized on one of them can call the route. Defaults to `[\"default\"]`",
+        "example": [
+          "default"
+        ]
+      },
+      "bound_listeners": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The id of an http listener",
+          "example": "http-listener_internal"
+        },
+        "description": "The ids of the http listeners the route is bound to. A listener that is exclusive only serves the routes bound to it. Empty: the route is served by the standard listeners",
+        "example": [
+          "http-listener_internal"
+        ]
+      },
+      "frontend": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgFrontend"
+          }
+        ],
+        "description": "What requests the route matches: domains, paths, methods, headers, query params and cookies"
+      },
+      "backend": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgBackend"
+          }
+        ],
+        "description": "Where the matched requests are forwarded, and how otoroshi calls the targets. When `backend_ref` is set, the value sent is ignored and replaced by the stored backend it references (the empty backend when there is none)"
+      },
+      "backend_ref": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of a stored backend (proxy.otoroshi.io.Backend) the route uses instead of its own `backend`. Null when the route has its own backend",
+        "example": "backend_users_service"
+      },
+      "api_ref": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the api (apis.otoroshi.io.Api) the route was generated from, set by otoroshi and mirrored in the `Otoroshi-Api-Ref` metadata (which is read when it is missing). Null for a route created on its own",
+        "example": "api_users"
+      },
+      "plugins": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NgPluginInstance"
+        },
+        "description": "The chain of plugins applied to the calls of the route, in this order unless a plugin sets its `plugin_index`"
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "route_users_api",
+      "name": "Users API",
+      "description": "The public api of the users service",
+      "tags": [
+        "users",
+        "public"
+      ],
+      "metadata": {
+        "owner": "team-users"
+      },
+      "enabled": true,
+      "debug_flow": false,
+      "export_reporting": false,
+      "capture": false,
+      "groups": [
+        "default"
+      ],
+      "bound_listeners": [],
+      "frontend": {
+        "domains": [
+          "api.oto.tools/users"
+        ],
+        "strip_path": true,
+        "exact": false,
+        "headers": {},
+        "cookies": {},
+        "query": {},
+        "methods": []
+      },
+      "backend": {
+        "targets": [
+          {
+            "id": "users-service-1",
+            "hostname": "users-1.internal.oto.tools",
+            "port": 8080,
+            "tls": false,
+            "weight": 1,
+            "backup": false,
+            "predicate": {
+              "type": "AlwaysMatch"
+            },
+            "protocol": "HTTP/1.1",
+            "ip_address": null,
+            "tls_config": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ],
+        "root": "/",
+        "rewrite": false,
+        "load_balancing": {
+          "type": "RoundRobin"
+        },
+        "client": {
+          "retries": 1,
+          "max_errors": 20,
+          "retry_initial_delay": 50,
+          "backoff_factor": 2,
+          "call_timeout": 30000,
+          "call_and_stream_timeout": 120000,
+          "connection_timeout": 10000,
+          "idle_timeout": 60000,
+          "global_timeout": 30000,
+          "sample_interval": 2000,
+          "proxy": {},
+          "custom_timeouts": [],
+          "cache_connection_settings": {
+            "enabled": false,
+            "queue_size": 2048
+          }
+        },
+        "health_check": null
+      },
+      "backend_ref": null,
+      "api_ref": null,
+      "plugins": [
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+          "include": [],
+          "exclude": [],
+          "config": {},
+          "bound_listeners": []
+        },
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+          "include": [],
+          "exclude": [
+            "/api/users/_health"
+          ],
+          "config": {
+            "validate": true,
+            "mandatory": true,
+            "pass_with_user": false,
+            "wipe_backend_request": true,
+            "update_quotas": true
+          },
+          "bound_listeners": [],
+          "plugin_index": {
+            "validate_access": 0,
+            "transform_request": 0,
+            "match_route": 0
+          }
+        },
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+          "include": [
+            "/api/users/.*"
+          ],
+          "exclude": [],
+          "config": {
+            "headers": {
+              "X-Frame-Options": "DENY"
+            }
+          },
+          "bound_listeners": []
+        }
+      ]
+    }
+  },
+  "NgFrontend": {
+    "description": "What requests a route matches. A request has to satisfy every criterion. The legacy `domain` key, holding a single domain, is read too and replaces `domains`",
+    "type": "object",
+    "properties": {
+      "domains": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A domain followed by an optional path. The domain can hold `*` wildcards (`*.oto.tools`), the path wildcards (`/users/*/bills`), named parameters (`/users/:id`) and named parameters with a regex (`/users/$id<[0-9]+>`)",
+          "example": "api.oto.tools/users/$id<[0-9]+>"
+        },
+        "description": "The domains, with an optional path, the route matches. The path matches as a prefix unless `exact` is true",
+        "example": [
+          "api.oto.tools/users",
+          "users.oto.tools"
+        ]
+      },
+      "strip_path": {
+        "type": "boolean",
+        "description": "Whether the matched path is removed from the path of the request forwarded to the backend. Defaults to `true`"
+      },
+      "exact": {
+        "type": "boolean",
+        "description": "Whether the path of the request must be the path of a domain exactly, instead of starting with it. Defaults to `false`"
+      },
+      "headers": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The expected value: a value to match exactly, `Regex(<regex>)`, `Wildcard(<pattern with *>)`, `Exists()` (or `IsDefined()`) when the header must be present with any value, `NotDefined()` when it must be absent"
+        },
+        "description": "The headers the request must hold, by name (case insensitive). Empty: any headers",
+        "example": {
+          "X-Api-Version": "Regex(v[2-3])"
+        }
+      },
+      "cookies": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The expected value, with the syntax of the headers: an exact value, `Regex(...)`, `Wildcard(...)`, `Exists()`, `IsDefined()` or `NotDefined()`"
+        },
+        "description": "The cookies the request must hold, by name (case insensitive). Empty: any cookies",
+        "example": {
+          "session": "Exists()"
+        }
+      },
+      "query": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The expected value, with the syntax of the headers: an exact value, `Regex(...)`, `Wildcard(...)`, `Exists()`, `IsDefined()` or `NotDefined()`"
+        },
+        "description": "The query params the request must hold, by name. Empty: any query params",
+        "example": {
+          "debug": "NotDefined()"
+        }
+      },
+      "methods": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "An http method, in upper case",
+          "example": "GET"
+        },
+        "description": "The http methods the route matches. Empty: any method",
+        "example": [
+          "GET",
+          "POST"
+        ]
+      }
+    },
+    "example": {
+      "domains": [
+        "api.oto.tools/users",
+        "users.oto.tools"
+      ],
+      "strip_path": true,
+      "exact": false,
+      "headers": {
+        "X-Api-Version": "Regex(v[2-3])"
+      },
+      "cookies": {},
+      "query": {
+        "debug": "NotDefined()"
+      },
+      "methods": [
+        "GET",
+        "POST"
+      ]
+    }
+  },
+  "NgPluginInstance": {
+    "description": "A plugin of the chain of a route, with its configuration",
+    "type": "object",
+    "required": [
+      "plugin"
+    ],
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the plugin is applied. Defaults to `true`"
+      },
+      "debug": {
+        "type": "boolean",
+        "description": "Whether the execution report of each call holds the input and the output of this plugin, like `debug_flow` does for the whole route. Defaults to `false`"
+      },
+      "plugin": {
+        "type": "string",
+        "description": "The id of the plugin: `cp:` followed by the class name of a plugin of the classpath (the built-in ones for instance), or the id of a plugin entity (a wasm plugin for instance)",
+        "example": "cp:otoroshi.next.plugins.ApikeyCalls"
+      },
+      "include": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A regex the whole path of the request must match",
+          "example": "/api/users/.*"
+        },
+        "description": "Regexes on the path of the request: when not empty, the plugin only applies to the calls whose path matches one of them",
+        "example": [
+          "/api/users/.*"
+        ]
+      },
+      "exclude": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A regex the whole path of the request must match",
+          "example": "/api/users/_health"
+        },
+        "description": "Regexes on the path of the request: the plugin does not apply to the calls whose path matches one of them",
+        "example": [
+          "/api/users/_health"
+        ]
+      },
+      "config": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The configuration of the plugin, whose shape depends on the plugin (see the documentation of each plugin). An empty object uses the default configuration of the plugin",
+        "example": {
+          "headers": {
+            "X-Frame-Options": "DENY"
+          }
+        }
+      },
+      "bound_listeners": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The id of an http listener",
+          "example": "http-listener_internal"
+        },
+        "description": "The ids of the http listeners the plugin is bound to: when not empty, the plugin only applies to the calls received by one of them",
+        "example": [
+          "http-listener_internal"
+        ]
+      },
+      "plugin_index": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PluginIndex"
+          }
+        ],
+        "description": "The position of the plugin in each phase of the calls, when it must not run in the order of the chain. Only written when set"
+      }
+    },
+    "example": {
+      "enabled": true,
+      "debug": false,
+      "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+      "include": [],
+      "exclude": [
+        "/api/users/_health"
+      ],
+      "config": {
+        "validate": true,
+        "mandatory": true,
+        "pass_with_user": false,
+        "wipe_backend_request": true,
+        "update_quotas": true
+      },
+      "bound_listeners": [],
+      "plugin_index": {
+        "validate_access": 0,
+        "transform_request": 0,
+        "match_route": 0
+      }
+    }
+  },
+  "PluginIndex": {
+    "description": "The position of a plugin in each phase of a call: in a phase, the plugins with a position run first, by increasing position, then the other ones in the order of the chain. Only the phases set are written",
+    "type": "object",
+    "properties": {
+      "sink": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where the router plugins choose a route, and the requests no route matched are handled",
+        "example": 0
+      },
+      "pre_route": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where the request is checked before its access is validated",
+        "example": 0
+      },
+      "validate_access": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where the access to the route is validated",
+        "example": 0
+      },
+      "transform_request": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where the request is transformed before being forwarded",
+        "example": 0
+      },
+      "transform_response": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where the response is transformed before being answered",
+        "example": 0
+      },
+      "match_route": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where the route is matched",
+        "example": 0
+      },
+      "handles_tunnel": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where a tunnel is handled",
+        "example": 0
+      },
+      "handles_websocket": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where the messages of a websocket are handled",
+        "example": 0
+      },
+      "handles_websocket_backend": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where the messages a websocket backend sends are handled",
+        "example": 0
+      },
+      "call_backend": {
+        "type": "number",
+        "format": "double",
+        "description": "The position of the plugin among the plugins of the route during the phase where the backend is called",
+        "example": 0
+      }
+    },
+    "example": {
+      "validate_access": 0,
+      "transform_request": 1
+    }
+  },
+  "proxy.otoroshi.io.RouteComposition": {
+    "description": "Several routes sharing the same settings and plugins, written as one entity: each of its routes becomes a route of the proxy with the settings, the client and the plugins of the composition",
+    "type": "object",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the route composition, also the id of the routes it generates",
+        "example": "route-composition_users_api"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the route composition",
+        "example": "Users API"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the route composition",
+        "example": "The routes of the users api"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "users"
+        },
+        "description": "Free tags to search, sort and group the route compositions, also used by automation tools",
+        "example": [
+          "users"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "description": "Free key/value pairs attached to the route composition",
+        "example": {
+          "owner": "team-users"
+        }
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the routes of the composition are served. Defaults to `true`"
+      },
+      "debug_flow": {
+        "type": "boolean",
+        "description": "Whether the execution report of each call holds the input and the output of every step and plugin, to debug the routes. Defaults to `false`"
+      },
+      "export_reporting": {
+        "type": "boolean",
+        "description": "Whether the execution report of each call is sent as a `RequestFlowReport` event to the data exporters. Defaults to `false`"
+      },
+      "capture": {
+        "type": "boolean",
+        "description": "Whether each call generates a `TrafficCaptureEvent` holding the request and the response, bodies included, for the data exporters. Defaults to `false`"
+      },
+      "groups": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The id of a service group",
+          "example": "default"
+        },
+        "description": "The ids of the service groups the routes belong to. An api key authorized on one of them can call the routes. Defaults to `[\"default\"]`",
+        "example": [
+          "default"
+        ]
+      },
+      "routes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NgMinimalRoute"
+        },
+        "description": "The routes of the composition. A route that cannot be read is left out"
+      },
+      "client": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgClientConfig"
+          }
+        ],
+        "description": "How otoroshi calls the targets of every route of the composition"
+      },
+      "plugins": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NgPluginInstance"
+        },
+        "description": "The plugins applied to the calls of every route of the composition, after the plugins of the route itself"
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "route-composition_users_api",
+      "name": "Users API",
+      "description": "The routes of the users api",
+      "tags": [
+        "users"
+      ],
+      "metadata": {},
+      "enabled": true,
+      "debug_flow": false,
+      "export_reporting": false,
+      "capture": false,
+      "groups": [
+        "default"
+      ],
+      "routes": [
+        {
+          "frontend": {
+            "domains": [
+              "api.oto.tools/users/:id"
+            ],
+            "strip_path": false,
+            "exact": true,
+            "headers": {},
+            "cookies": {},
+            "query": {},
+            "methods": [
+              "GET"
+            ]
+          },
+          "backend": {
+            "targets": [
+              {
+                "id": "users-service-1",
+                "hostname": "users-1.internal.oto.tools",
+                "port": 8080,
+                "tls": false,
+                "weight": 1,
+                "backup": false,
+                "predicate": {
+                  "type": "AlwaysMatch"
+                },
+                "protocol": "HTTP/1.1",
+                "ip_address": null,
+                "tls_config": {
+                  "certs": [],
+                  "trusted_certs": [],
+                  "enabled": false,
+                  "loose": false,
+                  "trust_all": false
+                }
+              }
+            ],
+            "root": "/",
+            "rewrite": false,
+            "load_balancing": {
+              "type": "RoundRobin"
+            }
+          },
+          "backend_ref": null,
+          "plugins": [
+            {
+              "enabled": true,
+              "debug": false,
+              "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+              "include": [],
+              "exclude": [],
+              "config": {
+                "headers": {
+                  "X-Frame-Options": "DENY"
+                }
+              },
+              "bound_listeners": []
+            }
+          ]
+        }
+      ],
+      "client": {
+        "retries": 1,
+        "max_errors": 20,
+        "retry_initial_delay": 50,
+        "backoff_factor": 2,
+        "call_timeout": 30000,
+        "call_and_stream_timeout": 120000,
+        "connection_timeout": 10000,
+        "idle_timeout": 60000,
+        "global_timeout": 30000,
+        "sample_interval": 2000,
+        "proxy": {},
+        "custom_timeouts": [],
+        "cache_connection_settings": {
+          "enabled": false,
+          "queue_size": 2048
+        }
+      },
+      "plugins": [
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+          "include": [],
+          "exclude": [],
+          "config": {},
+          "bound_listeners": []
+        }
+      ]
+    }
+  },
+  "NgMinimalRoute": {
+    "description": "A route of a route composition: its frontend and its backend, the other settings coming from the composition",
+    "type": "object",
+    "properties": {
+      "frontend": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgFrontend"
+          }
+        ],
+        "description": "What requests the route matches"
+      },
+      "backend": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgMinimalBackend"
+          }
+        ],
+        "description": "Where the matched requests are forwarded. When `backend_ref` is set, the value sent is ignored and replaced by the stored backend it references (the empty backend when there is none)"
+      },
+      "backend_ref": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of a stored backend (proxy.otoroshi.io.Backend) the route uses instead of its own `backend`. Null when the route has its own backend",
+        "example": "backend_users_service"
+      },
+      "override_plugins": {
+        "type": "boolean",
+        "description": "Whether the plugins of the route replace the plugins of the composition, instead of running before them. Only written when true, defaults to `false`"
+      },
+      "plugins": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NgPluginInstance"
+        },
+        "description": "The plugins applied to the calls of this route only. Only written when not empty"
+      }
+    },
+    "example": {
+      "frontend": {
+        "domains": [
+          "api.oto.tools/users/:id"
+        ],
+        "strip_path": false,
+        "exact": true,
+        "headers": {},
+        "cookies": {},
+        "query": {},
+        "methods": [
+          "GET"
+        ]
+      },
+      "backend": {
+        "targets": [
+          {
+            "id": "users-service-1",
+            "hostname": "users-1.internal.oto.tools",
+            "port": 8080,
+            "tls": false,
+            "weight": 1,
+            "backup": false,
+            "predicate": {
+              "type": "AlwaysMatch"
+            },
+            "protocol": "HTTP/1.1",
+            "ip_address": null,
+            "tls_config": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ],
+        "root": "/",
+        "rewrite": false,
+        "load_balancing": {
+          "type": "RoundRobin"
+        }
+      },
+      "backend_ref": null,
+      "plugins": [
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+          "include": [],
+          "exclude": [],
+          "config": {
+            "headers": {
+              "X-Frame-Options": "DENY"
+            }
+          },
+          "bound_listeners": []
+        }
+      ]
+    }
+  },
+  "NgMinimalBackend": {
+    "description": "The backend of a route of a route composition: its targets, the client settings coming from the composition",
+    "type": "object",
+    "properties": {
+      "targets": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NgTarget"
+        },
+        "description": "The servers the requests are forwarded to"
+      },
+      "root": {
+        "type": "string",
+        "description": "The path prepended to the path of the forwarded requests. Defaults to `/`",
+        "example": "/api/v2"
+      },
+      "rewrite": {
+        "type": "boolean",
+        "description": "Whether the path of the forwarded requests is `root` alone (where the expression language can use the named path params of the frontend), instead of `root` followed by the path of the request. Defaults to `false`"
+      },
+      "load_balancing": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/LoadBalancing"
+          }
+        ],
+        "description": "How a target is chosen for each request. Defaults to round robin"
+      }
+    },
+    "example": {
+      "targets": [
+        {
+          "id": "users-service-1",
+          "hostname": "users-1.internal.oto.tools",
+          "port": 8080,
+          "tls": false,
+          "weight": 1,
+          "backup": false,
+          "predicate": {
+            "type": "AlwaysMatch"
+          },
+          "protocol": "HTTP/1.1",
+          "ip_address": null,
+          "tls_config": {
+            "certs": [],
+            "trusted_certs": [],
+            "enabled": false,
+            "loose": false,
+            "trust_all": false
+          }
+        }
+      ],
+      "root": "/",
+      "rewrite": false,
+      "load_balancing": {
+        "type": "RoundRobin"
+      }
+    }
+  },
+  "proxy.otoroshi.io.RouteTemplate": {
+    "description": "A preconfigured route used as a starting point to create new routes. A template is not served by the proxy",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the route template",
+        "example": "route-template_secured_api"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the route template, shown in the list of the route templates of the backoffice",
+        "example": "Secured api"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the route template",
+        "example": "The starting point of the routes protected by apikeys"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "security"
+        },
+        "description": "Free tags to search, sort and group the route templates, also used by automation tools",
+        "example": [
+          "security"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "description": "Free key/value pairs attached to the route template",
+        "example": {
+          "team": "platform"
+        }
+      },
+      "route": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/proxy.otoroshi.io.Route"
+          }
+        ],
+        "description": "The route copied into each route created from the template. The empty route when missing or invalid"
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "route-template_secured_api",
+      "name": "Secured api",
+      "description": "The starting point of the routes protected by apikeys",
+      "tags": [
+        "security"
+      ],
+      "metadata": {
+        "team": "platform"
+      },
+      "route": {
+        "_loc": {
+          "tenant": "default",
+          "teams": [
+            "default"
+          ]
+        },
+        "id": "route_secured_api_template",
+        "name": "Secured api",
+        "description": "A route protected by apikeys",
+        "tags": [],
+        "metadata": {},
+        "enabled": true,
+        "debug_flow": false,
+        "export_reporting": false,
+        "capture": false,
+        "groups": [
+          "default"
+        ],
+        "bound_listeners": [],
+        "frontend": {
+          "domains": [
+            "new-api.oto.tools"
+          ],
+          "strip_path": true,
+          "exact": false,
+          "headers": {},
+          "cookies": {},
+          "query": {},
+          "methods": []
+        },
+        "backend": {
+          "targets": [
+            {
+              "id": "target_1",
+              "hostname": "new-api.internal.oto.tools",
+              "port": 8080,
+              "tls": false,
+              "weight": 1,
+              "backup": false,
+              "predicate": {
+                "type": "AlwaysMatch"
+              },
+              "protocol": "HTTP/1.1",
+              "ip_address": null,
+              "tls_config": {
+                "certs": [],
+                "trusted_certs": [],
+                "enabled": false,
+                "loose": false,
+                "trust_all": false
+              }
+            }
+          ],
+          "root": "/",
+          "rewrite": false,
+          "load_balancing": {
+            "type": "RoundRobin"
+          },
+          "client": {
+            "retries": 1,
+            "max_errors": 20,
+            "retry_initial_delay": 50,
+            "backoff_factor": 2,
+            "call_timeout": 30000,
+            "call_and_stream_timeout": 120000,
+            "connection_timeout": 10000,
+            "idle_timeout": 60000,
+            "global_timeout": 30000,
+            "sample_interval": 2000,
+            "proxy": {},
+            "custom_timeouts": [],
+            "cache_connection_settings": {
+              "enabled": false,
+              "queue_size": 2048
+            }
+          },
+          "health_check": null
+        },
+        "backend_ref": null,
+        "api_ref": null,
+        "plugins": [
+          {
+            "enabled": true,
+            "debug": false,
+            "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+            "include": [],
+            "exclude": [],
+            "config": {},
+            "bound_listeners": []
+          },
+          {
+            "enabled": true,
+            "debug": false,
+            "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+            "include": [],
+            "exclude": [],
+            "config": {
+              "validate": true,
+              "mandatory": true,
+              "pass_with_user": false,
+              "wipe_backend_request": true,
+              "update_quotas": true
+            },
+            "bound_listeners": [],
+            "plugin_index": {
+              "validate_access": 0,
+              "transform_request": 0,
+              "match_route": 0
+            }
+          }
+        ]
+      }
+    }
+  },
+  "proxy.otoroshi.io.TcpService": {
+    "description": "A tcp proxy: otoroshi listens on a port and forwards the raw tcp connections to targets, optionally terminating tls or routing on the sni of the tls handshake. No http processing is applied",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description",
+      "port"
+    ],
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the tcp service, written as `@serviceId` in the `TcpEvent` analytics events of its connections",
+        "example": "tcp_service_postgres"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the tcp service, shown in the backoffice and written as `@service` in the `TcpEvent` analytics events of its connections",
+        "example": "PostgreSQL proxy"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing the tcp service",
+        "example": "The proxy of the postgres cluster"
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether otoroshi listens on the port of the tcp service. Defaults to `false` when missing"
+      },
+      "tls": {
+        "type": "string",
+        "enum": [
+          "Disabled",
+          "Enabled",
+          "PassThrough"
+        ],
+        "description": "How tls is handled: `Disabled` forwards the connections as they are, `Enabled` terminates tls with the certificates of otoroshi (chosen with the sni), `PassThrough` forwards the tls connections to targets that terminate tls themselves. Defaults to `Disabled`",
+        "example": "Enabled"
+      },
+      "sni": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SniSettings"
+          }
+        ],
+        "description": "How the connections are routed on the domain of the sni of the tls handshake"
+      },
+      "clientAuth": {
+        "type": "string",
+        "enum": [
+          "None",
+          "Want",
+          "Need",
+          "Dynamic"
+        ],
+        "description": "Whether a client certificate is asked for when tls is enabled: `None` does not ask for one, `Want` asks for one without requiring it, `Need` requires one. `Dynamic` is read but asks for none on a tcp service (it does not follow the tls settings of the global configuration here). Defaults to `None`",
+        "example": "Want"
+      },
+      "port": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "description": "The port otoroshi listens on for the tcp service",
+        "example": 5432
+      },
+      "interface": {
+        "type": "string",
+        "description": "The network interface otoroshi listens on. Defaults to `0.0.0.0`",
+        "example": "0.0.0.0"
+      },
+      "rules": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TcpRule"
+        },
+        "description": "The routing rules. With sni routing, the first rule whose domain matches the sni domain of the connection gives its targets. Without it, the connections go to the targets of all the rules in turn"
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "description": "Free key/value pairs attached to the tcp service",
+        "example": {
+          "owner": "team-data"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "database"
+        },
+        "description": "Free tags to search, sort and group the tcp services",
+        "example": [
+          "database"
+        ]
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "tcp_service_postgres",
+      "name": "PostgreSQL proxy",
+      "description": "The proxy of the postgres cluster",
+      "enabled": true,
+      "tls": "Enabled",
+      "sni": {
+        "enabled": true,
+        "forwardIfNoMatch": true,
+        "forwardsTo": {
+          "host": "postgres-primary.internal.oto.tools",
+          "ip": null,
+          "port": 5432,
+          "tls": false
+        }
+      },
+      "clientAuth": "None",
+      "port": 5432,
+      "interface": "0.0.0.0",
+      "rules": [
+        {
+          "domain": "replica.db.oto.tools",
+          "targets": [
+            {
+              "host": "postgres-replica-1.internal.oto.tools",
+              "ip": "10.0.12.31",
+              "port": 5432,
+              "tls": false
+            }
+          ]
+        }
+      ],
+      "metadata": {},
+      "tags": [
+        "database"
+      ]
+    }
+  },
+  "TcpTarget": {
+    "description": "A server a tcp service forwards connections to",
+    "type": "object",
+    "required": [
+      "host"
+    ],
+    "properties": {
+      "host": {
+        "type": "string",
+        "description": "The host name of the server the connections are forwarded to, resolved to connect to it unless `ip` is set",
+        "example": "postgres-replica-1.internal.oto.tools"
+      },
+      "ip": {
+        "type": "string",
+        "nullable": true,
+        "description": "The ip address the connections are made to, instead of the resolution of `host`. Null to resolve `host`",
+        "example": "10.0.12.31"
+      },
+      "port": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "description": "The port of the target. Defaults to `8080`",
+        "example": 5432
+      },
+      "tls": {
+        "type": "boolean",
+        "description": "Whether otoroshi connects to the target over tls. Defaults to `false`"
+      }
+    },
+    "example": {
+      "host": "postgres-replica-1.internal.oto.tools",
+      "ip": "10.0.12.31",
+      "port": 5432,
+      "tls": false
+    }
+  },
+  "SniSettings": {
+    "description": "How a tcp service routes the connections on the domain of the sni of the tls handshake",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the connections are routed on their sni domain, which lets several rules share the port. Defaults to `false`"
+      },
+      "forwardIfNoMatch": {
+        "type": "boolean",
+        "description": "Whether the connections whose sni domain matches no rule go to `forwardsTo`, instead of being closed. Defaults to `false`"
+      },
+      "forwardsTo": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TcpTarget"
+          }
+        ],
+        "description": "The target of the connections whose sni domain matches no rule, when `forwardIfNoMatch` is true. It is called over plain tcp, its `tls` flag is not used. Defaults to `127.0.0.1:8080`"
+      }
+    },
+    "example": {
+      "enabled": true,
+      "forwardIfNoMatch": true,
+      "forwardsTo": {
+        "host": "postgres-primary.internal.oto.tools",
+        "ip": null,
+        "port": 5432,
+        "tls": false
+      }
+    }
+  },
+  "TcpRule": {
+    "description": "A routing rule of a tcp service: the targets of the connections to a domain",
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "string",
+        "description": "The domain the sni of the connection must match, `*` being a wildcard. Defaults to `*`",
+        "example": "*.db.oto.tools"
+      },
+      "targets": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TcpTarget"
+        },
+        "description": "The targets of the matching connections, used in turn"
+      }
+    },
+    "example": {
+      "domain": "replica.db.oto.tools",
+      "targets": [
+        {
+          "host": "postgres-replica-1.internal.oto.tools",
+          "ip": "10.0.12.31",
+          "port": 5432,
+          "tls": false
+        }
+      ]
+    }
+  },
+  "TargetPredicate": {
+    "description": "Which requests a target can serve, the predicate being chosen by its `type`. The targets whose predicate does not match a request are left out of the load balancing of that request. An unknown type is read as `AlwaysMatch`",
+    "type": "object",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/TargetPredicateAlwaysMatch"
+      },
+      {
+        "$ref": "#/components/schemas/TargetPredicateGeolocationMatch"
+      },
+      {
+        "$ref": "#/components/schemas/TargetPredicateNetworkLocationMatch"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "AlwaysMatch": "#/components/schemas/TargetPredicateAlwaysMatch",
+        "GeolocationMatch": "#/components/schemas/TargetPredicateGeolocationMatch",
+        "NetworkLocationMatch": "#/components/schemas/TargetPredicateNetworkLocationMatch"
+      }
+    },
+    "example": {
+      "type": "AlwaysMatch"
+    }
+  },
+  "TargetPredicateAlwaysMatch": {
+    "description": "A target predicate that always matches: the target can serve every request",
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "AlwaysMatch"
+        ],
+        "description": "Selects the predicate that always matches: the target can serve every request",
+        "example": "AlwaysMatch"
+      }
+    },
+    "example": {
+      "type": "AlwaysMatch"
+    }
+  },
+  "TargetPredicateGeolocationMatch": {
+    "description": "A target predicate on the geolocation of the client: the target only serves the requests coming from near one of its positions. It needs a plugin giving the geolocation of the client, every request matches without it",
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "GeolocationMatch"
+        ],
+        "description": "Selects the predicate on the geolocation of the client: the target only serves the clients near one of its `positions`",
+        "example": "GeolocationMatch"
+      },
+      "positions": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A position written `<latitude>:<longitude>:<radius>`, in degrees for the coordinates and in kilometers for the radius. `;` is read as a separator too",
+          "example": "48.8566:2.3522:50.0"
+        },
+        "description": "The positions the client must be near one of",
+        "example": [
+          "48.8566:2.3522:50.0"
+        ]
+      }
+    },
+    "example": {
+      "type": "GeolocationMatch",
+      "positions": [
+        "48.8566:2.3522:50.0",
+        "45.764:4.8357:30.0"
+      ]
+    }
+  },
+  "TargetPredicateNetworkLocationMatch": {
+    "description": "A target predicate on the location of the otoroshi instance handling the request (its cluster relay location): the target only serves the requests handled by the instances of the location. Each criterion is a pattern where `*` is a wildcard, null matching any value",
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "NetworkLocationMatch"
+        ],
+        "description": "Selects the predicate on the location of the otoroshi instance handling the request: the target only serves the requests handled by the instances of that location",
+        "example": "NetworkLocationMatch"
+      },
+      "provider": {
+        "type": "string",
+        "nullable": true,
+        "description": "The pattern the provider of the otoroshi instance must match, case insensitively. An instance gets its provider from `OTOROSHI_CLUSTER_RELAY_LOCATION_PROVIDER` (or `otoroshi.instance.provider`), `local` by default. Null for any provider",
+        "example": "aws"
+      },
+      "region": {
+        "type": "string",
+        "nullable": true,
+        "description": "The pattern the region of the otoroshi instance must match, case insensitively. An instance gets its region from `OTOROSHI_CLUSTER_RELAY_LOCATION_REGION` (or `otoroshi.instance.region`), `local` by default. Null for any region",
+        "example": "eu-west-*"
+      },
+      "zone": {
+        "type": "string",
+        "nullable": true,
+        "description": "The pattern the zone of the otoroshi instance must match, case insensitively. An instance gets its zone from `OTOROSHI_CLUSTER_RELAY_LOCATION_ZONE` (or `otoroshi.instance.zone`), `local` by default. Null for any zone",
+        "example": "eu-west-1a"
+      },
+      "dc": {
+        "type": "string",
+        "nullable": true,
+        "description": "The pattern the datacenter of the otoroshi instance must match, case insensitively. An instance gets its datacenter from `OTOROSHI_CLUSTER_RELAY_LOCATION_DATACENTER` (or `otoroshi.instance.dc`), `local` by default. Null for any datacenter",
+        "example": "dc1"
+      },
+      "rack": {
+        "type": "string",
+        "nullable": true,
+        "description": "The pattern the rack of the otoroshi instance must match, case insensitively. An instance gets its rack from `OTOROSHI_CLUSTER_RELAY_LOCATION_RACK` (or `otoroshi.instance.rack`), `local` by default. Null for any rack",
+        "example": "rack-12"
+      }
+    },
+    "example": {
+      "type": "NetworkLocationMatch",
+      "provider": "aws",
+      "region": "eu-west-*",
+      "zone": null,
+      "dc": null,
+      "rack": null
+    }
+  },
+  "NgTlsConfig": {
+    "description": "The tls settings of the calls to a target: the client certificates otoroshi presents, and the certificates it trusts. A certificate can be designated by its id or by its distinguished name (the valid one expiring last is then used). The legacy `certId` and `cert_id` keys, holding a single certificate, are read too",
+    "type": "object",
+    "properties": {
+      "certs": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The id or the distinguished name of a certificate",
+          "example": "otoroshi-client-cert"
+        },
+        "description": "The certificates presented as client certificates to the target (mtls)",
+        "example": [
+          "otoroshi-client-cert"
+        ]
+      },
+      "trusted_certs": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The id or the distinguished name of a certificate",
+          "example": "users-service-ca"
+        },
+        "description": "The certificates trusted to validate the certificate of the target, instead of the default trust store",
+        "example": [
+          "users-service-ca"
+        ]
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether these tls settings are used to call the target. When false, the default tls settings of otoroshi are used. Defaults to `false`"
+      },
+      "loose": {
+        "type": "boolean",
+        "description": "Whether the host name of the certificate of the target is not checked. Defaults to `false`"
+      },
+      "trust_all": {
+        "type": "boolean",
+        "description": "Whether any certificate of the target is trusted, self signed ones included. For tests only. Defaults to `false`"
+      }
+    },
+    "example": {
+      "certs": [
+        "otoroshi-client-cert"
+      ],
+      "trusted_certs": [
+        "users-service-ca"
+      ],
+      "enabled": true,
+      "loose": false,
+      "trust_all": false
+    }
+  },
+  "LoadBalancing": {
+    "description": "How a backend chooses the target of each request among the targets whose predicate matches, the algorithm being chosen by its `type`. The backup targets are only used when no primary target is available. A missing or unknown type is read as `RoundRobin`",
+    "type": "object",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/LoadBalancingRoundRobin"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingRandom"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingSticky"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingIpAddressHash"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingCookieHash"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingQueryHash"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingHeaderHash"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingBestResponseTime"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingWeightedBestResponseTime"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingLeastConnections"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingPowerOfTwoRandomChoices"
+      },
+      {
+        "$ref": "#/components/schemas/LoadBalancingNaiveFailover"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "RoundRobin": "#/components/schemas/LoadBalancingRoundRobin",
+        "Random": "#/components/schemas/LoadBalancingRandom",
+        "Sticky": "#/components/schemas/LoadBalancingSticky",
+        "IpAddressHash": "#/components/schemas/LoadBalancingIpAddressHash",
+        "CookieHash": "#/components/schemas/LoadBalancingCookieHash",
+        "QueryHash": "#/components/schemas/LoadBalancingQueryHash",
+        "HeaderHash": "#/components/schemas/LoadBalancingHeaderHash",
+        "BestResponseTime": "#/components/schemas/LoadBalancingBestResponseTime",
+        "WeightedBestResponseTime": "#/components/schemas/LoadBalancingWeightedBestResponseTime",
+        "LeastConnections": "#/components/schemas/LoadBalancingLeastConnections",
+        "PowerOfTwoRandomChoices": "#/components/schemas/LoadBalancingPowerOfTwoRandomChoices",
+        "NaiveFailover": "#/components/schemas/LoadBalancingNaiveFailover"
+      }
+    },
+    "example": {
+      "type": "RoundRobin"
+    }
+  },
+  "LoadBalancingRoundRobin": {
+    "description": "The `RoundRobin` load balancing: sends the requests to the targets in turn, in the order of the list. The default",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "RoundRobin"
+        ],
+        "description": "Selects the round robin load balancing: the targets are used one after the other",
+        "example": "RoundRobin"
+      }
+    },
+    "example": {
+      "type": "RoundRobin"
+    }
+  },
+  "LoadBalancingRandom": {
+    "description": "The `Random` load balancing: sends each request to a target chosen at random",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "Random"
+        ],
+        "description": "Selects the random load balancing: each request goes to a target picked at random",
+        "example": "Random"
+      }
+    },
+    "example": {
+      "type": "Random"
+    }
+  },
+  "LoadBalancingSticky": {
+    "description": "The `Sticky` load balancing: sends the requests of a client to the same target, chosen by consistent hashing of the otoroshi tracking id of the client (a cookie otoroshi sets)",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "Sticky"
+        ],
+        "description": "Selects the sticky load balancing: the requests of a client go to the same target, chosen from the otoroshi tracking id of the client",
+        "example": "Sticky"
+      }
+    },
+    "example": {
+      "type": "Sticky"
+    }
+  },
+  "LoadBalancingIpAddressHash": {
+    "description": "The `IpAddressHash` load balancing: sends the requests of a client ip address to the same target, chosen by consistent hashing of the ip address",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "IpAddressHash"
+        ],
+        "description": "Selects the load balancing on the ip address: the requests of a client ip address go to the same target",
+        "example": "IpAddressHash"
+      }
+    },
+    "example": {
+      "type": "IpAddressHash"
+    }
+  },
+  "LoadBalancingCookieHash": {
+    "description": "The `CookieHash` load balancing: sends the requests to the target chosen by consistent hashing of the value of a cookie, in turn when the request does not hold the cookie",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "CookieHash"
+        ],
+        "description": "Selects the load balancing on a cookie: the requests holding the same value of the `cookie_name` cookie go to the same target",
+        "example": "CookieHash"
+      },
+      "cookie_name": {
+        "type": "string",
+        "description": "The name of the cookie. Defaults to `session-id`",
+        "example": "session-id"
+      }
+    },
+    "example": {
+      "type": "CookieHash",
+      "cookie_name": "session-id"
+    }
+  },
+  "LoadBalancingQueryHash": {
+    "description": "The `QueryHash` load balancing: sends the requests to the target chosen by consistent hashing of the value of a query param, in turn when the request does not hold the query param",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "QueryHash"
+        ],
+        "description": "Selects the load balancing on a query param: the requests holding the same value of the `query_name` query param go to the same target",
+        "example": "QueryHash"
+      },
+      "query_name": {
+        "type": "string",
+        "description": "The name of the query param. Defaults to `session-id`",
+        "example": "tenant"
+      }
+    },
+    "example": {
+      "type": "QueryHash",
+      "query_name": "tenant"
+    }
+  },
+  "LoadBalancingHeaderHash": {
+    "description": "The `HeaderHash` load balancing: sends the requests to the target chosen by consistent hashing of the value of a header, in turn when the request does not hold the header",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "HeaderHash"
+        ],
+        "description": "Selects the load balancing on a header: the requests holding the same value of the `header_name` header go to the same target",
+        "example": "HeaderHash"
+      },
+      "header_name": {
+        "type": "string",
+        "description": "The name of the header. Defaults to `session-id`",
+        "example": "X-Tenant-Id"
+      }
+    },
+    "example": {
+      "type": "HeaderHash",
+      "header_name": "X-Tenant-Id"
+    }
+  },
+  "LoadBalancingBestResponseTime": {
+    "description": "The `BestResponseTime` load balancing: sends the requests to the target with the lowest average response time, the targets without a measure being tried first. The measures are kept by each otoroshi instance",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "BestResponseTime"
+        ],
+        "description": "Selects the load balancing on the response time: the requests go to the target answering the fastest on average",
+        "example": "BestResponseTime"
+      }
+    },
+    "example": {
+      "type": "BestResponseTime"
+    }
+  },
+  "LoadBalancingWeightedBestResponseTime": {
+    "description": "The `WeightedBestResponseTime` load balancing: sends a share of the requests to the target with the lowest average response time and the others to a random target. The measures are kept by each otoroshi instance",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "WeightedBestResponseTime"
+        ],
+        "description": "Selects the weighted load balancing on the response time: a `ratio` of the requests goes to the fastest target, the other ones to a random target",
+        "example": "WeightedBestResponseTime"
+      },
+      "ratio": {
+        "type": "number",
+        "format": "double",
+        "description": "The share of the requests sent to the fastest target, between `0.0` (random) and `0.99`. Defaults to `0.5`",
+        "example": 0.8
+      }
+    },
+    "example": {
+      "type": "WeightedBestResponseTime",
+      "ratio": 0.8
+    }
+  },
+  "LoadBalancingLeastConnections": {
+    "description": "The `LeastConnections` load balancing: sends the requests to the target with the fewest calls in progress on this otoroshi instance, in turn among the ties",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "LeastConnections"
+        ],
+        "description": "Selects the least connections load balancing: the requests go to the target with the fewest calls in progress",
+        "example": "LeastConnections"
+      }
+    },
+    "example": {
+      "type": "LeastConnections"
+    }
+  },
+  "LoadBalancingPowerOfTwoRandomChoices": {
+    "description": "The `PowerOfTwoRandomChoices` load balancing: picks two targets at random and sends the request to the one with the fewest calls in progress on this otoroshi instance",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "PowerOfTwoRandomChoices"
+        ],
+        "description": "Selects the power of two random choices load balancing: of two targets picked at random, the one with the fewer calls in progress gets the request",
+        "example": "PowerOfTwoRandomChoices"
+      }
+    },
+    "example": {
+      "type": "PowerOfTwoRandomChoices"
+    }
+  },
+  "LoadBalancingNaiveFailover": {
+    "description": "The `NaiveFailover` load balancing: sends the requests to the first target, each retry going to the next target of the list",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "NaiveFailover"
+        ],
+        "description": "Selects the failover load balancing: the requests go to the first target, the retries to the next ones in turn",
+        "example": "NaiveFailover"
+      }
+    },
+    "example": {
+      "type": "NaiveFailover"
+    }
+  },
+  "NgClientConfig": {
+    "description": "How otoroshi calls the targets of a backend: retries, timeouts, circuit breaker and http proxy. The durations are in milliseconds",
+    "type": "object",
+    "properties": {
+      "retries": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "description": "How many times a failed call is retried before giving up. Defaults to `1`",
+        "example": 3
+      },
+      "max_errors": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "description": "How many consecutive failed calls open the circuit breaker of a target, which then fails the calls without trying until `sample_interval` has elapsed. Defaults to `20`",
+        "example": 50
+      },
+      "retry_initial_delay": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "The delay before the first retry, in milliseconds. Defaults to `50`",
+        "example": 100
+      },
+      "backoff_factor": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "The factor the delay is multiplied by at each retry. Defaults to `2`",
+        "example": 2
+      },
+      "call_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long a call can last at most, the streaming of the response excluded, in milliseconds. A soft timeout enforced by the circuit breaker. Defaults to `30000`",
+        "example": 15000
+      },
+      "call_and_stream_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long a call can last at most, the streaming of the response included, in milliseconds. The connection is closed after it. Defaults to `120000`",
+        "example": 60000
+      },
+      "connection_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long connecting to the target can last at most, in milliseconds. Defaults to `10000`",
+        "example": 5000
+      },
+      "idle_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long a connection can stay idle at most, in milliseconds. Defaults to `60000`",
+        "example": 30000
+      },
+      "global_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long a call can last at most, its retries included, in milliseconds. Defaults to `30000`",
+        "example": 45000
+      },
+      "sample_interval": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long an open circuit breaker fails the calls before letting a call try the target again, in milliseconds. Defaults to `2000`",
+        "example": 5000
+      },
+      "proxy": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WSProxyServer"
+          }
+        ],
+        "description": "The http proxy the calls to the targets go through. An empty object when the calls do not use a proxy of their own (the proxy of the global configuration for the services is used then)"
+      },
+      "custom_timeouts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NgCustomTimeouts"
+        },
+        "description": "Timeouts replacing the ones above for some paths, the first one matching the path of the request applying"
+      },
+      "cache_connection_settings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgCacheConnectionSettings"
+          }
+        ],
+        "description": "The pool of connections kept open to each target"
+      }
+    },
+    "example": {
+      "retries": 3,
+      "max_errors": 50,
+      "retry_initial_delay": 100,
+      "backoff_factor": 2,
+      "call_timeout": 15000,
+      "call_and_stream_timeout": 60000,
+      "connection_timeout": 5000,
+      "idle_timeout": 30000,
+      "global_timeout": 45000,
+      "sample_interval": 5000,
+      "proxy": {
+        "host": "proxy.oto.tools",
+        "port": 3128,
+        "protocol": "http",
+        "principal": "otoroshi",
+        "password": "secret",
+        "ntlmDomain": null,
+        "encoding": null,
+        "nonProxyHosts": [
+          "*.internal.oto.tools"
+        ]
+      },
+      "custom_timeouts": [
+        {
+          "path": "/api/users/_export*",
+          "call_timeout": 120000,
+          "call_and_stream_timeout": 300000,
+          "connection_timeout": 5000,
+          "idle_timeout": 120000,
+          "global_timeout": 120000
+        }
+      ],
+      "cache_connection_settings": {
+        "enabled": true,
+        "queue_size": 4096
+      }
+    }
+  },
+  "NgCustomTimeouts": {
+    "description": "Timeouts applying to the requests whose path matches a pattern, instead of the timeouts of the client. The durations are in milliseconds",
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "The pattern the path of the request must match, `*` being a wildcard. Defaults to `*`",
+        "example": "/api/users/_export*"
+      },
+      "call_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long a call can last at most, the streaming of the response excluded, in milliseconds. Defaults to `30000`",
+        "example": 120000
+      },
+      "call_and_stream_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long a call can last at most, the streaming of the response included, in milliseconds. Defaults to `3600000`",
+        "example": 300000
+      },
+      "connection_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long connecting to the target can last at most, in milliseconds. Defaults to `10000`",
+        "example": 5000
+      },
+      "idle_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long a connection can stay idle at most, in milliseconds. Defaults to `60000`",
+        "example": 120000
+      },
+      "global_timeout": {
+        "type": "integer",
+        "format": "int64",
+        "minimum": 0,
+        "description": "How long a call can last at most, its retries included, in milliseconds. Defaults to `30000`",
+        "example": 120000
+      }
+    },
+    "example": {
+      "path": "/api/users/_export*",
+      "call_timeout": 120000,
+      "call_and_stream_timeout": 300000,
+      "connection_timeout": 5000,
+      "idle_timeout": 120000,
+      "global_timeout": 120000
+    }
+  },
+  "NgCacheConnectionSettings": {
+    "description": "The pool of connections the pekko http client keeps open to each target: the requests wait in a queue for a connection of the pool instead of opening their own",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the requests go through the pool of connections. Defaults to `false`"
+      },
+      "queue_size": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "description": "How many requests can wait for a connection, the requests beyond being dropped. Defaults to `2048`",
+        "example": 4096
+      }
+    },
+    "example": {
+      "enabled": true,
+      "queue_size": 4096
+    }
+  },
+  "NgBackend": {
+    "description": "Where the requests of a route are forwarded: the targets, how one is chosen, how otoroshi calls them and checks their health. A `url` key (or `target`, `target_url`) holding a full url is read too: it replaces `targets` by the single target of the url, and `root` by its path",
+    "type": "object",
+    "properties": {
+      "targets": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NgTarget"
+        },
+        "description": "The servers the requests are forwarded to"
+      },
+      "root": {
+        "type": "string",
+        "description": "The path prepended to the path of the forwarded requests. Defaults to `/`",
+        "example": "/api/users"
+      },
+      "rewrite": {
+        "type": "boolean",
+        "description": "Whether the path of the forwarded requests is `root` alone, instead of `root` followed by the path of the request. `root` can then use the expression language, like `/users/${req.pathparams.id}` with the named path params of the frontend. Defaults to `false`"
+      },
+      "load_balancing": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/LoadBalancing"
+          }
+        ],
+        "description": "How a target is chosen for each request. Defaults to round robin"
+      },
+      "client": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgClientConfig"
+          }
+        ],
+        "description": "How otoroshi calls the targets: retries, timeouts, circuit breaker, http proxy"
+      },
+      "health_check": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/HealthCheck"
+          }
+        ],
+        "description": "How otoroshi checks the health of the targets. Null when their health is not checked",
+        "nullable": true
+      }
+    },
+    "example": {
+      "targets": [
+        {
+          "id": "users-service-1",
+          "hostname": "users-1.internal.oto.tools",
+          "port": 8443,
+          "tls": true,
+          "weight": 2,
+          "backup": false,
+          "predicate": {
+            "type": "AlwaysMatch"
+          },
+          "protocol": "HTTP/2.0",
+          "ip_address": "10.0.12.21",
+          "tls_config": {
+            "certs": [
+              "otoroshi-client-cert"
+            ],
+            "trusted_certs": [
+              "users-service-ca"
+            ],
+            "enabled": true,
+            "loose": false,
+            "trust_all": false
+          }
+        }
+      ],
+      "root": "/api/users",
+      "rewrite": false,
+      "load_balancing": {
+        "type": "WeightedBestResponseTime",
+        "ratio": 0.8
+      },
+      "client": {
+        "retries": 3,
+        "max_errors": 50,
+        "retry_initial_delay": 100,
+        "backoff_factor": 2,
+        "call_timeout": 15000,
+        "call_and_stream_timeout": 60000,
+        "connection_timeout": 5000,
+        "idle_timeout": 30000,
+        "global_timeout": 45000,
+        "sample_interval": 5000,
+        "proxy": {
+          "host": "proxy.oto.tools",
+          "port": 3128,
+          "protocol": "http",
+          "principal": "otoroshi",
+          "password": "secret",
+          "ntlmDomain": null,
+          "encoding": null,
+          "nonProxyHosts": [
+            "*.internal.oto.tools"
+          ]
+        },
+        "custom_timeouts": [
+          {
+            "path": "/api/users/_export*",
+            "call_timeout": 120000,
+            "call_and_stream_timeout": 300000,
+            "connection_timeout": 5000,
+            "idle_timeout": 120000,
+            "global_timeout": 120000
+          }
+        ],
+        "cache_connection_settings": {
+          "enabled": true,
+          "queue_size": 4096
+        }
+      },
+      "health_check": {
+        "enabled": true,
+        "url": "/health",
+        "timeout": 2000,
+        "healthyStatuses": [
+          200
+        ],
+        "unhealthyStatuses": [
+          500,
+          502,
+          503
+        ],
+        "blockOnRed": true,
+        "logicCheck": false,
+        "healthyRegexChecks": [
+          "\"status\"\\s*:\\s*\"UP\""
+        ],
+        "unhealthyRegexChecks": []
+      }
+    }
+  },
+  "HealthCheck": {
+    "description": "How otoroshi checks the health of the targets of a backend: it calls a path of each target periodically, and the answer gives the health of the target, sent as a `HealthCheckEvent`: green, yellow when the logic check fails, red, or black when the target cannot be reached. A target that cannot be reached is left out of the load balancing until a check reaches it again",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the health of the targets is checked. Defaults to `false`"
+      },
+      "url": {
+        "type": "string",
+        "description": "The path called on each target, appended to its scheme, host and port",
+        "example": "/health"
+      },
+      "timeout": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "description": "How long the call can last at most, in milliseconds. Defaults to `5000`",
+        "example": 2000
+      },
+      "healthyStatuses": {
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "format": "int32",
+          "description": "An http status",
+          "example": 200
+        },
+        "description": "The statuses of a healthy target. When this list or `unhealthyStatuses` is not empty, a status in neither list is unhealthy. Both empty: a status from 200 to 499 is healthy",
+        "example": [
+          200
+        ]
+      },
+      "unhealthyStatuses": {
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "format": "int32",
+          "description": "An http status",
+          "example": 503
+        },
+        "description": "The statuses of an unhealthy target, checked before `healthyStatuses`",
+        "example": [
+          500,
+          502,
+          503
+        ]
+      },
+      "blockOnRed": {
+        "type": "boolean",
+        "description": "Whether a target found red is flagged as unhealthy in the datastore, for the time to live of the health checks, as an unreachable target is. Defaults to `false`"
+      },
+      "logicCheck": {
+        "type": "boolean",
+        "description": "Whether the call holds an `Otoroshi-Health-Check-Logic-Test` header with a number, the target having to answer that number plus 42 in the `Otoroshi-Health-Check-Logic-Test-Result` header to be green instead of yellow. Defaults to `true` when missing"
+      },
+      "healthyRegexChecks": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A regex",
+          "example": "\"status\"\\s*:\\s*\"UP\""
+        },
+        "description": "Regexes looked for in a textual body: when not empty, the body must hold one of them for the target to be healthy",
+        "example": [
+          "\"status\"\\s*:\\s*\"UP\""
+        ]
+      },
+      "unhealthyRegexChecks": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A regex",
+          "example": "\"status\"\\s*:\\s*\"DOWN\""
+        },
+        "description": "Regexes looked for in a textual body: a body holding one of them makes the target unhealthy",
+        "example": [
+          "\"status\"\\s*:\\s*\"DOWN\""
+        ]
+      }
+    },
+    "example": {
+      "enabled": true,
+      "url": "/health",
+      "timeout": 2000,
+      "healthyStatuses": [
+        200
+      ],
+      "unhealthyStatuses": [
+        500,
+        502,
+        503
+      ],
+      "blockOnRed": true,
+      "logicCheck": false,
+      "healthyRegexChecks": [
+        "\"status\"\\s*:\\s*\"UP\""
+      ],
+      "unhealthyRegexChecks": []
+    }
+  },
+  "NgTarget": {
+    "description": "A server a backend forwards requests to",
+    "type": "object",
+    "required": [
+      "hostname",
+      "port"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the target, unique in its backend. Defaults to the url of the target",
+        "example": "users-service-1"
+      },
+      "hostname": {
+        "type": "string",
+        "description": "The host name of the target, without scheme nor port",
+        "example": "users-1.internal.oto.tools"
+      },
+      "port": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "description": "The port the requests are sent to on the target, usually `443` when `tls` is true and `80` otherwise. Required",
+        "example": 8443
+      },
+      "tls": {
+        "type": "boolean",
+        "description": "Whether the target is called over https. Defaults to `false`"
+      },
+      "weight": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "description": "The weight of the target in the load balancing: a target of weight 2 gets twice the requests of a target of weight 1. Defaults to `1`",
+        "example": 2
+      },
+      "backup": {
+        "type": "boolean",
+        "description": "Whether the target is a backup target, only receiving the requests when no primary target is available (unhealthy, circuit breaker open or predicate not matching), and the retries once every primary target has been tried. Defaults to `false`"
+      },
+      "predicate": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TargetPredicate"
+          }
+        ],
+        "description": "Which requests the target can serve. Defaults to any request"
+      },
+      "protocol": {
+        "type": "string",
+        "enum": [
+          "HTTP/1.0",
+          "HTTP/1.1",
+          "HTTP/2.0",
+          "HTTP/3.0"
+        ],
+        "description": "The http protocol used to call the target. Defaults to `HTTP/1.1`",
+        "example": "HTTP/2.0"
+      },
+      "ip_address": {
+        "type": "string",
+        "nullable": true,
+        "description": "The ip address the calls are made to, instead of the resolution of `hostname`, which is still used for tls (sni and certificate check). Null to resolve `hostname`",
+        "example": "10.0.12.21"
+      },
+      "tls_config": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NgTlsConfig"
+          }
+        ],
+        "description": "The tls settings of the calls to the target"
+      }
+    },
+    "example": {
+      "id": "users-service-1",
+      "hostname": "users-1.internal.oto.tools",
+      "port": 8443,
+      "tls": true,
+      "weight": 2,
+      "backup": false,
+      "predicate": {
+        "type": "AlwaysMatch"
+      },
+      "protocol": "HTTP/2.0",
+      "ip_address": "10.0.12.21",
+      "tls_config": {
+        "certs": [
+          "otoroshi-client-cert"
+        ],
+        "trusted_certs": [
+          "users-service-ca"
+        ],
+        "enabled": true,
+        "loose": false,
+        "trust_all": false
+      }
+    }
+  }
+}

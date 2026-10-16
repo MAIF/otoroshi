@@ -1,0 +1,381 @@
+{
+  "OtoroshiExport": {
+    "type": "object",
+    "description": "The whole state of an otoroshi as json: its global configuration and every entity, grouped by kind. The import reads every group as optional (an absent group imports nothing of its kind, an absent `config` the default global configuration) and ignores `label`, `dateRaw`, `date` and `stats`",
+    "properties": {
+      "label": {
+        "type": "string",
+        "description": "Always `Otoroshi export`",
+        "example": "Otoroshi export"
+      },
+      "dateRaw": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the export was made, a timestamp in milliseconds",
+        "example": 1792094628000
+      },
+      "date": {
+        "type": "string",
+        "description": "When the export was made, as `yyyy-MM-dd hh:mm:ss` (a 12 hours clock, without am or pm)",
+        "example": "2026-10-15 10:03:48"
+      },
+      "stats": {
+        "type": "object",
+        "description": "The traffic otoroshi handled since its datastore was created",
+        "properties": {
+          "calls": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The number of calls otoroshi has handled, a global counter of its datastore",
+            "example": 360087
+          },
+          "dataIn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The number of bytes otoroshi has received in the calls it handled, a global counter of its datastore",
+            "example": 11280598
+          },
+          "dataOut": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The number of bytes otoroshi has sent in the calls it handled, a global counter of its datastore",
+            "example": 162326308
+          }
+        },
+        "example": {
+          "calls": 360087,
+          "dataIn": 11280598,
+          "dataOut": 162326308
+        }
+      },
+      "config": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/config.otoroshi.io.GlobalConfig"
+          }
+        ],
+        "description": "The global configuration of otoroshi (`config.otoroshi.io/GlobalConfig`). The import saves the default one when it is missing"
+      },
+      "admins": {
+        "type": "array",
+        "description": "The admins who log in with webauthn",
+        "items": {
+          "type": "object",
+          "description": "An admin who logs in with webauthn: its username, password hash, webauthn credentials, rights and metadata",
+          "additionalProperties": true
+        }
+      },
+      "simpleAdmins": {
+        "type": "array",
+        "description": "The admins who log in with a username and a password",
+        "items": {
+          "$ref": "#/components/schemas/security.otoroshi.io.SimpleAdminUser"
+        }
+      },
+      "serviceGroups": {
+        "type": "array",
+        "description": "Every service group (`organize.otoroshi.io/ServiceGroup` entities)",
+        "items": {
+          "$ref": "#/components/schemas/organize.otoroshi.io.ServiceGroup"
+        }
+      },
+      "apiKeys": {
+        "type": "array",
+        "description": "Every api key (`apim.otoroshi.io/Apikey` entities), with its client secret",
+        "items": {
+          "$ref": "#/components/schemas/apim.otoroshi.io.Apikey"
+        }
+      },
+      "serviceDescriptors": {
+        "type": "array",
+        "writeOnly": true,
+        "description": "Service descriptors of an export made before otoroshi 18: the import converts each one into a route. Never written by the export",
+        "items": {
+          "type": "object",
+          "description": "A service descriptor",
+          "additionalProperties": true
+        }
+      },
+      "errorTemplates": {
+        "type": "array",
+        "description": "Every error template (`proxy.otoroshi.io/ErrorTemplate` entities), the custom error pages of the routes",
+        "items": {
+          "$ref": "#/components/schemas/proxy.otoroshi.io.ErrorTemplate"
+        }
+      },
+      "jwtVerifiers": {
+        "type": "array",
+        "description": "Every jwt verifier (`security.otoroshi.io/JwtVerifier` entities)",
+        "items": {
+          "$ref": "#/components/schemas/security.otoroshi.io.JwtVerifier"
+        }
+      },
+      "authConfigs": {
+        "type": "array",
+        "description": "Every auth module (`security.otoroshi.io/AuthModule` entities)",
+        "items": {
+          "$ref": "#/components/schemas/security.otoroshi.io.AuthModule"
+        }
+      },
+      "certificates": {
+        "type": "array",
+        "description": "Every certificate (`pki.otoroshi.io/Certificate` entities), with its private key",
+        "items": {
+          "$ref": "#/components/schemas/pki.otoroshi.io.Certificate"
+        }
+      },
+      "clientValidators": {
+        "type": "array",
+        "description": "The client certificate validators (legacy)",
+        "items": {
+          "type": "object",
+          "description": "A client certificate validator",
+          "additionalProperties": true
+        }
+      },
+      "scripts": {
+        "type": "array",
+        "description": "Every script (`plugins.otoroshi.io/Script` entities): the legacy plugins otoroshi compiles",
+        "items": {
+          "type": "object",
+          "description": "A script",
+          "additionalProperties": true
+        }
+      },
+      "tcpServices": {
+        "type": "array",
+        "description": "Every tcp service (`proxy.otoroshi.io/TcpService` entities)",
+        "items": {
+          "$ref": "#/components/schemas/proxy.otoroshi.io.TcpService"
+        }
+      },
+      "dataExporters": {
+        "type": "array",
+        "description": "Every data exporter (`events.otoroshi.io/DataExporter` entities)",
+        "items": {
+          "$ref": "#/components/schemas/events.otoroshi.io.DataExporter"
+        }
+      },
+      "tenants": {
+        "type": "array",
+        "description": "Every tenant, or organization (`organize.otoroshi.io/Tenant` entities)",
+        "items": {
+          "$ref": "#/components/schemas/organize.otoroshi.io.Tenant"
+        }
+      },
+      "teams": {
+        "type": "array",
+        "description": "Every team (`organize.otoroshi.io/Team` entities)",
+        "items": {
+          "$ref": "#/components/schemas/organize.otoroshi.io.Team"
+        }
+      },
+      "routes": {
+        "type": "array",
+        "description": "Every route (`proxy.otoroshi.io/Route` entities)",
+        "items": {
+          "$ref": "#/components/schemas/proxy.otoroshi.io.Route"
+        }
+      },
+      "routeCompositions": {
+        "type": "array",
+        "description": "Every route composition (`proxy.otoroshi.io/RouteComposition` entities)",
+        "items": {
+          "$ref": "#/components/schemas/proxy.otoroshi.io.RouteComposition"
+        }
+      },
+      "backends": {
+        "type": "array",
+        "description": "Every stored backend (`proxy.otoroshi.io/Backend` entities), the backends the routes can reference by id",
+        "items": {
+          "$ref": "#/components/schemas/proxy.otoroshi.io.Backend"
+        }
+      },
+      "wasmPlugins": {
+        "type": "array",
+        "description": "Every wasm plugin (`plugins.otoroshi.io/WasmPlugin` entities)",
+        "items": {
+          "type": "object",
+          "description": "A wasm plugin",
+          "additionalProperties": true
+        }
+      },
+      "drafts": {
+        "type": "array",
+        "description": "Every draft (`proxy.otoroshi.io/Draft` entities): the versions of the entities edited in the backoffice and not published yet",
+        "items": {
+          "$ref": "#/components/schemas/proxy.otoroshi.io.Draft"
+        }
+      },
+      "apis": {
+        "type": "array",
+        "description": "Every api (`apis.otoroshi.io/Api` entities)",
+        "items": {
+          "$ref": "#/components/schemas/apis.otoroshi.io.Api"
+        }
+      },
+      "apiSubscriptions": {
+        "type": "array",
+        "description": "Every subscription to an api (`apis.otoroshi.io/ApiSubscription` entities)",
+        "items": {
+          "$ref": "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+        }
+      },
+      "extensions": {
+        "type": "object",
+        "description": "The entities of the admin extensions, by id of extension",
+        "additionalProperties": {
+          "type": "object",
+          "description": "The entities of an admin extension, by kind of entity",
+          "additionalProperties": {
+            "type": "array",
+            "description": "The entities of a kind",
+            "items": {
+              "type": "object",
+              "description": "An entity of the admin extension",
+              "additionalProperties": true
+            }
+          }
+        },
+        "example": {}
+      }
+    },
+    "example": {
+      "label": "Otoroshi export",
+      "dateRaw": 1792094628000,
+      "date": "2026-10-15 10:03:48",
+      "stats": {
+        "calls": 360087,
+        "dataIn": 11280598,
+        "dataOut": 162326308
+      },
+      "admins": [],
+      "simpleAdmins": [],
+      "serviceGroups": [
+        {
+          "_loc": {
+            "tenant": "default",
+            "teams": [
+              "default"
+            ]
+          },
+          "id": "admin-api-group",
+          "name": "Otoroshi Admin Api group",
+          "description": "No description",
+          "tags": [],
+          "metadata": {}
+        }
+      ],
+      "apiKeys": [
+        {
+          "_loc": {
+            "tenant": "default",
+            "teams": [
+              "default"
+            ]
+          },
+          "clientId": "admin-api-apikey-id",
+          "clientSecret": "admin-api-apikey-secret",
+          "clientName": "Otoroshi Backoffice ApiKey",
+          "description": "The apikey used by the Otoroshi UI",
+          "authorizedEntities": [
+            "group_admin-api-group"
+          ],
+          "enabled": true,
+          "readOnly": false,
+          "allowClientIdOnly": false,
+          "throttlingQuota": 10000,
+          "dailyQuota": 10000000,
+          "monthlyQuota": 10000000,
+          "tags": [],
+          "metadata": {}
+        }
+      ],
+      "errorTemplates": [],
+      "jwtVerifiers": [],
+      "authConfigs": [],
+      "certificates": [],
+      "clientValidators": [],
+      "scripts": [],
+      "tcpServices": [],
+      "dataExporters": [],
+      "tenants": [],
+      "teams": [],
+      "routes": [],
+      "routeCompositions": [],
+      "backends": [],
+      "wasmPlugins": [],
+      "drafts": [],
+      "apis": [],
+      "apiSubscriptions": [],
+      "extensions": {}
+    }
+  },
+  "StorageExportLine": {
+    "type": "object",
+    "description": "A key of the datastore of otoroshi, with its value, its type and its expiration: a line of the ndjson export of the datastore and of the state of the cluster",
+    "required": [
+      "k",
+      "v",
+      "t",
+      "w"
+    ],
+    "properties": {
+      "k": {
+        "type": "string",
+        "description": "The key in the datastore, prefixed by the storage root of otoroshi (`otoroshi` by default)",
+        "example": "otoroshi:sgroup:admin-api-group"
+      },
+      "v": {
+        "description": "The value of the key: a string for a `string` key (a counter included), an object of strings for a `hash`, an array of strings for a `list` or a `set`",
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "The value of a `string` key"
+          },
+          {
+            "type": "object",
+            "description": "The fields of a `hash` key",
+            "additionalProperties": {
+              "type": "string",
+              "description": "The value of a field"
+            }
+          },
+          {
+            "type": "array",
+            "description": "The items of a `list` or a `set` key",
+            "items": {
+              "type": "string",
+              "description": "An item"
+            }
+          }
+        ],
+        "example": "{\"id\":\"admin-api-group\",\"name\":\"Otoroshi Admin Api group\"}"
+      },
+      "t": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the key expires, a timestamp in milliseconds, -1 when it never expires",
+        "example": -1
+      },
+      "w": {
+        "type": "string",
+        "description": "The type of the key. `counter` (a number) is only read by the import, the export writing counters as `string`",
+        "enum": [
+          "string",
+          "hash",
+          "list",
+          "set",
+          "counter"
+        ],
+        "example": "string"
+      }
+    },
+    "example": {
+      "k": "otoroshi:sgroup:admin-api-group",
+      "v": "{\"id\":\"admin-api-group\",\"name\":\"Otoroshi Admin Api group\"}",
+      "t": -1,
+      "w": "string"
+    }
+  }
+}

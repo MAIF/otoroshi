@@ -1,0 +1,178 @@
+{
+  "http-listeners.proxy.otoroshi.io.HttpListener": {
+    "description": "An http listener: an additional http server started by otoroshi on its own port, with its own protocols and tls settings, that routes the traffic like the standard listener. A route can be bound to some listeners through its `bound_listeners`. The server is started when the listener is created, restarted when it changes, stopped when it is disabled or deleted",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description",
+      "config"
+    ],
+    "properties": {
+      "_loc": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityLocation"
+          }
+        ],
+        "description": "The tenant (organization) and the teams the http listener belongs to. The default tenant and team when absent"
+      },
+      "id": {
+        "type": "string",
+        "description": "The unique id of the http listener, the one routes name in their `bound_listeners`",
+        "example": "http-listener_c1021c93-cbc3-49a3-88da-f76741619ab8"
+      },
+      "name": {
+        "type": "string",
+        "description": "The display name of the http listener, shown and searched in the list of the http listeners of the backoffice",
+        "example": "Private h2 listener"
+      },
+      "description": {
+        "type": "string",
+        "description": "A free text describing what the http listener is for, shown in its form of the backoffice",
+        "example": "An exclusive h2 listener for the internal grpc services"
+      },
+      "config": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/HttpListenerConfig"
+          }
+        ],
+        "description": "The settings of the server of the listener"
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Free key/value metadata of the http listener, with string values. The admin api stores the date of the last write of the entity under `created_at` or `updated_at`",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of a metadata"
+        },
+        "example": {
+          "owner": "platform-team"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the http listener, to sort and search the listeners",
+        "items": {
+          "type": "string",
+          "description": "A tag"
+        },
+        "example": [
+          "internal"
+        ]
+      }
+    },
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "http-listener_c1021c93-cbc3-49a3-88da-f76741619ab8",
+      "name": "Private h2 listener",
+      "description": "An exclusive h2 listener for the internal grpc services",
+      "config": {
+        "enabled": true,
+        "exclusive": true,
+        "tls": true,
+        "http1": false,
+        "http2": true,
+        "h2c": false,
+        "http3": false,
+        "port": 7892,
+        "exposedPort": 7892,
+        "host": "0.0.0.0",
+        "accessLog": true,
+        "clientAuth": "Need"
+      },
+      "metadata": {
+        "owner": "platform-team"
+      },
+      "tags": [
+        "internal"
+      ]
+    }
+  },
+  "HttpListenerConfig": {
+    "description": "The settings of the http server of an http listener: the port and interface it binds to, the protocols it speaks and its tls settings",
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the server of the listener runs, false when absent"
+      },
+      "exclusive": {
+        "type": "boolean",
+        "description": "Whether the listener only serves the routes bound to it through their `bound_listeners`. A listener that is not exclusive also serves the routes bound to no listener. False when absent"
+      },
+      "tls": {
+        "type": "boolean",
+        "description": "Whether the listener speaks https, with the certificates of otoroshi, instead of plain http. True when absent"
+      },
+      "http1": {
+        "type": "boolean",
+        "description": "Whether the listener speaks http/1.1, true when absent"
+      },
+      "http2": {
+        "type": "boolean",
+        "description": "Whether the listener speaks http/2 over tls (negotiated with alpn), true when absent"
+      },
+      "h2c": {
+        "type": "boolean",
+        "description": "Whether the listener speaks http/2 in clear text, without tls, false when absent"
+      },
+      "http3": {
+        "type": "boolean",
+        "description": "Whether the listener speaks http/3 (quic), on an udp socket of the same port. Only with `tls`. False when absent"
+      },
+      "port": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The port the listener binds to, 7890 when absent",
+        "example": 7890
+      },
+      "exposedPort": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The port the clients reach the listener on, when it differs from `port` (behind a load balancer, a proxy or a container port mapping). `port` when absent",
+        "example": 443
+      },
+      "host": {
+        "type": "string",
+        "description": "The network interface the listener binds to, `0.0.0.0` (every interface) when absent",
+        "example": "0.0.0.0"
+      },
+      "accessLog": {
+        "type": "boolean",
+        "description": "Whether the listener writes an access log of the calls it serves, false when absent"
+      },
+      "clientAuth": {
+        "type": "string",
+        "description": "Whether the tls handshake asks the client for a certificate (mtls): `None` never, `Want` asks for an optional one, `Need` requires one, `Dynamic` follows the client auth of the tls settings of the global configuration. Read without case, `None` when absent or unknown",
+        "enum": [
+          "None",
+          "Want",
+          "Need",
+          "Dynamic"
+        ],
+        "example": "Need"
+      }
+    },
+    "example": {
+      "enabled": true,
+      "exclusive": false,
+      "tls": true,
+      "http1": true,
+      "http2": true,
+      "h2c": false,
+      "http3": true,
+      "port": 8443,
+      "exposedPort": 443,
+      "host": "0.0.0.0",
+      "accessLog": false,
+      "clientAuth": "None"
+    }
+  }
+}

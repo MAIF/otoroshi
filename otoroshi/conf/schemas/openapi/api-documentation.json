@@ -1,0 +1,461 @@
+{
+  "OpenApiDocument": {
+    "type": "object",
+    "description": "An openapi 3.0.3 document that describes the admin api of otoroshi",
+    "properties": {
+      "openapi": {
+        "type": "string",
+        "description": "The version of the openapi specification the document follows",
+        "example": "3.0.3"
+      },
+      "info": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The title and the description of the api, its version (the version of otoroshi, or the `version` asked for), its contact and its license",
+        "example": {
+          "title": "Otoroshi Admin API",
+          "description": "Admin API of the Otoroshi reverse proxy",
+          "version": "18.0.0",
+          "contact": {
+            "name": "Otoroshi Team",
+            "email": "oss@maif.fr"
+          },
+          "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+          }
+        }
+      },
+      "externalDocs": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Where to find the documentation of otoroshi",
+        "example": {
+          "url": "https://www.otoroshi.io",
+          "description": "Otoroshi website"
+        }
+      },
+      "servers": {
+        "type": "array",
+        "description": "The admin api of this otoroshi, as it is exposed",
+        "items": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "A server: its `url` and its `description`"
+        },
+        "example": [
+          {
+            "url": "http://otoroshi-api.oto.tools:8080",
+            "description": "your local otoroshi server"
+          }
+        ]
+      },
+      "tags": {
+        "type": "array",
+        "description": "The tags the operations list in their `tags`: one per kind of entity (its singular name), one per group of entities, and one per family of the other operations of the admin api",
+        "items": {
+          "type": "object",
+          "description": "A tag",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the tag, as the operations list it in their `tags`",
+              "example": "route"
+            },
+            "description": {
+              "type": "string",
+              "description": "What the operations of the tag are about",
+              "example": "Create, read, update and delete the routes (proxy.otoroshi.io/Route)"
+            }
+          }
+        },
+        "example": [
+          {
+            "name": "route",
+            "description": "Create, read, update and delete the routes (proxy.otoroshi.io/Route)"
+          }
+        ]
+      },
+      "paths": {
+        "type": "object",
+        "description": "The operations of the api, by path",
+        "additionalProperties": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "The operations of a path, by http method"
+        }
+      },
+      "components": {
+        "type": "object",
+        "description": "The schemas the operations use, and how to authenticate",
+        "properties": {
+          "schemas": {
+            "type": "object",
+            "description": "The schemas, by name",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "A schema"
+            }
+          },
+          "securitySchemes": {
+            "type": "object",
+            "description": "How to authenticate, by name of scheme",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "A security scheme"
+            }
+          }
+        }
+      }
+    },
+    "example": {
+      "openapi": "3.0.3",
+      "info": {
+        "title": "Otoroshi Admin API",
+        "description": "Admin API of the Otoroshi reverse proxy",
+        "version": "18.0.0"
+      },
+      "servers": [
+        {
+          "url": "http://otoroshi-api.oto.tools:8080",
+          "description": "your local otoroshi server"
+        }
+      ],
+      "tags": [
+        {
+          "name": "route",
+          "description": "Create, read, update and delete the routes (proxy.otoroshi.io/Route)"
+        }
+      ],
+      "paths": {},
+      "components": {
+        "schemas": {},
+        "securitySchemes": {
+          "otoroshi_auth": {
+            "type": "http",
+            "scheme": "basic"
+          }
+        }
+      }
+    }
+  },
+  "WorkflowDescriptor": {
+    "type": "object",
+    "description": "What the workflows of otoroshi can use: the nodes, grouped in categories, the functions and the operators",
+    "properties": {
+      "categories": {
+        "type": "array",
+        "description": "The categories the workflow editor groups the nodes, the functions and the operators in",
+        "items": {
+          "$ref": "#/components/schemas/NodeCategory"
+        }
+      },
+      "nodes": {
+        "type": "array",
+        "description": "The nodes a workflow is made of",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowItemDocumentation"
+        }
+      },
+      "functions": {
+        "type": "array",
+        "description": "The functions a `call` node can run",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowItemDocumentation"
+        }
+      },
+      "operators": {
+        "type": "array",
+        "description": "The operators that compute values in the expressions of a workflow",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowItemDocumentation"
+        }
+      }
+    },
+    "example": {
+      "categories": [
+        {
+          "id": "core",
+          "name": "Core",
+          "description": "Run code, make HTTP requests, etc",
+          "nodes": [
+            "workflow",
+            "call",
+            "assign"
+          ]
+        }
+      ],
+      "nodes": [
+        {
+          "name": "call",
+          "display_name": "Call",
+          "icon": "fas fa-code",
+          "description": "This node calls a function an returns its result",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "function": {
+                "type": "string"
+              }
+            }
+          },
+          "form_schema": null,
+          "category": "core",
+          "example": {
+            "kind": "call",
+            "function": "core.log",
+            "args": {
+              "message": "hello"
+            }
+          }
+        }
+      ],
+      "functions": [],
+      "operators": []
+    }
+  },
+  "NodeCategory": {
+    "type": "object",
+    "description": "A category of nodes of the workflows",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the category, like `core`, `flow`, `transformations` or `functions`",
+        "example": "core"
+      },
+      "name": {
+        "type": "string",
+        "description": "The readable name of the category, like `JSON Transformations`",
+        "example": "Core"
+      },
+      "description": {
+        "type": "string",
+        "description": "What the nodes of the category do",
+        "example": "Run code, make HTTP requests, etc"
+      },
+      "nodes": {
+        "type": "array",
+        "description": "The names of the nodes, or of the operators, the category groups. Empty when the category lists none, like `functions`: the functions carry `functions` as their `category` instead",
+        "items": {
+          "type": "string",
+          "description": "The name of a node"
+        },
+        "example": [
+          "workflow",
+          "call",
+          "assign"
+        ]
+      }
+    },
+    "example": {
+      "id": "core",
+      "name": "Core",
+      "description": "Run code, make HTTP requests, etc",
+      "nodes": [
+        "workflow",
+        "call",
+        "assign"
+      ]
+    }
+  },
+  "WorkflowItemDocumentation": {
+    "type": "object",
+    "description": "The documentation of a node, a function or an operator of the workflows",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name to use in a workflow: the `kind` of a node, the `function` of a call, the key of an operator",
+        "example": "core.http_client"
+      },
+      "display_name": {
+        "type": "string",
+        "description": "The readable name the workflow editor shows, the `name` when none is declared",
+        "example": "HTTP client"
+      },
+      "icon": {
+        "type": "string",
+        "description": "The font awesome classes of the icon the workflow editor shows",
+        "example": "fas fa-network-wired"
+      },
+      "description": {
+        "type": "string",
+        "description": "What it does, `no description` when it has none",
+        "example": "This function makes a HTTP request"
+      },
+      "schema": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "The json schema of what it takes as input, `null` when it does not say",
+        "example": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "form_schema": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "The form the workflow editor uses to edit its input, `null` when it has none"
+      },
+      "category": {
+        "type": "string",
+        "nullable": true,
+        "description": "Its category: the one it declares, `functions` or `operators` by default for a function or an operator, `null` for a node that declares none",
+        "example": "functions"
+      },
+      "example": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "An example of its use in a workflow, `null` when it has none"
+      }
+    },
+    "example": {
+      "name": "core.http_client",
+      "display_name": "HTTP client",
+      "icon": "fas fa-network-wired",
+      "description": "This function makes a HTTP request",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "form_schema": null,
+      "category": "functions",
+      "example": {
+        "kind": "call",
+        "function": "core.http_client",
+        "args": {
+          "url": "https://www.otoroshi.io"
+        }
+      }
+    }
+  },
+  "ApiResources": {
+    "type": "object",
+    "description": "The kinds of entities the generic api serves",
+    "properties": {
+      "version": {
+        "type": "string",
+        "description": "The version of the otoroshi instance that answers, like `18.0.0`",
+        "example": "18.0.0"
+      },
+      "resources": {
+        "type": "array",
+        "description": "The kinds of entities, the ones of the admin extensions included",
+        "items": {
+          "$ref": "#/components/schemas/Resource"
+        }
+      }
+    },
+    "example": {
+      "version": "18.0.0",
+      "resources": [
+        {
+          "kind": "Route",
+          "plural_name": "routes",
+          "singular_name": "route",
+          "group": "proxy.otoroshi.io",
+          "version": {
+            "name": "v1",
+            "served": true,
+            "deprecated": false,
+            "storage": true,
+            "schema": null
+          }
+        }
+      ]
+    }
+  },
+  "Resource": {
+    "type": "object",
+    "description": "A kind of entity the generic api serves on `/apis/<group>/<version>/<plural_name>`",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "description": "The name of the kind, in PascalCase. It is accepted instead of `plural_name` in the paths, and, prefixed by the group (`<group>/<kind>`), it is the `kind` of the entities in the ndjson answers of the generic api and in the remote catalogs",
+        "example": "Route"
+      },
+      "plural_name": {
+        "type": "string",
+        "description": "The name of the entities in the paths of the api",
+        "example": "routes"
+      },
+      "singular_name": {
+        "type": "string",
+        "description": "The name of one entity of the kind: the tag of its operations in the openapi document, and the prefix of the ids the generic api generates for its entities",
+        "example": "route"
+      },
+      "group": {
+        "type": "string",
+        "description": "The api group of the kind, the segment of its paths after `/apis/`",
+        "example": "proxy.otoroshi.io"
+      },
+      "version": {
+        "$ref": "#/components/schemas/ResourceVersion"
+      }
+    },
+    "example": {
+      "kind": "Route",
+      "plural_name": "routes",
+      "singular_name": "route",
+      "group": "proxy.otoroshi.io",
+      "version": {
+        "name": "v1",
+        "served": true,
+        "deprecated": false,
+        "storage": true,
+        "schema": null
+      }
+    }
+  },
+  "ResourceVersion": {
+    "type": "object",
+    "description": "The version of a kind of entity",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name of the version, in the paths of the api",
+        "example": "v1"
+      },
+      "served": {
+        "type": "boolean",
+        "description": "Whether the generic api serves the version"
+      },
+      "deprecated": {
+        "type": "boolean",
+        "description": "Whether the version is deprecated"
+      },
+      "storage": {
+        "type": "boolean",
+        "description": "Whether the entities are stored in this version"
+      },
+      "schema": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JsonSchema"
+          }
+        ],
+        "nullable": true,
+        "description": "The json schema of the entities. With `schema=false`, only the hand written schema of the core entities, `null` for the entities described by reflection on their class"
+      }
+    },
+    "example": {
+      "name": "v1",
+      "served": true,
+      "deprecated": false,
+      "storage": true,
+      "schema": null
+    }
+  }
+}

@@ -1,0 +1,518 @@
+{
+  "/api/snowmonkey/_start": {
+    "post": {
+      "tags": [
+        "snowmonkey"
+      ],
+      "summary": "Start the snow monkey",
+      "description": "Forgets the outages of the day, and enables the snow monkey in the global configuration: from its start time to its stop time, it then injects outages into the routes of its target groups that use the `Snow Monkey Chaos` plugin (`cp:otoroshi.next.plugins.SnowMonkeyChaos`), as their calls come. An audit event (`STARTED_SNOWMONKEY`) and an alert are sent. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.SnowMonkeyController.startSnowMonkey",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The snow monkey is enabled and the outages of the day are forgotten: `done` is `true`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/snowmonkey/_stop": {
+    "post": {
+      "tags": [
+        "snowmonkey"
+      ],
+      "summary": "Stop the snow monkey",
+      "description": "Forgets the outages of the day, ending the running ones, and disables the snow monkey in the global configuration. An audit event (`STOPPED_SNOWMONKEY`) and an alert are sent. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.SnowMonkeyController.stopSnowMonkey",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The snow monkey is disabled and its running outages are ended: `done` is `true`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/snowmonkey/outages": {
+    "get": {
+      "tags": [
+        "snowmonkey"
+      ],
+      "summary": "List the running outages of the snow monkey",
+      "description": "Answers the outages the snow monkey is injecting right now, one per route under outage: an outage leaves the list as soon as it ends. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.SnowMonkeyController.getSnowMonkeyOutages",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The outages running now, one per route under outage",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "The outages running now",
+                "items": {
+                  "$ref": "#/components/schemas/Outage"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": [
+        "snowmonkey"
+      ],
+      "summary": "Forget the outages of the snow monkey",
+      "description": "Forgets the outages of the day, ending the running ones: the snow monkey can inject new outages into every route again. An audit event (`RESET_SNOWMONKEY_OUTAGES`) and an alert are sent. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.SnowMonkeyController.resetSnowMonkey",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The running outages are ended and the outages of the day forgotten: `done` is `true`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/snowmonkey/config": {
+    "get": {
+      "tags": [
+        "snowmonkey"
+      ],
+      "summary": "Read the settings of the snow monkey",
+      "description": "Answers the settings of the snow monkey, the `snowMonkeyConfig` of the global configuration. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.SnowMonkeyController.getSnowMonkeyConfig",
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The settings of the snow monkey, the `snowMonkeyConfig` of the global configuration",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnowMonkeyConfig"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "put": {
+      "tags": [
+        "snowmonkey"
+      ],
+      "summary": "Update the settings of the snow monkey",
+      "description": "Replaces the settings of the snow monkey in the global configuration, and answers them. A missing field takes its default value. An audit event (`UPDATED_SNOWMONKEY_CONFIG`) and an alert are sent. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.SnowMonkeyController.updateSnowMonkey",
+      "requestBody": {
+        "description": "The new settings of the snow monkey",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SnowMonkeyConfig"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The settings of the snow monkey, once updated",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnowMonkeyConfig"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not json, or it is not the settings of a snow monkey",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": [
+        "snowmonkey"
+      ],
+      "summary": "Patch the settings of the snow monkey",
+      "description": "Applies the json patch (RFC 6902) of the body to the settings of the snow monkey, saves them in the global configuration, and answers them. A patch that cannot be applied (an operation on a path that does not exist, a failed `test`) resets every setting of the snow monkey to its default value. An audit event (`PATCH_SNOWMONKEY_CONFIG`) and an alert are sent. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.SnowMonkeyController.patchSnowMonkey",
+      "requestBody": {
+        "description": "The json patch to apply to the settings of the snow monkey",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonPatch"
+                }
+              ],
+              "description": "The operations to apply to the settings of the snow monkey",
+              "example": [
+                {
+                  "op": "replace",
+                  "path": "/dryRun",
+                  "value": true
+                },
+                {
+                  "op": "replace",
+                  "path": "/timesPerDay",
+                  "value": 2
+                }
+              ]
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The settings of the snow monkey, once patched",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnowMonkeyConfig"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not json, or the patched settings are not the settings of a snow monkey",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body is not a json patch (answered as a server error)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

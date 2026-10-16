@@ -1,0 +1,1119 @@
+{
+  "/api/pki/keys": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Generate a key pair",
+      "description": "Generates a public / private key pair and wraps it in a certificate self signed for ten years (subject `CN=keypair-<serial>`), flagged as a key pair (`keypair: true`) and named `KeyPair - <serial>`, the way otoroshi stores key pairs (to sign and verify jwt tokens for instance). The generated certificate is answered as a certificate entity, with its chain and its private key, and stored unless `persist=false`. Only a super admin can call it. The self signed certificate is always signed with `SHA256WithRSAEncryption`: only an rsa key pair can be generated here, any other algorithm being answered as a bad request.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.genKeyPair",
+      "parameters": [
+        {
+          "name": "persist",
+          "in": "query",
+          "description": "Whether to store the generated certificate as a certificate entity (true by default). When stored, the answer holds its id in `certId`",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": true,
+            "example": true
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The settings of the key pair to generate",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GenKeyPairQuery"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The key pair, as a certificate entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratedCertificate"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body does not describe a key pair, or the key pair cannot be generated",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body is not json. The error is answered as a server error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/csrs": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Generate a certificate signing request",
+      "description": "Generates a key pair and a certificate signing request for it, from the settings of the body. With the `ca` query parameter, the request carries the authority key identifier of that certificate authority. Nothing is stored: the private key is only in the answer. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number: a value that is neither the id of a certificate nor a number answers a server error instead of a not found.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.genCsr",
+      "parameters": [
+        {
+          "name": "ca",
+          "in": "query",
+          "description": "The certificate authority the request is meant for: the id of a certificate entity of otoroshi, or the serial number (as a decimal number) of one",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "otoroshi-intermediate-ca"
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The settings of the certificate to request",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GenCsrQuery"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The certificate signing request and its key pair",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenCsrResponse"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the request cannot be generated",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The certificate authority does not exist, or is not a certificate authority",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body is not json, or the certificate authority is looked up by a value that is neither the id nor the serial number of a certificate (see the description). The error is answered as a server error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/certs": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Generate a self signed certificate",
+      "description": "Generates a key pair and a certificate self signed with it, from the settings of the body. With `ca: true`, the certificate is a self signed certificate authority, as generated by `POST /api/pki/cas`. The generated certificate is answered as a certificate entity, with its chain and its private key, and stored unless `persist=false`. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.genSelfSignedCert",
+      "parameters": [
+        {
+          "name": "persist",
+          "in": "query",
+          "description": "Whether to store the generated certificate as a certificate entity (true by default). When stored, the answer holds its id in `certId`",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": true,
+            "example": true
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The settings of the certificate to generate",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GenCsrQuery"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The self signed certificate, as a certificate entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratedCertificate"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate cannot be generated (an unknown algorithm for instance)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body is not json. The error is answered as a server error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/cas": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Generate a self signed certificate authority",
+      "description": "Generates a key pair and a root certificate authority self signed with it (basic constraint `CA:true`, key usages `keyCertSign` and `cRLSign`), from the settings of the body, whatever its `ca` field says. Its `hosts` are ignored. With `includeAIA: true`, a certificate authority whose subject is the one of the root ca of otoroshi carries the authority information access extension. The generated certificate is answered as a certificate entity, with its chain and its private key, and stored unless `persist=false`. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.genSelfSignedCA",
+      "parameters": [
+        {
+          "name": "persist",
+          "in": "query",
+          "description": "Whether to store the generated certificate as a certificate entity (true by default). When stored, the answer holds its id in `certId`",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": true,
+            "example": true
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The settings of the certificate authority to generate",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GenCsrQuery"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The certificate authority, as a certificate entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratedCertificate"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate authority cannot be generated",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body is not json. The error is answered as a server error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/cas/{ca}/certs": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Generate a certificate signed by a certificate authority",
+      "description": "Generates a key pair, a certificate signing request and the certificate the certificate authority of the path signs from it, from the settings of the body. The chain of the certificate holds the certificate, the certificate authority and the chain of the certificate authority. With `includeAIA: true`, a certificate signed by the root ca of otoroshi carries the authority information access extension. The generated certificate is answered as a certificate entity, with its chain and its private key, and stored unless `persist=false`. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number: a value that is neither the id of a certificate nor a number answers a server error instead of a not found.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.genCert",
+      "parameters": [
+        {
+          "name": "ca",
+          "in": "path",
+          "description": "The certificate authority: the id of a certificate entity of otoroshi, or the serial number (as a decimal number) of one, that has to be a certificate authority",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "otoroshi-intermediate-ca"
+          }
+        },
+        {
+          "name": "persist",
+          "in": "query",
+          "description": "Whether to store the generated certificate as a certificate entity (true by default). When stored, the answer holds its id in `certId`",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": true,
+            "example": true
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The settings of the certificate to generate",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GenCsrQuery"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The certificate, as a certificate entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratedCertificate"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate cannot be generated",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The certificate authority does not exist, or is not a certificate authority",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body is not json, or the certificate authority is looked up by a value that is neither the id nor the serial number of a certificate (see the description). The error is answered as a server error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/cas/{ca}/cas": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Generate an intermediate certificate authority",
+      "description": "Generates a key pair and an intermediate certificate authority signed by the certificate authority of the path (basic constraint `CA:true` with a path length of 0, key usages `keyCertSign`, `cRLSign` and `digitalSignature`), from the settings of the body. The chain of the generated certificate authority holds it, its parent and the chain of its parent. The generated certificate is answered as a certificate entity, with its chain and its private key, and stored unless `persist=false`. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number: a value that is neither the id of a certificate nor a number answers a server error instead of a not found.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.genSubCA",
+      "parameters": [
+        {
+          "name": "ca",
+          "in": "path",
+          "description": "The certificate authority: the id of a certificate entity of otoroshi, or the serial number (as a decimal number) of one, that has to be a certificate authority",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "otoroshi-intermediate-ca"
+          }
+        },
+        {
+          "name": "persist",
+          "in": "query",
+          "description": "Whether to store the generated certificate as a certificate entity (true by default). When stored, the answer holds its id in `certId`",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": true,
+            "example": true
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The settings of the intermediate certificate authority to generate",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GenCsrQuery"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The intermediate certificate authority, as a certificate entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratedCertificate"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate authority cannot be generated",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The parent certificate authority does not exist, or is not a certificate authority",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body is not json, or the certificate authority is looked up by a value that is neither the id nor the serial number of a certificate (see the description). The error is answered as a server error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/cas/{ca}/certs/_sign": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Sign a certificate signing request",
+      "description": "Signs the certificate signing request of the body with the certificate authority of the path, and answers the certificate. The certificate keeps the subject, the public key and the extensions of the request, and is signed with the signature algorithm of the certificate authority. Nothing is stored. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number: a value that is neither the id of a certificate nor a number answers a server error instead of a not found.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.signCert",
+      "parameters": [
+        {
+          "name": "ca",
+          "in": "path",
+          "description": "The certificate authority: the id of a certificate entity of otoroshi, or the serial number (as a decimal number) of one, that has to be a certificate authority",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "otoroshi-intermediate-ca"
+          }
+        },
+        {
+          "name": "duration",
+          "in": "query",
+          "description": "How long the certificate is valid from now, in milliseconds. Defaults to 365 days",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "example": 31536000000
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The certificate signing request to sign, PEM encoded",
+        "required": true,
+        "content": {
+          "application/x-pem-file": {
+            "schema": {
+              "type": "string",
+              "description": "A certificate signing request, PEM encoded",
+              "example": "-----BEGIN CERTIFICATE REQUEST-----\nMIH/MIGlAgEAMBgxFjAUBgNVBAMMDWFwaS5vdG8udG9vbHMwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQMgfryxgBtjHjHfcBj\nWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/oCswKQYJKoZIhvcNAQkOMRww\nGjAYBgNVHREEETAPgg1hcGkub3RvLnRvb2xzMAoGCCqGSM49BAMCA0kAMEYCIQCn\n5pWVAG5d9/upPkJ8tZX7lvWtVGCnD+X3NXTpUFodmAIhAO/f4pwl3yFllNNMfFbJ\na5A8IhGS5zAzdYWCXUeTNkGV\n-----END CERTIFICATE REQUEST-----\n"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The certificate signed by the certificate authority, with the signing request it comes from and the certificate of the authority, all PEM encoded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignCertResponse"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the certificate cannot be signed",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "The certificate authority does not exist, or is not a certificate authority",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The body is not a PEM encoded certificate signing request, `duration` is not a number, or the certificate authority is looked up by a value that is neither the id nor the serial number of a certificate. These errors are answered as server errors",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/certs/_letencrypt": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Order a certificate from Let's Encrypt",
+      "description": "Orders a certificate for a domain from the acme server of the Let's Encrypt settings of the global configuration (an account is created on it the first time, its key pair being saved in the settings), validates the order with an http-01 challenge served by otoroshi, and stores the certificate. The domain has to resolve to this otoroshi for the challenge to succeed. The call waits for the order to complete. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.genLetsEncryptCert",
+      "requestBody": {
+        "description": "The domain of the certificate to order",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LetsEncryptCertificateQuery"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The certificate, with the id of the certificate entity stored for it",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenCertResponse"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the body gives no `host`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The order failed: the acme server cannot be reached, it refuses the domain, or the challenge failed. Also answered when the body is not json",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/certs/_p12": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Import the certificates of a PKCS#12 file",
+      "description": "Reads the certificates and the private keys of the PKCS#12 file (`.p12`, `.pfx`) of the body, decrypted with the `password` query parameter, and stores each of them as a certificate entity. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.importCertFromP12",
+      "parameters": [
+        {
+          "name": "password",
+          "in": "query",
+          "description": "The password of the PKCS#12 file. Defaults to an empty password",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "password",
+            "example": "changeit"
+          }
+        }
+      ],
+      "requestBody": {
+        "description": "The raw bytes of the PKCS#12 file (`.p12`, `.pfx`) holding the certificates and their private keys",
+        "required": true,
+        "content": {
+          "application/x-pkcs12": {
+            "schema": {
+              "type": "string",
+              "format": "binary",
+              "description": "The bytes of a PKCS#12 file"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Every certificate of the file was stored as a certificate entity, answered as `{\"done\": true}`",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Done"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the body is not a PKCS#12 file that the password decrypts",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/certs/_valid": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Check that a certificate can be loaded",
+      "description": "Tells whether the certificate entity of the body can be loaded: its private key can be read (with its password, if any) and its chain holds at least one certificate. Neither its validity period nor its revocation are checked. Nothing is stored. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.certificateIsValid",
+      "requestBody": {
+        "description": "The certificate to check, as a certificate entity",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/pki.otoroshi.io.Certificate"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Whether the certificate is valid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateValidity"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the body is not a certificate entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/pki/certs/_data": {
+    "post": {
+      "tags": [
+        "pki"
+      ],
+      "summary": "Read the content of a PEM certificate",
+      "description": "Reads the PEM encoded certificate of the body (the first one of a chain), and answers what it holds: its subject, its issuer, its validity period, its serial number, its public key, its usages and its extensions. The `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----` lines can be omitted. Nothing is stored. Only a super admin can call it.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.certificateData",
+      "requestBody": {
+        "description": "The certificate to read, PEM encoded",
+        "required": true,
+        "content": {
+          "application/x-pem-file": {
+            "schema": {
+              "type": "string",
+              "description": "A certificate, or a chain of certificates, PEM encoded",
+              "example": "-----BEGIN CERTIFICATE-----\nMIIBmDCCAT+gAwIBAgIUHmaApVzaf97nvdtkn1zXWPCsNw4wCgYIKoZIzj0EAwIw\nIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNTIw\nMDM0OFoXDTI3MTAxNTIwMDM0OFowGDEWMBQGA1UEAwwNYXBpLm90by50b29sczBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABERdD06sNJhRvqbfbEmaUF0G0Exp5AyB\n+vLGAG2MeMd9wGNZJKa9wWEX0keouCbILZMItNrUra1s0OFCRO+zgr+jXDBaMBgG\nA1UdEQQRMA+CDWFwaS5vdG8udG9vbHMwHQYDVR0OBBYEFCMIuwvZa6WNpN6l/R2e\nBqQCkQ1yMB8GA1UdIwQYMBaAFC0ILPN7bjaQP5qU2j762hOZtZTlMAoGCCqGSM49\nBAMCA0cAMEQCIF9CP8IoYL4nXRAfBDwZvjPE09nS6+ClleeFlY2tQ6exAiAeuJ1F\niYzxB++dXcZk2e8bHQG/t0Wvaz/5RXvwPHlawg==\n-----END CERTIFICATE-----\n"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "What the certificate holds",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateData"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, or the body is not a PEM encoded certificate",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin: the admin the backoffice calls on behalf of (`Otoroshi-BackOffice-User`), or the rights the api key carries in its `otoroshi-access-rights` metadata. An api key without such rights is not refused",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
