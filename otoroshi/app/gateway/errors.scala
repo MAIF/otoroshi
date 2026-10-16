@@ -525,7 +525,10 @@ object Errors {
             message = message,
             otoroshiResponse = NgPluginHttpResponse(
               res.header.status,
-              res.header.headers,
+              // the content type and the length of a result are held by its body, not by its headers: without them
+              // the error answered once its plugins are applied has neither
+              res.header.headers ++ res.body.contentType.map(ctype => "Content-Type" -> ctype) ++ res.body.contentLength
+                .map(length => "Content-Length" -> length.toString),
               res.newCookies.map(c =>
                 DefaultWSCookie(
                   name = c.name,

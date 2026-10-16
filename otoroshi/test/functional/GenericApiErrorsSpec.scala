@@ -36,6 +36,16 @@ class GenericApiErrorsSpec extends OtoroshiSpec {
     "warm up" in {
       startOtoroshi()
     }
+    "answer its refusals of credentials as json" in {
+      Seq(None, Some(("admin-api-apikey-id", "not-the-secret"))).foreach { credentials =>
+        val resp = call("GET", routes, credentials = credentials)
+        withClue(s"$credentials: ${resp.status} ${resp.headers}") {
+          resp.status must (be >= 400 and be < 500)
+          resp.contentType mustBe "application/json"
+          (resp.json \ "Otoroshi-Error").asOpt[String] must not be empty
+        }
+      }
+    }
     "refuse an entity that is not a json object" in {
       Seq(("POST", routes), ("POST", s"$routes/route_not_an_object"), ("PUT", s"$routes/route_not_an_object")).foreach {
         case (method, path) =>
