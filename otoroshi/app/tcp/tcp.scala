@@ -287,6 +287,36 @@ object TcpService {
     RegexPool(matchRule).matches(domain)
   }
 
+  // otoroshi is the tls client of a target: the engine comes from the client context, runs in client mode and checks
+  // the certificate of the target against its host
+  private def targetSSLEngine(target: TcpTarget): SSLEngine = {
+    val engine = DynamicSSLEngineProvider.currentClient.createSSLEngine(target.host, target.port)
+    engine.setUseClientMode(true)
+    val params = engine.getSSLParameters
+    params.setEndpointIdentificationAlgorithm("https")
+    engine.setSSLParameters(params)
+    engine
+  }
+
+  // the connection to a target, over tls when the target asks for it. in passthrough the bytes of the client already
+  // are tls, otoroshi adds none
+  private def connectTo(
+      target: TcpTarget,
+      service: TcpService
+  )(using actorSystem: ActorSystem): Flow[ByteString, ByteString, Future[Tcp.OutgoingConnection]] = {
+    val remoteAddress = target.ip match {
+      case Some(ip) =>
+        new InetSocketAddress(
+          InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
+          target.port
+        )
+      case None     => new InetSocketAddress(target.host, target.port)
+    }
+    if (target.tls && service.tls != TlsMode.PassThrough)
+      Tcp().outgoingConnectionWithTls(remoteAddress, () => targetSSLEngine(target))
+    else Tcp().outgoingConnection(remoteAddress)
+  }
+
   def routeWithoutSNI(
       incoming: Tcp.IncomingConnection,
       port: Int,
@@ -312,33 +342,7 @@ object TcpService {
             val index   = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
             val target  = targets.apply(index.toInt)
             targetRef.set(target)
-            target.tls match {
-              case true  => {
-                val remoteAddress = target.ip match {
-                  case Some(ip) =>
-                    new InetSocketAddress(
-                      InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
-                      target.port
-                    )
-                  case None     => new InetSocketAddress(target.host, target.port)
-                }
-                Tcp().outgoingConnectionWithTls(
-                  remoteAddress,
-                  () => DynamicSSLEngineProvider.createSSLEngine(service.clientAuth, None, None, None, env)
-                )
-              }
-              case false => {
-                val remoteAddress = target.ip match {
-                  case Some(ip) =>
-                    new InetSocketAddress(
-                      InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
-                      target.port
-                    )
-                  case None     => new InetSocketAddress(target.host, target.port)
-                }
-                Tcp().outgoingConnection(remoteAddress)
-              }
-            }
+            connectTo(target, service)
           }
           val overhead = System.currentTimeMillis() - start
           fullLayer
@@ -475,33 +479,7 @@ object TcpService {
                   val index   = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
                   val target  = targets.apply(index.toInt)
                   targetRef.set(target)
-                  target.tls match {
-                    case true  => {
-                      val remoteAddress = target.ip match {
-                        case Some(ip) =>
-                          new InetSocketAddress(
-                            InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
-                            target.port
-                          )
-                        case None     => new InetSocketAddress(target.host, target.port)
-                      }
-                      Tcp().outgoingConnectionWithTls(
-                        remoteAddress,
-                        () => DynamicSSLEngineProvider.createSSLEngine(service.clientAuth, None, None, None, env)
-                      )
-                    }
-                    case false => {
-                      val remoteAddress = target.ip match {
-                        case Some(ip) =>
-                          new InetSocketAddress(
-                            InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
-                            target.port
-                          )
-                        case None     => new InetSocketAddress(target.host, target.port)
-                      }
-                      Tcp().outgoingConnection(remoteAddress)
-                    }
-                  }
+                  connectTo(target, service)
                 }
                 case None if service.sni.forwardIfNoMatch => {
                   val target        = service.sni.forwardsTo

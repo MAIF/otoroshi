@@ -1637,7 +1637,7 @@
       },
       "tls": {
         "type": "boolean",
-        "description": "Whether otoroshi connects to the target over tls. Defaults to `false`"
+        "description": "Whether otoroshi connects to the target over tls. Ignored when the tcp service is in `PassThrough` mode, where the tls of the client goes through as is. Defaults to `false`"
       }
     },
     "example": {

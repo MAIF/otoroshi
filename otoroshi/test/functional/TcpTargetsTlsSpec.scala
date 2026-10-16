@@ -18,7 +18,9 @@ import javax.net.ssl.*
 import scala.concurrent.duration.*
 import scala.util.Try
 
-// the tls of a tcp service: it terminates the tls of its clients when asked to
+// the tls of a tcp service: it terminates the tls of its clients when asked to, and calls its targets over tls when
+// they ask for it (otoroshi is then the tls client of the target), except in passthrough where the tls of the client
+// goes through as is
 class TcpTargetsTlsSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -174,6 +176,106 @@ class TcpTargetsTlsSpec extends OtoroshiSpec {
       } finally {
         env.datastores.tcpServiceDataStore.delete(service.id).futureValue
         echoServer.stop()
+      }
+    }
+    "call its targets over tls when they ask for it" in {
+      given env: Env = otoroshiComponents.env
+      val echoServer = new EchoServer(Some(echoServerContext()))
+      val port       = TargetService.freePort
+      val service    = TcpService(
+        enabled = true,
+        tls = TlsMode.Disabled,
+        sni = SniSettings(enabled = false, forwardIfNoMatch = false),
+        clientAuth = ClientAuth.None,
+        port = port,
+        rules = Seq(TcpRule("*", Seq(TcpTarget("localhost", Some("127.0.0.1"), echoServer.port, tls = true)))),
+        tags = Seq.empty,
+        metadata = Map.empty
+      )
+      env.datastores.tcpServiceDataStore.set(service).futureValue
+      try {
+        awaitListening(port)
+        echo(() => new Socket("127.0.0.1", port), "hello over tls") mustBe Some("hello over tls")
+      } finally {
+        env.datastores.tcpServiceDataStore.delete(service.id).futureValue
+        echoServer.stop()
+      }
+    }
+    "not call its targets over tls when their certificate is not trusted or not issued for their host" in {
+      given env: Env = otoroshiComponents.env
+      val untrusted  = new EchoServer(Some(echoServerContext(signedByOtoroshi = false)))
+      val trusted    = new EchoServer(Some(echoServerContext()))
+      val port       = TargetService.freePort
+      // the certificate of the trusted server is issued for localhost
+      val service    = TcpService(
+        enabled = true,
+        tls = TlsMode.Disabled,
+        sni = SniSettings(enabled = false, forwardIfNoMatch = false),
+        clientAuth = ClientAuth.None,
+        port = port,
+        rules = Seq(TcpRule("*", Seq(TcpTarget("localhost", Some("127.0.0.1"), untrusted.port, tls = true)))),
+        tags = Seq.empty,
+        metadata = Map.empty
+      )
+      val otherHost  = service.copy(
+        id = s"${service.id}-other-host",
+        port = TargetService.freePort,
+        rules = Seq(TcpRule("*", Seq(TcpTarget("other.oto.tools", Some("127.0.0.1"), trusted.port, tls = true))))
+      )
+      val sameHost   = service.copy(
+        id = s"${service.id}-same-host",
+        port = TargetService.freePort,
+        rules = Seq(TcpRule("*", Seq(TcpTarget("localhost", Some("127.0.0.1"), trusted.port, tls = true))))
+      )
+      Seq(service, otherHost, sameHost).foreach(s => env.datastores.tcpServiceDataStore.set(s).futureValue)
+      try {
+        Seq(service, otherHost, sameHost).foreach(s => awaitListening(s.port))
+        // once the target with a trusted certificate answers, the tls contexts of otoroshi are up to date
+        echo(() => new Socket("127.0.0.1", sameHost.port), "hello") mustBe Some("hello")
+        echoOnce(new Socket("127.0.0.1", service.port), "hello") mustBe None
+        echoOnce(new Socket("127.0.0.1", otherHost.port), "hello") mustBe None
+        // otoroshi, as the tls client, ends both handshakes because of the certificate
+        untrusted.errors.toArray.toSeq.map(_.toString) must contain("Received fatal alert: certificate_unknown")
+        trusted.errors.toArray.toSeq.map(_.toString) must contain("Received fatal alert: certificate_unknown")
+      } finally {
+        Seq(service, otherHost, sameHost).foreach(s => env.datastores.tcpServiceDataStore.delete(s.id).futureValue)
+        untrusted.stop()
+        trusted.stop()
+      }
+    }
+    "let the tls of its clients go through in passthrough, whatever the tls of its targets" in {
+      given env: Env = otoroshiComponents.env
+      val ruleServer     = new EchoServer(Some(echoServerContext()))
+      val fallbackServer = new EchoServer(Some(echoServerContext()))
+      val port           = TargetService.freePort
+      val service        = TcpService(
+        enabled = true,
+        tls = TlsMode.PassThrough,
+        sni = SniSettings(
+          enabled = true,
+          forwardIfNoMatch = true,
+          forwardsTo = TcpTarget("localhost", Some("127.0.0.1"), fallbackServer.port, tls = true)
+        ),
+        clientAuth = ClientAuth.None,
+        port = port,
+        rules = Seq(TcpRule("rule.oto.tools", Seq(TcpTarget("localhost", Some("127.0.0.1"), ruleServer.port, tls = true)))),
+        tags = Seq.empty,
+        metadata = Map.empty
+      )
+      env.datastores.tcpServiceDataStore.set(service).futureValue
+      try {
+        awaitListening(port)
+        // the clients do the tls handshake with the targets themselves
+        echo(() => tlsClient(port, Some("rule.oto.tools")), "hello through the rule") mustBe Some(
+          "hello through the rule"
+        )
+        echo(() => tlsClient(port, Some("fallback.oto.tools")), "hello through the fallback") mustBe Some(
+          "hello through the fallback"
+        )
+      } finally {
+        env.datastores.tcpServiceDataStore.delete(service.id).futureValue
+        ruleServer.stop()
+        fallbackServer.stop()
       }
     }
     "shutdown" in {

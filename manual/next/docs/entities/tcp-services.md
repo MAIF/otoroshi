@@ -97,7 +97,7 @@ For any listening TCP proxy, you can define multiple routing rules based on SNI 
 | `targets[].host` | string | Target hostname |
 | `targets[].ip` | string | Target IP address |
 | `targets[].port` | number | Target port |
-| `targets[].tls` | boolean | Use TLS to connect to this target |
+| `targets[].tls` | boolean | Use TLS to connect to this target. Ignored in `PassThrough` mode, where the TLS of the client goes through as is |
 
 ## JSON example
 
