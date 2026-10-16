@@ -869,7 +869,7 @@ class OtoroshiResources(env: Env) {
       "admins", //"simple-admin-user",
       "security.otoroshi.io",
       ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApiWithState[SimpleOtoroshiAdmin](
+      GenericResourceAccessApiWithStateAndWriteValidation[SimpleOtoroshiAdmin](
         SimpleOtoroshiAdmin.fmt,
         classOf[SimpleOtoroshiAdmin],
         env.datastores.simpleAdminDataStore.key,
@@ -887,7 +887,8 @@ class OtoroshiResources(env: Env) {
           env.proxyState.otoroshiAdmin(id).collect { case u: SimpleOtoroshiAdmin =>
             u
           },
-        stateUpdate = seq => throw new UnsupportedOperationException("...")
+        stateUpdate = seq => throw new UnsupportedOperationException("..."),
+        writeValidator = SimpleOtoroshiAdmin.writeValidator
       )
     ),
     Resource(

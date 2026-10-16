@@ -5,6 +5,7 @@ import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.*
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
+import otoroshi.utils.crypto.BCryptHelper
 import play.api.libs.json.*
 import otoroshi.utils.syntax.implicits.*
 
@@ -88,6 +89,28 @@ case class SimpleOtoroshiAdmin(
 }
 
 object SimpleOtoroshiAdmin {
+
+  // the admins api stores the admin it is given: a password sent in clear is hashed first, like
+  // POST /api/admins/simple does, and a bcrypt hash is kept as is. an empty password is refused, hashed it would let
+  // anyone in
+  def writeValidator(
+      admin: SimpleOtoroshiAdmin,
+      body: JsValue,
+      oldEntity: Option[(SimpleOtoroshiAdmin, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: otoroshi.api.WriteAction,
+      env: Env
+  ): Future[Either[JsValue, SimpleOtoroshiAdmin]] = {
+    if (admin.password.isBlank) {
+      Json.obj("error" -> "the password of an admin cannot be empty", "http_status_code" -> 400).leftf
+    } else if (BCryptHelper.isHash(admin.password)) {
+      admin.rightf
+    } else {
+      admin.copy(password = BCrypt.hashpw(admin.password, BCrypt.gensalt())).rightf
+    }
+  }
+
   val fmt: Format[SimpleOtoroshiAdmin] = new Format[SimpleOtoroshiAdmin] {
     override def writes(o: SimpleOtoroshiAdmin): JsValue             = o.json
     override def reads(json: JsValue): JsResult[SimpleOtoroshiAdmin] = SimpleOtoroshiAdmin.reads(json)

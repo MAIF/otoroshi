@@ -19,6 +19,9 @@ object BCryptHelper {
     else BCrypt.checkpw(candidate, normalize(hashed))
   }
 
+  def isHash(value: String): Boolean =
+    value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$")
+
   private def normalize(hashed: String): String = {
     if (hashed.startsWith("$2b$") || hashed.startsWith("$2y$")) "$2a$" + hashed.substring(4)
     else hashed
