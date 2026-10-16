@@ -637,20 +637,19 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       readOk(format, Json.obj("elasticReadsConfig" -> Json.obj("index" -> "events"))).elasticReadsConfig mustBe None
     }
 
-    "drop every elastic writes config when one of them cannot be read" in {
+    "only leave out the elastic writes configs that cannot be read" in {
       val back = readOk(
         format,
         Json.obj("elasticWritesConfigs" -> Json.arr(elastic.toJson, Json.obj("index" -> "events")))
       )
-      back.elasticWritesConfigs mustBe empty
+      back.elasticWritesConfigs mustBe Seq(elastic)
     }
 
-    "drop every webhook when one of them has no url" in {
-      val back = readOk(
-        format,
-        Json.obj("analyticsWebhooks" -> Json.arr(Json.obj("url" -> "http://a"), Json.obj("headers" -> Json.obj())))
-      )
-      back.analyticsWebhooks mustBe empty
+    "only leave out the webhooks without url" in {
+      val webhooks = Json.arr(Json.obj("url" -> "http://a"), Json.obj("headers" -> Json.obj()), Json.obj("url" -> "http://b"))
+      val back     = readOk(format, Json.obj("analyticsWebhooks" -> webhooks, "alertsWebhooks" -> webhooks))
+      back.analyticsWebhooks mustBe Seq(Webhook("http://a"), Webhook("http://b"))
+      back.alertsWebhooks mustBe Seq(Webhook("http://a"), Webhook("http://b"))
     }
 
     "read webhooks with their default headers and mtls config" in {

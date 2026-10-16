@@ -790,6 +790,12 @@ object GlobalConfig {
 
   val _fmt: Format[GlobalConfig] = new Format[GlobalConfig] {
 
+    // the entries of a list are read one by one: an unreadable one is left out, the others are kept
+    def readEach[A](json: JsValue, key: String, reads: Reads[A]): Seq[A] = (json \ key).asOpt[JsArray] match {
+      case Some(JsArray(values)) => values.toSeq.flatMap(value => reads.reads(value).asOpt)
+      case None                  => Seq.empty[A]
+    }
+
     def readWasmoSettings(json: JsValue): Option[TlsWasmoSettings] = {
       if (json.atPath("wasmoSettings.settings").isEmpty) {
         // a missing wasmo config is written as null, which must not read back as a wasmo on localhost. the legacy
@@ -967,13 +973,9 @@ object GlobalConfig {
               case e => None
             }*/
           },
-          analyticsWebhooks =
-            (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](using Reads.seq(using Webhook.format)).getOrElse(Seq.empty[Webhook]).toSeq,
-          alertsWebhooks =
-            (json \ "alertsWebhooks").asOpt[Seq[Webhook]](using Reads.seq(using Webhook.format)).getOrElse(Seq.empty[Webhook]).toSeq,
-          elasticWritesConfigs = (json \ "elasticWritesConfigs")
-            .asOpt[Seq[ElasticAnalyticsConfig]](using Reads.seq(using ElasticAnalyticsConfig.format))
-            .getOrElse(Seq.empty[ElasticAnalyticsConfig]).toSeq,
+          analyticsWebhooks = readEach(json, "analyticsWebhooks", Webhook.format),
+          alertsWebhooks = readEach(json, "alertsWebhooks", Webhook.format),
+          elasticWritesConfigs = readEach(json, "elasticWritesConfigs", ElasticAnalyticsConfig.format),
           alertsEmails = (json \ "alertsEmails").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           endlessIpAddresses = (json \ "endlessIpAddresses").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           maxWebhookSize = (json \ "maxWebhookSize").asOpt[Int].getOrElse(100),
