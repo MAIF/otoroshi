@@ -948,7 +948,7 @@ object GlobalConfig {
           maxConcurrentRequests = (json \ "maxConcurrentRequests").asOpt[Long].getOrElse(1000),
           maxHttp10ResponseSize = (json \ "maxHttp10ResponseSize").asOpt[Long].getOrElse(4 * (1024 * 1024)),
           useCircuitBreakers = true, // [REMOVE SERVICEDESC] (json \ "useCircuitBreakers").asOpt[Boolean].getOrElse(true),
-          otoroshiId = (json \ "otoroshiId").asOpt[String].getOrElse(s"otoroshi_${IdGenerator.uuid}"),
+          otoroshiId = (json \ "otoroshiId").asOpt[String].getOrElse(IdGenerator.uuid),
           apiReadOnly = (json \ "apiReadOnly").asOpt[Boolean].getOrElse(false),
           u2fLoginOnly = (json \ "u2fLoginOnly").asOpt[Boolean].getOrElse(false),
           // a stored config without the flag comes from an instance that predates it, where missing rights meant

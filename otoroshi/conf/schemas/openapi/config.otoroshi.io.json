@@ -240,7 +240,7 @@
       },
       "otoroshiId": {
         "type": "string",
-        "description": "The unique id of the instance (of the whole cluster), set at its first start from `otoroshi.instance.instanceId` or to a random uuid. Sent with the anonymous reporting. A random `otoroshi_<uuid>` when absent",
+        "description": "The unique id of the instance (of the whole cluster), set at its first start from `otoroshi.instance.instanceId` or to a random uuid. Sent with the anonymous reporting. A random uuid when absent",
         "example": "65fe2ae2-3ec4-4c65-9922-86601aa63ae8"
       },
       "snowMonkeyConfig": {

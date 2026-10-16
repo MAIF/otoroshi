@@ -515,10 +515,11 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       readOk(format, Json.obj("superAdminWhenNoRights" -> "false")).superAdminWhenNoRights mustBe true
     }
 
-    "generate an otoroshi id prefixed with otoroshi_ when it is missing" in {
+    "generate a random otoroshi id when it is missing, like a new config" in {
       val first  = readOk(format, Json.obj()).otoroshiId
       val second = readOk(format, Json.obj()).otoroshiId
-      first must startWith("otoroshi_")
+      first must not startWith "otoroshi_"
+      first must not be empty
       first must not be second
     }
 
