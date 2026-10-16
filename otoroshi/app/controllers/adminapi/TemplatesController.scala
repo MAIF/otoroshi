@@ -539,7 +539,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                   .map(JsString.apply)
               )
             ).future
-          case None        => BadRequest("Event type unkown").future
+          case None        => BadRequest("Event type unknown").future
         }
       }
     }

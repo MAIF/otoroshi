@@ -9,7 +9,7 @@ import play.api.libs.ws.{readableAsString, WSAuthScheme, WSResponse}
 import java.util.Base64
 import scala.concurrent.duration.*
 
-// small things of the admin api: the extensions of a certificate in hexadecimal
+// small things of the admin api: the extensions of a certificate in hexadecimal and an unknown kind of event
 class AdminApiSmallFixesSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
@@ -37,6 +37,11 @@ class AdminApiSmallFixesSpec extends OtoroshiSpec {
       // the subject alternative names hold the dns name
       val san        = extensions.find(e => (e \ "oid").as[String] == "2.5.29.17").map(e => (e \ "value").as[String])
       san.get must endWith("small-fixes.oto.tools".getBytes("UTF-8").map(b => f"$b%02X").mkString(":"))
+    }
+    "answer an unknown kind of event without typo" in {
+      val resp = admin("/api/events/_template?eventType=NotAnEvent")
+      resp.status mustBe 400
+      resp.body[String] must include("Event type unknown")
     }
     "shutdown" in {
       stopAll()

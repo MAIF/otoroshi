@@ -1280,7 +1280,7 @@
               "schema": {
                 "type": "string",
                 "description": "The error",
-                "example": "Event type unkown"
+                "example": "Event type unknown"
               }
             }
           }
