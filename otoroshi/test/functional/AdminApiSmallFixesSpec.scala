@@ -9,8 +9,8 @@ import play.api.libs.ws.{readableAsString, WSAuthScheme, WSResponse}
 import java.util.Base64
 import scala.concurrent.duration.*
 
-// small things of the admin api: the extensions of a certificate in hexadecimal, an unknown kind of event and the
-// category of the workflow operators
+// small things of the admin api: the extensions of a certificate in hexadecimal, an unknown kind of event, the
+// category of the workflow operators and the bearer of an api key
 class AdminApiSmallFixesSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
@@ -50,6 +50,9 @@ class AdminApiSmallFixesSpec extends OtoroshiSpec {
       val operators  = (doc \ "operators").as[Seq[JsObject]].map(o => (o \ "category").as[String]).toSet
       operators must not be empty
       operators.diff(categories) mustBe empty
+    }
+    "still answer the bearer of an api key" in {
+      admin("/api/apikeys/admin-api-apikey-id/bearer").status mustBe 200
     }
     "shutdown" in {
       stopAll()
