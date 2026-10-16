@@ -67,8 +67,8 @@ object SaslConfig {
     override def reads(json: JsValue): JsResult[SaslConfig] =
       Try {
         SaslConfig(
-          username = (json \ "username").asOpt[String].getOrElse("foo"),
-          password = (json \ "password").asOpt[String].getOrElse("bar"),
+          username = (json \ "username").asOpt[String].getOrElse(""),
+          password = (json \ "password").asOpt[String].getOrElse(""),
           mechanism = (json \ "mechanism").asOpt[String].getOrElse("PLAIN"),
           jaasConfig = (json \ "jaasConfig").asOpt[String]
         )
@@ -147,8 +147,8 @@ object KafkaSettings {
   }
 
   def kafkaSettings(_env: otoroshi.env.Env, config: KafkaConfig): Map[String, String] = {
-    val username   = config.saslConfig.map(_.username).getOrElse("foo")
-    val password   = config.saslConfig.map(_.password).getOrElse("bar")
+    val username   = config.saslConfig.map(_.username).getOrElse("")
+    val password   = config.saslConfig.map(_.password).getOrElse("")
     val mechanism  = config.saslConfig.map(_.mechanism).getOrElse("PLAIN")
     val jaasConfig = config.saslConfig.flatMap(_.jaasConfig)
 

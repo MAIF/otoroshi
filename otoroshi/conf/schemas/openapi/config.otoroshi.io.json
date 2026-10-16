@@ -1000,12 +1000,12 @@
     "properties": {
       "username": {
         "type": "string",
-        "description": "The SASL user. `foo` when absent",
+        "description": "The SASL user. Empty when absent",
         "example": "otoroshi"
       },
       "password": {
         "type": "string",
-        "description": "The SASL password. `bar` when absent",
+        "description": "The SASL password. Empty when absent",
         "example": "secret"
       },
       "mechanism": {

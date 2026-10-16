@@ -291,8 +291,8 @@ class DataExporterSettingsEntityFormatSpec extends EntityFormatSpec {
       readOk(format, Json.obj()) mustBe KafkaConfig(Seq.empty)
     }
 
-    "read empty sasl settings with the default credentials" in {
-      readOk(format, Json.obj("saslConfig" -> Json.obj())).saslConfig mustBe Some(SaslConfig("foo", "bar", "PLAIN", None))
+    "read empty sasl settings with empty credentials" in {
+      readOk(format, Json.obj("saslConfig" -> Json.obj())).saslConfig mustBe Some(SaslConfig("", "", "PLAIN", None))
     }
 
     "round trip a config without sasl settings" in {
@@ -333,8 +333,8 @@ class DataExporterSettingsEntityFormatSpec extends EntityFormatSpec {
       roundTrip(format, SaslConfig("user", "password", "SCRAM-SHA-256", Some("jaas")))
     }
 
-    "read an empty object with the default credentials and mechanism" in {
-      readOk(format, Json.obj()) mustBe SaslConfig("foo", "bar", "PLAIN", None)
+    "read an empty object with empty credentials and the default mechanism" in {
+      readOk(format, Json.obj()) mustBe SaslConfig("", "", "PLAIN", None)
     }
   }
 
