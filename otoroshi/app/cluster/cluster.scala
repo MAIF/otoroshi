@@ -857,9 +857,10 @@ object MemberView {
           httpPort = (value \ "httpPort").asOpt[Int].getOrElse(env.exposedHttpPortInt),
           internalHttpsPort = (value \ "internalHttpsPort").asOpt[Int].getOrElse(env.httpsPort),
           internalHttpPort = (value \ "internalHttpPort").asOpt[Int].getOrElse(env.httpPort),
+          // the relay settings the member sent, enabled when it sent none, as before they were read
           relay = RelayRouting(
-            enabled = true,
-            leaderOnly = false,
+            enabled = value.select("relay").select("enabled").asOpt[Boolean].getOrElse(true),
+            leaderOnly = value.select("relay").select("leaderOnly").asOpt[Boolean].getOrElse(false),
             location = InstanceLocation(
               provider = value.select("relay").select("location").select("provider").asOpt[String].getOrElse("local"),
               zone = value.select("relay").select("location").select("zone").asOpt[String].getOrElse("local"),
