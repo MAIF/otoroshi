@@ -27,6 +27,19 @@ class OpenApiSchemaDraftsSpec extends OtoroshiSpec {
   override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(ConfigFactory.parseString("app.env = dev").resolve()).withFallback(configuration)
 
+  // the json of the schema files: two spaces, `"key": value`, one item per line, the way they are edited by hand
+  private def pretty(js: JsValue, indent: String = ""): String = {
+    val next = indent + "  "
+    js match {
+      case obj: JsObject if obj.keys.isEmpty => "{}"
+      case obj: JsObject                     =>
+        obj.fields.map { case (k, v) => s"$next${Json.stringify(JsString(k))}: ${pretty(v, next)}" }.mkString("{\n", ",\n", s"\n$indent}")
+      case arr: JsArray if arr.value.isEmpty => "[]"
+      case arr: JsArray                      => arr.value.map(v => s"$next${pretty(v, next)}").mkString("[\n", ",\n", s"\n$indent]")
+      case other                             => Json.stringify(other)
+    }
+  }
+
   private def readJson(file: File): Option[JsObject] =
     if (file.exists()) Try(Json.parse(Files.readString(file.toPath)).as[JsObject]).toOption else None
 
@@ -151,13 +164,14 @@ class OpenApiSchemaDraftsSpec extends OtoroshiSpec {
       val index     = readJson(indexFile).flatMap(j => (j \ "files").asOpt[Seq[String]]).getOrElse(Seq.empty)
       val existing  = index.flatMap(f => readJson(new File(directory, f)).toSeq).flatMap(_.keys).toSet
       var known     = existing
-      val resources = env.allResources.coreResources.filter(_.version.served).filterNot(_.version.deprecated)
+      val resources = env.allResources.coreResources.filter(_.version.served)
       val byGroup   = resources.groupBy(_.group).toSeq.sortBy(_._1)
       var files     = index
       byGroup.foreach { case (group, groupResources) =>
         val fileName = s"$group.json"
         val file     = new File(directory, fileName)
-        var drafted  = readJson(file).getOrElse(Json.obj())
+        val before   = readJson(file).getOrElse(Json.obj())
+        var drafted  = before
         groupResources.sortBy(_.kind).foreach { resource =>
           val schemaName = s"${resource.group}.${resource.kind}"
           if (!known.contains(schemaName)) {
@@ -175,12 +189,17 @@ class OpenApiSchemaDraftsSpec extends OtoroshiSpec {
             known = known + schemaName ++ nested.keys
           }
         }
-        if (drafted.keys.nonEmpty) {
-          Files.writeString(file.toPath, Json.prettyPrint(drafted) + "\n")
+        // only the files that get a new draft are written, the others are left as they are
+        if (drafted.keys.size > before.keys.size) {
+          Files.writeString(file.toPath, pretty(drafted) + "\n")
           if (!files.contains(fileName)) files = files :+ fileName
         }
       }
-      Files.writeString(indexFile.toPath, Json.prettyPrint(Json.obj("files" -> files)) + "\n")
+      // the index keeps its other keys (paths, tags)
+      if (files != index) {
+        val current = readJson(indexFile).getOrElse(Json.obj())
+        Files.writeString(indexFile.toPath, pretty(current ++ Json.obj("files" -> files)) + "\n")
+      }
     }
     "shutdown" in {
       stopAll()
