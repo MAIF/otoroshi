@@ -112,6 +112,8 @@ Each source kind requires specific configuration. Common fields include:
 | `path` | string | Path or prefix within the source |
 | `headers` | object | Additional HTTP headers (for HTTP sources) |
 
+The values of the source configuration can be [vault references](../topics/secrets.md), like `${vault://local/github_token}` (the name of the vault, then the path of the secret in it), resolved when the catalog is fetched.
+
 ## Scheduling
 
 The catalog can be deployed manually or on a schedule:
@@ -149,7 +151,7 @@ A GitHub-based remote catalog syncing every 5 minutes:
   "source_kind": "github",
   "source_config": {
     "url": "https://github.com/my-org/otoroshi-config",
-    "token": "${vault://github_token}",
+    "token": "${vault://local/github_token}",
     "branch": "main",
     "path": "otoroshi/"
   },
@@ -178,7 +180,7 @@ An HTTP-based catalog for a simple endpoint:
   "source_config": {
     "url": "https://config-server.internal/otoroshi/entities",
     "headers": {
-      "Authorization": "Bearer ${vault://config_token}"
+      "Authorization": "Bearer ${vault://local/config_token}"
     }
   },
   "scheduling": {
