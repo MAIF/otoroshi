@@ -230,7 +230,7 @@ case class HttpCallSettings(
       .execute()
       .map { resp =>
         val status = resp.status
-        if (resp.status > 199 && resp.status < 299) {
+        if (resp.status > 199 && resp.status < 300) {
           ExportResult.ExportResultSuccess
         } else {
           ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
@@ -333,7 +333,7 @@ case class SplunkCallSettings(
       .execute()
       .map { resp =>
         val status = resp.status
-        if (resp.status > 199 && resp.status < 299) {
+        if (resp.status > 199 && resp.status < 300) {
           ExportResult.ExportResultSuccess
         } else {
           ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
@@ -439,7 +439,7 @@ case class DatadogCallSettings(
       .execute()
       .map { resp =>
         val status = resp.status
-        if (resp.status > 199 && resp.status < 299) {
+        if (resp.status > 199 && resp.status < 300) {
           ExportResult.ExportResultSuccess
         } else {
           ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
@@ -517,7 +517,7 @@ case class NewRelicCallSettings(
       .execute()
       .map { resp =>
         val status = resp.status
-        if (resp.status > 199 && resp.status < 299) {
+        if (resp.status > 199 && resp.status < 300) {
           ExportResult.ExportResultSuccess
         } else {
           ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
