@@ -501,16 +501,6 @@
               }
             }
           }
-        },
-        "500": {
-          "description": "The body is not a json patch (answered as a server error)",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
         }
       }
     }
