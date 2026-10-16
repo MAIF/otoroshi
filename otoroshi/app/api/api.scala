@@ -1038,7 +1038,7 @@ class OtoroshiResources(env: Env) {
       "wasm-plugins",
       "wasm-plugin",
       "plugins.otoroshi.io",
-      ResourceVersion("v1", served = true, deprecated = true, storage = true),
+      ResourceVersion("v1", served = true, deprecated = false, storage = true),
       GenericResourceAccessApiWithState[WasmPlugin](
         WasmPlugin.format,
         classOf[WasmPlugin],
