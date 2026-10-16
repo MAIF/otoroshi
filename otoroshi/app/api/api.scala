@@ -1969,7 +1969,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                         )
                         .map {
                           case Left(error)          =>
-                            error.stringify.byteString
+                            refusedBulkLine(error, entity)
                           case Right(createdEntity) =>
                             adminApiEvent(
                               ctx,
@@ -2072,7 +2072,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                             .create(version, resource.singularName, None, entity, WriteAction.Create, None)
                             .map {
                               case Left(error)          =>
-                                error.stringify.byteString
+                                refusedBulkLine(error, entity)
                               case Right(createdEntity) =>
                                 adminApiEvent(
                                   ctx,
@@ -2194,7 +2194,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                             )
                             .map {
                               case Left(error)          =>
-                                error.stringify.byteString
+                                refusedBulkLine(error, entity)
                               case Right(createdEntity) =>
                                 adminApiEvent(
                                   ctx,
@@ -2366,6 +2366,18 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
       case Some(code) => Results.Status(code)
     }
   }
+
+  // a bulk line refused by the validation of its entity, written like the other refused lines
+  private def refusedBulkLine(error: JsValue, entity: JsValue): ByteString =
+    Json
+      .obj(
+        "status"            -> error.select("http_status_code").asOpt[Int].getOrElse(400),
+        "error"             -> "bad_request",
+        "error_description" -> error.select("error").asOpt[JsValue].getOrElse(cleanError(error)),
+        "entity"            -> entity
+      )
+      .stringify
+      .byteString
 
   private def cleanError(err: JsValue): JsValue = {
     err match {

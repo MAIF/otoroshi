@@ -341,15 +341,16 @@
   },
   "BulkOperationError": {
     "type": "object",
-    "description": "A line a bulk operation refused. A refusal of the validation of an entity holds its http status under `http_status_code` instead of `status`",
+    "description": "A line a bulk operation refused",
     "required": [
+      "status",
       "error"
     ],
     "properties": {
       "status": {
         "type": "integer",
         "format": "int32",
-        "description": "The http status the line would get as a single call: 404 when the entity to update does not exist, 400 otherwise (a line that cannot be read, an entity the credentials cannot change, an entity to patch or to delete that does not exist)",
+        "description": "The http status the line would get as a single call: 404 when the entity to update does not exist, the status of the refusal when the validation of the entity refused it, 400 otherwise (a line that cannot be read, an entity the credentials cannot change, an entity to patch or to delete that does not exist)",
         "example": 400
       },
       "error": {
@@ -394,12 +395,6 @@
             }
           }
         ]
-      },
-      "http_status_code": {
-        "type": "integer",
-        "format": "int32",
-        "description": "The http status of the refusal, when the validation of the entity refused it",
-        "example": 400
       }
     }
   }

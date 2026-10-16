@@ -89,6 +89,21 @@ class GenericApiErrorsSpec extends OtoroshiSpec {
         call("DELETE", s"$routes/$id")
       }
     }
+    "write a bulk line refused by the validation of its entity like the other refused lines" in {
+      val admins = "/apis/security.otoroshi.io/v1/admins"
+      val line   = Json.obj("username" -> "bulk-empty-password@oto.tools", "password" -> "", "label" -> "bulk", "type" -> "SIMPLE")
+      val bulk   = call("POST", s"$admins/_bulk", Some(line.stringify), contentType = "application/x-ndjson")
+      withClue(bulk.body[String])(bulk.status mustBe 200)
+      lines(bulk) match {
+        case Seq(refused) =>
+          (refused \ "status").as[Int] mustBe 400
+          (refused \ "error").as[String] mustBe "bad_request"
+          (refused \ "error_description").as[String] mustBe "the password of an admin cannot be empty"
+          (refused \ "entity" \ "username").as[String] mustBe "bulk-empty-password@oto.tools"
+          (refused \ "http_status_code").isDefined mustBe false
+        case other        => fail(s"one line expected: $other")
+      }
+    }
     "reach the generic operations of the drafts, and list the drafts of a kind" in {
       val drafts = "/apis/proxy.otoroshi.io/v1/drafts"
       Seq("_count", "_schema", "_template").foreach { op =>
