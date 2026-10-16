@@ -135,13 +135,13 @@ trait AdminApiHelper {
     val paginationPage: Int     = ctx.request.queryString
       .get("page")
       .flatMap(_.headOption)
-      .map(_.toInt)
+      .flatMap(_.toIntOption)
       .getOrElse(1)
     val paginationPageSize: Int =
       ctx.request.queryString
         .get("pageSize")
         .flatMap(_.headOption)
-        .map(_.toInt)
+        .flatMap(_.toIntOption)
         .getOrElse(Int.MaxValue)
 
     val paginationPosition = (paginationPage - 1) * paginationPageSize
@@ -164,16 +164,17 @@ trait AdminApiHelper {
         if (hasFilters) {
           jsonElements
             .filter { case (_, elem) =>
+              // a field the element lacks, or a value of another type than the field, does not match
               filters.forall { case (key, value) =>
-                (elem \ key).as[JsValue] match {
+                (elem \ key).asOpt[JsValue].getOrElse(JsNull) match {
                   case JsString(v)     => v == value
-                  case JsBoolean(v)    => v == value.toBoolean
-                  case JsNumber(v)     => v.toDouble == value.toDouble
+                  case JsBoolean(v)    => value.toBooleanOption.contains(v)
+                  case JsNumber(v)     => value.toDoubleOption.contains(v.toDouble)
                   case JsArray(values) =>
                     values.exists {
                       case JsString(v)     => v.contains(value)
-                      case JsBoolean(v)    => v == value.toBoolean
-                      case JsNumber(v)     => v.toDouble == value.toDouble
+                      case JsBoolean(v)    => value.toBooleanOption.contains(v)
+                      case JsNumber(v)     => value.toDoubleOption.contains(v.toDouble)
                       case JsArray(values) => values.contains(JsString(value))
                       case _               => false
                     }
@@ -197,7 +198,13 @@ trait AdminApiHelper {
   )(
       findAllOps: => Future[Either[ApiError[Error], Seq[Entity]]]
   )(using env: Env, ec: ExecutionContext): Future[Result] = {
-    fetchWithPaginationAndFiltering[Entity, Error](ctx, filterPrefix, writeEntity, audit)(findAllOps).map {
+    // the paging parameters are numbers
+    val notNumbers = Seq("page", "pageSize").filter(name => ctx.request.getQueryString(name).exists(_.toIntOption.isEmpty))
+    if (notNumbers.nonEmpty)
+      Results
+        .BadRequest(Json.obj("error" -> "bad_request", "error_description" -> s"not a number: ${notNumbers.mkString(", ")}"))
+        .future
+    else fetchWithPaginationAndFiltering[Entity, Error](ctx, filterPrefix, writeEntity, audit)(findAllOps).map {
       case Left(error)       =>
         Results.Status(error.status)(Json.obj("error" -> "fetch_error", "error_description" -> error.bodyAsJson))
       case Right(finalItems) => {
@@ -809,13 +816,13 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     val paginationPage: Int     = ctx.request.queryString
       .get("page")
       .flatMap(_.headOption)
-      .map(_.toInt)
+      .flatMap(_.toIntOption)
       .getOrElse(1)
     val paginationPageSize: Int =
       ctx.request.queryString
         .get("pageSize")
         .flatMap(_.headOption)
-        .map(_.toInt)
+        .flatMap(_.toIntOption)
         .getOrElse(Int.MaxValue)
 
     val paginationPosition = (paginationPage - 1) * paginationPageSize
@@ -899,15 +906,15 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         val reducedItems  = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall { case (key, value) =>
-              (elem \ key).as[JsValue] match {
+              (elem \ key).asOpt[JsValue].getOrElse(JsNull) match {
                 case JsString(v)     => v == value
-                case JsBoolean(v)    => v == value.toBoolean
-                case JsNumber(v)     => v.toDouble == value.toDouble
+                case JsBoolean(v)    => value.toBooleanOption.contains(v)
+                case JsNumber(v)     => value.toDoubleOption.contains(v.toDouble)
                 case JsArray(values) =>
                   values.exists {
                     case JsString(v)     => v == value
-                    case JsBoolean(v)    => v == value.toBoolean
-                    case JsNumber(v)     => v.toDouble == value.toDouble
+                    case JsBoolean(v)    => value.toBooleanOption.contains(v)
+                    case JsNumber(v)     => value.toDoubleOption.contains(v.toDouble)
                     case JsArray(values) => values.contains(JsString(value))
                     case _               => false
                   }
@@ -926,13 +933,13 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 case Some(v) =>
                   v match {
                     case JsString(v)              => v.toLowerCase().indexOf(value) != -1
-                    case JsBoolean(v)             => v == value.toBoolean
-                    case JsNumber(v)              => v.toDouble == value.toDouble
+                    case JsBoolean(v)             => value.toBooleanOption.contains(v)
+                    case JsNumber(v)              => value.toDoubleOption.contains(v.toDouble)
                     case JsArray(values)          =>
                       values.exists {
                         case JsString(v)     => v == value
-                        case JsBoolean(v)    => v == value.toBoolean
-                        case JsNumber(v)     => v.toDouble == value.toDouble
+                        case JsBoolean(v)    => value.toBooleanOption.contains(v)
+                        case JsNumber(v)     => value.toDoubleOption.contains(v.toDouble)
                         case JsArray(values) => values.contains(JsString(value))
                         case _               => false
                       }
@@ -941,13 +948,13 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                         case Some(v) =>
                           v match {
                             case JsString(v)     => v.toLowerCase().indexOf(value) != -1
-                            case JsBoolean(v)    => v == value.toBoolean
-                            case JsNumber(v)     => v.toDouble == value.toDouble
+                            case JsBoolean(v)    => value.toBooleanOption.contains(v)
+                            case JsNumber(v)     => value.toDoubleOption.contains(v.toDouble)
                             case JsArray(values) =>
                               values.exists {
                                 case JsString(v)     => v == value
-                                case JsBoolean(v)    => v == value.toBoolean
-                                case JsNumber(v)     => v.toDouble == value.toDouble
+                                case JsBoolean(v)    => value.toBooleanOption.contains(v)
+                                case JsNumber(v)     => value.toDoubleOption.contains(v.toDouble)
                                 case JsArray(values) => values.contains(JsString(value))
                                 case _               => false
                               }

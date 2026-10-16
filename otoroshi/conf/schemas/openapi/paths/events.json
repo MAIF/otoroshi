@@ -57,7 +57,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), or `page` or `pageSize` is not a number",
           "content": {
             "application/json": {
               "schema": {
@@ -157,7 +157,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), or `page` or `pageSize` is not a number",
           "content": {
             "application/json": {
               "schema": {
@@ -480,7 +480,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), `page` or `pageSize` is not a number, or `from` or `to` is not a timestamp in milliseconds",
           "content": {
             "application/json": {
               "schema": {
@@ -631,7 +631,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), `page` or `pageSize` is not a number, or `from` or `to` is not a timestamp in milliseconds",
           "content": {
             "application/json": {
               "schema": {
@@ -798,7 +798,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), `page` or `pageSize` is not a number, or `from` or `to` is not a timestamp in milliseconds",
           "content": {
             "application/json": {
               "schema": {
@@ -1100,7 +1100,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), `page` or `pageSize` is not a number, or `from` or `to` is not a timestamp in milliseconds",
           "content": {
             "application/json": {
               "schema": {

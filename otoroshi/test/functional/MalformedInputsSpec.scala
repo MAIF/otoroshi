@@ -79,6 +79,19 @@ class MalformedInputsSpec extends OtoroshiSpec {
       mustBe400(call("POST", "/api/otoroshi.json", Some("[]")))
       mustBe400(call("POST", "/api/import", Some("not json"), contentType = "text/plain"))
     }
+    "refuse the paging and ranges that are not numbers, and filter on any field" in {
+      Seq(
+        "/api/audit/events?page=one",
+        "/api/alert/events?pageSize=ten",
+        "/api/stats/global?from=yesterday",
+        "/api/events?to=now",
+        "/api/stats?page=one"
+      ).foreach(path => withClue(path)(mustBe400(call("GET", path))))
+      Seq("/api/audit/events?filter.not_a_field=1", "/api/audit/events?filter.@timestamp=not-a-number").foreach { path =>
+        val resp = call("GET", path)
+        withClue(s"$path ${resp.body[String]}")(resp.status mustBe 200)
+      }
+    }
     "shutdown" in {
       stopAll()
     }

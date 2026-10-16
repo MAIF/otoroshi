@@ -128,7 +128,11 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
 
   def withEventStoreAndParser[A](parser: BodyParser[A])(f: ApiActionContext[A] => Future[Result]): Action[A] = {
     ApiAction.async(parser) { ctx =>
-      env.datastores.globalConfigDataStore.singleton().flatMap { config =>
+      // the paging and range parameters are numbers
+      val notNumbers = Seq("page", "pageSize").filter(name => ctx.request.getQueryString(name).exists(_.toIntOption.isEmpty)) ++
+        Seq("from", "to").filter(name => ctx.request.getQueryString(name).exists(_.toLongOption.isEmpty))
+      if (notNumbers.nonEmpty) BadRequest(Json.obj("error" -> s"not a number: ${notNumbers.mkString(", ")}")).future
+      else env.datastores.globalConfigDataStore.singleton().flatMap { config =>
         config.elasticReadsConfig match {
           case None    =>
             NotFound(Json.obj("error" -> "no elastic read config found !")).future
