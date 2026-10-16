@@ -637,12 +637,28 @@ class OpenApiConformanceSpec(configurationSpec: => Configuration) extends Otoros
     case other       => other
   }
 
+  // the yaml reader of otoroshi stops at 3145728 code points (the default limit of snakeyaml), and the whole document
+  // is above it: the answers in yaml are read without that limit
+  private lazy val yamlReader = new com.fasterxml.jackson.databind.ObjectMapper(
+    com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+      .builder()
+      .loaderOptions {
+        val options = new org.yaml.snakeyaml.LoaderOptions()
+        options.setCodePointLimit(Int.MaxValue)
+        options
+      }
+      .build()
+  )
+
+  private def parseYaml(body: String): Option[JsValue] =
+    Try(Json.parse(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(yamlReader.readValue(body, classOf[Object])))).toOption
+
   // the schema documented for a content, and the json values of a body in that content
   private def bodyValues(contentType: String, body: String): Either[String, Seq[JsValue]] = contentType match {
     case "application/json"                           => Try(Json.parse(body)).toEither.left.map(e => s"not json: ${e.getMessage}").map(Seq(_))
     case "application/x-ndjson"                       =>
       Try(body.split("\n").toSeq.map(_.trim).filter(_.nonEmpty).map(Json.parse)).toEither.left.map(e => s"not ndjson: ${e.getMessage}")
-    case "application/yaml" | "application/yml"       => Yaml.parse(body).map(Seq(_)).toRight("not yaml")
+    case "application/yaml" | "application/yml"       => parseYaml(body).map(Seq(_)).toRight("not yaml")
     case _                                            => Right(Seq.empty)
   }
 
