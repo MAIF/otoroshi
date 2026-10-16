@@ -538,6 +538,17 @@ class OpenApiConformanceSpec(configurationSpec: => Configuration) extends Otoros
     "globalconfig", "new", "{entity}", "admin-sessions", "apps-sessions", "apps-sessions-module", "openapi.json", "openapi"
   )
 
+  // the routes of these families that the generic api has no equivalent of: they have to be documented
+  private val requiredInUndocumentedFamilies: Set[(String, String)] = Set(
+    ("get", "/api/apikeys/{id}/quotas"),
+    ("delete", "/api/apikeys/{id}/quotas"),
+    ("post", "/api/certificates/{certId}/_renew"),
+    ("post", "/api/certificates/_bundle"),
+    ("post", "/api/certificates/_dedupLetsEncrypt"),
+    ("delete", "/api/apps-sessions-module/{id}"),
+    ("post", "/api/new/resources")
+  )
+
   private val expectedOperations: Seq[(String, String)] = {
     val generic = resources.flatMap(genericOperations)
     val others  = playRoutes.filter { r =>
@@ -545,7 +556,9 @@ class OpenApiConformanceSpec(configurationSpec: => Configuration) extends Otoros
       segments match {
         case "apis" +: "{group}" +: _                    => false
         case "apis" +: rest                              => !Set(Seq("openapi", "ui"), Seq("openapi"), Seq("workflows", "doc")).contains(rest)
-        case "api" +: family +: _                        => !undocumentedApiFamilies.contains(family) && r.path != "/api/analytics/_migrate"
+        case "api" +: family +: _                        =>
+          (!undocumentedApiFamilies.contains(family) || requiredInUndocumentedFamilies.contains((r.method, r.path))) &&
+          r.path != "/api/analytics/_migrate"
         case _                                           => false
       }
     }.map(r => (r.method, r.path))
