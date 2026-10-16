@@ -1714,7 +1714,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Close a plan of an api",
-      "description": "Deletes the subscriptions of the plan (the draft ones with `version=Draft`). The api itself is not changed: removing the plan from its `plans` is left to an update of the api. The api has to be enabled, and neither deprecated nor removed. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "description": "Closes the plan: its `status` is set to `closed` and the api (its draft with `version=Draft`) is saved, as the backoffice does, which deletes the subscriptions of the plan and their api keys. The api has to be enabled, and neither deprecated nor removed. The admin behind the credentials has to be able to write the api. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.closePlan",
       "parameters": [
         {
@@ -1769,7 +1769,7 @@
       },
       "responses": {
         "200": {
-          "description": "The subscriptions of the plan are deleted",
+          "description": "The plan is closed and its subscriptions are deleted: the body is `{\"done\": true}`",
           "content": {
             "application/json": {
               "schema": {

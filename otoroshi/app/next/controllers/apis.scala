@@ -18,6 +18,7 @@ import otoroshi.next.models.{
 }
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
+import otoroshi.api.WriteAction
 import otoroshi.api.WriteAction.Create
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
@@ -369,12 +370,31 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
             result match {
               case Left(err) => err.vfuture
               case Right(_)  =>
-                val oldApi = api
-                val newApi = api.copy(plans = api.plans.filter(_.id != planId))
-
-                ApiConsistencyService
-                  .applyApiChanges(oldApi, newApi, isDraft)
-                  .map(_ => Ok(Json.obj("done" -> true)))
+                // the plan is closed, not removed: the api is saved with the plan closed, as the backoffice does, and
+                // the save deletes the subscriptions of the plan and their api keys
+                val newApi = api.copy(plans = api.plans.map { plan =>
+                  if (plan.id == planId) plan.copy(raw = plan.raw ++ Json.obj("status" -> "closed")) else plan
+                })
+                if (isDraft) {
+                  ApiConsistencyService.applyApiChanges(api, newApi, isDraft = true).flatMap { saved =>
+                    env.datastores.draftsDataStore.findById(apiId).flatMap {
+                      case None        => Results.NotFound(Json.obj("error" -> "api not found")).vfuture
+                      case Some(draft) =>
+                        env.datastores.draftsDataStore
+                          .set(draft.copy(content = saved.json))
+                          .map(_ => Ok(Json.obj("done" -> true)))
+                    }
+                  }
+                } else {
+                  Api.writeValidator(newApi, newApi.json, Some((api, api.json)), "api", Some(apiId), WriteAction.Update, env)
+                    .flatMap {
+                      case Left(err)    =>
+                        Results
+                          .Status(err.select("http_status_code").asOpt[Int].getOrElse(400))(err.asObject - "http_status_code")
+                          .vfuture
+                      case Right(saved) => env.datastores.apiDataStore.set(saved).map(_ => Ok(Json.obj("done" -> true)))
+                    }
+                }
             }
         }
       }

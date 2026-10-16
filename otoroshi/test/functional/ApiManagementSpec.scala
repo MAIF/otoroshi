@@ -77,6 +77,15 @@ class ApiManagementSpec extends OtoroshiSpec {
       val subs = ok(call("POST", s"$apis/api-mgmt-a/plans/plan-x/subscriptions/preview-update", Some(Json.obj())))
       subs.as[Seq[JsObject]].map(s => (s \ "id").as[String]) mustBe Seq("sub-a")
     }
+    "close a plan, deleting its subscriptions and their api keys, in its api only" in {
+      val key = keyOf("sub-a")
+      ok(call("POST", s"$apis/api-mgmt-a/plans/plan-x/close", Some(Json.obj())))
+      val plans = (ok(call("GET", s"$apis/api-mgmt-a")) \ "plans").as[Seq[JsObject]]
+      plans.map(p => ((p \ "id").as[String], (p \ "status").as[String])) mustBe Seq(("plan-x", "closed"))
+      call("GET", s"/apis/apis.otoroshi.io/v1/apisubscriptions/sub-a").status mustBe 404
+      call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$key").status mustBe 404
+      ok(call("GET", s"/apis/apis.otoroshi.io/v1/apisubscriptions/sub-b"))
+    }
     "keep the state of an api it stops" in {
       createApi("api-mgmt-staging", "staging")
       ok(call("POST", s"$apis/api-mgmt-staging/_stop"))
