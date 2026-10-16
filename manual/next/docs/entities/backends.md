@@ -68,7 +68,7 @@ Each target represents a downstream server that Otoroshi can forward requests to
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `enabled` | boolean | `false` | Enable custom TLS configuration for this target |
-| `loose` | boolean | `false` | If enabled, will block all untrusted SSL configurations |
+| `loose` | boolean | `false` | Do not check that the certificate of the target is issued for its host name |
 | `trust_all` | boolean | `false` | Accept any server certificate, including self-signed ones |
 | `certs` | array of string | `[]` | Client certificate IDs used to communicate with the target |
 | `trusted_certs` | array of string | `[]` | Trusted certificate IDs expected from the target |
@@ -101,9 +101,11 @@ Each target represents a downstream server that Otoroshi can forward requests to
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `enabled` | boolean | `false` | Enable periodic health checks |
-| `url` | string |     | The URL to call for health checks |
+| `url` | string |     | The path called on each target, appended to its scheme, host and port (`/health`, not a full URL) |
+| `timeout` | number | `5000` | Maximum duration (ms) of a health check call |
+| `blockOnRed` | boolean | `false` | Also remove from the load balancing pool the targets whose health check answers red |
 
-When enabled, Otoroshi periodically calls the health check URL. Unhealthy targets can be temporarily removed from the load balancing pool.
+When enabled, Otoroshi periodically calls the health check path on each target. A target answering a status from 200 to 499 is healthy, a target answering another status is red. A target that cannot be reached is removed from the load balancing pool until its last failed health check is older than `otoroshi.healthcheck.ttl` (60 seconds by default). With `blockOnRed`, a red target is removed the same way.
 
 ## Load balancing
 
@@ -166,7 +168,7 @@ Client settings control how Otoroshi connects to backend targets.
 | `call_and_stream_timeout` | number | `120000` | Maximum duration (ms) for handling the request and streaming the response |
 | `call_timeout` | number | `30000` | Maximum duration (ms) for a single call |
 | `global_timeout` | number | `30000` | Maximum duration (ms) for the entire call including retries |
-| `sample_interval` | number | `2000` | Delay (ms) between retries. Multiplied by `backoff_factor` at each retry |
+| `sample_interval` | number | `2000` | How long (ms) an open circuit breaker fails the calls before letting a call try the target again |
 | `custom_timeouts` | array of object | `[]` | Path-specific timeout overrides (see below) |
 | `cache_connection_settings` | object |     | Connection caching settings (see below) |
 | `proxy` | object | `null` | HTTP proxy settings for reaching the backend |
@@ -232,7 +234,7 @@ Custom timeouts allow overriding timeout values for specific paths:
   "load_balancing": { "type": "RoundRobin" },
   "health_check": {
     "enabled": true,
-    "url": "http://api-1.backend.internal:8080/health"
+    "url": "/health"
   },
   "client": {
     "retries": 1,
