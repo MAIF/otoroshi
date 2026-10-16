@@ -808,19 +808,19 @@ object MemberView {
       location = request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
       httpPort = request.headers
         .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
-        .map(_.toInt)
+        .flatMap(_.toIntOption)
         .getOrElse(env.exposedHttpPortInt),
       httpsPort = request.headers
         .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
-        .map(_.toInt)
+        .flatMap(_.toIntOption)
         .getOrElse(env.exposedHttpsPortInt),
       internalHttpPort = request.headers
         .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
-        .map(_.toInt)
+        .flatMap(_.toIntOption)
         .getOrElse(env.httpPort),
       internalHttpsPort = request.headers
         .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
-        .map(_.toInt)
+        .flatMap(_.toIntOption)
         .getOrElse(env.httpsPort),
       lastSeen = DateTime.now(),
       timeout = Duration(

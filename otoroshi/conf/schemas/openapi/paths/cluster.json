@@ -580,7 +580,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, or the body is not json",
+          "description": "The credentials are missing, the body is not json, or it has no `token` (a string) or no `user`",
           "content": {
             "application/json": {
               "schema": {
@@ -630,7 +630,7 @@
           }
         },
         "500": {
-          "description": "The body has no `token` or no `user` (answered as a server error), or this instance is a worker and the leaders did not create the token",
+          "description": "This instance is a worker and the leaders did not create the token",
           "content": {
             "application/json": {
               "schema": {
@@ -1022,7 +1022,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), or the `Otoroshi-Worker-Name` header of the worker is missing",
           "content": {
             "application/json": {
               "schema": {
@@ -1072,7 +1072,7 @@
           }
         },
         "500": {
-          "description": "The body could not be read: a line that is not json, a last line without a new line, a body that is not compressed as configured, a missing `Otoroshi-Worker-Name` header, or a `budget` that is not a number",
+          "description": "The body could not be read: a line that is not json, or a body that is not compressed as configured",
           "content": {
             "application/json": {
               "schema": {
@@ -1330,16 +1330,6 @@
               }
             }
           }
-        },
-        "500": {
-          "description": "A port header is not a number, or `budget` is not a number",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
         }
       }
     }
@@ -1527,7 +1517,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "description": "The credentials are missing (the route that serves the admin api refuses the call before the controller runs), or a header that describes the relayed request is missing or cannot be read: `Otoroshi-Relay-Routing-Id` (a number), `-Method`, `-Uri`, `-Remote-Addr`, `-Secured` and `-Has-Body` (booleans), `-Certs-<index>` (a number)",
           "content": {
             "application/json": {
               "schema": {
@@ -1557,27 +1547,24 @@
           }
         },
         "404": {
-          "description": "The cluster api is not available: the cluster mode of this instance is `Off`",
+          "description": "The cluster api is not available (the cluster mode of this instance is `Off`), or the answer of the route is a 404, when no route matches the relayed request for instance",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ErrorResponse"
+              }
+            },
+            "*/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "description": "The body of the answer of the route"
               }
             }
           }
         },
         "429": {
           "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
-        },
-        "500": {
-          "description": "A required `Otoroshi-Relay-Routing-*` header is missing or malformed (answered as a server error)",
           "content": {
             "application/json": {
               "schema": {

@@ -203,6 +203,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHe
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
           case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+          case _
+              if (ctx.request.body \ "token").asOpt[String].isEmpty || (ctx.request.body \ "user").asOpt[JsValue].isEmpty =>
+            FastFuture.successful(BadRequest(Json.obj("error" -> "the body needs a token and a user")))
           case Worker => {
             val token = (ctx.request.body \ "token").as[String]
             val usr   = (ctx.request.body \ "user").as[JsValue]
@@ -292,10 +295,15 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHe
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
           case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+          // the quotas are counted for the worker that sends them
+          case _ if !ctx.request.headers.hasHeader(ClusterAgent.OtoroshiWorkerNameHeader) =>
+            FastFuture.successful(
+              BadRequest(Json.obj("error" -> s"missing header ${ClusterAgent.OtoroshiWorkerNameHeader}"))
+            )
           case Worker => {
             ctx.request.body
               .via(env.clusterConfig.gunzip())
-              .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
+              .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, allowTruncation = true))
               .mapAsync(4) { item =>
                 val jsItem = Json.parse(item.utf8String)
                 ClusterLeaderUpdateMessage.read(jsItem) match {
@@ -314,7 +322,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHe
           }
           case Leader => {
             // Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updating quotas")
-            val budget: Long = ctx.request.getQueryString("budget").map(_.toLong).getOrElse(2000L)
+            val budget: Long = ctx.request.getQueryString("budget").flatMap(_.toLongOption).getOrElse(2000L)
             val start: Long  = System.currentTimeMillis()
             val bytesCounter = new AtomicLong(0L)
             env.datastores.globalConfigDataStore.singleton().flatMap { config =>
@@ -324,7 +332,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHe
                   bs
                 })
                 .via(env.clusterConfig.gunzip())
-                .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
+                .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, allowTruncation = true))
                 .mapAsync(4) { item =>
                   val jsItem = Json.parse(item.utf8String)
                   ClusterLeaderUpdateMessage.read(jsItem) match {
@@ -382,7 +390,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHe
           }
           case Leader => {
 
-            val budget: Long = ctx.request.getQueryString("budget").map(_.toLong).getOrElse(2000L)
+            val budget: Long = ctx.request.getQueryString("budget").flatMap(_.toLongOption).getOrElse(2000L)
             val cachedValue  = cachedRef.get()
 
             ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
@@ -467,11 +475,32 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHe
       }
     }
 
+  // the headers that describe the relayed request that are missing, or whose value cannot be read
+  private def badRelayRoutingHeaders(request: RequestHeader): Seq[String] = {
+    def bad(name: String, valid: String => Boolean): Option[String] = request.headers.get(name) match {
+      case Some(value) if valid(value) => None
+      case _                           => Some(name)
+    }
+    Seq(
+      bad("Otoroshi-Relay-Routing-Id", _.toLongOption.isDefined),
+      bad("Otoroshi-Relay-Routing-Method", _.nonEmpty),
+      bad("Otoroshi-Relay-Routing-Uri", _.nonEmpty),
+      bad("Otoroshi-Relay-Routing-Remote-Addr", _.nonEmpty),
+      bad("Otoroshi-Relay-Routing-Secured", _.toBooleanOption.isDefined),
+      bad("Otoroshi-Relay-Routing-Has-Body", _.toBooleanOption.isDefined)
+    ).flatten ++ request.headers.keys.toSeq.filter(key =>
+      key.startsWith("Otoroshi-Relay-Routing-Certs-") && key.stripPrefix("Otoroshi-Relay-Routing-Certs-").toIntOption.isEmpty
+    )
+  }
+
   def relayRouting() = ApiAction.async(sourceBodyParser) { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      val badHeaders = badRelayRoutingHeaders(ctx.request)
       env.clusterConfig.mode match {
-        case Off => NotFound(Json.obj("error" -> "Cluster API not available")).future
-        case _   => {
+        case Off                      => NotFound(Json.obj("error" -> "Cluster API not available")).future
+        case _ if badHeaders.nonEmpty =>
+          BadRequest(Json.obj("error" -> s"missing or bad relay routing headers: ${badHeaders.mkString(", ")}")).future
+        case _                        => {
           val engine     = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").toOption.get
           val cookies    = ctx.request.headers
             .get("Otoroshi-Relay-Routing-Cookies")
