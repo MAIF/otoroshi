@@ -2922,7 +2922,14 @@ class DocAction(val parser: BodyParser[AnyContent])(using env: Env)
 
   override protected def executionContext: ExecutionContext = env.otoroshiExecutionContext
 
-  override def invokeBlock[A](request: Request[A], block: DocActionCtx[A] => Future[Result]): Future[Result] = {
+  // the admin api route sends the state challenge of otoroshi to its backend, answered here like ApiAction does, so
+  // that the documentation is served through the admin api host too, with the credentials checked by that route
+  override def invokeBlock[A](request: Request[A], block: DocActionCtx[A] => Future[Result]): Future[Result] =
+    checkSecret(request, block).map(
+      _.withHeaders(env.Headers.OtoroshiStateResp -> request.headers.get(env.Headers.OtoroshiState).getOrElse("--"))
+    )(using executionContext)
+
+  private def checkSecret[A](request: Request[A], block: DocActionCtx[A] => Future[Result]): Future[Result] = {
     if (env.isDev) {
       block(DocActionCtx(request, ""))
     } else {

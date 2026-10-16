@@ -56,6 +56,11 @@ class GenericApiErrorsSpec extends OtoroshiSpec {
           }
       }
     }
+    "serve its documentation through the admin api host" in {
+      val resp = call("GET", "/apis/openapi.json")
+      withClue(resp.body[String].take(500))(resp.status mustBe 200)
+      (resp.json \ "openapi").asOpt[String] mustBe Some("3.0.3")
+    }
     "shutdown" in {
       stopAll()
     }
