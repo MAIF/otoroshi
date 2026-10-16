@@ -1263,6 +1263,19 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   private def notFoundBody: JsValue = Json.obj("error" -> "not_found", "error_description" -> "resource not found")
 
+  // the body of the creation or the update of an entity, which has to be a json object
+  private def entityBodyIn(
+      ctx: ApiActionContext[?],
+      request: Request[Source[ByteString, ?]],
+      resource: Resource,
+      version: String
+  ): Future[Either[JsValue, JsValue]] = bodyIn(ctx, request, resource, version).map {
+    case Right(body: JsObject) => Right(body)
+    case Right(_)              =>
+      Left(Json.obj("error" -> "bad_request", "error_description" -> "the body of an entity must be a json object"))
+    case left                  => left
+  }
+
   private def bodyIn(
       ctx: ApiActionContext[?],
       request: Request[Source[ByteString, ?]],
@@ -2355,7 +2368,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
     (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       withResource(group, version, entity, ctx) { resource =>
-        bodyIn(ctx, ctx.request, resource, version) flatMap {
+        entityBodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
           case Right(body) if !ctx.canUserWriteJson(body) =>
             result(
@@ -2512,7 +2525,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
     (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       withResource(group, version, entity, ctx) { resource =>
-        bodyIn(ctx, ctx.request, resource, version) flatMap {
+        entityBodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
           case Right(__body) => {
             val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
@@ -2586,7 +2599,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
     (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       withResource(group, version, entity, ctx) { resource =>
-        bodyIn(ctx, ctx.request, resource, version) flatMap {
+        entityBodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
           case Right(__body) => {
             val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
