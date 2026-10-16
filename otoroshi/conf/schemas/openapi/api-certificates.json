@@ -1,0 +1,52 @@
+{
+  "LetsEncryptDedupReport": {
+    "type": "object",
+    "description": "What the removal of the duplicated let's encrypt certificates found, and deleted",
+    "properties": {
+      "dryRun": {
+        "type": "boolean",
+        "description": "`true` when nothing was deleted, the report only says what would be",
+        "example": true
+      },
+      "certificates": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of let's encrypt certificates otoroshi holds",
+        "example": 12
+      },
+      "duplicates": {
+        "type": "array",
+        "description": "The ids of the let's encrypt certificates that duplicate a certificate kept",
+        "items": {
+          "type": "string",
+          "description": "The id of a certificate",
+          "example": "cert_le_api_oto_tools_2"
+        }
+      },
+      "expired": {
+        "type": "array",
+        "description": "The ids of the expired let's encrypt certificates whose domains are covered by a certificate kept, when `deleteExpired` is true",
+        "items": {
+          "type": "string",
+          "description": "The id of a certificate",
+          "example": "cert_le_api_oto_tools_old"
+        }
+      },
+      "deleted": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of certificates deleted, 0 for a dry run",
+        "example": 0
+      }
+    },
+    "example": {
+      "dryRun": true,
+      "certificates": 12,
+      "duplicates": [
+        "cert_le_api_oto_tools_2"
+      ],
+      "expired": [],
+      "deleted": 0
+    }
+  }
+}
