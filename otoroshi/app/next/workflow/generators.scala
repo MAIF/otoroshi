@@ -41,7 +41,8 @@ object WorkflowGenerators {
           "description"  -> value.documentationDescription,
           "schema"       -> value.documentationInputSchema,
           "form_schema"  -> value.documentationFormSchema,
-          "category"     -> JsString(value.documentationCategory.getOrElse("operators")),
+          // the category of the operators, a category that exists
+          "category"     -> JsString(value.documentationCategory.getOrElse("transformations")),
           "example"      -> value.documentationExample,
           "display_name" -> value.documentationDisplayName,
           "icon"         -> value.documentationIcon

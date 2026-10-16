@@ -9,7 +9,8 @@ import play.api.libs.ws.{readableAsString, WSAuthScheme, WSResponse}
 import java.util.Base64
 import scala.concurrent.duration.*
 
-// small things of the admin api: the extensions of a certificate in hexadecimal and an unknown kind of event
+// small things of the admin api: the extensions of a certificate in hexadecimal, an unknown kind of event and the
+// category of the workflow operators
 class AdminApiSmallFixesSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
@@ -42,6 +43,13 @@ class AdminApiSmallFixesSpec extends OtoroshiSpec {
       val resp = admin("/api/events/_template?eventType=NotAnEvent")
       resp.status mustBe 400
       resp.body[String] must include("Event type unknown")
+    }
+    "put every workflow operator in a category that exists" in {
+      val doc        = admin("/apis/workflows/doc.json").json
+      val categories = (doc \ "categories").as[Seq[JsObject]].map(c => (c \ "id").as[String]).toSet
+      val operators  = (doc \ "operators").as[Seq[JsObject]].map(o => (o \ "category").as[String]).toSet
+      operators must not be empty
+      operators.diff(categories) mustBe empty
     }
     "shutdown" in {
       stopAll()
