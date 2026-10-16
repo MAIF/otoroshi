@@ -381,7 +381,9 @@ case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
   lazy val unknownConfigTypeError = JsError("Unknown auth. config type")
 
   override def reads(json: JsValue): JsResult[AuthModuleConfig] = {
-    (json \ "type").as[String] match {
+    // a json without type is an error to report, not an exception
+    if ((json \ "type").asOpt[String].isEmpty) JsError("missing auth. config type")
+    else (json \ "type").as[String] match {
       case "oauth2"        => GenericOauth2ModuleConfig._fmt.reads(json)
       case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
       case "basic"         => BasicAuthModuleConfig._fmt.reads(json)

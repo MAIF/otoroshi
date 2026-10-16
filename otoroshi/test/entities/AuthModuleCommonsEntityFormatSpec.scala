@@ -298,6 +298,11 @@ class AuthModuleCommonsEntityFormatSpec extends EntityFormatSpec {
 
     val session = Json.obj("clientSideSessionEnabled" -> true)
 
+    "not read a config without type" in {
+      readError(format, session ++ Json.obj("id" -> "a", "name" -> "b"))
+      readError(format, JsNull)
+    }
+
     "read a basic module" in {
       readOk(format, session ++ Json.obj("type" -> "basic", "id" -> "a", "name" -> "b")) mustBe a[BasicAuthModuleConfig]
     }
@@ -364,10 +369,6 @@ class AuthModuleCommonsEntityFormatSpec extends EntityFormatSpec {
 
     "give the error of the module format for a known type" in {
       readError(format, Json.obj("type" -> "basic", "name" -> "b"))
-    }
-
-    "throw instead of failing for a module without type" in {
-      a[JsResultException] must be thrownBy format.reads(Json.obj("id" -> "a", "name" -> "b"))
     }
 
     "write what the module writes" in {
