@@ -52,6 +52,20 @@ class MalformedInputsSpec extends OtoroshiSpec {
       relay.body[String] must include("Otoroshi-Relay-Routing-Id")
       mustBe400(call("POST", "/api/cluster/user-tokens", Some("{}")))
     }
+    "refuse the malformed calls of the pki" in {
+      given env: Env = otoroshiComponents.env
+      val deadline   = System.currentTimeMillis() + 60000L
+      while (
+        env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA).futureValue.isEmpty &&
+        System.currentTimeMillis() < deadline
+      ) Thread.sleep(500)
+      call("POST", "/api/pki/cas/not-a-ca-nor-a-number/certs", Some("{}")).status mustBe 404
+      mustBe400(call("POST", "/api/pki/certs", Some("not json"), contentType = "text/plain"))
+      val sign = s"/api/pki/cas/${Cert.OtoroshiIntermediateCA}/certs/_sign"
+      mustBe400(call("POST", s"$sign?duration=not-a-number", Some("not pem"), contentType = "text/plain"))
+      mustBe400(call("POST", sign, Some("not pem"), contentType = "text/plain"))
+      mustBe400(call("POST", "/api/pki/certs/_letencrypt", Some("not json"), contentType = "text/plain"))
+    }
     "shutdown" in {
       stopAll()
     }

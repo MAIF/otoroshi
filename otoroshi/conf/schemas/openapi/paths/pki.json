@@ -48,7 +48,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body does not describe a key pair, or the key pair cannot be generated",
+          "description": "The credentials are missing, the body does not describe a key pair, or the key pair cannot be generated, or the body is not json",
           "content": {
             "application/json": {
               "schema": {
@@ -86,16 +86,6 @@
               }
             }
           }
-        },
-        "500": {
-          "description": "The body is not json. The error is answered as a server error",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
         }
       }
     }
@@ -106,7 +96,7 @@
         "pki"
       ],
       "summary": "Generate a certificate signing request",
-      "description": "Generates a key pair and a certificate signing request for it, from the settings of the body. With the `ca` query parameter, the request carries the authority key identifier of that certificate authority. Nothing is stored: the private key is only in the answer. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number: a value that is neither the id of a certificate nor a number answers a server error instead of a not found.",
+      "description": "Generates a key pair and a certificate signing request for it, from the settings of the body. With the `ca` query parameter, the request carries the authority key identifier of that certificate authority. Nothing is stored: the private key is only in the answer. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number, as it is written or as a number.",
       "operationId": "otoroshi.controllers.adminapi.PkiController.genCsr",
       "parameters": [
         {
@@ -148,7 +138,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the request cannot be generated",
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the request cannot be generated, or the body is not json",
           "content": {
             "application/json": {
               "schema": {
@@ -189,16 +179,6 @@
         },
         "429": {
           "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
-        },
-        "500": {
-          "description": "The body is not json, or the certificate authority is looked up by a value that is neither the id nor the serial number of a certificate (see the description). The error is answered as a server error",
           "content": {
             "application/json": {
               "schema": {
@@ -259,7 +239,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate cannot be generated (an unknown algorithm for instance)",
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate cannot be generated (an unknown algorithm for instance), or the body is not json",
           "content": {
             "application/json": {
               "schema": {
@@ -290,16 +270,6 @@
         },
         "429": {
           "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
-        },
-        "500": {
-          "description": "The body is not json. The error is answered as a server error",
           "content": {
             "application/json": {
               "schema": {
@@ -360,7 +330,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate authority cannot be generated",
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate authority cannot be generated, or the body is not json",
           "content": {
             "application/json": {
               "schema": {
@@ -398,16 +368,6 @@
               }
             }
           }
-        },
-        "500": {
-          "description": "The body is not json. The error is answered as a server error",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
         }
       }
     }
@@ -418,7 +378,7 @@
         "pki"
       ],
       "summary": "Generate a certificate signed by a certificate authority",
-      "description": "Generates a key pair, a certificate signing request and the certificate the certificate authority of the path signs from it, from the settings of the body. The chain of the certificate holds the certificate, the certificate authority and the chain of the certificate authority. With `includeAIA: true`, a certificate signed by the root ca of otoroshi carries the authority information access extension. The generated certificate is answered as a certificate entity, with its chain and its private key, and stored unless `persist=false`. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number: a value that is neither the id of a certificate nor a number answers a server error instead of a not found.",
+      "description": "Generates a key pair, a certificate signing request and the certificate the certificate authority of the path signs from it, from the settings of the body. The chain of the certificate holds the certificate, the certificate authority and the chain of the certificate authority. With `includeAIA: true`, a certificate signed by the root ca of otoroshi carries the authority information access extension. The generated certificate is answered as a certificate entity, with its chain and its private key, and stored unless `persist=false`. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number, as it is written or as a number.",
       "operationId": "otoroshi.controllers.adminapi.PkiController.genCert",
       "parameters": [
         {
@@ -471,7 +431,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate cannot be generated",
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate cannot be generated, or the body is not json",
           "content": {
             "application/json": {
               "schema": {
@@ -519,16 +479,6 @@
               }
             }
           }
-        },
-        "500": {
-          "description": "The body is not json, or the certificate authority is looked up by a value that is neither the id nor the serial number of a certificate (see the description). The error is answered as a server error",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
         }
       }
     }
@@ -539,7 +489,7 @@
         "pki"
       ],
       "summary": "Generate an intermediate certificate authority",
-      "description": "Generates a key pair and an intermediate certificate authority signed by the certificate authority of the path (basic constraint `CA:true` with a path length of 0, key usages `keyCertSign`, `cRLSign` and `digitalSignature`), from the settings of the body. The chain of the generated certificate authority holds it, its parent and the chain of its parent. The generated certificate is answered as a certificate entity, with its chain and its private key, and stored unless `persist=false`. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number: a value that is neither the id of a certificate nor a number answers a server error instead of a not found.",
+      "description": "Generates a key pair and an intermediate certificate authority signed by the certificate authority of the path (basic constraint `CA:true` with a path length of 0, key usages `keyCertSign`, `cRLSign` and `digitalSignature`), from the settings of the body. The chain of the generated certificate authority holds it, its parent and the chain of its parent. The generated certificate is answered as a certificate entity, with its chain and its private key, and stored unless `persist=false`. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number, as it is written or as a number.",
       "operationId": "otoroshi.controllers.adminapi.PkiController.genSubCA",
       "parameters": [
         {
@@ -592,7 +542,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate authority cannot be generated",
+          "description": "The credentials are missing, the body does not describe a certificate (it gives neither `key` nor `keyType` and `keySize`), or the certificate authority cannot be generated, or the body is not json",
           "content": {
             "application/json": {
               "schema": {
@@ -640,16 +590,6 @@
               }
             }
           }
-        },
-        "500": {
-          "description": "The body is not json, or the certificate authority is looked up by a value that is neither the id nor the serial number of a certificate (see the description). The error is answered as a server error",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
         }
       }
     }
@@ -660,7 +600,7 @@
         "pki"
       ],
       "summary": "Sign a certificate signing request",
-      "description": "Signs the certificate signing request of the body with the certificate authority of the path, and answers the certificate. The certificate keeps the subject, the public key and the extensions of the request, and is signed with the signature algorithm of the certificate authority. Nothing is stored. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number: a value that is neither the id of a certificate nor a number answers a server error instead of a not found.",
+      "description": "Signs the certificate signing request of the body with the certificate authority of the path, and answers the certificate. The certificate keeps the subject, the public key and the extensions of the request, and is signed with the signature algorithm of the certificate authority. Nothing is stored. Only a super admin can call it. The certificate authority is found by its id, or else by its serial number, as it is written or as a number.",
       "operationId": "otoroshi.controllers.adminapi.PkiController.signCert",
       "parameters": [
         {
@@ -715,7 +655,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, or the certificate cannot be signed",
+          "description": "The credentials are missing, the body is not a PEM encoded certificate signing request, `duration` is not a number, or the certificate cannot be signed",
           "content": {
             "application/json": {
               "schema": {
@@ -763,16 +703,6 @@
               }
             }
           }
-        },
-        "500": {
-          "description": "The body is not a PEM encoded certificate signing request, `duration` is not a number, or the certificate authority is looked up by a value that is neither the id nor the serial number of a certificate. These errors are answered as server errors",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            }
-          }
         }
       }
     }
@@ -813,7 +743,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, or the body gives no `host`",
+          "description": "The credentials are missing, or the body gives no `host` (or is not json)",
           "content": {
             "application/json": {
               "schema": {
@@ -852,8 +782,8 @@
             }
           }
         },
-        "500": {
-          "description": "The order failed: the acme server cannot be reached, it refuses the domain, or the challenge failed. Also answered when the body is not json",
+        "502": {
+          "description": "The order failed: the acme server cannot be reached, it refuses the domain, or the challenge failed",
           "content": {
             "application/json": {
               "schema": {

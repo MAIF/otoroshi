@@ -47,9 +47,13 @@ import otoroshi.utils.http.DN
 
 trait Pki {
 
+  // the json of a query, or why it cannot be read
+  private def parseQuery(query: ByteString): Either[String, JsValue] =
+    Try(Json.parse(query.utf8String)).toOption.toRight("the body is not json")
+
   // genkeypair          generate a public key / private key pair
   def genKeyPair(query: ByteString)(using ec: ExecutionContext): Future[Either[String, GenKeyPairResponse]] =
-    GenKeyPairQuery.fromJson(Json.parse(query.utf8String)) match {
+    parseQuery(query).flatMap(GenKeyPairQuery.fromJson) match {
       case Left(err) => Left(err).future
       case Right(q)  => genKeyPair(q)
     }
@@ -58,7 +62,7 @@ trait Pki {
   def genCsr(query: ByteString, caCert: Option[X509Certificate])(using
       ec: ExecutionContext
   ): Future[Either[String, GenCsrResponse]] =
-    GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
+    parseQuery(query).flatMap(GenCsrQuery.fromJson) match {
       case Left(err) => Left(err).future
       case Right(q)  => genCsr(q, caCert)
     }
@@ -67,7 +71,7 @@ trait Pki {
   def genCert(query: ByteString, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(using
       ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] =
-    GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
+    parseQuery(query).flatMap(GenCsrQuery.fromJson) match {
       case Left(err) => Left(err).future
       case Right(q)  => genCert(q, caCert, caChain, caKey)
     }
@@ -80,16 +84,20 @@ trait Pki {
       caKey: PrivateKey,
       existingSerialNumber: Option[Long]
   )(using ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
-    val pemReader = new PemReader(new StringReader(csr.utf8String))
-    val pemObject = pemReader.readPemObject()
-    val _csr      = new PKCS10CertificationRequest(pemObject.getContent)
-    pemReader.close()
-    signCert(_csr, validity, caCert, caKey, existingSerialNumber, None)
+    // the pem reader answers null for a body that is not pem
+    Try {
+      val pemReader = new PemReader(new StringReader(csr.utf8String))
+      try new PKCS10CertificationRequest(pemReader.readPemObject().getContent)
+      finally pemReader.close()
+    } match {
+      case Failure(_)    => Left("the body is not a PEM encoded certificate request").future
+      case Success(_csr) => signCert(_csr, validity, caCert, caKey, existingSerialNumber, None)
+    }
   }
 
   // selfsign         generates a self-signed certificate
   def genSelfSignedCert(query: ByteString)(using ec: ExecutionContext): Future[Either[String, GenCertResponse]] =
-    GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
+    parseQuery(query).flatMap(GenCsrQuery.fromJson) match {
       case Left(err) => Left(err).future
       case Right(q)  => genSelfSignedCert(q)
     }
@@ -97,7 +105,7 @@ trait Pki {
   def genSelfSignedCA(
       query: ByteString
   )(using ec: ExecutionContext, mat: Materializer): Future[Either[String, GenCertResponse]] =
-    GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
+    parseQuery(query).flatMap(GenCsrQuery.fromJson) match {
       case Left(err) => Left(err).future
       case Right(q)  => genSelfSignedCA(q)
     }
@@ -105,7 +113,7 @@ trait Pki {
   def genSubCA(query: ByteString, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(using
       ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] =
-    GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
+    parseQuery(query).flatMap(GenCsrQuery.fromJson) match {
       case Left(err) => Left(err).future
       case Right(q)  => genSubCA(q, caCert, caChain, caKey)
     }

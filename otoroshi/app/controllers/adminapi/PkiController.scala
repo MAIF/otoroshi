@@ -10,7 +10,7 @@ import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.ssl.{Cert, CertificateData, P12Helper, PemCertificate}
 import otoroshi.utils.future.Implicits.*
 import play.api.Logger
-import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
+import play.api.libs.json.{JsError, JsNull, JsObject, JsSuccess, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.*
 
@@ -36,7 +36,13 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: E
         case None       =>
           env.datastores.certificatesDataStore
             .findAll()
-            .map(certs => certs.find(_.serialNumber.get == id).orElse(certs.find(_.serialNumberLng.get == id.toLong)))
+            .map { certs =>
+              // the serial number of a ca as it is written, or as a number. a certificate may have none
+              val serial = Try(new java.math.BigInteger(id)).toOption
+              certs
+                .find(cert => Try(cert.serialNumber).toOption.flatten.contains(id))
+                .orElse(serial.flatMap(s => certs.find(cert => Try(cert.serialNumberLng).toOption.flatten.contains(s))))
+            }
         case Some(cert) => Some(cert).future
       }
       .map(_.filter(_.ca))
@@ -111,9 +117,12 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: E
   def signCert(ca: String) =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
-        val duration = ctx.request.getQueryString("duration").map(_.toLong.millis).getOrElse(365.days)
+        val durationParam = ctx.request.getQueryString("duration")
+        val duration      = durationParam.flatMap(_.toLongOption).map(_.millis).getOrElse(365.days)
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
           findCertificateByIdOrSerialNumber(ca).flatMap {
+            case _ if durationParam.exists(_.toLongOption.isEmpty) =>
+              BadRequest(Json.obj("error" -> "the duration is not a number of milliseconds")).future
             case None         => NotFound(Json.obj("error" -> "ca not found !")).future
             case Some(cacert) =>
               env.pki.signCert(body, duration, cacert.certificate.get, cacert.cryptoKeyPair.getPrivate, None).map {
@@ -192,12 +201,14 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: E
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
-          val jsonBody = Json.parse(body.utf8String)
+          // a body that is not json has no domain either
+          val jsonBody = Try(Json.parse(body.utf8String)).getOrElse(JsNull)
           (jsonBody \ "host").asOpt[String] match {
             case None         => FastFuture.successful(BadRequest(Json.obj("error" -> "no domain found in request")))
             case Some(domain) =>
               otoroshi.utils.letsencrypt.LetsEncryptHelper.createCertificate(domain).map {
-                case Left(err)   => InternalServerError(Json.obj("error" -> err))
+                // the order failed on the side of the acme server or of the validation of the domain
+                case Left(err)   => BadGateway(Json.obj("error" -> err))
                 case Right(cert) => Ok(cert.toGenCertResponse.json.as[JsObject] ++ Json.obj("certId" -> cert.id))
               }
           }
