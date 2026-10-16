@@ -1,0 +1,283 @@
+{
+  "/api/certificates/{certId}/_renew": {
+    "post": {
+      "tags": [
+        "certificate",
+        "pki.otoroshi.io"
+      ],
+      "summary": "Renew a certificate",
+      "description": "Renews the certificate with this id right away, without waiting for the renewal job: a self signed certificate, or a certificate signed by a certificate authority of otoroshi, is generated again with the same subject and a new validity; a let's encrypt certificate is ordered again. The certificate keeps its id.",
+      "operationId": "otoroshi.controllers.adminapi.CertificatesController.renewCert",
+      "parameters": [
+        {
+          "name": "certId",
+          "in": "path",
+          "description": "The id of the certificate to renew",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "cert_api_oto_tools"
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The certificate renewed, with its new validity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/pki.otoroshi.io.Certificate"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot write this certificate: it is not in its tenant or teams",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No certificate has this id",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "The certificate could not be renewed: a certificate otoroshi did not generate (imported, without its certificate authority) cannot be, and a let's encrypt order can fail",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/certificates/_bundle": {
+    "post": {
+      "tags": [
+        "certificate",
+        "pki.otoroshi.io"
+      ],
+      "summary": "Import a PEM bundle as a certificate",
+      "description": "Creates a certificate from a PEM bundle: the certificate, the certificates of its chain, and its private key (PKCS#8, RSA or EC), in any order. The certificate gets a new id and is stored at once.",
+      "operationId": "otoroshi.controllers.adminapi.PkiController.importBundle",
+      "parameters": [],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The PEM bundle, read whatever the content type of the request",
+        "required": true,
+        "content": {
+          "application/x-pem-file": {
+            "schema": {
+              "type": "string",
+              "description": "The PEM blocks of the certificate, of its chain and of its private key",
+              "example": "-----BEGIN CERTIFICATE-----\nMIIBqDCCAU6gAwIBAgIUXuQmrQJwUobrX2+F4c8fcHkNtN8wCgYIKoZIzj0EAwIw\nGzEZMBcGA1UEAwwQYnVuZGxlLm90by50b29sczAeFw0yNjEwMTYwNTQ5MzZaFw0z\nNjEwMTMwNTQ5MzZaMBsxGTAXBgNVBAMMEGJ1bmRsZS5vdG8udG9vbHMwWTATBgcq\nhkjOPQIBBggqhkjOPQMBBwNCAAQQdCaGv0WC+v8SJ2bNQY+LtLOzoAmUtM78MCQC\ny3snZ2k6AldarvbZjZ6vWSzJiPGohQp3uUNwThWk3AgrYGa5o3AwbjAdBgNVHQ4E\nFgQUApUS1J3ohBlgzSopEL8TUqeZiQ0wHwYDVR0jBBgwFoAUApUS1J3ohBlgzSop\nEL8TUqeZiQ0wDwYDVR0TAQH/BAUwAwEB/zAbBgNVHREEFDASghBidW5kbGUub3Rv\nLnRvb2xzMAoGCCqGSM49BAMCA0gAMEUCIBD2yo2LqRMK+VWTS9pA04L2omFo0jNP\nFKj/C8xDX3vHAiEA+XTQvINO72z3G3a5aqWt1Im7t+dmJ9QhXIUHlgIr8X8=\n-----END CERTIFICATE-----\n-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgQVW1ec3ep+ogLJjk\nLlltvg2drDzcPt76gpC/qdefuNOhRANCAAQQdCaGv0WC+v8SJ2bNQY+LtLOzoAmU\ntM78MCQCy3snZ2k6AldarvbZjZ6vWSzJiPGohQp3uUNwThWk3AgrYGa5\n-----END PRIVATE KEY-----\n"
+            }
+          },
+          "text/plain": {
+            "schema": {
+              "type": "string",
+              "description": "The PEM blocks of the certificate, of its chain and of its private key",
+              "example": "-----BEGIN CERTIFICATE-----\nMIIBqDCCAU6gAwIBAgIUXuQmrQJwUobrX2+F4c8fcHkNtN8wCgYIKoZIzj0EAwIw\nGzEZMBcGA1UEAwwQYnVuZGxlLm90by50b29sczAeFw0yNjEwMTYwNTQ5MzZaFw0z\nNjEwMTMwNTQ5MzZaMBsxGTAXBgNVBAMMEGJ1bmRsZS5vdG8udG9vbHMwWTATBgcq\nhkjOPQIBBggqhkjOPQMBBwNCAAQQdCaGv0WC+v8SJ2bNQY+LtLOzoAmUtM78MCQC\ny3snZ2k6AldarvbZjZ6vWSzJiPGohQp3uUNwThWk3AgrYGa5o3AwbjAdBgNVHQ4E\nFgQUApUS1J3ohBlgzSopEL8TUqeZiQ0wHwYDVR0jBBgwFoAUApUS1J3ohBlgzSop\nEL8TUqeZiQ0wDwYDVR0TAQH/BAUwAwEB/zAbBgNVHREEFDASghBidW5kbGUub3Rv\nLnRvb2xzMAoGCCqGSM49BAMCA0gAMEUCIBD2yo2LqRMK+VWTS9pA04L2omFo0jNP\nFKj/C8xDX3vHAiEA+XTQvINO72z3G3a5aqWt1Im7t+dmJ9QhXIUHlgIr8X8=\n-----END CERTIFICATE-----\n-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgQVW1ec3ep+ogLJjk\nLlltvg2drDzcPt76gpC/qdefuNOhRANCAAQQdCaGv0WC+v8SJ2bNQY+LtLOzoAmU\ntM78MCQCy3snZ2k6AldarvbZjZ6vWSzJiPGohQp3uUNwThWk3AgrYGa5\n-----END PRIVATE KEY-----\n"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "The certificate created from the bundle and stored",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/pki.otoroshi.io.Certificate"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The body is not a PEM bundle holding a certificate and its private key, or the credentials are missing",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/certificates/_dedupLetsEncrypt": {
+    "post": {
+      "tags": [
+        "certificate",
+        "pki.otoroshi.io"
+      ],
+      "summary": "Remove the duplicated let's encrypt certificates",
+      "description": "A maintenance operation for the instances that ran an older renewal of the let's encrypt certificates, which left a new active copy behind at each renewal. Among the let's encrypt certificates holding the exact same chain and key, keeps one (the plainly named one, then the smallest id) and deletes the others. With `deleteExpired=true`, also deletes the expired let's encrypt certificates whose domains are all covered by a certificate kept. Only reports what it would delete unless `dryRun=false`.",
+      "operationId": "otoroshi.controllers.adminapi.CertificatesController.dedupLetsEncryptCerts",
+      "parameters": [
+        {
+          "name": "dryRun",
+          "in": "query",
+          "description": "Only reports what would be deleted, unless it is `false`",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": true
+          },
+          "example": true
+        },
+        {
+          "name": "deleteExpired",
+          "in": "query",
+          "description": "Also deletes the expired let's encrypt certificates whose domains are all covered by a certificate kept",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": false
+          },
+          "example": false
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "What was found, and deleted unless it is a dry run",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LetsEncryptDedupReport"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials is not a super admin",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
