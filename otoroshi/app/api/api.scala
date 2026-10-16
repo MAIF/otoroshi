@@ -57,7 +57,7 @@ import scala.util.{Failure, Success, Try}
 case class TweakedGlobalConfig(config: GlobalConfig) extends EntityLocationSupport {
   override def location: EntityLocation         = EntityLocation.default
   override def internalId: String               = config.internalId
-  override def json: JsValue                    = config.json
+  override def json: JsValue                    = TweakedGlobalConfig.fmt.writes(this)
   override def theName: String                  = config.theName
   override def theDescription: String           = config.theDescription
   override def theTags: Seq[String]             = config.theTags
@@ -66,7 +66,8 @@ case class TweakedGlobalConfig(config: GlobalConfig) extends EntityLocationSuppo
 
 object TweakedGlobalConfig {
   val fmt = new Format[TweakedGlobalConfig] {
-    override def writes(o: TweakedGlobalConfig): JsValue             = o.config.json
+    // the generic api answers an entity with its id, the global config written alone has none
+    override def writes(o: TweakedGlobalConfig): JsValue             = o.config.json.asObject ++ Json.obj("id" -> o.internalId)
     override def reads(json: JsValue): JsResult[TweakedGlobalConfig] =
       GlobalConfig._fmt.reads(json).map(c => TweakedGlobalConfig(c))
   }
@@ -1063,7 +1064,11 @@ class OtoroshiResources(env: Env) {
       GenericResourceAccessApiWithState[TweakedGlobalConfig](
         TweakedGlobalConfig.fmt,
         classOf[TweakedGlobalConfig],
-        id => env.datastores.globalConfigDataStore.key(id),
+        // the datastore keeps the singleton under one key whatever the id it is given: only its id, and the pattern
+        // the list is read with, reach it
+        id =>
+          if (id == "global" || id == "*") env.datastores.globalConfigDataStore.key(id)
+          else s"${env.storageRoot}:config:unknown-global-config:$id",
         c => env.datastores.globalConfigDataStore.extractId(c.config),
         json => "global",
         () => "id",
@@ -1072,7 +1077,7 @@ class OtoroshiResources(env: Env) {
         canDelete = false,
         canBulk = false,
         stateAll = () => env.proxyState.globalConfig().map(TweakedGlobalConfig.apply).toSeq,
-        stateOne = id => env.proxyState.globalConfig().map(TweakedGlobalConfig.apply),
+        stateOne = id => if (id == "global") env.proxyState.globalConfig().map(TweakedGlobalConfig.apply) else None,
         stateUpdate = seq => throw new UnsupportedOperationException("...")
       )
     ),

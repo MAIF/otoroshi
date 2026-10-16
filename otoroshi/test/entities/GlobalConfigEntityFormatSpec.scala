@@ -787,8 +787,8 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
 
     val format = TweakedGlobalConfig.fmt
 
-    "write the json of the global config" in {
-      format.writes(TweakedGlobalConfig(full)) mustBe GlobalConfig._fmt.writes(full)
+    "write the json of the global config with its id" in {
+      format.writes(TweakedGlobalConfig(full)) mustBe GlobalConfig._fmt.writes(full).as[JsObject] ++ Json.obj("id" -> "global")
     }
 
     "round trip the wrapped config" in {

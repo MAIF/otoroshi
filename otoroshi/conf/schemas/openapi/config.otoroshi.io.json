@@ -316,7 +316,7 @@
         "enum": [
           "global"
         ],
-        "description": "The id of the global configuration, always `global`: the global configuration is a singleton. The admin api adds it to the global configuration it answers after an update, and ignores it on input"
+        "description": "The id of the global configuration, always `global`: the global configuration is a singleton. The admin api adds it to the global configuration it answers, and ignores it on input"
       }
     },
     "example": {

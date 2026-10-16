@@ -66,6 +66,14 @@ class GenericApiErrorsSpec extends OtoroshiSpec {
       byKind.status mustBe 200
       byKind.json mustBe Json.arr()
     }
+    "only answer the global config under its id, with its id" in {
+      val configs = "/apis/config.otoroshi.io/v1/global-configs"
+      val global  = call("GET", s"$configs/global")
+      global.status mustBe 200
+      (global.json \ "id").asOpt[String] mustBe Some("global")
+      (call("GET", configs).json \ 0 \ "id").asOpt[String] mustBe Some("global")
+      call("GET", s"$configs/not-global").status mustBe 404
+    }
     "serve its documentation through the admin api host" in {
       val resp = call("GET", "/apis/openapi.json")
       withClue(resp.body[String].take(500))(resp.status mustBe 200)
