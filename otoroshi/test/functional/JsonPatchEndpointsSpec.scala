@@ -58,6 +58,9 @@ class JsonPatchEndpointsSpec extends OtoroshiSpec {
     "refuse a bad patch of the snow monkey config and keep it" in {
       checkPatches("/api/snowmonkey/config", "timesPerDay", JsNumber(7))
     }
+    "refuse a bad patch of the global config and keep it" in {
+      checkPatches("/api/globalconfig", "maxLogsSize", JsNumber(4242))
+    }
     "shutdown" in {
       stopAll()
     }

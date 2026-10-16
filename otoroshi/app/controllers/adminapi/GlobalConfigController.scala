@@ -10,7 +10,7 @@ import otoroshi.utils.json.JsonOperationsHelper
 import play.api.Logger
 import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
-import otoroshi.utils.json.JsonPatchHelpers.patchJson
+import otoroshi.utils.json.JsonPatchHelpers.patchJsonSafe
 
 class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
@@ -104,8 +104,10 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(usi
         val user = ctx.user.getOrElse(ctx.apiKey.toJson)
         env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { conf =>
           val currentConfigJson = conf.toJson
-          val newConfigJson     = patchJson(ctx.request.body, currentConfigJson)
-          ctx.validateEntity(newConfigJson, "global-config") match {
+          val patched           = patchJsonSafe(ctx.request.body, currentConfigJson)
+          val newConfigJson     = patched.getOrElse(JsNull)
+          // a patch that cannot be applied must not save the defaults of the global config
+          patched.fold[Either[JsValue, JsValue]](error => Left(JsString(error)), ctx.validateEntity(_, "global-config")) match {
             case Left(errs) =>
               FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format", "details" -> errs)))
             case Right(_)   => {
