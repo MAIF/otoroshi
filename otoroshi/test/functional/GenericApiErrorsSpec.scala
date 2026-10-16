@@ -56,6 +56,39 @@ class GenericApiErrorsSpec extends OtoroshiSpec {
           }
       }
     }
+    "refuse a patch of an entity that is not a json patch or cannot be applied" in {
+      val id      = "route_patched_by_the_generic_api"
+      val template = call("GET", s"$routes/_template").json.as[JsObject]
+      val created  = call("POST", routes, Some((template ++ Json.obj("id" -> id, "name" -> "patched")).stringify))
+      withClue(created.body[String])(created.status mustBe 201)
+      try {
+        Seq(
+          Json.obj("name" -> "not a patch"),
+          Json.arr(Json.obj("op" -> "replace", "path" -> "/does/not/exist", "value" -> 1))
+        ).foreach { patch =>
+          val resp = call("PATCH", s"$routes/$id", Some(patch.stringify))
+          withClue(s"$patch: ${resp.body[String]}")(resp.status mustBe 400)
+        }
+        (call("GET", s"$routes/$id").json \ "name").as[String] mustBe "patched"
+        // a line of a bulk patch that cannot be applied is a refused line, the others are processed
+        val bulk = call(
+          "PATCH",
+          s"$routes/_bulk",
+          Some(
+            Seq(
+              Json.obj("id" -> id, "patch" -> Json.obj("name" -> "not a patch")),
+              Json.obj("id" -> id, "patch" -> Json.arr(Json.obj("op" -> "replace", "path" -> "/name", "value" -> "bulk")))
+            ).map(_.stringify).mkString("\n")
+          ),
+          contentType = "application/x-ndjson"
+        )
+        withClue(bulk.body[String])(bulk.status mustBe 200)
+        lines(bulk).map(l => (l \ "status").as[Int]) mustBe Seq(400, 200)
+        (call("GET", s"$routes/$id").json \ "name").as[String] mustBe "bulk"
+      } finally {
+        call("DELETE", s"$routes/$id")
+      }
+    }
     "reach the generic operations of the drafts, and list the drafts of a kind" in {
       val drafts = "/apis/proxy.otoroshi.io/v1/drafts"
       Seq("_count", "_schema", "_template").foreach { op =>

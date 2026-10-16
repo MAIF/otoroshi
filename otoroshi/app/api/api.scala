@@ -1896,7 +1896,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // PATCH /apis/:group/:version/:entity/_bulk
   def bulkPatch(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
     (ctx: ApiActionContext[Source[ByteString, ?]]) =>
-      import otoroshi.utils.json.JsonPatchHelpers.patchJson
+      import otoroshi.utils.json.JsonPatchHelpers.patchJsonSafe
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx, bulk = true) { resource =>
@@ -1926,8 +1926,13 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                     .byteString
                     .future
                 case Right((patchBody, entity)) => {
-                  val patchedEntity = patchJson(patchBody, entity)
-                  resource.access.validateToJson(patchedEntity, resource.singularName, ctx.backOfficeUser) match {
+                  // a patch that cannot be applied is an error line, it must not end the whole stream
+                  val patched       = patchJsonSafe(patchBody, entity)
+                  val patchedEntity = patched.getOrElse(JsNull)
+                  patched.fold[JsResult[JsValue]](
+                    JsError(_),
+                    resource.access.validateToJson(_, resource.singularName, ctx.backOfficeUser)
+                  ) match {
                     case JsError(errs)   =>
                       Json
                         .obj(
@@ -2665,7 +2670,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // PATCH /apis/:group/:version/:entity/:id
   def patch(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
     (ctx: ApiActionContext[Source[ByteString, ?]]) =>
-      import otoroshi.utils.json.JsonPatchHelpers.patchJson
+      import otoroshi.utils.json.JsonPatchHelpers.patchJsonSafe
       withResource(group, version, entity, ctx) { resource =>
         resource.access.findOne(version, id).flatMap {
           case None                                            => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
@@ -2684,9 +2689,16 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
             bodyIn(ctx, ctx.request, resource, version, defaultEntity) flatMap {
               case Left(err)   => result(Results.BadRequest, err, ctx.request, resource.some)
               case Right(body) => {
-                val _patchedBody = if (isFormDataBody) body else patchJson(body, current)
-                val patchedBody  = _patchedBody.asObject ++ Json.obj(resource.access.idFieldName() -> id)
-                resource.access.validateToJson(patchedBody, resource.singularName, ctx.backOfficeUser) match {
+                // a body that is not a json patch, or a patch that cannot be applied, is a bad request
+                val patched     = (if (isFormDataBody) Right(body) else patchJsonSafe(body, current)).flatMap {
+                  case obj: JsObject => Right(obj ++ Json.obj(resource.access.idFieldName() -> id))
+                  case _             => Left("the patched entity is not a json object")
+                }
+                val patchedBody = patched.getOrElse(Json.obj())
+                patched.fold[JsResult[JsValue]](
+                  JsError(_),
+                  resource.access.validateToJson(_, resource.singularName, ctx.backOfficeUser)
+                ) match {
                   case JsError(errs)   =>
                     result(
                       Results.BadRequest,
