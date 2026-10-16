@@ -409,7 +409,17 @@
           }
         },
         "403": {
-          "description": "The route does not exist, or the credentials cannot read it",
+          "description": "The credentials cannot read the entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No entity has this id",
           "content": {
             "application/json": {
               "schema": {

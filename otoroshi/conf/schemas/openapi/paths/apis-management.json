@@ -897,7 +897,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Read the live statistics of an api",
-      "description": "Answers the statistics of the routes the api exposes (its routes when it is published or deprecated, and the routes of its draft when the testing of the draft is enabled), added up: the calls, the calls per second, the average durations and overheads. An api that exposes no route answers zeros. An id that is not the one of an api, but of another entity the admin can read (a route, a route composition, a draft), answers an empty object. The admin behind the credentials has to be able to read the api: an id that is not the one of an api, a route, a route composition or a draft is refused with a 403. An audit event is sent.",
+      "description": "Answers the statistics of the routes the api exposes (its routes when it is published or deprecated, and the routes of its draft when the testing of the draft is enabled), added up: the calls, the calls per second, the average durations and overheads. An api that exposes no route answers zeros. An id that is not the one of an api, but of another entity the admin can read (a route, a route composition, a draft), answers an empty object. The admin behind the credentials has to be able to read the api: an id that is not the one of an api, a route, a route composition or a draft is not found. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.liveStats",
       "parameters": [
         {
@@ -967,7 +967,17 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot read it",
+          "description": "The admin behind the credentials cannot read the entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No entity has this id",
           "content": {
             "application/json": {
               "schema": {
@@ -1040,7 +1050,7 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "description": "The admin behind the credentials cannot write the entity",
           "content": {
             "application/json": {
               "schema": {
@@ -1050,7 +1060,14 @@
           }
         },
         "404": {
-          "description": "No api has this id, but another entity (a route, a route composition or a draft) does"
+          "description": "No entity has this id, or no api has it while another entity (a route, a route composition or a draft) does (`api not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
         },
         "429": {
           "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
@@ -1116,7 +1133,7 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "description": "The admin behind the credentials cannot write the entity",
           "content": {
             "application/json": {
               "schema": {
@@ -1126,7 +1143,14 @@
           }
         },
         "404": {
-          "description": "No api has this id, but another entity (a route, a route composition or a draft) does"
+          "description": "No entity has this id, or no api has it while another entity (a route, a route composition or a draft) does (`api not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
         },
         "429": {
           "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
@@ -1217,7 +1241,7 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot read it",
+          "description": "The admin behind the credentials cannot read the entity",
           "content": {
             "application/json": {
               "schema": {
@@ -1227,7 +1251,7 @@
           }
         },
         "404": {
-          "description": "No api has this id while another entity does (`api not found`), or the api does not hold the route, or the backend of the route does not exist (`route not found`)",
+          "description": "No entity has this id, no api has it while another entity does (`api not found`), or the api does not hold the route, or the backend of the route does not exist (`route not found`)",
           "content": {
             "application/json": {
               "schema": {
@@ -1486,7 +1510,7 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "description": "The admin behind the credentials cannot write the entity",
           "content": {
             "application/json": {
               "schema": {
@@ -1496,7 +1520,14 @@
           }
         },
         "404": {
-          "description": "No api has this id (but another entity does), the api has no draft, or its draft cannot be read as an api"
+          "description": "No entity has this id, no api has it while another entity does (`api not found`), the api has no draft, or its draft cannot be read as an api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
         },
         "415": {
           "description": "The body is not sent with an `application/json` (or `text/json`) content type",
@@ -1614,7 +1645,17 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "description": "The admin behind the credentials cannot write the entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No entity has this id",
           "content": {
             "application/json": {
               "schema": {
@@ -1738,7 +1779,7 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "description": "The admin behind the credentials cannot write the entity",
           "content": {
             "application/json": {
               "schema": {
@@ -1748,7 +1789,14 @@
           }
         },
         "404": {
-          "description": "No api (no draft of an api with `version=Draft`) has this id"
+          "description": "No entity has this id, or no api (no draft of an api with `version=Draft`) has it (`api not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
         },
         "415": {
           "description": "The body is not sent with an `application/json` (or `text/json`) content type",
@@ -1862,7 +1910,7 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "description": "The admin behind the credentials cannot write the entity",
           "content": {
             "application/json": {
               "schema": {
@@ -1872,7 +1920,14 @@
           }
         },
         "404": {
-          "description": "No api (no draft of an api with `version=Draft`) has this id"
+          "description": "No entity has this id, or no api (no draft of an api with `version=Draft`) has it (`api not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
         },
         "415": {
           "description": "The body is not sent with an `application/json` (or `text/json`) content type",
@@ -1982,7 +2037,7 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "description": "The admin behind the credentials cannot write the entity",
           "content": {
             "application/json": {
               "schema": {
@@ -1992,7 +2047,7 @@
           }
         },
         "404": {
-          "description": "No subscription has this id (`subscription not found`). When no api (no draft of an api with `version=Draft`) has the id of the path, the answer has no body",
+          "description": "No entity has this id, no api (no draft of an api with `version=Draft`) has it (`api not found`), or no subscription has the id of the path (`subscription not found`)",
           "content": {
             "application/json": {
               "schema": {
@@ -2093,7 +2148,7 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot write it",
+          "description": "The admin behind the credentials cannot write the entity",
           "content": {
             "application/json": {
               "schema": {
@@ -2103,7 +2158,14 @@
           }
         },
         "404": {
-          "description": "No api has this id, but another entity (a route, a route composition or a draft) does"
+          "description": "No entity has this id, or no api has it while another entity (a route, a route composition or a draft) does (`api not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
         },
         "415": {
           "description": "The body is not sent with an `application/json` (or `text/json`) content type",

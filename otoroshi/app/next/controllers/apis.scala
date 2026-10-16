@@ -228,7 +228,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
             )
           )
           .flatMap(_ => Results.Ok.future)
-      case None      => Results.NotFound.future
+      case None      => Results.NotFound(Json.obj("error" -> "api not found")).future
     }
   }
 
@@ -353,7 +353,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
           else env.datastores.apiDataStore.findById(apiId)
 
         findApi().flatMap {
-          case None      => Results.NotFound.vfuture
+          case None      => Results.NotFound(Json.obj("error" -> "api not found")).vfuture
           case Some(api) =>
             val result = for {
               _ <- validateApi(api)
@@ -503,7 +503,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
           }
 
         findApi().flatMap {
-          case None      => Results.NotFound.vfuture
+          case None      => Results.NotFound(Json.obj("error" -> "api not found")).vfuture
           case Some(api) =>
             val result = for {
               validApi     <- validateApi(api)
@@ -583,7 +583,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
           }
 
         findApi().flatMap {
-          case None      => Results.NotFound.vfuture
+          case None      => Results.NotFound(Json.obj("error" -> "api not found")).vfuture
           case Some(api) =>
             validateApi(api) match {
               case Left(errorResult) => errorResult.vfuture
@@ -625,7 +625,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
         )
 
         env.datastores.apiDataStore.findById(apiId) flatMap {
-          case None      => Results.NotFound.vfuture
+          case None      => Results.NotFound(Json.obj("error" -> "api not found")).vfuture
           case Some(api) =>
             val newApiId = s"api_${IdGenerator.uuid}"
             env.datastores.apiDataStore
@@ -668,16 +668,16 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
         )
 
         env.datastores.apiDataStore.findById(apiId) flatMap {
-          case None      => Results.NotFound.future
+          case None      => Results.NotFound(Json.obj("error" -> "api not found")).future
           case Some(api) =>
             ApiDeployment._fmt.reads(ctx.request.body) match {
               case JsError(_)               => Results.BadRequest(Json.obj("error" -> "bad entity")).future
               case JsSuccess(deployment, _) =>
                 env.datastores.draftsDataStore.findById(apiId) flatMap {
-                  case None               => Results.NotFound.future
+                  case None               => Results.NotFound(Json.obj("error" -> "the api has no draft to deploy")).future
                   case Some(draftWrapper) =>
                     Api.format.reads(draftWrapper.content) match {
-                      case JsError(_)             => Results.NotFound.future
+                      case JsError(_)             => Results.NotFound(Json.obj("error" -> "the draft of the api cannot be read")).future
                       case JsSuccess(apiDraft, _) =>
                         val targetState = if (apiDraft.state == ApiStaging) ApiPublished else api.state
                         // Redundant with Api.writeValidator (which apiDataStore.set bypasses):

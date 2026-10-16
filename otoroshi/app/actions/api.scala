@@ -293,6 +293,7 @@ trait ApiActionContextCapable {
       f
     } else {
       findServiceById(id).flatMap {
+        case None                                  => serviceNotFound(id)
         case Some(service) if canUserRead(service) => f
         case _                                     => fforbidden
       }
@@ -301,10 +302,15 @@ trait ApiActionContextCapable {
 
   def canWriteService(id: String)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     findServiceById(id).flatMap {
+      case None                                   => serviceNotFound(id)
       case Some(service) if canUserWrite(service) => f
       case _                                      => fforbidden
     }
   }
+
+  // an entity that does not exist is not found, one the admin cannot access is forbidden
+  private def serviceNotFound(id: String): Future[Result] =
+    FastFuture.successful(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> s"entity '$id' not found")))
 
   def canReadApikey(id: String)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.apiKeyDataStore.findById(id).flatMap {

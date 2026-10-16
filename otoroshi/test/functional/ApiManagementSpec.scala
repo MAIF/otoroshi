@@ -81,6 +81,13 @@ class ApiManagementSpec extends OtoroshiSpec {
     "answer not found for a route an api does not hold" in {
       call("GET", s"$apis/api-mgmt-a/routes/route-that-does-not-exist").status mustBe 404
     }
+    "answer not found, with a body, for an api that does not exist" in {
+      val resp = call("POST", s"$apis/api-that-does-not-exist/_start")
+      withClue(resp.body[String]) {
+        resp.status mustBe 404
+        (resp.json \ "error").asOpt[String] must not be empty
+      }
+    }
     "shutdown" in {
       stopAll()
     }

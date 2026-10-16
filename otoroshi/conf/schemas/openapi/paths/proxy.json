@@ -180,7 +180,17 @@
           }
         },
         "403": {
-          "description": "No entity has this id, or the admin behind the credentials cannot read it",
+          "description": "The admin behind the credentials cannot read the entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No entity has this id",
           "content": {
             "application/json": {
               "schema": {
