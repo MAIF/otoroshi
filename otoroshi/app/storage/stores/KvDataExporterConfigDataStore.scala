@@ -33,6 +33,19 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
   override def extractId(value: DataExporterConfig): String = value.id
 
   def template(modType: Option[String], ctx: Option[ApiActionContext[?]] = None): DataExporterConfig = {
+    def exporter(typ: DataExporterConfigType, name: String, config: Exporter): DataExporterConfig =
+      DataExporterConfig(
+        typ = typ,
+        id = IdGenerator.namedId("data_exporter", env),
+        name = s"New $name exporter config",
+        desc = s"New $name exporter config",
+        metadata = Map.empty,
+        enabled = false,
+        location = EntityLocation.ownEntityLocation(ctx)(using env),
+        projection = Json.obj(),
+        filtering = DataExporterConfigFiltering(),
+        config = config
+      )
     val defaultTemplate = modType match {
       case Some("webhook")        =>
         DataExporterConfig(
@@ -474,6 +487,50 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             poolSize = 5,
             ssl = false
           )
+        )
+      // the settings of these types as they are read when they are missing
+      case Some("console")        => exporter(DataExporterConfigType.Console, "console", ConsoleSettings())
+      case Some("tcp")            =>
+        exporter(DataExporterConfigType.TCP, "tcp", TCPExporterSettings.format.reads(Json.obj()).get)
+      case Some("udp")            =>
+        exporter(DataExporterConfigType.UDP, "udp", UDPExporterSettings.format.reads(Json.obj()).get)
+      case Some("syslog")         =>
+        exporter(DataExporterConfigType.Syslog, "syslog", SyslogExporterSettings.format.reads(Json.obj()).get)
+      case Some("jms")            =>
+        exporter(DataExporterConfigType.JMS, "jms", JMSExporterSettings.format.reads(Json.obj()).get)
+      case Some("s3")             =>
+        exporter(DataExporterConfigType.S3File, "s3", S3ExporterSettings.format.reads(Json.obj()).get)
+      case Some("goreplays3")     =>
+        exporter(
+          DataExporterConfigType.GoReplayS3,
+          "goreplay s3",
+          GoReplayS3Settings(
+            s3 = otoroshi.storage.drivers.inmemory.S3Configuration.format.reads(Json.obj()).get,
+            captureRequests = true,
+            captureResponses = false,
+            preferBackendRequest = false,
+            preferBackendResponse = false,
+            methods = Seq.empty
+          )
+        )
+      case Some("goreplayfile")   =>
+        exporter(
+          DataExporterConfigType.GoReplayFile,
+          "goreplay file",
+          GoReplayFileSettings(
+            path = "/tmp/otoroshi-requests.gor",
+            captureRequests = true,
+            captureResponses = false,
+            preferBackendRequest = false,
+            preferBackendResponse = false,
+            methods = Seq.empty
+          )
+        )
+      case Some("user-analytics") =>
+        exporter(
+          DataExporterConfigType.UserAnalytics,
+          "user analytics",
+          otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings()
         )
       case _                      =>
         DataExporterConfig(
