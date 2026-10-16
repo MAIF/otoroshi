@@ -609,19 +609,19 @@
       "bdu": {
         "type": "integer",
         "format": "int64",
-        "description": "The cumulated duration of the calls minus the time spent in their backend call step, in milliseconds, as workers compute it. Defaults to 0",
+        "description": "The cumulated duration of the calls to the backends (the backend call step), in milliseconds. Defaults to 0",
         "example": 222
       },
       "hi": {
         "type": "integer",
         "format": "int64",
-        "description": "The number of bytes of the request headers received. Workers always send 0. Defaults to 0",
+        "description": "The number of bytes of the request headers received, request line included. Defaults to 0",
         "example": 4096
       },
       "ho": {
         "type": "integer",
         "format": "int64",
-        "description": "The number of bytes of the response headers sent. Workers always send 0. Defaults to 0",
+        "description": "The number of bytes of the response headers sent, status line included. Defaults to 0",
         "example": 3072
       }
     },

@@ -2074,7 +2074,9 @@ case class ServiceDescriptor(
       dataIn: Long,
       dataOut: Long,
       upstreamLatency: Long,
-      config: otoroshi.models.GlobalConfig
+      config: otoroshi.models.GlobalConfig,
+      headersIn: Long = 0L,
+      headersOut: Long = 0L
   )(using
       ec: ExecutionContext,
       env: Env
@@ -2086,7 +2088,9 @@ case class ServiceDescriptor(
       dataIn,
       dataOut,
       upstreamLatency,
-      config
+      config,
+      headersIn,
+      headersOut
     )
   def theScheme: String                                           = if (forceHttps) "https://" else "http://"
   def theLine: String                                             = if (env == "prod") "" else s".$env"
@@ -2659,6 +2663,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         defaultDescriptor
       }
   }
+  // headersIn and headersOut: the size of the headers of the request and of the response, reported by the workers
   def updateMetrics(
       id: String,
       callDuration: Long,
@@ -2666,7 +2671,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       dataIn: Long,
       dataOut: Long,
       upstreamLatency: Long,
-      config: otoroshi.models.GlobalConfig
+      config: otoroshi.models.GlobalConfig,
+      headersIn: Long = 0L,
+      headersOut: Long = 0L
   )(using
       ec: ExecutionContext,
       env: Env

@@ -4177,8 +4177,35 @@ class ProxyEngine() extends RequestHandler {
             300L
           else actualDuration
         }
+        // the size of the headers of the request and of the response, counted as the green score counts them (the
+        // headers are ascii). only a worker reports them, to the green score of its leader
+        val isWorker             = env.clusterConfig.mode.isWorker
+        val headersInSize: Long  = if (!isWorker) 0L
+        else
+          rawRequest.headers.headers.foldLeft(0L) { case (acc, (key, value)) =>
+            acc + key.length + value.length + 3
+          } + rawRequest.method.length + rawRequest.uri.length + rawRequest.version.length + 2
+        val headersOutSize: Long = if (!isWorker) 0L
+        else
+          response.headers.foldLeft(0L) { case (acc, (key, value)) =>
+            acc + key.length + value.length + 3
+          } + rawRequest.version.length + 1 + 3 + Results
+            .Status(response.status)
+            .header
+            .reasonPhrase
+            .map(_.length)
+            .getOrElse(0)
         // increments calls for service and globally, see above
-        route.serviceDescriptor.updateMetrics(duration, overhead, counterIn.get(), counterOut.get(), upstreamLatency, globalConfig)
+        route.serviceDescriptor.updateMetrics(
+          duration,
+          overhead,
+          counterIn.get(),
+          counterOut.get(),
+          upstreamLatency,
+          globalConfig,
+          headersInSize,
+          headersOutSize
+        )
         env.datastores.globalConfigDataStore.updateQuotas(globalConfig)
         route.backend.loadBalancing match {
           case BestResponseTime            =>

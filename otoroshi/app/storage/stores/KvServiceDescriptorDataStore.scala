@@ -230,7 +230,9 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       dataIn: Long,
       dataOut: Long,
       upstreamLatency: Long,
-      config: otoroshi.models.GlobalConfig
+      config: otoroshi.models.GlobalConfig,
+      headersIn: Long,
+      headersOut: Long
   )(using
       ec: ExecutionContext,
       env: Env
@@ -245,9 +247,10 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
         dataOut,
         callOverhead,
         callDuration,
-        callDuration - upstreamLatency,
-        0L,
-        0L
+        // the duration of the call to the backend (-1 when there was none)
+        math.max(upstreamLatency, 0L),
+        headersIn,
+        headersOut
       )
     }
     FastFuture.successful(())
