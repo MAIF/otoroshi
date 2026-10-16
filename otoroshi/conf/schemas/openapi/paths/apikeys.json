@@ -1,0 +1,180 @@
+{
+  "/api/apikeys/{id}/quotas": {
+    "get": {
+      "tags": [
+        "apikey",
+        "apim.otoroshi.io"
+      ],
+      "summary": "Read the quotas of an api key",
+      "description": "Answers the calls the api key is allowed to make, made and has left in the current throttling window, the current day and the current month, as counted by its throttling strategy. The calls of every route and api the key is authorized on are counted together.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysController.apiKeyQuotas",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The client id of the api key",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "kx8e4lq2v9twb3hd"
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The quotas of the api key",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemainingQuotas"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot read (or, for a reset, write) this api key: it is not in its tenant or teams",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api key has this client id",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": [
+        "apikey",
+        "apim.otoroshi.io"
+      ],
+      "summary": "Reset the quotas of an api key",
+      "description": "Sets the calls the api key made in the current throttling window, day and month back to zero, through its throttling strategy, and answers its quotas once reset. The key can call again right away if it had exhausted them.",
+      "operationId": "otoroshi.controllers.adminapi.ApiKeysController.resetApiKeyQuotas",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The client id of the api key",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "kx8e4lq2v9twb3hd"
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "The quotas of the api key, once reset",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemainingQuotas"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing: the call carries no api key, and the route that serves the admin api refuses it before the controller runs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or they do not give access to the admin api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot read (or, for a reset, write) this api key: it is not in its tenant or teams",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No api key has this client id",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
