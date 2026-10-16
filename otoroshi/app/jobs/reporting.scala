@@ -403,7 +403,8 @@ object AnonymousReportingJob {
               val key = env.proxyState
                 .authModule(session.authConfigId)
                 .map(_.`type`)
-                .getOrElse(if (session.simpleLogin) "simple" else session.authConfigId)
+                // the id of a module is not sent, even the one of a module that does not exist anymore
+                .getOrElse(if (session.simpleLogin) "simple" else "unknown")
               obj ++ Json.obj(key -> (obj.select(key).asOpt[Int].getOrElse(0) + 1))
             }
           ),

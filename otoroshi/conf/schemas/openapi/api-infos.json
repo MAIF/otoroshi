@@ -837,7 +837,7 @@
                 "$ref": "#/components/schemas/AnonymousReportCountByKind"
               }
             ],
-            "description": "The live sessions of the admins in the backoffice, by type of the auth module they logged in with, `simple` for an admin stored in otoroshi, or the id of the auth module when it no longer exists"
+            "description": "The live sessions of the admins in the backoffice, by type of the auth module they logged in with, `simple` for an admin stored in otoroshi, `unknown` when the module no longer exists"
           },
           "private_apps_sessions": {
             "allOf": [
