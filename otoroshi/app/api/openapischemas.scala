@@ -22,9 +22,15 @@ object OpenApiSchemas {
   private val logger = play.api.Logger("otoroshi-openapi")
   private val cache  = new TrieMap[String, JsObject]()
 
-  private def read(env: Env, path: String): Option[JsValue] = env.environment.resourceAsStream(path).map { in =>
-    try Json.parse(new String(in.readAllBytes(), StandardCharsets.UTF_8))
-    finally in.close()
+  // a file that cannot be read as json (a broken copy of the resources, a syntax error) is left out of the document
+  // instead of failing it whole
+  private def read(env: Env, path: String): Option[JsValue] = env.environment.resourceAsStream(path).flatMap { in =>
+    try Some(Json.parse(new String(in.readAllBytes(), StandardCharsets.UTF_8)))
+    catch {
+      case scala.util.control.NonFatal(e) =>
+        logger.error(s"openapi: the file '$path' cannot be read as json: ${e.getMessage}")
+        None
+    } finally in.close()
   }
 
   // the json objects of the files listed under a key of the index, merged. a key defined twice keeps its first
