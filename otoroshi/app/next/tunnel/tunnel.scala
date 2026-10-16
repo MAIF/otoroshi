@@ -960,7 +960,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(u
                 "http_port"  -> mv.httpPort,
                 "https_port" -> mv.httpsPort,
                 "last_seen"  -> mv.lastSeen.toString(),
-                "type"       -> "Leader"
+                "type"       -> mv.memberType.name
               )
             }
         )

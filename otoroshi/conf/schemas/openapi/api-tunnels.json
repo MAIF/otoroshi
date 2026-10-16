@@ -102,9 +102,11 @@
       },
       "type": {
         "type": "string",
-        "description": "Always `Leader`, whatever the cluster mode of the instance (a worker connected to the leaders by websocket lists its tunnels too)",
+        "description": "The cluster mode of the instance: `Leader`, or `Worker` for a worker connected to the leaders by websocket",
         "enum": [
-          "Leader"
+          "Leader",
+          "Worker",
+          "Off"
         ],
         "example": "Leader"
       }
