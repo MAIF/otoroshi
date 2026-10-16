@@ -652,6 +652,8 @@ class TcpEngineProvider {
     protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
+    // the jdk refuses to start a handshake on an engine whose mode is not set
+    engine.setUseClientMode(false)
     clientAuth match {
       case ClientAuth.Want =>
         engine.setWantClientAuth(true)
