@@ -390,7 +390,10 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
           .map(_.toInt)
           .getOrElse(Int.MaxValue)
 
-      val paginationPosition = paginationPage * paginationPageSize
+      // the pages are counted from 1, every route is on the first page when no page size is given
+      val paginationPosition =
+        math.min(math.max(paginationPage - 1, 0).toLong * paginationPageSize, Int.MaxValue.toLong).toInt
+      val paginationEnd      = math.min(paginationPosition.toLong + paginationPageSize, Int.MaxValue.toLong).toInt
 
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -431,7 +434,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
           //  }
           //  .flatMap {
           //    case Some(desc) =>
-          val seq = filtered_descs.slice(paginationPosition, paginationPosition + paginationPageSize)
+          val seq = filtered_descs.slice(paginationPosition, paginationEnd)
           analyticsService.fetchServicesStatus(seq, fromDate, toDate).map {
             case Some(value) =>
               Ok(value).withHeaders(

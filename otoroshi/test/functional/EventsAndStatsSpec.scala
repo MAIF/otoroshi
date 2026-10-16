@@ -1,19 +1,57 @@
 package functional
 
+import com.sun.net.httpserver.HttpServer
 import otoroshi.env.Env
+import otoroshi.models.ElasticAnalyticsConfig
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.*
 import play.api.libs.ws.{readableAsString, WSAuthScheme, WSResponse}
 
+import java.net.InetSocketAddress
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters.*
 
-// the events the admin api reads: the audit events filtered then paginated, one per line in ndjson and the fields of an
-// event as written in its json
+// the events and the statistics the admin api reads: the audit events filtered then paginated, one per line in ndjson,
+// the fields of an event as written in its json and the pages of the health of the routes
 class EventsAndStatsSpec extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration): Configuration = configuration
+
+  // an elasticsearch cluster that answers the same aggregations to every search, and keeps the searches
+  private val searches = new ConcurrentLinkedQueue[String]()
+  private val elastic  = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0)
+  elastic.createContext(
+    "/",
+    exchange => {
+      val body   = new String(exchange.getRequestBody.readAllBytes(), StandardCharsets.UTF_8)
+      if (exchange.getRequestURI.getPath.endsWith("_search")) searches.add(body)
+      val answer = Json
+        .obj(
+          "hits"         -> Json.obj("total" -> Json.obj("value" -> 1), "hits" -> Json.arr()),
+          "aggregations" -> Json.obj(
+            "codes"    -> Json.obj(
+              "buckets" -> Json.arr(Json.obj("key" -> "my-route", "doc_count" -> 3), Json.obj("key" -> 200, "doc_count" -> 5))
+            ),
+            "services" -> Json.obj("buckets" -> Json.arr())
+          )
+        )
+        .stringify
+        .getBytes(StandardCharsets.UTF_8)
+      exchange.getResponseHeaders.add("Content-Type", "application/json")
+      exchange.sendResponseHeaders(200, answer.length)
+      exchange.getResponseBody.write(answer)
+      exchange.close()
+    }
+  )
+
+  private def elasticConfig = ElasticAnalyticsConfig(
+    uris = Seq(s"http://127.0.0.1:${elastic.getAddress.getPort}"),
+    version = Some("8.0.0")
+  )
 
   private def admin(path: String, headers: (String, String)*): WSResponse = ws
     .url(s"http://127.0.0.1:$port$path")
@@ -25,6 +63,7 @@ class EventsAndStatsSpec extends OtoroshiSpec {
   "The events and the statistics" should {
     "warm up" in {
       startOtoroshi()
+      elastic.start()
     }
     "filter the audit events, then paginate them" in {
       given env: Env             = otoroshiComponents.env
@@ -50,7 +89,50 @@ class EventsAndStatsSpec extends OtoroshiSpec {
       fields must contain("@timestamp")
       fields.filter(_.contains("$")) mustBe empty
     }
+    "answer the health of the routes of the page asked, counted from 1" in {
+      given env: Env             = otoroshiComponents.env
+      given ec: ExecutionContext = env.otoroshiExecutionContext
+      val config                 = env.datastores.globalConfigDataStore.singleton().futureValue
+      config.copy(elasticReadsConfig = Some(elasticConfig)).save().futureValue
+      val template               = admin("/apis/proxy.otoroshi.io/v1/routes/_template").json.as[JsObject]
+      Seq("status-route-1", "status-route-2", "status-route-3").foreach { id =>
+        val route = template ++ Json.obj(
+          "id"       -> id,
+          "name"     -> id,
+          "frontend" -> ((template \ "frontend").as[JsObject] ++ Json.obj("domains" -> Json.arr(s"$id.oto.tools"))),
+          "backend"  -> ((template \ "backend").as[JsObject] ++ Json.obj(
+            "targets"      -> Json.arr(Json.obj("id" -> "target", "hostname" -> "127.0.0.1", "port" -> 1, "tls" -> false)),
+            "health_check" -> Json.obj("enabled" -> true, "url" -> "/")
+          ))
+        )
+        val resp  = ws
+          .url(s"http://127.0.0.1:$port/apis/proxy.otoroshi.io/v1/routes")
+          .withHttpHeaders("Host" -> "otoroshi-api.oto.tools", "Content-Type" -> "application/json")
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .post(route.stringify)
+          .futureValue
+        withClue(resp.body[String])(resp.status mustBe 201)
+      }
+      // the routes the last search asked the health of
+      def searched(path: String): Seq[String] = {
+        searches.clear()
+        val resp = admin(path)
+        withClue(resp.body[String])(resp.header("X-Count") mustBe Some("3"))
+        searches.asScala.toSeq.flatMap { s =>
+          Seq("status-route-1", "status-route-2", "status-route-3").filter(id => s.contains(s"\"$id\""))
+        }.distinct
+      }
+      // the proxy states take the routes a few seconds after
+      val deadline = System.currentTimeMillis() + 20000L
+      while (admin("/api/status/global").header("X-Count").isEmpty && System.currentTimeMillis() < deadline) {
+        Thread.sleep(1000)
+      }
+      searched("/api/status/global") mustBe Seq("status-route-1", "status-route-2", "status-route-3")
+      searched("/api/status/global?page=1&pageSize=2") mustBe Seq("status-route-1", "status-route-2")
+      searched("/api/status/global?page=2&pageSize=2") mustBe Seq("status-route-3")
+    }
     "shutdown" in {
+      elastic.stop(0)
       stopAll()
     }
   }

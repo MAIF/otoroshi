@@ -24,7 +24,8 @@ export class GlobalStatusPage extends Component {
 
   update = () => {
     this.setState({ loading: true });
-    BackOfficeServices.fetchGlobalStatus(this.state.page, this.state.pageSize).then(
+    // the api counts the pages from 1
+    BackOfficeServices.fetchGlobalStatus(this.state.page + 1, this.state.pageSize).then(
       ({ status, count, error }) => {
         this.setState({ status, count, error, loading: false });
       }

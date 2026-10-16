@@ -737,12 +737,12 @@
         {
           "name": "page",
           "in": "query",
-          "description": "The page of routes to answer: the page answered starts at the route `page * pageSize` (counted from 0)",
+          "description": "The page of routes to answer, counted from 1: the page answered starts at the route `(page - 1) * pageSize` (counted from 0)",
           "required": false,
           "schema": {
             "type": "integer",
             "format": "int32",
-            "minimum": 0,
+            "minimum": 1,
             "default": 1
           }
         },
