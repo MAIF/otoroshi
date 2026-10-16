@@ -121,9 +121,9 @@ The catalog can be deployed manually or on a schedule:
 | Property | Type | Description |
 |----------|------|-------------|
 | `enabled` | boolean | Enable scheduled deployment |
-| `kind` | string | `ScheduledEvery` (fixed interval) or `CronExpression` |
+| `kind` | string | `ScheduledEvery` (fixed interval) or `Cron` (cron expression). Another value is read as `ScheduledEvery` |
 | `interval` | number | Interval in milliseconds (for `ScheduledEvery`) |
-| `cron_expression` | string | Cron expression (for `CronExpression`) |
+| `cron_expression` | string | Cron expression (for `Cron`) |
 | `initial_delay` | number | Initial delay in milliseconds before first run |
 | `deploy_args` | object | Arguments passed during each scheduled deploy |
 
@@ -185,7 +185,7 @@ An HTTP-based catalog for a simple endpoint:
   },
   "scheduling": {
     "enabled": true,
-    "kind": "CronExpression",
+    "kind": "Cron",
     "cron_expression": "0 */10 * * * ?",
     "initial_delay": 5000,
     "deploy_args": {}

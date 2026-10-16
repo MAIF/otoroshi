@@ -208,9 +208,9 @@ A Remote Catalog entity has the following structure:
   "source_config": { ... },         // source-specific configuration
   "scheduling": {                    // optional auto-sync schedule
     "enabled": false,
-    "kind": "ScheduledEvery",        // ScheduledEvery or CronExpression
+    "kind": "ScheduledEvery",        // ScheduledEvery or Cron
     "interval": 60000,               // interval in milliseconds (for ScheduledEvery)
-    "cron_expression": "0 */5 * * * ?", // cron expression (for CronExpression)
+    "cron_expression": "0 */5 * * * ?", // cron expression (for Cron)
     "initial_delay": 10000,          // initial delay in milliseconds
     "deploy_args": {}                // arguments passed during scheduled deploy
   },
@@ -645,7 +645,7 @@ Remote catalogs can be configured to automatically deploy at regular intervals. 
 Two scheduling modes are available:
 
 - **ScheduledEvery**: runs the deploy at a fixed interval (e.g., every 60 seconds)
-- **CronExpression**: runs the deploy according to a cron expression
+- **Cron**: runs the deploy according to a cron expression (another kind is read as `ScheduledEvery`)
 
 ```javascript
 {
@@ -663,7 +663,7 @@ Two scheduling modes are available:
 {
   "scheduling": {
     "enabled": true,
-    "kind": "CronExpression",
+    "kind": "Cron",
     "cron_expression": "0 */5 * * * ?",  // every 5 minutes
     "deploy_args": {}
   }
