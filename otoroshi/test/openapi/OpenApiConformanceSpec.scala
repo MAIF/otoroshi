@@ -686,12 +686,15 @@ class OpenApiConformanceSpec(configurationSpec: => Configuration) extends Otoros
           if (c.body.trim.nonEmpty) Seq(Violation(s"${op.name} $status", s"answered a body the document does not describe: ${c.excerpt}"))
           else Seq.empty
         } else {
+          // a media type range (text/*, */*) describes every type it covers, the most specific description is used
+          def documented(ct: String): Option[JsObject] =
+            Seq(ct, s"${ct.takeWhile(_ != '/')}/*", "*/*").collectFirst { case key if contents.contains(key) => contents(key) }
           c.baseContentType match {
             case None                                  => Seq(Violation(s"${op.name} $status", s"answered no content type, documented ${contents.keys.mkString(", ")}"))
-            case Some(ct) if !contents.contains(ct)    =>
+            case Some(ct) if documented(ct).isEmpty    =>
               Seq(Violation(s"${op.name} $status", s"answered $ct, documented ${contents.keys.mkString(", ")}: ${c.excerpt}"))
             case Some(ct)                              =>
-              (contents(ct) \ "schema").toOption match {
+              (documented(ct).get \ "schema").toOption match {
                 case None         => Seq.empty
                 case Some(schema) =>
                   bodyValues(ct, c.body) match {
