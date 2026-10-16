@@ -271,7 +271,7 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
         "cleverSettings"           -> JsNull,
         "maxWebhookSize"           -> 100,
         "middleFingers"            -> false,
-        "maxLogsSize"              -> 10000,
+        "maxLogsSize"              -> 100,
         "otoroshiId"               -> "otoroshi-1",
         "wasmoSettings"            -> JsNull,
         "metadata"                 -> Json.obj(),
@@ -471,7 +471,7 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       back.useAkkaHttpClient mustBe false
       back.maxWebhookSize mustBe 100
       back.middleFingers mustBe false
-      back.maxLogsSize mustBe 10000
+      back.maxLogsSize mustBe 100
       back.tags mustBe empty
       back.metadata mustBe empty
       back.env mustBe Json.obj()
@@ -578,7 +578,7 @@ class GlobalConfigEntityFormatSpec extends EntityFormatSpec {
       back.maxConcurrentRequests mustBe 1000L
       back.apiReadOnly mustBe false
       back.maintenanceMode mustBe false
-      back.maxLogsSize mustBe 10000
+      back.maxLogsSize mustBe 100
       back.env mustBe Json.obj()
       back.tags mustBe empty
     }

@@ -235,7 +235,7 @@
       "maxLogsSize": {
         "type": "integer",
         "format": "int32",
-        "description": "The maximum number of alert events and of audit events kept in the datastore, the older ones being dropped. 10000 when absent, `app.events.maxSize` (100 by default) for a new instance",
+        "description": "The maximum number of alert events and of audit events kept in the datastore, the older ones being dropped. 100 when absent, `app.events.maxSize` for a new instance (50 in the default configuration, 100 when it is not set)",
         "example": 10000
       },
       "otoroshiId": {

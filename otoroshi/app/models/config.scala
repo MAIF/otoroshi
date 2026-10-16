@@ -718,7 +718,7 @@ case class GlobalConfig(
     statsdConfig: Option[StatsdConfig] = None,
     maxWebhookSize: Int = 100,
     middleFingers: Boolean = false,
-    maxLogsSize: Int = 10000,
+    maxLogsSize: Int = 100,
     otoroshiId: String = IdGenerator.uuid,
     snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
     proxies: Proxies = Proxies(),
@@ -980,7 +980,7 @@ object GlobalConfig {
           endlessIpAddresses = (json \ "endlessIpAddresses").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           maxWebhookSize = (json \ "maxWebhookSize").asOpt[Int].getOrElse(100),
           middleFingers = (json \ "middleFingers").asOpt[Boolean].getOrElse(false),
-          maxLogsSize = (json \ "maxLogsSize").asOpt[Int].getOrElse(10000),
+          maxLogsSize = (json \ "maxLogsSize").asOpt[Int].getOrElse(100),
           statsdConfig = (json \ "statsdConfig").asOpt[JsValue].flatMap { config =>
             (
               (config \ "host").asOpt[String].filter(_.nonEmpty),
