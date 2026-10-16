@@ -276,8 +276,9 @@ class UserAlertEntityFormatSpec extends EntityFormatSpec {
 
     "generate an alert id for an alert without id" in {
       val id = readOk(format, Json.obj("name" -> "A")).id
+      // a single uuid after the prefix
       id must startWith("alert_")
-      id.split("_").length mustBe 3
+      id.split("_").length mustBe 2
     }
 
     "generate a new id at each read of an alert without id" in {

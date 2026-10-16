@@ -248,8 +248,9 @@ class UserDashboardEntityFormatSpec extends EntityFormatSpec {
 
     "generate a dashboard id for a dashboard without id" in {
       val id = readOk(format, Json.obj("name" -> "D")).id
+      // a single uuid after the prefix
       id must startWith("dashboard_")
-      id.split("_").length mustBe 3
+      id.split("_").length mustBe 2
     }
 
     "generate a new id at each read of a dashboard without id" in {
