@@ -70,6 +70,9 @@ class ApiManagementSpec extends OtoroshiSpec {
       keys must contain(keyOf("sub-a"))
       keys must not contain keyOf("sub-b")
     }
+    "read the quotas of the api keys of an api" in {
+      ok(call("GET", s"$apis/api-mgmt-a/apikeys/${keyOf("sub-a")}/quotas"))
+    }
     "shutdown" in {
       stopAll()
     }

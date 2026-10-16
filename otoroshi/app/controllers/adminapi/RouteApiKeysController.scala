@@ -81,16 +81,17 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
     (if (isRoute)
        canReadOrWriteRoute[AnyContent](ctx, id, (ctx, entity) => ctx.canUserRead(entity))
      else canReadOrWriteApi[AnyContent](ctx, id, (ctx, entity) => ctx.canUserRead(entity))).flatMap {
-      case Left(err) => err.vfuture
-      case Right(_)  =>
+      case Left(err)     => err.vfuture
+      // the keys of a route or an api are authorized on it, or on one of its groups, like the reset of the quotas
+      case Right(entity) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-          case None                                            => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
-          case Some(apiKey) if !ctx.canUserRead(apiKey)        => ctx.fforbidden
-          case Some(apiKey) if !apiKey.authorizedOnService(id) =>
+          case None                                                                   => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+          case Some(apiKey) if !ctx.canUserRead(apiKey)                               => ctx.fforbidden
+          case Some(apiKey) if !apiKey.authorizedOnServiceOrGroups(id, entity.groups) =>
             NotFound(
               Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$id'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedOnService(id)  => {
+          case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(id, entity.groups)  => {
             sendAudit(
               "ACCESS_SERVICE_APIKEY_QUOTAS",
               s"User accessed an apikey quotas",

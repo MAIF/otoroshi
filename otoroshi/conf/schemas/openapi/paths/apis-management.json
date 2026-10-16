@@ -6,7 +6,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Read the remaining quotas of an api key of an api",
-      "description": "Answers the calls the api key consumed in the current throttling window, day and month, the calls it is allowed to make, and the calls it has left. The admin behind the credentials has to be able to read the api and the api key. Only an api key authorized on the id of the api as on a service descriptor (`service_<apiId>` in its `authorizedEntities`) is found: an api key authorized on the api itself (`api_<apiId>`) or minted by one of its plans is answered as not found.",
+      "description": "Answers the calls the api key consumed in the current throttling window, day and month, the calls it is allowed to make, and the calls it has left. The admin behind the credentials has to be able to read the api and the api key. The api key has to be authorized on the api, directly (`api_<apiId>` in its `authorizedEntities`, or minted by one of the plans of the api) or through one of the groups of the api.",
       "operationId": "otoroshi.controllers.adminapi.ApiKeysFromRouteController.apiKeyQuotasOfApi",
       "parameters": [
         {
