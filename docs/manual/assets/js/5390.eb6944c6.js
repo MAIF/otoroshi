@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunkotoroshi_documentation=globalThis.webpackChunkotoroshi_documentation||[]).push([[5390],{75390(o,e,t){t.d(e,{createArchitectureServices:()=>c.S});var c=t(65530);t(72519)}}]);
