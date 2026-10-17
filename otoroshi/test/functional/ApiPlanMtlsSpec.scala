@@ -59,6 +59,8 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
 
   private var matchingClient: (PrivateKey, Array[X509Certificate]) = scala.compiletime.uninitialized
   private var otherClient: (PrivateKey, Array[X509Certificate])    = scala.compiletime.uninitialized
+  // the backend of the apis of the mtls plans: a call depends on nothing but this instance
+  private var mtlsBackend: TargetService                           = scala.compiletime.uninitialized
 
   override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(
@@ -189,7 +191,12 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
 
   private def deployApi(planId: String, accessModeConfiguration: JsObject, tag: String): Api = {
     given Env  = otoEnv
-    val backend = ApiBackend.empty
+    val default = ApiBackend.empty
+    val backend = default.copy(
+      backend = default.backend.copy(
+        targets = Seq(NgTarget(id = "target_1", hostname = "127.0.0.1", port = mtlsBackend.port, tls = false))
+      )
+    )
     val flow    = ApiFlows.empty.copy(plugins = NgPlugins(ApiFlows.empty.plugins.slots :+ probePlugin(tag)))
     val api     = Api(
       location = EntityLocation.default,
@@ -243,6 +250,9 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
 
     "warm up" in {
       startInstance()
+      mtlsBackend = TargetService
+        .full(None, "/", "application/json", _ => (200, """{"message":"hello world"}""", List.empty))
+        .await()
       given Env = otoEnv
       DynamicSSLEngineProvider.addCertificates(
         Seq(
@@ -685,6 +695,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
 
   "The otoroshi instance" should {
     "shutdown" in {
+      Try(mtlsBackend.stop())
       Try(otoRef.get().stop())
     }
   }
