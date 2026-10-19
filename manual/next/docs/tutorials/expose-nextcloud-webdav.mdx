@@ -1,0 +1,190 @@
+---
+title: Expose Nextcloud (WebDAV, CalDAV, CardDAV)
+sidebar_position: 32
+---
+
+# Expose Nextcloud (WebDAV, CalDAV, CardDAV)
+
+<div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+<span style={{ fontWeight: "bold" }}>Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.XForwardedHeaders">X-Forwarded-* headers</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.Redirection">Redirection</a>
+</div>
+
+Nextcloud, and many other collaborative tools, rely on WebDAV for files and on CalDAV and CardDAV for calendars and contacts. These protocols extend HTTP with their own methods (`PROPFIND`, `PROPPATCH`, `MKCOL`, `COPY`, `MOVE`, `LOCK`, `UNLOCK`, `REPORT`, `MKCALENDAR`, ...), their own headers (`Depth`, `Destination`, `Overwrite`, `If`, `Lock-Token`, `Timeout`) and the `207 Multi-Status` response.
+
+This tutorial puts a Nextcloud instance behind Otoroshi so that the web interface, the desktop and mobile apps, and the CalDAV and CardDAV clients all work, shared calendars and address books included. It was checked against Nextcloud 35 running the official `nextcloud:apache` docker image.
+
+In this tutorial:
+
+- [Use the Netty server](#use-the-netty-server)
+- [Use a dedicated domain](#use-a-dedicated-domain)
+- [Create the route](#create-the-route)
+- [Configure Nextcloud](#configure-nextcloud)
+- [Check the setup](#check-the-setup)
+- [Troubleshooting](#troubleshooting)
+
+## Use the Netty server
+
+The default HTTP server of Otoroshi (Pekko HTTP, on ports `8080` and `8443` by default) only accepts the standard HTTP methods. It answers `501 Unsupported HTTP method` to a `PROPFIND` or a `REPORT` before the request reaches the proxy engine, so no route or plugin can help there.
+
+The [Netty server](../topics/netty-server.md) accepts any method. Enable it and send the Nextcloud traffic to its ports (`10049` for HTTP and `10048` for HTTPS by default):
+
+```sh
+OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED=true
+```
+
+[Custom HTTP listeners](../topics/http-listeners.mdx) run on Netty too, and work the same way.
+
+:::warning
+Enabling the Netty server does not replace the Pekko server: it starts new listeners next to it. Make sure your load balancer, or the port mapping of your container, sends the Nextcloud traffic to the Netty ports.
+:::
+
+A quick way to know which server answers:
+
+```sh
+curl -i -X PROPFIND -u 'alice:app-password' https://cloud.example.org/remote.php/dav/
+```
+
+A `501` with `Unsupported HTTP method` in the body means the request went through the Pekko server. A `207` means the WebDAV methods reach Nextcloud.
+
+On the Netty server, the methods, their XML bodies, the WebDAV headers and the `207` responses go through untouched, and so do file names with spaces, accents or characters such as `+`, `&` and `#`.
+
+## Use a dedicated domain
+
+Expose Nextcloud on its own domain, with `/` sent to `/` on the backend, for instance `https://cloud.example.org`.
+
+Nextcloud writes paths in the `href` elements of its `207` responses and reads the path of the `Destination` header of `COPY` and `MOVE`. Otoroshi rewrites neither of them. Under a sub-path with strip path (`https://example.org/cloud` sent to `/`):
+
+- `COPY` and `MOVE` are refused with `403 Forbidden`, because the destination path is outside of what Nextcloud serves,
+- the `href` elements lack the `/cloud` prefix, so the clients look for the files and collections at the wrong place,
+- the calendar and contacts clients look for `/.well-known/caldav` and `/.well-known/carddav` at the root of the domain, outside of the route.
+
+## Create the route
+
+```json
+{
+  "id": "route_nextcloud",
+  "name": "nextcloud",
+  "frontend": {
+    "domains": ["cloud.example.org"]
+  },
+  "backend": {
+    "targets": [
+      { "hostname": "nextcloud", "port": 80, "tls": false }
+    ],
+    "client": {
+      "call_timeout": 3600000,
+      "call_and_stream_timeout": 3600000,
+      "global_timeout": 3600000
+    }
+  },
+  "plugins": [
+    { "plugin": "cp:otoroshi.next.plugins.XForwardedHeaders" },
+    {
+      "plugin": "cp:otoroshi.next.plugins.Redirection",
+      "include": ["/\\.well-known/(caldav|carddav)"],
+      "config": { "code": 301, "to": "https://${req.host}/remote.php/dav/" }
+    }
+  ]
+}
+```
+
+Save it in `nextcloud-route.json` and create it with the admin API:
+
+```sh
+curl -X POST -u "$ID:$SECRET" \
+  -H 'Content-Type: application/json' \
+  -d @nextcloud-route.json \
+  http://otoroshi-api.oto.tools:8080/apis/proxy.otoroshi.io/v1/routes
+```
+
+The fields left out take their default values. Each part of this route matters:
+
+### No Override Host plugin
+
+A route created from the UI comes with the `Override Host` plugin, which replaces the `Host` header with the hostname of the backend target. Nextcloud builds absolute URLs from the host it receives: with that plugin, the Login Flow used by the desktop and mobile apps hands out URLs like `http://nextcloud/login/v2/...`, and the apps then try to reach an address they cannot resolve. Remove the plugin so that Nextcloud receives `cloud.example.org`.
+
+### The X-Forwarded-* headers plugin
+
+Otoroshi drops the `X-Forwarded-For` and `X-Forwarded-Proto` headers sent by the client. The `X-Forwarded-* headers` plugin sends the right ones to Nextcloud:
+
+- `X-Forwarded-Proto` tells Nextcloud that the client uses `https`, so the URLs it generates start with `https://`,
+- `X-Forwarded-For` gives the address of the client. Without it, Nextcloud sees every client with the address of Otoroshi: its brute force protection then slows down every user as soon as one of them, or one of their sync apps, uses a wrong password.
+
+Nextcloud only reads these headers from a trusted proxy, see [Configure Nextcloud](#configure-nextcloud).
+
+### Longer timeouts
+
+`call_timeout` and `global_timeout` (30 seconds in the routes created from the UI) bound the time until the response headers of the backend arrive. For an upload, Nextcloud only answers once it has received the whole file: any upload longer than 30 seconds gets a `504 Gateway Timeout`, the file is not stored, and Nextcloud may keep it locked for a while, so the next attempt gets a `423 Locked`.
+
+Set `call_timeout`, `global_timeout` and `call_and_stream_timeout` (120 seconds in the routes created from the UI) to the duration of the longest transfer you expect. The route above uses one hour (`3600000` milliseconds).
+
+### The Redirection plugin
+
+Calendar and contacts clients discover the server through `/.well-known/caldav` and `/.well-known/carddav`. In the official Nextcloud docker image, Apache redirects them with a rewrite rule that ignores `X-Forwarded-Proto`, so the redirection points to `http://cloud.example.org/remote.php/dav/`. The `Redirection` plugin answers these two paths directly with the `https` address. Its `include` list restricts it to them, so the rest of the traffic reaches Nextcloud.
+
+## Configure Nextcloud
+
+Declare the public domain, and the address Otoroshi connects from as a trusted proxy, in `config/config.php`:
+
+```php
+'trusted_domains' => ['cloud.example.org'],
+'trusted_proxies' => ['10.0.0.12'],
+'overwrite.cli.url' => 'https://cloud.example.org',
+```
+
+or with `occ`:
+
+```sh
+php occ config:system:set trusted_domains 1 --value=cloud.example.org
+php occ config:system:set trusted_proxies 0 --value=10.0.0.12
+php occ config:system:set overwrite.cli.url --value=https://cloud.example.org
+```
+
+The number after `trusted_domains` and `trusted_proxies` is the position in the list: pick one that does not overwrite an existing entry.
+
+`trusted_proxies` takes the address Nextcloud sees for the connections of Otoroshi: the address of the Otoroshi instances, or of the Otoroshi container when both run in the same docker network. `overwrite.cli.url` is used for the URLs Nextcloud generates outside of a request, in background jobs and notifications.
+
+## Check the setup
+
+The WebDAV methods reach Nextcloud:
+
+```sh
+curl -s -o /dev/null -w '%{http_code}\n' -X PROPFIND -H 'Depth: 0' \
+  -u 'alice:app-password' https://cloud.example.org/remote.php/dav/files/alice/
+# 207
+```
+
+The URLs handed to the desktop and mobile apps use the public address (both `login` and `poll.endpoint` must start with `https://cloud.example.org/`):
+
+```sh
+curl -s -X POST https://cloud.example.org/index.php/login/v2
+```
+
+The discovery of calendars and contacts redirects to the public address:
+
+```sh
+curl -sI https://cloud.example.org/.well-known/caldav | grep -i location
+# location: https://cloud.example.org/remote.php/dav/
+```
+
+A slow upload goes through (with `--limit-rate`, a 5 MB file takes more than 30 seconds):
+
+```sh
+head -c 5000000 /dev/urandom > slow.bin
+curl -s -o /dev/null -w '%{http_code}\n' --limit-rate 100k -T slow.bin \
+  -u 'alice:app-password' https://cloud.example.org/remote.php/dav/files/alice/slow.bin
+# 201
+```
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `PROPFIND`, `REPORT`, ... answered `501 Unsupported HTTP method` | The request goes through the Pekko server | Send the traffic to the [Netty server](#use-the-netty-server) |
+| The desktop or mobile app cannot finish its login, or tries to reach an internal address | `Override Host` plugin, or missing `X-Forwarded-*` headers | [Remove Override Host](#no-override-host-plugin), [add X-Forwarded-* headers](#the-x-forwarded--headers-plugin), set `trusted_proxies` |
+| Large uploads fail with `504`, then `423 Locked` on retry | `call_timeout` and `global_timeout` too short | [Raise the timeouts](#longer-timeouts) |
+| Calendar or contacts apps cannot find the server from its domain | `/.well-known` redirects to `http://` | [Add the Redirection plugin](#the-redirection-plugin) |
+| Renaming or moving a file fails with `403 Forbidden` | Nextcloud exposed under a sub-path | [Use a dedicated domain](#use-a-dedicated-domain) |
+| Every user gets slowed down after a wrong password | Nextcloud sees all clients with the address of Otoroshi | [Add X-Forwarded-* headers](#the-x-forwarded--headers-plugin) and set `trusted_proxies` |

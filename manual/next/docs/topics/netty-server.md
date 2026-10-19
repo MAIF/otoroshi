@@ -211,6 +211,10 @@ Access logs are written via the `reactor.netty.http.server.AccessLog` logger.
 
 The Netty server fully supports WebSocket connections over HTTP/1.1 and HTTP/2. WebSocket upgrades are detected via the `Upgrade` and `Sec-WebSocket-Version` headers and routed to the proxy engine's WebSocket handler.
 
+## Custom HTTP methods
+
+The Netty server accepts any HTTP method, while the default Pekko HTTP server answers `501 Unsupported HTTP method` to the methods it does not know. Protocols built on top of HTTP with their own methods, like WebDAV, CalDAV and CardDAV (`PROPFIND`, `REPORT`, `MKCOL`, `MKCALENDAR`, `LOCK`, ...), need the Netty server or a [custom HTTP listener](./http-listeners.mdx). See [Expose Nextcloud](../tutorials/expose-nextcloud-webdav.mdx) for a complete setup.
+
 ## Trailer headers
 
 The server supports HTTP/2 and HTTP/3 trailer headers. Trailers are stored in an internal cache (TTL: 10 seconds, max 1000 entries) and can be accessed asynchronously during request processing.
@@ -233,3 +237,4 @@ The Netty server described here is the "experimental" built-in server started fr
 * [HTTP/3](./http3.md) - HTTP/3 protocol details
 * [Custom HTTP Listeners](./http-listeners.mdx) - Dynamic listeners with route binding
 * [TLS](./tls.md) - TLS and certificate management
+* [Expose Nextcloud](../tutorials/expose-nextcloud-webdav.mdx) - WebDAV, CalDAV and CardDAV behind the Netty server

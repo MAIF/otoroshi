@@ -38,5 +38,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Create your first API](./create-your-first-api.mdx)
 * [Set up an AI Gateway with otoroshictl](./setup-ai-gateway-with-otoroshictl.md)
 * [Sign and verify HTTP messages (RFC 9421)](./http-message-signatures-rfc9421.md)
+* [Expose Nextcloud (WebDAV, CalDAV, CardDAV)](./expose-nextcloud-webdav.mdx)
 
 
