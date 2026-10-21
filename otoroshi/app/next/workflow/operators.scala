@@ -1083,7 +1083,7 @@ class StringifyOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.stringify.json
+    opts.select("value").getOrElse(opts).stringify.json
   }
 }
 
@@ -1120,7 +1120,7 @@ class PrettifyOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.prettify.json
+    opts.select("value").getOrElse(opts).prettify.json
   }
 }
 
