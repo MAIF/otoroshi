@@ -83,12 +83,15 @@ export MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-2}"
 export JAVA_OPTS="${DEFAULT_JAVA_OPTS# } ${JAVA_OPTS:-}"
 echo "JAVA_OPTS: ${JAVA_OPTS}"
 
+# --enable-native-access: the native libraries (jq through jna, quic, brotli, ...) are loaded with restricted methods,
+# a warning since jdk 24 that a future jdk turns into an error
 BASE_JAVA_OPTS="$JAVA_OPTS \
  --add-opens java.base/javax.net.ssl=ALL-UNNAMED \
  --add-opens java.base/jdk.internal.misc=ALL-UNNAMED \
  --add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED \
  --add-exports=java.base/sun.security.x509=ALL-UNNAMED \
  --add-opens=java.base/sun.security.ssl=ALL-UNNAMED \
+ --enable-native-access=ALL-UNNAMED \
  -Dlog4j2.formatMsgNoLookups=true \
  -Dhttp.port=8080 -Dhttps.port=8443"
 
