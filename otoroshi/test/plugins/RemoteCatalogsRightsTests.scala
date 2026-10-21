@@ -123,9 +123,18 @@ class RemoteCatalogsRightsTests(parent: PluginsTestSpecBase) {
     readerTest.status mustBe Status.FORBIDDEN
   }
 
+  val readerApiTest = adminApi("_test", Some(reader), one)
+  withClue(s"reader dry runs through the admin api: status=${readerApiTest.status} body=${readerApiTest.body} ") {
+    readerApiTest.status mustBe Status.FORBIDDEN
+  }
+
   val writerTest = backoffice("_test", writer, one)
   withClue(s"writer dry runs from the backoffice: status=${writerTest.status} body=${writerTest.body} ") {
     writerTest.status mustBe Status.FORBIDDEN
+  }
+  val writerApiTest = adminApi("_test", Some(writer), one)
+  withClue(s"writer dry runs through the admin api: status=${writerApiTest.status} body=${writerApiTest.body} ") {
+    writerApiTest.status mustBe Status.FORBIDDEN
   }
   itemError("writer deploys from the backoffice", backoffice("_deploy", writer, many)) mustBe Some(notAuthorized)
   itemError("writer deploys through the admin api", adminApi("_deploy", Some(writer), many)) mustBe Some(
@@ -158,6 +167,10 @@ class RemoteCatalogsRightsTests(parent: PluginsTestSpecBase) {
   itemError("admin apikey deploys through the admin api", adminApi("_deploy", None, many)) must not be Some(
     notAuthorized
   )
+  val apikeyTest = adminApi("_test", None, one)
+  withClue(s"admin apikey dry runs through the admin api: status=${apikeyTest.status} body=${apikeyTest.body} ") {
+    apikeyTest.status mustBe Status.OK
+  }
 
   Seq(admin, writer, reader).foreach(_.delete()(using env.otoroshiExecutionContext, env).futureValue)
   otoroshiApiCall("DELETE", s"/apis/catalogs.otoroshi.io/v1/remote-catalogs/$catalogId").futureValue

@@ -594,7 +594,7 @@ An API (`apis.otoroshi.io/Api`) written by a catalog does not go through a draft
 A dry-run performs the same fetch and reconciliation logic but without actually writing any changes. It returns a report showing what would be created, updated, or deleted.
 
 ```sh
-curl -X POST 'http://otoroshi-api.oto.tools:8080/extensions/remote-catalogs/_test' \
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/extensions/remote-catalogs/_test' \
   -u admin-api-apikey-id:admin-api-apikey-secret \
   -H 'Content-Type: application/json' \
   -d '{"id": "my-catalog", "args": {}}'

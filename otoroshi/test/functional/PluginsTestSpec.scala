@@ -231,6 +231,9 @@ class RemoteCatalogsChecksSpec extends PluginsTestSpecBase {
     "only let super admins use the remote catalogs" in {
       new RemoteCatalogsRightsTests(this)
     }
+    "dry run a catalog through the admin api without writing it" in {
+      new RemoteCatalogsDryRunTests(this)
+    }
   }
 }
 

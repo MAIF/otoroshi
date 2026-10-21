@@ -212,7 +212,7 @@ Additional action endpoints:
 ```
 POST /api/extensions/remote-catalogs/_deploy     # Deploy one or more catalogs
 POST /api/extensions/remote-catalogs/_undeploy   # Undeploy one or more catalogs
-POST /extensions/remote-catalogs/_test           # Dry-run a catalog
+POST /api/extensions/remote-catalogs/_test       # Dry-run a catalog
 ```
 
 ## Learn more

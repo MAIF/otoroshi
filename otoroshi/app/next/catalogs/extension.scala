@@ -244,6 +244,12 @@ class RemoteCatalogAdminExtension(val env: Env) extends CoreAdminExtension {
       ),
       AdminExtensionAdminApiRoute(
         method = "POST",
+        path = "/api/extensions/remote-catalogs/_test",
+        wantsBody = true,
+        handle = (ctx, req, apikey, optBody) => handleTest(optBody, canApiWriteCatalog(req, apikey))
+      ),
+      AdminExtensionAdminApiRoute(
+        method = "POST",
         path = "/api/extensions/remote-catalogs/_undeploy",
         wantsBody = true,
         handle = (ctx, req, apikey, optBody) => handleUndeploy(optBody, canApiWriteCatalog(req, apikey))
