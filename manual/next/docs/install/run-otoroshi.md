@@ -33,9 +33,13 @@ java \
   --add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED \
   --add-exports=java.base/sun.security.x509=ALL-UNNAMED \
   --add-opens=java.base/sun.security.ssl=ALL-UNNAMED \
+  --enable-native-access=ALL-UNNAMED \
   -Dlog4j2.formatMsgNoLookups=true \
   -jar otoroshi.jar
 ```
+
+`--enable-native-access=ALL-UNNAMED` lets the native libraries some features load (jq, quic, brotli, ...) call
+the restricted methods of the JDK: JDK 24 and later print a warning without it, and a future JDK blocks them.
 
 ## From docker
 

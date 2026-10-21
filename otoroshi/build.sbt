@@ -328,7 +328,8 @@ Test / javaOptions ++= Seq(
   "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED",
   "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
   "--add-exports=java.base/sun.security.x509=ALL-UNNAMED",
-  "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
+  "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED",
+  "--enable-native-access=ALL-UNNAMED"
 )
 
 // Every spec that boots an otoroshi instance leaves process-global state behind
@@ -496,6 +497,7 @@ addJava "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
 addJava "--add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED"
 addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED"
 addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
+addJava "--enable-native-access=ALL-UNNAMED"
 addJava "-Dlog4j2.formatMsgNoLookups=true"
 """
 
@@ -525,6 +527,7 @@ reStart / javaOptions ++= Seq(
   "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
   "--add-exports=java.base/sun.security.x509=ALL-UNNAMED",
   "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED",
+  "--enable-native-access=ALL-UNNAMED",
   "-Dlog4j2.formatMsgNoLookups=true",
   //"-Dapp.rootScheme=https",
   "-Dotoroshi.revolver=true",
