@@ -108,8 +108,10 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
     if (bresponse.contentType.exists(_.contains("application/grpc"))) {
       headers.add(HttpHeaderNames.TRAILER, "grpc-status, grpc-message")
     }
-    bresponse.contentType.foreach(ct => headers.add("Content-Type", ct))
-    bresponse.contentLength.foreach(cl => headers.addInt("Content-Length", cl.toInt))
+    // the headers of a result can hold its content type and length too: the ones of its body replace them, like pekko
+    // does, a repeated content-length being refused by http2 clients
+    bresponse.contentType.foreach(ct => headers.set("Content-Type", ct))
+    bresponse.contentLength.foreach(cl => headers.setInt("Content-Length", cl.toInt))
     res
       .status(result.header.status)
       .headers(headers)
