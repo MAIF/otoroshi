@@ -850,38 +850,19 @@ class Env(
   lazy val backOfficePath = "/bo/dashboard"
   lazy val backOfficeUrl  = s"$exposedRootScheme://$backOfficeHost$bestExposedPort$backOfficePath"
 
-  lazy val adminApiExposedDomains = configuration
-    .getOptionalWithFileSupport[Seq[String]]("app.adminapi.exposedDomains")
-    .orElse(
+  // the list and the comma separated string are both read and merged: application.conf always sets the list (to []),
+  // which used to hide the string, the only one the environment variables fill
+  private def domainsFromConfig(listPath: String, strPath: String): Seq[String] =
+    (configuration.getOptionalWithFileSupport[Seq[String]](listPath).getOrElse(Seq.empty) ++
       configuration
-        .getOptionalWithFileSupport[String]("app.adminapi.exposedDomainsStr")
-        .map(ds => ds.split(",").toSeq.map(_.trim))
-    )
-    .getOrElse(Seq.empty).toSeq
-  lazy val adminApiDomains        = configuration
-    .getOptionalWithFileSupport[Seq[String]]("app.adminapi.domains")
-    .orElse(
-      configuration
-        .getOptionalWithFileSupport[String]("app.adminapi.domainsStr")
-        .map(ds => ds.split(",").toSeq.map(_.trim))
-    )
-    .getOrElse(Seq.empty).toSeq
-  lazy val privateAppsDomains     = configuration
-    .getOptionalWithFileSupport[Seq[String]]("app.privateapps.domains")
-    .orElse(
-      configuration
-        .getOptionalWithFileSupport[String]("app.privateapps.domainsStr")
-        .map(ds => ds.split(",").toSeq.map(_.trim))
-    )
-    .getOrElse(Seq.empty).toSeq
-  lazy val backofficeDomains      = configuration
-    .getOptionalWithFileSupport[Seq[String]]("app.backoffice.domains")
-    .orElse(
-      configuration
-        .getOptionalWithFileSupport[String]("app.backoffice.domainsStr")
-        .map(ds => ds.split(",").toSeq.map(_.trim))
-    )
-    .getOrElse(Seq.empty).toSeq
+        .getOptionalWithFileSupport[String](strPath)
+        .map(_.split(",").toSeq.map(_.trim))
+        .getOrElse(Seq.empty)).filter(_.nonEmpty).distinct
+
+  lazy val adminApiExposedDomains = domainsFromConfig("app.adminapi.exposedDomains", "app.adminapi.exposedDomainsStr")
+  lazy val adminApiDomains        = domainsFromConfig("app.adminapi.domains", "app.adminapi.domainsStr")
+  lazy val privateAppsDomains     = domainsFromConfig("app.privateapps.domains", "app.privateapps.domainsStr")
+  lazy val backofficeDomains      = domainsFromConfig("app.backoffice.domains", "app.backoffice.domainsStr")
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
