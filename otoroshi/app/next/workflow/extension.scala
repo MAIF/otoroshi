@@ -664,7 +664,8 @@ class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(using 
     request.headers.get("Origin") match {
       case None         => false
       case Some(origin) =>
-        Try(Uri(origin).authority.copy(port = 0).toString()).toOption.forall(_ != env.backOfficeHost)
+        Try(Uri(origin).authority.copy(port = 0).toString()).toOption
+          .forall(o => o != env.backOfficeHost && !env.backofficeDomains.contains(o))
     }
   }
 

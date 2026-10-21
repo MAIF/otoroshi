@@ -191,7 +191,8 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(using env: Env)
           request.headers.get("Referer").map(Uri.apply).map(uri => uri.copy(path = Path.Empty))
         )
         .map(u => u.authority.copy(port = 0).toString()) match {
-        case Some(origin) if origin == env.backOfficeHost                                        => {
+        // the same hosts as the host check below: the backoffice can be served on its alternative domains too
+        case Some(origin) if origin == env.backOfficeHost || env.backofficeDomains.contains(origin) => {
           if (
             req.thePath.startsWith("/bo/api/") && env.datastores.globalConfigDataStore
               .latest()
@@ -209,7 +210,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(using env: Env)
             callAction()
           }
         }
-        case Some(origin) if origin != env.backOfficeHost && request.method.toLowerCase != "get" =>
+        case Some(_) if request.method.toLowerCase != "get"                                         =>
           Errors.craftResponseResult(
             s"Bad origin",
             Status(417),
