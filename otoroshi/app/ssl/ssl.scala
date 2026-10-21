@@ -2771,28 +2771,26 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
       selector: BiFunction[SSLEngine, util.List[String], String]
   ): Unit = {
     import scala.jdk.CollectionConverters.*
-    if (!lock) {
-      delegate.setHandshakeApplicationProtocolSelector(new BiFunction[SSLEngine, util.List[String], String] {
-        override def apply(t: SSLEngine, u: util.List[String]): String = {
-          Try(t.getPeerHost)
-            .orElse(Try(t.getHandshakeSession).map(_.getPeerHost))
-            .orElse(Try(t.getSession).map(_.getPeerHost)) match {
-            case Failure(_)        => selector.apply(t, u)
-            case Success(peerHost) => {
-              // println(s"get selector on : ${peerHost} - ${u.toArray.mkString(", ")}")
-              bannedProtos.get(peerHost) match {
-                case None         => selector.apply(t, u)
-                case Some(banned) => {
-                  val withoutBanned = u.asScala.filterNot(v => banned.contains(v))
-                  // println(s"can just use: ${withoutBanned.mkString(", ")}")
-                  selector.apply(t, withoutBanned.asJava)
-                }
+    delegate.setHandshakeApplicationProtocolSelector(new BiFunction[SSLEngine, util.List[String], String] {
+      override def apply(t: SSLEngine, u: util.List[String]): String = {
+        Try(t.getPeerHost)
+          .orElse(Try(t.getHandshakeSession).map(_.getPeerHost))
+          .orElse(Try(t.getSession).map(_.getPeerHost)) match {
+          case Failure(_)        => selector.apply(t, u)
+          case Success(peerHost) => {
+            // println(s"get selector on : ${peerHost} - ${u.toArray.mkString(", ")}")
+            bannedProtos.get(peerHost) match {
+              case None         => selector.apply(t, u)
+              case Some(banned) => {
+                val withoutBanned = u.asScala.filterNot(v => banned.contains(v))
+                // println(s"can just use: ${withoutBanned.mkString(", ")}")
+                selector.apply(t, withoutBanned.asJava)
               }
             }
           }
         }
-      })
-    }
+      }
+    })
   }
 
   override def getHandshakeApplicationProtocolSelector: BiFunction[SSLEngine, util.List[String], String] =

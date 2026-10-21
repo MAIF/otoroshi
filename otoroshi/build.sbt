@@ -53,7 +53,7 @@ inThisBuild(
 )
 
 lazy val root = (project in file("."))
-  .enablePlugins(PlayScala)
+  .enablePlugins(PlayScala, PlayPekkoHttp2Support)
   .disablePlugins(PlayFilters)
 
 lazy val scalaLangVersion        = "3.8.4"
