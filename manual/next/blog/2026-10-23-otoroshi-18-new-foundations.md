@@ -5,11 +5,11 @@ authors: [otoroshi-team]
 tags: [otoroshi, release, scala3, play, pekko, migration]
 ---
 
-Otoroshi `18.0.0` is the largest release we have shipped in years. The whole runtime moved to Scala 3, Play 3 and Apache Pekko, and Service Descriptors -- deprecated for four years -- are finally gone.
+Otoroshi `18.0.0` is the largest release we have shipped in years, and probably the most carefully prepared one. The whole runtime moved to Scala 3, Play 3 and Apache Pekko, and Service Descriptors -- deprecated for four years -- are finally gone.
 
 It is also, by design, meant to be one of the most boring upgrades you will ever do. Your routes, plugins, API keys, certificates and exporters are untouched. Your traffic does not care.
 
-And once the new foundations were in, we started building on them: every caller of an API is now an API key, consumers can carry their own plugin chain, any plugin can run conditionally, and the whole gateway went through a security pass.
+And once the new foundations were in, we started building on them: every caller of an API is now an API key, consumers can carry their own plugin chain, any plugin can run conditionally, and the whole gateway went through two security audits. Then we checked everything, twice.
 
 <!-- truncate -->
 
@@ -54,7 +54,11 @@ The rule for the port was strict: change nothing but the foundation. Once it had
 
 **Conditional plugins.** The new [Conditional plugin](/docs/plugins/conditional-plugin) wraps any other plugin and runs it only when a set of JSONPath predicates matches -- on the API key, the authenticated user, the route metadata, the request, the response or the request attributes. "Only apply this rate limiter to the free tier" is now configuration, not code. JSONPath evaluation itself got a lot faster in the process, which also benefits the plugins that already relied on it.
 
-**A security pass.** Admin API rights are checked more strictly for users and API keys scoped to a tenant or a team. SAML response validation was fixed and is now secure by default. An LDAP filter injection was closed. The token the admin UI hands to the admin API is now short-lived and signed with the Otoroshi secret. Random ids and digest comparisons were hardened, and the keypair verifying an API key JWT can be pinned so that a token cannot pick it through its `kid` header. We also wrote down everything we would check before putting a gateway in front of real traffic: the new [production checklist](/docs/topics/production-checklist) is worth ten minutes of your time, whether you install Otoroshi or upgrade it.
+**Two security audits.** Once the port had landed, we went through the gateway twice looking for security issues: once by going back over the history of the previous versions, once over the current code itself. The result is a long list of fixes. The rights of the admin API and of the backoffice are checked more strictly, especially for users and API keys scoped to a tenant or a team, and nobody can grant rights they do not hold anymore. Authentication modules, sessions and API key validation were hardened, plugins bound what they read in memory, and secrets no longer travel in exported events. SAML response validation was fixed and is now secure by default. An LDAP filter injection was closed. The token the admin UI hands to the admin API is now short-lived and signed with the Otoroshi secret. Random ids and digest comparisons were hardened, and the keypair verifying an API key JWT can be pinned so that a token cannot pick it through its `kid` header. We also wrote down everything we would check before putting a gateway in front of real traffic: the new [production checklist](/docs/topics/production-checklist) is worth ten minutes of your time, whether you install Otoroshi or upgrade it.
+
+**Trusted proxies.** Otoroshi now resolves the client address on its own, the same way on every HTTP server it can run. Declare your reverse proxies as trusted proxies, and the address is read from the trusted end of the `X-Forwarded-For` chain: a client can no longer pick its own IP address to dodge a rate limit or an allow list. The effective configuration is logged at startup, and the production checklist tells you which setting matches your topology.
+
+**Faster.** With the new stack running, we took a long look at the request hot path. Expression language, reporting, metrics, timeouts and id generation now do less work per request, and the Docker image, the Helm chart and the Kustomize manifests size the JVM from the container limits.
 
 A few smaller things came along:
 
@@ -63,7 +67,18 @@ A few smaller things came along:
 - Remote catalogs can sync from Bitbucket Server / Data Center, and from any self-hosted forge exposing a compatible API.
 - User Analytics lets you choose which families of events are stored, and admin extensions can contribute their own queries and projections.
 - Info tokens signed with a keypair now carry a `kid` header, so backends can pick the right key from a JWKS.
-- The test suite grew along the way, with dedicated coverage for clustering, mTLS, WebAuthn, SAML validation and admin API rights.
+- The Swagger UI plugin ships its own bundle, with a dark theme.
+- The Brotli compression plugin works on Apple Silicon.
+
+## Checking every plank
+
+A port of this size is only as good as the checks behind it, so we spent at least as much time verifying as writing. It took more than four months, from the first commit of the port in June to the final release: around 1,000 commits, 234 issues closed, nine previews and four release candidates.
+
+The test suite grew by more than 70,000 lines along the way. It now covers clustering with in-process leaders and workers, mTLS, WebAuthn, SAML validation and the rights of the admin API. It also writes and reads back the JSON of every entity and of the plugin configurations. That last part alone turned up dozens of settings that silently lost their value on a save, or were read under another key than the one they were written with. None of them would have shown up in a demo, and all of them are fixed.
+
+The admin API got the same treatment. Its [OpenAPI document](/docs/api) was rewritten, with updated schemas and examples, and a conformance suite now checks it against a running Otoroshi. Every disagreement between the document and the API was a bug on one side or the other, and was fixed where it belonged.
+
+And then there is the long tail: a 500 that should have been a 400, an exporter reporting a success on a failure, a tunnel losing its cookies, a quota counter expiring too early. Nobody would have opened an issue for most of them, and we fixed them anyway. They are all in the [release notes](https://github.com/MAIF/otoroshi/releases/tag/v18.0.0). We will not detail them here: there are a lot.
 
 ## What this means for you
 
@@ -75,6 +90,7 @@ A few things are worth checking before you upgrade:
 
 | If you... | then... |
 | --- | --- |
+| run Otoroshi on Java 11 | Java 17 or later is required, the jdk11 images are no longer built |
 | tuned `akka.*` settings in your config | rename them to `pekko.*` (`akka.http.parsing.max-uri-length` → `pekko.http.parsing.max-uri-length`, and so on). The `OTOROSHI_AKKA_*` environment variables keep working, and now have `OTOROSHI_PEKKO_*` equivalents |
 | depend on Otoroshi as a library | the Maven artifact moves from `fr.maif:otoroshi_2.12` to `fr.maif:otoroshi_3` |
 | ship **custom Scala plugins** as JARs | they must be recompiled against Scala 3 and the new artifact. WASM plugins are unaffected |
@@ -83,6 +99,7 @@ A few things are worth checking before you upgrade:
 | use **SAML** authentication modules | responses are now really checked against the configured issuer, must carry exactly one assertion, and must be signed when signature validation is on. Existing modules keep their settings; new ones validate signatures and assertions by default |
 | rely on the status code of `NgServiceQuotas`, `NgCustomQuotas` or `NgCustomThrottling` | they now answer `429 Too Many Requests` instead of `403` when a limit is reached |
 | delegate admin rights to **tenant or team-scoped** users or API keys | a patch can no longer move an entity outside of the caller's scope, nobody can grant rights they do not hold, and writing the global config from a template requires superadmin rights |
+| start or stop an API through the admin API | `_start` and `_stop` now require a `POST` |
 
 One small UI removal: the `Use circuit breakers` global toggle in the Danger Zone is gone. It only ever existed to switch circuit breakers off for Service Descriptors; circuit breaking is now configured per Route, in the client settings of its backend.
 
