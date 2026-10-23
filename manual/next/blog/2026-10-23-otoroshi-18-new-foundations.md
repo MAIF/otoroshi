@@ -24,7 +24,6 @@ The planks needed swapping for reasons that had been accumulating for a while:
 - **Scala 2.12** first shipped in 2016. Staying on it meant an ever-shrinking set of libraries willing to publish for it, and no access to anything the language has learned since.
 - **Akka** was relicensed under the BSL in September 2023. The Apache Software Foundation forked the last Apache-2.0 release as **Apache Pekko**, and the ecosystem followed. Otoroshi did not, yet.
 - **Play 2.8** went out of support, and **Play 3.0** -- the Pekko-based line -- landed in late 2023. Issue [#1755](https://github.com/MAIF/otoroshi/issues/1755) was opened on November 7th, 2023 and stayed open for almost three years.
-- We were shipping a **patched snapshot build of akka-stream** in the repository (`akka-stream_2.12-2.6.21+5-a72bf6ba-SNAPSHOT.jar`) to carry a TLS 1.3 handshake fix that upstream had not released.
 
 Individually, each of those is survivable. Together they meant the foundation was quietly drifting away from the rest of the JVM ecosystem, and the gap was only going to widen.
 
@@ -36,7 +35,7 @@ So in July we tagged `scala2-freeze`, stopped adding features, and did the port.
 
 **Play 2.8.19 → 3.0.11, Akka 2.6 → Apache Pekko 1.6.** Same actor model, same streams, same HTTP stack -- Pekko is a direct fork of the Akka we were already running. The package names changed, the semantics did not.
 
-**The vendored third-party jars are gone.** The patched akka-stream snapshot was dropped: the TLS 1.3 fix it carried has been part of Pekko since 1.1.0, so we now run straight upstream Pekko with no local patches. `scala-schema` went with it, and so did our local build of `java-jq`, which we had been carrying for Apple Silicon support and which now comes from its upstream release.
+**The vendored third-party jars are gone.** `scala-schema` was dropped, and so did our local build of `java-jq`, which we had been carrying for Apple Silicon support and which now comes from its upstream release.
 
 **The admin UI build moved from webpack to Vite**, and jQuery left the frontend for good. The documentation toolchain was updated along the way. You will not see any of it, which is the point: faster builds and fewer ancient dependencies for the people working on Otoroshi.
 
