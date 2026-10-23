@@ -9,7 +9,6 @@ this is the home of the Otoroshi server app
 * jdk 17 at least
 * sbt
 * node 24
-* rustup toolchain with the latest stable version of rust
 
 ## Build Otoroshi for prod
 
@@ -66,4 +65,3 @@ at the root of the repository, run the following command
 ```sh
 sh ./scripts/docs.sh
 ```
-
