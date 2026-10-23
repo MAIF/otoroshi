@@ -2,8 +2,36 @@ apiVersion: v1
 entries:
   otoroshi:
   - apiVersion: v2
+    appVersion: 18.0.0
+    created: "2026-10-23T10:04:17.467401141Z"
+    dependencies:
+    - condition: redis.deploy
+      name: redis
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.29.2
+    description: An Otoroshi based Kubernetes ingress controller
+    digest: a612099c92ea5641461336b17fb98c939fd23d8954f8521de599ed15cfde944a
+    icon: https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png
+    keywords:
+    - otoroshi
+    - ingress
+    - gateway
+    - apim
+    - reverseproxy
+    - apimanager
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - name: mathieuancelin
+    name: otoroshi
+    sources:
+    - https://github.com/MAIF/otoroshi
+    type: application
+    urls:
+    - https://maif.github.io/otoroshi/helm/otoroshi-18.0.0.tgz
+    version: 18.0.0
+  - apiVersion: v2
     appVersion: 18.0.0-rc4
-    created: "2026-10-22T09:28:50.540667427Z"
+    created: "2026-10-23T10:04:17.463062183Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -31,7 +59,7 @@ entries:
     version: 18.0.0-rc4
   - apiVersion: v2
     appVersion: 18.0.0-rc3
-    created: "2026-10-22T09:28:50.536346214Z"
+    created: "2026-10-23T10:04:17.45966773Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -59,7 +87,7 @@ entries:
     version: 18.0.0-rc3
   - apiVersion: v2
     appVersion: 18.0.0-rc2
-    created: "2026-10-22T09:28:50.532938217Z"
+    created: "2026-10-23T10:04:17.455256898Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -87,7 +115,7 @@ entries:
     version: 18.0.0-rc2
   - apiVersion: v2
     appVersion: 18.0.0-rc1
-    created: "2026-10-22T09:28:50.528777178Z"
+    created: "2026-10-23T10:04:17.451884576Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -115,7 +143,7 @@ entries:
     version: 18.0.0-rc1
   - apiVersion: v2
     appVersion: 18.0.0-preview9
-    created: "2026-10-22T09:28:50.525385762Z"
+    created: "2026-10-23T10:04:17.447582198Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -143,7 +171,7 @@ entries:
     version: 18.0.0-preview9
   - apiVersion: v2
     appVersion: 18.0.0-preview8
-    created: "2026-10-22T09:28:50.521148533Z"
+    created: "2026-10-23T10:04:17.444192313Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -171,7 +199,7 @@ entries:
     version: 18.0.0-preview8
   - apiVersion: v2
     appVersion: 18.0.0-preview7
-    created: "2026-10-22T09:28:50.517763459Z"
+    created: "2026-10-23T10:04:17.440048409Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -199,7 +227,7 @@ entries:
     version: 18.0.0-preview7
   - apiVersion: v2
     appVersion: 18.0.0-preview6
-    created: "2026-10-22T09:28:50.51358356Z"
+    created: "2026-10-23T10:04:17.436703489Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -227,7 +255,7 @@ entries:
     version: 18.0.0-preview6
   - apiVersion: v2
     appVersion: 18.0.0-preview5
-    created: "2026-10-22T09:28:50.510255993Z"
+    created: "2026-10-23T10:04:17.432539781Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -255,7 +283,7 @@ entries:
     version: 18.0.0-preview5
   - apiVersion: v2
     appVersion: 18.0.0-preview4
-    created: "2026-10-22T09:28:50.505882174Z"
+    created: "2026-10-23T10:04:17.429123326Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -283,7 +311,7 @@ entries:
     version: 18.0.0-preview4
   - apiVersion: v2
     appVersion: 18.0.0-preview3
-    created: "2026-10-22T09:28:50.502477203Z"
+    created: "2026-10-23T10:04:17.424946133Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -311,7 +339,7 @@ entries:
     version: 18.0.0-preview3
   - apiVersion: v2
     appVersion: 18.0.0-preview2
-    created: "2026-10-22T09:28:50.498153676Z"
+    created: "2026-10-23T10:04:17.42155204Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -339,7 +367,7 @@ entries:
     version: 18.0.0-preview2
   - apiVersion: v2
     appVersion: 18.0.0-preview1
-    created: "2026-10-22T09:28:50.494750397Z"
+    created: "2026-10-23T10:04:17.416959129Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -367,7 +395,7 @@ entries:
     version: 18.0.0-preview1
   - apiVersion: v2
     appVersion: 17.17.0
-    created: "2026-10-22T09:28:50.490500463Z"
+    created: "2026-10-23T10:04:17.413547593Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -395,7 +423,7 @@ entries:
     version: 17.17.0
   - apiVersion: v2
     appVersion: 17.16.1
-    created: "2026-10-22T09:28:50.487094811Z"
+    created: "2026-10-23T10:04:17.409287421Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -423,7 +451,7 @@ entries:
     version: 17.16.1
   - apiVersion: v2
     appVersion: 17.16.0
-    created: "2026-10-22T09:28:50.482913609Z"
+    created: "2026-10-23T10:04:17.405224409Z"
     dependencies:
     - condition: redis.deploy
       name: redis
@@ -451,7 +479,7 @@ entries:
     version: 17.16.0
   - apiVersion: v3
     appVersion: 17.15.1
-    created: "2026-10-22T09:28:50.479612262Z"
+    created: "2026-10-23T10:04:17.401914655Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -476,7 +504,7 @@ entries:
     version: 17.15.1
   - apiVersion: v3
     appVersion: 17.15.0
-    created: "2026-10-22T09:28:50.472554177Z"
+    created: "2026-10-23T10:04:17.394925307Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -501,7 +529,7 @@ entries:
     version: 17.15.0
   - apiVersion: v3
     appVersion: 1.5.10
-    created: "2026-10-22T09:28:50.433083247Z"
+    created: "2026-10-23T10:04:17.355356836Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -526,7 +554,7 @@ entries:
     version: 1.5.10
   - apiVersion: v3
     appVersion: 1.5.9
-    created: "2026-10-22T09:28:50.465262914Z"
+    created: "2026-10-23T10:04:17.387842826Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -551,7 +579,7 @@ entries:
     version: 1.5.9
   - apiVersion: v3
     appVersion: 1.5.8
-    created: "2026-10-22T09:28:50.460188964Z"
+    created: "2026-10-23T10:04:17.38345646Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -576,7 +604,7 @@ entries:
     version: 1.5.8
   - apiVersion: v3
     appVersion: 1.5.6
-    created: "2026-10-22T09:28:50.455265426Z"
+    created: "2026-10-23T10:04:17.378947374Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -601,7 +629,7 @@ entries:
     version: 1.5.6
   - apiVersion: v3
     appVersion: 1.5.5
-    created: "2026-10-22T09:28:50.451203558Z"
+    created: "2026-10-23T10:04:17.374161781Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -626,7 +654,7 @@ entries:
     version: 1.5.5
   - apiVersion: v3
     appVersion: 1.5.4
-    created: "2026-10-22T09:28:50.446294869Z"
+    created: "2026-10-23T10:04:17.370005647Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -651,7 +679,7 @@ entries:
     version: 1.5.4
   - apiVersion: v3
     appVersion: 1.5.3
-    created: "2026-10-22T09:28:50.441632156Z"
+    created: "2026-10-23T10:04:17.364900749Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -676,7 +704,7 @@ entries:
     version: 1.5.3
   - apiVersion: v3
     appVersion: 1.5.2
-    created: "2026-10-22T09:28:50.437617578Z"
+    created: "2026-10-23T10:04:17.360076888Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -701,7 +729,7 @@ entries:
     version: 1.5.2
   - apiVersion: v3
     appVersion: 1.5.1
-    created: "2026-10-22T09:28:50.428987395Z"
+    created: "2026-10-23T10:04:17.347736431Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -726,7 +754,7 @@ entries:
     version: 1.5.1
   - apiVersion: v3
     appVersion: 1.5.0
-    created: "2026-10-22T09:28:50.424038832Z"
+    created: "2026-10-23T10:04:17.342464627Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -751,7 +779,7 @@ entries:
     version: 1.5.0
   - apiVersion: v3
     appVersion: 1.5.0-rc.4
-    created: "2026-10-22T09:28:50.419304392Z"
+    created: "2026-10-23T10:04:17.338325545Z"
     dependencies:
     - condition: global.prod
       name: redis
@@ -774,4 +802,4 @@ entries:
     urls:
     - https://maif.github.io/otoroshi/helm/otoroshi-1.5.0-rc.4.tgz
     version: 1.5.0-rc.4
-generated: "2026-10-22T09:28:50.41498874Z"
+generated: "2026-10-23T10:04:17.329365339Z"
