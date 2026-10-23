@@ -27,6 +27,12 @@ const openSourceProjects = [
     tags: ['Security', 'Authorization', 'authz', 'token', 'Cloud APIM'],
   },
   {
+    name: 'otoroshi-event-brokers-extension',
+    description: 'Put event brokers behind your routes. Publish events with a plain HTTP call, consume them as JSON lines, server-sent events or over a websocket. Supports Kafka, RabbitMQ, Pulsar, Redis, MQTT and ActiveMQ Artemis, with CloudEvents everywhere.',
+    url: 'https://github.com/cloud-apim/otoroshi-event-brokers-extension',
+    tags: ['Events', 'Kafka', 'MQTT', 'CloudEvents', 'Cloud APIM'],
+  },
+  {
     name: 'otoroshi-plugin-dynamic-js-modules',
     description: 'Execute WASM plugins written in JavaScript without any compilation phase.',
     url: 'https://github.com/cloud-apim/otoroshi-plugin-dynamic-js-modules',
