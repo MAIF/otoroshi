@@ -7,7 +7,8 @@ export const firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.s
 
 export const toUpperCaseLabels = (obj) => {
   return Object.entries(obj).reduce((acc, [key, value]) => {
-    const isLabelField = key === 'label';
+    // a form field may itself be named `label`: only its string labels are display text
+    const isLabelField = key === 'label' && typeof value === 'string';
     const v = isLabelField && value ? value.replace(/_/g, ' ') : value;
 
     return {
