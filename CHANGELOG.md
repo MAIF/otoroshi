@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [18.0.1] - 2026-10-26
+
+
+https://github.com/MAIF/otoroshi/milestone/143?closed=1
+https://github.com/MAIF/otoroshi/compare/v18.0.0...v18.0.1
+https://github.com/MAIF/otoroshi/releases/tag/v18.0.1
+
+
+
+
+### Fixed 
+
+- The route designer does not load when an installed plugin has a form field named label (#2911 fixed by [davlgd](https://github.com/davlgd))       
+      
+
+### Contributors
+
+* @davlgd
+
 ## [18.0.0] - 2026-10-23
 
 
