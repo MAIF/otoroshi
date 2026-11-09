@@ -42,6 +42,7 @@ import play.api.mvc.request.RequestAttrKey
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 case class ProxyEngineConfig(
@@ -838,6 +839,15 @@ class ProxyEngine() extends RequestHandler {
     FEither.right(Done)
   }
 
+  // a plugin throwing instead of returning a failed future: the chains call a plugin from the callback of the previous
+  // one, where an exception never completes the chain and the request hangs until the circuit breaker times out (#2920)
+  private def callPlugin[A](f: => Future[A]): Future[A] = {
+    try f
+    catch {
+      case NonFatal(e) => Future.failed(e)
+    }
+  }
+
   def applyIncomingRequestValidation(request: RequestHeader, snowflake: String)(using
       ec: ExecutionContext,
       env: Env,
@@ -904,7 +914,7 @@ class ProxyEngine() extends RequestHandler {
           in,
           JsNull
         )
-        FEither(wrapper.plugin.access(ctx).transform {
+        FEither(callPlugin(wrapper.plugin.access(ctx)).transform {
           case Failure(exception)                 =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
             report.setSequence(sequence.stopSequence())
@@ -960,7 +970,7 @@ class ProxyEngine() extends RequestHandler {
                 in,
                 JsNull
               )
-              wrapper.plugin.access(ctx).andThen {
+              callPlugin(wrapper.plugin.access(ctx)).andThen {
                 case Failure(exception)                               =>
                   markPluginItem(
                     item,
@@ -1376,8 +1386,7 @@ class ProxyEngine() extends RequestHandler {
         )
         called.append(wrapper)
         FEither(
-          wrapper.plugin
-            .beforeRequest(ctx)
+          callPlugin(wrapper.plugin.beforeRequest(ctx))
             .map { _ =>
               markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
               report.setSequence(sequence.stopSequence())
@@ -1432,7 +1441,7 @@ class ProxyEngine() extends RequestHandler {
                 JsNull
               )
               called.append(wrapper)
-              wrapper.plugin.beforeRequest(ctx).andThen {
+              callPlugin(wrapper.plugin.beforeRequest(ctx)).andThen {
                 case Failure(exception)              =>
                   markPluginItem(
                     item,
@@ -1554,8 +1563,7 @@ class ProxyEngine() extends RequestHandler {
           JsNull
         )
         FEither(
-          wrapper.plugin
-            .afterRequest(ctx)
+          callPlugin(wrapper.plugin.afterRequest(ctx))
             .map { _ =>
               markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
               report.setSequence(sequence.stopSequence())
@@ -1609,7 +1617,7 @@ class ProxyEngine() extends RequestHandler {
                 in,
                 JsNull
               )
-              wrapper.plugin.afterRequest(ctx).andThen {
+              callPlugin(wrapper.plugin.afterRequest(ctx)).andThen {
                 case Failure(exception)              =>
                   markPluginItem(
                     item,
@@ -1732,8 +1740,7 @@ class ProxyEngine() extends RequestHandler {
           JsNull
         )
         FEither(
-          wrapper.plugin
-            .preRoute(ctx)
+          callPlugin(wrapper.plugin.preRoute(ctx))
             .transform {
               case Failure(exception) =>
                 markPluginItem(
@@ -1805,7 +1812,7 @@ class ProxyEngine() extends RequestHandler {
                 in,
                 JsNull
               )
-              wrapper.plugin.preRoute(ctx).andThen {
+              callPlugin(wrapper.plugin.preRoute(ctx)).andThen {
                 case Failure(exception)                     =>
                   markPluginItem(
                     item,
@@ -1943,7 +1950,7 @@ class ProxyEngine() extends RequestHandler {
           in,
           JsNull
         )
-        FEither(wrapper.plugin.access(ctx).transform {
+        FEither(callPlugin(wrapper.plugin.access(ctx)).transform {
           case Failure(exception)                 =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
             report.setSequence(sequence.stopSequence())
@@ -2001,7 +2008,7 @@ class ProxyEngine() extends RequestHandler {
                 in,
                 JsNull
               )
-              wrapper.plugin.access(ctx).andThen {
+              callPlugin(wrapper.plugin.access(ctx)).andThen {
                 case Failure(exception)                               =>
                   markPluginItem(
                     item,
@@ -3009,7 +3016,7 @@ class ProxyEngine() extends RequestHandler {
           in,
           JsNull
         )
-        FEither(wrapper.plugin.transformRequest(ctx).transform {
+        FEither(callPlugin(wrapper.plugin.transformRequest(ctx)).transform {
           case Failure(exception)       =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
             report.setSequence(sequence.stopSequence())
@@ -3072,7 +3079,7 @@ class ProxyEngine() extends RequestHandler {
                 in,
                 JsNull
               )
-              wrapper.plugin.transformRequest(ctx).andThen {
+              callPlugin(wrapper.plugin.transformRequest(ctx)).andThen {
                 case Failure(exception)                            =>
                   markPluginItem(
                     item,
@@ -3612,7 +3619,7 @@ class ProxyEngine() extends RequestHandler {
           in,
           JsNull
         )
-        FEither(wrapper.plugin.transformResponse(ctx).transform {
+        FEither(callPlugin(wrapper.plugin.transformResponse(ctx)).transform {
           case Failure(exception)        =>
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
             report.setSequence(sequence.stopSequence())
@@ -3675,7 +3682,7 @@ class ProxyEngine() extends RequestHandler {
                 in,
                 JsNull
               )
-              wrapper.plugin.transformResponse(ctx).andThen {
+              callPlugin(wrapper.plugin.transformResponse(ctx)).andThen {
                 case Failure(exception)                             =>
                   markPluginItem(
                     item,
