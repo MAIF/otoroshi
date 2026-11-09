@@ -2842,6 +2842,17 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
+  // the uri has no leading slash when the path is not stripped and one when it is, and the root may end with a slash or
+  // not: they are joined with exactly one slash, a double slash breaks the plugins reading the relative uri (#2918)
+  def joinRootAndUri(root: String, uri: String): String = {
+    if (uri.isEmpty || uri.startsWith("?")) s"$root$uri"
+    else if (root.endsWith("/")) {
+      if (uri.startsWith("/")) s"$root${uri.substring(1)}" else s"$root$uri"
+    } else {
+      if (uri.startsWith("/")) s"$root$uri" else s"$root/$uri"
+    }
+  }
+
   def callRequestTransformer(
       snowflake: String,
       request: RequestHeader,
@@ -2906,7 +2917,7 @@ class ProxyEngine() extends RequestHandler {
     )
     val targetUrlRaw    =
       if (route.backend.rewrite) s"${target.scheme}://${target.host}$root"
-      else s"${target.scheme}://${target.host}$root$uri"
+      else s"${target.scheme}://${target.host}${joinRootAndUri(root, uri)}"
     val targetUrl       = TargetExpressionLanguage(
       targetUrlRaw,
       request.some,
