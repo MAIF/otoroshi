@@ -199,7 +199,7 @@ case class HttpRequest(
     claims: OtoroshiClaim,
     body: () => Source[ByteString, ?]
 ) {
-  lazy val contentType: Option[String] = headers.get("Content-Type").orElse(headers.get("content-type"))
+  lazy val contentType: Option[String] = headers.getIgnoreCase("Content-Type")
   lazy val host: String                = headers.get("Host").orElse(headers.get("host")).getOrElse("")
   lazy val uri: Uri                    = Uri(url)
   lazy val scheme: String              = uri.scheme

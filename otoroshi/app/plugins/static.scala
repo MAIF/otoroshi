@@ -53,7 +53,7 @@ class StaticResponse extends RequestTransformer {
     val status           = config.select("status").asOpt[Int].getOrElse(200)
     val _headers         =
       config.select("headers").asOpt[Map[String, String]].getOrElse(Map("Content-Type" -> "application/json"))
-    val contentType      = _headers.get("Content-Type").orElse(_headers.get("content-type")).getOrElse("application/json")
+    val contentType      = _headers.getIgnoreCase("Content-Type").getOrElse("application/json")
     val headers          = _headers.filterNot(_._1.toLowerCase() == "content-type")
     val bodytext         = config.select("body").asOpt[String].map(ByteString.apply)
     val bodyBase64       = config.select("bodyBase64").asOpt[String].map(ByteString.apply).map(_.decodeBase64)

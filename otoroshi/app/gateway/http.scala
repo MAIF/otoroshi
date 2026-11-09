@@ -32,7 +32,7 @@ import otoroshi.utils.http.ResponseImplicits.*
 import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
 import otoroshi.utils.http.Implicits.*
 import otoroshi.utils.streams.MaxLengthLimiter
-import otoroshi.utils.syntax.implicits.BetterSyntax
+import otoroshi.utils.syntax.implicits.{BetterMapOfStringAndB, BetterSyntax}
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
@@ -684,8 +684,7 @@ class HttpHandler()(using env: Env) {
                       case Right(httpResponse) => {
                         val headersOut                  = httpResponse.headers.toSeq
                         val contentType: Option[String] = httpResponse.headers
-                          .get("Content-Type")
-                          .orElse(httpResponse.headers.get("content-type"))
+                          .getIgnoreCase("Content-Type")
 
                         val noContentLengthHeader: Boolean =
                           resp.contentLength.isEmpty
@@ -881,8 +880,7 @@ class HttpHandler()(using env: Env) {
                             }
                             case false => {
                               val contentLength: Option[Long] = httpResponse.headers
-                                .get("Content-Length")
-                                .orElse(httpResponse.headers.get("content-length"))
+                                .getIgnoreCase("Content-Length")
                                 .orElse(resp.contentLengthStr)
                                 .map(
                                   _.toLong + snowMonkeyContext.trailingResponseBodySize

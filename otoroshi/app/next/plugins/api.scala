@@ -110,7 +110,7 @@ case class NgPluginHttpRequest(
 
   def queryParam(name: String): Option[String] = uri.query().get(name).orElse(uri.query().get(name.toLowerCase()))
 
-  def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))
+  def header(name: String): Option[String] = headers.getIgnoreCase(name)
 
   def json: JsValue = {
     val certs: Option[Seq[X509Certificate]] = clientCertificateChain()
@@ -188,7 +188,7 @@ case class NgPluginHttpResponse(
   lazy val contentLengthStr: Option[String] = header("Content-Length")
   lazy val contentLength: Option[Long]      = contentLengthStr.map(_.toLong)
   lazy val hasLength: Boolean               = contentLengthStr.isDefined
-  def header(name: String): Option[String]  = headers.get(name).orElse(headers.get(name.toLowerCase()))
+  def header(name: String): Option[String]  = headers.getIgnoreCase(name)
   def asResult: Result = {
     val ctype   = header("Content-Type")
     val clength = header("Content-Length").map(_.toLong)

@@ -347,8 +347,7 @@ class NgResponseCache extends NgRequestTransformer {
   private def couldCacheResponse(ctx: NgTransformerResponseContext, config: NgResponseCacheConfig): Boolean = {
     if (filter(ctx.request, config, Some(ctx.rawResponse.status))) {
       ctx.rawResponse.headers
-        .get("Content-Length")
-        .orElse(ctx.rawResponse.headers.get("content-Length"))
+        .getIgnoreCase("Content-Length")
         .map(_.toInt) match {
         case Some(csize) if csize <= config.maxSize => true
         case Some(csize) if csize > config.maxSize  => false
@@ -426,8 +425,7 @@ class NgResponseCache extends NgRequestTransformer {
             .alsoTo(Sink.onComplete { case _ =>
               if (size.get() < config.maxSize) {
                 val ctype: String                = ctx.rawResponse.headers
-                  .get("Content-Type")
-                  .orElse(ctx.rawResponse.headers.get("content-type"))
+                  .getIgnoreCase("Content-Type")
                   .getOrElse("text/plain")
                 val headers: Map[String, String] = ctx.rawResponse.headers.filterNot { tuple =>
                   val name = tuple._1.toLowerCase()

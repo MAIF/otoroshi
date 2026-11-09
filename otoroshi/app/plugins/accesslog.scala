@@ -10,6 +10,7 @@ import otoroshi.events.KafkaWrapper
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerErrorContext, TransformerResponseContext}
 import otoroshi.utils.RegexPool
+import otoroshi.utils.syntax.implicits.BetterMapOfStringAndB
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.Logger
 import play.api.libs.json.*
@@ -183,8 +184,7 @@ class AccessLog extends RequestTransformer {
       val http      = ctx.request.theProtocol
       val protocol  = ctx.request.version
       val size      = ctx.rawResponse.headers
-        .get("Content-Length")
-        .orElse(ctx.rawResponse.headers.get("content-length"))
+        .getIgnoreCase("Content-Length")
         .getOrElse("-")
       val referer   =
         ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
@@ -244,8 +244,7 @@ class AccessLog extends RequestTransformer {
       val http      = ctx.request.theProtocol
       val protocol  = ctx.request.version
       val size      = ctx.otoroshiResponse.headers
-        .get("Content-Length")
-        .orElse(ctx.otoroshiResponse.headers.get("content-length"))
+        .getIgnoreCase("Content-Length")
         .getOrElse("-")
       val referer   =
         ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
@@ -347,8 +346,7 @@ class AccessLogJson extends RequestTransformer {
       val http      = ctx.request.theProtocol
       val protocol  = ctx.request.version
       val size      = ctx.rawResponse.headers
-        .get("Content-Length")
-        .orElse(ctx.rawResponse.headers.get("content-length"))
+        .getIgnoreCase("Content-Length")
         .getOrElse("-")
       val referer   =
         ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
@@ -434,8 +432,7 @@ class AccessLogJson extends RequestTransformer {
       val http      = ctx.request.theProtocol
       val protocol  = ctx.request.version
       val size      = ctx.otoroshiResponse.headers
-        .get("Content-Length")
-        .orElse(ctx.otoroshiResponse.headers.get("content-length"))
+        .getIgnoreCase("Content-Length")
         .getOrElse("-")
       val referer   =
         ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
@@ -588,8 +585,7 @@ class KafkaAccessLog extends RequestTransformer {
               val http                        = ctx.request.theProtocol
               val protocol                    = ctx.request.version
               val size                        = ctx.rawResponse.headers
-                .get("Content-Length")
-                .orElse(ctx.rawResponse.headers.get("content-length"))
+                .getIgnoreCase("Content-Length")
                 .getOrElse("-")
               val referer                     =
                 ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
@@ -718,8 +714,7 @@ class KafkaAccessLog extends RequestTransformer {
               val http                        = ctx.request.theProtocol
               val protocol                    = ctx.request.version
               val size                        = ctx.otoroshiResponse.headers
-                .get("Content-Length")
-                .orElse(ctx.otoroshiResponse.headers.get("content-length"))
+                .getIgnoreCase("Content-Length")
                 .getOrElse("-")
               val referer                     = ctx.request.headers
                 .get("Referer")

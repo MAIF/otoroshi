@@ -695,9 +695,19 @@ object implicits {
     def put(key: String, value: B): Map[String, B]                 = theMap.+((key, value))
     def put(tuple: (String, B)): Map[String, B]                    = theMap.+(tuple)
     def remove(key: String): Map[String, B]                        = theMap.-(key)
-    def removeIgnoreCase(key: String): Map[String, B]              = theMap.-(key).-(key.toLowerCase())
-    def containsIgnoreCase(key: String): Boolean                   = theMap.contains(key) || theMap.contains(key.toLowerCase())
-    def getIgnoreCase(key: String): Option[B]                      = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
+    // the key as it is and in lower case are the usual spellings of a header name, any other case (Content-type, ...)
+    // is looked for in the whole map (#2921)
+    def removeIgnoreCase(key: String): Map[String, B]              = {
+      val cleaned = theMap.-(key).-(key.toLowerCase())
+      if (cleaned.exists(_._1.equalsIgnoreCase(key))) cleaned.filterNot(_._1.equalsIgnoreCase(key)) else cleaned
+    }
+    def containsIgnoreCase(key: String): Boolean                   =
+      theMap.contains(key) || theMap.contains(key.toLowerCase()) || theMap.exists(_._1.equalsIgnoreCase(key))
+    def getIgnoreCase(key: String): Option[B]                      =
+      theMap
+        .get(key)
+        .orElse(theMap.get(key.toLowerCase()))
+        .orElse(theMap.collectFirst { case (k, v) if k.equalsIgnoreCase(key) => v })
     def removeAndPutIgnoreCase(tuple: (String, B)): Map[String, B] = removeIgnoreCase(tuple._1).put(tuple)
   }
   implicit class BetterTrieMapOfStringAndB[B](val theMap: TrieMap[String, B]) extends AnyVal {

@@ -140,9 +140,9 @@ class ForwardTrafficHandler extends RequestHandler {
           .map { resp =>
             val calldur                      = System.currentTimeMillis() - httpcallstart
             val duration                     = System.currentTimeMillis() - start
-            val ctypeOut                     = resp.headers.get("Content-Type").orElse(resp.headers.get("content-type")).map(_.last)
+            val ctypeOut                     = resp.headers.getIgnoreCase("Content-Type").map(_.last)
             val clenOut                      =
-              resp.headers.get("Content-Length").orElse(resp.headers.get("content-length")).map(_.last).map(_.toLong)
+              resp.headers.getIgnoreCase("Content-Length").map(_.last).map(_.toLong)
             val headersOut                   = resp.headers
               .view.mapValues(_.last).toMap
               .filterNot { case (key, _) =>

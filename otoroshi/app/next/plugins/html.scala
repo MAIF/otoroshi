@@ -63,7 +63,7 @@ class NgHtmlPatcher extends NgRequestTransformer {
   override def transformResponse(
       ctx: NgTransformerResponseContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
-    ctx.rawResponse.headers.get("Content-Type").orElse(ctx.rawResponse.headers.get("content-type")) match {
+    ctx.rawResponse.headers.getIgnoreCase("Content-Type") match {
       case Some(ctype) if ctype.contains("text/html") => {
         val newHeaders    =
           ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")

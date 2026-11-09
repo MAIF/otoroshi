@@ -15,7 +15,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import otoroshi.utils.http.RequestImplicits.*
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterMapOfStringAndB, BetterSyntax}
 
 import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
@@ -276,8 +276,7 @@ class ResponseCache extends RequestTransformer {
   private def couldCacheResponse(ctx: TransformerResponseBodyContext, config: ResponseCacheConfig): Boolean = {
     if (filter(ctx.request, config, Some(ctx.rawResponse.status))) {
       ctx.rawResponse.headers
-        .get("Content-Length")
-        .orElse(ctx.rawResponse.headers.get("content-Length"))
+        .getIgnoreCase("Content-Length")
         .map(_.toInt) match {
         case Some(csize) if csize <= config.maxSize => true
         case Some(csize) if csize > config.maxSize  => false
@@ -356,8 +355,7 @@ class ResponseCache extends RequestTransformer {
           case _ => {
             if (size.get() < config.maxSize) {
               val ctype: String                = ctx.rawResponse.headers
-                .get("Content-Type")
-                .orElse(ctx.rawResponse.headers.get("content-type"))
+                .getIgnoreCase("Content-Type")
                 .getOrElse("text/plain")
               val headers: Map[String, String] = ctx.rawResponse.headers.filterNot { tuple =>
                 val name = tuple._1.toLowerCase()

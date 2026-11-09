@@ -689,8 +689,7 @@ class WasmSink extends NgRequestSink {
                 .getOrElse(Map("Content-Type" -> "application/json"))
 
               val contentType = _headers
-                .get("Content-Type")
-                .orElse(_headers.get("content-type"))
+                .getIgnoreCase("Content-Type")
                 .getOrElse("application/json")
 
               val headers = _headers

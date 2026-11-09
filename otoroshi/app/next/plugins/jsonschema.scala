@@ -209,8 +209,7 @@ class JsonSchemaResponseValidator extends NgRequestTransformer {
       .cachedConfig(internalName)(JsonSchemaValidatorConfig.format)
       .getOrElse(JsonSchemaValidatorConfig())
     val ct     = ctx.otoroshiResponse.headers
-      .get("Content-Type")
-      .orElse(ctx.otoroshiResponse.headers.get("content-type"))
+      .getIgnoreCase("Content-Type")
     if (!JsonSchemaValidator.isJsonContentType(ct)) {
       ctx.otoroshiResponse.right.vfuture
     } else {
