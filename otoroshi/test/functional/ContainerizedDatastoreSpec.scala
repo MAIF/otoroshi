@@ -72,6 +72,28 @@ trait ContainerizedDatastoreSpec extends OtoroshiSpec with BeforeAndAfterAll {
       store.exists(key).futureValue mustBe false
     }
 
+    "read and write hashes through the datastore driver" in {
+      given env: Env = otoroshiComponents.env
+      val redis      = env.datastores.redis
+      val key        = s"${env.storageRoot}:tests:hash:${IdGenerator.uuid}"
+
+      redis.hset(key, "a", "1").futureValue
+      redis.hset(key, "b", "2").futureValue
+      redis.hset(key, "c", "3").futureValue
+      redis.hset(key, "b", "two").futureValue
+      redis.hgetall(key).futureValue.view.mapValues(_.utf8String).toMap mustBe Map(
+        "a" -> "1",
+        "b" -> "two",
+        "c" -> "3"
+      )
+
+      redis.hdel(key, "a").futureValue
+      redis.hgetall(key).futureValue.view.mapValues(_.utf8String).toMap mustBe Map("b" -> "two", "c" -> "3")
+
+      redis.del(key).futureValue
+      redis.hgetall(key).futureValue mustBe empty
+    }
+
     "persist a route and serve http calls through it" in {
       val domain = s"datastore-${IdGenerator.uuid}.oto.tools"
       val route  = createLocalRoute(

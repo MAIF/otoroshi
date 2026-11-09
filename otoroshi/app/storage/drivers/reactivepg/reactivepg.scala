@@ -1092,7 +1092,7 @@ class ReactivePgRedis(
       val arr = fields.zipWithIndex.map { case (_, count) => s"$$${count + 2}" }.mkString(",")
       queryRaw(
         s"update $schemaDotTable set type = 'hash', mvalue = mvalue - ARRAY[$arr] where key = $$1 and (ttl_starting_at + ttl) > NOW();",
-        fields
+        key +: fields
       ) { _ =>
         fields.size
       }
@@ -1112,14 +1112,16 @@ class ReactivePgRedis(
 
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] =
     measure("pg.ops.hset") {
+      // the value is bound as a json object, a string would be bound as a json string and turn mvalue into an array.
+      // A row written that way by a previous version is not an object: the hash starts over from an empty one (#2907)
       queryRaw(
         s"""insert into $schemaDotTable (key, type, mvalue)
          |values ($$1, 'hash', $$2::jsonb)
          |on conflict (key)
          |do
-         |  update set type = 'hash', mvalue = $schemaDotTable.mvalue || $$2::jsonb;
+         |  update set type = 'hash', mvalue = (case when jsonb_typeof($schemaDotTable.mvalue) = 'object' then $schemaDotTable.mvalue else '{}'::jsonb end) || $$2::jsonb;
          |""".stripMargin,
-        Seq(key, Json.obj(key -> value.utf8String).stringify)
+        Seq(key, new JsonObject(Json.obj(field -> value.utf8String).stringify))
       ) { _ =>
         true
       }
@@ -1308,6 +1310,8 @@ class ReactivePgRedis(
         val ttl         = row.optOffsetDatetime("expire_at").map(ldate => ldate.toEpochSecond * 1000).getOrElse(-1L)
         val interval    = row.getValue("ttl").asInstanceOf[io.vertx.pgclient.data.Interval]
         val intervalStr = if (interval.getYears == 1000) "1000 years" else interval.toString
+        // a column that can not be read is logged and exported as empty: one bad row must not fail the whole export of
+        // the cluster state (#2907)
         Json
           .obj(
             "key"             -> row.getString("key"),
@@ -1316,9 +1320,9 @@ class ReactivePgRedis(
             "ttl"             -> intervalStr,
             "counter"         -> row.getLong("counter").longValue(),
             "value"           -> row.getString("value"),
-            "lvalue"          -> row.optJsArray("lvalue").get,
-            "svalue"          -> row.optJsObject("svalue").get,
-            "mvalue"          -> row.optJsObject("mvalue").get,
+            "lvalue"          -> row.optJsArray("lvalue").getOrElse(Json.arr()),
+            "svalue"          -> row.optJsObject("svalue").getOrElse(Json.obj()),
+            "mvalue"          -> row.optJsObject("mvalue").getOrElse(Json.obj()),
             "kind"            -> row.getString("kind"),
             "pttl"            -> ttl
           )
