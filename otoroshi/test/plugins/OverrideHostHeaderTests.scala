@@ -1,6 +1,6 @@
 package plugins
 
-import functional.PluginsTestSpec
+import functional.{EchoTarget, PluginsTestSpec}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{MissingHeadersOut, NgHeaderValuesConfig, OverrideHost}
@@ -28,7 +28,7 @@ class OverrideHostHeaderTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  getInHeader(resp, "host") mustBe Some("request.otoroshi.io")
+  getInHeader(resp, "host") mustBe Some(EchoTarget.hostname)
 
   deleteOtoroshiRoute(route).futureValue
 }

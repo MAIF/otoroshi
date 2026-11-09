@@ -1770,11 +1770,12 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       }
   }
 
+  // the default target is the local echo backend (EchoTarget), another hostname is an external target on 443 over tls
   def createRouteWithExternalTarget(
       plugins: Seq[NgPluginInstance] = Seq.empty,
       domain: Option[String] = None,
       id: String = IdGenerator.uuid,
-      hostname: String = "request.otoroshi.io",
+      hostname: String = EchoTarget.hostname,
       root: String = "/",
       target: Option[NgTarget] = None,
       customOtoroshiPort: Option[Int] = None
@@ -1800,12 +1801,14 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       backend = NgBackend(
         targets = Seq(
           target.getOrElse(
-            NgTarget(
-              hostname = hostname,
-              port = 443,
-              id = "request.otoroshi.io.target",
-              tls = true
-            )
+            if (hostname == EchoTarget.hostname) EchoTarget.target
+            else
+              NgTarget(
+                hostname = hostname,
+                port = 443,
+                id = s"$hostname.target",
+                tls = true
+              )
           )
         ),
         root,
@@ -1826,7 +1829,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
           if (result._1.select("error_description").asOptString.contains("Entity already exists")) {
             deleteOtoroshiRoute(newRoute).futureValue
             await(2.seconds)
-            createRouteWithExternalTarget(plugins, domain, id, hostname, root)
+            createRouteWithExternalTarget(plugins, domain, id, hostname, root, target, customOtoroshiPort)
           } else {
             throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
           }

@@ -29,11 +29,11 @@ class XForwardedHeadersTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  getInHeader(resp, "x-forwarded-host").isDefined mustBe true
+  // the plugin adds the host, the client chain and the protocol: x-forwarded-port and forwarded were only there when
+  // the public echo backend was the target, added by the reverse proxy in front of it
+  getInHeader(resp, "x-forwarded-host") mustBe Some(route.frontend.domains.head.domain)
   getInHeader(resp, "x-forwarded-for").isDefined mustBe true
-  getInHeader(resp, "x-forwarded-proto").isDefined mustBe true
-  getInHeader(resp, "x-forwarded-port").isDefined mustBe true
-  getInHeader(resp, "forwarded").isDefined mustBe true
+  getInHeader(resp, "x-forwarded-proto") mustBe Some("http")
 
   deleteOtoroshiRoute(route).futureValue
 }

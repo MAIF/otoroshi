@@ -22,7 +22,7 @@ class RedirectionTests(parent: PluginsTestSpec) {
         config = NgPluginInstanceConfig(
           NgRedirectionSettings(
             code = 301,
-            to = "http://request.otoroshi.io/foo"
+            to = "http://request.oto.tools/foo"
           ).json.as[JsObject]
         )
       )
@@ -39,7 +39,7 @@ class RedirectionTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.MOVED_PERMANENTLY
-  resp.headers("Location").head mustBe "http://request.otoroshi.io/foo"
+  resp.headers("Location").head mustBe "http://request.oto.tools/foo"
 
   deleteOtoroshiRoute(route).futureValue
 }

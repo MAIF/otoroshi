@@ -1,6 +1,6 @@
 package plugins
 
-import functional.PluginsTestSpec
+import functional.{EchoTarget, PluginsTestSpec}
 import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.models.EntityLocation
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
@@ -28,7 +28,7 @@ class WorkflowTransformRequestTests(parent: PluginsTestSpec) {
       "steps"    -> Json.arr(),
       "returned" -> Json.obj(
         "method"    -> "POST",
-        "url"       -> "https://request.otoroshi.io",
+        "url"       -> EchoTarget.url,
         "body_json" -> Json.obj("Foo" -> "bar")
       ),
       "id"       -> "start"

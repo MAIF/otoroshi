@@ -1,6 +1,6 @@
 package plugins
 
-import functional.PluginsTestSpec
+import functional.{EchoTarget, PluginsTestSpec}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -24,12 +24,7 @@ class CanaryModeTests(parent: PluginsTestSpec) {
           NgCanarySettings(
             traffic = 0.5,
             targets = Seq(
-              NgTarget(
-                id = IdGenerator.uuid,
-                hostname = "request.otoroshi.io",
-                port = 443,
-                tls = true
-              )
+              EchoTarget.target.copy(id = IdGenerator.uuid)
             ),
             root = "/foo"
           ).json.as[JsObject]
