@@ -1,4 +1,4 @@
-addSbtPlugin("org.playframework" % "sbt-plugin"   % "3.0.11")
+addSbtPlugin("org.playframework" % "sbt-plugin"   % "3.0.12")
 addSbtPlugin("org.scalameta"     % "sbt-scalafmt" % "2.6.2")
 addSbtPlugin("com.timushev.sbt"  % "sbt-updates"  % "0.7.0")
 addSbtPlugin("net.nmoncho"       % "sbt-dependency-check" % "2.0.0")
