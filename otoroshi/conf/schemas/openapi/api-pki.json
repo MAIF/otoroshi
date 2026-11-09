@@ -193,11 +193,6 @@
         "description": "The certificate, PEM encoded",
         "example": "-----BEGIN CERTIFICATE-----\nMIIBmDCCAT+gAwIBAgIUHmaApVzaf97nvdtkn1zXWPCsNw4wCgYIKoZIzj0EAwIw\nIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNTIw\nMDM0OFoXDTI3MTAxNTIwMDM0OFowGDEWMBQGA1UEAwwNYXBpLm90by50b29sczBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABERdD06sNJhRvqbfbEmaUF0G0Exp5AyB\n+vLGAG2MeMd9wGNZJKa9wWEX0keouCbILZMItNrUra1s0OFCRO+zgr+jXDBaMBgG\nA1UdEQQRMA+CDWFwaS5vdG8udG9vbHMwHQYDVR0OBBYEFCMIuwvZa6WNpN6l/R2e\nBqQCkQ1yMB8GA1UdIwQYMBaAFC0ILPN7bjaQP5qU2j762hOZtZTlMAoGCCqGSM49\nBAMCA0cAMEQCIF9CP8IoYL4nXRAfBDwZvjPE09nS6+ClleeFlY2tQ6exAiAeuJ1F\niYzxB++dXcZk2e8bHQG/t0Wvaz/5RXvwPHlawg==\n-----END CERTIFICATE-----\n"
       },
-      "csr": {
-        "type": "string",
-        "description": "A certificate signing request built for the domain and the subject of the certificate, PEM encoded",
-        "example": "-----BEGIN CERTIFICATE REQUEST-----\nMIH/MIGlAgEAMBgxFjAUBgNVBAMMDWFwaS5vdG8udG9vbHMwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAAREXQ9OrDSYUb6m32xJmlBdBtBMaeQMgfryxgBtjHjHfcBj\nWSSmvcFhF9JHqLgmyC2TCLTa1K2tbNDhQkTvs4K/oCswKQYJKoZIhvcNAQkOMRww\nGjAYBgNVHREEETAPgg1hcGkub3RvLnRvb2xzMAoGCCqGSM49BAMCA0kAMEYCIQCn\n5pWVAG5d9/upPkJ8tZX7lvWtVGCnD+X3NXTpUFodmAIhAO/f4pwl3yFllNNMfFbJ\na5A8IhGS5zAzdYWCXUeTNkGV\n-----END CERTIFICATE REQUEST-----\n"
-      },
       "key": {
         "type": "string",
         "description": "The private key of the certificate, PEM encoded (PKCS#8)",
@@ -207,15 +202,6 @@
         "type": "string",
         "description": "The certificate of the authority that issued the certificate, PEM encoded",
         "example": "-----BEGIN CERTIFICATE-----\nMIIBqzCCAVGgAwIBAgIUDSkuOt38oc3hi49VAroJHYJ2iTcwCgYIKoZIzj0EAwIw\nIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNTIw\nMDM0OFoXDTM2MTAxMjIwMDM0OFowIzEhMB8GA1UEAwwYT3Rvcm9zaGkgSW50ZXJt\nZWRpYXRlIENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYzx8Kq5ZtmeRKku9\nogbFmYAAHv9A6oH+RxB9diMlkzfWglovvBAslATi1Ej3k9+mnn8smOmfhrB+NpwJ\nsmt7NaNjMGEwHQYDVR0OBBYEFC0ILPN7bjaQP5qU2j762hOZtZTlMB8GA1UdIwQY\nMBaAFC0ILPN7bjaQP5qU2j762hOZtZTlMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0P\nAQH/BAQDAgEGMAoGCCqGSM49BAMCA0gAMEUCIDj0PB7h6v295PTJYcmlxVIUFwam\nHrQNd32/prLBBUmbAiEA3s6SteAGZXY9Og07TmAWYEOwUj1SROef3fKrlIAX+Kw=\n-----END CERTIFICATE-----\n"
-      },
-      "query": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/GenCsrQuery"
-          }
-        ],
-        "nullable": true,
-        "description": "The domain and the subject of the certificate, as a certificate query"
       },
       "certId": {
         "type": "string",

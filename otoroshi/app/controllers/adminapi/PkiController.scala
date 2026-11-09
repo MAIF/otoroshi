@@ -7,10 +7,11 @@ import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker
 import otoroshi.ssl.pki.models.GenCsrQuery
+import otoroshi.ssl.SSLImplicits.*
 import otoroshi.ssl.{Cert, CertificateData, P12Helper, PemCertificate}
 import otoroshi.utils.future.Implicits.*
 import play.api.Logger
-import play.api.libs.json.{JsError, JsNull, JsObject, JsSuccess, Json}
+import play.api.libs.json.{JsError, JsNull, JsNumber, JsObject, JsString, JsSuccess, JsValue, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.*
 
@@ -209,7 +210,21 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: E
               otoroshi.utils.letsencrypt.LetsEncryptHelper.createCertificate(domain).map {
                 // the order failed on the side of the acme server or of the validation of the domain
                 case Left(err)   => BadGateway(Json.obj("error" -> err))
-                case Right(cert) => Ok(cert.toGenCertResponse.json.as[JsObject] ++ Json.obj("certId" -> cert.id))
+                // an acme certificate has no csr to give back, and its subject can be empty: building a csr from it to
+                // fill the response failed although the certificate was issued and saved (#2908)
+                case Right(cert) =>
+                  Ok(
+                    Json.obj(
+                      "serial" -> cert.certificate
+                        .map(c => JsNumber(BigDecimal(c.getSerialNumber)))
+                        .getOrElse(JsNull)
+                        .as[JsValue],
+                      "cert"   -> cert.certificate.map(c => JsString(c.asPem)).getOrElse(JsNull).as[JsValue],
+                      "key"    -> cert.cryptoKeyPair.getPrivate.asPem,
+                      "ca"     -> cert.caFromChain.map(c => JsString(c.asPem)).getOrElse(JsNull).as[JsValue],
+                      "certId" -> cert.id
+                    )
+                  )
               }
           }
         }

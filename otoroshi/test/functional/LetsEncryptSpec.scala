@@ -47,11 +47,12 @@ class LetsEncryptSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
   private val singleDomain = "acme-single.oto.tools"
   private val mainDomain   = "acme-main.oto.tools"
   private val sanDomain    = "acme-san.oto.tools"
+  private val apiDomain    = "acme-api.oto.tools"
   // listed in pebble's `domainBlocklist` below: ordering for it always fails, which is how a rate limited
   // or misconfigured domain behaves in production.
   private val blockedDomain = "blocked-domain.example"
 
-  private val allDomains = Seq(singleDomain, mainDomain, sanDomain)
+  private val allDomains = Seq(singleDomain, mainDomain, sanDomain, apiDomain)
 
   // `ec` comes from OtoroshiSpec. both of these are lazy (a `given` without parameters is), so they are
   // only resolved once the instance is up.
@@ -293,6 +294,19 @@ class LetsEncryptSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       val survivors = certsFor(singleDomain)
       survivors.size mustBe 1
       survivors.head.contentHash mustBe original.contentHash
+    }
+
+    // pebble issues certificates with an empty subject, and an acme certificate has no csr: the answer of the admin
+    // api used to need a csr built from the subject, and failed although the certificate was issued and saved (#2908)
+    "answer the issued certificate on the admin api" in {
+      val (json, status) =
+        otoroshiApiCall("POST", "/api/pki/certs/_letencrypt", Some(Json.obj("host" -> apiDomain))).futureValue
+      status mustBe Status.OK
+      (json \ "cert").as[String] must startWith("-----BEGIN CERTIFICATE-----")
+      (json \ "key").as[String] must include("PRIVATE KEY-----")
+      (json \ "ca").as[String] must startWith("-----BEGIN CERTIFICATE-----")
+      (json \ "serial").asOpt[BigDecimal].isDefined mustBe true
+      certsFor(apiDomain).map(_.id) mustBe Seq((json \ "certId").as[String])
     }
   }
 }

@@ -449,26 +449,6 @@ case class Cert(
     val pubkey: PublicKey = certificate.get.getPublicKey
     new KeyPair(pubkey, privkey)
   }
-
-  def toGenCertResponse(using env: Env): GenCertResponse = {
-    val query = GenCsrQuery(
-      hosts = Seq(domain),
-      subject = Some(subject)
-    )
-    GenCertResponse(
-      serial = serialNumberLng.get,
-      cert = certificate.get,
-      csr = Await
-        .result(env.pki.genCsr(query, None)(using env.otoroshiExecutionContext), 10.seconds)
-        .toOption
-        .get
-        .csr,
-      csrQuery = query.some,
-      key = cryptoKeyPair.getPrivate,
-      ca = caFromChain.get,
-      caChain = certificates.tail
-    )
-  }
 }
 
 object Cert {

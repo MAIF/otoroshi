@@ -236,7 +236,17 @@ Generates a certificate using Let's Encrypt (or any ACME-compatible server). Req
 }
 ```
 
-**Response**: Full certificate JSON entity with a `certId` field.
+**Response**: the issued certificate, its private key, the certificate of the authority that issued it, and the id of the certificate entity stored for it:
+
+```json
+{
+  "serial": 8922432013914401082,
+  "cert": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----",
+  "key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
+  "ca": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----",
+  "certId": "LLMiLgA3D0Y7zdWv0Oy9ZW7UGvj3cJmnrcSmOVCSBgcnixHXuRSzRWy0ED8B5j4Q"
+}
+```
 
 ### Import PKCS#12
 
