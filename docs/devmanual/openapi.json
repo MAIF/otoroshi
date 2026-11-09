@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:42697",
+    "url" : "http://otoroshi-api.oto.tools:34323",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -20739,7 +20739,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "example" : "18.1.0-dev"
+            "example" : "18.0.0"
           }
         }, {
           "name" : "Otoroshi-Worker-Java-Version",
@@ -20836,7 +20836,7 @@
                 "description" : "The version of otoroshi the leader runs",
                 "schema" : {
                   "type" : "string",
-                  "example" : "18.1.0-dev"
+                  "example" : "18.0.0"
                 }
               },
               "X-Data-Count" : {
@@ -23810,7 +23810,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "example" : "18.1.0-dev"
+            "example" : "18.0.0"
           }
         }, {
           "name" : "extension_group",
@@ -34629,7 +34629,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "example" : "18.1.0-dev"
+            "example" : "18.0.0"
           }
         }, {
           "name" : "extension_group",
@@ -42620,7 +42620,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "example" : "18.1.0-dev"
+            "example" : "18.0.0"
           }
         }, {
           "name" : "extension_group",
@@ -45086,7 +45086,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "example" : "18.1.0-dev"
+            "example" : "18.0.0"
           }
         }, {
           "name" : "Otoroshi-Worker-Java-Version",
@@ -54147,7 +54147,7 @@
             "example" : {
               "title" : "Otoroshi Admin API",
               "description" : "Admin API of the Otoroshi reverse proxy",
-              "version" : "18.1.0-dev",
+              "version" : "18.0.0",
               "contact" : {
                 "name" : "Otoroshi Team",
                 "email" : "oss@maif.fr"
@@ -54243,7 +54243,7 @@
           "info" : {
             "title" : "Otoroshi Admin API",
             "description" : "Admin API of the Otoroshi reverse proxy",
-            "version" : "18.1.0-dev"
+            "version" : "18.0.0"
           },
           "servers" : [ {
             "url" : "http://otoroshi-api.oto.tools:8080",
@@ -54282,7 +54282,7 @@
           "version" : {
             "type" : "string",
             "description" : "The version of otoroshi the instance runs, `undefined` when a worker does not send it",
-            "example" : "18.1.0-dev"
+            "example" : "18.0.0"
           },
           "javaVersion" : {
             "$ref" : "#/components/schemas/JavaVersion"
@@ -54366,7 +54366,7 @@
         "example" : {
           "id" : "node_9a6c2b1e-5d3f-4c8a-b7e2-0f1d2c3b4a5e",
           "name" : "otoroshi-worker-1",
-          "version" : "18.1.0-dev",
+          "version" : "18.0.0",
           "javaVersion" : {
             "version" : "17.0.2",
             "vendor" : "Oracle Corporation"
@@ -56307,7 +56307,7 @@
           "otoroshi_version" : {
             "type" : "string",
             "description" : "The version of otoroshi the instance runs, as written (the `raw` of `otoroshi_version_sem`)",
-            "example" : "18.1.0-dev-dev"
+            "example" : "18.0.0-dev"
           },
           "otoroshi_version_sem" : {
             "$ref" : "#/components/schemas/Version"
@@ -56336,16 +56336,16 @@
         },
         "example" : {
           "otoroshi_cluster_id" : "7bcab7ed5-9b9c-430e-acb5-2a42300b102c",
-          "otoroshi_version" : "18.1.0-dev-dev",
+          "otoroshi_version" : "18.0.0-dev",
           "otoroshi_version_sem" : {
-            "raw" : "18.1.0-dev-dev",
+            "raw" : "18.0.0-dev",
             "major" : 18,
             "minor" : 0,
             "patch" : 0,
             "build" : null,
             "suffix" : "dev",
             "suffix_version" : null,
-            "str" : "18.1.0-dev-dev",
+            "str" : "18.0.0-dev",
             "value" : 1799.5
           },
           "java_version" : {
@@ -61004,8 +61004,8 @@
         "properties" : {
           "version" : {
             "type" : "string",
-            "description" : "The version of the otoroshi instance that answers, like `18.1.0-dev`",
-            "example" : "18.1.0-dev"
+            "description" : "The version of the otoroshi instance that answers, like `18.0.0`",
+            "example" : "18.0.0"
           },
           "resources" : {
             "type" : "array",
@@ -61016,7 +61016,7 @@
           }
         },
         "example" : {
-          "version" : "18.1.0-dev",
+          "version" : "18.0.0",
           "resources" : [ {
             "kind" : "Route",
             "plural_name" : "routes",
@@ -62926,25 +62926,25 @@
         "properties" : {
           "raw" : {
             "type" : "string",
-            "description" : "The version as written, before it is parsed (`18.1.0-dev-dev`, `18.1.0-dev-preview2`...)",
-            "example" : "18.1.0-dev-dev"
+            "description" : "The version as written, before it is parsed (`18.0.0-dev`, `18.0.0-preview2`...)",
+            "example" : "18.0.0-dev"
           },
           "major" : {
             "type" : "integer",
             "format" : "int32",
-            "description" : "The first number of the version (`18` for `18.1.0-dev-dev`), 0 when it cannot be read",
+            "description" : "The first number of the version (`18` for `18.0.0-dev`), 0 when it cannot be read",
             "example" : 18
           },
           "minor" : {
             "type" : "integer",
             "format" : "int32",
-            "description" : "The second number of the version (`0` for `18.1.0-dev-dev`), 0 when it is absent or cannot be read",
+            "description" : "The second number of the version (`0` for `18.0.0-dev`), 0 when it is absent or cannot be read",
             "example" : 0
           },
           "patch" : {
             "type" : "integer",
             "format" : "int32",
-            "description" : "The third number of the version (`0` for `18.1.0-dev-dev`), 0 when it is absent or cannot be read",
+            "description" : "The third number of the version (`0` for `18.0.0-dev`), 0 when it is absent or cannot be read",
             "example" : 0
           },
           "build" : {
@@ -62970,25 +62970,25 @@
           },
           "str" : {
             "type" : "string",
-            "description" : "The version written back from its parts: `<major>.<minor>.<patch>`, then `.<build>`, `-<suffix>` and `.<suffix_version>` when present, so `18.1.0-dev-preview.2` for `18.1.0-dev-preview2`",
-            "example" : "18.1.0-dev-dev"
+            "description" : "The version written back from its parts: `<major>.<minor>.<patch>`, then `.<build>`, `-<suffix>` and `.<suffix_version>` when present, so `18.0.0-preview.2` for `18.0.0-preview2`",
+            "example" : "18.0.0-dev"
           },
           "value" : {
             "type" : "number",
             "format" : "double",
-            "description" : "A number derived from the version: its digits put together (the pre-release number included), minus 0.5 for `dev` and `snapshot`, 0.4 for `alpha`, 0.3 for `beta`, 0.25 for `preview` or 0.2 for `rc` (`1799.5` for `18.1.0-dev-dev`)",
+            "description" : "A number derived from the version: its digits put together (the pre-release number included), minus 0.5 for `dev` and `snapshot`, 0.4 for `alpha`, 0.3 for `beta`, 0.25 for `preview` or 0.2 for `rc` (`1799.5` for `18.0.0-dev`)",
             "example" : 1799.5
           }
         },
         "example" : {
-          "raw" : "18.1.0-dev-dev",
+          "raw" : "18.0.0-dev",
           "major" : 18,
           "minor" : 0,
           "patch" : 0,
           "build" : null,
           "suffix" : "dev",
           "suffix_version" : null,
-          "str" : "18.1.0-dev-dev",
+          "str" : "18.0.0-dev",
           "value" : 1799.5
         }
       },
@@ -69518,7 +69518,7 @@
           "otoroshi_version" : {
             "type" : "string",
             "description" : "The version of otoroshi the instance that builds the report runs, as written",
-            "example" : "18.1.0-dev-dev"
+            "example" : "18.0.0-dev"
           },
           "otoroshi_version_sem" : {
             "$ref" : "#/components/schemas/Version"
@@ -70015,16 +70015,16 @@
           "timestamp_str" : "2026-10-15T21:54:57.918+02:00",
           "@id" : "1d72b5dfd-e4f5-4dcd-a5a8-2cf3537cfc9e",
           "otoroshi_cluster_id" : "7bcab7ed5-9b9c-430e-acb5-2a42300b102c",
-          "otoroshi_version" : "18.1.0-dev-dev",
+          "otoroshi_version" : "18.0.0-dev",
           "otoroshi_version_sem" : {
-            "raw" : "18.1.0-dev-dev",
+            "raw" : "18.0.0-dev",
             "major" : 18,
             "minor" : 0,
             "patch" : 0,
             "build" : null,
             "suffix" : "dev",
             "suffix_version" : null,
-            "str" : "18.1.0-dev-dev",
+            "str" : "18.0.0-dev",
             "value" : 1799.5
           },
           "java_version" : {
@@ -70082,7 +70082,7 @@
                 "version" : "17.0.2",
                 "vendor" : "Oracle Corporation"
               },
-              "version" : "18.1.0-dev-dev",
+              "version" : "18.0.0-dev",
               "type" : "Leader",
               "cpu_usage" : 9.02,
               "load_average" : 7.92,
@@ -76729,7 +76729,7 @@
           "version" : {
             "type" : "string",
             "description" : "The version of otoroshi the member runs",
-            "example" : "18.1.0-dev-dev"
+            "example" : "18.0.0-dev"
           },
           "type" : {
             "type" : "string",
@@ -76788,7 +76788,7 @@
             "version" : "17.0.2",
             "vendor" : "Oracle Corporation"
           },
-          "version" : "18.1.0-dev-dev",
+          "version" : "18.0.0-dev",
           "type" : "Leader",
           "cpu_usage" : 9.02,
           "load_average" : 7.92,
