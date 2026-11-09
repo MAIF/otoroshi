@@ -2918,16 +2918,19 @@ class ProxyEngine() extends RequestHandler {
     val targetUrlRaw    =
       if (route.backend.rewrite) s"${target.scheme}://${target.host}$root"
       else s"${target.scheme}://${target.host}${joinRootAndUri(root, uri)}"
-    val targetUrl       = TargetExpressionLanguage(
-      targetUrlRaw,
-      request.some,
-      route.serviceDescriptor.some,
-      route.some,
-      attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
-      attrs.get(otoroshi.plugins.Keys.UserKey),
-      attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
-      attrs,
-      env
+    // the plugins get the url the backend gets: a path starting with several slashes makes the relative uri throw
+    val targetUrl       = UrlSanitizer.sanitize(
+      TargetExpressionLanguage(
+        targetUrlRaw,
+        request.some,
+        route.serviceDescriptor.some,
+        route.some,
+        attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        attrs.get(otoroshi.plugins.Keys.UserKey),
+        attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
+        attrs,
+        env
+      )
     )
     val otoroshiRequest = NgPluginHttpRequest(
       url = targetUrl,

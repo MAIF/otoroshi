@@ -161,7 +161,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   private def client(url: String, wildcard: Boolean = true): WSRequest = {
-    val _uri         = UrlSanitizer.sanitize(config.endpoint + url)
+    val _uri         = UrlSanitizer.collapseDoubleSlashes(config.endpoint + url)
     val uri          = if (wildcard) Uri(_uri.replace("/namespaces/*", "")) else Uri(_uri)
     if (logger.isDebugEnabled) logger.debug(s"built uri: $uri")
     val clientConfig = ClientConfig(

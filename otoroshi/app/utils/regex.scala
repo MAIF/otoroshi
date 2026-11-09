@@ -105,7 +105,27 @@ object test {
 
 object UrlSanitizer {
   private val doubleSlash = Pattern.compile("([^:])\\/\\/")
+
+  // the slashes starting the path are collapsed to one: such a path can not be read as a relative uri, and a backend can
+  // read it as an authority. The rest of the path and the query string are left as they are, a double slash there can
+  // carry meaning, like ?next=//host/path or an empty segment of an object key (#2919)
   def sanitize(url: String): String = {
+    val schemeEnd = url.indexOf("://")
+    if (schemeEnd < 0) url
+    else {
+      var start = schemeEnd + 3
+      while (start < url.length && url.charAt(start) != '/' && url.charAt(start) != '?' && url.charAt(start) != '#') {
+        start += 1
+      }
+      var end   = start
+      while (end < url.length && url.charAt(end) == '/') end += 1
+      if (end - start < 2) url else url.substring(0, start + 1) + url.substring(end)
+    }
+  }
+
+  // every double slash is collapsed, query string included: only for urls joined from configuration parts, where a
+  // double slash can only come from the join
+  def collapseDoubleSlashes(url: String): String = {
     doubleSlash.matcher(url).replaceAll("$1/")
   }
 }

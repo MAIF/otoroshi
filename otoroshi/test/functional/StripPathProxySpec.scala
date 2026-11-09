@@ -5,6 +5,7 @@ import otoroshi.next.models.*
 import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
 import otoroshi.next.plugins.{EchoBackend, OverrideHost}
 import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.utils.UrlSanitizer
 import play.api.libs.json.Json
 
 // strip path through the proxy: a path param holding characters that mean something in a regex is stripped like any
@@ -119,6 +120,81 @@ class StripPathProxySpec extends PluginsTestSpecBase {
       }
       echo.stop()
       results.filterNot { case (_, _, _, expected, status, got) => status == 200 && got.contains(expected) } mustBe empty
+    }
+
+    "collapse only the slashes starting the path of a url" in {
+      Seq(
+        "https://host//hello"                 -> "https://host/hello",
+        "https://host///hello?a=1"            -> "https://host/hello?a=1",
+        "https://host:8443//"                 -> "https://host:8443/",
+        "https://host/hello"                  -> "https://host/hello",
+        "https://host"                        -> "https://host",
+        "https://host/files//archive"         -> "https://host/files//archive",
+        "https://host/login?next=//app/home"  -> "https://host/login?next=//app/home",
+        "https://host?next=//app/home"        -> "https://host?next=//app/home",
+        "https://host/a#//frag"               -> "https://host/a#//frag",
+        "https://host/a?next=https://app/home" -> "https://host/a?next=https://app/home"
+      ).filterNot { case (url, expected) => UrlSanitizer.sanitize(url) == expected } mustBe empty
+    }
+
+    // (request, expected relative uri on the backend side): a double slash inside the path or in the query string
+    // carries meaning and reaches the backend, a double slash starting the path is collapsed (#2919)
+    val doubleSlashCases = Seq(
+      ("/a/login?next=//app/home", "/login?next=//app/home"),
+      ("/a/files//archive", "/files//archive"),
+      ("/a//x", "/x"),
+      ("/a//x?next=//app", "/x?next=//app")
+    )
+
+    "keep the meaningful double slashes for the plugins" in {
+      val route   = rootRoute(
+        "double-slash-plugin",
+        strip = true,
+        root = "/",
+        80,
+        Seq(NgPluginInstance(plugin = NgPluginHelper.pluginId[EchoBackend]))
+      )
+      createOtoroshiRoute(route).futureValue
+      val results = doubleSlashCases.map { case (path, expected) =>
+        val resp = ws
+          .url(s"http://127.0.0.1:$port$path")
+          .withHttpHeaders("Host" -> s"${route.id}.oto.tools")
+          .get()
+          .futureValue
+        (path, expected, resp.status, if (resp.status == 200) (resp.json \ "raw_path").asOpt[String] else None)
+      }
+      deleteOtoroshiRoute(route).futureValue
+      results.filterNot { case (_, expected, status, got) => status == 200 && got.contains(expected) } mustBe empty
+    }
+
+    "keep the meaningful double slashes for the backend" in {
+      val echo    = TargetService
+        .jsonFull(
+          None,
+          "/",
+          (r: HttpRequest) =>
+            (200, Json.obj("uri" -> (r.uri.path.toString + r.uri.rawQueryString.map("?" + _).getOrElse(""))), List.empty)
+        )
+        .await()
+      val route   = rootRoute(
+        "double-slash-backend",
+        strip = true,
+        root = "/",
+        echo.port,
+        Seq(NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]))
+      )
+      createOtoroshiRoute(route).futureValue
+      val results = doubleSlashCases.map { case (path, expected) =>
+        val resp = ws
+          .url(s"http://127.0.0.1:$port$path")
+          .withHttpHeaders("Host" -> s"${route.id}.oto.tools")
+          .get()
+          .futureValue
+        (path, expected, resp.status, if (resp.status == 200) (resp.json \ "uri").asOpt[String] else None)
+      }
+      deleteOtoroshiRoute(route).futureValue
+      echo.stop()
+      results.filterNot { case (_, expected, status, got) => status == 200 && got.contains(expected) } mustBe empty
     }
   }
 }
