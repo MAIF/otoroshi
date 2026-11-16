@@ -166,16 +166,26 @@ class BackOfficeController(
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  // the tooling that calls a url given by the user and returns its response: not for read only users
-  private lazy val BackOfficeWriterActionAuth = BackOfficeActionAuth.andThen(
+  // the tooling that calls a url given by the user and returns its response: for the users that can write the kind of
+  // entity the tool serves, not for read only users nor for users limited to other kinds
+  private def BackOfficeWriterActionAuth(kinds: EntityKind*) = BackOfficeActionAuth.andThen(
     new ActionFilter[BackOfficeActionContextAuth] {
       override protected def executionContext: ExecutionContext = ec
       override protected def filter[A](ctx: BackOfficeActionContextAuth[A]): Future[Option[Result]] = {
-        if (env.bypassUserRightsCheck || RightsChecker.WriterOnly.canPerform(ctx.user, ctx.currentTenant)) None.vfuture
-        else ApiActionContext.forbidden.some.vfuture
+        if (env.bypassUserRightsCheck || RightsChecker.WriterOf(kinds).canPerform(ctx.user, ctx.currentTenant)) {
+          None.vfuture
+        } else {
+          ApiActionContext.forbidden.some.vfuture
+        }
       }
     }
   )
+
+  private val routesKind      = EntityKind("proxy.otoroshi.io", "routes")
+  private val backendsKind    = EntityKind("proxy.otoroshi.io", "backends")
+  private val authModulesKind = EntityKind("security.otoroshi.io", "auth-modules")
+  private val exportersKind   = EntityKind("events.otoroshi.io", "data-exporters")
+  private val wasmPluginsKind = EntityKind("plugins.otoroshi.io", "wasm-plugins")
 
   def getFlags() = BackOfficeActionAuth.async { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
@@ -707,7 +717,7 @@ class BackOfficeController(
     }
 
   def externalEurekaServers() =
-    BackOfficeWriterActionAuth.async { ctx =>
+    BackOfficeWriterActionAuth(routesKind, backendsKind).async { ctx =>
       ctx.request.getQueryString("url") match {
         case Some(url) =>
           env.Ws
@@ -985,7 +995,7 @@ class BackOfficeController(
   //[REMOVE SERVICEDESC]   }
 
   def fetchOpenIdConfiguration() =
-    BackOfficeWriterActionAuth.async(parse.json) { ctx =>
+    BackOfficeWriterActionAuth(authModulesKind).async(parse.json) { ctx =>
       import otoroshi.utils.http.Implicits.*
 
       import scala.concurrent.duration.*
@@ -1148,7 +1158,7 @@ class BackOfficeController(
       }
     }
 
-  def fetchSAMLConfiguration() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
+  def fetchSAMLConfiguration() = BackOfficeWriterActionAuth(authModulesKind).async(parse.json) { ctx =>
     import scala.xml.Elem
     import scala.xml.XML.*
     Try {
@@ -1640,7 +1650,7 @@ class BackOfficeController(
       (ctx.request.body \ "host").asOpt[String] match {
         case None         => FastFuture.successful(BadRequest(Json.obj("error" -> "no domain found in request")))
         // the certificate is stored in the default location: the user has to be able to write there
-        case Some(_) if !ctx.canUserWrite(FakeEntityLocationSupport(EntityLocation())) => ApiActionContext.fforbidden
+        case Some(_) if !ctx.canUserWrite(FakeEntityLocationSupport(EntityLocation(), Seq(EntityKind("pki.otoroshi.io", "certificates")))) => ApiActionContext.fforbidden
         case Some(domain) =>
           otoroshi.utils.letsencrypt.LetsEncryptHelper.createCertificate(domain).map {
             case Left(err)   => InternalServerError(Json.obj("error" -> err))
@@ -1689,7 +1699,7 @@ class BackOfficeController(
         if (issuer.exists(ca => !ctx.canUserRead(ca))) ApiActionContext.fforbidden
         else (ctx.request.body \ "letsEncrypt").asOpt[Boolean] match {
           // the certificate is stored in the default location: the user has to be able to write there
-          case Some(true) if !ctx.canUserWrite(FakeEntityLocationSupport(EntityLocation())) => ApiActionContext.fforbidden
+          case Some(true) if !ctx.canUserWrite(FakeEntityLocationSupport(EntityLocation(), Seq(EntityKind("pki.otoroshi.io", "certificates")))) => ApiActionContext.fforbidden
           case Some(true) =>
             maybeHost match {
               case None         => BadRequest(Json.obj("error" -> "No domain found !")).future
@@ -1798,7 +1808,7 @@ class BackOfficeController(
     }
 
   def checkLdapConnection() =
-    BackOfficeWriterActionAuth.async(parse.json) { ctx =>
+    BackOfficeWriterActionAuth(authModulesKind).async(parse.json) { ctx =>
       if ((ctx.request.body \ "user").isDefined) {
         val username = (ctx.request.body \ "user" \ "username").as[String]
         val password = (ctx.request.body \ "user" \ "password").as[String]
@@ -1895,7 +1905,7 @@ class BackOfficeController(
       }
     }
 
-  def checkElasticsearchConnection() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
+  def checkElasticsearchConnection() = BackOfficeWriterActionAuth(exportersKind).async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("none" -> true)).future
       case Some(config) => {
@@ -1924,7 +1934,7 @@ class BackOfficeController(
     }
   }
 
-  def applyElasticsearchTemplate() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
+  def applyElasticsearchTemplate() = BackOfficeWriterActionAuth(exportersKind).async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) => {
@@ -1943,7 +1953,7 @@ class BackOfficeController(
     }
   }
 
-  def elasticTemplate() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
+  def elasticTemplate() = BackOfficeWriterActionAuth(exportersKind).async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) => {
@@ -1981,7 +1991,7 @@ class BackOfficeController(
     }
   }
 
-  def elasticVersion() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
+  def elasticVersion() = BackOfficeWriterActionAuth(exportersKind).async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) => {
@@ -2018,7 +2028,7 @@ class BackOfficeController(
     NoContent.addingToSession("ui-mode" -> mode).future
   }
 
-  def graphqlProxy() = BackOfficeWriterActionAuth.async(sourceBodyParser) { ctx =>
+  def graphqlProxy() = BackOfficeWriterActionAuth(routesKind).async(sourceBodyParser) { ctx =>
     val url     = ctx.request.queryString.get("url").map(_.last).get
     val host    = Uri(url).authority.host.toString()
     // the cookies of the backoffice (the admin session) must never leave otoroshi
@@ -2175,7 +2185,7 @@ class BackOfficeController(
       }
   }
 
-  def getWasmFilesFromBodyConfiguration() = BackOfficeWriterActionAuth.async(parse.json) { ctx =>
+  def getWasmFilesFromBodyConfiguration() = BackOfficeWriterActionAuth(wasmPluginsKind, routesKind).async(parse.json) { ctx =>
     val jsonBody = ctx.request.body
 
     val wasmoConfiguration = TlsWasmoSettings.format.reads(jsonBody).get
@@ -2328,6 +2338,121 @@ class BackOfficeController(
         extraAnalyticsData = None
       ).toJson
     )
+  }
+
+  // the personal admin apikey of the current user. the user creates it itself, even when it cannot write apikeys: its
+  // rights are the ones of its rights policy, in replace mode, resolved on each call
+  private def personalAdminApikeyPayload(
+      ctx: BackOfficeActionContextAuth[?],
+      policy: Option[UserRightsPolicy],
+      apikey: Option[ApiKey]
+  ): JsValue = {
+    Json.obj(
+      "email"              -> ctx.user.email,
+      "policy"             -> policy
+        .map(p => Json.obj("email" -> p.email, "name" -> p.name, "mode" -> p.mode.name))
+        .getOrElse(JsNull)
+        .asValue,
+      // a policy in restrict mode gives no personal apikey
+      "allowed"            -> policy.exists(_.mode == UserRightsPolicyMode.Replace),
+      "apikey"             -> apikey
+        .map(k =>
+          Json.obj(
+            "clientId"     -> k.clientId,
+            "clientSecret" -> k.clientSecret,
+            "clientName"   -> k.clientName,
+            "enabled"      -> k.enabled
+          )
+        )
+        .getOrElse(JsNull)
+        .asValue,
+      // what the apikey can do right now
+      "rights"             -> apikey
+        .flatMap(_ => PersonalAdminApikey.rights(ctx.user.email).toOption)
+        .map(_.json)
+        .getOrElse(JsNull)
+        .asValue,
+      "adminApiHost"       -> env.adminApiExposedHost,
+      "clientIdHeader"     -> env.Headers.OtoroshiClientId,
+      "clientSecretHeader" -> env.Headers.OtoroshiClientSecret
+    )
+  }
+
+  private def personalAdminApikeyEvent(
+      ctx: BackOfficeActionContextAuth[?],
+      action: String,
+      message: String,
+      apikey: ApiKey
+  ): Unit = {
+    Audit.send(
+      BackOfficeEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        ctx.user,
+        action,
+        message,
+        ctx.from,
+        ctx.ua,
+        Json.obj("clientId" -> apikey.clientId, "owner" -> ctx.user.email)
+      )
+    )
+  }
+
+  def personalAdminApikey() = BackOfficeActionAuth.async { ctx =>
+    for {
+      policy <- UserRightsPolicy.ofF(ctx.user.email)
+      apikey <- PersonalAdminApikey.find(ctx.user.email)
+    } yield Ok(personalAdminApikeyPayload(ctx, policy, apikey))
+  }
+
+  // creates the apikey, or answers the one the user already has
+  def createPersonalAdminApikey() = BackOfficeActionAuth.async { ctx =>
+    UserRightsPolicy.ofF(ctx.user.email).flatMap {
+      case None                                                          =>
+        Forbidden(
+          Json.obj("error" -> "you have no rights policy: a super admin has to write one for you before you get an admin apikey")
+        ).vfuture
+      case Some(policy) if policy.mode == UserRightsPolicyMode.Restrict =>
+        Forbidden(Json.obj("error" -> PersonalAdminApikey.restrictModeError)).vfuture
+      case Some(policy)                                                  =>
+        PersonalAdminApikey
+          .find(ctx.user.email)
+          .flatMap {
+            case Some(existing) => existing.vfuture
+            case None           =>
+              PersonalAdminApikey.create(policy).map { apikey =>
+                personalAdminApikeyEvent(ctx, "CREATE_PERSONAL_ADMIN_APIKEY", "User created its personal admin apikey", apikey)
+                apikey
+              }
+          }
+          .map(apikey => Ok(personalAdminApikeyPayload(ctx, policy.some, apikey.some)))
+    }
+  }
+
+  // a new secret for the apikey, the same client id
+  def rotatePersonalAdminApikey() = BackOfficeActionAuth.async { ctx =>
+    PersonalAdminApikey.find(ctx.user.email).flatMap {
+      case None         => NotFound(Json.obj("error" -> "you have no personal admin apikey")).vfuture
+      case Some(apikey) =>
+        for {
+          rotated <- PersonalAdminApikey.rotate(apikey)
+          policy  <- UserRightsPolicy.ofF(ctx.user.email)
+        } yield {
+          personalAdminApikeyEvent(ctx, "ROTATE_PERSONAL_ADMIN_APIKEY", "User regenerated the secret of its personal admin apikey", rotated)
+          Ok(personalAdminApikeyPayload(ctx, policy, rotated.some))
+        }
+    }
+  }
+
+  def deletePersonalAdminApikey() = BackOfficeActionAuth.async { ctx =>
+    PersonalAdminApikey.find(ctx.user.email).flatMap {
+      case None         => NotFound(Json.obj("error" -> "you have no personal admin apikey")).vfuture
+      case Some(apikey) =>
+        apikey.delete().map { _ =>
+          personalAdminApikeyEvent(ctx, "DELETE_PERSONAL_ADMIN_APIKEY", "User deleted its personal admin apikey", apikey)
+          Ok(Json.obj("deleted" -> true))
+        }
+    }
   }
 
   def getUserPreferences() = BackOfficeActionAuth.async { ctx =>

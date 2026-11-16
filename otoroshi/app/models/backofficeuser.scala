@@ -70,6 +70,14 @@ case class BackOfficeUser(
 
   def toJson: JsValue = BackOfficeUser.fmt.writes(this)
 
+  // the session keeps the rights its auth module gave at login, the rights policy of the user applies on top of them on
+  // every call: a policy written or deleted takes effect without a new login
+  def withPolicyRights()(using env: Env, ec: ExecutionContext): Future[BackOfficeUser] = {
+    UserRightsPolicy.effectiveRightsF(email, rights).map { effective =>
+      if (effective eq rights) this else copy(rights = effective)
+    }
+  }
+
   def withAuthModuleConfig[A](f: AuthModuleConfig => A)(using ec: ExecutionContext, env: Env): Unit = {
     // env.datastores.authConfigsDataStore.findById(authConfigId).map {
     env.proxyState.authModuleAsync(authConfigId).map {

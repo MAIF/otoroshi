@@ -2894,7 +2894,7 @@
   },
   "UserRight": {
     "type": "object",
-    "description": "The rights of a user on a tenant (organization) and on some of its teams",
+    "description": "The rights of a user on a tenant (organization), on some of its teams and, optionally, on some kinds of entities only",
     "properties": {
       "tenant": {
         "type": "string",
@@ -2912,6 +2912,31 @@
         "example": [
           "default:rw",
           "ops:r"
+        ]
+      },
+      "authorized_entities_read": {
+        "type": "array",
+        "description": "The kinds of entities the right can read, on top of the ones it can write. A kind is `*` (every kind), `<plural>` (the kind of this plural name, `backends` for instance, in any group), `<group>/<plural>` (`proxy.otoroshi.io/backends`) or `<group>/*` (every kind of the group). Without `authorized_entities_read` and `authorized_entities_write`, the right gives access to every kind; with only one of them, the other one is empty. A right limited to some kinds never makes a super admin or a tenant admin",
+        "items": {
+          "type": "string",
+          "description": "A kind of entity",
+          "example": "*"
+        },
+        "example": [
+          "*"
+        ]
+      },
+      "authorized_entities_write": {
+        "type": "array",
+        "description": "The kinds of entities the right can write (create, update and delete), written like `authorized_entities_read`. The kinds the right can write are readable too",
+        "items": {
+          "type": "string",
+          "description": "A kind of entity",
+          "example": "backends"
+        },
+        "example": [
+          "backends",
+          "pki.otoroshi.io/certificates"
         ]
       }
     },
@@ -4206,6 +4231,116 @@
         }
       ],
       "adminEntityValidators": {}
+    }
+  },
+  "security.otoroshi.io.UserRightsPolicy": {
+    "type": "object",
+    "description": "The rights of a backoffice user, whatever the auth module it logs in with. A policy is identified by the email of its user. They are resolved on each call of the user, from its session or from its personal admin apikey: a policy written or deleted takes effect on the next call, without a new login (on the other nodes of a cluster, after their next state sync). Only a super admin reads and writes them, and cannot give more rights than it has",
+    "properties": {
+      "_loc": {
+        "$ref": "#/components/schemas/EntityLocation"
+      },
+      "email": {
+        "type": "string",
+        "description": "The email of the user the policy applies to, compared without case. It is the id of the policy: a user has one policy at most",
+        "example": "jane.doe@oto.tools"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the policy. The email of the user when missing",
+        "example": "Jane Doe rights"
+      },
+      "description": {
+        "type": "string",
+        "description": "The description of the policy",
+        "example": "Jane manages the backends and the certificates of the ops team"
+      },
+      "tags": {
+        "type": "array",
+        "description": "Free tags of the policy, to search and sort it",
+        "items": {
+          "type": "string",
+          "description": "A tag",
+          "example": "ops"
+        },
+        "example": [
+          "ops"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The metadata of the policy, free key/value pairs",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the metadata"
+        },
+        "example": {
+          "team": "ops"
+        }
+      },
+      "mode": {
+        "type": "string",
+        "description": "How the policy combines with the rights the auth module gives the user. `replace`: the rights of the policy are the rights of the user, the ones of the auth module are ignored. `restrict`: the user keeps the rights of its auth module, capped by the ones of the policy, the auth module cannot give what the policy keeps away. `replace` when missing",
+        "enum": [
+          "replace",
+          "restrict"
+        ],
+        "example": "replace"
+      },
+      "rights": {
+        "type": "array",
+        "description": "The rights of the policy. No rights at all when missing",
+        "items": {
+          "$ref": "#/components/schemas/UserRight"
+        },
+        "example": [
+          {
+            "tenant": "default:rw",
+            "teams": [
+              "ops:rw"
+            ],
+            "authorized_entities_read": [
+              "*"
+            ],
+            "authorized_entities_write": [
+              "backends",
+              "certificates"
+            ]
+          }
+        ]
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "example": {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "email": "jane.doe@oto.tools",
+      "name": "Jane Doe rights",
+      "description": "Jane manages the backends and the certificates of the ops team",
+      "tags": [],
+      "metadata": {},
+      "mode": "replace",
+      "rights": [
+        {
+          "tenant": "default:rw",
+          "teams": [
+            "ops:rw"
+          ],
+          "authorized_entities_read": [
+            "*"
+          ],
+          "authorized_entities_write": [
+            "backends",
+            "certificates"
+          ]
+        }
+      ]
     }
   }
 }

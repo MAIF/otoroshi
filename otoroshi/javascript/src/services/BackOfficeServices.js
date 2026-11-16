@@ -2357,3 +2357,19 @@ export const getWorkflowDocs = () =>
       Accept: 'application/json',
     },
   }).then((r) => r.json());
+
+// the personal admin apikey of the current user, its rights being the ones of its rights policy
+function personalAdminApikeyCall(method, path = '') {
+  return fetch(`/bo/api/me/admin-apikey${path}`, {
+    method,
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json().then((body) => ({ status: r.status, body })));
+}
+
+export const fetchPersonalAdminApikey = () => personalAdminApikeyCall('GET');
+export const createPersonalAdminApikey = () => personalAdminApikeyCall('POST');
+export const deletePersonalAdminApikey = () => personalAdminApikeyCall('DELETE');
+export const rotatePersonalAdminApikey = () => personalAdminApikeyCall('POST', '/_rotate');

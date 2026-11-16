@@ -80,6 +80,7 @@ object OtoroshiTests {
       new BasicSpec,
       new AdminApiSpec(name, config),
       new AdminApiRightsSpec(name, config),
+      new UserRightsPoliciesSpec(name, config),
       new CircuitBreakerSpec(name, config),
       new AlertAndAnalyticsSpec(name, config),
       // new AnalyticsSpec(name, config),
@@ -249,6 +250,7 @@ class UnitTests
       new plugins.configs.RateLimitingPluginConfigsSpec(),
       // json formats of the core entities, one spec per entity family
       new entities.TeamsEntityFormatSpec(),
+      new entities.UserRightsKindsEntityFormatSpec(),
       new entities.ScriptEntityFormatSpec(),
       new entities.WasmPluginEntityFormatSpec(),
       new entities.UserDashboardEntityFormatSpec(),
@@ -358,6 +360,12 @@ class FakeTrustManagerVulnTests
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()
+    )
+
+// rights limited to some kinds of entities, user rights policies and personal admin apikeys
+class UserRightsPoliciesTests
+    extends Suites(
+      new UserRightsPoliciesSpec("InMemory", Configurations.InMemoryConfiguration)
     )
 
 // rights enforcement on the admin api, one test per finding of the security review

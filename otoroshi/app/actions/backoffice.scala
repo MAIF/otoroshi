@@ -9,7 +9,7 @@ import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}
 import otoroshi.gateway.Errors
 import otoroshi.models.BackOfficeUser
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models.{EntityLocationSupport, RightsChecker, TenantId}
+import otoroshi.models.{ApiKey, EntityKind, EntityLocationSupport, PersonalAdminApikey, RightsChecker, TenantId}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.Json
@@ -49,13 +49,23 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
   def canUserRead[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     rootOrTenantAdmin(user) {
       (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
-        .canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
+        .canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams) &&
+      user.rights.canReadKinds(item.location.tenant, item.location.teams, EntityKind.of(item)) &&
+      (item match {
+        case apikey: ApiKey => PersonalAdminApikey.ownerOf(apikey).forall(o => PersonalAdminApikey.canRead(o, user))
+        case _              => true
+      })
     }
   }
   def canUserWrite[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     rootOrTenantAdmin(user) {
       (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
-        .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
+        .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams) &&
+      user.rights.canWriteKinds(item.location.tenant, item.location.teams, EntityKind.of(item)) &&
+      (item match {
+        case apikey: ApiKey => PersonalAdminApikey.ownerOf(apikey).forall(o => PersonalAdminApikey.canWrite(o, user))
+        case _              => true
+      })
     }
   }
 
@@ -87,7 +97,7 @@ class BackOfficeAction(val parser: BodyParser[AnyContent])(using env: Env)
     def perform(): Future[Result] = {
       request.session.get("bousr").map { id =>
         env.datastores.backOfficeUserDataStore.findById(id).flatMap {
-          case Some(user) => block(BackOfficeActionContext(request, Some(user)))
+          case Some(user) => user.withPolicyRights().flatMap(u => block(BackOfficeActionContext(request, Some(u))))
           case None       => block(BackOfficeActionContext(request, None))
         }
       } getOrElse {
@@ -160,7 +170,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(using env: Env)
                   user.withAuthModuleConfig { auth =>
                     GenericOauth2Module.handleTokenRefresh(auth, user)
                   }
-                  block(BackOfficeActionContextAuth(request, user))
+                  user.withPolicyRights().flatMap(u => block(BackOfficeActionContextAuth(request, u)))
                 //}
               }
             }
