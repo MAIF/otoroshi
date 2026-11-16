@@ -68,6 +68,7 @@ You can find all remote catalogs [here](http://otoroshi.oto.tools:8080/bo/dashbo
 | `source_config` | object | Source-specific configuration |
 | `scheduling` | object | Optional auto-sync scheduling configuration |
 | `test_deploy_args` | object | Arguments used for manual test/dry-run |
+| `kinds` | object | The kinds of entities the catalog deploys, globally and by location (see [below](#kinds-of-entities)). Every kind when absent |
 | `tags` | array of string | Tags |
 | `metadata` | object | Key/value metadata |
 
@@ -137,6 +138,29 @@ When a catalog is deployed, Otoroshi performs a full reconciliation:
 4. **Reconcile**: Entities are created, updated, or deleted to match the remote state
 
 This ensures that the Otoroshi state always matches the external source of truth.
+
+## Kinds of entities
+
+By default, a catalog deploys every kind of entity found in its source, wherever the entities say they are located (`_loc`). `kinds` limits what it deploys, globally and by location, both at once if needed:
+
+```json
+{
+  "kinds": {
+    "include": ["*"],
+    "exclude": ["global-configs", "admins"],
+    "locations": {
+      "team-*": { "include": ["routes", "backends", "apikeys"] },
+      "orga-1/sandbox": { "exclude": ["apikeys"] }
+    }
+  }
+}
+```
+
+* a kind is written as the plural name of its resource (`routes`), its kind (`Route`), with its group (`proxy.otoroshi.io/routes`, `proxy.otoroshi.io/Route`) or as a pattern (`*`, `proxy.otoroshi.io/*`, `*-plugins`), compared without case
+* `include` and `exclude` are the global rule: a kind is deployed when it matches one of the included patterns and none of the excluded ones. `include` is `["*"]` when absent
+* `locations` holds the rules of some locations, keyed by `<organization>` or `<organization>/<team>`, patterns too. They only narrow the global rule: an entity is deployed when the global rule allows its kind, and the rule of every location matching its `_loc` allows it too. An entity located in every organization or every team (`*`) gets the rules of all of them
+* the entities refused are listed in the errors of the deploy report (and of a dry run). The catalog neither writes them, nor deletes the entities of a kind it does not deploy anymore at their location: an entity deployed before its kind was excluded stays in Otoroshi. Undeploying the catalog still deletes every entity it created
+* a catalog whose `kinds` cannot be read is refused by the admin api
 
 ## JSON example
 

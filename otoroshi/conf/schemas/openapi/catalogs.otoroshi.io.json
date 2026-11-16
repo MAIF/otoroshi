@@ -209,6 +209,9 @@
         "description": "The arguments given to the source when the catalog is deployed or tested from the backoffice. Free json object, empty when absent",
         "additionalProperties": true,
         "example": {}
+      },
+      "kinds": {
+        "$ref": "#/components/schemas/RemoteCatalogKinds"
       }
     },
     "example": {
@@ -244,7 +247,25 @@
         "cron_expression": null,
         "deploy_args": {}
       },
-      "test_deploy_args": {}
+      "test_deploy_args": {},
+      "kinds": {
+        "include": [
+          "*"
+        ],
+        "exclude": [
+          "global-configs",
+          "admins"
+        ],
+        "locations": {
+          "team-*": {
+            "include": [
+              "routes",
+              "backends"
+            ],
+            "exclude": []
+          }
+        }
+      }
     }
   },
   "RemoteCatalogScheduling": {
@@ -312,6 +333,109 @@
       "interval": null,
       "cron_expression": "0 */10 * * * ?",
       "deploy_args": {}
+    }
+  },
+  "RemoteCatalogKindsRule": {
+    "type": "object",
+    "description": "A rule on the kinds of entities a remote catalog deploys at some locations: a kind is deployed when it matches one of the included patterns and none of the excluded ones",
+    "properties": {
+      "include": {
+        "type": "array",
+        "description": "The kinds of entities deployed. A kind is the plural name of its resource (`routes`), its kind (`Route`), with its group (`proxy.otoroshi.io/routes`, `proxy.otoroshi.io/Route`) or a pattern (`*`, `proxy.otoroshi.io/*`, `*-plugins`), compared without case. `[\"*\"]` when absent",
+        "items": {
+          "type": "string",
+          "description": "A kind of entity or a pattern of kinds",
+          "example": "routes"
+        },
+        "example": [
+          "*"
+        ]
+      },
+      "exclude": {
+        "type": "array",
+        "description": "The kinds of entities never deployed, written like `include`. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "A kind of entity or a pattern of kinds",
+          "example": "global-configs"
+        },
+        "example": [
+          "global-configs",
+          "admins"
+        ]
+      }
+    },
+    "example": {
+      "include": [
+        "routes",
+        "backends"
+      ],
+      "exclude": []
+    }
+  },
+  "RemoteCatalogKinds": {
+    "type": "object",
+    "description": "The kinds of entities a remote catalog deploys, globally (`include`, `exclude`) and by location (`locations`). The entities refused are listed in the errors of the deploy report, the catalog neither writes them nor deletes the entities it does not deploy anymore (an undeploy deletes every entity the catalog created). Every kind when absent. Kinds that cannot be read are refused",
+    "properties": {
+      "include": {
+        "type": "array",
+        "description": "The kinds of entities deployed. A kind is the plural name of its resource (`routes`), its kind (`Route`), with its group (`proxy.otoroshi.io/routes`, `proxy.otoroshi.io/Route`) or a pattern (`*`, `proxy.otoroshi.io/*`, `*-plugins`), compared without case. `[\"*\"]` when absent",
+        "items": {
+          "type": "string",
+          "description": "A kind of entity or a pattern of kinds",
+          "example": "routes"
+        },
+        "example": [
+          "*"
+        ]
+      },
+      "exclude": {
+        "type": "array",
+        "description": "The kinds of entities never deployed, written like `include`. Empty when absent",
+        "items": {
+          "type": "string",
+          "description": "A kind of entity or a pattern of kinds",
+          "example": "global-configs"
+        },
+        "example": [
+          "global-configs",
+          "admins"
+        ]
+      },
+      "locations": {
+        "type": "object",
+        "description": "The rules of some locations, keyed by `<organization>` or `<organization>/<team>`, patterns too (`team-*`). They only narrow the global rule: an entity is deployed when the global rule allows its kind, and the rule of every location matching the `_loc` of the entity allows it too. Empty when absent",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/RemoteCatalogKindsRule"
+        },
+        "example": {
+          "team-*": {
+            "include": [
+              "routes",
+              "backends"
+            ],
+            "exclude": []
+          }
+        }
+      }
+    },
+    "example": {
+      "include": [
+        "*"
+      ],
+      "exclude": [
+        "global-configs",
+        "admins"
+      ],
+      "locations": {
+        "team-*": {
+          "include": [
+            "routes",
+            "backends"
+          ],
+          "exclude": []
+        }
+      }
     }
   }
 }

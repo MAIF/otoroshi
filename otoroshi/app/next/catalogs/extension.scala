@@ -67,6 +67,108 @@ object RemoteCatalogScheduling {
   }
 }
 
+// a rule on the kinds of entities a catalog deploys. a kind is written as the plural name of its resource (`routes`),
+// its kind (`Route`), with its group (`proxy.otoroshi.io/routes`, `proxy.otoroshi.io/Route`) or as a pattern (`*`,
+// `proxy.otoroshi.io/*`, `*-plugins`). a kind is deployed when it matches one of the included patterns and none of the
+// excluded ones
+case class RemoteCatalogKindsRule(include: Seq[String] = Seq("*"), exclude: Seq[String] = Seq.empty) {
+  def allows(resource: Resource): Boolean = {
+    include.exists(p => RemoteCatalogKinds.matches(p, resource)) &&
+    !exclude.exists(p => RemoteCatalogKinds.matches(p, resource))
+  }
+  def json: JsObject = Json.obj("include" -> include, "exclude" -> exclude)
+}
+
+object RemoteCatalogKindsRule {
+  val everything: RemoteCatalogKindsRule = RemoteCatalogKindsRule()
+}
+
+// the kinds of entities a catalog deploys, globally and by location: the rules of the locations (`<organization>` or
+// `<organization>/<team>`, patterns too) only narrow the global one. an entity is deployed when the global rule allows
+// its kind, and the rule of every location pattern matching its location allows it too. the catalog neither writes nor
+// deletes (except when undeployed) the entities it does not deploy
+case class RemoteCatalogKinds(
+    global: RemoteCatalogKindsRule = RemoteCatalogKindsRule.everything,
+    locations: Map[String, RemoteCatalogKindsRule] = Map.empty
+) {
+  def allowsKind(resource: Resource): Boolean                         = global.allows(resource)
+  def allows(resource: Resource, location: EntityLocation): Boolean = {
+    global.allows(resource) && locations.forall { case (pattern, rule) =>
+      !RemoteCatalogKinds.appliesTo(pattern, location) || rule.allows(resource)
+    }
+  }
+  def json: JsObject                                                   =
+    global.json ++ Json.obj("locations" -> JsObject(locations.view.mapValues(_.json).toSeq))
+}
+
+object RemoteCatalogKinds {
+
+  val everything: RemoteCatalogKinds = RemoteCatalogKinds()
+
+  private def names(resource: Resource): Seq[String] = Seq(
+    resource.pluralName,
+    resource.kind,
+    s"${resource.group}/${resource.pluralName}",
+    s"${resource.group}/${resource.kind}"
+  ).map(_.toLowerCase)
+
+  def matches(pattern: String, resource: Resource): Boolean = {
+    val p = pattern.toLowerCase.trim
+    p == "*" || names(resource).exists(n => otoroshi.utils.RegexPool(p).matches(n))
+  }
+
+  // an entity located in every organization or every team (`*`) is in all of them: every rule naming one applies to it,
+  // applying more rules only narrows what is deployed
+  private def valueMatches(pattern: String, value: String): Boolean = {
+    val p = pattern.toLowerCase.trim
+    value == "*" || p == "*" || otoroshi.utils.RegexPool(p).matches(value.toLowerCase.trim)
+  }
+
+  def appliesTo(pattern: String, location: EntityLocation): Boolean = {
+    pattern.split("/", 2).toSeq match {
+      case Seq(tenant)       => valueMatches(tenant, location.tenant.value)
+      case Seq(tenant, team) =>
+        valueMatches(tenant, location.tenant.value) &&
+        (location.teams.isEmpty || location.teams.exists(t => valueMatches(team, t.value)))
+      case _                 => false
+    }
+  }
+
+  // a list is an array of strings, or a single string
+  private def list(json: JsValue, name: String): Option[Seq[String]] = (json \ name).toOption match {
+    case None | Some(JsNull) => None
+    case Some(JsString(one)) => Some(Seq(one))
+    case Some(arr: JsArray)  => Some(arr.value.toSeq.map(_.as[String]))
+    case Some(_)             => throw new IllegalArgumentException(s"'$name' must be an array of kinds of entities")
+  }
+
+  private def readRule(json: JsValue): RemoteCatalogKindsRule = {
+    if (!json.isInstanceOf[JsObject]) throw new IllegalArgumentException("a rule of kinds must be an object")
+    RemoteCatalogKindsRule(
+      include = list(json, "include").getOrElse(Seq("*")),
+      exclude = list(json, "exclude").getOrElse(Seq.empty)
+    )
+  }
+
+  // a catalog whose kinds cannot be read is refused: it is not deployed rather than deploying every kind
+  val format: Format[RemoteCatalogKinds] = new Format[RemoteCatalogKinds] {
+    override def writes(o: RemoteCatalogKinds): JsValue             = o.json
+    override def reads(json: JsValue): JsResult[RemoteCatalogKinds] = Try {
+      RemoteCatalogKinds(
+        global = readRule(json),
+        locations = (json \ "locations").toOption match {
+          case None | Some(JsNull) => Map.empty
+          case Some(obj: JsObject) => obj.value.toMap.view.mapValues(readRule).toMap
+          case Some(_)             => throw new IllegalArgumentException("'locations' must be an object")
+        }
+      )
+    } match {
+      case Failure(e)     => JsError(s"bad kinds of entities: ${e.getMessage}")
+      case Success(kinds) => JsSuccess(kinds)
+    }
+  }
+}
+
 case class RemoteCatalog(
     location: EntityLocation,
     id: String,
@@ -78,7 +180,8 @@ case class RemoteCatalog(
     sourceKind: String,
     sourceConfig: JsObject,
     scheduling: RemoteCatalogScheduling,
-    testDeployArgs: JsObject
+    testDeployArgs: JsObject,
+    kinds: RemoteCatalogKinds = RemoteCatalogKinds.everything
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = RemoteCatalog.format.writes(this)
@@ -113,7 +216,8 @@ object RemoteCatalog {
       "source_kind"      -> o.sourceKind,
       "source_config"    -> o.sourceConfig,
       "scheduling"       -> o.scheduling.json,
-      "test_deploy_args" -> o.testDeployArgs
+      "test_deploy_args" -> o.testDeployArgs,
+      "kinds"            -> o.kinds.json
     )
     override def reads(json: JsValue): JsResult[RemoteCatalog] = Try {
       RemoteCatalog(
@@ -130,7 +234,12 @@ object RemoteCatalog {
           .asOpt[JsObject]
           .flatMap(o => RemoteCatalogScheduling.format.reads(o).asOpt)
           .getOrElse(RemoteCatalogScheduling.default),
-        testDeployArgs = (json \ "test_deploy_args").asOpt[JsObject].getOrElse(Json.obj())
+        testDeployArgs = (json \ "test_deploy_args").asOpt[JsObject].getOrElse(Json.obj()),
+        // every kind without kinds, like before. kinds that cannot be read fail the whole catalog
+        kinds = (json \ "kinds").toOption match {
+          case None | Some(JsNull) => RemoteCatalogKinds.everything
+          case Some(value)         => RemoteCatalogKinds.format.reads(value).get
+        }
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

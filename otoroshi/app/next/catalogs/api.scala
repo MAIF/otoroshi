@@ -3,6 +3,7 @@ package otoroshi.next.catalogs
 import org.joda.time.DateTime
 import otoroshi.api.{Resource, WriteAction}
 import otoroshi.env.Env
+import otoroshi.models.EntityLocation
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
@@ -319,7 +320,18 @@ class RemoteCatalogEngine(env: Env) {
     val unknownKinds = remoteEntities.filterNot(re => resources.exists(r => matches(re, r))).map(_.kind).distinct
     grouped
       .mapAsync { case (resource, entities) =>
-        reconcileResource(catalog, resource.groupKind, resource, entities, dryRun).map(result => (entities, result))
+        // the entities of a kind the catalog does not deploy at their location are refused, and reported
+        val (allowed, refused) =
+          entities.partition(e => catalog.kinds.allows(resource, EntityLocation.readFromKey(e.content)))
+        reconcileResource(
+          catalog,
+          resource.groupKind,
+          resource,
+          allowed,
+          entities.map(_.id).toSet,
+          refused,
+          dryRun
+        ).map(result => (entities, result))
       }
       .map { results =>
         DeployReport(
@@ -332,18 +344,24 @@ class RemoteCatalogEngine(env: Env) {
       }
   }
 
+  // remoteIds are the ids of every entity of the kind in the source, refused ones included: an entity still in the
+  // source is never deleted
   private def reconcileResource(
       catalog: RemoteCatalog,
       kind: String,
       resource: Resource,
       entities: Seq[RemoteEntity],
+      remoteIds: Set[String],
+      refused: Seq[RemoteEntity],
       dryRun: Boolean
   )(using ec: ExecutionContext, ev: Env): Future[ReconcileResult] = {
     val metadataKey = s"remote_catalog=${catalog.id}"
     var created     = 0
     var updated     = 0
-    var errors      = Seq.empty[String]
-    val remoteIds   = entities.map(_.id).toSet
+    var errors      = refused.map { e =>
+      val loc = EntityLocation.readFromKey(e.content)
+      s"Entity ${e.id} of kind $kind refused: the catalog does not deploy this kind in ${loc.tenant.value}/${loc.teams.map(_.value).mkString(",")}"
+    }
     entities
       .mapAsync { entity =>
         val entityId = entity.id
@@ -390,11 +408,13 @@ class RemoteCatalogEngine(env: Env) {
   )(using ec: ExecutionContext, ev: Env): Future[Int] = {
     Try {
       val allEntities     = resource.access.allJson()
+      // the entities of a kind the catalog does not deploy anymore at their location are left as they are
       val managedEntities = allEntities.filter { json =>
         json
           .select("metadata")
           .asOpt[Map[String, String]]
-          .exists(_.get("created_by").contains(metadataKey))
+          .exists(_.get("created_by").contains(metadataKey)) &&
+        catalog.kinds.allows(resource, EntityLocation.readFromKey(json))
       }
       val toDelete        = managedEntities.filter { json =>
         val entityId = json

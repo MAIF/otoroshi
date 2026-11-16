@@ -456,6 +456,14 @@ export function setupRemoteCatalogsExtension(registerExtension) {
           type: 'jsonobjectcode',
           props: { label: 'Test deploy args' },
         },
+        kinds: {
+          type: 'jsonobjectcode',
+          props: {
+            label: 'Kinds of entities',
+            help: 'The kinds of entities the catalog deploys: include and exclude kinds (routes, Route, proxy.otoroshi.io/routes, patterns like * or *-plugins) globally, and by location in locations (organization or organization/team, patterns too). The rules of a location only narrow the global ones. The refused entities are listed in the deploy report',
+            height: '200px',
+          },
+        },
         deploy_action: {
           type: DeployButton,
         },
@@ -676,6 +684,8 @@ export function setupRemoteCatalogsExtension(registerExtension) {
 
           '>>>Source raw config.',
           'source_config',
+          '>>>Kinds of entities',
+          'kinds',
           '>>>Scheduling',
           'scheduling.enabled',
           'scheduling.kind',
@@ -722,6 +732,7 @@ export function setupRemoteCatalogsExtension(registerExtension) {
                 deploy_args: {},
               },
               test_deploy_args: {},
+              kinds: { include: ['*'], exclude: [], locations: {} },
             }),
             itemName: 'Remote Catalog',
             formSchema: this.formSchema,
