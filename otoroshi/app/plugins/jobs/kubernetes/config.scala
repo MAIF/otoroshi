@@ -16,6 +16,83 @@ import java.util.Base64
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
+// a rule on the kinds of otoroshi entities (crds) the job reads. a kind is the plural name of its crd (`routes`,
+// `apikeys`, `global-configs`...) or a pattern of plural names (`*`, `*-plugins`). a kind is read when it matches one of
+// the included patterns and none of the excluded ones
+case class KubernetesCrdsKindsRule(include: Seq[String] = Seq("*"), exclude: Seq[String] = Seq.empty) {
+  def allows(kind: String): Boolean = {
+    include.exists(p => KubernetesCrdsKinds.matches(p, kind)) && !exclude.exists(p => KubernetesCrdsKinds.matches(p, kind))
+  }
+  def json: JsObject = Json.obj("include" -> include, "exclude" -> exclude)
+}
+
+object KubernetesCrdsKindsRule {
+  val everything: KubernetesCrdsKindsRule = KubernetesCrdsKindsRule()
+  val nothing: KubernetesCrdsKindsRule    = KubernetesCrdsKindsRule(include = Seq.empty)
+}
+
+// the kinds of otoroshi entities (crds) the job reads, globally and by namespace. the rules of the namespaces only narrow
+// the global one: a kind is read in a namespace when the global rule allows it, and the rule of every namespace pattern
+// matching the namespace allows it too. the job neither writes nor deletes the entities of the kinds it does not read
+case class KubernetesCrdsKinds(
+    global: KubernetesCrdsKindsRule = KubernetesCrdsKindsRule.everything,
+    namespaces: Map[String, KubernetesCrdsKindsRule] = Map.empty
+) {
+  // read in at least one namespace: the job fetches and watches it
+  def readsKind(kind: String): Boolean                        = global.allows(kind)
+  def reads(kind: String, namespace: Option[String]): Boolean = {
+    global.allows(kind) && namespace.forall { ns =>
+      namespaces.forall { case (pattern, rule) => !KubernetesCrdsKinds.matches(pattern, ns) || rule.allows(kind) }
+    }
+  }
+  def json: JsObject = global.json ++ Json.obj("namespaces" -> JsObject(namespaces.view.mapValues(_.json).toSeq))
+}
+
+object KubernetesCrdsKinds {
+
+  private val logger = play.api.Logger("otoroshi-plugins-kubernetes-crds-kinds")
+
+  val everything: KubernetesCrdsKinds = KubernetesCrdsKinds()
+
+  def matches(pattern: String, value: String): Boolean = {
+    val p = pattern.toLowerCase.trim
+    p == "*" || otoroshi.utils.RegexPool(p).matches(value.toLowerCase.trim)
+  }
+
+  // a list is an array of strings, or a single string
+  private def list(json: JsValue, name: String): Option[Seq[String]] = (json \ name).toOption match {
+    case None | Some(JsNull) => None
+    case Some(JsString(one)) => Some(Seq(one))
+    case Some(arr: JsArray)  => Some(arr.value.toSeq.collect { case JsString(v) => v })
+    case Some(other)         => throw new IllegalArgumentException(s"'$name' must be an array of kinds of entities")
+  }
+
+  private def readRule(json: JsValue): KubernetesCrdsKindsRule = KubernetesCrdsKindsRule(
+    include = list(json, "include").getOrElse(Seq("*")),
+    exclude = list(json, "exclude").getOrElse(Seq.empty)
+  )
+
+  // a rule that cannot be read reads nothing: the kinds were limited on purpose, reading every kind instead would let
+  // anyone able to write crds in the cluster write any entity
+  def read(conf: JsValue): KubernetesCrdsKinds = {
+    (conf \ "crdsKinds").toOption match {
+      case None | Some(JsNull) => everything
+      case Some(json)          =>
+        Try {
+          KubernetesCrdsKinds(
+            global = readRule(json),
+            namespaces = (json \ "namespaces").asOpt[JsObject].getOrElse(Json.obj()).value.toMap.view.mapValues(readRule).toMap
+          )
+        } match {
+          case scala.util.Success(kinds) => kinds
+          case scala.util.Failure(e)     =>
+            logger.error(s"the crdsKinds of the kubernetes config cannot be read, no crd will be read: ${e.getMessage}")
+            KubernetesCrdsKinds(global = KubernetesCrdsKindsRule.nothing)
+        }
+    }
+  }
+}
+
 case class KubernetesConfig(
     endpoint: String,
     token: Option[String],
@@ -40,6 +117,7 @@ case class KubernetesConfig(
     ingressEndpointPublishedService: Option[String],
     crds: Boolean,
     crdsOverride: Boolean,
+    crdsKinds: KubernetesCrdsKinds,
     syncDaikokuApikeysOnly: Boolean,
     restartDependantDeployments: Boolean,
     useProxyState: Boolean,
@@ -235,6 +313,7 @@ object KubernetesConfig {
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           crdsOverride = (conf \ "crdsOverride").asOpt[Boolean].getOrElse(false),
+          crdsKinds = KubernetesCrdsKinds.read(conf),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(false),
           useProxyState = (conf \ "useProxyState").asOpt[Boolean].getOrElse(false),
@@ -351,6 +430,7 @@ object KubernetesConfig {
           coreDnsAzure = (conf \ "coreDnsAzure").asOpt[Boolean].getOrElse(false),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           crdsOverride = (conf \ "crdsOverride").asOpt[Boolean].getOrElse(false),
+          crdsKinds = KubernetesCrdsKinds.read(conf),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(false),
           useProxyState = (conf \ "useProxyState").asOpt[Boolean].getOrElse(false),
@@ -436,6 +516,12 @@ object KubernetesConfig {
         "ingresses"                            -> true,
         "crds"                                 -> true,
         "crdsOverride"                         -> false, // when enabled crds always win, we do not try to read what's in datastore and merge
+        // the kinds of entities read, globally and by namespace (patterns of namespaces), the namespaces only narrow
+        "crdsKinds"                            -> Json.obj(
+          "include"    -> Json.arr("*"),
+          "exclude"    -> Json.arr(),
+          "namespaces" -> Json.obj()
+        ),
         "coreDnsIntegration"                   -> false,
         "coreDnsIntegrationDryRun"             -> false,
         "coreDnsAzure"                         -> false,
@@ -522,6 +608,7 @@ object KubernetesConfig {
       "defaultGroup",
       ">>>CRDs",
       "crds",
+      "crdsKinds",
       "syncDaikokuApikeysOnly",
       "restartDependantDeployments",
       "useProxyState",
@@ -682,6 +769,13 @@ object KubernetesConfig {
     )
 
     ++ makeFormField("crds", "bool", "Enabled", "Enable Otoroshi CRDs".some)
+    ++ makeFormField(
+      "crdsKinds",
+      "jsonobjectcode",
+      "Kinds of entities",
+      "The kinds of entities (plural names of the crds, or patterns like * or *-plugins) the job reads: globally with include and exclude, and by namespace (patterns of namespaces) with namespaces. The rules of a namespace only narrow the global ones. The job neither writes nor deletes the entities of the kinds it does not read".some,
+      more = Json.obj("height" -> "200px")
+    )
     ++ makeFormField(
       "syncDaikokuApikeysOnly",
       "bool",

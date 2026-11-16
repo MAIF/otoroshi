@@ -224,6 +224,7 @@ class UnitTests
       new plugins.configs.JsonSchemaPluginConfigsSpec(),
       new plugins.configs.React2ShellPluginConfigsSpec(),
       new plugins.configs.KubernetesPluginConfigsSpec(),
+      new plugins.configs.KubernetesCrdsKindsSpec(),
       new plugins.configs.RequestPluginConfigsSpec(),
       new plugins.configs.ClientCertPluginConfigsSpec(),
       new plugins.configs.EurekaPluginConfigsSpec(),
@@ -358,6 +359,12 @@ class FakeTrustManagerVulnTests
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()
+    )
+
+// the kinds of entities (crds) the kubernetes job reads, against a fake kubernetes api server
+class KubernetesCrdsKindsTests
+    extends Suites(
+      new KubernetesCrdsKindsFetchSpec("InMemory", Configurations.InMemoryConfiguration)
     )
 
 // rights enforcement on the admin api, one test per finding of the security review
