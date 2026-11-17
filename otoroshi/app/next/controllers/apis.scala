@@ -22,7 +22,7 @@ import otoroshi.api.WriteAction
 import otoroshi.api.WriteAction.Create
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
-import otoroshi.models.Draft
+import otoroshi.models.{Draft, EntityKind}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
@@ -118,7 +118,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     ApiAction.async { ctx =>
       env.datastores.draftsDataStore.findAll().map { drafts =>
         // a draft carries the whole entity it drafts, it is only visible to whoever can read that entity
-        Results.Ok(JsArray(drafts.filter(d => d.id.startsWith(kind) && ctx.canUserReadJson(d.content)).map(_.json)))
+        Results.Ok(JsArray(drafts.filter(d => d.id.startsWith(kind) && ctx.canUserReadJson(d.content, Seq(EntityKind("proxy.otoroshi.io", "drafts")))).map(_.json)))
       }
     }
 
@@ -783,7 +783,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
   // the openapi document is fetched by otoroshi from a url chosen by the caller: only for someone who could create the api
   def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
-    if (!ctx.canUserWriteJson(ctx.request.body)) {
+    if (!ctx.canUserWriteJson(ctx.request.body, Seq(EntityKind("apis.otoroshi.io", "apis")))) {
       ctx.fforbidden
     } else {
       val body = ctx.request.body

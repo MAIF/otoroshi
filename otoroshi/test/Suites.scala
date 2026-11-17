@@ -80,6 +80,7 @@ object OtoroshiTests {
       new BasicSpec,
       new AdminApiSpec(name, config),
       new AdminApiRightsSpec(name, config),
+      new UserRightsPoliciesSpec(name, config),
       new CircuitBreakerSpec(name, config),
       new AlertAndAnalyticsSpec(name, config),
       // new AnalyticsSpec(name, config),
@@ -225,6 +226,7 @@ class UnitTests
       new plugins.configs.React2ShellPluginConfigsSpec(),
       new plugins.configs.KubernetesPluginConfigsSpec(),
       new plugins.configs.RemoteCatalogKindsSpec(),
+      new plugins.configs.KubernetesCrdsKindsSpec(),
       new plugins.configs.RequestPluginConfigsSpec(),
       new plugins.configs.ClientCertPluginConfigsSpec(),
       new plugins.configs.EurekaPluginConfigsSpec(),
@@ -250,6 +252,7 @@ class UnitTests
       new plugins.configs.RateLimitingPluginConfigsSpec(),
       // json formats of the core entities, one spec per entity family
       new entities.TeamsEntityFormatSpec(),
+      new entities.UserRightsKindsEntityFormatSpec(),
       new entities.ScriptEntityFormatSpec(),
       new entities.WasmPluginEntityFormatSpec(),
       new entities.UserDashboardEntityFormatSpec(),
@@ -359,6 +362,18 @@ class FakeTrustManagerVulnTests
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()
+    )
+
+// the kinds of entities (crds) the kubernetes job reads, against a fake kubernetes api server
+class KubernetesCrdsKindsTests
+    extends Suites(
+      new KubernetesCrdsKindsFetchSpec("InMemory", Configurations.InMemoryConfiguration)
+    )
+
+// rights limited to some kinds of entities, user rights policies and personal admin apikeys
+class UserRightsPoliciesTests
+    extends Suites(
+      new UserRightsPoliciesSpec("InMemory", Configurations.InMemoryConfiguration)
     )
 
 // rights enforcement on the admin api, one test per finding of the security review

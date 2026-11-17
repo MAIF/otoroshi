@@ -10,7 +10,7 @@ import otoroshi.actions.{ApiAction, ApiActionContext, BackOfficeActionContext}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}
-import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocation, EntityLocationSupport}
+import otoroshi.models.{ApiKey, BackOfficeUser, EntityKind, EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.*
 import otoroshi.next.models.NgBackend
 import otoroshi.next.plugins.{WasmJob, WasmJobsConfig}
@@ -498,7 +498,8 @@ class WorkflowAdminExtension(val env: Env) extends CoreAdminExtension {
       case None     => EntityLocation.readFromKey(payload)
     }
     user.rights.canWriteTenant(location.tenant)(using env) && user.rights
-      .canWriteTeams(location.tenant, location.teams)(using env)
+      .canWriteTeams(location.tenant, location.teams)(using env) && user.rights
+      .canWriteKinds(location.tenant, location.teams, EntityKind.ofClass(classOf[Workflow])(using env))(using env)
   }
 
   def handleWorkflowDebug(user: BackOfficeUser): Flow[Message, Message, NotUsed] = {
@@ -694,7 +695,8 @@ class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(using 
                 env.adminExtensions.extension[WorkflowAdminExtension] match {
                   case None      => Results.NotFound(Json.obj("error" -> "extension not found")).leftf
                   case Some(ext) => {
-                    ext.handleWorkflowDebug(user).rightf
+                    // the rights policy of the user applies here like on every backoffice call
+                    user.withPolicyRights().map(u => Right(ext.handleWorkflowDebug(u)))
                   }
                 }
             }

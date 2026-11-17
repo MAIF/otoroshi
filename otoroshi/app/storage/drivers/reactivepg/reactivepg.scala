@@ -428,6 +428,8 @@ class ReactivePgDataStores(
 
   private lazy val _teamDataStore           = new TeamDataStore(redis, env)
   override def teamDataStore: TeamDataStore = _teamDataStore
+  private lazy val _userRightsPolicyDataStore = new otoroshi.models.UserRightsPolicyDataStore(redis, env)
+  override def userRightsPolicyDataStore: otoroshi.models.UserRightsPolicyDataStore = _userRightsPolicyDataStore
 
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore

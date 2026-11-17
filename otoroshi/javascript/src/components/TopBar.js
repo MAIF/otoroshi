@@ -1069,6 +1069,13 @@ export class TopBar extends Component {
                 <span className="fas fa-lock" /> Priv. apps sessions
               </Link>
             </li>
+            {window.__user.superAdmin && (
+              <li>
+                <Link to="/user-rights-policies" className="dropdown-item">
+                  <span className="fas fa-user-shield" /> User rights policies
+                </Link>
+              </li>
+            )}
           </>
         )}
         {window.__otoroshi__env__latest.userAdmin && (
@@ -1268,6 +1275,11 @@ export class TopBar extends Component {
         )}
         <li className="dropdown-divider" />
         <li>
+          <Link to="/my-admin-apikey" className="dropdown-item">
+            <span className="fas fa-key" /> My admin apikey
+          </Link>
+        </li>
+        <li>
           <a href="/backoffice/auth0/logout" className="link-logout dropdown-item">
             <span className="fas fa-power-off" />
             <span className="topbar-userName"> {window.__userid} </span>
@@ -1355,6 +1367,11 @@ export class TopBar extends Component {
           </>
         )}
         <li className="dropdown-divider" />
+        <li>
+          <Link to="/my-admin-apikey" className="dropdown-item">
+            <span className="fas fa-key" /> My admin apikey
+          </Link>
+        </li>
         <li>
           <a href="/backoffice/auth0/logout" className="link-logout dropdown-item">
             <span className="fas fa-power-off" />

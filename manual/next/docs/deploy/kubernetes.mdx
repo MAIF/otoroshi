@@ -821,6 +821,7 @@ Otoroshi provides some Custom Resource Definitions for kubernetes in order to ma
 - `organizations`
 - `tenants`
 - `teams`
+- `user-rights-policies`
 - `data-exporters`
 - `wasm-plugins`
 - `global-configs`
@@ -933,6 +934,7 @@ the configuration can have the following values
     "defaultGroup": "default", // the group to put services in otoroshi
     "ingresses": false, // sync ingresses
     "crds": true, // sync crds
+    "crdsKinds": { "include": ["*"], "exclude": [], "namespaces": {} }, // the kinds of entities the job reads, see below
     "kubeLeader": false, // delegate leader election to kubernetes, to know where the sync job should run
     "restartDependantDeployments": true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
     "templates": { // template for entities that will be merged with kubernetes entities. can be "default" to use otoroshi default templates
@@ -960,6 +962,36 @@ If `caCert` is not defined, Otoroshi will try to get it from the file at `/var/r
 If `$KUBECONFIG` is defined, `endpoint`, `token` and `caCert` will be read from the current context of the file referenced by it.
 
 you can find a more complete example of the configuration object [here](https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/plugins/jobs/kubernetes/config.scala#L134-L163)
+
+### Choose the kinds of entities the job reads
+
+By default, the job reads every kind of Otoroshi entity, in every namespace it watches. `crdsKinds` limits the kinds it reads, globally and by namespace, both at once if needed:
+
+```json
+{
+  "KubernetesConfig": {
+    "crds": true,
+    "namespaces": ["*"],
+    "crdsKinds": {
+      "include": ["*"],
+      "exclude": ["admins", "global-configs"],
+      "namespaces": {
+        "team-*": { "include": ["routes", "backends", "apikeys", "certificates"] },
+        "team-sandbox": { "exclude": ["certificates"] }
+      }
+    }
+  }
+}
+```
+
+* a kind is the plural name of its crd (`routes`, `apikeys`, `admins`, `global-configs`, ..., the ones of the admin extensions too) or a pattern of plural names (`*`, `*-plugins`)
+* `include` and `exclude` are the global rule: a kind is read when it matches one of the included patterns and none of the excluded ones. `include` is `["*"]` when missing
+* `namespaces` holds the rules of some namespaces, by name or pattern of name. They only narrow the global rule: a kind is read in a namespace when the global rule allows it, and the rule of every pattern matching the namespace allows it too. In the example, `team-sandbox` can only hold routes, backends and apikeys
+* the job neither fetches nor watches a kind the global rule excludes, and it neither creates, updates nor deletes the entities of a kind it does not read in their namespace: an entity synced before its kind was excluded stays in Otoroshi, delete it by hand if needed
+* the admins are read from the `simple-admin-users` crd: `admins` and `simple-admin-users` are the same kind, a rule on one of them applies to both
+* a `crdsKinds` that cannot be read makes the job read nothing, rather than every kind: a value that is not an object, an unknown field (`excludes`), a list that does not only hold strings, a namespace rule that is not an object. The error is logged
+
+With the helm chart, set the `crdsKinds` value the same way.
 
 ### Note about `apikeys` and `certificates` resources
 

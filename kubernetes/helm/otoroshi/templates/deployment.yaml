@@ -190,7 +190,8 @@ spec:
                         ],
                         "defaultGroup": "default",
                         "ingresses": false,
-                        "crds": true,
+                        "crds": true,{{ if .Values.crdsKinds }}
+                        "crdsKinds": {{ toJson .Values.crdsKinds }},{{ end }}
                         "coreDnsIntegration": false,
                         "coreDnsIntegrationDryRun": false,
                         "kubeLeader": false,

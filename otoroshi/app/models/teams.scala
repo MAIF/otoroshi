@@ -19,6 +19,8 @@ case class UserRights(rights: Seq[UserRight]) {
       f
     }
   }
+  // a right limited to some kinds of entities never makes a super admin or a tenant admin: both skip the checks of the
+  // kinds
   def superAdmin(using env: Env): Boolean = {
     if (env.bypassUserRightsCheck) {
       true
@@ -26,7 +28,8 @@ case class UserRights(rights: Seq[UserRight]) {
       rights.exists(ur =>
         ur.tenant.value == "*" &&
         ur.tenant.canReadWrite &&
-        ur.teams.exists(t => t.wildcard && t.canRead && t.canWrite)
+        ur.teams.exists(t => t.wildcard && t.canRead && t.canWrite) &&
+        ur.entities.unrestricted
       )
     }
   }
@@ -38,7 +41,34 @@ case class UserRights(rights: Seq[UserRight]) {
       rights.exists(ur =>
         ur.tenant.matches(tenant) &&
         ur.tenant.canReadWrite &&
-        ur.teams.exists(t => t.wildcard && t.canRead && t.canWrite)
+        ur.teams.exists(t => t.wildcard && t.canRead && t.canWrite) &&
+        ur.entities.unrestricted
+      )
+    }
+  }
+  // most rights give access to every kind of entity, the checks of the kinds are skipped for them
+  lazy val restrictsEntityKinds: Boolean = rights.exists(!_.entities.unrestricted)
+  // the kinds are checked right by right: the tenant, one of the teams and the kind have to be allowed by the same
+  // right. an entity without teams (a tenant) only needs its tenant
+  def canReadKinds(tenant: TenantId, teams: Seq[TeamId], kinds: Seq[EntityKind])(using env: Env): Boolean = {
+    if (env.bypassUserRightsCheck || !restrictsEntityKinds) {
+      true
+    } else {
+      rights.exists(ur =>
+        ur.tenant.matches(tenant) && ur.tenant.canRead &&
+        (teams.isEmpty || teams.exists(t => ur.teams.exists(ta => ta.matches(t) && ta.canRead))) &&
+        ur.entities.canRead(kinds)
+      )
+    }
+  }
+  def canWriteKinds(tenant: TenantId, teams: Seq[TeamId], kinds: Seq[EntityKind])(using env: Env): Boolean = {
+    if (env.bypassUserRightsCheck || !restrictsEntityKinds) {
+      true
+    } else {
+      rights.exists(ur =>
+        ur.tenant.matches(tenant) && ur.tenant.canReadWrite &&
+        (teams.isEmpty || teams.exists(t => ur.teams.exists(ta => ta.matches(t) && ta.canReadWrite))) &&
+        ur.entities.canWrite(kinds)
       )
     }
   }
@@ -66,9 +96,35 @@ case class UserRights(rights: Seq[UserRight]) {
     other.rights.forall { requested =>
       rights.exists { mine =>
         mine.tenant.covers(requested.tenant) &&
-        requested.teams.forall(requestedTeam => mine.teams.exists(_.covers(requestedTeam)))
+        requested.teams.forall(requestedTeam => mine.teams.exists(_.covers(requestedTeam))) &&
+        mine.entities.covers(requested.entities)
       }
     }
+  }
+  // what both sets of rights allow, right by right. two patterns of tenants or teams that do not cover one another
+  // (team-a-* and team-*-b) have no intersection that can be written: the access is dropped, so the result never
+  // allows more than either side
+  def intersect(other: UserRights): UserRights = {
+    UserRights(
+      (for {
+        mine   <- rights
+        theirs <- other.rights
+        tenant <- AccessCoverage
+                    .intersectValue(mine.tenant.value, theirs.tenant.value)
+                    .map(v => TenantAccess(v, mine.tenant.canRead && theirs.tenant.canRead, mine.tenant.canWrite && theirs.tenant.canWrite))
+                    .filter(_.canRead)
+      } yield {
+        val teams = for {
+          myTeam    <- mine.teams
+          theirTeam <- theirs.teams
+          team      <- AccessCoverage
+                         .intersectValue(myTeam.value, theirTeam.value)
+                         .map(v => TeamAccess(v, myTeam.canRead && theirTeam.canRead, myTeam.canWrite && theirTeam.canWrite))
+                         .filter(_.canRead)
+        } yield team
+        UserRight(tenant, teams.distinct, mine.entities.intersect(theirs.entities))
+      }).distinct
+    )
   }
   def oneAuthorizedTenant: TenantId                                                   =
     rights.headOption.filter(_.tenant.plain).map(_.tenant.asTenantId).getOrElse(TenantId.default)
@@ -120,7 +176,11 @@ object UserRights {
   }
 }
 
-case class UserRight(tenant: TenantAccess, teams: Seq[TeamAccess]) {
+case class UserRight(
+    tenant: TenantAccess,
+    teams: Seq[TeamAccess],
+    entities: EntityKindsAccess = EntityKindsAccess.all
+) {
   def json: JsValue = UserRight.format.writes(this)
 }
 
@@ -128,11 +188,15 @@ object UserRight {
   val default    = UserRight(TenantAccess("default"), Seq(TeamAccess("default")))
   val superAdmin = UserRight(TenantAccess("*"), Seq(TeamAccess("*")))
   val format     = new Format[UserRight] {
+    // the kinds are only written for a right limited to some of them: the rights giving access to every kind keep
+    // the json they always had
     override def writes(o: UserRight): JsValue             =
-      Json.obj(
-        "tenant" -> o.tenant.raw,
-        "teams"  -> JsArray(o.teams.distinct.map(t => JsString(t.raw)))
-      )
+      Json
+        .obj(
+          "tenant" -> o.tenant.raw,
+          "teams"  -> JsArray(o.teams.distinct.map(t => JsString(t.raw)))
+        )
+        .applyOnIf(!o.entities.unrestricted)(_ ++ o.entities.json)
     override def reads(json: JsValue): JsResult[UserRight] =
       Try {
         UserRight(
@@ -143,7 +207,8 @@ object UserRight {
             .map { t =>
               TeamAccess(t.as[String])
             }
-            .distinct.toSeq
+            .distinct.toSeq,
+          entities = EntityKindsAccess.readFrom(json)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -232,7 +297,10 @@ trait EntityLocationSupport extends Entity {
   def location: EntityLocation
 }
 
-case class FakeEntityLocationSupport(location: EntityLocation) extends EntityLocationSupport {
+// the kinds are the ones of the entity the location was read from, when the caller knows them: without them, only a
+// right giving access to every kind reaches it
+case class FakeEntityLocationSupport(location: EntityLocation, kinds: Seq[EntityKind] = Seq.empty)
+    extends EntityLocationSupport {
   override def internalId: String               = ""
   override def json: JsValue                    = Json.obj("_loc" -> location.json)
   override def theName: String                  = ""
@@ -269,6 +337,152 @@ object AccessCoverage {
   }
   def coversPermissions(mine: (Boolean, Boolean), requested: (Boolean, Boolean)): Boolean = {
     (!requested._1 || mine._1) && (!requested._2 || mine._2)
+  }
+  // the values matched by both: the narrower one when one covers the other, nothing otherwise (even when two patterns
+  // overlap, their intersection cannot be written as a pattern)
+  def intersectValue(a: String, b: String): Option[String] = {
+    if (coversValue(a, b)) Some(b)
+    else if (coversValue(b, a)) Some(a)
+    else None
+  }
+}
+
+// a kind of entity, as the generic admin api names it: its group and its plural name
+case class EntityKind(group: String, plural: String)
+
+object EntityKind {
+
+  private val classKinds = new scala.collection.concurrent.TrieMap[Class[?], Seq[EntityKind]]()
+
+  def of(resource: otoroshi.api.Resource): Seq[EntityKind] =
+    Seq(EntityKind(resource.group.toLowerCase.trim, resource.pluralName.toLowerCase.trim))
+
+  // the kinds of an entity come from the resources of the generic admin api sharing its class (organizations and
+  // tenants share one). an entity whose class is not the one of a resource has no kind: only a right giving access to
+  // every kind reaches it
+  def of(item: EntityLocationSupport)(using env: Env): Seq[EntityKind] = item match {
+    case fake: FakeEntityLocationSupport => fake.kinds
+    // the typed controllers check the rights of a route on its legacy service descriptor
+    case _: ServiceDescriptor            => Seq(EntityKind("proxy.otoroshi.io", "routes"))
+    case _                               => ofClass(item.getClass)
+  }
+
+  def ofClass(clazz: Class[?])(using env: Env): Seq[EntityKind] = classKinds.getOrElseUpdate(clazz, fromClass(clazz))
+
+  private def fromClass(clazz: Class[?])(using env: Env): Seq[EntityKind] = {
+    val resources = env.allResources.resources.filter(r => r.access != null && r.access.clazz != null)
+    val exact     = resources.filter(_.access.clazz == clazz)
+    // the auth modules are stored under their trait, each kind of module being its own class
+    val found     = if (exact.nonEmpty) exact else resources.filter(_.access.clazz.isAssignableFrom(clazz))
+    found.flatMap(of).distinct
+  }
+}
+
+// a pattern of kinds of entities: `*` (every kind), `<plural>` (the kind of this plural name, in any group),
+// `<group>/<plural>` or `<group>/*` (every kind of the group). None stands for any group or any plural name
+case class EntityKindPattern(group: Option[String], plural: Option[String]) {
+  lazy val all: Boolean = group.isEmpty && plural.isEmpty
+  lazy val raw: String  = (group, plural) match {
+    case (None, None)       => "*"
+    case (None, Some(p))    => p
+    case (Some(g), None)    => s"$g/*"
+    case (Some(g), Some(p)) => s"$g/$p"
+  }
+  def matches(kind: EntityKind): Boolean            = group.forall(_ == kind.group) && plural.forall(_ == kind.plural)
+  def covers(other: EntityKindPattern): Boolean     =
+    group.forall(g => other.group.contains(g)) && plural.forall(p => other.plural.contains(p))
+  // unlike the patterns of tenants and teams, two patterns of kinds always have an intersection that can be written
+  def intersect(other: EntityKindPattern): Option[EntityKindPattern] = {
+    def both(a: Option[String], b: Option[String]): Option[Option[String]] = (a, b) match {
+      case (None, _)                => Some(b)
+      case (_, None)                => Some(a)
+      case (Some(x), Some(y)) if x == y => Some(a)
+      case _                        => None
+    }
+    for {
+      g <- both(group, other.group)
+      p <- both(plural, other.plural)
+    } yield EntityKindPattern(g, p)
+  }
+}
+
+object EntityKindPattern {
+  def parse(raw: String): EntityKindPattern = {
+    val value = raw.toLowerCase.trim
+    val index = value.lastIndexOf('/')
+    if (value == "*") {
+      EntityKindPattern(None, None)
+    } else if (index < 0) {
+      EntityKindPattern(None, Some(value))
+    } else {
+      val group  = value.substring(0, index).trim
+      val plural = value.substring(index + 1).trim
+      EntityKindPattern(
+        if (group == "*" || group.isEmpty) None else Some(group),
+        if (plural == "*" || plural.isEmpty) None else Some(plural)
+      )
+    }
+  }
+  // the patterns covered by another one of the list add nothing to it
+  def simplify(patterns: Seq[EntityKindPattern]): Seq[EntityKindPattern] = {
+    val distinct = patterns.distinct
+    distinct.filterNot(p => distinct.exists(o => o != p && o.covers(p)))
+  }
+}
+
+// the kinds of entities a right gives access to, on top of its tenant and its teams. the kinds a right can write are
+// readable too. a right without kinds gives access to every kind, like it always did
+case class EntityKindsAccess(read: Seq[String], write: Seq[String]) {
+  private lazy val writePatterns: Seq[EntityKindPattern] = EntityKindPattern.simplify(write.map(EntityKindPattern.parse))
+  private lazy val readPatterns: Seq[EntityKindPattern]  =
+    EntityKindPattern.simplify((read ++ write).map(EntityKindPattern.parse))
+  lazy val unrestricted: Boolean                         = writePatterns.exists(_.all)
+  def canRead(kinds: Seq[EntityKind]): Boolean           =
+    unrestricted || readPatterns.exists(p => p.all || kinds.exists(p.matches))
+  def canWrite(kinds: Seq[EntityKind]): Boolean          =
+    unrestricted || writePatterns.exists(p => p.all || kinds.exists(p.matches))
+  def covers(other: EntityKindsAccess): Boolean          = {
+    other.writePatterns.forall(r => writePatterns.exists(_.covers(r))) &&
+    other.readPatterns.forall(r => readPatterns.exists(_.covers(r)))
+  }
+  def intersect(other: EntityKindsAccess): EntityKindsAccess = {
+    def cross(a: Seq[EntityKindPattern], b: Seq[EntityKindPattern]): Seq[EntityKindPattern] =
+      EntityKindPattern.simplify(for {
+        x <- a
+        y <- b
+        z <- x.intersect(y)
+      } yield z)
+    val writable = cross(writePatterns, other.writePatterns)
+    if (writable.exists(_.all)) {
+      EntityKindsAccess.all
+    } else {
+      // what is writable is readable, no need to repeat it in the readable kinds
+      val readable = cross(readPatterns, other.readPatterns).filterNot(p => writable.exists(_.covers(p)))
+      EntityKindsAccess(readable.map(_.raw), writable.map(_.raw))
+    }
+  }
+  def json: JsObject = Json.obj(
+    "authorized_entities_read"  -> JsArray(read.map(JsString.apply)),
+    "authorized_entities_write" -> JsArray(write.map(JsString.apply))
+  )
+}
+
+object EntityKindsAccess {
+  val all: EntityKindsAccess = EntityKindsAccess(Seq("*"), Seq("*"))
+  // without any of the two lists, every kind. with one of them only, the other one is empty: a list of readable kinds
+  // alone must not let the right write everything. a list that cannot be read fails the whole right, and an unreadable
+  // right is dropped: it never falls back to every kind
+  def readFrom(json: JsValue): EntityKindsAccess = {
+    def list(name: String): Option[Seq[String]] = (json \ name).toOption match {
+      case None | Some(JsNull)  => None
+      case Some(JsString(one))  => Some(Seq(one))
+      case Some(arr: JsArray)   => Some(arr.value.toSeq.map(_.as[String]))
+      case Some(other)          => throw new IllegalArgumentException(s"$name must be an array of entity kinds")
+    }
+    (list("authorized_entities_read"), list("authorized_entities_write")) match {
+      case (None, None)          => all
+      case (readOpt, writeOpt)   => EntityKindsAccess(readOpt.getOrElse(Seq.empty), writeOpt.getOrElse(Seq.empty))
+    }
   }
 }
 
@@ -361,11 +575,13 @@ object RightsChecker {
     def canPerform(user: BackOfficeUser, currentTenant: TenantId)(using env: Env): Boolean =
       user.rights.tenantAdmin(currentTenant)
   }
-  // can write something in the current tenant, a read only user cannot
-  case object WriterOnly      extends RightsChecker {
+  // can write one of these kinds of entities in the current tenant: a read only user cannot, nor a user limited to other
+  // kinds
+  case class WriterOf(kinds: Seq[EntityKind]) extends RightsChecker {
     def canPerform(user: BackOfficeUser, currentTenant: TenantId)(using env: Env): Boolean =
       user.rights.tenantAdmin(currentTenant) || user.rights.rights.exists(ur =>
-        ur.tenant.matches(currentTenant) && ur.tenant.canReadWrite && ur.teams.exists(_.canReadWrite)
+        ur.tenant.matches(currentTenant) && ur.tenant.canReadWrite && ur.teams.exists(_.canReadWrite) &&
+        ur.entities.canWrite(kinds)
       )
   }
 }

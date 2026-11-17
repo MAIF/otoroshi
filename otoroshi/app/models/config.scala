@@ -1139,6 +1139,7 @@ case class OtoroshiExport(
     drafts: Seq[Draft] = Seq.empty,
     apis: Seq[Api] = Seq.empty,
     apiSubscriptions: Seq[ApiSubscription] = Seq.empty,
+    userRightsPolicies: Seq[UserRightsPolicy] = Seq.empty,
 ) {
 
   import otoroshi.utils.json.JsonImplicits.*
@@ -1326,6 +1327,13 @@ case class OtoroshiExport(
         SimpleOtoroshiAdmin.fmt,
         _.select("username").asString,
         _.username
+      ),
+      userRightsPolicies = customizeAndMergeArray[UserRightsPolicy](
+        userRightsPolicies,
+        customization.select("userRightsPolicies").asOpt[JsArray].getOrElse(Json.arr()),
+        UserRightsPolicy.format,
+        json => UserRightsPolicy.normalizeEmail(json.select("email").asString),
+        _.email
       )
     )
   }
@@ -1363,6 +1371,7 @@ case class OtoroshiExport(
       "drafts"             -> JsArray(drafts.map(_.json)),
       "apis"               -> JsArray(apis.map(_.json)),
       "apiSubscriptions"   -> JsArray(apiSubscriptions.map(_.json)),
+      "userRightsPolicies" -> JsArray(userRightsPolicies.map(_.json)),
       "extensions"         -> extensions
     )
   }
