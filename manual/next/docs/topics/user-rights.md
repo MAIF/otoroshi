@@ -145,6 +145,10 @@ So a policy only **gives** its rights to the users of one auth module: the one o
 
 The rights of the local admins are written on the admins themselves (**Admins** in the menu), rights limited to some kinds of entities included: they do not need a policy.
 
+:::warning
+The policies trust the emails given by their auth module. Whoever can write this auth module (its `rightsOverride`, the users of a basic auth module, its identity provider, ...) decides who logs in with which email, and so who gets the rights of the policies. Locate the backoffice auth module, and every auth module named in an `auth_module_ref`, in an organization only the super admins can write. An entity located on every team (`*`) can be written by anyone writing one of the teams of its organization, not only by the tenant admins: the default location (organization `default`, every team) does not protect the module as soon as a user can write a team of `default`.
+:::
+
 The rights of a user are resolved on each of its calls: a policy written, changed or deleted takes effect on the next call of the user, without a new login (on the other nodes of a cluster, after their next state sync, every 10 seconds by default).
 
 * only the super admins read and write the policies (a policy can take rights away from anyone, a super admin included), and they cannot write a policy giving more rights than they have
