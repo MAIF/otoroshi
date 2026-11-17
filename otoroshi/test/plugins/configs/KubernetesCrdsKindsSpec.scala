@@ -92,6 +92,42 @@ class KubernetesCrdsKindsSpec extends AnyWordSpec with Matchers {
       read(Json.obj("namespaces" -> Json.obj("team-a" -> Json.obj("exclude" -> Json.obj())))).readsKind("routes") mustBe false
     }
 
+    "read nothing when it is not written the expected way" in {
+      val nothing = KubernetesCrdsKinds(global = KubernetesCrdsKindsRule.nothing)
+      // not an object
+      read(JsString("routes")) mustBe nothing
+      read(JsNumber(42)) mustBe nothing
+      read(Json.arr("routes")) mustBe nothing
+      // unknown fields
+      read(Json.obj("excludes" -> Json.arr("admins"))) mustBe nothing
+      read(Json.obj("namespaces" -> Json.obj("team-a" -> Json.obj("included" -> Json.arr("routes"))))) mustBe nothing
+      // lists that do not only hold strings
+      read(Json.obj("exclude" -> Json.arr(42))) mustBe nothing
+      read(Json.obj("exclude" -> Json.arr(Json.arr("admins")))) mustBe nothing
+      // namespaces that are not an object of rules
+      read(Json.obj("namespaces" -> Json.arr("team-a"))) mustBe nothing
+      read(Json.obj("namespaces" -> Json.obj("team-a" -> Json.arr("routes")))) mustBe nothing
+      read(Json.obj("namespaces" -> Json.obj("team-a" -> "routes"))) mustBe nothing
+    }
+
+    "handle the admins under both names of their crds" in {
+      // the job fetches the admins as `simple-admin-users`
+      val excluded = read(Json.obj("exclude" -> Json.arr("admins")))
+      excluded.readsKind("admins") mustBe false
+      excluded.readsKind("simple-admin-users") mustBe false
+      excluded.reads("simple-admin-users", Some("team-a")) mustBe false
+      val excludedByCrdName = read(Json.obj("exclude" -> Json.arr("simple-admin-users")))
+      excludedByCrdName.readsKind("admins") mustBe false
+      excludedByCrdName.readsKind("simple-admin-users") mustBe false
+      val included = read(Json.obj("include" -> Json.arr("routes", "admins")))
+      included.readsKind("simple-admin-users") mustBe true
+      included.readsKind("admins") mustBe true
+      included.readsKind("apikeys") mustBe false
+      val byNamespace = read(Json.obj("namespaces" -> Json.obj("team-*" -> Json.obj("exclude" -> Json.arr("admins")))))
+      byNamespace.reads("simple-admin-users", Some("team-a")) mustBe false
+      byNamespace.reads("simple-admin-users", Some("other")) mustBe true
+    }
+
     "write the rules it read" in {
       val kinds = read(
         Json.obj(

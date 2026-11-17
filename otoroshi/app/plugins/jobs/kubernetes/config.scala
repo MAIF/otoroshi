@@ -21,7 +21,10 @@ import scala.util.Try
 // the included patterns and none of the excluded ones
 case class KubernetesCrdsKindsRule(include: Seq[String] = Seq("*"), exclude: Seq[String] = Seq.empty) {
   def allows(kind: String): Boolean = {
-    include.exists(p => KubernetesCrdsKinds.matches(p, kind)) && !exclude.exists(p => KubernetesCrdsKinds.matches(p, kind))
+    // a kind known under several names is matched under each of them
+    val names = KubernetesCrdsKinds.names(kind)
+    include.exists(p => names.exists(n => KubernetesCrdsKinds.matches(p, n))) &&
+    !exclude.exists(p => names.exists(n => KubernetesCrdsKinds.matches(p, n)))
   }
   def json: JsObject = Json.obj("include" -> include, "exclude" -> exclude)
 }
@@ -54,23 +57,63 @@ object KubernetesCrdsKinds {
 
   val everything: KubernetesCrdsKinds = KubernetesCrdsKinds()
 
+  // the admins are read from the `simple-admin-users` crd, and known as `admins` everywhere else (the entity, its other
+  // crd, the documentation): both names are the same kind, a rule on one of them is a rule on the other
+  private val aliases: Seq[Set[String]] = Seq(Set("admins", "simple-admin-users"))
+
+  def names(kind: String): Set[String] = {
+    val k = kind.toLowerCase.trim
+    aliases.find(_.contains(k)).getOrElse(Set(k))
+  }
+
   def matches(pattern: String, value: String): Boolean = {
     val p = pattern.toLowerCase.trim
     p == "*" || otoroshi.utils.RegexPool(p).matches(value.toLowerCase.trim)
   }
 
-  // a list is an array of strings, or a single string
-  private def list(json: JsValue, name: String): Option[Seq[String]] = (json \ name).toOption match {
-    case None | Some(JsNull) => None
-    case Some(JsString(one)) => Some(Seq(one))
-    case Some(arr: JsArray)  => Some(arr.value.toSeq.collect { case JsString(v) => v })
-    case Some(other)         => throw new IllegalArgumentException(s"'$name' must be an array of kinds of entities")
+  private val ruleKeys: Set[String]  = Set("include", "exclude")
+  private val kindsKeys: Set[String] = ruleKeys + "namespaces"
+
+  // nothing is guessed from a value that is not the expected one: a rule written the wrong way is not a rule that
+  // allows everything
+  private def obj(json: JsValue, what: String, keys: Set[String]): JsObject = json match {
+    case o: JsObject =>
+      val unknown = o.keys.toSeq.filterNot(keys.contains)
+      if (unknown.nonEmpty) {
+        throw new IllegalArgumentException(
+          s"$what has unknown fields: ${unknown.mkString(", ")} (expected ${keys.toSeq.sorted.mkString(", ")})"
+        )
+      }
+      o
+    case _           => throw new IllegalArgumentException(s"$what must be an object")
   }
 
-  private def readRule(json: JsValue): KubernetesCrdsKindsRule = KubernetesCrdsKindsRule(
-    include = list(json, "include").getOrElse(Seq("*")),
-    exclude = list(json, "exclude").getOrElse(Seq.empty)
+  // a list is an array of strings, or a single string
+  private def list(json: JsObject, name: String, what: String): Option[Seq[String]] = json.value.get(name) match {
+    case None | Some(JsNull) => None
+    case Some(JsString(one)) => Some(Seq(one))
+    case Some(arr: JsArray)  =>
+      Some(arr.value.toSeq.map {
+        case JsString(v) => v
+        case _           => throw new IllegalArgumentException(s"'$name' of $what must only hold strings")
+      })
+    case Some(_)             => throw new IllegalArgumentException(s"'$name' of $what must be an array of strings")
+  }
+
+  private def readRule(json: JsObject, what: String): KubernetesCrdsKindsRule = KubernetesCrdsKindsRule(
+    include = list(json, "include", what).getOrElse(Seq("*")),
+    exclude = list(json, "exclude", what).getOrElse(Seq.empty)
   )
+
+  private def readNamespaces(json: JsObject): Map[String, KubernetesCrdsKindsRule] = json.value.get("namespaces") match {
+    case None | Some(JsNull) => Map.empty
+    case Some(o: JsObject)   =>
+      o.value.toMap.map { case (pattern, rule) =>
+        val what = s"the rule of the namespace '$pattern'"
+        (pattern, readRule(obj(rule, what, ruleKeys), what))
+      }
+    case Some(_)             => throw new IllegalArgumentException("'namespaces' of crdsKinds must be an object")
+  }
 
   // a rule that cannot be read reads nothing: the kinds were limited on purpose, reading every kind instead would let
   // anyone able to write crds in the cluster write any entity
@@ -79,10 +122,8 @@ object KubernetesCrdsKinds {
       case None | Some(JsNull) => everything
       case Some(json)          =>
         Try {
-          KubernetesCrdsKinds(
-            global = readRule(json),
-            namespaces = (json \ "namespaces").asOpt[JsObject].getOrElse(Json.obj()).value.toMap.view.mapValues(readRule).toMap
-          )
+          val kinds = obj(json, "crdsKinds", kindsKeys)
+          KubernetesCrdsKinds(global = readRule(kinds, "crdsKinds"), namespaces = readNamespaces(kinds))
         } match {
           case scala.util.Success(kinds) => kinds
           case scala.util.Failure(e)     =>

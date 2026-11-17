@@ -987,7 +987,8 @@ By default, the job reads every kind of Otoroshi entity, in every namespace it w
 * `include` and `exclude` are the global rule: a kind is read when it matches one of the included patterns and none of the excluded ones. `include` is `["*"]` when missing
 * `namespaces` holds the rules of some namespaces, by name or pattern of name. They only narrow the global rule: a kind is read in a namespace when the global rule allows it, and the rule of every pattern matching the namespace allows it too. In the example, `team-sandbox` can only hold routes, backends and apikeys
 * the job neither fetches nor watches a kind the global rule excludes, and it neither creates, updates nor deletes the entities of a kind it does not read in their namespace: an entity synced before its kind was excluded stays in Otoroshi, delete it by hand if needed
-* a `crdsKinds` that cannot be read makes the job read nothing, rather than every kind
+* the admins are read from the `simple-admin-users` crd: `admins` and `simple-admin-users` are the same kind, a rule on one of them applies to both
+* a `crdsKinds` that cannot be read makes the job read nothing, rather than every kind: a value that is not an object, an unknown field (`excludes`), a list that does not only hold strings, a namespace rule that is not an object. The error is logged
 
 With the helm chart, set the `crdsKinds` value the same way.
 
