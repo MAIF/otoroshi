@@ -134,6 +134,14 @@ object RemoteCatalogKinds {
     }
   }
 
+  // a pattern that cannot be compiled is refused when the catalog is read, rather than failing every deploy
+  private def checked(pattern: String): String = {
+    Try(otoroshi.utils.RegexPool(pattern.toLowerCase.trim)) match {
+      case Failure(_) => throw new IllegalArgumentException(s"'$pattern' is not a valid pattern")
+      case Success(_) => pattern
+    }
+  }
+
   // a list is an array of strings, or a single string
   private def list(json: JsValue, name: String): Option[Seq[String]] = (json \ name).toOption match {
     case None | Some(JsNull) => None
@@ -145,8 +153,8 @@ object RemoteCatalogKinds {
   private def readRule(json: JsValue): RemoteCatalogKindsRule = {
     if (!json.isInstanceOf[JsObject]) throw new IllegalArgumentException("a rule of kinds must be an object")
     RemoteCatalogKindsRule(
-      include = list(json, "include").getOrElse(Seq("*")),
-      exclude = list(json, "exclude").getOrElse(Seq.empty)
+      include = list(json, "include").getOrElse(Seq("*")).map(checked),
+      exclude = list(json, "exclude").getOrElse(Seq.empty).map(checked)
     )
   }
 
@@ -158,7 +166,11 @@ object RemoteCatalogKinds {
         global = readRule(json),
         locations = (json \ "locations").toOption match {
           case None | Some(JsNull) => Map.empty
-          case Some(obj: JsObject) => obj.value.toMap.view.mapValues(readRule).toMap
+          case Some(obj: JsObject) =>
+            obj.value.toMap.map { case (location, rule) =>
+              location.split("/", 2).foreach(checked)
+              (location, readRule(rule))
+            }
           case Some(_)             => throw new IllegalArgumentException("'locations' must be an object")
         }
       )

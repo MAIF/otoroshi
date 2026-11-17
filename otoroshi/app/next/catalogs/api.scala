@@ -181,13 +181,22 @@ object RemoteContentParser {
   }
 }
 
-case class ReconcileResult(entityKind: String, created: Int, updated: Int, deleted: Int, errors: Seq[String]) {
+// refused holds the entities the catalog does not deploy because of its kinds: they are expected, not errors
+case class ReconcileResult(
+    entityKind: String,
+    created: Int,
+    updated: Int,
+    deleted: Int,
+    errors: Seq[String],
+    refused: Seq[String] = Seq.empty
+) {
   def json: JsValue = Json.obj(
     "entity_kind" -> entityKind,
     "created"     -> created,
     "updated"     -> updated,
     "deleted"     -> deleted,
-    "errors"      -> JsArray(errors.map(JsString.apply))
+    "errors"      -> JsArray(errors.map(JsString.apply)),
+    "refused"     -> JsArray(refused.map(JsString.apply))
   )
 }
 
@@ -358,7 +367,8 @@ class RemoteCatalogEngine(env: Env) {
     val metadataKey = s"remote_catalog=${catalog.id}"
     var created     = 0
     var updated     = 0
-    var errors      = refused.map { e =>
+    var errors      = Seq.empty[String]
+    var refusals    = refused.map { e =>
       val loc = EntityLocation.readFromKey(e.content)
       s"Entity ${e.id} of kind $kind refused: the catalog does not deploy this kind in ${loc.tenant.value}/${loc.teams.map(_.value).mkString(",")}"
     }
@@ -375,12 +385,21 @@ class RemoteCatalogEngine(env: Env) {
             val oldEntity    = resource.access.oneJson(entityId)
             val action       = if (oldEntity.isDefined) WriteAction.Update else WriteAction.Create
             val version      = resource.version.name
+            // the location the source gives to an entity is not enough: an entity that already exists where the
+            // catalog does not deploy its kind is neither overwritten nor moved
+            val oldRefused   =
+              oldEntity.exists(old => !catalog.kinds.allows(resource, EntityLocation.readFromKey(old)))
             // a dry run goes through the same checks as a deploy, without writing anything
             val result       =
-              if (dryRun)
+              if (oldRefused) Json.obj("error" -> "refused").leftf[JsValue]
+              else if (dryRun)
                 resource.access.checkCreate(version, resource.singularName, entityId.some, enrichedJson, action, oldEntity)
               else resource.access.create(version, resource.singularName, entityId.some, enrichedJson, action, oldEntity)
             result.map {
+              case Left(_) if oldRefused           =>
+                val loc = EntityLocation.readFromKey(oldEntity.get)
+                refusals =
+                  refusals :+ s"Entity $entityId of kind $kind refused: it already exists in ${loc.tenant.value}/${loc.teams.map(_.value).mkString(",")}, where the catalog does not deploy this kind"
               case Left(err)                       =>
                 errors = errors :+ s"Error upserting entity $entityId of kind $kind: ${err.stringify}"
               case Right(_) if oldEntity.isDefined => updated += 1
@@ -393,7 +412,7 @@ class RemoteCatalogEngine(env: Env) {
       }
       .flatMap { _ =>
         handleDeletions(catalog, kind, resource, remoteIds, metadataKey, dryRun).map { deletedCount =>
-          ReconcileResult(kind, created, updated, deletedCount, errors)
+          ReconcileResult(kind, created, updated, deletedCount, errors, refusals)
         }
       }
   }

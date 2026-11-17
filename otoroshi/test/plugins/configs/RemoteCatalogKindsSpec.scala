@@ -53,8 +53,8 @@ class RemoteCatalogKindsSpec extends AnyWordSpec with Matchers {
       Json.obj(
         "exclude"   -> Json.arr("global-configs"),
         "locations" -> Json.obj(
-          "team-*"         -> Json.obj("include" -> Json.arr("routes", "backends")),
-          "team-a/sandbox" -> Json.obj("exclude" -> Json.arr("backends"))
+          "orga-*"         -> Json.obj("include" -> Json.arr("routes", "backends")),
+          "orga-a/sandbox" -> Json.obj("exclude" -> Json.arr("backends"))
         )
       )
     )
@@ -71,19 +71,19 @@ class RemoteCatalogKindsSpec extends AnyWordSpec with Matchers {
     }
 
     "only narrow the global rule with the rules of the locations" in {
-      kinds.allows(routes, loc("team-a", "default")) mustBe true
-      kinds.allows(wasmPlugins, loc("team-a", "default")) mustBe false
-      kinds.allows(backends, loc("team-a", "default")) mustBe true
+      kinds.allows(routes, loc("orga-a", "default")) mustBe true
+      kinds.allows(wasmPlugins, loc("orga-a", "default")) mustBe false
+      kinds.allows(backends, loc("orga-a", "default")) mustBe true
       // a location matching several patterns gets all their rules
-      kinds.allows(backends, loc("team-a", "sandbox")) mustBe false
-      kinds.allows(routes, loc("team-a", "sandbox")) mustBe true
+      kinds.allows(backends, loc("orga-a", "sandbox")) mustBe false
+      kinds.allows(routes, loc("orga-a", "sandbox")) mustBe true
       // an entity in several teams gets the rules of each of them
-      kinds.allows(backends, loc("team-a", "default", "sandbox")) mustBe false
+      kinds.allows(backends, loc("orga-a", "default", "sandbox")) mustBe false
     }
 
     "apply every rule to an entity located everywhere" in {
       kinds.allows(wasmPlugins, loc("*", "*")) mustBe false
-      kinds.allows(backends, loc("team-a", "*")) mustBe false
+      kinds.allows(backends, loc("orga-a", "*")) mustBe false
       kinds.allows(routes, loc("*", "*")) mustBe true
     }
 
@@ -92,6 +92,14 @@ class RemoteCatalogKindsSpec extends AnyWordSpec with Matchers {
       RemoteCatalogKinds.format.reads(Json.obj("locations" -> Json.arr())).isError mustBe true
       RemoteCatalogKinds.format.reads(Json.obj("locations" -> Json.obj("a" -> "routes"))).isError mustBe true
       RemoteCatalogKinds.format.reads(JsString("routes")).isError mustBe true
+    }
+
+    "refuse patterns that are not valid" in {
+      RemoteCatalogKinds.format.reads(Json.obj("include" -> Json.arr("routes["))).isError mustBe true
+      RemoteCatalogKinds.format.reads(Json.obj("exclude" -> Json.arr("(routes"))).isError mustBe true
+      RemoteCatalogKinds.format.reads(Json.obj("locations" -> Json.obj("orga-[" -> Json.obj()))).isError mustBe true
+      RemoteCatalogKinds.format.reads(Json.obj("locations" -> Json.obj("orga-a/team-(" -> Json.obj()))).isError mustBe true
+      RemoteCatalogKinds.format.reads(Json.obj("locations" -> Json.obj("orga-*/team-*" -> Json.obj()))).isError mustBe false
     }
 
     "accept a single kind written as a string" in {
