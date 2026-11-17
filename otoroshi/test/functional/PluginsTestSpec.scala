@@ -234,6 +234,9 @@ class RemoteCatalogsChecksSpec extends PluginsTestSpecBase {
     "dry run a catalog through the admin api without writing it" in {
       new RemoteCatalogsDryRunTests(this)
     }
+    "only deploy the kinds of entities they are given, globally and by location" in {
+      new RemoteCatalogsKindsTests(this)
+    }
   }
 }
 

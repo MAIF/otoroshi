@@ -221,6 +221,13 @@
           "$ref": "#/components/schemas/apis.otoroshi.io.ApiSubscription"
         }
       },
+      "userRightsPolicies": {
+        "type": "array",
+        "description": "Every rights policy of the backoffice users (`security.otoroshi.io/UserRightsPolicy` entities)",
+        "items": {
+          "$ref": "#/components/schemas/security.otoroshi.io.UserRightsPolicy"
+        }
+      },
       "extensions": {
         "type": "object",
         "description": "The entities of the admin extensions, by id of extension",
@@ -308,6 +315,7 @@
       "drafts": [],
       "apis": [],
       "apiSubscriptions": [],
+      "userRightsPolicies": [],
       "extensions": {}
     }
   },

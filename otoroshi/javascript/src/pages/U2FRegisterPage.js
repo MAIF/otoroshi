@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';
 import { Separator } from '../components/Separator';
 import { abortCeremony, createCredentials } from '../webauthn';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
+import { UserRightsEditor } from '../components/UserRightsEditor';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -790,10 +791,9 @@ export class AdminEditionModal extends Component {
       props: {},
     },
     rights: {
-      type: JsonObjectAsCodeInput,
+      type: UserRightsEditor,
       props: {
         label: 'Rights',
-        height: '200px',
       },
     },
     adminEntityValidators: {

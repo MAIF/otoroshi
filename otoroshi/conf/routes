@@ -117,6 +117,10 @@ GET     /bo/api/me/preferences/:id                            otoroshi.controlle
 GET     /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.getUserPreferences()
 POST    /bo/api/me/preferences/:id                            otoroshi.controllers.BackOfficeController.setUserPreference(id)
 POST    /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.setUserPreferences()
+GET     /bo/api/me/admin-apikey                               otoroshi.controllers.BackOfficeController.personalAdminApikey()
+POST    /bo/api/me/admin-apikey                               otoroshi.controllers.BackOfficeController.createPersonalAdminApikey()
+POST    /bo/api/me/admin-apikey/_rotate                       otoroshi.controllers.BackOfficeController.rotatePersonalAdminApikey()
+DELETE  /bo/api/me/admin-apikey                               otoroshi.controllers.BackOfficeController.deletePersonalAdminApikey()
 DELETE  /bo/api/me/preferences/:id                            otoroshi.controllers.BackOfficeController.clearUserPreference(id)
 DELETE  /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.clearUserPreferences()
 

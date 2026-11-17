@@ -84,7 +84,9 @@ class RemoteCatalogEntityFormatSpec extends EntityFormatSpec {
         "source_kind"      -> "http",
         "source_config"    -> Json.obj(),
         "scheduling"       -> defaultSchedulingJson,
-        "test_deploy_args" -> Json.obj()
+        "test_deploy_args" -> Json.obj(),
+        // every kind of entity, everywhere
+        "kinds"            -> Json.obj("include" -> Json.arr("*"), "exclude" -> Json.arr(), "locations" -> Json.obj())
       )
     }
 

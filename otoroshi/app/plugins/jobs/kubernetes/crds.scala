@@ -200,7 +200,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
               nses,
               (
                 env.allResources.resources.map(_.pluralName) ++ env.adminExtensions.resources().map(_.pluralName)
-              ).distinct,
+              ).distinct.filter(conf.crdsKinds.readsKind),
               conf.watchTimeoutSeconds,
               !watchCommand.get()
             )
@@ -425,6 +425,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: Exec
           .asObject
       case "organization"       => env.datastores.tenantDataStore.template(env).json.asObject
       case "admin"              => env.datastores.simpleAdminDataStore.template(env).json.asObject
+      case "user-rights-policy" => env.datastores.userRightsPolicyDataStore.template(env).json.asObject
       case "data-exporter"      =>
         env.datastores.dataExporterConfigDataStore.template(source.select("type").asOpt[String]).json.asObject
       case "jwt-verifier"       => env.datastores.globalJwtVerifierDataStore.template(env).json.asObject
@@ -929,6 +930,17 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: Exec
     customizeIdAndName(spec, res)
   }
 
+  // a policy is identified by the email of its user
+  private[kubernetes] def customizeUserRightsPolicy(
+      _spec: JsValue,
+      res: KubernetesOtoroshiResource,
+      entities: Seq[UserRightsPolicy]
+  ): JsValue = {
+    val spec =
+      findAndMerge[UserRightsPolicy](_spec, res, "user-rights-policy", None, entities, _.metadata, _.email, _.json)
+    customizeIdAndName(spec, res)
+  }
+
   private def handleTargetFromRoute(
       res: KubernetesOtoroshiResource,
       obj: JsObject,
@@ -1204,6 +1216,12 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: Exec
     client.fetchOtoroshiResources[Tenant]("organizations", Tenant.format, (a, b) => customizeTenant(a, b, tenants))
   def crdsFetchTeams(teams: Seq[Team]): Future[Seq[OtoResHolder[Team]]]                                         =
     client.fetchOtoroshiResources[Team]("teams", Team.format, (a, b) => customizeTeam(a, b, teams))
+  def crdsFetchUserRightsPolicies(policies: Seq[UserRightsPolicy]): Future[Seq[OtoResHolder[UserRightsPolicy]]] =
+    client.fetchOtoroshiResources[UserRightsPolicy](
+      "user-rights-policies",
+      UserRightsPolicy.format,
+      (a, b) => customizeUserRightsPolicy(a, b, policies)
+    )
   def crdsFetchRoutes(
       routes: Seq[NgRoute],
       services: Seq[KubernetesService],
@@ -1384,7 +1402,8 @@ case class KubernetesResourcesContext(
     routes: Seq[OtoResHolder[NgRoute]],
     routesCompositions: Seq[OtoResHolder[NgRouteComposition]],
     backends: Seq[OtoResHolder[StoredNgBackend]],
-    extRes: Map[otoroshi.api.Resource, Seq[OtoResHolder[JsValue]]]
+    extRes: Map[otoroshi.api.Resource, Seq[OtoResHolder[JsValue]]],
+    userRightsPolicies: Seq[OtoResHolder[UserRightsPolicy]] = Seq.empty
 )
 
 case class OtoroshiResourcesContext(
@@ -1405,7 +1424,8 @@ case class OtoroshiResourcesContext(
     routes: Seq[NgRoute],
     routeCompositions: Seq[NgRouteComposition],
     backends: Seq[StoredNgBackend],
-    extRes: Map[otoroshi.api.Resource, Seq[JsValue]]
+    extRes: Map[otoroshi.api.Resource, Seq[JsValue]],
+    userRightsPolicies: Seq[UserRightsPolicy] = Seq.empty
 )
 
 case class CRDContext(
@@ -1482,6 +1502,8 @@ object KubernetesCRDsJob {
       otodataexporters      <- if (useProxyState) env.proxyState.allDataExporters().vfuture
                                else env.datastores.dataExporterConfigDataStore.findAll()
       ototeams              <- if (useProxyState) env.proxyState.allTeams().vfuture else env.datastores.teamDataStore.findAll()
+      otopolicies           <- if (useProxyState) env.proxyState.allUserRightsPolicies().vfuture
+                               else env.datastores.userRightsPolicyDataStore.findAll()
       ototenants            <- if (useProxyState) env.proxyState.allTenants().vfuture else env.datastores.tenantDataStore.findAll()
       otoroutes             <- if (useProxyState) env.proxyState.allRoutes().vfuture else env.datastores.routeDataStore.findAll()
       otoroutecomps         <-
@@ -1513,6 +1535,7 @@ object KubernetesCRDsJob {
       simpleAdmins       <- clientSupport.crdsFetchSimpleAdmins(otosimpleAdmins)
       dataExporters      <- clientSupport.crdsFetchDataExporters(otodataexporters)
       teams              <- clientSupport.crdsFetchTeams(ototeams)
+      policies           <- clientSupport.crdsFetchUserRightsPolicies(otopolicies)
       tenants            <- clientSupport.crdsFetchTenants(ototenants)
       routes             <- clientSupport.crdsFetchRoutes(otoroutes, services, endpoints, conf)
       routecomps         <- clientSupport.crdsFetchRouteCompositions(otoroutecomps, services, endpoints, conf)
@@ -1539,7 +1562,8 @@ object KubernetesCRDsJob {
           routes = routes,
           routesCompositions = routecomps,
           backends = backends,
-          extRes = extres
+          extRes = extres,
+          userRightsPolicies = policies
         ),
         otoroshi = OtoroshiResourcesContext(
           serviceGroups = otoserviceGroups,
@@ -1559,7 +1583,8 @@ object KubernetesCRDsJob {
           routes = otoroutes,
           routeCompositions = otoroutecomps,
           backends = otobackends,
-          extRes = otoextres
+          extRes = otoextres,
+          userRightsPolicies = otopolicies
         )
       )
     }
@@ -1686,6 +1711,14 @@ object KubernetesCRDsJob {
         EntityBatch("Tenant", compareAndSave(ctx.kubernetes.tenants)(ctx.otoroshi.tenants, _.id.value, _.save())),
         EntityBatch("Team", compareAndSave(ctx.kubernetes.teams)(ctx.otoroshi.teams, _.id.value, _.save())),
         EntityBatch(
+          "UserRightsPolicy",
+          compareAndSave(ctx.kubernetes.userRightsPolicies)(
+            ctx.otoroshi.userRightsPolicies,
+            _.email,
+            v => env.datastores.userRightsPolicyDataStore.set(v)
+          )
+        ),
+        EntityBatch(
           "ServiceGroup",
           compareAndSave(ctx.kubernetes.serviceGroups)(ctx.otoroshi.serviceGroups, _.id, _.save())
         ),
@@ -1800,6 +1833,13 @@ object KubernetesCRDsJob {
     }
   }
 
+  // an entity created by the crds sync, of a kind the job still reads in the namespace it came from: the job does not
+  // delete what it does not read anymore
+  private def managedByCrds(conf: KubernetesConfig, kind: String, metadata: Map[String, String]): Boolean = {
+    metadata.get("otoroshi-provider").contains("kubernetes-crds") &&
+    conf.crdsKinds.reads(kind, metadata.get("kubernetes-namespace"))
+  }
+
   def deleteOutDatedEntities(conf: KubernetesConfig, attrs: TypedMap, ctx: CRDContext)(using
       env: Env,
       ec: ExecutionContext
@@ -1807,21 +1847,30 @@ object KubernetesCRDsJob {
     for {
       _ <-
         ctx.otoroshi.tenants
-          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filter(sg => managedByCrds(conf, "organizations", sg.metadata))
           .filterNot(sg => ctx.kubernetes.tenants.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
           .map(_.id.value)
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date tenants entities"))
           .applyOn(env.datastores.tenantDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.teams
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+             .filter(sg => managedByCrds(conf, "teams", sg.metadata))
              .filterNot(sg => ctx.kubernetes.teams.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
              .map(_.id.value)
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date teams entities"))
              .applyOn(env.datastores.teamDataStore.deleteByIds)
 
+      _ <- ctx.otoroshi.userRightsPolicies
+             .filter(p => p.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+             .filterNot(p =>
+               ctx.kubernetes.userRightsPolicies.exists(kp => p.metadata.get("kubernetes-path").contains(kp.path))
+             )
+             .map(_.email)
+             .debug(seq => logger.info(s"Will delete ${seq.size} out of date user rights policies entities"))
+             .applyOn(env.datastores.userRightsPolicyDataStore.deleteByIds)
+
       _ <- ctx.otoroshi.serviceGroups
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+             .filter(sg => managedByCrds(conf, "service-groups", sg.metadata))
              .filterNot(sg =>
                ctx.kubernetes.serviceGroups.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
              )
@@ -1840,14 +1889,14 @@ object KubernetesCRDsJob {
 
       _ <-
         ctx.otoroshi.apiKeys
-          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filter(sg => managedByCrds(conf, "apikeys", sg.metadata))
           .filterNot(sg => ctx.kubernetes.apiKeys.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
           .map(_.clientId)
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date apikey entities"))
           .applyOn(env.datastores.apiKeyDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.certificates
-             .filter(sg => sg.entityMetadata.get("otoroshi-provider").contains("kubernetes-crds"))
+             .filter(sg => managedByCrds(conf, "certificates", sg.entityMetadata))
              .filterNot(sg =>
                ctx.kubernetes.certificates.exists(ssg => sg.entityMetadata.get("kubernetes-path").contains(ssg.path))
              )
@@ -1857,7 +1906,7 @@ object KubernetesCRDsJob {
 
       _ <- ctx.otoroshi.jwtVerifiers
              .map(_.asGlobal)
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+             .filter(sg => managedByCrds(conf, "jwt-verifiers", sg.metadata))
              .filterNot(sg =>
                ctx.kubernetes.jwtVerifiers.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
              )
@@ -1866,7 +1915,7 @@ object KubernetesCRDsJob {
              .applyOn(env.datastores.globalJwtVerifierDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.authModules
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+             .filter(sg => managedByCrds(conf, "auth-modules", sg.metadata))
              .filterNot(sg =>
                ctx.kubernetes.authModules.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
              )
@@ -1876,7 +1925,7 @@ object KubernetesCRDsJob {
 
       _ <-
         ctx.otoroshi.scripts
-          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filter(sg => managedByCrds(conf, "scripts", sg.metadata))
           .filterNot(sg => ctx.kubernetes.scripts.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
           .map(_.id)
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date script entities"))
@@ -1884,7 +1933,7 @@ object KubernetesCRDsJob {
 
       _ <-
         ctx.otoroshi.wasmPlugins
-          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filter(sg => managedByCrds(conf, "wasm-plugins", sg.metadata))
           .filterNot(sg =>
             ctx.kubernetes.wasmPlugins.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
           )
@@ -1893,7 +1942,7 @@ object KubernetesCRDsJob {
           .applyOn(env.datastores.wasmPluginsDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.tcpServices
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+             .filter(sg => managedByCrds(conf, "tcp-services", sg.metadata))
              .filterNot(sg =>
                ctx.kubernetes.tcpServices.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
              )
@@ -1902,7 +1951,7 @@ object KubernetesCRDsJob {
              .applyOn(env.datastores.tcpServiceDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.simpleAdmins
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+             .filter(sg => managedByCrds(conf, "admins", sg.metadata))
              .filterNot(sg =>
                ctx.kubernetes.simpleAdmins.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
              )
@@ -1911,7 +1960,7 @@ object KubernetesCRDsJob {
              .applyOn(env.datastores.simpleAdminDataStore.deleteUsers)
 
       _ <- ctx.otoroshi.dataExporters
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+             .filter(sg => managedByCrds(conf, "data-exporters", sg.metadata))
              .filterNot(sg =>
                ctx.kubernetes.dataExporters.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
              )
@@ -1921,7 +1970,7 @@ object KubernetesCRDsJob {
 
       _ <-
         ctx.otoroshi.routes
-          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filter(sg => managedByCrds(conf, "routes", sg.metadata))
           .filterNot(sg => ctx.kubernetes.routes.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
           .map(_.id)
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-routes entities"))
@@ -1929,7 +1978,7 @@ object KubernetesCRDsJob {
 
       _ <-
         ctx.otoroshi.routeCompositions
-          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filter(sg => managedByCrds(conf, "route-compositions", sg.metadata))
           .filterNot(sg =>
             ctx.kubernetes.routesCompositions.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
           )
@@ -1939,7 +1988,7 @@ object KubernetesCRDsJob {
 
       _ <-
         ctx.otoroshi.backends
-          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filter(sg => managedByCrds(conf, "backends", sg.metadata))
           .filterNot(sg => ctx.kubernetes.backends.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
           .map(_.id)
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-backends entities"))
@@ -1950,7 +1999,7 @@ object KubernetesCRDsJob {
           case (resource, values) => { () =>
             values
               .filter(sg =>
-                sg.select("metadata").as[Map[String, String]].get("otoroshi-provider").contains("kubernetes-crds")
+                managedByCrds(conf, resource.pluralName, sg.select("metadata").as[Map[String, String]])
               )
               .filterNot(sg =>
                 ctx.kubernetes.extRes

@@ -247,8 +247,9 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   // has, like UsersController.checkNewUserRights and the typed apikeys api, nor rewrite or delete a stored one that
   // has more than it
   def grantsMoreThan(json: JsValue, user: BackOfficeUser)(using env: Env): Boolean = format.reads(json) match {
-    case JsSuccess(admin: OtoroshiAdmin, _) => !user.rights.covers(admin.rights)
-    case JsSuccess(apikey: ApiKey, _)       => !ApiActionContext.canUserGrantApikeyRights(apikey, user)
+    case JsSuccess(admin: OtoroshiAdmin, _)     => !user.rights.covers(admin.rights)
+    case JsSuccess(policy: UserRightsPolicy, _) => !user.rights.covers(policy.rights)
+    case JsSuccess(apikey: ApiKey, _)           => !ApiActionContext.canUserGrantApikeyRights(apikey, user)
     case _                                  => false
   }
 
@@ -920,6 +921,28 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allPrivateAppsSessions(),
         stateOne = id => env.proxyState.privateAppsSession(id),
         stateUpdate = seq => throw new UnsupportedOperationException("...")
+      )
+    ),
+    Resource(
+      "UserRightsPolicy",
+      "user-rights-policies",
+      "user-rights-policy",
+      "security.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithStateAndWriteValidation[UserRightsPolicy](
+        UserRightsPolicy.format,
+        classOf[UserRightsPolicy],
+        env.datastores.userRightsPolicyDataStore.key,
+        env.datastores.userRightsPolicyDataStore.extractId,
+        // a policy is identified by the email of its user, compared without case
+        json => UserRightsPolicy.normalizeEmail(json.select("email").asString),
+        () => "email",
+        tmpl = (v, p, ctx) => env.datastores.userRightsPolicyDataStore.template(env).json,
+        stateAll = () => env.proxyState.allUserRightsPolicies(),
+        stateOne = id => env.proxyState.userRightsPolicy(id),
+        stateUpdate = seq => env.proxyState.updateUserRightsPolicies(seq),
+        writeValidator = UserRightsPolicy.writeValidator,
+        deleteValidator = UserRightsPolicy.deleteValidator
       )
     ),
     //////
@@ -1794,6 +1817,8 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     ("security.otoroshi.io", "admins")            -> RightsChecker.TenantAdminOnly,
     ("security.otoroshi.io", "admin-sessions")    -> RightsChecker.TenantAdminOnly,
     ("security.otoroshi.io", "auth-module-users") -> RightsChecker.TenantAdminOnly,
+    // a policy can take rights away from any user, a super admin included: only a super admin writes them
+    ("security.otoroshi.io", "user-rights-policies") -> RightsChecker.SuperAdminOnly,
     ("config.otoroshi.io", "global-configs")      -> RightsChecker.SuperAdminOnly,
     // a remote catalog writes any entity it describes, and its sources can run commands
     ("catalogs.otoroshi.io", "remote-catalogs")   -> RightsChecker.SuperAdminOnly
@@ -1803,7 +1828,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // apikeys): rewriting or deleting one that has more rights than the caller would let it take over, or lock out, a
   // stronger account located where it can write. same check as ApiActionContext.canUserWrite on the typed apis
   private def canUserWriteStored(ctx: ApiActionContext[?], resource: Resource, entity: JsValue): Boolean = {
-    ctx.canUserWriteJson(entity) && (ctx.backOfficeUser match {
+    ctx.canUserWriteJson(entity, EntityKind.of(resource)) && (ctx.backOfficeUser match {
       case Right(Some(user)) => user.rights.superAdmin || !resource.access.grantsMoreThan(entity, user)
       case _                 => true
     })
@@ -1966,7 +1991,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                         .vfuture
                     // like the single patch: the stored entity is checked above, the patched one has
                     // to be checked too or its location can be rewritten
-                    case JsSuccess(_, _) if !ctx.canUserWriteJson(patchedEntity) =>
+                    case JsSuccess(_, _) if !ctx.canUserWriteJson(patchedEntity, EntityKind.of(resource)) =>
                       Json
                         .obj(
                           "status"            -> 400,
@@ -2048,7 +2073,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
               )
               .filter {
                 case Left(_)            => true
-                case Right((_, entity)) => ctx.canUserWriteJson(entity)
+                case Right((_, entity)) => ctx.canUserWriteJson(entity, EntityKind.of(resource))
               }
               .mapAsync(grouping) {
                 case Left((error, json)) =>
@@ -2153,7 +2178,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
               )
               .filter {
                 case Left(_)            => true
-                case Right((_, entity)) => ctx.canUserWriteJson(entity)
+                case Right((_, entity)) => ctx.canUserWriteJson(entity, EntityKind.of(resource))
               }
               .mapAsync(grouping) {
                 case Left((error, json)) =>
@@ -2354,7 +2379,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
           Json.obj(),
           None
         )
-        result(Results.Ok, Json.obj("count" -> entities.count(e => ctx.canUserReadJson(e))), ctx.request, resource.some)
+        result(Results.Ok, Json.obj("count" -> entities.count(e => ctx.canUserReadJson(e, EntityKind.of(resource)))), ctx.request, resource.some)
       }
     }
   }
@@ -2375,7 +2400,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
           Json.obj(),
           None
         )
-        result(Results.Ok, JsArray(entities.filter(e => ctx.canUserReadJson(e))), ctx.request, resource.some)
+        result(Results.Ok, JsArray(entities.filter(e => ctx.canUserReadJson(e, EntityKind.of(resource)))), ctx.request, resource.some)
       }
     }
   }
@@ -2412,7 +2437,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
       withResource(group, version, entity, ctx) { resource =>
         entityBodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
-          case Right(body) if !ctx.canUserWriteJson(body) =>
+          case Right(body) if !ctx.canUserWriteJson(body, EntityKind.of(resource)) =>
             result(
               Results.Unauthorized,
               Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
@@ -2515,7 +2540,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
       }
       fuOptEntity.flatMap {
         case None                                         => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
-        case Some(entity) if !ctx.canUserReadJson(entity) =>
+        case Some(entity) if !ctx.canUserReadJson(entity, EntityKind.of(resource)) =>
           result(
             Results.Unauthorized,
             Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
@@ -2574,7 +2599,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
             resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
               case err @ JsError(_)                                =>
                 result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
-              case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
+              case JsSuccess(_, _) if !ctx.canUserWriteJson(_body, EntityKind.of(resource)) =>
                 result(
                   Results.Unauthorized,
                   Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
@@ -2664,7 +2689,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                 resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
                   case err @ JsError(_)                                =>
                     result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
-                  case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
+                  case JsSuccess(_, _) if !ctx.canUserWriteJson(_body, EntityKind.of(resource)) =>
                     result(
                       Results.Unauthorized,
                       Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
@@ -2741,7 +2766,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                       ctx.request,
                       resource.some
                     )
-                  case JsSuccess(_, _) if !ctx.canUserWriteJson(patchedBody) =>
+                  case JsSuccess(_, _) if !ctx.canUserWriteJson(patchedBody, EntityKind.of(resource)) =>
                     result(
                       Results.Unauthorized,
                       Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),

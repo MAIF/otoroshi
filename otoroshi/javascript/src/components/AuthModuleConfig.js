@@ -28,6 +28,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import { randomAlphaNumeric, randomFirstName, randomLastName } from '../util';
 import bcrypt from 'bcryptjs';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
+import { RightsOverrideEditor } from './UserRightsEditor';
 import { Form } from './inputs';
 import isString from 'lodash/isString';
 import { LabelAndInput, NgCodeRenderer, NgForm } from './nginputs';
@@ -664,20 +665,11 @@ export class Oauth2ModuleConfig extends Component {
             },
           }}
         />
-        <JsonObjectAsCodeInput
+        <RightsOverrideEditor
           label="Rights override"
-          mode="json"
           value={settings.rightsOverride || {}}
           onChange={(e) => {
             changeTheValue(path + '.rightsOverride', e);
-          }}
-          example={{
-            'jhon@otoroshi.tools': [
-              {
-                tenant: '*:r',
-                teams: ['*:r'],
-              },
-            ],
           }}
         />
         <JsonObjectAsCodeInput
@@ -1901,19 +1893,10 @@ export class LdapModuleConfig extends Component {
             },
           }}
         />
-        <JsonObjectAsCodeInput
+        <RightsOverrideEditor
           label="Rights override"
-          mode="json"
           value={settings.rightsOverride || {}}
           onChange={(e) => this.changeTheValue(path + '.rightsOverride', e)}
-          example={{
-            'my_user@oto.tools': [
-              {
-                tenant: '*:r',
-                teams: ['*:r'],
-              },
-            ],
-          }}
         />
         <JsonObjectAsCodeInput
           label="Admin entity validators override"
@@ -2846,19 +2829,10 @@ export class OAuth1ModuleConfig extends Component {
     },
     rightsOverride: {
       type: ({}) => (
-        <JsonObjectAsCodeInput
+        <RightsOverrideEditor
           label="Rights override"
-          mode="json"
           value={this.props.value.rightsOverride || {}}
           onChange={(e) => this.changeTheValue('rightsOverride', e)}
-          example={{
-            'no.name@oto.tools': [
-              {
-                tenant: '*:r',
-                teams: ['*:r'],
-              },
-            ],
-          }}
         />
       ),
       props: {

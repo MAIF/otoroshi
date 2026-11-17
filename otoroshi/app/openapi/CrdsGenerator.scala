@@ -22,6 +22,11 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
     "Organization"      -> Json
       .obj("plural" -> "organizations", "singular" -> "organization", "entity" -> "otoroshi.models.Tenant"),
     "Team"              -> Json.obj("plural" -> "teams", "singular" -> "team", "entity" -> "otoroshi.models.Team"),
+    "UserRightsPolicy"  -> Json.obj(
+      "plural"   -> "user-rights-policies",
+      "singular" -> "user-rights-policy",
+      "entity"   -> "otoroshi.models.UserRightsPolicy"
+    ),
     //[REMOVE SERVICEDESC] "ServiceDescriptor" -> Json.obj(
     //[REMOVE SERVICEDESC]   "plural"   -> "service-descriptors",
     //[REMOVE SERVICEDESC]   "singular" -> "service-descriptor",

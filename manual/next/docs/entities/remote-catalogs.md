@@ -68,6 +68,7 @@ You can find all remote catalogs [here](http://otoroshi.oto.tools:8080/bo/dashbo
 | `source_config` | object | Source-specific configuration |
 | `scheduling` | object | Optional auto-sync scheduling configuration |
 | `test_deploy_args` | object | Arguments used for manual test/dry-run |
+| `kinds` | object | The kinds of entities the catalog deploys, globally and by location (see [below](#kinds-of-entities)). Every kind when absent |
 | `tags` | array of string | Tags |
 | `metadata` | object | Key/value metadata |
 
@@ -137,6 +138,36 @@ When a catalog is deployed, Otoroshi performs a full reconciliation:
 4. **Reconcile**: Entities are created, updated, or deleted to match the remote state
 
 This ensures that the Otoroshi state always matches the external source of truth.
+
+## Kinds of entities
+
+By default, a catalog deploys every kind of entity found in its source, wherever the entities say they are located (`_loc`). `kinds` limits what it deploys, globally and by location, both at once if needed:
+
+```json
+{
+  "kinds": {
+    "include": ["*"],
+    "exclude": ["global-configs", "admins", "remote-catalogs"],
+    "locations": {
+      "orga-*": { "include": ["routes", "backends", "apikeys"] },
+      "orga-1/sandbox": { "exclude": ["apikeys"] }
+    }
+  }
+}
+```
+
+* a kind is written as the plural name of its resource (`routes`), its kind (`Route`), with its group (`proxy.otoroshi.io/routes`, `proxy.otoroshi.io/Route`) or as a pattern (`*`, `proxy.otoroshi.io/*`, `*-plugins`), compared without case
+* `include` and `exclude` are the global rule: a kind is deployed when it matches one of the included patterns and none of the excluded ones. `include` is `["*"]` when absent
+* `locations` holds the rules of some locations, keyed by `<organization>` or `<organization>/<team>`, patterns too: a key without `/` is an organization (`orga-*`), the teams named `sandbox` of every organization are `*/sandbox`. They only narrow the global rule: an entity is deployed when the global rule allows its kind, and the rule of every location matching its `_loc` allows it too. An entity located in every organization or every team (`*`) gets the rules of all of them
+* the entities refused are listed in `refused` in the deploy report (and in the one of a dry run), apart from its `errors`. The catalog neither writes them, nor deletes the entities of a kind it does not deploy anymore at their location: an entity deployed before its kind was excluded stays in Otoroshi. Undeploying the catalog still deletes every entity it created
+* an entity that already exists in Otoroshi at a location where the catalog does not deploy its kind is refused too, whatever the location the source gives it: a catalog neither overwrites nor moves it
+* a catalog whose `kinds` cannot be read, or hold a pattern that is not valid, is refused by the admin api
+
+:::warning
+The location of an entity (`_loc`) is the one its source gives it. The rules of `locations` are a guard rail for a source you trust, they do not isolate organizations or teams from a source you do not: such a source only has to give its entities a location without any rule. Only the global `include` and `exclude` limit what an untrusted source can deploy.
+
+For such a source, prefer a short list of included kinds (`"include": ["routes", "backends"]`) to a list of excluded ones. With `"include": ["*"]`, a source can still deploy apikeys, auth. modules, organizations, teams, certificates, or another remote catalog without any `kinds`, that deploys everything.
+:::
 
 ## JSON example
 

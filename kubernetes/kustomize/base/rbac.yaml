@@ -107,6 +107,7 @@ rules:
       - organizations
       - tenants
       - teams
+      - user-rights-policies
       - data-exporters
       - scripts
       - wasm-plugins
