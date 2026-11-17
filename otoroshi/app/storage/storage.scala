@@ -78,6 +78,7 @@ trait DataStores {
   def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore
   def tenantDataStore: TenantDataStore
   def teamDataStore: TeamDataStore
+  def userRightsPolicyDataStore: otoroshi.models.UserRightsPolicyDataStore
   def dataExporterConfigDataStore: DataExporterConfigDataStore
   def routeDataStore: NgRouteDataStore
   def routeCompositionDataStore: NgRouteCompositionDataStore

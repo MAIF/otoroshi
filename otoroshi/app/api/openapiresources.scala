@@ -26,6 +26,7 @@ object OpenApiResourcePaths {
     ("security.otoroshi.io", "admins")            -> "tenant admin",
     ("security.otoroshi.io", "admin-sessions")    -> "tenant admin",
     ("security.otoroshi.io", "auth-module-users") -> "tenant admin",
+    ("security.otoroshi.io", "user-rights-policies") -> "super admin",
     ("config.otoroshi.io", "global-configs")      -> "super admin",
     ("catalogs.otoroshi.io", "remote-catalogs")   -> "super admin"
   )

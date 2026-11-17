@@ -187,6 +187,22 @@ export const graph = (env) => {
           link: '/admins',
         },
         {
+          title: 'User rights policies',
+          description: 'The rights of your users, whatever their auth module',
+          img: 'admins',
+          display: () => env.superAdmin,
+          icon: () => 'fa-user-shield',
+          link: '/user-rights-policies',
+        },
+        {
+          title: 'My admin apikey',
+          description: 'Your own apikey to call the admin api',
+          img: 'admins',
+          display: () => true,
+          icon: () => 'fa-key',
+          link: '/my-admin-apikey',
+        },
+        {
           title: 'Error Templates',
           description: 'All your route and services error templates',
           img: 'error',
