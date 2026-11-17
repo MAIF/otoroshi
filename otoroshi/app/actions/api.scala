@@ -29,11 +29,9 @@ object ApiActionContext {
   // granting rights: refuse to write an apikey that would grant more than the writer already has. an apikey
   // authorized on the admin api without rights metadata has no restriction at all: only super admins write those
   def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
-    PersonalAdminApikey.ownerOf(apikey) match {
-      // its rights are the ones of the policy of its owner, whatever the apikey says
-      case Some(owner) => PersonalAdminApikey.canWrite(owner, user)
-      case None        => canUserGrantRightsMetadata(apikey, user)
-    }
+    // its rights are the ones of its owner, whatever the apikey says
+    if (PersonalAdminApikey.isPersonal(apikey)) PersonalAdminApikey.canWrite(user)
+    else canUserGrantRightsMetadata(apikey, user)
   }
 
   private def canUserGrantRightsMetadata(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
@@ -85,6 +83,19 @@ trait ApiActionContextCapable {
 
   private val bouRef = new AtomicReference[Either[String, Option[BackOfficeUser]]]()
 
+  // a call made with a personal admin apikey (and not on behalf of a backoffice user)
+  def isPersonalAdminApikeyCall: Boolean =
+    PersonalAdminApikey.isPersonal(apiKey) && request.headers.get("Otoroshi-BackOffice-User").isEmpty
+
+  // the identity of a call made with a personal admin apikey is read from the datastore, asynchronously, before the call
+  // is handled (see ApiAction.runBlock)
+  private[actions] def resolvedPersonalAdminApikeyUser(user: Either[String, BackOfficeUser]): Unit =
+    bouRef.set(user.map(_.some))
+
+  // the owner of a personal admin apikey the caller would be
+  private def callerOwner(user: BackOfficeUser)(using env: Env): Option[PersonalAdminApikeyOwner] =
+    if (isPersonalAdminApikeyCall) PersonalAdminApikey.ownerOf(apiKey.metadata) else PersonalAdminApikey.ownerFor(user)
+
   def userIsSuperAdmin(using env: Env): Boolean = {
     backOfficeUser match {
       case Left(_)           => false
@@ -116,23 +127,10 @@ trait ApiActionContextCapable {
           Right(None)
         } else {
           request.headers.get("Otoroshi-BackOffice-User") match {
-            case None if PersonalAdminApikey.ownerOf(apiKey).isDefined =>
-              val owner = PersonalAdminApikey.ownerOf(apiKey).get
-              PersonalAdminApikey.rights(owner).map { rights =>
-                BackOfficeUser(
-                  randomId = IdGenerator.token,
-                  name = apiKey.clientName,
-                  email = owner,
-                  profile = Json.obj(),
-                  authConfigId = "personal-admin-apikey",
-                  simpleLogin = false,
-                  tags = Seq.empty,
-                  metadata = Map.empty,
-                  rights = rights,
-                  location = EntityLocation(currentTenant, teams = Seq(TeamId.all)),
-                  adminEntityValidators = Map.empty
-                ).some
-              }
+            // resolved from the datastore before the call by ApiAction.runBlock. a context built another way (the admin
+            // routes of the extensions) reads them from the proxy state
+            case None if PersonalAdminApikey.isPersonal(apiKey) =>
+              PersonalAdminApikey.user(apiKey, currentTenant).map(_.some)
             case None          =>
               val tenantAccess = apiKey.metadata
                 .get(ApiKey.accessRightsMetadataKey)
@@ -202,22 +200,23 @@ trait ApiActionContextCapable {
   def canUserReadJson(item: JsValue, kinds: Seq[EntityKind] = Seq.empty)(using env: Env): Boolean = {
     canUserRead(FakeEntityLocationSupport(EntityLocation.readFromKey(item), kinds)) &&
     (!kinds.contains(ApiActionContext.apikeysKind) || canUserAccessPersonalApikey(
-      PersonalAdminApikey.ownerOfJson(item),
+      PersonalAdminApikey.metadataOfJson(item),
       write = false
     ))
   }
 
   // a personal admin apikey is read by its owner and the super admins, written by the super admins only
-  private def canUserAccessPersonalApikey(owner: Option[String], write: Boolean)(using env: Env): Boolean = {
-    owner match {
-      case None    => true
-      case Some(o) =>
-        backOfficeUser match {
-          case Left(_)           => false
-          case Right(None)       => true
-          case Right(Some(user)) =>
-            if (write) PersonalAdminApikey.canWrite(o, user) else PersonalAdminApikey.canRead(o, user)
-        }
+  private def canUserAccessPersonalApikey(metadata: Map[String, String], write: Boolean)(using env: Env): Boolean = {
+    if (!PersonalAdminApikey.isPersonal(metadata)) {
+      true
+    } else {
+      backOfficeUser match {
+        case Left(_)           => false
+        case Right(None)       => true
+        case Right(Some(user)) =>
+          if (write) PersonalAdminApikey.canWrite(user)
+          else PersonalAdminApikey.canRead(metadata, callerOwner(user), user)
+      }
     }
   }
 
@@ -235,7 +234,9 @@ trait ApiActionContextCapable {
                 .canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
           }) && user.rights.canReadKinds(item.location.tenant, item.location.teams, EntityKind.of(item)) &&
           (item match {
-            case apikey: ApiKey => PersonalAdminApikey.ownerOf(apikey).forall(o => PersonalAdminApikey.canRead(o, user))
+            case apikey: ApiKey =>
+              !PersonalAdminApikey.isPersonal(apikey) ||
+              PersonalAdminApikey.canRead(apikey.metadata, callerOwner(user), user)
             case _              => true
           })
         }
@@ -245,7 +246,7 @@ trait ApiActionContextCapable {
   def canUserWriteJson(item: JsValue, kinds: Seq[EntityKind] = Seq.empty)(using env: Env): Boolean = {
     canUserWrite(FakeEntityLocationSupport(EntityLocation.readFromKey(item), kinds)) &&
     (!kinds.contains(ApiActionContext.apikeysKind) || canUserAccessPersonalApikey(
-      PersonalAdminApikey.ownerOfJson(item),
+      PersonalAdminApikey.metadataOfJson(item),
       write = true
     ))
   }
@@ -476,14 +477,15 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
   // the authentication, and be answered as an authentication failure
   private def runBlock[A](ctx: ApiActionContext[A], block: ApiActionContext[A] => Future[Result]): Future[Result] =
     try {
-      // a personal admin apikey whose rights cannot be resolved (its owner has no rights policy in replace mode anymore) is
-      // refused right away, rather than answered with empty lists
-      if (
-        PersonalAdminApikey.ownerOf(ctx.apiKey).isDefined && ctx.request.headers.get("Otoroshi-BackOffice-User").isEmpty
-      ) {
-        ctx.backOfficeUser match {
-          case Left(err) => Results.Unauthorized(Json.obj("error" -> err)).future
-          case Right(_)  => block(ctx)
+      // the rights of a personal admin apikey are the ones of its owner at the time of the call, read from the datastore.
+      // an apikey whose rights cannot be resolved (its owner has no rights policy giving it rights anymore, the local
+      // admin owning it was deleted) is refused right away, rather than answered with empty lists
+      if (ctx.isPersonalAdminApikeyCall && !env.bypassUserRightsCheck) {
+        PersonalAdminApikey.userF(ctx.apiKey, ctx.currentTenant).flatMap {
+          case Left(err)  => Results.Unauthorized(Json.obj("error" -> err)).future
+          case Right(usr) =>
+            ctx.resolvedPersonalAdminApikeyUser(Right(usr))
+            block(ctx)
         }
       } else {
         block(ctx)

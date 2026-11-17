@@ -4235,7 +4235,7 @@
   },
   "security.otoroshi.io.UserRightsPolicy": {
     "type": "object",
-    "description": "The rights of a backoffice user, whatever the auth module it logs in with. A policy is identified by the email of its user. They are resolved on each call of the user, from its session or from its personal admin apikey: a policy written or deleted takes effect on the next call, without a new login (on the other nodes of a cluster, after their next state sync). Only a super admin reads and writes them, and cannot give more rights than it has",
+    "description": "The rights of a backoffice user. A policy is identified by the email of its user. An email alone is not an identity (the username of a local admin is chosen by whoever creates it, two auth modules can give the same email): a policy only gives its rights to the users of one auth module (`auth_module_ref`, the backoffice auth module when missing), every other user with the same email keeps its own rights, capped by the ones of the policy. The rights are resolved on each call of the user, from its session or from its personal admin apikey: a policy written or deleted takes effect on the next call, without a new login (on the other nodes of a cluster, after their next state sync). Only a super admin reads and writes them, and cannot give more rights than it has",
     "properties": {
       "_loc": {
         "$ref": "#/components/schemas/EntityLocation"
@@ -4280,12 +4280,18 @@
       },
       "mode": {
         "type": "string",
-        "description": "How the policy combines with the rights the auth module gives the user. `replace`: the rights of the policy are the rights of the user, the ones of the auth module are ignored. `restrict`: the user keeps the rights of its auth module, capped by the ones of the policy, the auth module cannot give what the policy keeps away. `replace` when missing",
+        "description": "How the policy combines with the rights the auth module gives the user. `replace`: the rights of the policy are the rights of the users of its auth module (`auth_module_ref`), the ones of the auth module are ignored, the other users with the same email are restricted. `restrict`: every user with the email keeps its own rights, capped by the ones of the policy, the auth module cannot give what the policy keeps away. `replace` when missing",
         "enum": [
           "replace",
           "restrict"
         ],
         "example": "replace"
+      },
+      "auth_module_ref": {
+        "type": "string",
+        "nullable": true,
+        "description": "The id of the auth module whose users get the rights of the policy in `replace` mode. Null for the backoffice auth module of the moment (the global config `backOfficeAuthRef`). The local admins never get the rights of a policy, they keep their own rights, capped by the ones of the policy",
+        "example": "otoroshi-backoffice"
       },
       "rights": {
         "type": "array",
@@ -4326,6 +4332,7 @@
       "tags": [],
       "metadata": {},
       "mode": "replace",
+      "auth_module_ref": null,
       "rights": [
         {
           "tenant": "default:rw",

@@ -36,6 +36,12 @@ export class UserRightsPoliciesPage extends Component {
       content: (item) => item.mode,
     },
     {
+      title: 'Auth module',
+      notFilterable: true,
+      style: { textAlign: 'center', width: 200 },
+      content: (item) => item.auth_module_ref || 'backoffice auth module',
+    },
+    {
       title: 'Rights',
       notFilterable: true,
       content: (item) => describeRights(item.rights),
@@ -52,7 +58,7 @@ export class UserRightsPoliciesPage extends Component {
       props: {
         label: 'User email',
         placeholder: 'jane.doe@oto.tools',
-        help: 'The email the user logs in with, whatever the auth module. It identifies the policy: a user has one policy at most',
+        help: 'The email the user logs in with. It identifies the policy: a user has one policy at most',
       },
     },
     name: {
@@ -68,11 +74,23 @@ export class UserRightsPoliciesPage extends Component {
       props: {
         label: 'Mode',
         help:
-          'replace: the rights below are the rights of the user, the ones of its auth module are ignored. restrict: the user keeps the rights of its auth module, capped by the rights below',
+          'replace: the rights below are the rights of the users of the auth module below, the ones the module gives them are ignored. The other users with the same email (local admins, users of another auth module) keep their own rights, capped by the rights below. restrict: every user with the email keeps its own rights, capped by the rights below',
         possibleValues: [
           { label: 'Replace the rights of the auth module', value: 'replace' },
           { label: 'Restrict the rights of the auth module', value: 'restrict' },
         ],
+      },
+    },
+    auth_module_ref: {
+      type: 'select',
+      props: {
+        label: 'Auth module',
+        placeholder: 'The backoffice auth module',
+        isClearable: true,
+        valuesFrom: '/bo/api/proxy/api/auths',
+        transformer: (a) => ({ value: a.id, label: a.name }),
+        help:
+          'The auth module whose users get the rights of the policy in replace mode. Empty for the backoffice auth module. An email alone is not an identity: the local admins and the users of the other auth modules with the same email are only restricted by the policy',
       },
     },
     rights: {
@@ -95,6 +113,7 @@ export class UserRightsPoliciesPage extends Component {
     'name',
     'description',
     'mode',
+    'auth_module_ref',
     '<<<Rights',
     'rights',
     '>>>Misc.',

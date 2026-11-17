@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import otoroshi.models.*
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
-import play.api.libs.json.{JsArray, JsNull, JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.ws.{WSAuthScheme, WSResponse, writeableOf_String}
 import play.api.mvc.{DefaultSessionCookieBaker, Session}
@@ -32,13 +32,16 @@ class UserRightsPoliciesSpec(name: String, configurationSpec: => Configuration) 
         .resolve()
     ).withFallback(configurationSpec).withFallback(configuration)
 
-  def user(email: String, rights: UserRights): BackOfficeUser = BackOfficeUser(
-    randomId = email,
+  // the auth module the users of the tests log in with, the one of their rights policies
+  val testModule = "test-module"
+
+  def user(email: String, rights: UserRights, authConfigId: String = testModule): BackOfficeUser = BackOfficeUser(
+    randomId = s"$authConfigId-$email",
     name = email,
     email = email,
     profile = Json.obj(),
-    authConfigId = "basic",
-    simpleLogin = true,
+    authConfigId = authConfigId,
+    simpleLogin = false,
     tags = Seq.empty,
     metadata = Map.empty,
     rights = rights,
@@ -144,12 +147,14 @@ class UserRightsPoliciesSpec(name: String, configurationSpec: => Configuration) 
     "frontend" -> Json.obj("domains" -> Json.arr(s"$id.oto.tools"))
   )
 
-  def policyJson(email: String, mode: String, rights: UserRights): JsObject = Json.obj(
-    "name"   -> email,
-    "email"  -> email,
-    "mode"   -> mode,
-    "rights" -> rights.json
-  )
+  def policyJson(email: String, mode: String, rights: UserRights, authModule: Option[String] = testModule.some): JsObject =
+    Json.obj(
+      "name"            -> email,
+      "email"           -> email,
+      "mode"            -> mode,
+      "auth_module_ref" -> authModule.map(JsString.apply).getOrElse(JsNull).asValue,
+      "rights"          -> rights.json
+    )
 
   val policies = "/apis/security.otoroshi.io/v1/user-rights-policies"
 
@@ -357,6 +362,217 @@ class UserRightsPoliciesSpec(name: String, configurationSpec: => Configuration) 
     }
   }
 
+  def localLogin(username: String, password: String): String = {
+    val response = ws
+      .url(s"http://127.0.0.1:$port/bo/simple/login")
+      .withFollowRedirects(false)
+      .withHttpHeaders("Host" -> otoEnv.backOfficeHost, "Content-Type" -> "application/json")
+      .post(Json.stringify(Json.obj("username" -> username, "password" -> password)))
+      .futureValue
+    withClue(s"login of $username: ${response.body} ") {
+      response.status mustBe 200
+    }
+    val cookie = response.cookie(otoEnv.httpConfiguration.session.cookieName).get
+    s"${cookie.name}=${cookie.value}"
+  }
+
+  def boCookie(method: String, path: String, cookie: String): WSResponse = {
+    ws.url(s"http://127.0.0.1:$port$path")
+      .withFollowRedirects(false)
+      .withHttpHeaders("Host" -> otoEnv.backOfficeHost, "Cookie" -> cookie)
+      .withMethod(method)
+      .execute()
+      .futureValue
+  }
+
+  def apikeyOf(json: JsValue, name: String): ApiKey = ApiKey(
+    clientId = (json \ "apikey" \ "clientId").as[String],
+    clientSecret = (json \ "apikey" \ "clientSecret").as[String],
+    clientName = name,
+    authorizedEntities = Seq.empty
+  )
+
+  val admins = "/apis/security.otoroshi.io/v1/admins"
+
+  def localAdminJson(username: String, rights: UserRights): JsObject = Json.obj(
+    "username" -> username,
+    "password" -> "local-admin-password",
+    "label"    -> username,
+    "type"     -> "SIMPLE",
+    "rights"   -> rights.json,
+    "_loc"     -> Json.obj("tenant" -> "default", "teams" -> Json.arr("*"))
+  )
+
+  s"[$name] Rights policies and the other users with the same email" should {
+
+    val readDefault = UserRights(Seq(UserRight(TenantAccess("default:r"), Seq(TeamAccess("default:r")))))
+    val otherTenant = UserRights(Seq(UserRight(TenantAccess("other:rw"), Seq(TeamAccess("*:rw")))))
+
+    "only give their rights to the users of their auth module, and cap the rights of the others" in {
+      call("POST", policies, superAdmin, policyJson("erin@oto.tools", "replace", readDefault).some)._2 mustBe 201
+      effective(user("erin@oto.tools", otherTenant)) mustBe readDefault
+      effective(user("erin@oto.tools", otherTenant, "another-module")) mustBe UserRights.empty
+      effective(user("erin@oto.tools", UserRights.superAdmin, "another-module")) mustBe readDefault
+      // a local admin, simple or webauthn
+      effective(user("erin@oto.tools", otherTenant, BackOfficeUser.localAdminsAuthConfigId)) mustBe UserRights.empty
+      effective(user("erin@oto.tools", UserRights.superAdmin, BackOfficeUser.localAdminsAuthConfigId)) mustBe readDefault
+      call("DELETE", s"$policies/erin@oto.tools", superAdmin)._2 mustBe 200
+    }
+
+    "give their rights to the users of the backoffice auth module without auth module" in {
+      val ec: scala.concurrent.ExecutionContext = otoEnv.otoroshiExecutionContext
+      val config                                = otoEnv.datastores.globalConfigDataStore.latest()(using ec, otoEnv)
+      def setBackOfficeModule(module: Option[String]): Unit = {
+        otoEnv.datastores.globalConfigDataStore
+          .set(config.copy(backOfficeAuthRef = module), None)(using ec, otoEnv)
+          .futureValue
+        await(1.second)
+      }
+      call("POST", policies, superAdmin, policyJson("frank@oto.tools", "replace", readDefault, None).some)._2 mustBe 201
+      try {
+        // without a backoffice auth module, the policy only restricts
+        setBackOfficeModule(None)
+        effective(user("frank@oto.tools", otherTenant, "bo-module")) mustBe UserRights.empty
+        setBackOfficeModule("bo-module".some)
+        effective(user("frank@oto.tools", otherTenant, "bo-module")) mustBe readDefault
+        effective(user("frank@oto.tools", otherTenant, testModule)) mustBe UserRights.empty
+        effective(user("frank@oto.tools", otherTenant, BackOfficeUser.localAdminsAuthConfigId)) mustBe UserRights.empty
+      } finally {
+        setBackOfficeModule(config.backOfficeAuthRef)
+        call("DELETE", s"$policies/frank@oto.tools", superAdmin)._2 mustBe 200
+      }
+    }
+
+    "not give the rights of a policy to a local admin named after its email by a tenant admin" in {
+      // the policy of a super admin, for the users of its auth module
+      call("POST", policies, superAdmin, policyJson("victim@oto.tools", "replace", UserRights.superAdmin).some)._2 mustBe 201
+      // the super admin gets its personal apikey
+      val victim       = session(user("victim@oto.tools", UserRights.empty))
+      val victimKeyRes = bo("POST", "/bo/api/me/admin-apikey", victim)
+      victimKeyRes.status mustBe 200
+      val victimKey    = apikeyOf(victimKeyRes.json, "victim")
+      await(1.second)
+      apikeyCall("GET", "/apis/config.otoroshi.io/v1/global-configs", victimKey)._2 mustBe 200
+      // a tenant admin creates a local admin with the same email, and logs in with it
+      val (created, createdStatus) = call(
+        "POST",
+        "/api/admins/simple",
+        tenantAdmin,
+        Json.obj("username" -> "victim@oto.tools", "password" -> "chosen-by-the-tenant-admin", "label" -> "victim").some
+      )
+      withClue(s"${Json.stringify(created)} ") {
+        createdStatus mustBe 200
+      }
+      val local = localLogin("victim@oto.tools", "chosen-by-the-tenant-admin")
+      // the local admin keeps its own rights, the ones of a tenant admin
+      boCookie("GET", "/bo/api/proxy/apis/config.otoroshi.io/v1/global-configs", local).status mustBe 403
+      boCookie("GET", "/bo/api/proxy/apis/security.otoroshi.io/v1/user-rights-policies", local).status mustBe 403
+      boCookie("GET", "/bo/api/proxy/apis/proxy.otoroshi.io/v1/routes", local).status mustBe 200
+      // it does not see the personal apikey of the super admin, not even its secret
+      val localPayload = boCookie("GET", "/bo/api/me/admin-apikey", local)
+      localPayload.status mustBe 200
+      (localPayload.json \ "source").as[String] mustBe "local-admin"
+      (localPayload.json \ "apikey").asOpt[JsObject] mustBe None
+      Json.stringify(localPayload.json) must not include victimKey.clientSecret
+      forbidden ++ Seq(404) must contain(
+        boCookie("GET", s"/bo/api/proxy/apis/apim.otoroshi.io/v1/apikeys/${victimKey.clientId}", local).status
+      )
+      // its own personal apikey has its own rights
+      val localKeyRes = boCookie("POST", "/bo/api/me/admin-apikey", local)
+      localKeyRes.status mustBe 200
+      val localKey    = apikeyOf(localKeyRes.json, "local victim")
+      localKey.clientId must not be victimKey.clientId
+      await(1.second)
+      apikeyCall("GET", "/apis/proxy.otoroshi.io/v1/routes", localKey)._2 mustBe 200
+      forbidden must contain(apikeyCall("GET", "/apis/config.otoroshi.io/v1/global-configs", localKey)._2)
+      // deleting it does not delete the one of the super admin
+      boCookie("DELETE", "/bo/api/me/admin-apikey", local).status mustBe 200
+      (bo("GET", "/bo/api/me/admin-apikey", victim).json \ "apikey" \ "clientId").as[String] mustBe victimKey.clientId
+      apikeyCall("GET", "/apis/config.otoroshi.io/v1/global-configs", victimKey)._2 mustBe 200
+      bo("DELETE", "/bo/api/me/admin-apikey", victim).status mustBe 200
+      otoroshiApiCall("DELETE", "/api/admins/simple/victim@oto.tools").futureValue._2 mustBe 200
+      call("DELETE", s"$policies/victim@oto.tools", superAdmin)._2 mustBe 200
+    }
+
+    "not give a personal apikey to a user of another auth module than the one of its policy" in {
+      call("POST", policies, superAdmin, policyJson("grace@oto.tools", "replace", readDefault).some)._2 mustBe 201
+      val grace   = session(user("grace@oto.tools", UserRights.superAdmin, "another-module"))
+      val payload = bo("GET", "/bo/api/me/admin-apikey", grace)
+      (payload.json \ "allowed").as[Boolean] mustBe false
+      (payload.json \ "reason").as[String] mustBe PersonalAdminApikey.otherAuthModuleError
+      bo("POST", "/bo/api/me/admin-apikey", grace).status mustBe 403
+      call("DELETE", s"$policies/grace@oto.tools", superAdmin)._2 mustBe 200
+    }
+  }
+
+  s"[$name] Personal admin apikeys of the local admins" should {
+
+    val backendsWriter = UserRights(
+      Seq(UserRight(TenantAccess("default:rw"), Seq(TeamAccess("*:rw")), EntityKindsAccess(Seq("*"), Seq("backends"))))
+    )
+    var key: ApiKey = null
+
+    "have the rights of their local admin, without rights policy" in {
+      otoroshiApiCall("POST", admins, localAdminJson("henry@oto.tools", backendsWriter).some).futureValue._2 mustBe 201
+      val henry   = localLogin("henry@oto.tools", "local-admin-password")
+      val payload = boCookie("GET", "/bo/api/me/admin-apikey", henry)
+      (payload.json \ "allowed").as[Boolean] mustBe true
+      (payload.json \ "policy").asOpt[JsObject] mustBe None
+      val created = boCookie("POST", "/bo/api/me/admin-apikey", henry)
+      created.status mustBe 200
+      key = apikeyOf(created.json, "henry")
+      await(1.second)
+      apikeyCall("POST", "/apis/proxy.otoroshi.io/v1/backends", key, backend("henry-backend").some)._2 mustBe 201
+      forbidden must contain(apikeyCall("POST", "/apis/proxy.otoroshi.io/v1/routes", key, route("henry-route").some)._2)
+      forbidden must contain(apikeyCall("GET", "/apis/config.otoroshi.io/v1/global-configs", key)._2)
+    }
+
+    "follow the rights of their local admin on the next call" in {
+      val (current, _) = otoroshiApiCall("GET", "/api/admins/simple/henry@oto.tools").futureValue
+      val readOnly     = UserRights(
+        Seq(UserRight(TenantAccess("default:rw"), Seq(TeamAccess("*:rw")), EntityKindsAccess(Seq("*"), Seq.empty)))
+      )
+      otoroshiApiCall(
+        "PUT",
+        "/api/admins/simple/henry@oto.tools",
+        (current.as[JsObject] ++ Json.obj("rights" -> readOnly.json)).some
+      ).futureValue._2 mustBe 200
+      forbidden must contain(
+        apikeyCall("POST", "/apis/proxy.otoroshi.io/v1/backends", key, backend("henry-backend-2").some)._2
+      )
+      apikeyCall("GET", "/apis/proxy.otoroshi.io/v1/routes", key)._2 mustBe 200
+    }
+
+    "be capped by the rights policy of their local admin, whatever its mode" in {
+      call("POST", policies, superAdmin, policyJson("henry@oto.tools", "replace", UserRights.superAdmin).some)._2 mustBe 201
+      forbidden must contain(apikeyCall("GET", "/apis/config.otoroshi.io/v1/global-configs", key)._2)
+      call("PUT", s"$policies/henry@oto.tools", superAdmin, policyJson("henry@oto.tools", "restrict", UserRights.empty).some)._2 mustBe 200
+      val (routes, status) = apikeyCall("GET", "/apis/proxy.otoroshi.io/v1/routes", key)
+      status mustBe 200
+      routes.as[JsArray].value mustBe empty
+      call("DELETE", s"$policies/henry@oto.tools", superAdmin)._2 mustBe 200
+    }
+
+    "have no rights once their local admin is deleted, even when an admin is created again with the same username" in {
+      otoroshiApiCall("DELETE", s"$admins/henry@oto.tools").futureValue._2 mustBe 200
+      apikeyCall("GET", "/apis/proxy.otoroshi.io/v1/routes", key)._2 mustBe 401
+      otoroshiApiCall(
+        "POST",
+        admins,
+        (localAdminJson("henry@oto.tools", UserRights.superAdmin) ++ Json.obj(
+          "createdAt" -> (System.currentTimeMillis() + 60000L)
+        )).some
+      ).futureValue._2 mustBe 201
+      apikeyCall("GET", "/apis/proxy.otoroshi.io/v1/routes", key)._2 mustBe 401
+      // the new admin does not see the apikey of the old one
+      val henry = localLogin("henry@oto.tools", "local-admin-password")
+      (boCookie("GET", "/bo/api/me/admin-apikey", henry).json \ "apikey").asOpt[JsObject] mustBe None
+      otoroshiApiCall("DELETE", s"$admins/henry@oto.tools").futureValue._2 mustBe 200
+      otoroshiApiCall("DELETE", s"/apis/apim.otoroshi.io/v1/apikeys/${key.clientId}").futureValue._2 mustBe 200
+      otoroshiApiCall("DELETE", "/apis/proxy.otoroshi.io/v1/backends/henry-backend").futureValue
+    }
+  }
+
   s"[$name] Personal admin apikeys" should {
 
     val aliceRights = UserRights(
@@ -367,7 +583,12 @@ class UserRightsPoliciesSpec(name: String, configurationSpec: => Configuration) 
     "get the rights of the policy of their owner" in {
       call("POST", policies, superAdmin, policyJson("alice@oto.tools", "replace", aliceRights).some)._2 mustBe 201
       val policy = UserRightsPolicy.of("alice@oto.tools")(using otoEnv).get
-      alice = PersonalAdminApikey.create(policy)(using otoEnv, otoEnv.otoroshiExecutionContext).futureValue
+      alice = PersonalAdminApikey
+        .create(PersonalAdminApikeyOwner.AuthModuleUser("alice@oto.tools", testModule), policy.location)(using
+          otoEnv,
+          otoEnv.otoroshiExecutionContext
+        )
+        .futureValue
       await(1.second)
       apikeyCall("GET", "/apis/proxy.otoroshi.io/v1/routes", alice)._2 mustBe 200
       apikeyCall("POST", "/apis/proxy.otoroshi.io/v1/backends", alice, backend("alice-backend").some)._2 mustBe 201

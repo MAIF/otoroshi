@@ -2341,41 +2341,60 @@ class BackOfficeController(
   }
 
   // the personal admin apikey of the current user. the user creates it itself, even when it cannot write apikeys: its
-  // rights are the ones of its rights policy, in replace mode, resolved on each call
+  // rights are the ones a session of the user has, resolved on each call
   private def personalAdminApikeyPayload(
       ctx: BackOfficeActionContextAuth[?],
+      owner: Option[PersonalAdminApikeyOwner],
       policy: Option[UserRightsPolicy],
       apikey: Option[ApiKey]
-  ): JsValue = {
-    Json.obj(
-      "email"              -> ctx.user.email,
-      "policy"             -> policy
-        .map(p => Json.obj("email" -> p.email, "name" -> p.name, "mode" -> p.mode.name))
-        .getOrElse(JsNull)
-        .asValue,
-      // a policy in restrict mode gives no personal apikey
-      "allowed"            -> policy.exists(_.mode == UserRightsPolicyMode.Replace),
-      "apikey"             -> apikey
-        .map(k =>
-          Json.obj(
-            "clientId"     -> k.clientId,
-            "clientSecret" -> k.clientSecret,
-            "clientName"   -> k.clientName,
-            "enabled"      -> k.enabled
+  ): Future[JsValue] = {
+    val refusal = owner match {
+      case None    => PersonalAdminApikey.noOwnerError.some
+      case Some(o) => PersonalAdminApikey.refusal(o, policy)
+    }
+    // what the apikey can do right now
+    val rightsF = (owner, apikey) match {
+      case (Some(o), Some(_)) => PersonalAdminApikey.rightsF(o).map(_.toOption)
+      case _                  => None.vfuture
+    }
+    rightsF.map { rights =>
+      Json.obj(
+        "email"              -> ctx.user.email,
+        "source"             -> (owner match {
+          case Some(_: PersonalAdminApikeyOwner.LocalAdmin)     => JsString("local-admin")
+          case Some(_: PersonalAdminApikeyOwner.AuthModuleUser) => JsString("auth-module")
+          case None                                             => JsNull
+        }),
+        "policy"             -> policy
+          .map(p =>
+            Json.obj(
+              "email"           -> p.email,
+              "name"            -> p.name,
+              "mode"            -> p.mode.name,
+              "auth_module_ref" -> p.authModuleRef.map(JsString.apply).getOrElse(JsNull).asValue
+            )
           )
-        )
-        .getOrElse(JsNull)
-        .asValue,
-      // what the apikey can do right now
-      "rights"             -> apikey
-        .flatMap(_ => PersonalAdminApikey.rights(ctx.user.email).toOption)
-        .map(_.json)
-        .getOrElse(JsNull)
-        .asValue,
-      "adminApiHost"       -> env.adminApiExposedHost,
-      "clientIdHeader"     -> env.Headers.OtoroshiClientId,
-      "clientSecretHeader" -> env.Headers.OtoroshiClientSecret
-    )
+          .getOrElse(JsNull)
+          .asValue,
+        "allowed"            -> refusal.isEmpty,
+        "reason"             -> refusal.map(JsString.apply).getOrElse(JsNull).asValue,
+        "apikey"             -> apikey
+          .map(k =>
+            Json.obj(
+              "clientId"     -> k.clientId,
+              "clientSecret" -> k.clientSecret,
+              "clientName"   -> k.clientName,
+              "enabled"      -> k.enabled
+            )
+          )
+          .getOrElse(JsNull)
+          .asValue,
+        "rights"             -> rights.map(_.json).getOrElse(JsNull).asValue,
+        "adminApiHost"       -> env.adminApiExposedHost,
+        "clientIdHeader"     -> env.Headers.OtoroshiClientId,
+        "clientSecretHeader" -> env.Headers.OtoroshiClientSecret
+      )
+    }
   }
 
   private def personalAdminApikeyEvent(
@@ -2393,65 +2412,91 @@ class BackOfficeController(
         message,
         ctx.from,
         ctx.ua,
-        Json.obj("clientId" -> apikey.clientId, "owner" -> ctx.user.email)
+        Json.obj("clientId" -> apikey.clientId, "owner" -> PersonalAdminApikey.ownerOf(apikey.metadata).map(_.metadata))
       )
     )
   }
 
+  // the owner the current user is (a user of an auth module, a local admin) and the rights policy of its email
+  private def personalAdminApikeyOwner(
+      ctx: BackOfficeActionContextAuth[?]
+  ): Future[(Option[PersonalAdminApikeyOwner], Option[UserRightsPolicy])] = {
+    for {
+      owner  <- PersonalAdminApikey.ownerForF(ctx.user)
+      policy <- UserRightsPolicy.ofF(ctx.user.email)
+    } yield (owner, policy)
+  }
+
+  // the apikey of the current user: the one of the same owner. a local admin and a user of an auth module with the same
+  // email do not see the apikey of one another
+  private def findPersonalAdminApikey(owner: Option[PersonalAdminApikeyOwner]): Future[Option[ApiKey]] =
+    owner match {
+      case None    => None.vfuture
+      case Some(o) => PersonalAdminApikey.find(o)
+    }
+
   def personalAdminApikey() = BackOfficeActionAuth.async { ctx =>
     for {
-      policy <- UserRightsPolicy.ofF(ctx.user.email)
-      apikey <- PersonalAdminApikey.find(ctx.user.email)
-    } yield Ok(personalAdminApikeyPayload(ctx, policy, apikey))
+      (owner, policy) <- personalAdminApikeyOwner(ctx)
+      apikey          <- findPersonalAdminApikey(owner)
+      payload         <- personalAdminApikeyPayload(ctx, owner, policy, apikey)
+    } yield Ok(payload)
   }
 
   // creates the apikey, or answers the one the user already has
   def createPersonalAdminApikey() = BackOfficeActionAuth.async { ctx =>
-    UserRightsPolicy.ofF(ctx.user.email).flatMap {
-      case None                                                          =>
-        Forbidden(
-          Json.obj("error" -> "you have no rights policy: a super admin has to write one for you before you get an admin apikey")
-        ).vfuture
-      case Some(policy) if policy.mode == UserRightsPolicyMode.Restrict =>
-        Forbidden(Json.obj("error" -> PersonalAdminApikey.restrictModeError)).vfuture
-      case Some(policy)                                                  =>
-        PersonalAdminApikey
-          .find(ctx.user.email)
-          .flatMap {
-            case Some(existing) => existing.vfuture
-            case None           =>
-              PersonalAdminApikey.create(policy).map { apikey =>
-                personalAdminApikeyEvent(ctx, "CREATE_PERSONAL_ADMIN_APIKEY", "User created its personal admin apikey", apikey)
-                apikey
+    personalAdminApikeyOwner(ctx).flatMap {
+      case (None, _)             => Forbidden(Json.obj("error" -> PersonalAdminApikey.noOwnerError)).vfuture
+      case (Some(owner), policy) =>
+        PersonalAdminApikey.refusal(owner, policy) match {
+          case Some(error) => Forbidden(Json.obj("error" -> error)).vfuture
+          case None        =>
+            PersonalAdminApikey
+              .find(owner)
+              .flatMap {
+                case Some(existing) => existing.vfuture
+                case None           =>
+                  PersonalAdminApikey
+                    .locationF(owner, policy)
+                    .flatMap(location => PersonalAdminApikey.create(owner, location))
+                    .map { apikey =>
+                      personalAdminApikeyEvent(ctx, "CREATE_PERSONAL_ADMIN_APIKEY", "User created its personal admin apikey", apikey)
+                      apikey
+                    }
               }
-          }
-          .map(apikey => Ok(personalAdminApikeyPayload(ctx, policy.some, apikey.some)))
+              .flatMap(apikey => personalAdminApikeyPayload(ctx, owner.some, policy, apikey.some))
+              .map(payload => Ok(payload))
+        }
     }
   }
 
   // a new secret for the apikey, the same client id
   def rotatePersonalAdminApikey() = BackOfficeActionAuth.async { ctx =>
-    PersonalAdminApikey.find(ctx.user.email).flatMap {
-      case None         => NotFound(Json.obj("error" -> "you have no personal admin apikey")).vfuture
-      case Some(apikey) =>
-        for {
-          rotated <- PersonalAdminApikey.rotate(apikey)
-          policy  <- UserRightsPolicy.ofF(ctx.user.email)
-        } yield {
-          personalAdminApikeyEvent(ctx, "ROTATE_PERSONAL_ADMIN_APIKEY", "User regenerated the secret of its personal admin apikey", rotated)
-          Ok(personalAdminApikeyPayload(ctx, policy, rotated.some))
-        }
+    personalAdminApikeyOwner(ctx).flatMap { case (owner, policy) =>
+      findPersonalAdminApikey(owner).flatMap {
+        case None         => NotFound(Json.obj("error" -> "you have no personal admin apikey")).vfuture
+        case Some(apikey) =>
+          for {
+            rotated <- PersonalAdminApikey.rotate(apikey)
+            payload <- personalAdminApikeyPayload(ctx, owner, policy, rotated.some)
+          } yield {
+            personalAdminApikeyEvent(ctx, "ROTATE_PERSONAL_ADMIN_APIKEY", "User regenerated the secret of its personal admin apikey", rotated)
+            Ok(payload)
+          }
+      }
     }
   }
 
   def deletePersonalAdminApikey() = BackOfficeActionAuth.async { ctx =>
-    PersonalAdminApikey.find(ctx.user.email).flatMap {
-      case None         => NotFound(Json.obj("error" -> "you have no personal admin apikey")).vfuture
-      case Some(apikey) =>
-        apikey.delete().map { _ =>
-          personalAdminApikeyEvent(ctx, "DELETE_PERSONAL_ADMIN_APIKEY", "User deleted its personal admin apikey", apikey)
-          Ok(Json.obj("deleted" -> true))
-        }
+    personalAdminApikeyOwner(ctx).flatMap { case (owner, _) =>
+      findPersonalAdminApikey(owner).flatMap {
+        case None         => NotFound(Json.obj("error" -> "you have no personal admin apikey")).vfuture
+        case Some(apikey) =>
+          apikey.delete().map { _ =>
+            personalAdminApikeyEvent(ctx, "DELETE_PERSONAL_ADMIN_APIKEY", "User deleted its personal admin apikey", apikey)
+            Ok(Json.obj("deleted" -> true))
+          }
+      }
     }
   }
 

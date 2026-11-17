@@ -113,13 +113,14 @@ The plural names and the groups are the ones of the [generic admin api](./generi
 
 ## User rights policies
 
-A user rights policy defines the rights of a backoffice user, by email, whatever the auth module it logs in with. The policies are managed by the super admins in the backoffice (**User rights policies** in the menu), or with the admin api (`security.otoroshi.io/v1/user-rights-policies`).
+A user rights policy defines the rights of a backoffice user, by email. The policies are managed by the super admins in the backoffice (**User rights policies** in the menu), or with the admin api (`security.otoroshi.io/v1/user-rights-policies`).
 
 ```json
 {
   "email": "jane.doe@oto.tools",
   "name": "Jane Doe rights",
   "mode": "replace",
+  "auth_module_ref": null,
   "rights": [
     {
       "tenant": "orga-1:rw",
@@ -133,8 +134,16 @@ A user rights policy defines the rights of a backoffice user, by email, whatever
 
 The `mode` of the policy tells how it combines with the rights the auth module gives the user:
 
-* `replace` (the default): the rights of the policy are the rights of the user, the ones of the auth module are ignored
+* `replace` (the default): the rights of the policy are the rights of the users of its auth module, the ones the module gives them are ignored
 * `restrict`: the user keeps the rights of its auth module (its `rightsOverride`, the rights read from its profile, ...), capped by the rights of the policy. The auth module cannot give what the policy keeps away. When a pattern of the auth module and a pattern of the policy overlap without one covering the other (`team-a-*` and `team-*-b`), the access is dropped
+
+### An email is not an identity
+
+Several users can log in to the backoffice with the same email: a user of the backoffice auth module, a local admin (simple or webauthn) whose username is this email, and the users of the auth modules used as backoffice auth module before. The username of a local admin is chosen by whoever creates it, a tenant admin included. A policy giving its rights to all of them would let a tenant admin create a local admin named after the email of a super admin, and log in with the rights of its policy.
+
+So a policy only **gives** its rights to the users of one auth module: the one of `auth_module_ref`, or, when it is empty, the backoffice auth module of the moment (`backOfficeAuthRef` in the global config). Every other user with the same email, the local admins included, keeps its own rights, **capped** by the rights of the policy, whatever the mode: a policy never gives a user more than it already has, unless the user comes from the auth module of the policy. Without a backoffice auth module nor `auth_module_ref`, a policy only restricts.
+
+The rights of the local admins are written on the admins themselves (**Admins** in the menu), rights limited to some kinds of entities included: they do not need a policy.
 
 The rights of a user are resolved on each of its calls: a policy written, changed or deleted takes effect on the next call of the user, without a new login (on the other nodes of a cluster, after their next state sync, every 10 seconds by default).
 
@@ -151,6 +160,7 @@ metadata:
 spec:
   email: jane.doe@oto.tools
   mode: replace
+  auth_module_ref: null
   rights:
     - tenant: "orga-1:rw"
       teams: ["ops:rw"]
@@ -160,16 +170,21 @@ spec:
 
 ## Personal admin apikey
 
-A user that has a rights policy in `replace` mode can get its own admin apikey, even when it cannot write apikeys: **My admin apikey** in the menu of the backoffice, or the endpoints of the backoffice
+A backoffice user can get its own admin apikey, even when it cannot write apikeys: **My admin apikey** in the menu of the backoffice, or the endpoints of the backoffice
 
 * `GET /bo/api/me/admin-apikey`: the apikey of the user, if any, and the rights it has right now
 * `POST /bo/api/me/admin-apikey`: creates the apikey, or answers the one the user already has. A user has one personal admin apikey at most
 * `POST /bo/api/me/admin-apikey/_rotate`: a new secret, the same client id
 * `DELETE /bo/api/me/admin-apikey`: deletes the apikey
 
-The rights of the apikey are not written in it: they are the rights of the policy of its owner, read on each call. Changing or deleting the policy takes effect on the next call of the apikey, and an apikey whose owner has no policy in `replace` mode anymore cannot do anything. A policy in `restrict` mode gives no personal apikey: its rights depend on the rights the auth module gives at login, and a call made with an apikey has no login.
+The rights of the apikey are not written in it: they are the rights a session of its owner would have, read on each call.
 
-The secret of a personal admin apikey gives the rights of its owner, today's and tomorrow's: only its owner and the super admins can read it, and only the super admins can write it through the admin api.
+* a **local admin** gets an apikey with its own rights, capped by its rights policy if it has one. Changing the rights of the admin takes effect on the next call of the apikey. The apikey belongs to this very admin: once the admin is deleted, the apikey cannot do anything, even if an admin is created again with the same username
+* a **user of an auth module** gets an apikey only with a rights policy giving it rights (`replace` mode, for this auth module): the rights the auth module gives at login are not stored anywhere, and a call made with an apikey has no login. The apikey has the rights of the policy. Changing or deleting the policy takes effect on the next call of the apikey, and an apikey whose owner has no such policy anymore cannot do anything
+
+The owner of an apikey is an email given by a source: a local admin and a user of an auth module with the same email have two different apikeys, and do not see the apikey of one another.
+
+The secret of a personal admin apikey gives the rights of its owner, today's and tomorrow's: only its owner and the super admins can read it, and only the super admins can write it through the admin api. An apikey bypasses the second factor of its owner (the webauthn device of a local admin, the MFA of an identity provider): rotate its secret, or delete it, when it may have leaked.
 
 ## Otoroshi Admin. API apikey rights
 

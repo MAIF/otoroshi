@@ -52,7 +52,9 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
         .canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams) &&
       user.rights.canReadKinds(item.location.tenant, item.location.teams, EntityKind.of(item)) &&
       (item match {
-        case apikey: ApiKey => PersonalAdminApikey.ownerOf(apikey).forall(o => PersonalAdminApikey.canRead(o, user))
+        case apikey: ApiKey =>
+          !PersonalAdminApikey.isPersonal(apikey) ||
+          PersonalAdminApikey.canRead(apikey.metadata, PersonalAdminApikey.ownerFor(user), user)
         case _              => true
       })
     }
@@ -63,7 +65,7 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
         .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams) &&
       user.rights.canWriteKinds(item.location.tenant, item.location.teams, EntityKind.of(item)) &&
       (item match {
-        case apikey: ApiKey => PersonalAdminApikey.ownerOf(apikey).forall(o => PersonalAdminApikey.canWrite(o, user))
+        case apikey: ApiKey => !PersonalAdminApikey.isPersonal(apikey) || PersonalAdminApikey.canWrite(user)
         case _              => true
       })
     }

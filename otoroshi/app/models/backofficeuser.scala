@@ -70,10 +70,15 @@ case class BackOfficeUser(
 
   def toJson: JsValue = BackOfficeUser.fmt.writes(this)
 
+  // a local admin logs in with its password (simple admins) or with its password and a webauthn device
+  def isLocalAdmin: Boolean    = authConfigId == BackOfficeUser.localAdminsAuthConfigId
+  def isWebAuthnAdmin: Boolean = isLocalAdmin && !simpleLogin
+
   // the session keeps the rights its auth module gave at login, the rights policy of the user applies on top of them on
-  // every call: a policy written or deleted takes effect without a new login
+  // every call: a policy written or deleted takes effect without a new login. it only gives its rights to the users of
+  // its auth module, it caps the rights of the others
   def withPolicyRights()(using env: Env, ec: ExecutionContext): Future[BackOfficeUser] = {
-    UserRightsPolicy.effectiveRightsF(email, rights).map { effective =>
+    UserRightsPolicy.effectiveRightsF(email, authConfigId, rights).map { effective =>
       if (effective eq rights) this else copy(rights = effective)
     }
   }
@@ -98,6 +103,16 @@ case class BackOfficeUser(
 }
 
 object BackOfficeUser {
+
+  // the auth config ids of the backoffice users that do not come from an auth module: the local admins (simple and
+  // webauthn), the users of an admin apikey carrying rights and the users of a personal admin apikey
+  val localAdminsAuthConfigId         = "none"
+  val apikeyAuthConfigId              = "apikey"
+  val personalAdminApikeyAuthConfigId = "personal-admin-apikey"
+
+  def isAuthModule(authConfigId: String): Boolean =
+    authConfigId.trim.nonEmpty && authConfigId != localAdminsAuthConfigId && authConfigId != apikeyAuthConfigId &&
+    authConfigId != personalAdminApikeyAuthConfigId
 
   val fmt = new Format[BackOfficeUser] {
 

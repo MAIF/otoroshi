@@ -88,7 +88,7 @@ export class PersonalAdminApikeyPage extends Component {
         />
         <CodeInput
           label="Current rights"
-          help="The rights of the apikey are the ones of your rights policy, read on each call: when your policy changes, the apikey follows"
+          help="The rights of the apikey are the ones you have when you log in, read on each call: when your rights or your rights policy change, the apikey follows"
           mode="json"
           height="200px"
           readOnly
@@ -115,32 +115,33 @@ export class PersonalAdminApikeyPage extends Component {
     return (
       <div className="sub-container sub-container__bg-color">
         {error && <div className="alert alert-danger">{error}</div>}
-        {data && !data.policy && (
+        {data && !data.allowed && (
           <p>
-            You have no rights policy. An admin apikey is only given to the users having one: ask a
-            super admin to write one for <code>{data.email}</code>.
-          </p>
-        )}
-        {data && data.policy && !data.allowed && (
-          <p>
-            Your rights policy is in restrict mode: its rights depend on your login, and an apikey
-            has no login. An admin apikey is only given to the users having a policy in replace
-            mode.
+            {data.reason}
+            {data.source === 'auth-module' && !data.policy && (
+              <>
+                {' '}
+                (the rights policy of <code>{data.email}</code>)
+              </>
+            )}
             {data.apikey && ' Your current admin apikey has no rights until then.'}
           </p>
         )}
-        {data && data.policy && data.allowed && !data.apikey && (
+        {data && data.allowed && !data.apikey && (
           <div className="d-flex align-items-center justify-content-between">
             <p className="mb-0">
               You have no admin apikey yet. It lets you call the admin api of Otoroshi with the
-              rights of your rights policy.
+              rights you have when you log in
+              {data.source === 'local-admin'
+                ? ' (your rights of local admin, capped by your rights policy if you have one).'
+                : ' (the rights of your rights policy).'}
             </p>
             <button type="button" className="btn btn-sm btn-primary" onClick={this.create}>
               <i className="fas fa-key" /> Create my admin apikey
             </button>
           </div>
         )}
-        {data && data.policy && data.allowed && data.apikey && this.renderApikey(data)}
+        {data && data.allowed && data.apikey && this.renderApikey(data)}
       </div>
     );
   }
