@@ -248,7 +248,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   // route composition
   def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
     (ctx.request.body.select("domain").asOpt[String], ctx.request.body.select("openapi").asOpt[String]) match {
-      case _ if !ctx.canUserWriteJson(ctx.request.body) => ctx.fforbidden
+      case _ if !ctx.canUserWriteJson(ctx.request.body, Seq(EntityKind("proxy.otoroshi.io", "route-compositions"))) => ctx.fforbidden
       case (Some(domain), Some(openapi)) =>
         NgRouteComposition
           .fromOpenApi(domain, openapi)

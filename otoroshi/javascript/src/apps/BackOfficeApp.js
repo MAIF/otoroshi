@@ -71,6 +71,8 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { createTooltip } from '../tooltips';
 import { TenantsPage } from '../pages/TenantsPage';
 import { TeamsPage } from '../pages/TeamsPage';
+import { UserRightsPoliciesPage } from '../pages/UserRightsPoliciesPage';
+import { PersonalAdminApikeyPage } from '../pages/PersonalAdminApikeyPage';
 import { Toasts } from '../components/Toasts';
 import { NgFormPlayground } from '../components/nginputs';
 import { NgSelectRenderer } from '../components/nginputs';
@@ -694,6 +696,42 @@ class BackOfficeAppContainer extends Component {
                         path="/teams"
                         component={(props) =>
                           this.decorate(TeamsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/user-rights-policies/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(UserRightsPoliciesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/user-rights-policies/:taction"
+                        component={(props) =>
+                          this.decorate(UserRightsPoliciesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/user-rights-policies"
+                        component={(props) =>
+                          this.decorate(UserRightsPoliciesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/my-admin-apikey"
+                        component={(props) =>
+                          this.decorate(PersonalAdminApikeyPage, {
                             ...props,
                             env: this.state.env,
                           })

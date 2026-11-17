@@ -47,6 +47,8 @@ class NgProxyState(env: Env) {
   private val errorTemplates      = new UnboundedTrieMap[String, ErrorTemplate]()
   //[REMOVE SERVICEDESC] private val services            = new UnboundedTrieMap[String, ServiceDescriptor]()
   private val teams               = new UnboundedTrieMap[String, Team]()
+  // by the email of their user, read on every call of a backoffice user
+  private val userRightsPolicies  = new UnboundedTrieMap[String, UserRightsPolicy]()
   private val tenants             = new UnboundedTrieMap[String, Tenant]()
   private val serviceGroups       = new UnboundedTrieMap[String, ServiceGroup]()
   private val dataExporters       = new UnboundedTrieMap[String, DataExporterConfig]()
@@ -138,6 +140,8 @@ class NgProxyState(env: Env) {
   def authModuleAsync(id: String): Future[Option[AuthModuleConfig]]           = authModules.get(id).vfuture
   //[REMOVE SERVICEDESC] def service(id: String): Option[ServiceDescriptor]                          = services.get(id)
   def team(id: String): Option[Team]                                          = teams.get(id)
+  def userRightsPolicy(email: String): Option[UserRightsPolicy]               =
+    userRightsPolicies.get(UserRightsPolicy.normalizeEmail(email))
   def tenant(id: String): Option[Tenant]                                      = tenants.get(id)
   def serviceGroup(id: String): Option[ServiceGroup]                          = serviceGroups.get(id)
   def dataExporter(id: String): Option[DataExporterConfig]                    = dataExporters.get(id)
@@ -165,6 +169,7 @@ class NgProxyState(env: Env) {
   def allAuthModules(): Seq[AuthModuleConfig]                        = authModules.values.toSeq
   //[REMOVE SERVICEDESC] def allServices(): Seq[ServiceDescriptor]                          = services.values.toSeq
   def allTeams(): Seq[Team]                                          = teams.values.toSeq
+  def allUserRightsPolicies(): Seq[UserRightsPolicy]                = userRightsPolicies.values.toSeq
   def allTenants(): Seq[Tenant]                                      = tenants.values.toSeq
   def allServiceGroups(): Seq[ServiceGroup]                          = serviceGroups.values.toSeq
   def allDataExporters(): Seq[DataExporterConfig]                    = dataExporters.values.toSeq
@@ -211,6 +216,12 @@ class NgProxyState(env: Env) {
 
   def updateTeams(values: Seq[Team]): Unit = {
     teams.addAll(values.map(v => (v.id.value, v))).remAll(teams.keySet.toSeq.diff(values.map(_.id.value)))
+  }
+
+  def updateUserRightsPolicies(values: Seq[UserRightsPolicy]): Unit = {
+    userRightsPolicies
+      .addAll(values.map(v => (v.email, v)))
+      .remAll(userRightsPolicies.keySet.toSeq.diff(values.map(_.email)))
   }
 
   def updateWasmPlugins(values: Seq[WasmPlugin]): Unit = {
@@ -630,6 +641,7 @@ class NgProxyState(env: Env) {
       backends            <- env.datastores.backendsDataStore.findAllAndFillSecrets() // secrets OK
       errorTemplates      <- env.datastores.errorTemplateDataStore.findAll() // no need for secrets
       teams               <- env.datastores.teamDataStore.findAll() // no need for secrets
+      userRightsPolicies  <- env.datastores.userRightsPolicyDataStore.findAll() // no need for secrets
       tenants             <- env.datastores.tenantDataStore.findAll() // no need for secrets
       serviceGroups       <- env.datastores.serviceGroupDataStore.findAll() // no need for secrets
       dataExporters       <- env.datastores.dataExporterConfigDataStore.findAllAndFillSecrets() // secrets OK
@@ -694,6 +706,7 @@ class NgProxyState(env: Env) {
       env.proxyState.updateErrorTemplates(errorTemplates)
       //[REMOVE SERVICEDESC] env.proxyState.updateServices(descriptors)
       env.proxyState.updateTeams(teams)
+      env.proxyState.updateUserRightsPolicies(userRightsPolicies)
       env.proxyState.updateTenants(tenants)
       env.proxyState.updateServiceGroups(serviceGroups)
       env.proxyState.updateDataExporters(dataExporters)

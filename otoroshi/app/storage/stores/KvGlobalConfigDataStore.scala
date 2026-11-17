@@ -295,6 +295,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val drafts             = (exportSource \ "drafts").asOpt[JsArray].getOrElse(Json.arr())
     val apis               = (exportSource \ "apis").asOpt[JsArray].getOrElse(Json.arr())
     val apiSubscriptions   = (exportSource \ "apiSubscriptions").asOpt[JsArray].getOrElse(Json.arr())
+    val userRightsPolicies = (exportSource \ "userRightsPolicies").asOpt[JsArray].getOrElse(Json.arr())
     val extensions         = (exportSource \ "extensions").asOpt[JsObject].getOrElse(Json.obj())
 
     for {
@@ -331,6 +332,12 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(drafts.value.map(Draft.fromJsons).map(_.save()))
       _ <- Future.sequence(apis.value.map(Api.fromJsons).map(_.save()))
       _ <- Future.sequence(apiSubscriptions.value.map(ApiSubscription.fromJsons).map(_.save()))
+      _ <- Future.sequence(
+             userRightsPolicies.value
+               .map(UserRightsPolicy.format.reads)
+               .collect { case JsSuccess(policy, _) => policy }
+               .map(env.datastores.userRightsPolicyDataStore.set(_))
+           )
       _ <- env.adminExtensions.importAllEntities(extensions)
     } yield { () }
   }
@@ -372,6 +379,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       drafts            <- env.datastores.draftsDataStore.findAll()
       apis              <- env.datastores.apiDataStore.findAll()
       apiSubscriptions  <- env.datastores.apiSubscriptionDataStore.findAll()
+      policies          <- env.datastores.userRightsPolicyDataStore.findAll()
       extensions        <- env.adminExtensions.exportAllEntities()
     } yield OtoroshiExport(
       config,
@@ -401,6 +409,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       drafts,
       apis,
       apiSubscriptions,
+      policies,
     ).json
   }
 
