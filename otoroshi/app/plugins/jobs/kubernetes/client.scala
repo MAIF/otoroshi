@@ -693,12 +693,18 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       reader: Reads[T],
       customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, b) => a
   ): Future[Seq[OtoResHolder[T]]] = {
-    asyncSequence(config.namespaces.flatMap { namespace =>
-      Seq(
-        fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1", reader, customize)
-        // fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1alpha1", reader, customize)
-      )
-    }).map(_.flatten.groupBy(_.uid).values.flatMap(_.headOption).toSeq)
+    // a kind the job does not read is not even fetched, nor in a namespace whose rules exclude it
+    val namespaces = config.namespaces.filter(ns => ns == "*" || config.crdsKinds.reads(pluralName, Some(ns)))
+    if (!config.crdsKinds.readsKind(pluralName) || namespaces.isEmpty) {
+      Seq.empty[OtoResHolder[T]].vfuture
+    } else {
+      asyncSequence(namespaces.flatMap { namespace =>
+        Seq(
+          fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1", reader, customize)
+          // fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1alpha1", reader, customize)
+        )
+      }).map(_.flatten.groupBy(_.uid).values.flatMap(_.headOption).toSeq)
+    }
   }
 
   def fetchOtoroshiResourcesForNamespaceAndVersion[T](
@@ -719,6 +725,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           Try {
             if (resp.status == 200) {
               filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(v => KubernetesOtoroshiResource(v)))
+                // the namespace of a resource fetched from all of them is only known now
+                .filter(item => config.crdsKinds.reads(pluralName, Some(item.namespace)))
                 .map { item =>
                   val spec                      = (item.raw \ "spec").as[JsValue]
                   val (failed, err, customSpec) = Try(customize(spec, item)) match {

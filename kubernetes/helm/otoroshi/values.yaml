@@ -301,6 +301,17 @@ cluster:
   leaderExternalServiceName: otoroshi-leader-external-service
   workerExternalServiceName: otoroshi-worker-external-service
 
+# The kinds of otoroshi entities (crds) the kubernetes job reads, globally and by namespace (patterns of namespaces).
+# A kind is the plural name of its crd (routes, apikeys, admins...) or a pattern (*, *-plugins). The rules of a
+# namespace only narrow the global ones. Empty: every kind, in every namespace.
+# crdsKinds:
+#   include: ["*"]
+#   exclude: ["admins", "global-configs"]
+#   namespaces:
+#     team-a: { include: ["routes", "backends", "apikeys"] }
+#     sandbox-*: { exclude: ["certificates"] }
+crdsKinds: {}
+
 # Kubernetes Gateway API support.
 # Requires Gateway API CRDs (https://github.com/kubernetes-sigs/gateway-api/releases) installed on the cluster.
 gatewayApi:
