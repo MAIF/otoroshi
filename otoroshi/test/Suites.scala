@@ -225,6 +225,7 @@ class UnitTests
       new plugins.configs.JsonSchemaPluginConfigsSpec(),
       new plugins.configs.React2ShellPluginConfigsSpec(),
       new plugins.configs.KubernetesPluginConfigsSpec(),
+      new plugins.configs.RemoteCatalogKindsSpec(),
       new plugins.configs.KubernetesCrdsKindsSpec(),
       new plugins.configs.RequestPluginConfigsSpec(),
       new plugins.configs.ClientCertPluginConfigsSpec(),
