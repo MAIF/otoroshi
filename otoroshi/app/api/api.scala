@@ -243,6 +243,15 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       env: Env
   ): Future[Either[JsValue, Unit]] = ().rightf
 
+  // otoroshi admins and apikeys carry the rights of their holder: a user cannot write one with more than it already
+  // has, like UsersController.checkNewUserRights and the typed apikeys api, nor rewrite or delete a stored one that
+  // has more than it
+  def grantsMoreThan(json: JsValue, user: BackOfficeUser)(using env: Env): Boolean = format.reads(json) match {
+    case JsSuccess(admin: OtoroshiAdmin, _) => !user.rights.covers(admin.rights)
+    case JsSuccess(apikey: ApiKey, _)       => !ApiActionContext.canUserGrantApikeyRights(apikey, user)
+    case _                                  => false
+  }
+
   def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(using
       env: Env
   ): JsResult[JsValue] = {
@@ -250,17 +259,10 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       case e: JsError             => e
       case JsSuccess(value, path) => JsSuccess(value.json, path)
     }
-    // otoroshi admins and apikeys carry the rights of their holder: a user cannot write one with more than it already
-    // has, like UsersController.checkNewUserRights and the typed apikeys api
-    def grantsMoreThan(user: BackOfficeUser): Boolean = format.reads(json) match {
-      case JsSuccess(admin: OtoroshiAdmin, _) => !user.rights.covers(admin.rights)
-      case JsSuccess(apikey: ApiKey, _)       => !ApiActionContext.canUserGrantApikeyRights(apikey, user)
-      case _                                  => false
-    }
     f match {
       case Left(err)         => JsError(err)
       case Right(None)       => readEntity()
-      case Right(Some(user)) if grantsMoreThan(user) => JsError("you can't grant rights you don't have yourself")
+      case Right(Some(user)) if grantsMoreThan(json, user) => JsError("you can't grant rights you don't have yourself")
       case Right(Some(user)) => {
         val envValidators: Seq[JsonValidator]  =
           env.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ env.adminEntityValidators
@@ -1797,6 +1799,16 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     ("catalogs.otoroshi.io", "remote-catalogs")   -> RightsChecker.SuperAdminOnly
   )
 
+  // the location of a stored entity is not enough for the ones that carry the rights of their holder (admins,
+  // apikeys): rewriting or deleting one that has more rights than the caller would let it take over, or lock out, a
+  // stronger account located where it can write. same check as ApiActionContext.canUserWrite on the typed apis
+  private def canUserWriteStored(ctx: ApiActionContext[?], resource: Resource, entity: JsValue): Boolean = {
+    ctx.canUserWriteJson(entity) && (ctx.backOfficeUser match {
+      case Right(Some(user)) => user.rights.superAdmin || !resource.access.grantsMoreThan(entity, user)
+      case _                 => true
+    })
+  }
+
   private def withResource(
       group: String,
       version: String,
@@ -1924,7 +1936,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
               }
               .filter {
                 case Left(_)            => true
-                case Right((_, entity)) => ctx.canUserWriteJson(entity)
+                case Right((_, entity)) => canUserWriteStored(ctx, resource, entity)
               }
               .mapAsync(grouping) {
                 case Left((error, json))        =>
@@ -2153,7 +2165,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                 case Right((_, entity))  => {
                   val id = resource.access.extractIdJson(entity)
                   resource.access.findOne(version, id).flatMap {
-                    case None                                                =>
+                    case None                                                             =>
                       Json
                         .obj(
                           "status"            -> 404,
@@ -2164,7 +2176,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                         .stringify
                         .byteString
                         .future
-                    case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
+                    case Some(oldEntity) if !canUserWriteStored(ctx, resource, oldEntity) =>
                       Json
                         .obj(
                           "status"            -> 400,
@@ -2175,7 +2187,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                         .stringify
                         .byteString
                         .future
-                    case Some(oldEntity)                                     => {
+                    case Some(oldEntity)                                                  => {
                       resource.access.validateToJson(entity, resource.singularName, ctx.backOfficeUser) match {
                         case JsError(errs)   =>
                           Json
@@ -2265,7 +2277,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
               }
               .filter {
                 case Left(_)            => true
-                case Right((_, entity)) => ctx.canUserWriteJson(entity)
+                case Right((_, entity)) => canUserWriteStored(ctx, resource, entity)
               }
               .mapAsync(grouping) {
                 case Left((error, json)) =>
@@ -2458,7 +2470,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // DELETE /apis/:group/:version/:entity
   def deleteAll(group: String, version: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx) { resource =>
-      resource.access.deleteAll(version, resource.singularName, e => ctx.canUserWriteJson(e)).flatMap {
+      resource.access.deleteAll(version, resource.singularName, e => canUserWriteStored(ctx, resource, e)).flatMap {
         case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
         case Right(_)  => {
           adminApiEvent(
@@ -2527,15 +2539,15 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   def delete(group: String, version: String, entity: String, id: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx) { resource =>
       resource.access.findOne(version, id).flatMap {
-        case None                                          => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
-        case Some(entity) if !ctx.canUserWriteJson(entity) =>
+        case None                                                       => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
+        case Some(entity) if !canUserWriteStored(ctx, resource, entity) =>
           result(
             Results.Unauthorized,
             Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
             ctx.request,
             resource.some
           )
-        case Some(entity)                                  =>
+        case Some(entity)                                               =>
           adminApiEvent(
             ctx,
             s"DELETE_${resource.singularName.toUpperCase()}",
@@ -2586,7 +2598,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                           )
                           result(Results.Created, res, ctx.request, resource.some)
                       }
-                  case Some(old) if !ctx.canUserWriteJson(old) =>
+                  case Some(old) if !canUserWriteStored(ctx, resource, old) =>
                     result(
                       Results.Unauthorized,
                       Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
@@ -2634,21 +2646,21 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
           case Right(__body) => {
             val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
             resource.access.findOne(version, id).flatMap {
-              case None                                                =>
+              case None                                                             =>
                 result(
                   Results.Unauthorized,
                   Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
                   ctx.request,
                   resource.some
                 )
-              case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
+              case Some(oldEntity) if !canUserWriteStored(ctx, resource, oldEntity) =>
                 result(
                   Results.Unauthorized,
                   Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
                   ctx.request,
                   resource.some
                 )
-              case Some(oldEntity)                                     => {
+              case Some(oldEntity)                                                  => {
                 resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
                   case err @ JsError(_)                                =>
                     result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
@@ -2693,15 +2705,15 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
       import otoroshi.utils.json.JsonPatchHelpers.patchJsonSafe
       withResource(group, version, entity, ctx) { resource =>
         resource.access.findOne(version, id).flatMap {
-          case None                                            => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
-          case Some(current) if !ctx.canUserWriteJson(current) =>
+          case None                                                         => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
+          case Some(current) if !canUserWriteStored(ctx, resource, current) =>
             result(
               Results.Unauthorized,
               Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
               ctx.request,
               resource.some
             )
-          case Some(current)                                   => {
+          case Some(current)                                                => {
             val isFormDataBody                  = ctx.request.contentType.contains(
               "application/x-www-form-urlencoded"
             ) || ctx.request.contentType.contains("application/json+oto-patch")

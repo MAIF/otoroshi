@@ -212,9 +212,12 @@ trait ApiActionContextCapable {
               (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
                 .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
           }
+          // apikeys and admins carry the rights of their holder: writing or deleting one with more rights than the
+          // caller would let it take over, or lock out, a stronger account located where it can write
           locationIsMine && (item match {
-            case apikey: ApiKey => canUserGrantApikeyRights(apikey, user)
-            case _              => true
+            case apikey: ApiKey       => canUserGrantApikeyRights(apikey, user)
+            case admin: OtoroshiAdmin => user.rights.covers(admin.rights)
+            case _                    => true
           })
         }
     }

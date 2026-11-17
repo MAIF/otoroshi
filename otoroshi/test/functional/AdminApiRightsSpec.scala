@@ -753,6 +753,100 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       status mustBe 200
     }
 
+    // the stored admin was only checked for its location: a tenant admin could rewrite (new password, rights narrowed
+    // to its own) or delete any admin located in its tenant, the super admin created at first start included
+    "not let a tenant admin rewrite or delete an admin that has more rights than itself" in {
+      createSimpleAdmin("stronger-admin", adminUser)
+      val before    = simpleAdmin("stronger-admin")
+      val hijacked  = before.as[JsObject] ++ Json.obj(
+        "password" -> "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
+        "rights"   -> Json.arr(Json.obj("tenant" -> s"${tenant.value}:rw", "teams" -> Json.arr("*:rw")))
+      )
+      val admins    = "/apis/security.otoroshi.io/v1/admins"
+      val update    = call("PUT", "/api/admins/simple/stronger-admin", tenantAdminUser, hijacked.some)._2
+      val upsert    = call("POST", s"$admins/stronger-admin", tenantAdminUser, hijacked.some)._2
+      val delete    = call("DELETE", "/api/admins/simple/stronger-admin", tenantAdminUser)._2
+      val gDelete   = call("DELETE", s"$admins/stronger-admin", tenantAdminUser)._2
+      ndjsonCall("DELETE", s"$admins/_bulk", tenantAdminUser, Json.stringify(Json.obj("username" -> "stronger-admin")))
+      val (after, afterStatus) = otoroshiApiCall("GET", "/api/admins/simple/stronger-admin").futureValue
+      withClue(s"update=$update upsert=$upsert delete=$delete generic delete=$gDelete after=$afterStatus ") {
+        update mustBe 403
+        upsert mustBe 401
+        delete mustBe 403
+        gDelete mustBe 401
+        afterStatus mustBe 200
+        after mustBe before
+      }
+    }
+
+    "not let a tenant admin rewrite or delete a webauthn admin that has more rights than itself" in {
+      val (created, createdStatus) = call(
+        "POST",
+        "/api/admins/webauthn",
+        adminUser,
+        Json
+          .obj(
+            "username" -> "stronger-webauthn-admin",
+            "password" -> "password",
+            "label"    -> "stronger-webauthn-admin",
+            "handle"   -> "stronger-webauthn-handle",
+            "rights"   -> Json.arr(Json.obj("tenant" -> "*:rw", "teams" -> Json.arr("*:rw")))
+          )
+          .some
+      )
+      withClue(s"create: ${Json.stringify(created)} ") {
+        createdStatus mustBe 200
+      }
+      val path        = "/api/admins/webauthn/stronger-webauthn-admin"
+      val (before, _) = otoroshiApiCall("GET", path).futureValue
+      val hijacked    = before.as[JsObject] ++ Json.obj(
+        "password"    -> "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
+        "credentials" -> Json.obj(),
+        "rights"      -> Json.arr(Json.obj("tenant" -> s"${tenant.value}:rw", "teams" -> Json.arr("*:rw")))
+      )
+      val update      = call("PUT", path, tenantAdminUser, hijacked.some)._2
+      val delete      = call("DELETE", s"$path/stronger-webauthn-handle", tenantAdminUser)._2
+      val (after, afterStatus) = otoroshiApiCall("GET", path).futureValue
+      withClue(s"update=$update delete=$delete after=$afterStatus ") {
+        update mustBe 403
+        delete mustBe 403
+        afterStatus mustBe 200
+        after mustBe before
+      }
+    }
+
+    // the typed apikeys api checks the rights of the stored apikey, the generic api only checked its location
+    "not let a tenant admin rewrite or delete an apikey that has more rights than itself through the generic api" in {
+      otoroshiApiCall("POST", "/api/apikeys", scopedApiKeyJson("stronger-apikey", superAdminRights).some)
+        .futureValue
+        ._2 mustBe 201
+      val path        = "/apis/apim.otoroshi.io/v1/apikeys/stronger-apikey"
+      val (before, _) = otoroshiApiCall("GET", path).futureValue
+      val narrowed    = before.as[JsObject] ++ Json.obj(
+        "clientSecret" -> "hijacked-secret",
+        "metadata"     -> Json.obj("otoroshi-access-rights" -> ownRights)
+      )
+      val update      = call("PUT", path, tenantAdminUser, narrowed.some)._2
+      val upsert      = call("POST", path, tenantAdminUser, narrowed.some)._2
+      val patch       = call(
+        "PATCH",
+        path,
+        tenantAdminUser,
+        Json.arr(Json.obj("op" -> "replace", "path" -> "/clientSecret", "value" -> "hijacked-secret")).some
+      )._2
+      val delete      = call("DELETE", path, tenantAdminUser)._2
+      val (after, afterStatus) = otoroshiApiCall("GET", path).futureValue
+      withClue(s"update=$update upsert=$upsert patch=$patch delete=$delete after=$afterStatus ") {
+        update mustBe 401
+        upsert mustBe 401
+        patch mustBe 401
+        delete mustBe 401
+        afterStatus mustBe 200
+        (after \ "clientSecret").as[String] mustBe "stronger-apikey-secret"
+        (after \ "metadata").as[JsValue] mustBe (before \ "metadata").as[JsValue]
+      }
+    }
+
     // the generic api upsert only validated the location the caller sent, never the one of the entity
     // it was about to overwrite
     "not let a scoped user hijack an entity of another tenant through POST /apis/:group/:version/:entity/:id" in {
