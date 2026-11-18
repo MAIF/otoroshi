@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkotoroshi_documentation=self.webpackChunkotoroshi_documentation||[]).push([["5743"],{22194(e,o,t){t.d(o,{createTreemapServices:()=>s.d});var s=t(81048);t(80184)}}]);
