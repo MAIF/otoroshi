@@ -12,7 +12,7 @@ import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models.{ApiKey, EntityKind, EntityLocationSupport, PersonalAdminApikey, RightsChecker, TenantId}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits.*
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Results.Status
 import play.api.mvc.*
 import otoroshi.utils.http.RequestImplicits.*
@@ -59,6 +59,14 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
       })
     }
   }
+  // whether the user sees the credentials of an apikey it can read, see ApiActionContext.canUserReadApikeySecret
+  def canUserReadApikeySecret(apikey: ApiKey)(using env: Env): Boolean =
+    ApiActionContext.canUserReadApikeySecret(apikey, user, PersonalAdminApikey.ownerFor(user))
+
+  // the json of an apikey in a response of the backoffice: without its credentials when the user cannot see them
+  def apikeyJson(apikey: ApiKey)(using env: Env): JsValue =
+    if (canUserReadApikeySecret(apikey)) apikey.toJson else ApiKey.withoutSecrets(apikey.toJson)
+
   def canUserWrite[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     rootOrTenantAdmin(user) {
       (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights

@@ -18,7 +18,7 @@
       },
       "clientSecret": {
         "type": "string",
-        "description": "The secret of the api key, sent by the clients as `client_secret`. 64 random lowercase alphanumerical characters when otoroshi generates it, but any non blank string is accepted",
+        "description": "The secret of the api key, sent by the clients as `client_secret`. 64 random lowercase alphanumerical characters when otoroshi generates it, but any non blank string is accepted. Answered as `********` to a caller that could not have granted the api key: an api key of the admin api whose rights are not covered by the ones of the caller (without `otoroshi-access-rights`, every caller but the super admins). Written back as `********`, the api key keeps its secret",
         "example": "0o07w2s891kstlttvgxdhb26sb8l6p3qgp9l4gc9qmp2og0nxbtbhqwmncutn6dr"
       },
       "clientName": {
@@ -161,7 +161,7 @@
       },
       "bearer": {
         "type": "string",
-        "description": "A bearer token standing for the credentials of the api key, that clients can send in an `Authorization: Bearer` header instead of the id and the secret: `otoapk_<clientId>_<signature>`, the signature being the HMAC-SHA256 of `otoapk_<clientId>` keyed with the secret. Computed by otoroshi, not read back",
+        "description": "A bearer token standing for the credentials of the api key, that clients can send in an `Authorization: Bearer` header instead of the id and the secret: `otoapk_<clientId>_<signature>`, the signature being the HMAC-SHA256 of `otoapk_<clientId>` keyed with the secret. Computed by otoroshi, not read back. `********` when the secret is masked",
         "readOnly": true,
         "example": "otoapk_v0stmnfeqy9fqbqh_d5a155e13ab2d8c1fb42d4ee9217ded6a571e0029f7e7031bb5bfdda468b09c7"
       }
@@ -393,7 +393,7 @@
       "nextSecret": {
         "type": "string",
         "nullable": true,
-        "description": "The next secret, generated at the start of the grace period. Null outside of it",
+        "description": "The next secret, generated at the start of the grace period. Null outside of it. `********` when the secret of the api key is masked, kept as it is when written back so",
         "example": "ftz6x3sb0kkgv8ra4ehqxc9wnl25jmyd7uo1pi0r4m8kzqvhe62sbt3ylgw9acfn"
       },
       "bearer": {

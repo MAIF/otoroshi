@@ -1899,7 +1899,7 @@ class BackOfficeController(
             val filtered = apikeys
               .filter(ctx.canUserRead)
               .filter(_.authorizedOnServiceOrGroups(service.id, service.groups))
-            Ok(JsArray(filtered.map(_.toJson)))
+            Ok(JsArray(filtered.map(k => ctx.apikeyJson(k))))
           }
         }
       }

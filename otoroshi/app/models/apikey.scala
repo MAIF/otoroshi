@@ -447,6 +447,45 @@ object ApiKey {
 
   lazy val logger = Logger("otoroshi-apkikey")
 
+  // what replaces the credentials of an apikey in a response for a caller that cannot see them
+  val maskedSecret = "********"
+
+  private def masking(fields: String*)(json: JsObject): JsObject =
+    fields.foldLeft(json) { (obj, field) =>
+      obj.value.get(field) match {
+        case Some(JsString(value)) if value.nonEmpty => obj ++ Json.obj(field -> maskedSecret)
+        case _                                       => obj
+      }
+    }
+
+  // the json of an apikey without the credentials it carries: its secret, its bearer, and the next secret and bearer
+  // of its rotation. Everything else (its rights, metadata, quotas...) stays readable
+  def withoutSecrets(json: JsValue): JsValue = json match {
+    case obj: JsObject =>
+      val base = masking("clientSecret", "bearer")(obj)
+      base.value.get("rotation") match {
+        case Some(rotation: JsObject) => base ++ Json.obj("rotation" -> masking("nextSecret", "bearer")(rotation))
+        case _                        => base
+      }
+    case other         => other
+  }
+
+  // an apikey written back with the masked credentials it was read with keeps the ones it has
+  def keepingStoredSecrets(apikey: ApiKey, stored: Option[ApiKey]): ApiKey = stored match {
+    case None         => apikey
+    case Some(stored) =>
+      apikey.copy(
+        clientSecret = if (apikey.clientSecret == maskedSecret) stored.clientSecret else apikey.clientSecret,
+        rotation =
+          if (apikey.rotation.nextSecret.contains(maskedSecret))
+            apikey.rotation.copy(nextSecret = stored.rotation.nextSecret)
+          else apikey.rotation
+      )
+  }
+
+  def carriesMaskedSecret(apikey: ApiKey): Boolean =
+    apikey.clientSecret == maskedSecret || apikey.rotation.nextSecret.contains(maskedSecret)
+
   // rights of the holder of this apikey when it is used against the admin api, see
   // otoroshi.actions.ApiActionContextCapable
   val accessRightsMetadataKey = "otoroshi-access-rights"

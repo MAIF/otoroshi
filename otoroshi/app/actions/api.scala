@@ -49,6 +49,20 @@ object ApiActionContext {
     }
   }
 
+  // the secret of an apikey is a credential: a caller sees it only if it could have granted that apikey. An apikey
+  // that gives access to the admin api is seen by the callers whose rights cover the ones it gives (one without rights
+  // metadata by the super admins only), a personal admin apikey by the ones who can read it, any other apikey (a
+  // consumer key) by whoever can read it
+  def canUserReadApikeySecret(apikey: ApiKey, user: BackOfficeUser, caller: => Option[PersonalAdminApikeyOwner])(using
+      env: Env
+  ): Boolean = {
+    if (env.bypassUserRightsCheck || user.rights.superAdmin) true
+    else if (PersonalAdminApikey.isPersonal(apikey)) PersonalAdminApikey.canRead(apikey.metadata, caller, user)
+    else if (!(apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey.authorizedOnService(env.backOfficeDescriptor.id)))
+      true
+    else canUserGrantRightsMetadata(apikey, user)
+  }
+
   val forbidden  = Results.Forbidden(Json.obj("error" -> "You're not authorized here !"))
   val fforbidden = forbidden.future
 
@@ -219,6 +233,19 @@ trait ApiActionContextCapable {
       }
     }
   }
+
+  // whether the caller sees the credentials of an apikey it can read, see ApiActionContext.canUserReadApikeySecret
+  def canUserReadApikeySecret(apikey: ApiKey)(using env: Env): Boolean = {
+    backOfficeUser match {
+      case Left(_)           => false
+      case Right(None)       => true
+      case Right(Some(user)) => ApiActionContext.canUserReadApikeySecret(apikey, user, callerOwner(user))
+    }
+  }
+
+  // the json of an apikey in a response of the admin api: without its credentials when the caller cannot see them
+  def apikeyJson(apikey: ApiKey)(using env: Env): JsValue =
+    if (canUserReadApikeySecret(apikey)) apikey.toJson else ApiKey.withoutSecrets(apikey.toJson)
 
   def canUserRead[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     backOfficeUser match {

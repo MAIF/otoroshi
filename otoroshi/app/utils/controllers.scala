@@ -3,7 +3,7 @@ package otoroshi.utils.controllers
 import org.apache.pekko.stream.scaladsl.{Framing, Source}
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
-import otoroshi.actions.{ApiAction, ApiActionContext}
+import otoroshi.actions.{ApiAction, ApiActionContext, ApiActionContextCapable}
 import otoroshi.env.Env
 import otoroshi.events.*
 import otoroshi.models.{BackOfficeUser, EntityLocationSupport}
@@ -265,6 +265,10 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
     }
   }
   def writeEntity(entity: Entity): JsValue
+  // what a response carries of an entity for the caller: the entity as writeEntity writes it, unless the controller hides
+  // a part of it from that caller (the credentials of an apikey). Every response of the helper goes through it, the
+  // filters of the lists too, so that a filter cannot tell what the response hides
+  def writeEntityFor(entity: Entity, ctx: ApiActionContextCapable)(using env: Env): JsValue = writeEntity(entity)
   def findByIdOps(
       id: String,
       req: RequestHeader
@@ -797,7 +801,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                         ctx.ua
                       )
                     )
-                    Created(writeEntity(entity))
+                    Created(writeEntityFor(entity, ctx))
                 }
               }
             }
@@ -903,7 +907,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           )
         )
         val jsonElements: Seq[JsValue] =
-          entities.filter(ctx.canUserRead).map(writeEntity)
+          entities.filter(ctx.canUserRead).map(e => writeEntityFor(e, ctx))
 
         val reducedItems  = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
@@ -1042,11 +1046,11 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             val fields    = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
             val hasFields = fields.nonEmpty
             if (hasFields) {
-              val out = writeEntity(v).as[JsObject]
+              val out = writeEntityFor(v, ctx).as[JsObject]
               // TODO: support dotted notation ?
               Ok(JsObject(out.value.view.filterKeys(f => fields.contains(f)).toMap))
             } else {
-              Ok(writeEntity(v))
+              Ok(writeEntityFor(v, ctx))
             }
         }
     }
@@ -1111,7 +1115,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                         ctx.ua
                       )
                     )
-                    Ok(writeEntity(entity))
+                    Ok(writeEntityFor(entity, ctx))
                 }
               }
             }
@@ -1180,7 +1184,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                         ctx.ua
                       )
                     )
-                    Ok(writeEntity(newEntity))
+                    Ok(writeEntityFor(newEntity, ctx))
                 }
               }
             }

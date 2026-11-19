@@ -203,3 +203,14 @@ If you want to restrict the scope of an Otoroshi Admin. API apikey, you can add 
   }
 }
 ```
+
+### Who reads the secret of an apikey
+
+The secret of an apikey that gives access to the admin api is a credential with the rights of that apikey: reading it is getting those rights. So a caller sees it only if it could have granted that apikey, the same rule as writing one:
+
+* a super admin, and an admin api apikey without `otoroshi-access-rights`, see every secret
+* an admin api apikey (authorized on the admin api group) is seen whole by the callers whose rights cover the rights of its `otoroshi-access-rights`. One without `otoroshi-access-rights`, which has no restriction at all, is seen by the super admins only
+* a personal admin apikey is seen by its owner and the super admins
+* any other apikey, the one of a consumer, is seen by whoever can read it
+
+The others still read the apikey (it stays in the lists, with its rights, metadata and quotas), with `********` in place of its `clientSecret`, of its `bearer` and of the `nextSecret` and `bearer` of its rotation, and `GET /api/apikeys/:id/bearer` answers `403`. That applies to every read of the admin api (`/api/apikeys`, `/apis/apim.otoroshi.io/v1/apikeys`, the apikeys of a group, of a route, of an api) and of the backoffice. An apikey written back with `********` as its secret keeps the secret it has.

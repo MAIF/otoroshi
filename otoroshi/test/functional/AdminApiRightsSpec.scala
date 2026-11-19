@@ -1191,6 +1191,129 @@ class AdminApiRightsSpec(name: String, configurationSpec: => Configuration) exte
       }
     }
 
+    "set up the apikeys whose secrets are read" in {
+      def key(clientId: String, adminApi: Boolean, rights: Option[String]): JsValue = Json.obj(
+        "clientId"           -> clientId,
+        "clientSecret"       -> s"$clientId-secret",
+        "clientName"         -> clientId,
+        "authorizedEntities" -> (if (adminApi) Json.arr("group_admin-api-group") else Json.arr()),
+        "metadata"           -> rights.map(r => Json.obj("otoroshi-access-rights" -> r)).getOrElse(Json.obj()).as[JsObject],
+        "_loc"               -> Json.obj("tenant" -> tenant.value, "teams" -> Json.arr(team.value))
+      )
+      Seq(
+        // no rights metadata: no restriction at all
+        key("secret-super-key", adminApi = true, None),
+        key("secret-consumer-key", adminApi = false, None),
+        // the rights of the scoped callers
+        key("secret-covered-key", adminApi = true, ownRights.some),
+        // every team of the tenant: more than a team scoped caller
+        key("secret-wider-key", adminApi = true, s"""[{"tenant":"${tenant.value}:rw","teams":["*:rw"]}]""".some)
+      ).foreach { json =>
+        val (body, status) = otoroshiApiCall("POST", "/api/apikeys", json.some).futureValue
+        withClue(s"create ${(json \ "clientId").as[String]}: ${Json.stringify(body)} ")(status mustBe 201)
+      }
+      createScopedApiKey("secret-narrowed-key")
+    }
+
+    "not show the secret of an admin api apikey to a caller that could not have granted it" in {
+      def secretOf(json: JsValue): String = (json \ "clientSecret").as[String]
+      def read(path: String): (JsValue, Int) = apikeyCall("GET", path, "secret-narrowed-key")
+      def listed(json: JsValue): Map[String, String] =
+        json.as[Seq[JsObject]].map(k => (k \ "clientId").as[String] -> secretOf(k)).toMap
+
+      // a consumer key, and an admin api apikey whose rights are the ones of the caller: seen whole
+      secretOf(read("/api/apikeys/secret-consumer-key")._1) mustBe "secret-consumer-key-secret"
+      secretOf(read("/api/apikeys/secret-covered-key")._1) mustBe "secret-covered-key-secret"
+      // an unrestricted admin api apikey, or one with more rights: still readable, its secret masked
+      Seq("secret-super-key", "secret-wider-key").foreach { clientId =>
+        val (byId, status) = read(s"/api/apikeys/$clientId")
+        withClue(s"$clientId: ${Json.stringify(byId)} ") {
+          status mustBe 200
+          (byId \ "clientId").as[String] mustBe clientId
+          secretOf(byId) mustBe ApiKey.maskedSecret
+        }
+        val (generic, genericStatus) = read(s"/apis/apim.otoroshi.io/v1/apikeys/$clientId")
+        withClue(s"generic $clientId: ${Json.stringify(generic)} ") {
+          genericStatus mustBe 200
+          secretOf(generic) mustBe ApiKey.maskedSecret
+          (generic \ "bearer").as[String] mustBe ApiKey.maskedSecret
+        }
+        read(s"/api/apikeys/$clientId/bearer")._2 mustBe 403
+      }
+      read("/api/apikeys/secret-consumer-key/bearer")._2 mustBe 200
+      Seq("/api/apikeys", "/apis/apim.otoroshi.io/v1/apikeys").foreach { path =>
+        val keys = listed(read(path)._1)
+        withClue(s"$path: $keys ") {
+          keys.get("secret-super-key") mustBe Some(ApiKey.maskedSecret)
+          keys.get("secret-wider-key") mustBe Some(ApiKey.maskedSecret)
+          keys.get("secret-consumer-key") mustBe Some("secret-consumer-key-secret")
+          keys.get("secret-covered-key") mustBe Some("secret-covered-key-secret")
+        }
+      }
+      // a filter does not tell what the answer hides
+      listed(read("/api/apikeys?filter.clientSecret=secret-super-key-secret")._1).keySet must not contain "secret-super-key"
+      listed(read("/api/apikeys?filter.clientSecret=secret-consumer-key-secret")._1).keySet mustBe Set("secret-consumer-key")
+    }
+
+    "not show the super admin apikey of a tenant to a tenant admin of that tenant" in {
+      val defaultTenantAdmin = scopedUser.copy(
+        randomId = "default-tenant-admin@otoroshi.io",
+        name = "default-tenant-admin@otoroshi.io",
+        email = "default-tenant-admin@otoroshi.io",
+        rights = UserRights(Seq(UserRight(TenantAccess("default"), Seq(TeamAccess("*")))))
+      )
+      def read(path: String): (JsValue, Int) = call("GET", path, defaultTenantAdmin, currentTenant = TenantId("default"))
+      val (byId, status) = read("/api/apikeys/admin-api-apikey-id")
+      withClue(Json.stringify(byId)) {
+        status mustBe 200
+        (byId \ "clientSecret").as[String] mustBe ApiKey.maskedSecret
+      }
+      val (ofGroup, groupStatus) = read("/api/groups/admin-api-group/apikeys")
+      withClue(Json.stringify(ofGroup)) {
+        groupStatus mustBe 200
+        val adminKey = ofGroup.as[Seq[JsObject]].find(k => (k \ "clientId").as[String] == "admin-api-apikey-id")
+        adminKey.map(k => (k \ "clientSecret").as[String]) mustBe Some(ApiKey.maskedSecret)
+      }
+      (read("/api/groups/admin-api-group/apikeys/admin-api-apikey-id")._1 \ "clientSecret").as[String] mustBe
+      ApiKey.maskedSecret
+      read("/api/apikeys/admin-api-apikey-id/bearer")._2 mustBe 403
+      Json.stringify(read("/api/apikeys")._1) must not include "admin-api-apikey-secret"
+      Json.stringify(read("/apis/apim.otoroshi.io/v1/apikeys")._1) must not include "admin-api-apikey-secret"
+    }
+
+    "still show every secret to a super admin and to an unrestricted admin api apikey" in {
+      val (asAdmin, _)        = call("GET", "/api/apikeys/secret-super-key", adminUser)
+      (asAdmin \ "clientSecret").as[String] mustBe "secret-super-key-secret"
+      val (unrestricted, _)   = otoroshiApiCall("GET", "/api/apikeys/secret-super-key").futureValue
+      (unrestricted \ "clientSecret").as[String] mustBe "secret-super-key-secret"
+      val (generic, _)        = otoroshiApiCall("GET", "/apis/apim.otoroshi.io/v1/apikeys/secret-super-key").futureValue
+      (generic \ "clientSecret").as[String] mustBe "secret-super-key-secret"
+      (generic \ "bearer").as[String] must startWith("otoapk_")
+      call("GET", "/api/apikeys/secret-super-key/bearer", adminUser)._2 mustBe 200
+    }
+
+    "keep the secret of an apikey written back with its masked secret" in {
+      def stored(): String =
+        (otoroshiApiCall("GET", "/api/apikeys/secret-covered-key").futureValue._1 \ "clientSecret").as[String]
+      val masked = Json.arr(Json.obj("op" -> "replace", "path" -> "/clientSecret", "value" -> ApiKey.maskedSecret))
+      otoroshiApiCall("PATCH", "/api/apikeys/secret-covered-key", masked.some).futureValue._2 mustBe 200
+      stored() mustBe "secret-covered-key-secret"
+      otoroshiApiCall("PATCH", "/api/groups/admin-api-group/apikeys/secret-covered-key", masked.some).futureValue._2 mustBe 200
+      stored() mustBe "secret-covered-key-secret"
+      val (current, _)    = otoroshiApiCall("GET", "/apis/apim.otoroshi.io/v1/apikeys/secret-covered-key").futureValue
+      val (_, putStatus)  = otoroshiApiCall(
+        "PUT",
+        "/apis/apim.otoroshi.io/v1/apikeys/secret-covered-key",
+        (current.as[JsObject] ++ Json.obj("clientSecret" -> ApiKey.maskedSecret)).some
+      ).futureValue
+      putStatus mustBe 200
+      stored() mustBe "secret-covered-key-secret"
+      // another secret is still written
+      val renewed = Json.arr(Json.obj("op" -> "replace", "path" -> "/clientSecret", "value" -> "secret-covered-key-renewed"))
+      otoroshiApiCall("PATCH", "/api/apikeys/secret-covered-key", renewed.some).futureValue._2 mustBe 200
+      stored() mustBe "secret-covered-key-renewed"
+    }
+
     "shutdown" in {
       stopAll()
     }

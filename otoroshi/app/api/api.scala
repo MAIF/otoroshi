@@ -6,7 +6,7 @@ import org.apache.pekko.util.ByteString
 import otoroshi.next.models.{Api, ApiSubscription, RouteTemplate}
 import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime
-import otoroshi.actions.{ApiAction, ApiActionContext}
+import otoroshi.actions.{ApiAction, ApiActionContext, ApiActionContextCapable}
 import otoroshi.api.DeleteAction.{DeleteAll, DeleteOne}
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.controllers.HealthController
@@ -464,6 +464,10 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   // the entities are not even read
   def beforeDeleteMany: Option[(Seq[T], Env) => Future[Unit]] = None
 
+  // what the generic api answers of an entity the caller can read: the json as it is, unless the resource hides a part
+  // of it from that caller (the credentials of an apikey). Applied before the filters and the projections of a list
+  def readableJson(json: JsValue, ctx: ApiActionContextCapable)(using env: Env): JsValue = json
+
   // no validation as it's only used by kubernetes jobs and remote catalogs
   def deleteMany(version: String, ids: Seq[String])(using
       ec: ExecutionContext,
@@ -689,6 +693,42 @@ class ApisResourceAccess(env: Env)
   override def beforeDeleteMany: Option[(Seq[Api], Env) => Future[Unit]] = Some(Api.beforeDeleteMany)
 }
 
+// the access of the apikeys: the credentials of an apikey are only answered to a caller that could have granted it, and
+// an apikey written back with the masked credentials it was read with keeps the ones it has. A subclass rather than a
+// new parameter of the case class, whose constructor the admin extensions are compiled against
+class ApiKeysResourceAccess(env: Env)
+    extends GenericResourceAccessApiWithStateAndWriteValidation[ApiKey](
+      ApiKeysResourceAccess.format,
+      classOf[ApiKey],
+      env.datastores.apiKeyDataStore.key,
+      env.datastores.apiKeyDataStore.extractId,
+      json => json.select("clientId").asString,
+      () => "clientId",
+      (v, p, ctx) => env.datastores.apiKeyDataStore.template(env, ctx).json,
+      stateAll = () => env.proxyState.allApikeys(),
+      stateOne = id => env.proxyState.apikey(id),
+      stateUpdate = seq => env.proxyState.updateApikeys(seq),
+      writeValidator = (entity, _, oldEntity, _, _, _, _) =>
+        ApiKey.keepingStoredSecrets(entity, oldEntity.map(_._1)).rightf,
+      writeChecker = (entity, _, oldEntity, _, _, _, _) =>
+        ApiKey.keepingStoredSecrets(entity, oldEntity.map(_._1)).rightf
+    ) {
+  override def readableJson(json: JsValue, ctx: ApiActionContextCapable)(using env: Env): JsValue =
+    ApiKey._fmt.reads(json) match {
+      case JsSuccess(apikey, _) if ctx.canUserReadApikeySecret(apikey) => json
+      // an apikey that cannot be read is answered without anything that could be a credential
+      case _                                                            => ApiKey.withoutSecrets(json)
+    }
+}
+
+object ApiKeysResourceAccess {
+  // the bearers of an apikey are part of its json in the generic api
+  val format: Format[ApiKey] = new Format[ApiKey] {
+    override def reads(json: JsValue): JsResult[ApiKey] = ApiKey._fmt.reads(json)
+    override def writes(o: ApiKey): JsValue             = o.jsonWithBearer
+  }
+}
+
 class OtoroshiResources(env: Env) {
   // the resources of otoroshi itself, without any admin extension
   private lazy val nativeResources = Seq(
@@ -816,30 +856,7 @@ class OtoroshiResources(env: Env) {
       "apikey",
       "apim.otoroshi.io",
       ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApiWithState[ApiKey](
-        new Format[ApiKey] {
-          override def reads(json: JsValue): JsResult[ApiKey] = {
-            ApiKey._fmt.reads(json)
-          }
-          override def writes(o: ApiKey): JsValue = {
-            // var base = Json.obj("bearer" -> o.toBearer())
-            // if (o.rotation.enabled && o.rotation.nextSecret.isDefined) {
-            //   base = base ++ Json.obj("rotation" -> Json.obj("bearer" -> o.toNextBearer()))
-            // }
-            // ApiKey._fmt.writes(o).asObject.deepMerge(base)
-            o.jsonWithBearer
-          }
-        },
-        classOf[ApiKey],
-        env.datastores.apiKeyDataStore.key,
-        env.datastores.apiKeyDataStore.extractId,
-        json => json.select("clientId").asString,
-        () => "clientId",
-        (v, p, ctx) => env.datastores.apiKeyDataStore.template(env, ctx).json,
-        stateAll = () => env.proxyState.allApikeys(),
-        stateOne = id => env.proxyState.apikey(id),
-        stateUpdate = seq => env.proxyState.updateApikeys(seq)
-      )
+      new ApiKeysResourceAccess(env)
     ),
     //////
     Resource(
@@ -2430,7 +2447,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
           Json.obj(),
           None
         )
-        result(Results.Ok, JsArray(entities.filter(e => ctx.canUserReadJson(e, EntityKind.of(resource)))), ctx.request, resource.some)
+        result(Results.Ok, JsArray(entities.filter(e => ctx.canUserReadJson(e, EntityKind.of(resource))).map(e => resource.access.readableJson(e, ctx))), ctx.request, resource.some)
       }
     }
   }
@@ -2512,7 +2529,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                             body,
                             s"${resource.singularName}Created".some
                           )
-                          result(Results.Created, res, ctx.request, resource.some)
+                          result(Results.Created, resource.access.readableJson(res, ctx), ctx.request, resource.some)
                       }
                 }
               }
@@ -2585,7 +2602,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
             Json.obj("id" -> id),
             None
           )
-          result(Results.Ok, entity, ctx.request, resource.some)
+          result(Results.Ok, resource.access.readableJson(entity, ctx), ctx.request, resource.some)
       }
     }
   }
@@ -2612,7 +2629,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
           )
           resource.access.deleteOne(version, id, resource.singularName).flatMap {
             case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
-            case Right(_)  => result(Results.Ok, entity, ctx.request, resource.some)
+            case Right(_)  => result(Results.Ok, resource.access.readableJson(entity, ctx), ctx.request, resource.some)
           }
       }
     }
@@ -2651,7 +2668,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                             body,
                             s"${resource.singularName}Created".some
                           )
-                          result(Results.Created, res, ctx.request, resource.some)
+                          result(Results.Created, resource.access.readableJson(res, ctx), ctx.request, resource.some)
                       }
                   case Some(old) if !canUserWriteStored(ctx, resource, old) =>
                     result(
@@ -2742,7 +2759,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                                 body,
                                 s"${resource.singularName}Updated".some
                               )
-                              result(Results.Ok, res, ctx.request, resource.some)
+                              result(Results.Ok, resource.access.readableJson(res, ctx), ctx.request, resource.some)
                           }
                     }
                   }
@@ -2816,7 +2833,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                             body,
                             s"${resource.singularName}Patched".some
                           )
-                          result(Results.Ok, res, ctx.request, resource.some)
+                          result(Results.Ok, resource.access.readableJson(res, ctx), ctx.request, resource.some)
                       }
                 }
               }

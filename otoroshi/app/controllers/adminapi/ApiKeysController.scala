@@ -1,6 +1,6 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions.ApiAction
+import otoroshi.actions.{ApiAction, ApiActionContextCapable}
 import otoroshi.env.Env
 import otoroshi.models.ApiKey
 import otoroshi.utils.controllers.{
@@ -476,11 +476,11 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                   }
                   .drop(paginationPosition)
                   .take(paginationPageSize)
-                  .map(_.toJson)
+                  .map(k => ctx.apikeyJson(k))
               )
             )
           } else {
-            Ok(JsArray(apiKeys.filter(ctx.canUserRead).map(_.toJson)))
+            Ok(JsArray(apiKeys.filter(ctx.canUserRead).map(k => ctx.apikeyJson(k))))
           }
         }
       }
@@ -504,7 +504,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                 Json.obj("groupId" -> groupId, "clientId" -> clientId),
                 ctx
               )
-              Ok(apiKey.toJson)
+              Ok(ctx.apikeyJson(apiKey))
             }
             case other => throw new IllegalStateException(s"unreachable case: $other")
           }
@@ -555,7 +555,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                       env.datastores.apiKeyDataStore.addFastLookupByGroup(groupId, apiKey).map { _ =>
                         env.datastores.apiKeyDataStore.findAll()
                       }
-                      Created(apiKey.toJson)
+                      Created(ctx.apikeyJson(apiKey))
                     }
                   }
                 }
@@ -601,7 +601,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                         ),
                         ctx
                       )
-                      newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                      // an apikey written back with the masked credentials it was read with keeps the ones it has
+                      val kept = ApiKey.keepingStoredSecrets(newApiKey, Some(apiKey))
+                      kept.save().map(_ => Ok(ctx.apikeyJson(kept)))
                     }
                   }
                 }
@@ -646,7 +648,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                     ),
                     ctx
                   )
-                  newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                  // an apikey written back with the masked credentials it was read with keeps the ones it has
+                  val kept = ApiKey.keepingStoredSecrets(newApiKey, Some(apiKey))
+                  kept.save().map(_ => Ok(ctx.apikeyJson(kept)))
                 }
                 case other => throw new IllegalStateException(s"unreachable case: $other")
               }
@@ -715,6 +719,15 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
 
   override def writeEntity(entity: ApiKey): JsValue = ApiKey._fmt.writes(entity)
 
+  // the credentials of an apikey are only answered to a caller that could have granted it
+  override def writeEntityFor(entity: ApiKey, ctx: ApiActionContextCapable)(using env: Env): JsValue =
+    if (ctx.canUserReadApikeySecret(entity)) writeEntity(entity) else ApiKey.withoutSecrets(writeEntity(entity))
+
+  // an apikey written back with the masked credentials it was read with keeps the ones it has
+  private def withStoredSecrets(entity: ApiKey)(using env: Env, ec: ExecutionContext): Future[ApiKey] =
+    if (!ApiKey.carriesMaskedSecret(entity)) entity.vfuture
+    else env.datastores.apiKeyDataStore.findById(entity.clientId).map(stored => ApiKey.keepingStoredSecrets(entity, stored))
+
   override def findByIdOps(
       id: String,
       req: RequestHeader
@@ -749,10 +762,10 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   }
 
   override def createEntityOps(
-      entity: ApiKey,
+      _entity: ApiKey,
       req: RequestHeader
-  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
-    env.datastores.apiKeyDataStore.set(entity).map {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] =
+    withStoredSecrets(_entity).flatMap { entity => env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
         Right(
           EntityAndContext(
@@ -776,10 +789,10 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   }
 
   override def updateEntityOps(
-      entity: ApiKey,
+      _entity: ApiKey,
       req: RequestHeader
-  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
-    env.datastores.apiKeyDataStore.set(entity).map {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] =
+    withStoredSecrets(_entity).flatMap { entity => env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
         Right(
           EntityAndContext(
@@ -833,6 +846,8 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
       env.datastores.apiKeyDataStore.findById(clientId).flatMap {
         case None                                     => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
         case Some(apiKey) if !ctx.canUserRead(apiKey) => ctx.fforbidden
+        // a bearer is the secret of the apikey in another form
+        case Some(apiKey) if !ctx.canUserReadApikeySecret(apiKey) => ctx.fforbidden
         case Some(apiKey)                             => {
           sendAudit(
             "ACCESS_SERVICE_APIKEY_SINGLE",

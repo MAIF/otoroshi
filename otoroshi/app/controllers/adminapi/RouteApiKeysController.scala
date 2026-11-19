@@ -239,7 +239,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                         env.datastores.apiKeyDataStore.addFastLookupByService(id, apiKey).map { _ =>
                           env.datastores.apiKeyDataStore.findAll()
                         }
-                        Created(apiKey.toJson)
+                        Created(ctx.apikeyJson(apiKey))
                       }
                     }
                   }
@@ -302,7 +302,9 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                           ),
                           ctx
                         )
-                        newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                        // an apikey written back with the masked credentials it was read with keeps the ones it has
+                        val kept = ApiKey.keepingStoredSecrets(newApiKey, Some(apiKey))
+                        kept.save().map(_ => Ok(ctx.apikeyJson(kept)))
                       }
                       case other => throw new IllegalStateException(s"unreachable case: $other")
                     }
@@ -365,7 +367,9 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                       ),
                       ctx
                     )
-                    newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                    // an apikey written back with the masked credentials it was read with keeps the ones it has
+                    val kept = ApiKey.keepingStoredSecrets(newApiKey, Some(apiKey))
+                    kept.save().map(_ => Ok(ctx.apikeyJson(kept)))
                   }
                   case other => throw new IllegalStateException(s"unreachable case: $other")
                 }
@@ -464,11 +468,11 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                 }
                 .drop(paginationPosition)
                 .take(paginationPageSize)
-                .map(_.toJson)
+                .map(k => ctx.apikeyJson(k))
             )
           )
         } else {
-          Ok(JsArray(apiKeys.filter(ctx.canUserRead).map(_.toJson)))
+          Ok(JsArray(apiKeys.filter(ctx.canUserRead).map(k => ctx.apikeyJson(k))))
         }
       }
     }
@@ -506,7 +510,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
               getAuditData(clientId.some, isRoute, id),
               ctx
             )
-            Ok(apiKey.toJson)
+            Ok(ctx.apikeyJson(apiKey))
           }
           case other => throw new IllegalStateException(s"unreachable case: $other")
         }
