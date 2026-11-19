@@ -60,6 +60,12 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
 
   private var matchingClient: (PrivateKey, Array[X509Certificate]) = scala.compiletime.uninitialized
   private var otherClient: (PrivateKey, Array[X509Certificate])    = scala.compiletime.uninitialized
+  // CN=mtls-client, issued by a second authority of the store, trusted by the handshake too
+  private var secondCaClient: (PrivateKey, Array[X509Certificate]) = scala.compiletime.uninitialized
+  // CN=mtls-client, issued by an authority outside of the store that bears the dn of the test CA
+  private var forgedClient: (PrivateKey, Array[X509Certificate])   = scala.compiletime.uninitialized
+  // the issuer pattern of the certificates of the test CA
+  private val testCaIssuer                                         = ".*CN=Otoroshi Frontend Test CA.*"
   // the backend of the apis of the mtls plans: a call depends on nothing but this instance
   private var mtlsBackend: TargetService                           = scala.compiletime.uninitialized
 
@@ -111,8 +117,12 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       .copy(id = s"mtlsplan-srv-${IdGenerator.token(8)}", name = host, description = host)
   }
 
-  private def clientCert(dn: String)(using e: Env): (PrivateKey, Array[X509Certificate]) = {
-    val ca   = FrontendTlsSpec.testCa(e)
+  private def clientCert(dn: String)(using e: Env): (PrivateKey, Array[X509Certificate]) =
+    clientCertFrom(FrontendTlsSpec.testCa(e), dn)
+
+  private def clientCertFrom(ca: otoroshi.ssl.pki.models.GenCertResponse, dn: String)(using
+      e: Env
+  ): (PrivateKey, Array[X509Certificate]) = {
     val resp = FakeKeyStore.createClientCertificateFromCA(dn, 3650.days, None, None, ca.cert, ca.caChain, ca.keyPair)(
       using e
     )
@@ -192,6 +202,14 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
   )
 
   private def deployApi(planId: String, accessModeConfiguration: JsObject, tag: String): Api = {
+    given Env = otoEnv
+    val api   = mtlsApi(planId, accessModeConfiguration, tag)
+    otoEnv.datastores.apiDataStore.set(api).futureValue
+    await(8.seconds) // let the proxy state job generate the routes
+    api
+  }
+
+  private def mtlsApi(planId: String, accessModeConfiguration: JsObject, tag: String): Api = {
     given Env  = otoEnv
     val default = ApiBackend.empty
     val backend = default.copy(
@@ -237,8 +255,6 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         )
       )
     )
-    otoEnv.datastores.apiDataStore.set(api).futureValue
-    await(8.seconds) // let the proxy state job generate the routes
     api
   }
 
@@ -266,6 +282,22 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       )
       matchingClient = clientCert("CN=mtls-client, O=Otoroshi Test")
       otherClient = clientCert("CN=other-client, O=Otoroshi Test")
+      // the authorities a plan names are read from the store: the test CA is stored too, with a second CA that the
+      // handshake trusts as well
+      val secondCa = FakeKeyStore.createCA("CN=Otoroshi Second Test CA, O=Otoroshi Test", 3650.days, None, None)
+      otoEnv.datastores.certificatesDataStore
+        .set(FrontendTlsSpec.testCa(otoEnv).toCert.copy(id = "mtlsplan-ca", name = "mtlsplan-ca", description = "ca", ca = true))
+        .futureValue
+      otoEnv.datastores.certificatesDataStore
+        .set(secondCa.toCert.copy(id = "mtlsplan-second-ca", name = "mtlsplan-second-ca", description = "ca", ca = true))
+        .futureValue
+      secondCaClient = clientCertFrom(secondCa, "CN=mtls-client, O=Otoroshi Test")
+      // another key pair under the very dn of the test CA, never stored
+      val forgedCa = FakeKeyStore.createCA("CN=Otoroshi Frontend Test CA, O=Otoroshi Test", 3650.days, None, None)
+      forgedClient = clientCertFrom(forgedCa, "CN=mtls-client, O=Otoroshi Test")
+      awaitCond(30.seconds) {
+        otoEnv.proxyState.certificate("mtlsplan-ca").isDefined && otoEnv.proxyState.certificate("mtlsplan-second-ca").isDefined
+      }
       // the handshake must complete without a cert too, so that the plan itself decides
       val gc = getOtoroshiConfig(customPort = Some(port)).futureValue
       updateOtoroshiConfig(
@@ -345,6 +377,174 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         call(Some(otherClient)) mustBe Some(200)
         ApiPlanApikeySeen.get("mtls-open") mustBe Some(s"mtls_${api.id}_plan-mtls-open_other-client")
       } finally undeploy(api)
+    }
+
+    "require every list of patterns with dn_match all" in {
+      val api = deployApi(
+        "plan-mtls-all",
+        Json.obj(
+          "regex_subject_dns" -> Json.arr(".*CN=mtls-client.*"),
+          "regex_issuer_dns"  -> Json.arr(testCaIssuer),
+          "dn_match"          -> "all",
+          "client_id_field"   -> "CN"
+        ),
+        "mtls-all"
+      )
+      try {
+        call(Some(matchingClient)) mustBe Some(200)
+        // the subject matches, not the issuer
+        call(Some(secondCaClient)) mustBe Some(401)
+        // the issuer matches, not the subject
+        call(Some(otherClient)) mustBe Some(401)
+      } finally undeploy(api)
+    }
+
+    "accept a certificate matching either list without dn_match, or with any" in {
+      Seq(Json.obj(), Json.obj("dn_match" -> "any")).zipWithIndex.foreach { case (dnMatch, idx) =>
+        val api = deployApi(
+          s"plan-mtls-any-$idx",
+          Json.obj(
+            "regex_subject_dns" -> Json.arr(".*CN=mtls-client.*"),
+            "regex_issuer_dns"  -> Json.arr(testCaIssuer),
+            "client_id_field"   -> "CN"
+          ) ++ dnMatch,
+          s"mtls-any-$idx"
+        )
+        try {
+          withClue(dnMatch.stringify) {
+            Seq(matchingClient, secondCaClient, otherClient).map(c => call(Some(c))) mustBe Seq(
+              Some(200),
+              Some(200),
+              Some(200)
+            )
+          }
+        } finally undeploy(api)
+      }
+    }
+
+    "only identify the certificates issued by the authorities of the plan" in {
+      given Env = otoEnv
+      val api   = deployApi(
+        "plan-mtls-ca",
+        Json.obj("trusted_ca_refs" -> Json.arr("mtlsplan-ca"), "client_id_field" -> "CN"),
+        "mtls-ca"
+      )
+      val keyId = s"mtls_${api.id}_plan-mtls-ca_mtls-client"
+      try {
+        // trusted by the handshake, not by the plan: nothing is minted for it
+        call(Some(secondCaClient)) mustBe Some(401)
+        otoEnv.datastores.apiKeyDataStore.findById(keyId).futureValue mustBe None
+        call(Some(matchingClient)) mustBe Some(200)
+        // no pattern: any certificate of the authority
+        call(Some(otherClient)) mustBe Some(200)
+      } finally {
+        otoEnv.datastores.apiKeyDataStore.delete(keyId).futureValue
+        undeploy(api)
+      }
+    }
+
+    "check the authorities of the plan, then its patterns" in {
+      val api = deployApi(
+        "plan-mtls-ca-all",
+        Json.obj(
+          "trusted_ca_refs"   -> Json.arr("mtlsplan-ca"),
+          "regex_subject_dns" -> Json.arr(".*CN=mtls-client.*"),
+          "dn_match"          -> "all",
+          "client_id_field"   -> "CN"
+        ),
+        "mtls-ca-all"
+      )
+      try {
+        call(Some(matchingClient)) mustBe Some(200)
+        call(Some(secondCaClient)) mustBe Some(401)
+        call(Some(otherClient)) mustBe Some(401)
+      } finally undeploy(api)
+    }
+
+    "refuse every certificate when no authority of the plan is in the store" in {
+      val api = deployApi(
+        "plan-mtls-ca-missing",
+        Json.obj("trusted_ca_refs" -> Json.arr("does-not-exist"), "client_id_field" -> "CN"),
+        "mtls-ca-missing"
+      )
+      try {
+        Seq(matchingClient, secondCaClient, otherClient).map(c => call(Some(c))) mustBe Seq(Some(401), Some(401), Some(401))
+      } finally undeploy(api)
+    }
+
+    "refuse the certificates of an authority revoked in the store" in {
+      given Env  = otoEnv
+      val api    = deployApi(
+        "plan-mtls-ca-revoked",
+        Json.obj("trusted_ca_refs" -> Json.arr("mtlsplan-ca"), "client_id_field" -> "CN"),
+        "mtls-ca-revoked"
+      )
+      val stored = otoEnv.datastores.certificatesDataStore.findById("mtlsplan-ca").futureValue.get
+      try {
+        call(Some(matchingClient)) mustBe Some(200)
+        // the handshake keeps trusting the authority through the copy the warm up handed to the tls engine, which
+        // expires after a few minutes: refreshed here, so that the refusal below is the one of the plan
+        DynamicSSLEngineProvider.addCertificates(Seq(stored), otoEnv)
+        otoEnv.datastores.certificatesDataStore.set(stored.copy(revoked = true)).futureValue
+        awaitCond(30.seconds)(otoEnv.proxyState.certificate("mtlsplan-ca").forall(_.revoked))
+        call(Some(matchingClient)) mustBe Some(401)
+        call(Some(otherClient)) mustBe Some(401)
+      } finally {
+        otoEnv.datastores.certificatesDataStore.set(stored).futureValue
+        awaitCond(30.seconds)(otoEnv.proxyState.certificate("mtlsplan-ca").exists(_.notRevoked))
+        undeploy(api)
+      }
+    }
+
+    "tie a plan to its authority whatever the trust mode of the handshake" in {
+      given Env = otoEnv
+      def trustMode(strict: Boolean): Unit = {
+        val gc = getOtoroshiConfig(customPort = Some(port)).futureValue
+        updateOtoroshiConfig(
+          gc.copy(tlsSettings = gc.tlsSettings.copy(strictBackendServerValidation = strict)),
+          customPort = Some(port)
+        ).futureValue
+        awaitCond(30.seconds)(otoEnv.strictBackendServerValidation == strict)
+        // the trust mode is read when the tls contexts are built
+        DynamicSSLEngineProvider.forceUpdate(otoEnv)
+      }
+      // the permissive mode: the handshake accepts any client chain
+      trustMode(strict = false)
+      try {
+        // an issuer pattern only compares text: a certificate of a forged authority bearing the same dn passes it
+        val byIssuer = deployApi(
+          "plan-mtls-forged-dn",
+          Json.obj("regex_issuer_dns" -> Json.arr(testCaIssuer), "client_id_field" -> "CN"),
+          "mtls-forged-dn"
+        )
+        try call(Some(forgedClient)) mustBe Some(200)
+        finally undeploy(byIssuer)
+        val byCa = deployApi(
+          "plan-mtls-forged-ca",
+          Json.obj("trusted_ca_refs" -> Json.arr("mtlsplan-ca"), "client_id_field" -> "CN"),
+          "mtls-forged-ca"
+        )
+        try {
+          call(Some(forgedClient)) mustBe Some(401)
+          call(Some(matchingClient)) mustBe Some(200)
+        } finally undeploy(byCa)
+      } finally trustMode(strict = true)
+    }
+
+    "refuse an mtls plan with an unknown dn_match, or trusted_ca_refs that are not ids" in {
+      Seq(
+        Json.obj("dn_match" -> "both")                 -> "plan 'plan-mtls-invalid': dn_match must be 'all' or 'any'",
+        Json.obj("trusted_ca_refs" -> "mtlsplan-ca")   -> "plan 'plan-mtls-invalid': trusted_ca_refs must be an array of certificate ids",
+        Json.obj("trusted_ca_refs" -> Json.arr("", 1)) -> "plan 'plan-mtls-invalid': trusted_ca_refs must be an array of certificate ids"
+      ).foreach { case (conf, description) =>
+        val api            = mtlsApi("plan-mtls-invalid", conf, "mtls-invalid").copy(state = ApiStaging)
+        val (body, status) = otoroshiApiCall("POST", "/apis/apis.otoroshi.io/v1/apis", Some(api.json)).futureValue
+        withClue(body.stringify) {
+          status mustBe 400
+          body.select("error").asString mustBe "invalid_plan"
+          body.select("error_description").asString mustBe description
+        }
+      }
     }
 
     "apply the restrictions of an mtls plan to its consumers" in {

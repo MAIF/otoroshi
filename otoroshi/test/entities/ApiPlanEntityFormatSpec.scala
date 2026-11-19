@@ -458,6 +458,8 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
       format.writes(full) mustBe Json.obj(
         "regex_subject_dns" -> Json.arr("CN=client.*"),
         "regex_issuer_dns"  -> Json.arr("CN=Otoroshi CA"),
+        "dn_match"          -> "any",
+        "trusted_ca_refs"   -> Json.arr(),
         "client_id_field"   -> "CN",
         "create_if_missing" -> true,
         "subscription_required" -> false,
@@ -489,6 +491,25 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
 
     "ignore subject dns given as a single string" in {
       readOk(format, Json.obj("regex_subject_dns" -> "CN=.*")).regexSubjectDNs mustBe empty
+    }
+
+    "read dn_match as any when absent, and as all for a value that is neither" in {
+      readOk(format, Json.obj()).dnMatch mustBe "any"
+      readOk(format, Json.obj("dn_match" -> JsNull)).dnMatch mustBe "any"
+      readOk(format, Json.obj("dn_match" -> "any")).dnMatch mustBe "any"
+      readOk(format, Json.obj("dn_match" -> "all")).dnMatch mustBe "all"
+      readOk(format, Json.obj("dn_match" -> "both")).dnMatch mustBe "all"
+      readOk(format, Json.obj("dn_match" -> 1)).dnMatch mustBe "all"
+      roundTrip(format, full.copy(dnMatch = "all")).dnMatch mustBe "all"
+    }
+
+    "read trusted_ca_refs, keeping what is not an id so that it never resolves" in {
+      readOk(format, Json.obj()).trustedCaRefs mustBe empty
+      readOk(format, Json.obj("trusted_ca_refs" -> Json.arr("ca-1", "ca-2"))).trustedCaRefs mustBe Seq("ca-1", "ca-2")
+      readOk(format, Json.obj("trusted_ca_refs" -> "ca-1")).trustedCaRefs mustBe Seq("ca-1")
+      readOk(format, Json.obj("trusted_ca_refs" -> Json.arr("ca-1", 2))).trustedCaRefs mustBe Seq("ca-1", "2")
+      readOk(format, Json.obj("trusted_ca_refs" -> Json.obj())).trustedCaRefs mustBe Seq("{}")
+      roundTrip(format, full.copy(trustedCaRefs = Seq("ca-1"))).trustedCaRefs mustBe Seq("ca-1")
     }
   }
 

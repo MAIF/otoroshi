@@ -187,7 +187,7 @@ a consumer identity to callers that have none. They all share the same settings 
 |--------|--------------|
 | `cp:otoroshi.next.plugins.NgExpressionApikeyExtractor` | `expression` (default `${req.ip}`), `client_id_prefix` default `public_`, `strict` default `false` |
 | `cp:otoroshi.next.plugins.NgJwtApikeyExtractor` | `verifier`, `client_id_path` (default `client_id`, JSON path supported), `client_id_prefix` default `jwt_`, `strict` default `true` |
-| `cp:otoroshi.next.plugins.NgClientCertApikeyExtractor` | `regex_subject_dns`, `regex_issuer_dns`, `client_id_field`, `client_id_prefix` default `mtls_`, `strict` default `true` |
+| `cp:otoroshi.next.plugins.NgClientCertApikeyExtractor` | `trusted_ca_refs`, `regex_subject_dns`, `regex_issuer_dns`, `dn_match` (`all` or `any`, default `any`), `client_id_field`, `client_id_prefix` default `mtls_`, `strict` default `true` |
 | `cp:otoroshi.next.plugins.NgOidcApikeyExtractor` | `ref` (auth. module), `client_id_path`, `source` (token location), `fetch_user`, `user_metadata_key`, `issuer`, `audiences`, `client_id_prefix` default `oauth2_`, `strict` default `true` |
 
 An extractor only **identifies** the caller. To also enforce the quotas and the restrictions of the

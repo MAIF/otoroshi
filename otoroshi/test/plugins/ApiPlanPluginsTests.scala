@@ -183,6 +183,8 @@ class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
       Json.obj(
         "regex_subject_dns" -> Json.arr(".*CN=client.*"),
         "regex_issuer_dns"  -> Json.arr(".*CN=ca.*"),
+        "dn_match"          -> "all",
+        "trusted_ca_refs"   -> Json.arr("partners-ca"),
         "client_id_field"   -> "UID"
       )
     )
@@ -193,6 +195,8 @@ class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
     val cfg   = slot.get.config.raw
     cfg.select("regex_subject_dns").as[Seq[String]] mustBe Seq(".*CN=client.*")
     cfg.select("regex_issuer_dns").as[Seq[String]] mustBe Seq(".*CN=ca.*")
+    cfg.select("dn_match").asString mustBe "all"
+    cfg.select("trusted_ca_refs").as[Seq[String]] mustBe Seq("partners-ca")
     cfg.select("client_id_field").asString mustBe "UID"
     cfg.select("client_id_prefix").asString mustBe s"mtls_${api.id}_plan-mtls_"
     cfg.select("api_id").asString mustBe api.id

@@ -1042,7 +1042,7 @@
           "type": "string",
           "description": "A regular expression on the subject dn"
         },
-        "description": "The regular expressions the subject dn of the client certificate may match. A certificate matching one of them, or one of `regex_issuer_dns`, is accepted. Both lists empty, any trusted certificate is",
+        "description": "The regular expressions the subject dn of the client certificate may match. How it combines with `regex_issuer_dns` is said by `dn_match`. Both lists empty, any certificate is accepted (of the authorities of `trusted_ca_refs` when it is not empty)",
         "example": [
           "CN=.*,OU=partners,O=Otoroshi"
         ]
@@ -1053,9 +1053,30 @@
           "type": "string",
           "description": "A regular expression on the issuer dn"
         },
-        "description": "The regular expressions the issuer dn of the client certificate may match",
+        "description": "The regular expressions the issuer dn of the client certificate may match. The issuer dn is only text, that anyone can write in a certificate of their own: `trusted_ca_refs` is what ties the plan to its authority",
         "example": [
           "CN=Otoroshi Partners CA,O=Otoroshi"
+        ]
+      },
+      "dn_match": {
+        "type": "string",
+        "enum": [
+          "all",
+          "any"
+        ],
+        "default": "any",
+        "description": "How `regex_subject_dns` and `regex_issuer_dns` combine. A list is satisfied when one of its patterns matches. `all`: every list that is not empty must be satisfied. `any`: one of them is enough. Both lists empty, any certificate is accepted whatever this says. `any` when absent, the behaviour of the plans written before the field; the backoffice writes `all` for a new mtls plan",
+        "example": "all"
+      },
+      "trusted_ca_refs": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The id of a certificate of the store"
+        },
+        "description": "The ids of the certificates of the store (authorities) that must have signed the client certificate. When it is not empty, the chain the client sent (its certificate, then the intermediates) has to lead to one of them, checked with pkix at the current date, before the dn patterns and whatever the trust store and the trust mode of the tls handshake, which trusts every certificate of the store and the authorities of the jdk unless `tlsSettings.trustedCAsServer` and `tlsSettings.includeJdkCaServer` say otherwise. Revocation is not checked on the chain, but a revoked authority of the list is not one. When none of the ids is a certificate of the store that is not revoked, every certificate is refused. The ids are not checked to exist when the api is written. Empty by default: no check on the authority",
+        "example": [
+          "partners-ca"
         ]
       },
       "client_id_field": {
@@ -1086,6 +1107,10 @@
         "CN=.*,OU=partners,O=Otoroshi"
       ],
       "regex_issuer_dns": [],
+      "dn_match": "all",
+      "trusted_ca_refs": [
+        "partners-ca"
+      ],
       "client_id_field": "CN",
       "create_if_missing": true
     }

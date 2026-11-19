@@ -4,7 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import otoroshi.env.Env
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.models.{ApiIdentifier, ApiKey, InHeader, InQueryParam, JwtTokenLocation, LocalJwtVerifier, RouteIdentifier}
-import otoroshi.next.models.{ApiRef, ApiSubscriptionEnabled, ApikeyAccessModeConfiguration, OAuth2RemoteAccessModeConfiguration}
+import otoroshi.next.models.{ApiRef, ApiSubscriptionEnabled, ApikeyAccessModeConfiguration, MtlsAccessModeConfiguration, OAuth2RemoteAccessModeConfiguration}
 import otoroshi.next.plugins.api.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.Base64Codec
@@ -20,6 +20,7 @@ import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
 import scala.util.*
 
 // Everything a plan needs to hand over so that an apikey created on the fly enforces the very same
@@ -744,6 +745,10 @@ class NgExpressionApikeyExtractor extends ApikeyExtractorPlugin {
 case class NgClientCertApikeyExtractorConfig(
     regexSubjectDNs: Seq[String] = Seq.empty,
     regexIssuerDNs: Seq[String] = Seq.empty,
+    // `all`: every non-empty pattern list must match, `any`: one of them
+    dnMatch: String = MtlsAccessModeConfiguration.DnMatchAny,
+    // the ids of the certificates of the store that must have signed the client certificate
+    trustedCaRefs: Seq[String] = Seq.empty,
     clientIdField: Option[String] = None,
     clientIdPrefix: String = "mtls_",
     strict: Boolean = true,
@@ -760,6 +765,8 @@ case class NgClientCertApikeyExtractorConfig(
   override def json: JsValue = Json.obj(
     "regex_subject_dns" -> regexSubjectDNs,
     "regex_issuer_dns"  -> regexIssuerDNs,
+    "dn_match"          -> dnMatch,
+    "trusted_ca_refs"   -> trustedCaRefs,
     "client_id_field"   -> clientIdField,
     "client_id_prefix"  -> clientIdPrefix,
     "strict"            -> strict
@@ -773,6 +780,8 @@ object NgClientCertApikeyExtractorConfig {
       NgClientCertApikeyExtractorConfig(
         regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        dnMatch = MtlsAccessModeConfiguration.readDnMatch(json),
+        trustedCaRefs = MtlsAccessModeConfiguration.readTrustedCaRefs(json),
         clientIdField = json.select("client_id_field").asOpt[String].filter(_.trim.nonEmpty),
         clientIdPrefix = json.select("client_id_prefix").asOpt[String].getOrElse("mtls_"),
         strict = json.select("strict").asOpt[Boolean].getOrElse(true),
@@ -791,23 +800,103 @@ object NgClientCertApikeyExtractorConfig {
   }
 }
 
+object NgClientCertApikeyExtractor {
+
+  private val logger = play.api.Logger("otoroshi-plugins-client-cert-apikey-extractor")
+
+  // the trust anchors of a set of certificates of the store, keyed by their ids and serial numbers: a renewed
+  // certificate gets new anchors
+  private val anchorsCache = com.github.blemale.scaffeine
+    .Scaffeine()
+    .expireAfterAccess(10.minutes)
+    .maximumSize(1000)
+    .build[String, java.util.Set[java.security.cert.TrustAnchor]]()
+
+  // the configurations whose authorities cannot be resolved, warned about once an hour each
+  private val warnedConfigurations = com.github.blemale.scaffeine
+    .Scaffeine()
+    .expireAfterWrite(1.hour)
+    .maximumSize(1000)
+    .build[String, java.lang.Boolean]()
+
+  val NotTrustedMessage = "Your client certificate was not issued by an authority this api trusts"
+
+  // whether the chain the client sent leads to one of the authorities of trusted_ca_refs, whatever the trust store
+  // and the trust mode of the handshake. The chain is the leaf then the intermediates as sent, cut before the
+  // first authority of the list it carries. Revocation is the business of the handshake and of the store: a
+  // revoked authority of the store is not an anchor, and when none of the ids resolves to a certificate that is not
+  // revoked, every certificate is refused
+  def trusted(
+      config: NgClientCertApikeyExtractorConfig,
+      chain: Seq[java.security.cert.X509Certificate],
+      routeId: String
+  )(using env: Env): Boolean = {
+    val authorities = config.trustedCaRefs.distinct
+      .flatMap(id => env.proxyState.certificate(id))
+      .filter(_.notRevoked)
+      .flatMap(cert => cert.certificate.map(c => (cert.id, c)))
+    if (authorities.isEmpty) {
+      val key = s"$routeId::${config.trustedCaRefs.mkString(",")}"
+      if (warnedConfigurations.getIfPresent(key).isEmpty) {
+        warnedConfigurations.put(key, java.lang.Boolean.TRUE)
+        logger.warn(
+          s"none of the trusted authorities [${config.trustedCaRefs.mkString(", ")}] of the plan " +
+          s"'${config.planId.getOrElse("--")}' of the api '${config.apiId.getOrElse("--")}' (route '$routeId') is a " +
+          "certificate of the store that is not revoked: every client certificate is refused"
+        )
+      }
+      false
+    } else {
+      val key     = authorities.map { case (id, c) => s"$id:${c.getSerialNumber}" }.sorted.mkString(",")
+      val anchors = anchorsCache.get(
+        key,
+        _ => {
+          val set = new java.util.HashSet[java.security.cert.TrustAnchor]()
+          authorities.foreach { case (_, c) => set.add(new java.security.cert.TrustAnchor(c, null)) }
+          java.util.Collections.unmodifiableSet(set)
+        }
+      )
+      val path    = chain.takeWhile(c => !authorities.exists(_._2 == c))
+      // an authority of the list presented as the client certificate itself is not a client certificate
+      path.nonEmpty && Try {
+        val certPath = java.security.cert.CertificateFactory
+          .getInstance("X.509")
+          .generateCertPath(java.util.Arrays.asList(path*))
+        val params   = new java.security.cert.PKIXParameters(anchors)
+        params.setRevocationEnabled(false)
+        java.security.cert.CertPathValidator.getInstance("PKIX").validate(certPath, params)
+      }.isSuccess
+    }
+  }
+
+  // no pattern at all means the plan puts no constraint on the DNs. A list is satisfied when one of its patterns
+  // matches: `all` asks every non-empty list to be, `any` one of them
+  def matches(config: NgClientCertApikeyExtractorConfig, subject: DN, issuer: DN): Boolean = {
+    val subjects = config.regexSubjectDNs
+    val issuers  = config.regexIssuerDNs
+    if (subjects.isEmpty && issuers.isEmpty) {
+      true
+    } else {
+      def subjectMatches = subjects.exists(s => RegexPool.regex(s).matches(subject.stringify))
+      def issuerMatches  = issuers.exists(s => RegexPool.regex(s).matches(issuer.stringify))
+      if (config.dnMatch == MtlsAccessModeConfiguration.DnMatchAll) {
+        (subjects.isEmpty || subjectMatches) && (issuers.isEmpty || issuerMatches)
+      } else {
+        subjectMatches || issuerMatches
+      }
+    }
+  }
+}
+
 class NgClientCertApikeyExtractor extends ApikeyExtractorPlugin {
 
   override def name: String                                = "Client certificate apikey extractor"
   override def description: Option[String]                 =
-    "This plugin validates the client certificate against subject and issuer DN patterns, then turns it into an apikey. The apikey is built from the plan settings when it does not exist yet. It only identifies the consumer: pair it with the 'Api consumer enforcer' plugin to enforce its quotas, like a published plan does".some
+    "This plugin validates the client certificate, then turns it into an apikey. With trusted_ca_refs, the chain of the certificate has to lead to one of those certificates of the store, whatever the trust store of the handshake. The subject and issuer DN patterns are then checked: every non-empty list has to match with dn_match 'all', one of them with 'any' (the default). The apikey is built from the plan settings when it does not exist yet. It only identifies the consumer: pair it with the 'Api consumer enforcer' plugin to enforce its quotas, like a published plan does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgClientCertApikeyExtractorConfig().some
 
-  // no pattern at all means the plan puts no constraint on the DNs, the mTLS handshake being the
-  // only requirement. as soon as one list is filled, the certificate has to match it.
-  private def matches(config: NgClientCertApikeyExtractorConfig, subject: DN, issuer: DN): Boolean = {
-    if (config.regexSubjectDNs.isEmpty && config.regexIssuerDNs.isEmpty) {
-      true
-    } else {
-      config.regexSubjectDNs.exists(s => RegexPool.regex(s).matches(subject.stringify)) ||
-      config.regexIssuerDNs.exists(s => RegexPool.regex(s).matches(issuer.stringify))
-    }
-  }
+  private def matches(config: NgClientCertApikeyExtractorConfig, subject: DN, issuer: DN): Boolean =
+    NgClientCertApikeyExtractor.matches(config, subject, issuer)
 
   // when the plan names a DN attribute, the certificate authority is the one deciding the consumer
   // identity, which is the point of an mTLS plan. a certificate missing that attribute does not
@@ -831,8 +920,12 @@ class NgClientCertApikeyExtractor extends ApikeyExtractorPlugin {
     val config = ctx
       .cachedConfig(internalName)(NgClientCertApikeyExtractorConfig.format)
       .getOrElse(NgClientCertApikeyExtractorConfig())
-    ctx.request.clientCertificateChain.flatMap(_.headOption) match {
+    val chain  = ctx.request.clientCertificateChain.getOrElse(Seq.empty)
+    chain.headOption match {
       case None       => failure(config.strict, "You have to provide a client certificate").vfuture
+      // the authorities of the plan come first: nothing is read from a certificate they did not issue
+      case Some(_) if config.trustedCaRefs.nonEmpty && !NgClientCertApikeyExtractor.trusted(config, chain, ctx.route.id) =>
+        failure(config.strict, NgClientCertApikeyExtractor.NotTrustedMessage).vfuture
       case Some(cert) => {
         val subject = DN(cert.getSubjectX500Principal.getName)
         val issuer  = DN(cert.getIssuerX500Principal.getName)

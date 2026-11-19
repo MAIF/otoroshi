@@ -397,6 +397,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
     val full = NgClientCertApikeyExtractorConfig(
       regexSubjectDNs = Seq("CN=.*\\.partners\\.oto\\.tools.*", "O=Partner.*"),
       regexIssuerDNs = Seq("CN=Otoroshi Intermediate CA.*"),
+      dnMatch = "all",
+      trustedCaRefs = Seq("partners-ca"),
       clientIdField = Some("CN"),
       clientIdPrefix = "partner_",
       strict = false,
@@ -421,6 +423,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
       format.writes(NgClientCertApikeyExtractorConfig()) mustBe Json.obj(
         "regex_subject_dns"   -> Json.arr(),
         "regex_issuer_dns"    -> Json.arr(),
+        "dn_match"            -> "any",
+        "trusted_ca_refs"     -> Json.arr(),
         "client_id_field"     -> JsNull,
         "client_id_prefix"    -> "mtls_",
         "strict"              -> true,
@@ -438,6 +442,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
       format.writes(full) mustBe Json.obj(
         "regex_subject_dns"   -> Json.arr("CN=.*\\.partners\\.oto\\.tools.*", "O=Partner.*"),
         "regex_issuer_dns"    -> Json.arr("CN=Otoroshi Intermediate CA.*"),
+        "dn_match"            -> "all",
+        "trusted_ca_refs"     -> Json.arr("partners-ca"),
         "client_id_field"     -> "CN",
         "client_id_prefix"    -> "partner_",
         "strict"              -> false,

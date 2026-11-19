@@ -469,12 +469,43 @@ case class MtlsAccessModeConfiguration(
     createIfMissing: Boolean = true,
     // only the consumers with an enabled subscription to the plan are served, create_if_missing is then ignored
     subscriptionRequired: Boolean = false,
-    override val restrictions: Restrictions = Restrictions()
+    override val restrictions: Restrictions = Restrictions(),
+    // how the subject and the issuer patterns combine: `all` (every non-empty list) or `any` (one of them)
+    dnMatch: String = MtlsAccessModeConfiguration.DnMatchAny,
+    // the ids of the certificates of the store that must have signed the client certificate, checked on its chain
+    trustedCaRefs: Seq[String] = Seq.empty
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Mtls
 }
 
 object MtlsAccessModeConfiguration {
+
+  val DnMatchAll = "all"
+  val DnMatchAny = "any"
+
+  // absent reads as `any`, the behaviour of the plans written before the field. A value that is neither, which
+  // the write of an api refuses, reads as the stricter `all`
+  def readDnMatch(json: JsValue): String =
+    json.select("dn_match").asOpt[JsValue] match {
+      case None | Some(JsNull)                                           => DnMatchAny
+      case Some(JsString(value)) if value.trim.toLowerCase == DnMatchAny => DnMatchAny
+      case Some(_)                                                       => DnMatchAll
+    }
+
+  // a value that is not an id never resolves, so a list written wrong refuses every certificate rather than
+  // checking none
+  def readTrustedCaRefs(json: JsValue): Seq[String] =
+    json.select("trusted_ca_refs").asOpt[JsValue] match {
+      case None | Some(JsNull)   => Seq.empty
+      case Some(JsString(value)) => Seq(value)
+      case Some(JsArray(values)) =>
+        values.toSeq.map {
+          case JsString(value) => value
+          case other           => other.toString
+        }
+      case Some(other)           => Seq(other.toString)
+    }
+
   def fmt = new Format[MtlsAccessModeConfiguration] {
     override def reads(json: JsValue): JsResult[MtlsAccessModeConfiguration] = Try {
       MtlsAccessModeConfiguration(
@@ -483,7 +514,9 @@ object MtlsAccessModeConfiguration {
         clientIdField = json.select("client_id_field").asOpt[String].filter(_.trim.nonEmpty),
         createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
         subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false),
-        restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions())
+        restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions()),
+        dnMatch = readDnMatch(json),
+        trustedCaRefs = readTrustedCaRefs(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -492,6 +525,8 @@ object MtlsAccessModeConfiguration {
     override def writes(o: MtlsAccessModeConfiguration): JsValue             = Json.obj(
       "regex_subject_dns" -> o.regexSubjectDNs,
       "regex_issuer_dns"  -> o.regexIssuerDNs,
+      "dn_match"          -> o.dnMatch,
+      "trusted_ca_refs"   -> o.trustedCaRefs,
       "client_id_field"   -> o.clientIdField,
       "create_if_missing" -> o.createIfMissing,
       "subscription_required" -> o.subscriptionRequired,
@@ -2206,6 +2241,8 @@ case class Api(
             NgClientCertApikeyExtractorConfig(
               regexSubjectDNs = mtlsConfig.regexSubjectDNs,
               regexIssuerDNs = mtlsConfig.regexIssuerDNs,
+              dnMatch = mtlsConfig.dnMatch,
+              trustedCaRefs = mtlsConfig.trustedCaRefs,
               clientIdField = mtlsConfig.clientIdField,
               clientIdPrefix = plan.consumerClientIdPrefix(api.id).get,
               strict = false,
@@ -2560,7 +2597,31 @@ object Api {
   // the plans that cannot be enforced as written: a selection on a plan whose callers present a key naming its plan, or
   // one that cannot be read
   def invalidPlan(api: Api): Option[String] =
-    api.plans.iterator.flatMap { plan =>
+    api.plans.iterator.flatMap(plan => invalidSelection(plan).orElse(invalidMtlsSettings(plan))).nextOption()
+
+  // the ids of trusted_ca_refs are not checked to exist: an import or a catalog may write the api before its
+  // certificates, and a missing one refuses every certificate at call time
+  private def invalidMtlsSettings(plan: ApiPlan): Option[String] =
+    if (plan.accessModeConfigurationType != "mtls") None
+    else {
+      val conf = plan.raw.select("access_mode_configuration").asOpt[JsObject].getOrElse(Json.obj())
+      val dnMatch = conf.select("dn_match").asOpt[JsValue] match {
+        case None | Some(JsNull)                                                                                => None
+        case Some(JsString(value))
+            if value == MtlsAccessModeConfiguration.DnMatchAll || value == MtlsAccessModeConfiguration.DnMatchAny =>
+          None
+        case Some(_)                                                                                            =>
+          Some(s"plan '${plan.id}': dn_match must be 'all' or 'any'")
+      }
+      dnMatch.orElse(conf.select("trusted_ca_refs").asOpt[JsValue] match {
+        case None | Some(JsNull)                                                                         => None
+        case Some(JsArray(values)) if values.forall { case JsString(id) => id.trim.nonEmpty; case _ => false } => None
+        case Some(_)                                                                                     =>
+          Some(s"plan '${plan.id}': trusted_ca_refs must be an array of certificate ids")
+      })
+    }
+
+  private def invalidSelection(plan: ApiPlan): Option[String] =
       plan.raw.select("selection").asOpt[JsValue] match {
         case None | Some(JsNull)                                                                             => None
         case Some(JsArray(values)) if values.isEmpty                                                         => None
@@ -2574,7 +2635,6 @@ object Api {
         case Some(_)                                                                                         =>
           Some(s"plan '${plan.id}': selection is not an array of json path validators")
       }
-    }.nextOption()
 
   // the ref a source puts on the api it writes, given to its deployments
   def deploymentRef(api: Api): Option[String] = ApiDeployment.readRef(api.metadata.get("deployment_ref"))

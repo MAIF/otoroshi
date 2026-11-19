@@ -320,17 +320,41 @@ const AccessModePluginConfigurationForm = {
     schema: {
       // the restrictions of the apikey of each consumer of the plan
       restrictions: ApiKeysConstants.schema.restrictions,
+      trusted_ca_refs: {
+        type: 'array-select',
+        label: 'Trusted authorities',
+        help: 'The CA certificates of the store that must have signed the client certificate: its chain has to lead to one of them, whatever the trust store of the TLS handshake, which trusts every certificate of the store and the CAs of the JDK by default. A revoked or deleted authority refuses every certificate. Empty: no check on the authority.',
+        props: {
+          optionsFrom: '/bo/api/proxy/api/certificates',
+          optionsTransformer: (certificates) =>
+            (certificates || [])
+              .filter((certificate) => certificate.ca)
+              .map((certificate) => ({ label: certificate.name, value: certificate.id })),
+        },
+      },
       regex_subject_dns: {
         type: 'array',
         label: 'Subject DN patterns',
-        help: 'Regex patterns the subject DN of the client certificate may match. Leave both lists empty to accept any trusted certificate.',
+        help: 'Regex patterns the subject DN of the client certificate may match. Leave both lists empty to accept any certificate of the trusted authorities.',
         props: { placeholder: '.*CN=my-client.*' },
       },
       regex_issuer_dns: {
         type: 'array',
         label: 'Issuer DN patterns',
-        help: 'Regex patterns the issuer DN of the client certificate may match. A certificate matching either list is accepted.',
+        help: 'Regex patterns the issuer DN of the client certificate may match. An issuer DN is only text that anyone can write in a certificate of their own: use the trusted authorities to tie the plan to its CA.',
         props: { placeholder: '.*CN=my-ca.*' },
+      },
+      dn_match: {
+        type: 'dots',
+        label: 'Patterns to match',
+        help: 'How the two lists of patterns combine. Both lists must match: a certificate has to match every list that is not empty. Either list may match: one of them is enough. An empty list is ignored either way.',
+        props: {
+          defaultValue: 'any',
+          options: [
+            { label: 'Both lists must match', value: 'all' },
+            { label: 'Either list may match', value: 'any' },
+          ],
+        },
       },
       client_id_field: {
         type: 'string',
@@ -351,8 +375,10 @@ const AccessModePluginConfigurationForm = {
       },
     },
     flow: [
+      'trusted_ca_refs',
       'regex_subject_dns',
       'regex_issuer_dns',
+      'dn_match',
       'client_id_field',
       'subscription_required',
       'create_if_missing',
@@ -666,7 +692,21 @@ function PlanForm({ plan, onChange, flows = [] }) {
       access_mode_configuration_type: {
         renderer: (props) => (
           <AccessModeConfigurationTypeSelector
-            onChange={props.onChange}
+            onChange={(type) => {
+              // a plan that becomes an mtls plan asks both lists of patterns to match
+              if (type === 'mtls' && props.rootValue?.access_mode_configuration_type !== 'mtls') {
+                props.rootOnChange({
+                  ...props.rootValue,
+                  access_mode_configuration_type: type,
+                  access_mode_configuration: {
+                    ...(props.rootValue?.access_mode_configuration || {}),
+                    dn_match: 'all',
+                  },
+                });
+              } else {
+                props.onChange(type);
+              }
+            }}
             value={props.value}
             onEdit={() => setAccessModeModal(true)}
           />
