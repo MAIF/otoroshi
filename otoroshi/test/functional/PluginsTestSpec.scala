@@ -303,6 +303,9 @@ class RemoteCatalogsChecksSpec extends PluginsTestSpecBase {
     "deploy, update and remove an api written as code" in {
       new RemoteCatalogsApisTests(this)
     }
+    "not take over an api an outside tool manages as code" in {
+      new RemoteCatalogsExternalApisTests(this)
+    }
     "only let super admins use the remote catalogs" in {
       new RemoteCatalogsRightsTests(this)
     }

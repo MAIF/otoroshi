@@ -4,6 +4,7 @@ import org.joda.time.DateTime
 import otoroshi.api.{Resource, WriteAction}
 import otoroshi.env.Env
 import otoroshi.models.EntityLocation
+import otoroshi.next.models.Api
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
@@ -389,13 +390,19 @@ class RemoteCatalogEngine(env: Env) {
             // catalog does not deploy its kind is neither overwritten nor moved
             val oldRefused   =
               oldEntity.exists(old => !catalog.kinds.allows(resource, EntityLocation.readFromKey(old)))
+            // an entity an outside tool manages as code is not taken over by a catalog
+            val managedBy    = oldEntity
+              .flatMap(_.select("metadata").select("created_by").asOpt[String])
+              .filter(_.startsWith(Api.externalToolPrefix))
             // a dry run goes through the same checks as a deploy, without writing anything
             val result       =
-              if (oldRefused) Json.obj("error" -> "refused").leftf[JsValue]
+              if (oldRefused || managedBy.isDefined) Json.obj("error" -> "refused").leftf[JsValue]
               else if (dryRun)
                 resource.access.checkCreate(version, resource.singularName, entityId.some, enrichedJson, action, oldEntity)
               else resource.access.create(version, resource.singularName, entityId.some, enrichedJson, action, oldEntity)
             result.map {
+              case Left(_) if managedBy.isDefined  =>
+                refusals = refusals :+ s"Entity $entityId of kind $kind refused: it is managed by ${managedBy.get}"
               case Left(_) if oldRefused           =>
                 val loc = EntityLocation.readFromKey(oldEntity.get)
                 refusals =

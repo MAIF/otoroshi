@@ -589,6 +589,7 @@ An API (`apis.otoroshi.io/Api`) written by a catalog does not go through a draft
 - The deployment history and the secret of the testing header stay the ones of the live API, whatever the source holds.
 - An edit of the API from the backoffice is replaced by the source at the next deploy of the catalog.
 - An API removed from the source is deleted with its routes, its subscriptions, the apikeys they hold and the apikeys its plans minted for their consumers. The draft of the API is not deleted.
+- A tool outside Otoroshi can write its APIs as code the same way, with `external=<tool id>` as `created_by`: see [APIs managed as code](../entities/apis.mdx#apis-managed-as-code). A catalog does not overwrite an entity managed by such a tool: an entity of its source with the id of one of them is refused (`Entity <id> of kind <kind> refused: it is managed by external=<tool id>` in the report, of a dry run too), and the undeploy of the catalog leaves it.
 
 ### Dry-run (test)
 

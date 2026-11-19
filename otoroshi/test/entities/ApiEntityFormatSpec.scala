@@ -693,6 +693,18 @@ class ApiEntityFormatSpec extends EntityFormatSpec {
       Api.isWrittenByCatalog(full.copy(metadata = Map("created_by" -> "admin"))) mustBe false
       Api.isWrittenByCatalog(full.copy(metadata = Map.empty)) mustBe false
     }
+
+    "tell the apis written as code, by a remote catalog or by an outside tool" in {
+      def asCode(createdBy: Option[String]): (Boolean, Option[String]) = {
+        val api = full.copy(metadata = createdBy.map(c => Map("created_by" -> c)).getOrElse(Map.empty))
+        (Api.isWrittenAsCode(api), Api.externalTool(api))
+      }
+      asCode(Some("external=my-gitops-tool")) mustBe (true, Some("my-gitops-tool"))
+      asCode(Some("remote_catalog=cat-1")) mustBe (true, None)
+      asCode(Some("admin")) mustBe (false, None)
+      asCode(None) mustBe (false, None)
+      Api.isWrittenByCatalog(full.copy(metadata = Map("created_by" -> "external=my-gitops-tool"))) mustBe false
+    }
   }
 
   "Api computed plugins" should {

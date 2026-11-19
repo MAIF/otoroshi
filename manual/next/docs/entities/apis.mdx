@@ -784,7 +784,7 @@ The extractors of the plans and the api consumer enforcer are access validators:
 
 ## Deployments
 
-Deployments track the history of API publications. Each deploy of the draft (`POST .../apis/{apiId}/deployments`), and each deploy of a remote catalog that changes what is live, adds a deployment record first in the `deployments` of the API.
+Deployments track the history of API publications. Each deploy of the draft (`POST .../apis/{apiId}/deployments`), and each write of an [API managed as code](#apis-managed-as-code) (by a remote catalog or an outside tool) that changes what is live, adds a deployment record first in the `deployments` of the API.
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -800,6 +800,31 @@ Deployments track the history of API publications. Each deploy of the draft (`PO
 `otoroshi.apis.deployments-history-size` deployments (env. `OTOROSHI_APIS_DEPLOYMENTS_HISTORY_SIZE`, 5 by default). The
 full history is the stream of `ApiDeploymentEvent` sent to the [data exporters](./data-exporters.mdx), each one with the
 `deploymentId` and the `ref` of its deployment.
+
+## APIs managed as code
+
+A tool that holds the desired state of its APIs (a GitOps pipeline, a deployment job of a CI, any declarative tool) writes them as code: it marks each API it manages with its own id in `metadata.created_by`, `external=<tool id>`, and every write of such an API through the admin API is a deploy, without any draft. A [remote catalog](../topics/remote-catalogs.md#apis) does the same with `remote_catalog=<catalog id>`.
+
+- The API takes the `state` of the body: it can be created directly in `published`, and its routes are served once the proxy state is synced.
+- The fields locked in production (`domain`, `contextPath`, `routes`, `backends`, `flows`, `documentation`, `testing`) take the content of the body in one write.
+- The state transitions are the ones of a deploy: a `published` API cannot go back to `staging`, and a `removed` API has to be reopened in `staging` first.
+- The deployment history and the secret of the testing header stay the ones of the live API, whatever the body holds.
+- A write that changes what is live (one of the locked fields, the `plans`, or the `metadata.deployment_ref` of the body) adds a [deployment](#deployments) owned by the value of `created_by`, and sends its `ApiDeploymentEvent`. The same body written again adds none.
+- Such a write needs the right to write the API, nothing more.
+
+The id of the tool is made of letters, digits, `.`, `_` and `-`, starts with a letter or a digit, and is at most 128 characters long: another value is refused with `400 invalid_created_by`. A remote catalog never takes over an API managed by an outside tool: an API of its source with the id of such an API is refused, and reported in the deploy report, and the undeploy of the catalog leaves it.
+
+```json
+{
+  "id": "my-api",
+  "state": "published",
+  "metadata": {
+    "created_by": "external=my-gitops-tool",
+    "deployment_ref": "3f9c2e1"
+  },
+  ...
+}
+```
 
 ## OpenAPI import
 

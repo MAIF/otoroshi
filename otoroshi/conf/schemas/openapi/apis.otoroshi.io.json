@@ -52,7 +52,7 @@
           "type": "string",
           "description": "A metadata value"
         },
-        "description": "Free key/value metadata of the api, also given to the routes built from it with `Otoroshi-Api-Ref` holding the id of the api",
+        "description": "Free key/value metadata of the api, also given to the routes built from it with `Otoroshi-Api-Ref` holding the id of the api. `created_by` says who writes the api as code, each of its writes being then a deploy: `remote_catalog=<catalog id>` for a remote catalog, `external=<tool id>` for a tool outside otoroshi (a gitops pipeline), whose id is made of letters, digits, `.`, `_` and `-` (at most 128 characters, starting with a letter or a digit). `deployment_ref` is the ref given to the deployments of such writes",
         "example": {
           "team": "platform"
         }

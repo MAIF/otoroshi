@@ -2643,13 +2643,35 @@ object Api {
   def isWrittenByCatalog(api: Api): Boolean =
     api.metadata.get("created_by").exists(_.startsWith("remote_catalog="))
 
+  // an outside tool (a gitops pipeline, a deployment job) marks the apis it manages as code with its id in `created_by`
+  val externalToolPrefix = "external="
+
+  private val externalToolId = "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$".r
+
+  def externalTool(api: Api): Option[String] =
+    api.metadata.get("created_by").filter(_.startsWith(externalToolPrefix)).map(_.drop(externalToolPrefix.length))
+
+  def isWrittenByExternalTool(api: Api): Boolean = externalTool(api).isDefined
+
+  // an api written as code, by a remote catalog or by an outside tool: each of its writes is a deploy
+  def isWrittenAsCode(api: Api): Boolean = isWrittenByCatalog(api) || isWrittenByExternalTool(api)
+
+  private def invalidExternalTool(api: Api): Option[JsValue] =
+    externalTool(api).filterNot(id => externalToolId.matches(id)).map { id =>
+      Json.obj(
+        "error"             -> "invalid_created_by",
+        "error_description" -> s"created_by '${externalToolPrefix}$id': the id of the tool must match [A-Za-z0-9][A-Za-z0-9._-]{0,127}",
+        "http_status_code"  -> 400
+      )
+    }
+
   private def isLive(state: ApiState): Boolean = state == ApiPublished || state == ApiDeprecated
 
-  // A remote catalog writes the api as code: its source plays the role of the draft, so each of its writes
-  // is a deploy. The api takes the state and the fields locked in production from the source, and a write
-  // that changes what is live is recorded in the deployment history. This opens nothing to the other
-  // writers: whoever can read an api can already publish it with `_start` or a deployment.
-  private def catalogDeploy(entity: Api, oldApi: Option[Api], env: Env): Future[Either[JsValue, Api]] = oldApi match {
+  // A remote catalog, or an outside tool, writes the api as code: its source plays the role of the draft, so each of
+  // its writes is a deploy. The api takes the state and the fields locked in production from the source, and a write
+  // that changes what is live is recorded in the deployment history, owned by the value of `created_by`. This opens
+  // nothing to the other writers: whoever can read an api can already publish it with `_start` or a deployment.
+  private def asCodeDeploy(entity: Api, oldApi: Option[Api], env: Env): Future[Either[JsValue, Api]] = oldApi match {
     case None                                                                            =>
       // created in the state of the source: created live, it is its first deploy
       val api = entity.copy(deployments = Seq.empty)
@@ -2701,9 +2723,9 @@ object Api {
     implicit val e: otoroshi.env.Env = env
     writeChecker(entity, body, oldEntity, singularName, id, action, env).flatMap {
       case Right(api) =>
-        // the deploy of a remote catalog is audited as the ones of the backoffice
+        // the deploy of an api written as code is audited as the ones of the backoffice
         if (
-          isWrittenByCatalog(api) && api.deployments.nonEmpty &&
+          isWrittenAsCode(api) && api.deployments.nonEmpty &&
           !oldEntity.exists(old => old._1.deployments.nonEmpty && old._1.deployments.head.id == api.deployments.head.id)
         ) {
           val deployment = api.deployments.head
@@ -2752,7 +2774,8 @@ object Api {
       // the ref a source gives to the deployments of its api
       case _ if ApiDeployment.refTooLong(deploymentRef(entity)) =>
         (ApiDeployment.refTooLongError ++ Json.obj("http_status_code" -> 400)).leftf
-      case _ if isWrittenByCatalog(entity) => catalogDeploy(entity, oldEntity.map(_._1), env)
+      case _ if invalidExternalTool(entity).isDefined          => invalidExternalTool(entity).get.leftf
+      case _ if isWrittenAsCode(entity)                         => asCodeDeploy(entity, oldEntity.map(_._1), env)
       case None      =>
         // Create path: API must start in staging.
         if (entity.state != ApiStaging) {

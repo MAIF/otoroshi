@@ -1085,6 +1085,110 @@ class ApiManagementSpec extends OtoroshiSpec {
       deployments.size mustBe 10
       deployments.map(d => (d \ "ref").asOpt[String]) mustBe (10 to 1 by -1).map(i => Some(s"r$i"))
     }
+    "write an api managed as code by an outside tool as a deploy" in {
+      given env: Env = otoroshiComponents.env
+      val external       = "api-mgmt-external"
+      val externalDomain = "api-mgmt-external.oto.tools"
+      val tool           = "external=my-gitops-tool"
+      val apiBackend     = ApiBackend(
+        id = "backend-external",
+        name = "backend",
+        backend = NgBackend.empty.copy(
+          targets = Seq(NgTarget(id = "target_1", hostname = "127.0.0.1", port = backendServer.port, tls = false))
+        ),
+        client = "default_backend_client"
+      )
+      val flow           = ApiFlows.empty
+      // a keyless plan serves the anonymous calls
+      val publicPlan     = Json.obj(
+        "id"                             -> "plan-public",
+        "name"                           -> "public",
+        "status"                         -> "published",
+        "access_mode_configuration_type" -> "keyless",
+        "access_mode_configuration"      -> Json.obj("create_if_missing" -> false)
+      )
+      def body(path: String, createdBy: Option[String] = Some(tool), state: ApiState = ApiPublished, id: String = external): JsValue =
+        Api(
+          location = EntityLocation.default,
+          id = id,
+          name = id,
+          description = "",
+          domain = externalDomain,
+          contextPath = "",
+          version = "1.0.0",
+          debugFlow = false,
+          capture = false,
+          exportReporting = false,
+          groups = Seq.empty,
+          state = state,
+          blueprint = ApiBlueprint.REST,
+          testing = ApiTesting(),
+          backends = Seq(apiBackend),
+          flows = Seq(flow),
+          plans = Seq(ApiPlan(publicPlan)),
+          routes = Seq(
+            ApiRoute(
+              id = "route-external",
+              frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(path))),
+              flowRef = flow.id,
+              backend = apiBackend.id
+            )
+          ),
+          metadata = createdBy.map(c => Map("created_by" -> c)).getOrElse(Map.empty)
+        ).json
+      def answer(path: String): Int =
+        ws.url(s"http://127.0.0.1:$port$path").withHttpHeaders("Host" -> externalDomain).get().futureValue.status
+      def deploymentsOf(json: JsValue): Seq[JsObject] = (json \ "deployments").as[Seq[JsObject]]
+      val events         = new ConcurrentLinkedQueue[ApiDeploymentEvent]()
+      val collector      = env.analyticsActorSystem.actorOf(Props(new ApiManagementSpec.DeploymentEvents(events)))
+      env.analyticsActorSystem.eventStream.subscribe(collector, classOf[ApiDeploymentEvent])
+      try {
+        // created live, without any draft, its first deployment owned by the tool
+        val created = ok(call("POST", apis, Some(body("/v1"))), 201)
+        (created \ "state").as[String] mustBe "published"
+        deploymentsOf(created).map(d => (d \ "owner").as[String]) mustBe Seq(tool)
+        waitUntil("the route of the api answers")(answer("/v1") == 200)
+        waitUntil("the deployment event of the tool")(events.asScala.exists(e => e.apiRef == external && e.owner == tool))
+
+        // another route path is deployed in one write, the same body again deploys nothing
+        val changed = ok(call("PUT", s"$apis/$external", Some(body("/v2"))))
+        deploymentsOf(changed).map(d => (d \ "owner").as[String]) mustBe Seq(tool, tool)
+        waitUntil("the new route of the api answers")(answer("/v2") == 200)
+        deploymentsOf(ok(call("PUT", s"$apis/$external", Some(body("/v2"))))).size mustBe 2
+
+        // the state transitions are the ones of a deploy
+        val backToStaging = call("PUT", s"$apis/$external", Some(body("/v2", state = ApiStaging)))
+        withClue(backToStaging.body[String]) {
+          backToStaging.status mustBe 400
+          (backToStaging.json \ "error").as[String] mustBe "invalid_state_transition"
+        }
+
+        // the id of the tool has to be one
+        Seq("external=", "external=bad id!").foreach { createdBy =>
+          val refused = call("POST", apis, Some(body("/v1", createdBy = Some(createdBy), id = "api-mgmt-external-bad")))
+          withClue(s"$createdBy: ${refused.body[String]}") {
+            refused.status mustBe 400
+            (refused.json \ "error").as[String] mustBe "invalid_created_by"
+          }
+        }
+
+        // without a marker, nothing changes: no api created live, no locked field written on a live api
+        val unmarkedCreate = call("POST", apis, Some(body("/v1", createdBy = None, id = "api-mgmt-external-unmarked")))
+        withClue(unmarkedCreate.body[String]) {
+          unmarkedCreate.status mustBe 400
+          (unmarkedCreate.json \ "error").as[String] mustBe "cannot_create_in_state"
+        }
+        val unmarkedUpdate = call("PUT", s"$apis/$external", Some(body("/v3", createdBy = None)))
+        withClue(unmarkedUpdate.body[String]) {
+          unmarkedUpdate.status mustBe 400
+          (unmarkedUpdate.json \ "error").as[String] mustBe "production_readonly"
+        }
+      } finally {
+        env.analyticsActorSystem.eventStream.unsubscribe(collector)
+        env.analyticsActorSystem.stop(collector)
+        call("DELETE", s"$apis/$external")
+      }
+    }
     "shutdown" in {
       backendServer.stop()
       stopAll()
