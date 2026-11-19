@@ -217,6 +217,24 @@ class ApiPlanSubscriptionRequiredSpec extends PluginsTestSpecBase {
   }
 }
 
+// an api without a published plan is not open: sbt "testOnly functional.ApiWithoutServedPlanSpec"
+class ApiWithoutServedPlanSpec extends PluginsTestSpecBase {
+  s"an api without a published plan" should {
+    "end every route of a live api with the consumer enforcer" in {
+      new ApiPlanPluginsTests(this).consumerEnforcerOnEveryRoute()
+    }
+    "refuse the calls that no plugin of its flows identified" in {
+      new ApiPlanPluginsTests(this).apiWithoutServedPlan()
+    }
+    "let the callers its flow identified through, counted once, and the anonymous ones with a keyless plan" in {
+      new ApiPlanPluginsTests(this).apiWithoutServedPlanIdentifiedByItsFlow()
+    }
+    "close again when its published plan is set back to staging" in {
+      new ApiPlanPluginsTests(this).planBackToStagingClosesTheApi()
+    }
+  }
+}
+
 class ApiSubscriptionKindSpec extends PluginsTestSpecBase {
   s"api subscriptions" should {
     "be of the kind of their plan, and get an apikey from an apikey or an oauth2-local plan" in {

@@ -2181,7 +2181,10 @@ case class Api(
     }
   }
 
-  private def applyPlansPolicies(routeWithApi: RouteWithApi): NgRoute = {
+  // live: a route of the live api always ends with the consumer enforcer, so that an api without a served plan does not
+  // answer every caller. The draft routes of the testing mode, only reachable with the testing header and whose plans
+  // are usually not published yet, only get it from a served plan
+  private def applyPlansPolicies(routeWithApi: RouteWithApi, live: Boolean): NgRoute = {
     val routeApiPlans = routeWithApi.api.plans
     // published and deprecated plans: a deprecated plan takes no new subscription, but its consumers keep calling
     val servedPlans   = routeApiPlans.filter(_.isServed)
@@ -2192,19 +2195,21 @@ case class Api(
       )
     )
 
-    if (servedPlans.nonEmpty) {
+    if (servedPlans.nonEmpty || live) {
       route.copy(
         plugins = addPluginsToFlow(
           route.plugins,
           Seq(
-            // the last access validator of the route: it requires a consumer and is the only place
-            // where the call is counted.
+            // at the end of the access validation (index 1000, after the extractors of the plans and the
+            // indexed plugins of the flows, the ones without index run after it): it requires a consumer and
+            // is the only place where the call is counted.
             // TODO: check that the apikey really belongs to this api. every plan kind namespaces the
             // identities it mints now, so an apikey reaching a route it does not belong to can be
             // turned away rather than served under the settings of another plan.
             PluginWithConfig(
               pluginId[NgApiConsumerEnforcer],
-              Json.obj(),
+              // without a served plan, only the callers a plugin of the flows of the api identified go through
+              if (servedPlans.nonEmpty) Json.obj() else Json.obj("no_published_plan" -> true),
               Some(PluginIndex(validateAccess = 1000.00.some)) // still valid
             ),
             PluginWithConfig(
@@ -2238,8 +2243,8 @@ case class Api(
                           )
                           .map { routes => routes.flatten.map(route => RouteWithApi(route, this)) }
       } yield {
-        val all                  = routeFutures ++ draftRoutes
-        val apisWithPlanPolicies = all.map(applyPlansPolicies)
+        val apisWithPlanPolicies =
+          routeFutures.map(applyPlansPolicies(_, live = true)) ++ draftRoutes.map(applyPlansPolicies(_, live = false))
 
 //        apisWithPlanPolicies.foreach(route =>
 //          println(route.frontend.domains, route.plugins.slots.map(p => (p.plugin, p.config)))
@@ -2331,6 +2336,33 @@ case class Api(
 object Api {
 
   private val logger = Logger("otoroshi-api-model")
+
+  // the routes of a live api always end with the consumer enforcer: an api without a published or a deprecated plan,
+  // that relied on being open, refuses the anonymous calls now. Told at startup for the ones whose flows do not
+  // identify their callers either
+  def warnApisWithoutServedPlan()(using env: Env, ec: ExecutionContext): Future[Unit] = {
+    def validatesAccess(slot: NgPluginInstance): Boolean =
+      slot.enabled && env.scriptManager
+        .getAnyScript[otoroshi.next.plugins.api.NgNamedPlugin](slot.plugin)
+        .toOption
+        .exists(_.steps.contains(otoroshi.next.plugins.api.NgStep.ValidateAccess))
+    env.datastores.apiDataStore
+      .findAll()
+      .map { apis =>
+        apis
+          .filter(api => api.state == ApiPublished || api.state == ApiDeprecated)
+          .filterNot(api => api.plans.exists(_.isServed))
+          .filterNot(api => api.flows.exists(_.plugins.slots.exists(validatesAccess)))
+          .foreach { api =>
+            logger.warn(
+              s"api '${api.id}' (${api.name}) is ${api.state.name} without a published or a deprecated plan: its routes now refuse the anonymous calls. Publish a keyless plan to serve them"
+            )
+          }
+      }
+      .recover { case e: Throwable =>
+        logger.error("error while looking for the apis without a published plan", e)
+      }
+  }
 
   // what was minted for an api goes with it: its subscriptions and the keys they hold, and the keys the extractors of
   // its plans minted for their consumers. The keys of the other apis are untouched. An api whose subscriptions or keys

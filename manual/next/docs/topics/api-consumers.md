@@ -101,7 +101,7 @@ identified with, serves the call. See [subscriptions](../entities/apis.mdx#subsc
 
 ### The consumer enforcer
 
-`Api consumer enforcer` runs last (plugin index `1000` in the access validation phase) and is the
+`Api consumer enforcer` runs at the end of the access validation phase (plugin index `1000`) and is the
 only place where a call made through a plan is **counted**:
 
 1. it requires a consumer — no API key and no authenticated user means `401`
@@ -117,8 +117,23 @@ another plugin, a failed JWT verification, a restriction — never consumes quot
 over a user session: a caller that went through an auth. module *and* carries an API key is
 enforced against the API key.
 
-APIs with at least one published or deprecated plan also get `Send otoroshi headers back`, so the caller receives
-the usual `Otoroshi-*` response headers, remaining quotas included.
+The routes of every published or deprecated API get it, and `Send otoroshi headers back`, so the caller receives
+the usual `Otoroshi-*` response headers, remaining quotas included. An API without a published or deprecated
+plan is not open: its enforcer only lets through the callers a plugin of the flows of the API identified (an
+auth. module, an `ApikeyCalls` of the flow...), without enforcing their API key again since that plugin already
+applied its own checks and quotas, and refuses the others with `401` (`apikey_rejection_reason: the api has no
+published plan`). Serving anonymous callers is an explicit choice: a published `keyless` plan.
+
+The access validators run in the order of their plugin index, the ones without an index after all the
+others. A plugin of a flow that identifies the callers has to run before the enforcer, with an index below
+`1000`, for the enforcer to see the caller it identified; the plugins of a flow edited from the UI always get
+an index.
+
+:::note
+Before 18.0.x an API without a published plan answered every caller. At startup, Otoroshi warns about every
+published or deprecated API without a published or deprecated plan whose flows do not identify their callers
+either: their routes now refuse the anonymous calls.
+:::
 
 ### Several plans on the same route
 

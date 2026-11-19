@@ -361,7 +361,10 @@ and its consumers are identified and enforced.
 | `deprecated` | served: its consumers keep calling, with their quotas | no new subscription; the existing ones can be updated |
 | `closed` | not served | deleted with their API keys |
 
-An API with no published or deprecated plan gets no consumer enforcer: its routes are open to anyone.
+An API with no published or deprecated plan refuses the calls that no plugin of its flows identified (`401`, with
+`apikey_rejection_reason: the api has no published plan`): putting its last plan in `staging`, closing it or removing it
+never opens the API. To serve anonymous callers, publish a `keyless` plan (with `create_if_missing: false` if no API key
+should be stored per caller).
 
 ### Access modes
 
@@ -379,8 +382,17 @@ public plan and for a plan asking for client credentials. See
 | `oauth2-local` | OAuth2 client credentials flow with local token generation. Clients obtain a JWT to call other routes | `ApikeyCalls` + client credentials endpoint |
 | `oauth2-remote` | OAuth2 token verified against the OIDC settings of an auth. module. The consumer is the client id claim of the token | `NgOidcApikeyExtractor` |
 
-Every published or deprecated plan also adds `NgApiConsumerEnforcer` on the routes of the API. It runs last, requires
-a consumer, and is the only place where a call is counted against the quotas of the plan.
+Every route of a published or deprecated API ends with `NgApiConsumerEnforcer`, whatever its plans. It runs at the
+plugin index `1000` of the access validation phase, requires a consumer, and is the only place where a call is counted
+against the quotas of the plan. On an API without a published or deprecated plan, it only lets through the callers a
+plugin of the flows of the API identified (an auth. module, an `ApikeyCalls` of the flow...), without enforcing their
+API key again: that plugin already applied its own checks and quotas.
+
+:::note
+The access validators run in the order of their plugin index, and the ones without an index after all the others: a
+plugin of a flow has to run before the consumer enforcer, with an index below `1000`, for the enforcer to see the
+caller it identified. The plugins of a flow edited from the UI always get an index.
+:::
 
 All the access modes but `apikey` and `oauth2-local` generate an API key for a consumer they have
 never seen, and they all share the `create_if_missing` flag for that. When it is on, the default,

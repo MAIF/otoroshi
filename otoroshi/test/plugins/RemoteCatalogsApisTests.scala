@@ -51,6 +51,18 @@ class RemoteCatalogsApisTests(parent: PluginsTestSpecBase) {
       testing = ApiTesting(),
       backends = Seq(backend),
       flows = Seq(flow),
+      // an api without a published plan refuses anonymous callers: this one serves them through a keyless plan
+      plans = Seq(
+        ApiPlan(
+          Json.obj(
+            "id"                             -> "plan-public",
+            "name"                           -> "public",
+            "status"                         -> "published",
+            "access_mode_configuration_type" -> "keyless",
+            "access_mode_configuration"      -> Json.obj("create_if_missing" -> false)
+          )
+        )
+      ),
       routes = Seq(
         ApiRoute(
           id = routeId,

@@ -276,6 +276,115 @@ class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
     )
     val route   = routeOf(apiWith(Seq(staging)))
     slotOf(route, NgPluginHelper.pluginId[NgExpressionApikeyExtractor]).isDefined mustBe false
+    // but the route still ends with the consumer enforcer: an api without a served plan is not open
+    slotOf(route, NgPluginHelper.pluginId[NgApiConsumerEnforcer]).map(_.config.raw) mustBe Some(
+      Json.obj("no_published_plan" -> true)
+    )
+  }
+
+  // every route of a live api ends with the consumer enforcer, told whether the api has a served plan
+  def consumerEnforcerOnEveryRoute(): Unit = {
+    val enforcer = NgPluginHelper.pluginId[NgApiConsumerEnforcer]
+    slotOf(routeOf(apiWith(Seq.empty)), enforcer).map(_.config.raw) mustBe Some(Json.obj("no_published_plan" -> true))
+    slotOf(routeOf(apiWith(Seq(ApiPlan(plan("plan-closed", "apikey").raw ++ Json.obj("status" -> "closed"))))), enforcer)
+      .map(_.config.raw) mustBe Some(Json.obj("no_published_plan" -> true))
+    slotOf(routeOf(apiWith(Seq(plan("plan-published", "keyless")))), enforcer).map(_.config.raw) mustBe Some(Json.obj())
+    // a deprecated plan is served
+    slotOf(routeOf(apiWith(Seq(ApiPlan(plan("plan-deprecated", "apikey").raw ++ Json.obj("status" -> "deprecated"))))), enforcer)
+      .map(_.config.raw) mustBe Some(Json.obj())
+  }
+
+  // an api without a published or a deprecated plan refuses the calls that no plugin of its flows identified
+  def apiWithoutServedPlan(): Unit = {
+    def withStatus(id: String, kind: String, status: String): ApiPlan =
+      ApiPlan(plan(id, kind).raw ++ Json.obj("status" -> status))
+    val events    = new ConcurrentLinkedQueue[GatewayEvent]()
+    val collector = env.analyticsActorSystem.actorOf(Props(new ClientIpAddressTests.EventsCollector(events)))
+    env.analyticsActorSystem.eventStream.subscribe(collector, classOf[GatewayEvent])
+    try {
+      Seq(
+        "a staging plan" -> Seq(withStatus("plan-ns-staging", "apikey", "staging")),
+        "a closed plan"  -> Seq(withStatus("plan-ns-closed", "apikey", "closed")),
+        "no plan"        -> Seq.empty
+      ).foreach { case (what, plans) =>
+        val api = apiWith(plans)
+        deploy(api)
+        try {
+          withClue(what)(callApi(api).status mustBe 401)
+          val deadline = System.currentTimeMillis() + 10000
+          def refused  = events.asScala.exists(e =>
+            e.route.exists(_.id.contains(api.routes.head.id)) &&
+            e.extraAnalyticsData.exists(_.select("apikey_rejection_reason").asOpt[String].contains("the api has no published plan"))
+          )
+          while (!refused && System.currentTimeMillis() < deadline) await(100.millis)
+          withClue(s"$what: the reason of the refusal")(refused mustBe true)
+        } finally undeploy(api)
+      }
+      // a deprecated plan is served: the caller has to be one of its consumers
+      val deprecated = apiWith(Seq(withStatus("plan-ns-deprecated", "apikey", "deprecated")))
+      deploy(deprecated)
+      try callApi(deprecated).status mustBe 401
+      finally undeploy(deprecated)
+    } finally {
+      env.analyticsActorSystem.eventStream.unsubscribe(collector)
+      env.analyticsActorSystem.stop(collector)
+    }
+  }
+
+  // an api without a served plan whose flow identifies its callers with ApikeyCalls: they go through, and their quotas
+  // are consumed once, by ApikeyCalls. A published keyless plan serves the anonymous callers
+  def apiWithoutServedPlanIdentifiedByItsFlow(): Unit = {
+    // with an index: the access validators without one run after the consumer enforcer (index 1000). Not mandatory:
+    // it identifies the callers with an api key, and counts their calls, without refusing the others
+    val apikeyCalls = NgPluginInstance(
+      plugin = NgPluginHelper.pluginId[ApikeyCalls],
+      config = NgPluginInstanceConfig(NgApikeyCallsConfig(mandatory = false).json.as[JsObject]),
+      pluginIndex = Some(PluginIndex(validateAccess = Some(1.0)))
+    )
+    val api         = apiWith(Seq.empty, flowPlugins = NgPlugins(Seq(apikeyCalls)))
+    val apikey      = otoroshi.models.ApiKey(
+      clientId = s"client_${IdGenerator.uuid}",
+      clientSecret = "flow-secret",
+      clientName = "flow consumer",
+      authorizedEntities = Seq(otoroshi.models.ApiIdentifier(api.id)),
+      // the quotas ApikeyCalls enforces
+      dailyQuota = 2
+    )
+    createOtoroshiApiKey(apikey).futureValue
+    deploy(api)
+    def withKey() = callApi(api, Seq("Otoroshi-Client-Id" -> apikey.clientId, "Otoroshi-Client-Secret" -> "flow-secret"))
+    try {
+      // without credentials: identified by nothing, refused by the consumer enforcer
+      callApi(api).status mustBe 401
+      // a quota of 2 calls: counted once per call, the third one is refused
+      Seq(withKey().status, withKey().status, withKey().status) mustBe Seq(200, 200, 429)
+
+      val public = api.copy(
+        plans = Seq(plan("plan-ns-public", "keyless", Json.obj("create_if_missing" -> false))),
+        routes = api.routes.map(_.copy(id = s"apiroute_${IdGenerator.uuid}"))
+      )
+      deploy(public)
+      callApi(public).status mustBe 200
+    } finally {
+      deleteOtoroshiApiKey(apikey).futureValue
+      undeploy(api)
+    }
+  }
+
+  // a published plan set back to staging closes the api again
+  def planBackToStagingClosesTheApi(): Unit = {
+    val published = apiWith(Seq(plan("plan-ns-back", "keyless", Json.obj("create_if_missing" -> false))))
+    deploy(published)
+    try {
+      callApi(published).status mustBe 200
+      otoroshiApiCall(
+        "PUT",
+        s"/apis/apis.otoroshi.io/v1/apis/${published.id}",
+        Some(published.copy(plans = Seq(ApiPlan(published.plans.head.raw ++ Json.obj("status" -> "staging")))).json)
+      ).futureValue._2 mustBe 200
+      await(4.seconds)
+      callApi(published).status mustBe 401
+    } finally undeploy(published)
   }
 
   // -----------------------------------------------------------------------------------------------

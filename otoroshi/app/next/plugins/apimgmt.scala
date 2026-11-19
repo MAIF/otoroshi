@@ -1043,6 +1043,24 @@ class NgApiConsumerEnforcer extends NgAccessValidator {
         .map(NgAccess.NgDenied.apply)
     }
 
+    // the route of an api without a served plan: only the callers a plugin of the flows of the api identified go
+    // through (an auth. module, an ApikeyCalls of the flow...). That plugin applied its own checks and quotas, they are
+    // not enforced again, so that the call is not counted twice
+    val noPublishedPlan = ctx.config.select("no_published_plan").asOpt[Boolean].getOrElse(false)
+    if (noPublishedPlan) {
+      return (
+        if (ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).isDefined || ctx.attrs.get(otoroshi.plugins.Keys.UserKey).isDefined)
+          NgAccess.NgAllowed.vfuture
+        else
+          error(
+            Results.Unauthorized,
+            "You're not authorized here !",
+            "errors.auth.unauthorized",
+            "the api has no published plan"
+          )
+      )
+    }
+
     // an apikey wins over a user session: it is the one carrying the plan quotas, so it has to be
     // enforced even when the caller also went through an auth. module
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
