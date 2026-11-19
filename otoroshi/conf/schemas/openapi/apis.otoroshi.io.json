@@ -684,6 +684,52 @@
         "example": {
           "tier": "free"
         }
+      },
+      "selection": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/JsonPathValidator"
+        },
+        "description": "On a `keyless`, `jwt`, `mtls` or `oauth2-remote` plan, the conditions a call has to meet for the plan to apply to it, all of them, evaluated against `{\"request\": {\"method\", \"path\", \"domain\", \"ip\", \"headers\" (lowercased names), \"query\"}, \"token\": <the claims of the token, jwt and oauth2-remote>, \"certificate\": {\"subject_dn\", \"issuer_dn\", \"serial_number\"} (mtls), \"client_id\": <the client id the plan read, without prefix>}`. A plan whose selection fails for a call identifies no one, nothing is looked up nor minted, and the next plan gets the call. Refused on `apikey` and `oauth2-local` plans, whose callers present a key naming its plan (`400 invalid_plan`). Absent or empty: the plan applies to every call its extractor can identify",
+        "example": [
+          {
+            "path": "$.token.tier",
+            "value": "gold"
+          }
+        ]
+      },
+      "counter_failure": {
+        "type": "object",
+        "description": "What happens to a call of a consumer of the plan when the counter of its quotas cannot be reached (a distributed rate limiting redis that is down, for instance). Absent: `deny`",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "deny",
+              "allow"
+            ],
+            "description": "`deny` answers `503 errors.quotas.unavailable`, retryable; `allow` lets the call through uncounted, with `quota_check_skipped` in the analytics of the call. Defaults to `deny`"
+          },
+          "timeout": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "In milliseconds: a counter that has not answered by then is a failure. Absent: the failure is the one of the client of the counter"
+          }
+        },
+        "example": {
+          "mode": "deny",
+          "timeout": 500
+        }
+      },
+      "circuit_breaker_scope": {
+        "type": "string",
+        "enum": [
+          "route",
+          "consumer"
+        ],
+        "description": "Who shares the circuit breaker of the backend: `route`, every caller of the route, or `consumer`, each consumer of the plan gets its own, so that one consumer whose calls make the backend fail does not open it for the others. The breakers of the consumers not used for `otoroshi.circuit-breakers.consumer-scope-ttl` (10 minutes by default) are forgotten. Defaults to `route`",
+        "example": "consumer"
       }
     },
     "example": {

@@ -431,19 +431,47 @@ class ServiceDescriptorCircuitBreaker()(using ec: ExecutionContext, scheduler: S
   }
 }
 
+object CircuitBreakersHolder {
+  // the breakers of a route that has one per consumer: its key, then this separator, then the client id of the consumer
+  val ConsumerScopeSeparator = "::consumer::"
+}
+
 class CircuitBreakersHolder() {
 
   private val circuitBreakers = new UnboundedTrieMap[String, ServiceDescriptorCircuitBreaker]()
 
+  // how long the breaker of a consumer is kept once it is not used anymore, set from the configuration at startup
+  @volatile var consumerScopeTtl: FiniteDuration = 10.minutes
+
+  // the breakers of the consumers of the plans that have one per consumer: a keyless plan has one consumer per caller,
+  // so the ones not used for a while are evicted
+  private val consumerCircuitBreakers = com.github.blemale.scaffeine
+    .Scaffeine()
+    .expireAfter[String, ServiceDescriptorCircuitBreaker](
+      create = (_, _) => consumerScopeTtl,
+      update = (_, _, _) => consumerScopeTtl,
+      read = (_, _, _) => consumerScopeTtl
+    )
+    .build[String, ServiceDescriptorCircuitBreaker]()
+
   def get(id: String, defaultValue: () => ServiceDescriptorCircuitBreaker): ServiceDescriptorCircuitBreaker = {
-    circuitBreakers.getOrElseUpdate(id, defaultValue())
+    if (id.contains(CircuitBreakersHolder.ConsumerScopeSeparator)) consumerCircuitBreakers.get(id, _ => defaultValue())
+    else circuitBreakers.getOrElseUpdate(id, defaultValue())
+  }
+
+  // the keys of the breakers of consumers still kept
+  def consumerScopedKeys(): Seq[String] = {
+    consumerCircuitBreakers.cleanUp()
+    consumerCircuitBreakers.asMap().keys.toSeq
   }
 
   def resetAllCircuitBreakers(): Unit = {
     circuitBreakers.clear()
+    consumerCircuitBreakers.invalidateAll()
   }
 
   def resetCircuitBreakersFor(id: String): Unit = {
     circuitBreakers.get(id).foreach(_.clear())
+    consumerCircuitBreakers.asMap().keys.filter(_.startsWith(id)).foreach(key => consumerCircuitBreakers.getIfPresent(key).foreach(_.clear()))
   }
 }

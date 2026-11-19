@@ -1374,6 +1374,9 @@ class RateLimiter(_env: Env) {
     }
   }
 
+  // the strategy of a key until its config changes: lets a test, or a tool, stand in for the counter of a consumer
+  def overrideStrategy(key: String, strategy: ThrottlingStrategy): Unit = strategies.put(key, strategy)
+
   private def getOrCreateWithConfig(key: String, config: ThrottlingStrategyConfig): ThrottlingStrategy = {
     strategies.getIfPresent(key) match {
       case Some(strategy) if strategy.config.id == config.id => strategy

@@ -854,6 +854,23 @@ case class ApiPlan(raw: JsObject) {
     .asOpt[JsObject]
     .flatMap(o => ApiPlanVisibility.format.reads(o).asOpt)
     .getOrElse(ApiPlanVisibility.Public)
+  // what happens to a call when the counter of the quotas of the plan cannot be reached
+  lazy val counterFailure: ApiPlanCounterFailure =
+    raw.select("counter_failure").asOpt[JsObject].map(ApiPlanCounterFailure.read).getOrElse(ApiPlanCounterFailure())
+  // the circuit breaker of the backend the consumers of the plan share: the one of the route, or one per consumer
+  lazy val circuitBreakerScope: String =
+    raw.select("circuit_breaker_scope").asOpt[String].map(_.trim.toLowerCase) match {
+      case Some(ApiPlan.ConsumerScope) => ApiPlan.ConsumerScope
+      case _                           => ApiPlan.RouteScope
+    }
+  // the conditions a call has to meet for the plan to apply to it, on a keyless, jwt, mtls or oauth2-remote plan: the
+  // plan of a call that fails one does not identify anyone, and the next plan gets the call. Empty: every call its
+  // extractor can identify
+  lazy val selection: Seq[otoroshi.utils.JsonPathValidator] = raw
+    .select("selection")
+    .asOpt[JsArray]
+    .map(_.value.flatMap(v => otoroshi.utils.JsonPathValidator.format.reads(v).asOpt).toSeq)
+    .getOrElse(Seq.empty)
   // the prefix of the client ids of the api keys the extractor of a keyless, jwt, mtls or oauth2-remote plan mints for
   // its consumers, and the subscriptions to it provision: <kind>_<api id>_<plan id>_. The id of a plan is only unique
   // in its api, so the api id keeps two apis with a plan of the same id from sharing their consumers
@@ -1701,6 +1718,8 @@ object ApiKind {
 }
 
 object ApiPlan {
+  val RouteScope    = "route"
+  val ConsumerScope = "consumer"
   // the first part of the client ids of the consumers of a plan, by access mode
   def consumerClientIdKind(accessMode: String): Option[String] = accessMode match {
     case "keyless"       => Some("keyless")
@@ -1709,6 +1728,17 @@ object ApiPlan {
     case "oauth2-remote" => Some("oauth2")
     case _               => None
   }
+}
+
+// what a plan does when the counter of its quotas cannot be reached: deny the call with a 503 (the default), or let it
+// through uncounted. With a timeout, a counter that has not answered by then is a failure
+case class ApiPlanCounterFailure(allow: Boolean = false, timeout: Option[Long] = None)
+
+object ApiPlanCounterFailure {
+  def read(json: JsValue): ApiPlanCounterFailure = ApiPlanCounterFailure(
+    allow = json.select("mode").asOpt[String].map(_.trim.toLowerCase).contains("allow"),
+    timeout = json.select("timeout").asOpt[Long].filter(_ > 0)
+  )
 }
 
 trait ApiPlanStatus  {
@@ -1997,6 +2027,13 @@ case class Api(
   lazy val computedPluginsByPlan: Map[String, NgPluginsWithOverride] =
     plans.collect { case plan if plan.hasPlugins => (plan.id, plan.computedPlugins(this)) }.toMap
 
+  // what each plan does when the counter of its quotas cannot be reached, read by the consumer enforcer on every call
+  lazy val counterFailureByPlan: Map[String, ApiPlanCounterFailure] = plans.map(plan => (plan.id, plan.counterFailure)).toMap
+
+  // the plans whose consumers get a circuit breaker of their own
+  lazy val consumerScopedBreakerPlans: Set[String] =
+    plans.filter(_.circuitBreakerScope == ApiPlan.ConsumerScope).map(_.id).toSet
+
   def resolveDocumentation()(using env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
     documentation.flatMap(_.source) match {
       case None         => documentation.vfuture
@@ -2094,7 +2131,8 @@ case class Api(
               apiId = api.id.some,
               planId = plan.id.some,
               throttlingStrategy = plan.rateLimiting,
-              apikey = plan.apikeyTemplate
+              apikey = plan.apikeyTemplate,
+              selection = plan.selection
             ).json,
             // a public plan always resolves an identity, so it is the last resort: it has to run
             // after every credential based extractor, and still before the consumer enforcer at 1000
@@ -2150,7 +2188,8 @@ case class Api(
               apiId = api.id.some,
               planId = plan.id.some,
               throttlingStrategy = plan.rateLimiting,
-              apikey = plan.apikeyTemplate
+              apikey = plan.apikeyTemplate,
+              selection = plan.selection
             ).json,
             pluginIndex = PluginIndex(
               validateAccess = 2.01.some
@@ -2175,7 +2214,8 @@ case class Api(
               apiId = api.id.some,
               planId = plan.id.some,
               throttlingStrategy = plan.rateLimiting,
-              apikey = plan.apikeyTemplate
+              apikey = plan.apikeyTemplate,
+              selection = plan.selection
             ).json,
             pluginIndex = PluginIndex(
               validateAccess = 2.02.some
@@ -2202,6 +2242,7 @@ case class Api(
               planId = plan.id.some,
               throttlingStrategy = plan.rateLimiting,
               apikey = plan.apikeyTemplate,
+              selection = plan.selection,
               issuer = oidcConfig.issuer,
               audiences = oidcConfig.audiences
             ).json,
@@ -2516,6 +2557,25 @@ object Api {
     "plans"         -> JsArray(api.plans.map(_.raw))
   )
 
+  // the plans that cannot be enforced as written: a selection on a plan whose callers present a key naming its plan, or
+  // one that cannot be read
+  def invalidPlan(api: Api): Option[String] =
+    api.plans.iterator.flatMap { plan =>
+      plan.raw.select("selection").asOpt[JsValue] match {
+        case None | Some(JsNull)                                                                             => None
+        case Some(JsArray(values)) if values.isEmpty                                                         => None
+        case Some(_) if plan.accessModeConfigurationType == "apikey" || plan.accessModeConfigurationType == "oauth2-local" =>
+          Some(s"plan '${plan.id}': selection is not supported on '${plan.accessModeConfigurationType}' plans")
+        case Some(JsArray(values))                                                                           =>
+          values.zipWithIndex.collectFirst {
+            case (value, index) if otoroshi.utils.JsonPathValidator.format.reads(value).isError =>
+              s"plan '${plan.id}': selection[$index] is not a valid json path validator"
+          }
+        case Some(_)                                                                                         =>
+          Some(s"plan '${plan.id}': selection is not an array of json path validators")
+      }
+    }.nextOption()
+
   // the ref a source puts on the api it writes, given to its deployments
   def deploymentRef(api: Api): Option[String] = ApiDeployment.readRef(api.metadata.get("deployment_ref"))
 
@@ -2625,6 +2685,10 @@ object Api {
       env: Env
   ): Future[Either[JsValue, Api]] = {
     oldEntity match {
+      case _ if invalidPlan(entity).isDefined                   =>
+        Json
+          .obj("error" -> "invalid_plan", "error_description" -> invalidPlan(entity).get, "http_status_code" -> 400)
+          .leftf
       // the ref a source gives to the deployments of its api
       case _ if ApiDeployment.refTooLong(deploymentRef(entity)) =>
         (ApiDeployment.refTooLongError ++ Json.obj("http_status_code" -> 400)).leftf

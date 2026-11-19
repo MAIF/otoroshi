@@ -692,6 +692,45 @@ function PlanForm({ plan, onChange, flows = [] }) {
         },
         flow: isApikeyPlan ? ['strategy'] : ['strategy', 'perIp', 'customPattern'],
       },
+      selection: {
+        type: 'any',
+        label: 'Selection',
+        visible: (value) =>
+          ['keyless', 'jwt', 'mtls', 'oauth2-remote'].includes(value?.access_mode_configuration_type),
+        help: 'JSON path conditions a call has to meet for this plan to apply to it, all of them, as [{"path": "$.token.tier", "value": "gold"}]. They are evaluated against the request ($.request.method, path, domain, ip, headers, query), the claims of the token ($.token, jwt and oauth2-remote plans), the client certificate ($.certificate.subject_dn, issuer_dn, serial_number, mtls plans) and the client id the plan read ($.client_id). A plan whose selection fails identifies no one, and the next plan gets the call. Empty: every call this plan can identify.',
+        props: {
+          mode: 'jsonOrPlaintext',
+          language: 'json',
+          useInternalState: true,
+          defaultValue: '[]',
+          height: 120,
+        },
+      },
+      counter_failure: {
+        type: 'form',
+        label: 'Quota counter failure',
+        schema: {
+          mode: {
+            type: 'dots',
+            label: 'Mode',
+            help: 'What happens when the counter of the quotas of this plan cannot be reached: deny answers a retryable 503, allow lets the call through uncounted.',
+            props: { defaultValue: 'deny', options: ['deny', 'allow'] },
+          },
+          timeout: {
+            type: 'number',
+            label: 'Timeout',
+            help: 'A counter that has not answered by then is a failure. Empty: the failure is the one of the client of the counter.',
+            props: { suffix: 'ms' },
+          },
+        },
+        flow: ['mode', 'timeout'],
+      },
+      circuit_breaker_scope: {
+        type: 'dots',
+        label: 'Circuit breaker scope',
+        help: 'Who shares the circuit breaker of the backend: route, every caller of the route, or consumer, each consumer of this plan gets its own, so that one consumer making the backend fail does not open it for the others.',
+        props: { defaultValue: 'route', options: ['route', 'consumer'] },
+      },
       pricing: {
         type: 'form',
         label: 'Pricing',
@@ -847,9 +886,15 @@ function PlanForm({ plan, onChange, flows = [] }) {
         type: 'group',
         name: 'Access Mode',
         collapsable: false,
-        fields: ['access_mode_configuration_type'],
+        fields: ['access_mode_configuration_type', 'selection'],
       },
       'rateLimiting',
+      {
+        type: 'group',
+        name: 'Enforcement',
+        collapsed: true,
+        fields: ['counter_failure', 'circuit_breaker_scope'],
+      },
       'pricing',
       'validation',
       'plugins',

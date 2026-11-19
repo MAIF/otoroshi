@@ -217,6 +217,27 @@ class ApiPlanSubscriptionRequiredSpec extends PluginsTestSpecBase {
   }
 }
 
+// the plan of a call, its quota counter and its circuit breaker: sbt "testOnly functional.ApiPlanEnforcementSettingsSpec"
+class ApiPlanEnforcementSettingsSpec extends PluginsTestSpecBase {
+  s"an api plan" should {
+    "apply to the calls of its selection only, between keyless plans" in {
+      new ApiPlanPluginsTests(this).keylessPlanSelection()
+    }
+    "apply to the calls of its selection only, between jwt plans of the same verifier" in {
+      new ApiPlanPluginsTests(this).jwtPlanSelection()
+    }
+    "refuse a selection it cannot enforce" in {
+      new ApiPlanPluginsTests(this).invalidPlanSelection()
+    }
+    "deny or let through the calls when the counter of its quotas cannot be reached" in {
+      new ApiPlanPluginsTests(this).counterFailure()
+    }
+    "give each of its consumers a circuit breaker of its own" in {
+      new ApiPlanPluginsTests(this).circuitBreakerScope()
+    }
+  }
+}
+
 // the restrictions of the plans of every kind: sbt "testOnly functional.ApiPlanRestrictionsSpec"
 class ApiPlanRestrictionsSpec extends PluginsTestSpecBase {
   s"the restrictions of an api plan" should {

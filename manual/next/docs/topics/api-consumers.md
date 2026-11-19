@@ -158,6 +158,13 @@ of each extractor:
 A `keyless` plan always resolves an identity, so it runs last: a caller presenting real credentials
 is identified by its own plan, and only the others fall back on the public plan.
 
+Between plans of the same kind, the order of the `plans` of the API decides: the first one that
+identifies the caller wins. A plan can pass on a call with a `selection`, JSON path conditions on the
+request, the claims of the token, the client certificate or the client id the plan read: a plan whose
+selection fails identifies no one, and the next plan gets the call (a gold tier and a free tier of the
+same identity provider, a partner plan keyed on a header before a public plan keyed on the ip). See
+[choosing the plan of a call](../entities/apis.mdx#choosing-the-plan-of-a-call).
+
 Extractors added by a plan are **not strict**: failing to identify a caller lets the call continue,
 and the enforcer is the one turning it away at the end. A rejection an extractor took on its own
 (`403`, `404` or `429`, a JWT verifier answering with its own error result) is returned as is.

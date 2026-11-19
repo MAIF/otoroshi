@@ -13,6 +13,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.*
+import play.api.libs.json.Json.JsValueWrapper
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.duration.DurationInt
@@ -986,6 +987,216 @@ class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
     } finally {
       Seq(keyId, otherId, byHand.clientId).foreach(id => env.datastores.apiKeyDataStore.delete(id).futureValue)
       undeploy(api)
+    }
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  // the plan of a call, its quota counter, its circuit breaker
+  // -----------------------------------------------------------------------------------------------
+
+  private def withFields(p: ApiPlan, fields: (String, JsValueWrapper)*): ApiPlan = ApiPlan(p.raw ++ Json.obj(fields*))
+
+  private def windowOf(quota: Long): JsObject =
+    Json.obj("strategy" -> FixedWindowStrategyConfig(windowDurationMs = 60000L, quota = AllowedQuota(window = quota)).json)
+
+  // two keyless plans: a partner plan keyed on a header, applied only to the calls carrying it, then a public one
+  def keylessPlanSelection(): Unit = {
+    ApiPlanApikeySeen.reset()
+    val partner = withFields(
+      plan("plan_partner", "keyless", Json.obj("expr" -> "${req.headers.X-Partner-Id}")),
+      "selection" -> Json.arr(Json.obj("path" -> "$.request.headers.x-partner-id", "value" -> "IsDefined()"))
+    )
+    val api     = apiWith(Seq(partner, plan("plan_free", "keyless")), flowPlugins = NgPlugins(Seq(probe("sel-kl"))))
+    deploy(api)
+    try {
+      callApi(api, Seq("X-Partner-Id" -> "acme")).status mustBe 200
+      ApiPlanApikeySeen.get("sel-kl") mustBe Some(s"keyless_${api.id}_plan_partner_acme")
+      ApiPlanApikeySeen.reset()
+      callApi(api).status mustBe 200
+      ApiPlanApikeySeen.get("sel-kl") mustBe Some(s"keyless_${api.id}_plan_free_127.0.0.1")
+    } finally undeploy(api)
+  }
+
+  // two jwt plans on the same verifier: the tier claim of the token picks the plan, and its quotas
+  def jwtPlanSelection(): Unit = {
+    ApiPlanApikeySeen.reset()
+    val verifierId = restrictionsVerifier()
+    val gold       = withFields(
+      plan("plan_gold", "jwt", Json.obj("verifier" -> verifierId)),
+      "selection"    -> Json.arr(Json.obj("path" -> "$.token.tier", "value" -> "gold")),
+      "rateLimiting" -> windowOf(10)
+    )
+    val free       = withFields(plan("plan_free", "jwt", Json.obj("verifier" -> verifierId)), "rateLimiting" -> windowOf(100))
+    def tiered(clientId: String, tier: String): (String, String) =
+      "Authorization" -> s"Bearer ${JWT.create().withClaim("client_id", clientId).withClaim("tier", tier).sign(Algorithm.HMAC512("secret"))}"
+    def windowOfKey(id: String): Option[Long] =
+      env.datastores.apiKeyDataStore.findById(id).futureValue.flatMap(_.throttlingStrategy).map(_.quota.window)
+
+    val api = apiWith(Seq(gold, free), flowPlugins = NgPlugins(Seq(probe("sel-jwt"))))
+    deploy(api)
+    try {
+      callApi(api, Seq(tiered("client-g", "gold"))).status mustBe 200
+      ApiPlanApikeySeen.get("sel-jwt") mustBe Some(s"jwt_${api.id}_plan_gold_client-g")
+      ApiPlanApikeySeen.reset()
+      callApi(api, Seq(tiered("client-f", "free"))).status mustBe 200
+      ApiPlanApikeySeen.get("sel-jwt") mustBe Some(s"jwt_${api.id}_plan_free_client-f")
+      await(1.second)
+      windowOfKey(s"jwt_${api.id}_plan_gold_client-g") mustBe Some(10L)
+      windowOfKey(s"jwt_${api.id}_plan_free_client-f") mustBe Some(100L)
+    } finally undeploy(api)
+
+    // alone on the api, a plan whose selection fails for a call identifies no one: refused by the enforcer
+    val alone = apiWith(Seq(gold))
+    deploy(alone)
+    try callApi(alone, Seq(tiered("client-f", "free"))).status mustBe 401
+    finally undeploy(alone)
+  }
+
+  // a selection on a plan whose callers present a key naming its plan, or one that cannot be read, is refused
+  def invalidPlanSelection(): Unit = {
+    val onApikey   = apiWith(
+      Seq(withFields(plan("plan_ak", "apikey"), "selection" -> Json.arr(Json.obj("path" -> "$.client_id", "value" -> "x"))))
+    ).copy(state = ApiStaging)
+    val unreadable = apiWith(Seq(withFields(plan("plan_kl", "keyless"), "selection" -> Json.arr(Json.obj("value" -> "x")))))
+      .copy(state = ApiStaging)
+    Seq(
+      onApikey   -> "plan 'plan_ak': selection is not supported on 'apikey' plans",
+      unreadable -> "plan 'plan_kl': selection[0] is not a valid json path validator"
+    ).foreach { case (api, description) =>
+      val (body, status) = otoroshiApiCall("POST", "/apis/apis.otoroshi.io/v1/apis", Some(api.json)).futureValue
+      withClue(body.stringify) {
+        status mustBe 400
+        body.select("error").asString mustBe "invalid_plan"
+        body.select("error_description").asString mustBe description
+      }
+    }
+  }
+
+  // a strategy standing in for the quota counter of a consumer
+  private class CounterStub(answer: () => scala.concurrent.Future[ThrottlingResult]) extends ThrottlingStrategy {
+    override def client(): otoroshi.storage.RedisLike   = env.datastores.redis
+    override def config: ThrottlingStrategyConfig        = FixedWindowStrategyConfig()
+    override def checkAndIncrement(key: String, increment: Long, allowedQuotas: AllowedQuota, expirationSeconds: Int)(
+        using env: otoroshi.env.Env,
+        ec: scala.concurrent.ExecutionContext
+    ): scala.concurrent.Future[ThrottlingResult] = answer()
+  }
+
+  // what a plan does when the counter of its quotas cannot be reached, within a timeout or not
+  def counterFailure(): Unit = {
+    val down: () => scala.concurrent.Future[ThrottlingResult] =
+      () => scala.concurrent.Future.failed(new RuntimeException("counter down"))
+    val slow: () => scala.concurrent.Future[ThrottlingResult] = () =>
+      org.apache.pekko.pattern.after(2.seconds, env.otoroshiScheduler)(
+        scala.concurrent.Future.failed(new RuntimeException("counter too slow"))
+      )(using env.otoroshiExecutionContext)
+    val events    = new ConcurrentLinkedQueue[GatewayEvent]()
+    val collector = env.analyticsActorSystem.actorOf(Props(new ClientIpAddressTests.EventsCollector(events)))
+    env.analyticsActorSystem.eventStream.subscribe(collector, classOf[GatewayEvent])
+    def extras(api: Api, key: String): Option[JsObject] = {
+      val deadline = System.currentTimeMillis() + 10000
+      def find()   = events.asScala.find(e => e.route.exists(_.id.contains(api.routes.head.id)) && e.extraAnalyticsData.exists(_.keys.contains(key)))
+      while (find().isEmpty && System.currentTimeMillis() < deadline) await(100.millis)
+      find().flatMap(_.extraAnalyticsData)
+    }
+    try {
+      Seq(
+        ("deny", Some(Json.obj("mode" -> "deny")), down, 503),
+        ("allow", Some(Json.obj("mode" -> "allow")), down, 200),
+        ("absent", None, down, 503),
+        ("deny-timeout", Some(Json.obj("mode" -> "deny", "timeout" -> 200)), slow, 503),
+        ("allow-timeout", Some(Json.obj("mode" -> "allow", "timeout" -> 200)), slow, 200)
+      ).foreach { case (what, counterFailure, answer, expected) =>
+        val keyless = withFields(plan(s"plan_cf_${what.replace("-", "_")}", "keyless"), "rateLimiting" -> windowOf(100))
+        val api     = apiWith(
+          Seq(counterFailure.map(cf => withFields(keyless, "counter_failure" -> cf)).getOrElse(keyless))
+        )
+        env.rateLimiter.overrideStrategy(s"keyless_${api.id}_${keyless.id}_127.0.0.1", new CounterStub(answer))
+        deploy(api)
+        try {
+          val start = System.currentTimeMillis()
+          withClue(what)(callApi(api).status mustBe expected)
+          if (what.endsWith("timeout")) withClue(s"$what: answered within the timeout")(System.currentTimeMillis() - start must be < 1500L)
+          if (expected == 503) {
+            withClue(s"$what: the reason of the refusal")(
+              extras(api, "apikey_rejection_reason").flatMap(_.select("apikey_rejection_reason").asOpt[String]) mustBe
+              Some(s"counter unavailable for apikey 'keyless_${api.id}_${keyless.id}_127.0.0.1'")
+            )
+          } else {
+            withClue(s"$what: the skipped check")(
+              extras(api, "quota_check_skipped").flatMap(_.select("quota_check_skipped").asOpt[String]) mustBe
+              Some("counter unavailable")
+            )
+          }
+        } finally undeploy(api)
+      }
+    } finally {
+      env.analyticsActorSystem.eventStream.unsubscribe(collector)
+      env.analyticsActorSystem.stop(collector)
+    }
+  }
+
+  // a consumer that makes the backend fail opens the breaker of the route for everybody, or only its own
+  def circuitBreakerScope(): Unit = {
+    val backendServer = functional.TargetService
+      .full(
+        None,
+        "/",
+        "application/json",
+        request => {
+          if (request.headers.exists(_.name().equalsIgnoreCase("X-Break"))) Thread.sleep(2000)
+          (200, Json.obj("ok" -> true).stringify, List.empty)
+        }
+      )
+      .await()
+    val client        = ApiBackendClient(
+      "cb_client",
+      "cb_client",
+      // a single attempt per call: retries counts the attempts
+      NgClientConfig(retries = 1, maxErrors = 2, callTimeout = 500, globalTimeout = 500, sampleInterval = 10000)
+    )
+    val backend       = ApiBackend(
+      id = "cb_backend",
+      name = "cb_backend",
+      backend = NgBackend.empty.copy(
+        targets = Seq(NgTarget(id = "cb_target", hostname = "127.0.0.1", port = backendServer.port, tls = false))
+      ),
+      client = client.id
+    )
+    def apiScoped(scope: Option[String]): Api = {
+      val consumers = plan("plan_cb", "keyless", Json.obj("expr" -> "${req.headers.x-consumer}"))
+      val base      = apiWith(Seq(scope.map(s => withFields(consumers, "circuit_breaker_scope" -> s)).getOrElse(consumers)))
+      base.copy(
+        backends = Seq(backend),
+        clientsBackendConfig = Seq(client),
+        routes = base.routes.map(_.copy(backend = backend.id))
+      )
+    }
+    def call(api: Api, consumer: String, break: Boolean): Int =
+      callApi(api, Seq("x-consumer" -> consumer) ++ (if (break) Seq("X-Break" -> "true") else Seq.empty)).status
+    env.circuitBeakersHolder.consumerScopeTtl = 3.seconds
+    try {
+      Seq(Some("consumer") -> true, Some("route") -> false, None -> false).foreach { case (scope, otherServed) =>
+        val api = apiScoped(scope)
+        deploy(api)
+        try {
+          withClue(s"$scope: the other consumer is served before")(call(api, "b", break = false) mustBe 200)
+          (1 to 3).foreach(_ => call(api, "a", break = true))
+          withClue(s"$scope: the breaking consumer is refused")(call(api, "a", break = false) must not be 200)
+          withClue(s"$scope: the other consumer")((call(api, "b", break = false) == 200) mustBe otherServed)
+          if (scope.contains("consumer")) {
+            withClue("the breaker of the consumer is kept")(
+              env.circuitBeakersHolder.consumerScopedKeys().exists(_.endsWith("_plan_cb_a")) mustBe true
+            )
+          }
+        } finally undeploy(api)
+      }
+      // the breakers of the consumers not used for longer than the ttl are forgotten
+      await(4.seconds)
+      env.circuitBeakersHolder.consumerScopedKeys().filter(_.contains("_plan_cb_")) mustBe empty
+    } finally {
+      env.circuitBeakersHolder.consumerScopeTtl = 10.minutes
+      backendServer.stop()
     }
   }
 }

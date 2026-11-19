@@ -348,6 +348,36 @@ Plans (also referred to as consumers in the UI) define security policies and pri
 | `pricing` | [ApiPricing](#pricing) | Pricing configuration |
 | `tags` | array of string | Tags |
 | `metadata` | object | Metadata |
+| `selection` | array of `{ "path", "value" }` | On a `keyless`, `jwt`, `mtls` or `oauth2-remote` plan, the [JSON path conditions](#choosing-the-plan-of-a-call) a call has to meet for the plan to apply to it. Refused on `apikey` and `oauth2-local` plans (`400 invalid_plan`). Absent: every call the plan can identify |
+| `counter_failure` | object | `{ "mode": "deny" \| "allow", "timeout": <ms> }`: what happens when the counter of the quotas of the plan cannot be reached. `deny`, the default, answers `503 errors.quotas.unavailable`; `allow` lets the call through uncounted (`quota_check_skipped` in its analytics). With a `timeout`, a counter that has not answered by then is a failure |
+| `circuit_breaker_scope` | string | `route` (default): the circuit breaker of the backend is shared by every caller of the route; `consumer`: each consumer of the plan gets its own, so that one consumer making the backend fail does not open it for the others. Unused consumer breakers are forgotten after `otoroshi.circuit-breakers.consumer-scope-ttl` (10 minutes) |
+
+### Choosing the plan of a call
+
+Between plans of the same kind, the order of `plans` decides: the first one that identifies the caller wins (see
+[several plans on the same route](../topics/api-consumers.md#several-plans-on-the-same-route)). A `selection` lets a
+plan pass on a call: all its conditions have to hold, evaluated against
+
+```json
+{
+  "request": { "method": "GET", "path": "/users", "domain": "my-api.oto.tools", "ip": "1.2.3.4",
+               "headers": { "x-partner-id": "acme" }, "query": { "page": "1" } },
+  "token": { "client_id": "client-1", "tier": "gold" },
+  "certificate": { "subject_dn": "CN=client-1", "issuer_dn": "CN=my-ca", "serial_number": "1234" },
+  "client_id": "client-1"
+}
+```
+
+where `token` holds the claims of the token of a `jwt` or an `oauth2-remote` plan, `certificate` the client certificate
+of an `mtls` plan, and `client_id` the client id the plan read, without prefix. A plan whose selection fails for a call
+identifies no one, and the next plan gets the call:
+
+```json
+"plans": [
+  { "id": "plan_gold", "access_mode_configuration_type": "jwt", "selection": [{ "path": "$.token.tier", "value": "gold" }], ... },
+  { "id": "plan_free", "access_mode_configuration_type": "jwt", ... }
+]
+```
 
 ### Plan statuses
 

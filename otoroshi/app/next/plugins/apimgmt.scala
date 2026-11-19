@@ -12,8 +12,9 @@ import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.events.{Alerts, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
-import otoroshi.utils.{JsonPathUtils, RegexPool}
+import otoroshi.utils.{JsonPathUtils, JsonPathValidator, RegexPool}
 import otoroshi.utils.http.DN
+import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
@@ -32,6 +33,9 @@ trait ApikeyFromPlanConfig {
   // only the consumers with an enabled subscription to the plan are identified: nothing is minted for the others.
   // Only applies with api_id and plan_id
   def subscriptionRequired: Boolean
+  // the conditions a call has to meet for the plan to apply to it, all of them: the plan of a call that fails one does
+  // not identify anyone, and the next plan gets the call
+  def selection: Seq[JsonPathValidator]
   // the access mode of the plan when its keys are the identities of the consumers of a token or a certificate:
   // jwt, mtls or oauth2-remote. None for the keys of the expression extractor
   def accessMode: Option[String] = None
@@ -55,7 +59,8 @@ object ApikeyFromPlan {
     "plan_id"             -> config.planId,
     "throttling_strategy" -> config.throttlingStrategy.map(_.json),
     "apikey"              -> config.apikey.json,
-    "subscription_required" -> config.subscriptionRequired
+    "subscription_required" -> config.subscriptionRequired,
+    "selection"           -> JsArray(config.selection.map(_.json))
   )
 
   def createIfMissing(json: JsValue): Boolean                            =
@@ -63,6 +68,38 @@ object ApikeyFromPlan {
   def apiId(json: JsValue): Option[String]                               = json.select("api_id").asOpt[String]
   def subscriptionRequired(json: JsValue): Boolean                       =
     json.select("subscription_required").asOpt[Boolean].getOrElse(false)
+  def selection(json: JsValue): Seq[JsonPathValidator]                    =
+    json
+      .select("selection")
+      .asOpt[JsArray]
+      .map(_.value.flatMap(v => JsonPathValidator.format.reads(v).asOpt).toSeq)
+      .getOrElse(Seq.empty)
+
+  // whether the plan of the extractor applies to the call: the conditions of its selection are evaluated against the
+  // request, the client id the plan read, and the claims of the token or the certificate it was read from
+  def selects(
+      config: ApikeyFromPlanConfig,
+      ctx: NgAccessContext,
+      clientId: String,
+      token: Option[JsValue] = None,
+      certificate: Option[JsValue] = None
+  )(using env: Env): Boolean =
+    config.selection.isEmpty || {
+      val request  = ctx.request
+      val document = Json.obj(
+        "request"   -> Json.obj(
+          "method"  -> request.method,
+          "path"    -> request.thePath,
+          "domain"  -> request.theDomain,
+          "ip"      -> request.theIpAddress,
+          "headers" -> JsObject(request.headers.toSimpleMap.map { case (name, value) => name.toLowerCase -> JsString(value) }),
+          "query"   -> JsObject(request.queryString.map { case (name, values) => name -> JsString(values.headOption.getOrElse("")) })
+        ),
+        "client_id" -> clientId
+      ) ++ token.map(t => Json.obj("token" -> t)).getOrElse(Json.obj()) ++
+        certificate.map(c => Json.obj("certificate" -> c)).getOrElse(Json.obj())
+      config.selection.forall(_.validate(document))
+    }
   def planId(json: JsValue): Option[String]                              = json.select("plan_id").asOpt[String]
   def throttlingStrategy(json: JsValue): Option[ThrottlingStrategyConfig] =
     json.select("throttling_strategy").asOpt(using ThrottlingStrategyConfig.fmt)
@@ -186,21 +223,57 @@ object ApikeyFromPlan {
         attrs = attrs,
         throttlingStrategy = apikey.throttlingStrategy
       )
-      strategy
-        .checkAndIncrement(
-          apikey.clientId,
-          1,
-          apikey.allowedQuota,
-          env.throttlingWindow
-        )
+      // the plan of the consumer says what happens when its counter cannot be reached. A key without plan fails as
+      // before
+      val counterFailure = apikey.apiRef.flatMap(ref =>
+        env.proxyState.api(ref.api).flatMap(_.counterFailureByPlan.get(ref.plan)).map(failure => (ref.plan, failure))
+      )
+      val counted        = strategy.checkAndIncrement(apikey.clientId, 1, apikey.allowedQuota, env.throttlingWindow)
+      counterFailure
+        .flatMap(_._2.timeout)
+        .map { timeout =>
+          Future.firstCompletedOf(
+            Seq(
+              counted,
+              org.apache.pekko.pattern.after(
+                scala.concurrent.duration.FiniteDuration(timeout, java.util.concurrent.TimeUnit.MILLISECONDS),
+                env.otoroshiScheduler
+              )(
+                Future.failed(new java.util.concurrent.TimeoutException(s"no answer of the counter within $timeout ms"))
+              )
+            )
+          )
+        }
+        .getOrElse(counted)
+        .map(result => Right(result): Either[Throwable, ThrottlingResult])
+        .recover { case e: Throwable => Left(e) }
         .flatMap {
-          case result if result.allowed =>
+          case Left(e) if counterFailure.isEmpty => Future.failed(e)
+          case Left(e)                            =>
+            val (planId, failure) = counterFailure.get
+            if (failure.allow) {
+              // let through, uncounted: the counter missed the call
+              attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
+                case Some(obj) => obj ++ Json.obj("quota_check_skipped" -> "counter unavailable")
+                case None      => Json.obj("quota_check_skipped" -> "counter unavailable")
+              }
+              warnCounterFailure(ctx.route.id, planId, e)
+              Results.Ok(Json.obj()).vfuture
+            } else {
+              error(
+                Results.ServiceUnavailable,
+                "The quotas of this consumer cannot be checked",
+                "errors.quotas.unavailable",
+                s"counter unavailable for apikey '${apikey.clientId}'".some
+              )
+            }
+          case Right(result) if result.allowed =>
             val quotas = result.quotas.legacy()
             attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
             ApiKey.sendQuotasAlmostExceededAlerts(apikey, quotas, quotasSettings)
             Results.Ok(Json.obj()).vfuture
 
-          case result =>
+          case Right(result) =>
             // Quota exceeded - reject with 429
             val quotas = result.quotas.legacy()
             attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey           -> apikey)
@@ -217,6 +290,25 @@ object ApikeyFromPlan {
   }
 
   private val logger = play.api.Logger("otoroshi-apikey-from-plan")
+
+  // the last time a counter failure was told for a plan: once per minute at most
+  private val counterFailureWarnings = new java.util.concurrent.ConcurrentHashMap[String, java.lang.Long]()
+
+  private def warnCounterFailure(routeId: String, planId: String, e: Throwable): Unit = {
+    val now  = System.currentTimeMillis()
+    var told = false
+    counterFailureWarnings.compute(
+      s"$routeId::$planId",
+      (_, last) =>
+        if (last == null || now - last.longValue() > 60000L) {
+          told = true
+          java.lang.Long.valueOf(now)
+        } else last
+    )
+    if (told) {
+      logger.warn(s"the quota counter of plan '$planId' cannot be reached, its calls go through uncounted: ${e.getMessage}")
+    }
+  }
 
   // the keys an extractor minted for a consumer, and the ones a subscription provisioned for it
   private def mintedForConsumer(apikey: ApiKey): Boolean =
@@ -493,7 +585,8 @@ case class NgJwtApikeyExtractorConfig(
     planId: Option[String] = None,
     throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
     apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration(),
-    subscriptionRequired: Boolean = false
+    subscriptionRequired: Boolean = false,
+    selection: Seq[JsonPathValidator] = Seq.empty
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   override def accessMode: Option[String] = Some("jwt")
@@ -519,6 +612,7 @@ object NgJwtApikeyExtractorConfig {
         planId = ApikeyFromPlan.planId(json),
         throttlingStrategy = ApikeyFromPlan.throttlingStrategy(json),
         apikey = ApikeyFromPlan.apikeyTemplate(json),
+        selection = ApikeyFromPlan.selection(json),
         subscriptionRequired = ApikeyFromPlan.subscriptionRequired(json)
       )
     } match {
@@ -556,6 +650,10 @@ class NgJwtApikeyExtractor extends ApikeyExtractorPlugin {
                 val jsonToken = new String(OtoroshiClaim.decoder.decode(token.getPayload))
                 JsonPathUtils.getAt[String](jsonToken, config.clientIdPath) match {
                   case None           => Results.Unauthorized(Json.obj("error" -> "no_client_id")).future
+                  // the plan does not apply to the call: not identified, the next plan gets it
+                  case Some(clientId)
+                      if !ApikeyFromPlan.selects(config, ctx, clientId, token = Try(Json.parse(jsonToken)).toOption) =>
+                    Results.Unauthorized(Json.obj("error" -> "not_selected")).future
                   case Some(clientId) =>
                     // the prefix keeps the identities of that plan in their own namespace: a client
                     // id comes from a token, so two apis behind the same idp would otherwise share
@@ -580,7 +678,8 @@ case class NgExpressionApikeyExtractorConfig(
     apiId: Option[String] = None,
     planId: Option[String] = None,
     throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
-    apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration()
+    apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration(),
+    selection: Seq[JsonPathValidator] = Seq.empty
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   // the identity of a keyless consumer is an expression on the request, no subscription can be tied to it
@@ -604,7 +703,8 @@ object NgExpressionApikeyExtractorConfig {
         apiId = ApikeyFromPlan.apiId(json),
         planId = ApikeyFromPlan.planId(json),
         throttlingStrategy = ApikeyFromPlan.throttlingStrategy(json),
-        apikey = ApikeyFromPlan.apikeyTemplate(json)
+        apikey = ApikeyFromPlan.apikeyTemplate(json),
+        selection = ApikeyFromPlan.selection(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -634,7 +734,9 @@ class NgExpressionApikeyExtractor extends ApikeyExtractorPlugin {
       // the prefix keeps generated identities in their own namespace: without it an expression fed
       // by the request could be made to resolve to the client id of a real apikey
       val clientId = s"${config.clientIdPrefix}${extracted}"
-      ApikeyFromPlan.resolveOrCreate(clientId, config, ctx).map(result => outcome(result, config.strict))
+      // the plan does not apply to the call: not identified, the next plan gets it
+      if (!ApikeyFromPlan.selects(config, ctx, extracted)) failure(config.strict, "Your call is not selected by this plan").vfuture
+      else ApikeyFromPlan.resolveOrCreate(clientId, config, ctx).map(result => outcome(result, config.strict))
     }
   }
 }
@@ -650,7 +752,8 @@ case class NgClientCertApikeyExtractorConfig(
     planId: Option[String] = None,
     throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
     apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration(),
-    subscriptionRequired: Boolean = false
+    subscriptionRequired: Boolean = false,
+    selection: Seq[JsonPathValidator] = Seq.empty
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   override def accessMode: Option[String] = Some("mtls")
@@ -678,6 +781,7 @@ object NgClientCertApikeyExtractorConfig {
         planId = ApikeyFromPlan.planId(json),
         throttlingStrategy = ApikeyFromPlan.throttlingStrategy(json),
         apikey = ApikeyFromPlan.apikeyTemplate(json),
+        selection = ApikeyFromPlan.selection(json),
         subscriptionRequired = ApikeyFromPlan.subscriptionRequired(json)
       )
     } match {
@@ -738,6 +842,21 @@ class NgClientCertApikeyExtractor extends ApikeyExtractorPlugin {
           derivedClientId(config, subject, cert.getSerialNumber.toString) match {
             case None           =>
               failure(config.strict, s"Your client certificate carries no ${config.clientIdField.get} in its subject").vfuture
+            // the plan does not apply to the call: not identified, the next plan gets it
+            case Some(clientId)
+                if !ApikeyFromPlan.selects(
+                  config,
+                  ctx,
+                  clientId,
+                  certificate = Json
+                    .obj(
+                      "subject_dn"    -> subject.stringify,
+                      "issuer_dn"     -> issuer.stringify,
+                      "serial_number" -> cert.getSerialNumber.toString
+                    )
+                    .some
+                ) =>
+              failure(config.strict, "Your call is not selected by this plan").vfuture
             case Some(clientId) =>
               ApikeyFromPlan
                 .resolveOrCreate(s"${config.clientIdPrefix}${clientId}", config, ctx)
@@ -766,7 +885,8 @@ case class NgOidcApikeyExtractorConfig(
     issuer: Option[String] = None,
     // a token must carry one of them in aud, not checked when empty
     audiences: Seq[String] = Seq.empty,
-    subscriptionRequired: Boolean = false
+    subscriptionRequired: Boolean = false,
+    selection: Seq[JsonPathValidator] = Seq.empty
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   override def accessMode: Option[String] = Some("oauth2-remote")
@@ -834,6 +954,7 @@ object NgOidcApikeyExtractorConfig {
         planId = ApikeyFromPlan.planId(json),
         throttlingStrategy = ApikeyFromPlan.throttlingStrategy(json),
         apikey = ApikeyFromPlan.apikeyTemplate(json),
+        selection = ApikeyFromPlan.selection(json),
         subscriptionRequired = ApikeyFromPlan.subscriptionRequired(json),
         issuer = OAuth2RemoteAccessModeConfiguration.readIssuer(json),
         audiences = OAuth2RemoteAccessModeConfiguration.readAudiences(json)
@@ -971,6 +1092,10 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
                         val jsonToken = new String(OtoroshiClaim.decoder.decode(token.getPayload))
                         JsonPathUtils.getAt[String](jsonToken, config.clientIdPath) match {
                           case None           => failure(config.strict, "No client id in the token").rightf
+                          // the plan does not apply to the call: not identified, the next plan gets it
+                          case Some(clientId)
+                              if !ApikeyFromPlan.selects(config, ctx, clientId, token = Try(Json.parse(jsonToken)).toOption) =>
+                            failure(config.strict, "Your call is not selected by this plan").rightf
                           case Some(clientId) =>
                             userMetadata(ctx, oidcModule, config, currentToken).flatMap { extraMetadata =>
                               // prefixed for the very same reason as the jwt extractor: the client id

@@ -219,6 +219,25 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
       )
     }
 
+    "read the selection of a plan, none when absent or unreadable" in {
+      plan().selection mustBe empty
+      plan("selection" -> Json.arr(Json.obj("path" -> "$.token.tier", "value" -> "gold"), Json.obj("value" -> "x"))).selection
+        .map(v => (v.path, v.value)) mustBe Seq(("$.token.tier", JsString("gold")))
+    }
+
+    "read the counter failure of a plan, deny without timeout when absent" in {
+      plan().counterFailure mustBe ApiPlanCounterFailure(allow = false, timeout = None)
+      plan("counter_failure" -> Json.obj("mode" -> "allow", "timeout" -> 500)).counterFailure mustBe
+      ApiPlanCounterFailure(allow = true, timeout = Some(500L))
+      plan("counter_failure" -> Json.obj("mode" -> "whatever", "timeout" -> -1)).counterFailure mustBe ApiPlanCounterFailure()
+    }
+
+    "read the circuit breaker scope of a plan, the route unless it says consumer" in {
+      plan().circuitBreakerScope mustBe "route"
+      plan("circuit_breaker_scope" -> "Consumer").circuitBreakerScope mustBe "consumer"
+      plan("circuit_breaker_scope" -> "anything").circuitBreakerScope mustBe "route"
+    }
+
     "have no configuration for an unknown access mode" in {
       plan("access_mode_configuration_type" -> "basic", "access_mode_configuration" -> Json.obj()).accessModeConfiguration mustBe None
     }

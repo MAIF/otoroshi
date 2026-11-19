@@ -106,7 +106,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "plan_id"             -> "plan_1",
         "throttling_strategy" -> legacyThrottling.json,
         "apikey"              -> ApikeyAccessModeConfiguration().json,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "selection" -> Json.arr()
       )
     }
 
@@ -117,7 +118,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
         "apikey"              -> ApikeyAccessModeConfiguration().json,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "selection" -> Json.arr()
       )
     }
   }
@@ -161,7 +163,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
         "apikey"              -> ApikeyAccessModeConfiguration().json,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "selection" -> Json.arr()
       )
     }
 
@@ -176,7 +179,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "plan_id"             -> "plan_gold",
         "throttling_strategy" -> fixedWindow.json,
         "apikey"              -> template.json,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "selection" -> Json.arr()
       )
     }
 
@@ -307,7 +311,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
         "apikey"              -> ApikeyAccessModeConfiguration().json,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "selection" -> Json.arr()
       )
     }
 
@@ -424,7 +429,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
         "apikey"              -> ApikeyAccessModeConfiguration().json,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "selection" -> Json.arr()
       )
     }
 
@@ -440,7 +446,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "plan_id"             -> "plan_mtls",
         "throttling_strategy" -> legacyThrottling.json,
         "apikey"              -> template.json,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "selection" -> Json.arr()
       )
     }
 
@@ -578,7 +585,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
         "apikey"              -> ApikeyAccessModeConfiguration().json,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "selection" -> Json.arr()
       )
     }
 
@@ -598,7 +606,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "plan_id"             -> "plan_oidc",
         "throttling_strategy" -> fixedWindow.json,
         "apikey"              -> template.json,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "selection" -> Json.arr()
       )
     }
 

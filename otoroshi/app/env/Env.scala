@@ -442,6 +442,11 @@ class Env(
   lazy val providerDashboardTitle: String =
     configuration.getOptionalWithFileSupport[String]("otoroshi.provider.title").getOrElse("Provider's dashboard")
 
+  // how long the circuit breaker of a consumer is kept once it is not used anymore
+  circuitBeakersHolder.consumerScopeTtl = configuration
+    .getOptionalWithFileSupport[scala.concurrent.duration.FiniteDuration]("otoroshi.circuit-breakers.consumer-scope-ttl")
+    .getOrElse(scala.concurrent.duration.FiniteDuration(10, java.util.concurrent.TimeUnit.MINUTES))
+
   lazy val useEventStreamForScriptEvents: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.useEventStreamForScriptEvents").getOrElse(true)
 

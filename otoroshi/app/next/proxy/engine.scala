@@ -154,6 +154,17 @@ class ProxyEngine() extends RequestHandler {
     Results.InternalServerError("bad default routing").left.vfuture
 
   private val logger               = Logger("otoroshi-next-gen-proxy-engine")
+
+  // the circuit breaker of the backend of a route is shared by every caller, unless the plan of the consumer of the
+  // call gives each of its consumers one of its own
+  private def circuitBreakerKey(route: NgRoute, cachedPath: String, attrs: TypedMap)(using env: Env): String = {
+    val routeKey = route.cacheableId + cachedPath
+    attrs.get(otoroshi.plugins.Keys.ApiKeyKey).flatMap { apikey =>
+      apikey.apiRef
+        .filter(ref => env.proxyState.api(ref.api).exists(_.consumerScopedBreakerPlans.contains(ref.plan)))
+        .map(_ => s"$routeKey${otoroshi.gateway.CircuitBreakersHolder.ConsumerScopeSeparator}${apikey.clientId}")
+    }.getOrElse(routeKey)
+  }
   private val fakeFailureIndicator = new AtomicBoolean(false)
   private val reqCounter           = new AtomicInteger(0)
 
@@ -2495,7 +2506,7 @@ class ProxyEngine() extends RequestHandler {
       FEither(
         env.circuitBeakersHolder
           .get(
-            route.cacheableId + cachedPath,
+            circuitBreakerKey(route, cachedPath, attrs),
             () => new ServiceDescriptorCircuitBreaker()
           )
           .callGenNg[Result](
@@ -2740,7 +2751,7 @@ class ProxyEngine() extends RequestHandler {
       FEither(
         env.circuitBeakersHolder
           .get(
-            route.cacheableId + cachedPath,
+            circuitBreakerKey(route, cachedPath, attrs),
             () => new ServiceDescriptorCircuitBreaker()
           )
           .callGenNg[Flow[PlayWSMessage, PlayWSMessage, ?]](
