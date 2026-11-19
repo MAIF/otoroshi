@@ -425,6 +425,21 @@ an empty default (`${req.headers.x-consumer:}`) to have those calls rejected ins
 | `fetch_user` | boolean | `false` | Call the userinfo endpoint of the module and store the profile of the token holder in a metadata of the API key. The call stays a consumer call, no user session is attached to it |
 | `user_metadata_key` | string | `user_profile` | Metadata key holding that profile |
 | `create_if_missing` | boolean | `true` | Persist the generated API key |
+| `issuer` | string | | The `iss` a token must carry, compared exactly: the `issuer` of the discovery document of the authorization server. Not checked when absent |
+| `audiences` | array of string | `[]` | The token must carry at least one of them in its `aud` claim. A token without `aud` is refused. Not checked when empty |
+
+A token refused for its issuer or its audience is not identified by the plan, and nothing is minted for it: another
+plan of the API can still identify the call (a second `oauth2-remote` plan of the same module for another audience
+for instance), otherwise the call answers `401`. The reason is written to the analytics of the call, under
+`token_rejection_reason`.
+
+:::warning
+Without `issuer` nor `audiences`, the plan accepts **any token signed with the keys of the auth. module**: an
+authorization server signs the tokens of all its clients and all its resource servers with the same keys, and some
+multi-tenant servers sign the tokens of all their tenants with one key set. Tokens issued for other clients, for
+other APIs or for other tenants of the same server are accepted and turned into consumers of the plan. Set at least
+the audience of the API.
+:::
 
 ### Apikey access mode configuration
 

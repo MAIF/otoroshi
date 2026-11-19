@@ -259,6 +259,18 @@ const AccessModePluginConfigurationForm = {
         help: 'Claim holding the client id of the consumer. Identity providers put it in client_id, azp or cid depending on the vendor.',
         props: { placeholder: 'client_id' },
       },
+      issuer: {
+        type: 'string',
+        label: 'Expected issuer',
+        help: 'The iss a token must carry, exactly: the issuer of the discovery document of the authorization server. Without an expected issuer nor accepted audiences, any token signed with the keys of the module is accepted, the ones issued for other clients, other apis or other tenants of the same server included.',
+        props: { placeholder: 'https://idp.example.com/realms/my-realm' },
+      },
+      audiences: {
+        type: 'array',
+        label: 'Accepted audiences',
+        help: 'A token must carry at least one of them in its aud claim. Leave empty to accept any audience.',
+        props: { placeholder: 'my-api' },
+      },
       fetch_user: {
         type: 'bool',
         label: 'Fetch the user profile',
@@ -276,7 +288,15 @@ const AccessModePluginConfigurationForm = {
         help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
-    flow: ['verifier', 'client_id_path', 'fetch_user', 'user_metadata_key', 'create_if_missing'],
+    flow: [
+      'verifier',
+      'client_id_path',
+      'issuer',
+      'audiences',
+      'fetch_user',
+      'user_metadata_key',
+      'create_if_missing',
+    ],
   },
   mtls: {
     schema: {

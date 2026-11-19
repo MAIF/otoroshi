@@ -443,12 +443,25 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
         "client_id_path"    -> "azp",
         "fetch_user"        -> true,
         "user_metadata_key" -> "profile",
-        "create_if_missing" -> true
+        "create_if_missing" -> true,
+        "issuer"            -> JsNull,
+        "audiences"         -> Json.arr()
       )
     }
 
     "round trip a configuration" in {
       roundTrip(format, full)
+    }
+
+    "round trip a configuration with an issuer and audiences" in {
+      roundTrip(format, full.copy(issuer = Some("https://idp.example.com"), audiences = Seq("api-1", "api-2")))
+    }
+
+    "read an audience given as a string as a one element list, and drop the blank issuer and audiences" in {
+      val config = readOk(format, Json.obj("issuer" -> "", "audiences" -> "my-api"))
+      config.issuer mustBe None
+      config.audiences mustBe Seq("my-api")
+      readOk(format, Json.obj("audiences" -> Json.arr("my-api", " "))).audiences mustBe Seq("my-api")
     }
 
     "round trip the default configuration" in {

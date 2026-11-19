@@ -463,12 +463,27 @@ case class OAuth2RemoteAccessModeConfiguration(
     clientIdPath: Option[String] = Some("client_id"),
     fetchUser: Boolean = false,
     userMetadataKey: String = "user_profile",
-    createIfMissing: Boolean = true
+    createIfMissing: Boolean = true,
+    // the iss a token must carry: the issuer of the authorization server. Not checked when empty
+    issuer: Option[String] = None,
+    // a token must carry one of them in aud. Not checked when empty
+    audiences: Seq[String] = Seq.empty
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Remote
 }
 
 object OAuth2RemoteAccessModeConfiguration {
+
+  // a blank issuer is no issuer, compared as it is otherwise (oidc requires the exact value)
+  def readIssuer(json: JsValue): Option[String] = json.select("issuer").asOpt[String].filter(_.trim.nonEmpty)
+
+  // a string reads as a one element list, blank entries are dropped
+  def readAudiences(json: JsValue): Seq[String] = (json.select("audiences").asOpt[JsValue] match {
+    case Some(JsString(audience)) => Seq(audience)
+    case Some(JsArray(values))    => values.collect { case JsString(audience) => audience }.toSeq
+    case _                        => Seq.empty
+  }).filter(_.trim.nonEmpty)
+
   def fmt = new Format[OAuth2RemoteAccessModeConfiguration] {
     override def reads(json: JsValue): JsResult[OAuth2RemoteAccessModeConfiguration] = Try {
       OAuth2RemoteAccessModeConfiguration(
@@ -476,7 +491,9 @@ object OAuth2RemoteAccessModeConfiguration {
         clientIdPath = json.select("client_id_path").asOpt[String],
         fetchUser = json.select("fetch_user").asOpt[Boolean].getOrElse(false),
         userMetadataKey = json.select("user_metadata_key").asOpt[String].getOrElse("user_profile"),
-        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
+        issuer = readIssuer(json),
+        audiences = readAudiences(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -487,7 +504,9 @@ object OAuth2RemoteAccessModeConfiguration {
       "client_id_path"    -> o.clientIdPath,
       "fetch_user"        -> o.fetchUser,
       "user_metadata_key" -> o.userMetadataKey,
-      "create_if_missing" -> o.createIfMissing
+      "create_if_missing" -> o.createIfMissing,
+      "issuer"            -> o.issuer,
+      "audiences"         -> o.audiences
     )
   }
 }
@@ -1980,7 +1999,9 @@ case class Api(
               apiId = api.id.some,
               planId = plan.id.some,
               throttlingStrategy = plan.rateLimiting,
-              apikey = plan.apikeyTemplate
+              apikey = plan.apikeyTemplate,
+              issuer = oidcConfig.issuer,
+              audiences = oidcConfig.audiences
             ).json,
             pluginIndex = PluginIndex(
               validateAccess = 2.03.some

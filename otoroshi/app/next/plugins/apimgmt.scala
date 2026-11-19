@@ -1,9 +1,10 @@
 package otoroshi.next.plugins
 
+import com.auth0.jwt.interfaces.DecodedJWT
 import otoroshi.env.Env
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.models.{ApiIdentifier, ApiKey, InHeader, InQueryParam, JwtTokenLocation, LocalJwtVerifier, RouteIdentifier}
-import otoroshi.next.models.{ApiRef, ApikeyAccessModeConfiguration}
+import otoroshi.next.models.{ApiRef, ApikeyAccessModeConfiguration, OAuth2RemoteAccessModeConfiguration}
 import otoroshi.next.plugins.api.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.Base64Codec
@@ -549,7 +550,11 @@ case class NgOidcApikeyExtractorConfig(
     apiId: Option[String] = None,
     planId: Option[String] = None,
     throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
-    apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration()
+    apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration(),
+    // the iss a token must carry, not checked when empty
+    issuer: Option[String] = None,
+    // a token must carry one of them in aud, not checked when empty
+    audiences: Seq[String] = Seq.empty
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   override def json: JsValue = Json.obj(
@@ -559,7 +564,9 @@ case class NgOidcApikeyExtractorConfig(
     "source"             -> source.map(_.asJson).getOrElse(JsNull).asValue,
     "fetch_user"         -> fetchUser,
     "user_metadata_key"  -> userMetadataKey,
-    "strict"             -> strict
+    "strict"             -> strict,
+    "issuer"             -> issuer.map(_.json).getOrElse(JsNull).asValue,
+    "audiences"          -> audiences
   ) ++ ApikeyFromPlan.json(this)
 }
 
@@ -571,6 +578,8 @@ object NgOidcApikeyExtractorConfig {
       "client_id_prefix",
       "fetch_user",
       "user_metadata_key",
+      "issuer",
+      "audiences",
       "strict",
       "create_if_missing",
       "source"
@@ -589,6 +598,8 @@ object NgOidcApikeyExtractorConfig {
       "client_id_prefix"  -> Json.obj("type" -> "string", "label" -> "Client id prefix"),
       "fetch_user"        -> Json.obj("type" -> "bool", "label" -> "Fetch the user profile"),
       "user_metadata_key" -> Json.obj("type" -> "string", "label" -> "Metadata key of the user profile"),
+      "issuer"            -> Json.obj("type" -> "string", "label" -> "Expected issuer"),
+      "audiences"         -> Json.obj("type" -> "array", "label" -> "Accepted audiences"),
       "strict"            -> Json.obj("type" -> "bool", "label" -> "Strict"),
       "create_if_missing" -> Json.obj("type" -> "bool", "label" -> "Create the apikey if missing"),
       "source"            -> Json.obj("type" -> "any", "label" -> "JWT Source", "props" -> Json.obj("height" -> 200))
@@ -609,7 +620,9 @@ object NgOidcApikeyExtractorConfig {
         apiId = ApikeyFromPlan.apiId(json),
         planId = ApikeyFromPlan.planId(json),
         throttlingStrategy = ApikeyFromPlan.throttlingStrategy(json),
-        apikey = ApikeyFromPlan.apikeyTemplate(json)
+        apikey = ApikeyFromPlan.apikeyTemplate(json),
+        issuer = OAuth2RemoteAccessModeConfiguration.readIssuer(json),
+        audiences = OAuth2RemoteAccessModeConfiguration.readAudiences(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -622,7 +635,7 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
 
   override def name: String                                = "OIDC apikey extractor"
   override def description: Option[String]                 =
-    "This plugin verifies the request jwt token against the OIDC settings of an auth. module, then extracts an apikey from a claim holding its client id. The apikey is built from the plan settings when it does not exist yet. It only identifies the consumer: pair it with the 'Api consumer enforcer' plugin to enforce its quotas, like a published plan does".some
+    "This plugin verifies the request jwt token against the OIDC settings of an auth. module, checks its issuer and its audience when they are configured, then extracts an apikey from a claim holding its client id. Without an expected issuer nor accepted audiences, any token signed with the keys of the auth. module is accepted, the ones issued for other clients, other apis or other tenants of the same authorization server included. The apikey is built from the plan settings when it does not exist yet. It only identifies the consumer: pair it with the 'Api consumer enforcer' plugin to enforce its quotas, like a published plan does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgOidcApikeyExtractorConfig().some
   override def isAccessAsync: Boolean                      = true
 
@@ -669,6 +682,36 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
     }
   }
 
+  // the issuer and the audience the config expects, checked on the payload of a verified token: an authorization
+  // server signs the tokens of all its clients, all its resource servers and sometimes all its tenants with the same
+  // keys. The reason of a refusal goes to the analytics of the call, the description to the caller in strict mode
+  private def claimsRejection(ctx: NgAccessContext, config: NgOidcApikeyExtractorConfig, payload: JsValue): Option[String] = {
+    def by: String = config.planId.map(id => s"plan $id").getOrElse(s"route ${ctx.route.id}")
+    val rejection  = config.issuer match {
+      case Some(expected) if !payload.select("iss").asOpt[String].contains(expected) =>
+        val iss = payload.select("iss").asOpt[JsValue].map(_.stringify).getOrElse("none")
+        Some(("token issuer not accepted", s"token issuer $iss not accepted by $by"))
+      case _ if config.audiences.nonEmpty                                           =>
+        // a string or an array of strings (rfc 7519, 4.1.3)
+        val aud = payload.select("aud").asOpt[JsValue] match {
+          case Some(JsString(value)) => Seq(value)
+          case Some(JsArray(values)) => values.collect { case JsString(value) => value }.toSeq
+          case _                     => Seq.empty
+        }
+        if (aud.exists(config.audiences.contains)) None
+        else Some(("token audience not accepted", s"token audience [${aud.mkString(", ")}] not accepted by $by"))
+      case _                                                                         => None
+    }
+    rejection.map { case (description, reason) =>
+      // not under apikey_rejection_reason, which the consumer enforcer overwrites
+      ctx.attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
+        case Some(obj) => obj ++ Json.obj("token_rejection_reason" -> reason)
+        case None      => Json.obj("token_rejection_reason" -> reason)
+      }
+      description
+    }
+  }
+
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgOidcApikeyExtractorConfig.format).getOrElse(NgOidcApikeyExtractorConfig())
     config.ref match {
@@ -678,6 +721,15 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
           case None                                                              =>
             NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not found"))).vfuture
           case Some(oidcModule: OAuth2ModuleConfig) if oidcModule.jwtVerifier.isDefined => {
+            // a verified token whose issuer or audience the config does not accept, with the description of the refusal
+            object RejectedClaims {
+              def unapply(token: DecodedJWT): Option[String] =
+                if (config.issuer.isEmpty && config.audiences.isEmpty) None
+                else {
+                  val payload = Try(Json.parse(new String(OtoroshiClaim.decoder.decode(token.getPayload))))
+                  claimsRejection(ctx, config, payload.getOrElse(Json.obj()))
+                }
+            }
             val verifier = LocalJwtVerifier().copy(enabled = true, algoSettings = oidcModule.jwtVerifier.get)
             val sources  = config.source
               .map(s => Seq(s))
@@ -699,6 +751,8 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
                   ) { jwtInjection =>
                     jwtInjection.decodedToken match {
                       case None        => failure(config.strict, "You have to provide a valid apikey").rightf
+                      // before the client id is read, so that nothing is minted for a refused token
+                      case Some(RejectedClaims(description)) => failure(config.strict, description).rightf
                       case Some(token) => {
                         val jsonToken = new String(OtoroshiClaim.decoder.decode(token.getPayload))
                         JsonPathUtils.getAt[String](jsonToken, config.clientIdPath) match {

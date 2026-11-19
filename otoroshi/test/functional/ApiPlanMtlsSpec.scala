@@ -17,13 +17,14 @@ import otoroshi.models.{
   VerificationSettings
 }
 import otoroshi.next.models.*
-import otoroshi.next.plugins.AdditionalHeadersOut
+import otoroshi.next.plugins.{AdditionalHeadersOut, NgOidcApikeyExtractor, NgOidcApikeyExtractorConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, ClientAuth, DynamicSSLEngineProvider, FakeKeyStore}
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
+import play.api.libs.ws.readableAsString
 import play.core.server.ServerConfig
 import plugins.{ApiPlanApikeyProbe, ApiPlanApikeySeen}
 
@@ -787,6 +788,277 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         demo.backendServer.stop()
         demo.oidcServer.stop()
         await(2.seconds)
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------------------------------
+  // the claims an oauth2-remote plan expects: the issuer of the authorization server and one of the
+  // audiences of the api. Every token below is signed with the keys of the same auth. module
+  // -------------------------------------------------------------------------------------------------
+
+  private val claimsPrefix   = "apiplansclaims"
+  private val claimsDomain   = s"$claimsPrefix.foo.tools"
+  private val claimsSecret   = "claims-oidc-secret"
+  private val claimsModuleId = s"$claimsPrefix-auth-module"
+
+  private case class ClaimsDemo(backendServer: TargetService, authModule: GenericOauth2ModuleConfig)
+  private var claims: ClaimsDemo = scala.compiletime.uninitialized
+
+  private def claimsJwt(clientId: String, iss: Option[String], aud: Seq[String]): String = {
+    val builder = JWT.create().withClaim("client_id", clientId)
+    iss.foreach(i => builder.withIssuer(i))
+    aud match {
+      case Seq()    => ()
+      case Seq(one) => builder.withClaim("aud", one)
+      case many     => builder.withArrayClaim("aud", many.toArray)
+    }
+    builder.sign(Algorithm.HMAC512(claimsSecret))
+  }
+
+  private def claimsPlan(id: String, accessModeConfiguration: JsObject): ApiPlan = ApiPlan(
+    Json.obj(
+      "id"                             -> id,
+      "name"                           -> id,
+      "status"                         -> "published",
+      "access_mode_configuration_type" -> "oauth2-remote",
+      "access_mode_configuration"      -> (Json.obj(
+        "verifier"          -> claimsModuleId,
+        "client_id_path"    -> "client_id",
+        "create_if_missing" -> true
+      ) ++ accessModeConfiguration)
+    )
+  )
+
+  // the api of the claims, with the plans given. The scenario reaches the route through the metadata of the api
+  private def deployClaimsApi(scenario: String, plans: ApiPlan*): Api = {
+    given Env      = otoEnv
+    val backend    = ApiBackend(
+      id = s"$claimsPrefix-backend",
+      name = "claims-backend",
+      backend = NgBackend.empty.copy(
+        targets =
+          Seq(NgTarget(id = "target_1", hostname = "127.0.0.1", port = claims.backendServer.port, tls = false))
+      ),
+      client = "default_backend_client"
+    )
+    val flow       = ApiFlows.empty.copy(
+      plugins = NgPlugins(
+        ApiFlows.empty.plugins.slots :+ NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[AdditionalHeadersOut],
+          config = NgPluginInstanceConfig(
+            Json.obj(
+              "headers" -> Json.obj("X-Demo-Consumer" -> "${apikey.clientId}", "X-Demo-Plan" -> "${apikey.api.plan}")
+            )
+          )
+        )
+      )
+    )
+    val api        = Api(
+      location = EntityLocation.default,
+      id = claimsPrefix,
+      name = claimsPrefix,
+      description = "the claims of an oauth2-remote plan",
+      domain = claimsDomain,
+      contextPath = "",
+      version = "0.0.1",
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      groups = Seq.empty,
+      state = ApiPublished,
+      blueprint = ApiBlueprint.REST,
+      testing = ApiTesting(),
+      backends = Seq(backend),
+      flows = Seq(flow),
+      plans = plans,
+      routes = Seq(
+        ApiRoute(
+          // one route id per scenario: the configs of the plugins of a route are cached for a few seconds by route id
+          id = s"$claimsPrefix-route-$scenario",
+          frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath("/"))),
+          flowRef = flow.id,
+          backend = backend.id
+        )
+      ),
+      metadata = Map("scenario" -> scenario)
+    )
+    otoEnv.datastores.apiDataStore.set(api).futureValue mustBe true
+    awaitCond(30.seconds) {
+      otoEnv.proxyState
+        .allRoutes()
+        .exists(route => route.apiRef.exists(_.id == api.id) && route.metadata.get("scenario").contains(scenario))
+    }
+    api
+  }
+
+  // the body of the answer stands for the description of the call
+  private def claimsCall(token: String, host: String = claimsDomain): DemoCall = {
+    val resp = ws
+      .url(s"http://127.0.0.1:$port/")
+      .withHttpHeaders("Host" -> host, "Authorization" -> s"Bearer $token")
+      .get()
+      .futureValue
+    DemoCall(
+      resp.body[String],
+      resp.status,
+      resp.headers.map { case (k, v) => (k.toLowerCase, v.headOption.getOrElse("")) }.toMap
+    )
+  }
+
+  private def storedKey(clientId: String): Option[ApiKey] = {
+    given Env = otoEnv
+    otoEnv.datastores.apiKeyDataStore.findById(clientId).futureValue
+  }
+
+  "An oauth2-remote plan" should {
+
+    "only identify the tokens of its issuer and of one of its audiences" in {
+      given Env         = otoEnv
+      val backendServer = TargetService
+        .full(None, "/", "application/json", _ => (200, """{"message":"hello world"}""", List.empty))
+        .await()
+      val authModule    = GenericOauth2ModuleConfig(
+        id = claimsModuleId,
+        name = claimsModuleId,
+        desc = "the auth. module signing every token of the claims tests",
+        clientSideSessionEnabled = true,
+        clientId = "claims-client",
+        clientSecret = "claims-client-secret",
+        jwtVerifier = HSAlgoSettings(512, claimsSecret).some,
+        tags = Seq.empty,
+        metadata = Map.empty,
+        sessionCookieValues = SessionCookieValues()
+      )
+      claims = ClaimsDemo(backendServer, authModule)
+      otoEnv.datastores.authConfigsDataStore.set(authModule).futureValue
+      awaitCond(30.seconds)(otoEnv.proxyState.authModule(claimsModuleId).isDefined)
+
+      val plan = claimsPlan(
+        "claims-plan",
+        Json.obj("issuer" -> "demo-idp", "audiences" -> Json.arr("my-api"))
+      )
+      deployClaimsApi("issuer-and-audiences", plan)
+
+      // the plan read back carries what it checks
+      val read = ws
+        .url(s"http://127.0.0.1:$port/apis/apis.otoroshi.io/v1/apis/$claimsPrefix")
+        .withHttpHeaders("Host" -> "otoroshi-api.oto.tools", "Accept" -> "application/json")
+        .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", play.api.libs.ws.WSAuthScheme.BASIC)
+        .get()
+        .futureValue
+      withClue(read.body[String]) {
+        read.status mustBe 200
+        val conf = (read.json \ "plans" \ 0 \ "access_mode_configuration")
+        (conf \ "issuer").as[String] mustBe "demo-idp"
+        (conf \ "audiences").as[Seq[String]] mustBe Seq("my-api")
+      }
+
+      val served = claimsCall(claimsJwt("client-1", Some("demo-idp"), Seq("my-api")))
+      withClue(served.how) {
+        served.status mustBe 200
+        served.consumer mustBe Some("oauth2_claims-plan_client-1")
+        served.plan mustBe Some("claims-plan")
+      }
+      val severalAudiences = claimsCall(claimsJwt("client-1", Some("demo-idp"), Seq("other-api", "my-api")))
+      withClue(severalAudiences.how)(severalAudiences.status mustBe 200)
+
+      // refused before the client id is read: nothing is minted for it
+      val otherIssuer = claimsCall(claimsJwt("client-refused", Some("other-idp"), Seq("my-api")))
+      withClue(otherIssuer.how)(otherIssuer.status mustBe 401)
+      storedKey("oauth2_claims-plan_client-refused") mustBe None
+
+      Seq(
+        "another audience" -> claimsJwt("client-refused", Some("demo-idp"), Seq("other-api")),
+        "no audience"      -> claimsJwt("client-refused", Some("demo-idp"), Seq.empty),
+        "no issuer"        -> claimsJwt("client-refused", None, Seq("my-api"))
+      ).foreach { case (what, token) =>
+        val refused = claimsCall(token)
+        withClue(s"$what: ${refused.how}")(refused.status mustBe 401)
+      }
+      storedKey("oauth2_claims-plan_client-refused") mustBe None
+
+      // without issuer nor audiences, as before: any token signed with the keys of the module
+      deployClaimsApi("no-claims", claimsPlan("claims-plan", Json.obj()))
+      Seq(
+        claimsJwt("client-1", Some("demo-idp"), Seq("my-api")),
+        claimsJwt("client-1", Some("other-idp"), Seq("my-api")),
+        claimsJwt("client-1", Some("demo-idp"), Seq("other-api")),
+        claimsJwt("client-1", Some("demo-idp"), Seq.empty),
+        claimsJwt("client-1", None, Seq("my-api"))
+      ).foreach { token =>
+        val call = claimsCall(token)
+        withClue(call.how) {
+          call.status mustBe 200
+          call.consumer mustBe Some("oauth2_claims-plan_client-1")
+        }
+      }
+    }
+
+    "let another oauth2-remote plan of the same module identify a token of its audience" in {
+      deployClaimsApi(
+        "two-audiences",
+        claimsPlan("claims-plan-a", Json.obj("audiences" -> Json.arr("api-a"))),
+        claimsPlan("claims-plan-b", Json.obj("audiences" -> "api-b"))
+      )
+      val toA = claimsCall(claimsJwt("client-2", Some("demo-idp"), Seq("api-a")))
+      withClue(toA.how) {
+        toA.status mustBe 200
+        toA.plan mustBe Some("claims-plan-a")
+      }
+      val toB = claimsCall(claimsJwt("client-2", Some("demo-idp"), Seq("api-b")))
+      withClue(toB.how) {
+        toB.status mustBe 200
+        toB.plan mustBe Some("claims-plan-b")
+        toB.consumer mustBe Some("oauth2_claims-plan-b_client-2")
+      }
+      val toNone = claimsCall(claimsJwt("client-2", Some("demo-idp"), Seq("api-c")))
+      withClue(toNone.how)(toNone.status mustBe 401)
+    }
+
+    "refuse a token of another audience in strict mode, on a route of its own" in {
+      given Env  = otoEnv
+      val domain = s"$claimsPrefix-route.foo.tools"
+      val route  = NgRoute.empty.copy(
+        id = s"$claimsPrefix-strict-route",
+        frontend = NgRoute.empty.frontend.copy(domains = Seq(NgDomainAndPath(domain))),
+        backend = NgRoute.empty.backend.copy(
+          targets =
+            Seq(NgTarget(id = "target_1", hostname = "127.0.0.1", port = claims.backendServer.port, tls = false))
+        ),
+        plugins = NgPlugins(
+          Seq(
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[NgOidcApikeyExtractor],
+              config = NgPluginInstanceConfig(
+                NgOidcApikeyExtractorConfig(ref = claimsModuleId.some, strict = true, audiences = Seq("my-api")).json
+                  .as[JsObject]
+              )
+            )
+          )
+        )
+      )
+      otoEnv.datastores.routeDataStore.set(route).futureValue mustBe true
+      try {
+        awaitCond(30.seconds)(otoEnv.proxyState.route(route.id).isDefined)
+        val refused = claimsCall(claimsJwt("client-3", Some("demo-idp"), Seq("other-api")), domain)
+        withClue(refused.how) {
+          refused.status mustBe 401
+          (Json.parse(refused.how) \ "error_description").as[String] mustBe "token audience not accepted"
+        }
+        val accepted = claimsCall(claimsJwt("client-3", Some("demo-idp"), Seq("my-api")), domain)
+        withClue(accepted.how)(accepted.status mustBe 200)
+      } finally {
+        otoEnv.datastores.routeDataStore.delete(route.id).futureValue
+      }
+    }
+
+    "clean up the claims tests" in {
+      given Env = otoEnv
+      if (claims != null) {
+        otoEnv.datastores.apiDataStore.delete(claimsPrefix).futureValue
+        otoEnv.datastores.authConfigsDataStore.delete(claims.authModule).futureValue
+        claims.backendServer.stop()
       }
     }
   }

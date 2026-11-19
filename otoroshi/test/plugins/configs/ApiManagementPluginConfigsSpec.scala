@@ -536,7 +536,9 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
       apiId = Some("api_1"),
       planId = Some("plan_oidc"),
       throttlingStrategy = Some(fixedWindow),
-      apikey = template
+      apikey = template,
+      issuer = Some("https://idp.example.com"),
+      audiences = Seq("api-1", "api-2")
     )
 
     "default to a strict extraction of client_id, prefixed by oauth2_, without fetching the user" in {
@@ -549,6 +551,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
       config.userMetadataKey mustBe "user_profile"
       config.strict mustBe true
       config.createIfMissing mustBe true
+      config.issuer mustBe None
+      config.audiences mustBe empty
     }
 
     "write the default config" in {
@@ -560,6 +564,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "fetch_user"          -> false,
         "user_metadata_key"   -> "user_profile",
         "strict"              -> true,
+        "issuer"              -> JsNull,
+        "audiences"           -> Json.arr(),
         "create_if_missing"   -> true,
         "api_id"              -> JsNull,
         "plan_id"             -> JsNull,
@@ -577,6 +583,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "fetch_user"          -> true,
         "user_metadata_key"   -> "profile",
         "strict"              -> false,
+        "issuer"              -> "https://idp.example.com",
+        "audiences"           -> Json.arr("api-1", "api-2"),
         "create_if_missing"   -> false,
         "api_id"              -> "api_1",
         "plan_id"             -> "plan_oidc",
@@ -591,6 +599,13 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
 
     "round trip a config where every field is set" in {
       roundTrip(format, full)
+    }
+
+    "read an audience given as a string as a one element list, and drop the blank issuer and audiences" in {
+      val config = format.reads(Json.obj("issuer" -> " ", "audiences" -> "my-api")).get
+      config.issuer mustBe None
+      config.audiences mustBe Seq("my-api")
+      format.reads(Json.obj("audiences" -> Json.arr("", "my-api", " "))).get.audiences mustBe Seq("my-api")
     }
 
     "round trip a token read from a header" in {

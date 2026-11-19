@@ -1065,6 +1065,23 @@
       "create_if_missing": {
         "type": "boolean",
         "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. `true` when the configuration does not say, and for a plan without any configuration"
+      },
+      "issuer": {
+        "type": "string",
+        "nullable": true,
+        "description": "The `iss` a token must carry, compared exactly (case sensitive, no trailing slash normalisation): the `issuer` of the discovery document of the authorization server. A token of another issuer is not identified by the plan, and nothing is minted for it. `null` or blank: the issuer is not checked. Without an issuer nor audiences, any token signed with the keys of the auth module is accepted, the ones issued for other clients, other apis or other tenants of the same authorization server included",
+        "example": "https://idp.example.com/realms/my-realm"
+      },
+      "audiences": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "An accepted audience"
+        },
+        "description": "The token must carry at least one of them in its `aud` claim (a string or an array of strings); a token without `aud` is not identified by the plan. A string reads as a one element list, blank entries are dropped. Empty: the audience is not checked. Defaults to an empty list",
+        "example": [
+          "my-api"
+        ]
       }
     },
     "example": {
@@ -1072,7 +1089,11 @@
       "client_id_path": "azp",
       "fetch_user": false,
       "user_metadata_key": "user_profile",
-      "create_if_missing": true
+      "create_if_missing": true,
+      "issuer": "https://idp.example.com/realms/my-realm",
+      "audiences": [
+        "my-api"
+      ]
     }
   },
   "ApiPlanPlugins": {

@@ -36,7 +36,7 @@ the API (a deprecated plan takes no new subscription, but its consumers keep cal
 | `oauth2-local` | `Apikey calls` | a token delivered by the client credentials endpoint of the plan | the client id of the API key |
 | `jwt` | `Jwt apikey extractor` | a claim of a token verified by a [JWT verifier](../entities/jwt-verifiers.md) | `jwt_<plan id>_<claim value>` |
 | `mtls` | `Client certificate apikey extractor` | the client certificate of the TLS connection | `mtls_<plan id>_<DN attribute, or a value derived from the subject and the serial number>` |
-| `oauth2-remote` | `OIDC apikey extractor` | a claim of a token verified against the OIDC settings of an [auth. module](../entities/auth-modules.md) | `oauth2_<plan id>_<claim value>` |
+| `oauth2-remote` | `OIDC apikey extractor` | a claim of a token verified against the OIDC settings of an [auth. module](../entities/auth-modules.md), of the `issuer` and one of the `audiences` of the plan when they are set | `oauth2_<plan id>_<claim value>` |
 
 The client id of a generated identity is always prefixed with the kind and the id of the plan. Two
 APIs sitting behind the same identity provider therefore never share a consumer, and a value coming
@@ -141,7 +141,7 @@ a consumer identity to callers that have none. They all share the same settings 
 | `cp:otoroshi.next.plugins.NgExpressionApikeyExtractor` | `expression` (default `${req.ip}`), `client_id_prefix` default `public_`, `strict` default `false` |
 | `cp:otoroshi.next.plugins.NgJwtApikeyExtractor` | `verifier`, `client_id_path` (default `client_id`, JSON path supported), `client_id_prefix` default `jwt_`, `strict` default `true` |
 | `cp:otoroshi.next.plugins.NgClientCertApikeyExtractor` | `regex_subject_dns`, `regex_issuer_dns`, `client_id_field`, `client_id_prefix` default `mtls_`, `strict` default `true` |
-| `cp:otoroshi.next.plugins.NgOidcApikeyExtractor` | `ref` (auth. module), `client_id_path`, `source` (token location), `fetch_user`, `user_metadata_key`, `client_id_prefix` default `oauth2_`, `strict` default `true` |
+| `cp:otoroshi.next.plugins.NgOidcApikeyExtractor` | `ref` (auth. module), `client_id_path`, `source` (token location), `fetch_user`, `user_metadata_key`, `issuer`, `audiences`, `client_id_prefix` default `oauth2_`, `strict` default `true` |
 
 An extractor only **identifies** the caller. To also enforce the quotas and the restrictions of the
 resulting API key, add `cp:otoroshi.next.plugins.NgApiConsumerEnforcer` after it, like a published
