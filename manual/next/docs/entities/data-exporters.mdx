@@ -249,24 +249,24 @@ The simplest way to discover the exact shape of an event in your own setup is to
 
 ## Secrets in exported events
 
-The events that describe a call carry its headers and the configuration of the route that served it, which can hold credentials. Otoroshi masks them when it turns those events into JSON, before any exporter sees them: each masked value is replaced by `********`.
+The events that describe a call carry its headers and the configuration of the route that served it, the audit and alert events carry the api key of an admin API call or the entities they are about: all of them can hold credentials. Otoroshi masks them when it turns those events into JSON, before any exporter sees them: each masked value is replaced by `********`. The audit events are masked the same way in the audit store that the admin API and the backoffice read.
 
 | Event | What is masked |
 |-------|----------------|
 | `GatewayEvent` | the values of the headers holding credentials in `headers`, `headersOut`, `otoroshiHeadersIn` and `otoroshiHeadersOut`, and the secret fields of the configurations it embeds (`route`, `descriptor`, the matched jwt verifier) |
 | `RequestFlowReport` | the secret fields, the values of the headers holding credentials and the values of the cookies, in the `route` and in the `report` (the contexts of the flow) |
-| `CdnPolyfillIoDetectedAlert`, `CdnPolyfillIoReplacedAlert`, `ReactToShellDetectedAlert` | the same, in the `route` and in the `request` they embed |
+| `AuditEvent`, `AlertEvent` (every audit and alert) | the secret fields, the values of the headers holding credentials and the values of the cookies, anywhere in the event: the `clientSecret` of the `apiKey` of an `AdminApiEvent`, of the `apikey` of the quota and rotation alerts, the secrets of an `audit_payload`, ... |
 
 The headers holding credentials are `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, and the Otoroshi headers carrying a client secret, an authorization, a bearer token, a jwt or a basic authorization (`Otoroshi-Client-Secret`, `Otoroshi-Authorization`, `Otoroshi-Token`, ... with the names configured for the instance).
 
-A secret field is recognised by its name, whatever its case: `secret`, `clientSecret`, `client_secret`, `password`, `privateKey`, `private_key`, `authorization`, `token`, `access_token`, `apikey` and `api_key`. That catches the settings of Otoroshi and of its plugins, not a secret stored under another key, like a metadata entry or a field of a custom plugin named otherwise: exclude it with a [projection](#projection), or send the events to a destination you trust with it. The other events (audit events, the other alerts, ...) are exported as they are.
+A secret field is recognised by its name, whatever its case: `secret`, `clientSecret`, `client_secret`, `password`, `privateKey`, `private_key`, `authorization`, `token`, `access_token`, `apikey` and `api_key`. That catches the settings of Otoroshi and of its plugins, not a secret stored under another key, like a metadata entry or a field of a custom plugin named otherwise: exclude it with a [projection](#projection), or send the events to a destination you trust with it. The other events (health checks, traffic captures, body events, ...) are exported as they are.
 
 The masking is on by default and applies to every exporter. It is set for the whole instance:
 
 ```hocon
 app {
   events {
-    maskSecrets = true # mask credential headers and configuration secrets in the exported gateway events
+    maskSecrets = true # mask credential headers and configuration secrets in the exported gateway, audit and alert events
     maskSecrets = ${?OTOROSHI_EVENTS_MASK_SECRETS}
   }
 }

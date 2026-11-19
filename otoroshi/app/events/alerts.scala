@@ -39,6 +39,11 @@ import otoroshi.utils.syntax.implicits.*
 
 trait AlertEvent extends AnalyticEvent {
   override def `@type`: String = "AlertEvent"
+
+  // an alert leaves otoroshi through the exporters with what it carries: an api key, the audit event of an admin api
+  // write... Their secrets are masked, unless app.events.maskSecrets is disabled
+  override def toEnrichedJson(using _env: Env, ec: ExecutionContext): Future[JsValue] =
+    super.toEnrichedJson.map(json => GatewayEvent.maskEmbeddedJson(json, _env))
 }
 
 object AlertEvent {

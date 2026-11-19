@@ -13,6 +13,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait AuditEvent extends AnalyticEvent {
   override def `@type`: String = "AuditEvent"
+
+  // an audit event leaves otoroshi through the exporters and the audit store with what it carries: the api key of an
+  // admin api call, the entity it wrote... Their secrets are masked, unless app.events.maskSecrets is disabled
+  override def toEnrichedJson(using _env: Env, ec: ExecutionContext): Future[JsValue] =
+    super.toEnrichedJson.map(json => GatewayEvent.maskEmbeddedJson(json, _env))
 }
 
 object AuditEvent {
