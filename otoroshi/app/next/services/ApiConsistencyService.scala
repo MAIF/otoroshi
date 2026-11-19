@@ -71,13 +71,14 @@ object ApiConsistencyService {
       .map(_ => api)
   }
 
-  // the api keys of the subscriptions go with them. A subscription whose keys could not be deleted is kept, and the
-  // write of the api fails, so that the plan stays in the api and the next write of the api retries it
+  // the api keys of the subscriptions go with them, deleted or disabled as when a subscription is deleted. A
+  // subscription whose keys could not be revoked is kept, and the write of the api fails, so that the plan stays in
+  // the api and the next write of the api retries it
   private def deleteSubscriptionsAndKeys(api: Api, plan: ApiPlan, subs: Seq[ApiSubscription])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
-    subs.mapAsync(sub => ApiSubscription.deleteKeys(sub).map(result => (sub, result))).flatMap { results =>
+    subs.mapAsync(sub => ApiSubscription.revokeKeys(sub).map(result => (sub, result))).flatMap { results =>
       val (deletable, kept) = results.partition(_._2.isRight)
       val deleted           =
         if (deletable.isEmpty) ().vfuture
@@ -87,11 +88,11 @@ object ApiConsistencyService {
         else {
           val ids = kept.map(_._1.id).mkString(", ")
           logger.error(
-            s"the api keys of the subscriptions $ids to the plan '${plan.id}' removed from api '${api.id}' could not be deleted, the subscriptions are kept"
+            s"the api keys of the subscriptions $ids to the plan '${plan.id}' removed from api '${api.id}' could not be revoked, the subscriptions are kept"
           )
           Future.failed(
             new RuntimeException(
-              s"the api keys of the subscriptions $ids to the plan '${plan.id}' could not be deleted, retry the write of the api"
+              s"the api keys of the subscriptions $ids to the plan '${plan.id}' could not be revoked, retry the write of the api"
             )
           )
         }

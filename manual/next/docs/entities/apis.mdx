@@ -588,6 +588,7 @@ End-users (developers, portals, machines) can subscribe to published plans. A su
 | `owner_ref` | string | Reference to the subscribing client |
 | `subscription_kind` | string | Kind of subscription: `apikey`, `mtls`, `keyless`, `oauth2-local`, `oauth2-remote`, `jwt`. It has to be the access mode of the plan |
 | `token_refs` | array of string | References to generated credentials (API key IDs, certificate IDs, etc.) |
+| `client_id` | string | For a `jwt`, `mtls` or `oauth2-remote` subscription: the client id its consumer calls with, as the plan reads it, without prefix. See below |
 | `dates` | object | Lifecycle timestamps (see below) |
 | `tags` | array of string | Tags |
 | `metadata` | object | Metadata |
@@ -595,8 +596,17 @@ End-users (developers, portals, machines) can subscribe to published plans. A su
 A subscription is refused with a `400` when its `subscription_kind` is not the access mode of its plan.
 A subscription to an `apikey` or an `oauth2-local` plan is given an API key built from the plan, and
 referenced in `token_refs` as `{"apikey": "<client id>"}`: the consumers of these plans call with an
-API key, and a subscription is the only way to get one. The other access modes build their consumer at call time, their subscriptions
-have nothing to generate.
+API key, and a subscription is the only way to get one. The `keyless` access mode builds its consumer at call time, its
+subscriptions have nothing to generate.
+
+The `jwt`, `mtls` and `oauth2-remote` access modes build their consumer at call time too, as the API key
+`<prefix><client id>` (`jwt_<plan id>_`, `mtls_<plan id>_` or `oauth2_<plan id>_`, the client id being the claim at
+`client_id_path` of the token, or the `client_id_field` of the certificate). A subscription to one of these plans
+with a `client_id` provisions that very API key, and references it in `token_refs`: the subscription then decides for
+that consumer. A key the plan already minted on the fly for it is taken over (same client id and secret), a key of
+another API or of another plan is not. Two subscriptions of a plan cannot share a `client_id`, and the `client_id` of a
+subscription cannot change (`400`): delete the subscription and create another one. A subscription without
+`client_id` provisions nothing, and its consumer keeps being identified at call time.
 
 The API key of a subscription follows its `status`: it is enabled only while the subscription is `enabled`, and disabled
 as soon as the subscription is set to any other status. `POST .../apis/{apiId}/plans/{planId}/subscribe` saves the subscription
@@ -605,8 +615,10 @@ enables both.
 
 Deleting a subscription (by id, all of them, in bulk, or when a remote catalog or the Kubernetes job removes it) deletes
 the API keys of its `token_refs`, except the ones whose `apiRef` is another subscription: its consumers cannot call
-the API anymore. A subscription whose API keys could not be deleted is kept, and the deletion answers a `500`.
-Removing a plan from an API deletes its subscriptions and their API keys in the same way.
+the API anymore. The API key of a `jwt`, `mtls` or `oauth2-remote` subscription is **disabled**, not deleted: the plan
+would mint it again, enabled, at the next call. A subscription whose API keys could not be revoked is kept, and the
+deletion answers a `500`. Removing a plan from an API deletes its subscriptions and revokes their API keys in the same
+way. Closing a plan deletes its subscriptions and their API keys, whatever their kind.
 
 ### Subscription dates
 

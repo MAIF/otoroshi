@@ -345,6 +345,64 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         ApiPlanApikeySeen.get("mtls-open") mustBe Some("mtls_plan-mtls-open_other-client")
       } finally undeploy(api)
     }
+
+    "let a subscription with the client id of a certificate decide for its consumer" in {
+      given Env         = otoEnv
+      val api           = deployApi(
+        "plan-mtls-sub",
+        Json.obj("regex_subject_dns" -> Json.arr(".*CN=mtls-client.*"), "client_id_field" -> "CN"),
+        "mtls-sub"
+      )
+      val keyId         = "mtls_plan-mtls-sub_mtls-client"
+      val subscriptions = "/apis/apis.otoroshi.io/v1/apisubscriptions"
+      // a call with the certificate, once the router sees the key of the consumer as it is stored
+      def callAsStored(): Option[Int] = {
+        val stored = otoEnv.datastores.apiKeyDataStore.findById(keyId).futureValue
+        awaitCond(30.seconds)(otoEnv.proxyState.apikey(keyId).map(_.enabled) == stored.map(_.enabled))
+        call(Some(matchingClient))
+      }
+      def setStatus(status: String): Unit = {
+        val current = otoroshiApiCall("GET", s"$subscriptions/sub-mtls").futureValue._1.as[JsObject]
+        otoroshiApiCall("PUT", s"$subscriptions/sub-mtls", Some(current ++ Json.obj("status" -> status))).futureValue._2 mustBe 200
+      }
+      try {
+        val template = otoroshiApiCall("GET", s"$subscriptions/_template").futureValue._1.as[JsObject]
+        val (created, status) = otoroshiApiCall(
+          "POST",
+          subscriptions,
+          Some(
+            template ++ Json.obj(
+              "id"                -> "sub-mtls",
+              "name"              -> "sub-mtls",
+              "api_ref"           -> api.id,
+              "plan_ref"          -> "plan-mtls-sub",
+              "owner_ref"         -> "client-1",
+              "subscription_kind" -> "mtls",
+              "status"            -> "enabled",
+              "client_id"         -> "mtls-client"
+            )
+          )
+        ).futureValue
+        withClue(created.stringify)(status mustBe 201)
+        val key = otoEnv.datastores.apiKeyDataStore.findById(keyId).futureValue
+        key.map(_.enabled) mustBe Some(true)
+        key.flatMap(_.apiRef) mustBe Some(ApiRef(api.id, "plan-mtls-sub", "sub-mtls"))
+        key.map(_.metadata.get("access_mode")) mustBe Some(Some("mtls"))
+        callAsStored() mustBe Some(200)
+
+        setStatus("disabled")
+        callAsStored() mustBe Some(401)
+        setStatus("enabled")
+        callAsStored() mustBe Some(200)
+
+        otoroshiApiCall("DELETE", s"$subscriptions/sub-mtls").futureValue._2 mustBe 200
+        otoEnv.datastores.apiKeyDataStore.findById(keyId).futureValue.map(_.enabled) mustBe Some(false)
+        callAsStored() mustBe Some(401)
+      } finally {
+        otoEnv.datastores.apiKeyDataStore.delete(keyId).futureValue
+        undeploy(api)
+      }
+    }
   }
 
   // -------------------------------------------------------------------------------------------------

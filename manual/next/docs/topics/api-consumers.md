@@ -55,7 +55,11 @@ consumer gets the same treatment whether it subscribed or not:
 | `apiRef` | `{ "api": <api id>, "plan": <plan id>, "sub": "" }` |
 | `authorizedEntities` | the API itself, or whatever the plan template declares |
 | `restrictions`, `rotation`, `validUntil`, `readOnly`, ... | the apikey template of the plan (an `apikey` plan carries a full template, the other kinds only carry the tags and metadata of the plan) |
-| `metadata` | the plan metadata, plus `created_by: apikey-extractor` |
+| `metadata` | the plan metadata, plus `created_by: apikey-extractor`. The keys of a `jwt`, `mtls` or `oauth2-remote` plan also carry `api_id`, `plan_id`, `access_mode` and `plan_consumer: "true"`, written last so that neither the template nor the user profile overrides them |
+
+A subscription to a `jwt`, `mtls` or `oauth2-remote` plan with a `client_id` provisions the very key the plan resolves
+for that consumer, with the same metadata, its `apiRef.sub` set, enabled only while the subscription is `enabled`, and
+disabled when the subscription is deleted. See [subscriptions](../entities/apis.mdx#subscriptions).
 
 An API key that already exists always wins over a generated one: a revoked, disabled or expired key
 cannot be resurrected by a caller presenting the same identity. Such a call is answered with

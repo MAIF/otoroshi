@@ -73,8 +73,23 @@ class ApiSubscriptionEntityFormatSpec extends EntityFormatSpec {
         "payment_ref"       -> Json.obj("stripe" -> "sub_123"),
         "api_ref"           -> "api-1",
         "subscription_kind" -> "apikey",
-        "token_refs"        -> Json.arr(Json.obj("apikey" -> "client-id-1"))
+        "token_refs"        -> Json.arr(Json.obj("apikey" -> "client-id-1")),
+        "client_id"         -> JsNull
       )
+    }
+
+    "write the client_id of a subscription" in {
+      (written(format, full.copy(subscriptionKind = ApiKind.JWT, clientId = Some("c1"))) \ "client_id").as[String] mustBe "c1"
+    }
+
+    "round trip the client_id of a subscription" in {
+      roundTrip(format, full.copy(subscriptionKind = ApiKind.Mtls, clientId = Some("c1"))).clientId mustBe Some("c1")
+    }
+
+    "read a missing, null or blank client_id as none" in {
+      readOk(format, minimalJson).clientId mustBe None
+      readOk(format, minimalJson ++ Json.obj("client_id" -> JsNull)).clientId mustBe None
+      readOk(format, minimalJson ++ Json.obj("client_id" -> " ")).clientId mustBe None
     }
 
     "write a subscription without tags, metadata, payment nor token" in {

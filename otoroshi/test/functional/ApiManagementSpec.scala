@@ -1,9 +1,21 @@
 package functional
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
-import otoroshi.models.{ApiIdentifier, ApiKey, EntityLocation}
+import otoroshi.models.{
+  ApiIdentifier,
+  ApiKey,
+  EntityLocation,
+  GlobalJwtVerifier,
+  HSAlgoSettings,
+  InHeader,
+  PassThrough,
+  VerificationSettings
+}
 import otoroshi.next.models.*
+import otoroshi.next.plugins.{AllowedQuota, FixedWindowStrategyConfig}
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
@@ -160,6 +172,64 @@ class ApiManagementSpec extends OtoroshiSpec {
   }
 
   private def apikeyStatus(clientId: String): Int = call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$clientId").status
+
+  // a published api with a jwt plan reading the client_id claim of the tokens of one verifier
+  private val jwtApi       = "api-mgmt-jwt"
+  private val jwtDomain    = "api-mgmt-jwt.oto.tools"
+  private val jwtSecret    = "api-mgmt-jwt-secret"
+  private val jwtVerifier  = "api-mgmt-jwt-verifier"
+  private val jwtKeyPrefix = "jwt_plan-jwt_"
+
+  private def jwtStrategy(quota: Long): FixedWindowStrategyConfig =
+    FixedWindowStrategyConfig(windowDurationMs = 60000L, quota = AllowedQuota(quota, quota * 10, quota * 100))
+
+  private def jwtPlan(quota: Long): JsObject = Json.obj(
+    "id"                             -> "plan-jwt",
+    "name"                           -> "plan jwt",
+    "status"                         -> "published",
+    "access_mode_configuration_type" -> "jwt",
+    "access_mode_configuration"      -> Json.obj(
+      "verifier"          -> jwtVerifier,
+      "client_id_path"    -> "client_id",
+      "create_if_missing" -> true
+    ),
+    "rateLimiting"                   -> Json.obj("strategy" -> jwtStrategy(quota).json)
+  )
+
+  private def callJwtApi(clientId: String): Int =
+    ws.url(s"http://127.0.0.1:$port/")
+      .withHttpHeaders(
+        "Host"          -> jwtDomain,
+        "Authorization" -> s"Bearer ${JWT.create().withClaim("client_id", clientId).sign(Algorithm.HMAC512(jwtSecret))}"
+      )
+      .get()
+      .futureValue
+      .status
+
+  private def storedApikey(clientId: String): Option[ApiKey] = {
+    given env: Env = otoroshiComponents.env
+    env.datastores.apiKeyDataStore.findById(clientId).futureValue
+  }
+
+  // a call with the token of a client id, once the router sees its api key as it is stored
+  private def callJwtApiAsStored(clientId: String): Int = {
+    given env: Env = otoroshiComponents.env
+    val stored     = storedApikey(s"$jwtKeyPrefix$clientId")
+    waitUntil(s"the router sees the api key of $clientId as it is stored") {
+      env.proxyState.apikey(s"$jwtKeyPrefix$clientId").map(_.enabled) == stored.map(_.enabled)
+    }
+    callJwtApi(clientId)
+  }
+
+  private def jwtSubscription(sub: String, status: String, clientId: Option[String]): JsObject =
+    subscriptionBody(sub, status, "plan-jwt", "jwt", jwtApi) ++
+    clientId.map(id => Json.obj("client_id" -> id)).getOrElse(Json.obj())
+
+  private def consumerMetadataOf(key: ApiKey): Map[String, String] =
+    key.metadata.view.filterKeys(Set("api_id", "plan_id", "access_mode", "plan_consumer")).toMap
+
+  private val jwtConsumerMetadata =
+    Map("api_id" -> jwtApi, "plan_id" -> "plan-jwt", "access_mode" -> "jwt", "plan_consumer" -> "true")
 
   "The management of the apis" should {
     "warm up" in {
@@ -522,6 +592,129 @@ class ApiManagementSpec extends OtoroshiSpec {
       val key = ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/${keyOf("sub-before-deprecation")}"))
       (key \ "metadata" \ "contract").as[String] mustBe "c-42"
       (key \ "enabled").as[Boolean] mustBe true
+    }
+    "set up a published api with a jwt plan" in {
+      given env: Env = otoroshiComponents.env
+      val verifier   = GlobalJwtVerifier(
+        id = jwtVerifier,
+        name = jwtVerifier,
+        desc = "the verifier of the jwt plan",
+        strict = true,
+        source = InHeader(name = "Authorization", remove = "Bearer "),
+        algoSettings = HSAlgoSettings(512, jwtSecret),
+        strategy = PassThrough(verificationSettings = VerificationSettings())
+      )
+      env.datastores.globalJwtVerifierDataStore.set(verifier).futureValue mustBe true
+      val apiBackend = ApiBackend(
+        id = "backend-jwt",
+        name = "backend",
+        backend = NgBackend.empty.copy(
+          targets = Seq(NgTarget(id = "target_1", hostname = "127.0.0.1", port = backendServer.port, tls = false))
+        ),
+        client = "default_backend_client"
+      )
+      val flow       = ApiFlows.empty
+      val api        = Api(
+        location = EntityLocation.default,
+        id = jwtApi,
+        name = jwtApi,
+        description = "",
+        domain = jwtDomain,
+        contextPath = "",
+        version = "0.0.1",
+        debugFlow = false,
+        capture = false,
+        exportReporting = false,
+        groups = Seq.empty,
+        state = ApiPublished,
+        blueprint = ApiBlueprint.REST,
+        testing = ApiTesting(),
+        backends = Seq(apiBackend),
+        flows = Seq(flow),
+        plans = Seq(ApiPlan(jwtPlan(100))),
+        routes = Seq(
+          ApiRoute(
+            id = "route-jwt",
+            frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(jwtDomain))),
+            flowRef = flow.id,
+            backend = apiBackend.id
+          )
+        )
+      )
+      env.datastores.apiDataStore.set(api).futureValue mustBe true
+      waitUntil("the route of the jwt api and its verifier reach the router") {
+        env.proxyState.allRoutes().exists(_.apiRef.exists(_.id == jwtApi)) &&
+        env.proxyState.jwtVerifier(jwtVerifier).isDefined
+      }
+    }
+    "provision the api key of the client_id of a subscription to a jwt plan" in {
+      ok(call("POST", subscriptions, Some(jwtSubscription("sub-jwt-c1", "enabled", Some("c1")))), 201)
+      val sub = ok(call("GET", s"$subscriptions/sub-jwt-c1"))
+      (sub \ "client_id").as[String] mustBe "c1"
+      (sub \ "token_refs").as[Seq[JsObject]] mustBe Seq(Json.obj("apikey" -> s"${jwtKeyPrefix}c1"))
+      val key = storedApikey(s"${jwtKeyPrefix}c1").get
+      key.enabled mustBe true
+      key.apiRef mustBe Some(ApiRef(jwtApi, "plan-jwt", "sub-jwt-c1"))
+      consumerMetadataOf(key) mustBe jwtConsumerMetadata
+      callJwtApiAsStored("c1") mustBe 200
+    }
+    "cut the consumer of a jwt plan off while its subscription is not enabled" in {
+      setStatus("sub-jwt-c1", "disabled")
+      storedApikey(s"${jwtKeyPrefix}c1").map(_.enabled) mustBe Some(false)
+      callJwtApiAsStored("c1") mustBe 401
+      setStatus("sub-jwt-c1", "enabled")
+      storedApikey(s"${jwtKeyPrefix}c1").map(_.enabled) mustBe Some(true)
+      callJwtApiAsStored("c1") mustBe 200
+    }
+    "take over the api key a jwt plan minted on the fly before the subscription" in {
+      // no subscription yet: the plan mints the key of the consumer at its first call
+      callJwtApi("c2") mustBe 200
+      waitUntil("the key minted on the fly is stored")(storedApikey(s"${jwtKeyPrefix}c2").isDefined)
+      val minted = storedApikey(s"${jwtKeyPrefix}c2").get
+      consumerMetadataOf(minted) mustBe jwtConsumerMetadata
+      minted.metadata.get("created_by") mustBe Some("apikey-extractor")
+      minted.apiRef mustBe Some(ApiRef(jwtApi, "plan-jwt", ""))
+
+      ok(call("POST", subscriptions, Some(jwtSubscription("sub-jwt-c2", "enabled", Some("c2")))), 201)
+      val taken = storedApikey(s"${jwtKeyPrefix}c2").get
+      taken.clientId mustBe minted.clientId
+      taken.clientSecret mustBe minted.clientSecret
+      taken.apiRef mustBe Some(ApiRef(jwtApi, "plan-jwt", "sub-jwt-c2"))
+      taken.enabled mustBe true
+      consumerMetadataOf(taken) mustBe jwtConsumerMetadata
+      callJwtApiAsStored("c2") mustBe 200
+    }
+    "refuse a second subscription of a jwt plan with the same client_id, and a change of client_id" in {
+      val duplicate = call("POST", subscriptions, Some(jwtSubscription("sub-jwt-dup", "enabled", Some("c1"))))
+      withClue(duplicate.body[String]) {
+        duplicate.status mustBe 400
+        (duplicate.json \ "error").as[String] mustBe "client_id 'c1' already subscribed to plan 'plan-jwt'"
+      }
+      call("GET", s"$subscriptions/sub-jwt-dup").status mustBe 404
+      val current = ok(call("GET", s"$subscriptions/sub-jwt-c1")).as[JsObject]
+      val changed = call("PUT", s"$subscriptions/sub-jwt-c1", Some(current ++ Json.obj("client_id" -> "c9")))
+      withClue(changed.body[String]) {
+        changed.status mustBe 400
+        (changed.json \ "error").as[String] mustBe "client_id cannot change: delete the subscription and create another one"
+      }
+      (ok(call("GET", s"$subscriptions/sub-jwt-c1")) \ "client_id").as[String] mustBe "c1"
+    }
+    "reach the api key of a subscription to a jwt plan with a change of the quotas of the plan" in {
+      val api = ok(call("GET", s"$apis/$jwtApi")).as[JsObject]
+      ok(call("PUT", s"$apis/$jwtApi", Some(api ++ Json.obj("plans" -> Json.arr(jwtPlan(7))))))
+      storedApikey(s"${jwtKeyPrefix}c1").flatMap(_.throttlingStrategy) mustBe Some(jwtStrategy(7))
+      storedApikey(s"${jwtKeyPrefix}c1").map(_.enabled) mustBe Some(true)
+    }
+    "disable, not delete, the api key of a deleted subscription to a jwt plan" in {
+      ok(call("DELETE", s"$subscriptions/sub-jwt-c1"))
+      call("GET", s"$subscriptions/sub-jwt-c1").status mustBe 404
+      val key = storedApikey(s"${jwtKeyPrefix}c1")
+      key.map(_.enabled) mustBe Some(false)
+      callJwtApiAsStored("c1") mustBe 401
+    }
+    "provision nothing for a subscription to a jwt plan without client_id" in {
+      ok(call("POST", subscriptions, Some(jwtSubscription("sub-jwt-none", "enabled", None))), 201)
+      (ok(call("GET", s"$subscriptions/sub-jwt-none")) \ "token_refs").as[Seq[JsValue]] mustBe empty
     }
     "shutdown" in {
       backendServer.stop()

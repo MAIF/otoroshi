@@ -805,6 +805,14 @@ case class ApiPlan(raw: JsObject) {
     .asOpt[JsObject]
     .flatMap(o => ApiPlanVisibility.format.reads(o).asOpt)
     .getOrElse(ApiPlanVisibility.Public)
+  // the prefix of the client ids of the api keys of the consumers of a jwt, mtls or oauth2-remote plan: the extractor
+  // of the plan and the subscriptions to it agree on the key of a consumer through it
+  lazy val consumerClientIdPrefix: Option[String] = accessModeConfigurationType match {
+    case "jwt"           => Some(s"jwt_${id}_")
+    case "mtls"          => Some(s"mtls_${id}_")
+    case "oauth2-remote" => Some(s"oauth2_${id}_")
+    case _               => None
+  }
   // the apikey settings a plan hands over when an apikey has to be minted for a consumer. only an
   // apikey plan carries a full template, the other kinds only have what the plan itself declares.
   lazy val apikeyTemplate: ApikeyAccessModeConfiguration = accessModeConfiguration match {
@@ -1074,7 +1082,10 @@ case class ApiSubscription(
     apiRef: String,
     paymentRef: JsObject = Json.obj(),
     subscriptionKind: ApiKind,
-    tokenRefs: Seq[JsValue] // ref to apikey, cert, etc
+    tokenRefs: Seq[JsValue], // ref to apikey, cert, etc
+    // the client id a consumer of a jwt, mtls or oauth2-remote plan calls with, as the plan reads it (token claim,
+    // certificate field), without prefix: the subscription provisions the api key the extractor of the plan resolves
+    clientId: Option[String] = None
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = ApiSubscription.format.writes(this)
@@ -1097,39 +1108,82 @@ object ApiSubscription {
 
   private val logger = Logger("otoroshi-api-subscriptions")
 
-  // revokes the api keys a subscription to an apikey or an oauth2-local plan was given (its token_refs): they were
-  // minted for it and are nobody else's, so they are deleted, not disabled. A key whose apiRef is another
-  // subscription's is not this one's anymore and is left alone. The other kinds hold no key
+  // the kinds whose consumers the extractor of their plan identifies at call time, from a token claim or a certificate
+  // field: a subscription with a client_id holds the key the extractor resolves for it
+  def isConsumerKind(kind: ApiKind): Boolean =
+    kind == ApiKind.JWT || kind == ApiKind.Mtls || kind == ApiKind.OAuth2Remote
+
+  // the api keys minted for an apikey or an oauth2-local subscription, the one provisioned for the client_id of a
+  // subscription to a jwt, mtls or oauth2-remote plan. A subscription without client_id holds none, as before
+  private def holdsKeys(subscription: ApiSubscription): Boolean = subscription.subscriptionKind match {
+    case ApiKind.Apikey | ApiKind.OAuth2Local => true
+    case kind if isConsumerKind(kind)         => subscription.clientId.isDefined
+    case _                                    => false
+  }
+
+  // the metadata telling the key of a consumer of a jwt, mtls or oauth2-remote plan, the same as on the keys the
+  // extractor mints on the fly
+  private def consumerMetadata(api: Api, plan: ApiPlan, subscription: ApiSubscription): Map[String, String] =
+    if (isConsumerKind(subscription.subscriptionKind))
+      ApikeyFromPlan.consumerMetadata(api.id, plan.id, subscription.subscriptionKind.name)
+    else Map.empty
+
+  // applies f to the api keys of the token_refs of a subscription that are still its own: a key whose apiRef is
+  // another subscription's is not, and is left alone
+  private def onOwnKeys(subscription: ApiSubscription, verb: String, participle: String)(
+      f: ApiKey => Future[Any]
+  )(using env: Env): Future[Either[String, Unit]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    val ownRef                        = ApiRef(api = subscription.apiRef, plan = subscription.planRef, subscription = subscription.id)
+    subscription.tokenRefs
+      .flatMap(ref => ref.select("apikey").asOpt[String])
+      .mapAsync { clientId =>
+        env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+          case None                                             => ().vfuture
+          case Some(apikey) if apikey.apiRef.exists(_ != ownRef) =>
+            logger.warn(
+              s"api key '$clientId' of subscription '${subscription.id}' belongs to ${apikey.apiRef.get.json.stringify}, it is not $participle with the subscription"
+            )
+            ().vfuture
+          case Some(apikey)                                     => f(apikey).map(_ => ())
+        }
+      }
+      .map(_ => Right(()): Either[String, Unit])
+      .recover { case e: Throwable =>
+        logger.error(s"failed to $verb the api keys of subscription '${subscription.id}'", e)
+        Left(s"failed to $verb the api keys of subscription '${subscription.id}'")
+      }
+  }
+
+  // deletes the api keys a subscription holds, whatever its kind: what a closed plan does, since its extractor no
+  // longer resolves them
   def deleteKeys(subscription: ApiSubscription)(using env: Env): Future[Either[String, Unit]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    if (holdsKeys(subscription))
+      onOwnKeys(subscription, "delete", "deleted")(apikey => env.datastores.apiKeyDataStore.delete(apikey.clientId))
+    else Right(()).vfuture
+  }
+
+  // what a deleted subscription does to its api keys. The keys minted for an apikey or an oauth2-local subscription
+  // are deleted: they were minted for it and are nobody else's. The key of a consumer of a jwt, mtls or oauth2-remote
+  // plan is disabled, not deleted: the extractor of the plan would mint it again, enabled, at the next call
+  def revokeKeys(subscription: ApiSubscription)(using env: Env): Future[Either[String, Unit]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
     subscription.subscriptionKind match {
-      case ApiKind.Apikey | ApiKind.OAuth2Local =>
-        val ownRef = ApiRef(api = subscription.apiRef, plan = subscription.planRef, subscription = subscription.id)
-        subscription.tokenRefs
-          .flatMap(ref => ref.select("apikey").asOpt[String])
-          .mapAsync { clientId =>
-            env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-              case None                                             => ().vfuture
-              case Some(apikey) if apikey.apiRef.exists(_ != ownRef) =>
-                logger.warn(
-                  s"api key '$clientId' of subscription '${subscription.id}' belongs to ${apikey.apiRef.get.json.stringify}, it is not deleted with the subscription"
-                )
-                ().vfuture
-              case Some(_)                                          => env.datastores.apiKeyDataStore.delete(clientId).map(_ => ())
-            }
-          }
-          .map(_ => Right(()): Either[String, Unit])
-          .recover { case e: Throwable =>
-            logger.error(s"failed to delete the api keys of subscription '${subscription.id}'", e)
-            Left(s"failed to delete the api keys of subscription '${subscription.id}'")
-          }
-      case _                                    => Right(()).vfuture
+      case kind if isConsumerKind(kind) && holdsKeys(subscription) =>
+        onOwnKeys(subscription, "disable", "disabled") { apikey =>
+          if (apikey.enabled) apikey.copy(enabled = false).save() else ().vfuture
+        }
+      case _                                                       => deleteKeys(subscription)
     }
   }
 
-  private def generateNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
-                                                                                                env: Env
-  ) = {
+  private def generateNewApikeyFromPlan(
+      api: Api,
+      plan: ApiPlan,
+      subscription: ApiSubscription,
+      clientId: Option[String] = None
+  )(using env: Env) = {
     // never cast the configuration of the plan: an oauth2-local plan carries its own, and a plan whose
     // kind changed still has subscriptions holding apikeys that have to be kept in sync
     val configPlan = plan.apikeyTemplate
@@ -1139,13 +1193,16 @@ object ApiSubscription {
       otoroshi.plugins.Keys.ApiKey  -> api
     )
 
+    val keyId = clientId.getOrElse(IdGenerator.lowerCaseToken(16))
+
     val defaultApikey = ApiKey(
       enabled = false,
-      clientId = IdGenerator.lowerCaseToken(16),
+      clientId = keyId,
       clientSecret = IdGenerator.lowerCaseToken(64),
+      // the key of a consumer is named after its client id, like the ones the extractor mints on the fly
       clientName = configPlan.clientNamePattern
         .map(_.evaluateEl(attrs)(using env))
-        .getOrElse(IdGenerator.lowerCaseToken(22)),
+        .getOrElse(if (isConsumerKind(subscription.subscriptionKind)) keyId else IdGenerator.lowerCaseToken(22)),
       description = configPlan.description.getOrElse(""),
       validUntil = configPlan.validUntil,
       readOnly = configPlan.readOnly,
@@ -1155,11 +1212,12 @@ object ApiSubscription {
       authorizedEntities = Seq(ApiIdentifier(api.id)),
       throttlingStrategy = plan.rateLimiting,
       apiRef = ApiRef(api = api.id, plan = plan.id, subscription = subscription.id).some,
-      metadata = configPlan.metadata ++ subscription.metadata +
+      metadata = (configPlan.metadata ++ subscription.metadata +
         (PLAN_METADATA_KEY         -> configPlan.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
         (SUBSCRIPTION_METADATA_KEY -> subscription.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
         (PLAN_TAGS_KEY             -> configPlan.tags.mkString(METADATA_AND_TAGS_SEPARATOR)) +
-        (SUBSCRIPTION_TAGS_KEY     -> subscription.tags.mkString(METADATA_AND_TAGS_SEPARATOR)),
+        (SUBSCRIPTION_TAGS_KEY     -> subscription.tags.mkString(METADATA_AND_TAGS_SEPARATOR))) ++
+        consumerMetadata(api, plan, subscription),
       tags = configPlan.tags ++ subscription.tags
     )
 
@@ -1185,6 +1243,49 @@ object ApiSubscription {
           .right
     }
   }
+
+  // the key a subscription to a jwt, mtls or oauth2-remote plan provisions for its client_id: the very key the
+  // extractor of the plan resolves for that consumer, so that the subscription decides for it, enabled or not. A key
+  // the extractor minted on the fly before, or that a deleted subscription left disabled, is taken over. A key of
+  // another api or another plan is not: the plan ids of two apis can be the same
+  private def createConsumerApikey(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
+      env: Env
+  ): Future[Either[String, ApiSubscription]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    (plan.consumerClientIdPrefix, subscription.clientId) match {
+      case (Some(prefix), Some(clientId)) =>
+        val keyId = s"$prefix$clientId"
+        val built = generateNewApikeyFromPlan(api, plan, subscription, Some(keyId))
+        env.datastores.apiKeyDataStore.findById(keyId).flatMap {
+          case Some(existing) if existing.apiRef.exists(ref => ref.api != api.id || ref.plan != plan.id) =>
+            val ref = existing.apiRef.get
+            s"api key '$keyId' belongs to plan '${ref.plan}' of api '${ref.api}'".leftf
+          case existing                                                                                =>
+            existing.map(e => rebuildApikey(e, built, api, plan, subscription)).getOrElse(built).save().map {
+              case false => "failed to create the apikey".left
+              case true  => subscription.copy(tokenRefs = Seq(Json.obj("apikey" -> keyId))).right
+            }
+        }
+      // without client_id, nothing, as before
+      case _                              => subscription.rightf
+    }
+  }
+
+  // the key rebuilt from the plan keeps its id, its secret, and what was added to it outside of the plan and of the
+  // subscription. The metadata of a consumer come last, so that nothing overrides them
+  private def rebuildApikey(
+      existing: ApiKey,
+      built: ApiKey,
+      api: Api,
+      plan: ApiPlan,
+      subscription: ApiSubscription
+  ): ApiKey =
+    built.copy(
+      clientId = existing.clientId,
+      clientSecret = existing.clientSecret,
+      metadata = built.metadata ++ removeManagedMetadata(existing.metadata) ++ consumerMetadata(api, plan, subscription),
+      tags = built.tags ++ removeManagedTags(existing.metadata, existing.tags)
+    )
 
   private def removeManagedMetadata(currentApikeyMetadata: Map[String, String]): Map[String, String] = {
     val managed_keys: Seq[String] =
@@ -1213,8 +1314,6 @@ object ApiSubscription {
   ): Future[Seq[Either[String, Boolean]]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
-    val newApikey = generateNewApikeyFromPlan(api, plan, subscription)
-
     val apikeys: Seq[String] = subscription.tokenRefs.collect {
       case JsObject(values) if values.contains("apikey") => values("apikey").asString
     }
@@ -1225,15 +1324,13 @@ object ApiSubscription {
           .findById(apikeyId)
           .flatMap {
             case Some(apikey) =>
-              newApikey
-                .copy(
-                  enabled = newApikey.enabled,
-                  clientId = apikey.clientId,
-                  clientSecret = apikey.clientSecret,
-                  metadata = newApikey.metadata ++ removeManagedMetadata(apikey.metadata),
-                  tags = newApikey.tags ++ removeManagedTags(apikey.metadata, apikey.tags)
-                )
-                .save()
+              rebuildApikey(
+                apikey,
+                generateNewApikeyFromPlan(api, plan, subscription, Some(apikey.clientId)),
+                api,
+                plan,
+                subscription
+              ).save()
                 .map(_.right)
             case None         => s"apikey with $apikeyId not found".leftf
           }
@@ -1253,15 +1350,18 @@ object ApiSubscription {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     // the consumers of an apikey plan and of an oauth2-local plan both call with an apikey, and a
-    // subscription is the only way to get one: the other kinds build their consumer at call time
+    // subscription is the only way to get one. The consumers of a jwt, mtls or oauth2-remote plan are
+    // built at call time by the extractor of the plan: a subscription with a client_id provisions the
+    // key the extractor resolves for it. A keyless subscription has nothing to mint
     if (action == WriteAction.Create) {
       subscription.subscriptionKind match {
         case ApiKind.Apikey | ApiKind.OAuth2Local => createNewApikeyFromPlan(api, plan, subscription)
+        case kind if isConsumerKind(kind)         => createConsumerApikey(api, plan, subscription)
         case _                                    => subscription.rightf
       }
     } else if (action == Update) {
       subscription.subscriptionKind match {
-        case ApiKind.Apikey | ApiKind.OAuth2Local if plan.status == ApiPlanStatus.Closed =>
+        case _ if holdsKeys(subscription) && plan.status == ApiPlanStatus.Closed =>
           // Cascade-delete the subscription AND the apikeys it points at.
           // Otherwise the apikey lingers in the datastore unreachable from
           // its owning subscription. A subscription whose keys could not be
@@ -1274,7 +1374,7 @@ object ApiSubscription {
                 else env.datastores.apiSubscriptionDataStore.delete(subscription.id)
               deleteSubscription.map(_ => subscription.right)
           }
-        case ApiKind.Apikey | ApiKind.OAuth2Local                                        =>
+        case _ if holdsKeys(subscription)                                        =>
           updateApikeyFromPlan(api, plan, subscription)
             .map(results =>
               results.collectFirst { case Left(err) => err } match {
@@ -1282,7 +1382,7 @@ object ApiSubscription {
                 case None      => subscription.right
               }
             )
-        case _                                                                           => subscription.rightf
+        case _                                                                   => subscription.rightf
       }
     } else {
       subscription.rightf
@@ -1344,6 +1444,39 @@ object ApiSubscription {
           }
         case _                                                                 => Left("wrong status api")
       }
+      .flatMap {
+        case Right((api, plan)) if isConsumerKind(entity.subscriptionKind) && !isDraft =>
+          checkClientId(entity, action).map(_.map(_ => (api, plan)))
+        case other                                                                      => other.vfuture
+      }
+  }
+
+  // the client_id of a subscription to a jwt, mtls or oauth2-remote plan names the key of one consumer of the plan: no
+  // two subscriptions of a plan share it, and it never changes, so that no previous key has to be kept disabled
+  private def checkClientId(entity: ApiSubscription, action: WriteAction)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[String, Unit]] = action match {
+    case WriteAction.Create =>
+      entity.clientId match {
+        case None           => Right(()).vfuture
+        case Some(clientId) =>
+          env.datastores.apiSubscriptionDataStore.findAll().map { subscriptions =>
+            if (
+              subscriptions.exists(sub =>
+                sub.id != entity.id && sub.apiRef == entity.apiRef && sub.planRef == entity.planRef &&
+                sub.clientId.contains(clientId)
+              )
+            ) Left(s"client_id '$clientId' already subscribed to plan '${entity.planRef}'")
+            else Right(())
+          }
+      }
+    case WriteAction.Update =>
+      env.datastores.apiSubscriptionDataStore.findById(entity.id).map {
+        case Some(stored) if stored.clientId != entity.clientId =>
+          Left("client_id cannot change: delete the subscription and create another one")
+        case _                                                  => Right(())
+      }
   }
 
   def writeValidator(
@@ -1403,9 +1536,9 @@ object ApiSubscription {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
     implicit val e: Env               = env
 
-    // the api keys of the subscription go with it: a subscription whose keys could not be deleted is kept, so that
+    // the api keys of the subscription go with it: a subscription whose keys could not be revoked is kept, so that
     // it never disappears while its keys still give access
-    deleteKeys(subscription).map {
+    revokeKeys(subscription).map {
       case Left(error) => Left(Json.obj("error" -> error, "http_status_code" -> 500))
       case Right(_)    => Right(())
     }
@@ -1417,7 +1550,7 @@ object ApiSubscription {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
     implicit val e: Env               = env
 
-    subscriptions.mapAsync(sub => deleteKeys(sub)).flatMap { results =>
+    subscriptions.mapAsync(sub => revokeKeys(sub)).flatMap { results =>
       results.collect { case Left(error) => error } match {
         case Seq()  => ().vfuture
         case errors => Future.failed(new RuntimeException(errors.mkString(", ")))
@@ -1464,7 +1597,8 @@ object ApiSubscription {
           case "jwt"           => ApiKind.JWT
         },
         apiRef = json.select("api_ref").asString,
-        tokenRefs = json.select("token_refs").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq
+        tokenRefs = json.select("token_refs").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq,
+        clientId = json.select("client_id").asOpt[String].filter(_.trim.nonEmpty)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -1483,7 +1617,8 @@ object ApiSubscription {
       "payment_ref"       -> o.paymentRef,
       "api_ref"           -> o.apiRef,
       "subscription_kind" -> o.subscriptionKind.name,
-      "token_refs"        -> o.tokenRefs
+      "token_refs"        -> o.tokenRefs,
+      "client_id"         -> o.clientId
     )
   }
 }
@@ -1942,7 +2077,7 @@ case class Api(
             NgJwtApikeyExtractorConfig(
               verifier = jwtConfig.verifier.getOrElse(""),
               clientIdPath = jwtConfig.clientIdPath.getOrElse("client_id"),
-              clientIdPrefix = s"jwt_${plan.id}_",
+              clientIdPrefix = plan.consumerClientIdPrefix.get,
               strict = false,
               createIfMissing = jwtConfig.createIfMissing,
               // an apikey minted from a token has to carry the very same quotas, restrictions and
@@ -1968,7 +2103,7 @@ case class Api(
               regexSubjectDNs = mtlsConfig.regexSubjectDNs,
               regexIssuerDNs = mtlsConfig.regexIssuerDNs,
               clientIdField = mtlsConfig.clientIdField,
-              clientIdPrefix = s"mtls_${plan.id}_",
+              clientIdPrefix = plan.consumerClientIdPrefix.get,
               strict = false,
               createIfMissing = mtlsConfig.createIfMissing,
               apiId = api.id.some,
@@ -1991,7 +2126,7 @@ case class Api(
             NgOidcApikeyExtractorConfig(
               ref = oidcConfig.verifier,
               clientIdPath = oidcConfig.clientIdPath.getOrElse("client_id"),
-              clientIdPrefix = s"oauth2_${plan.id}_",
+              clientIdPrefix = plan.consumerClientIdPrefix.get,
               fetchUser = oidcConfig.fetchUser,
               userMetadataKey = oidcConfig.userMetadataKey,
               strict = false,

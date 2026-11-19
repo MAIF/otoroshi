@@ -263,13 +263,13 @@ const AccessModePluginConfigurationForm = {
         type: 'string',
         label: 'Expected issuer',
         help: 'The iss a token must carry, exactly: the issuer of the discovery document of the authorization server. Without an expected issuer nor accepted audiences, any token signed with the keys of the module is accepted, the ones issued for other clients, other apis or other tenants of the same server included.',
-        props: { placeholder: 'https://idp.example.com/realms/my-realm' },
+        placeholder: 'https://idp.example.com/realms/my-realm',
       },
       audiences: {
         type: 'array',
         label: 'Accepted audiences',
         help: 'A token must carry at least one of them in its aud claim. Leave empty to accept any audience.',
-        props: { placeholder: 'my-api' },
+        placeholder: 'my-api',
       },
       fetch_user: {
         type: 'bool',

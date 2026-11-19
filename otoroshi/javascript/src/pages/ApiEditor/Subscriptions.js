@@ -14,8 +14,12 @@ import { VersionBadge } from './DraftOnly';
 import { Button } from '../../components/Button';
 import { Row } from '../../components/Row';
 
+// the kinds whose consumers the plan identifies at call time, from a token claim or a certificate field: a
+// subscription to them names its consumer with a client_id
+const CONSUMER_KINDS = ['jwt', 'mtls', 'oauth2-remote'];
+
 const SUBSCRIPTION_FORM_SETTINGS = {
-  schema: (item) => {
+  schema: (item, isEdition) => {
     return {
       _loc: {
         type: 'location',
@@ -89,6 +93,17 @@ const SUBSCRIPTION_FORM_SETTINGS = {
           },
         },
       },
+      client_id: {
+        type: 'string',
+        label: 'Client id',
+        visible: (value) => CONSUMER_KINDS.includes(value?.subscription_kind),
+        help: isEdition
+          ? 'The client id the consumer calls with. It cannot change: delete the subscription and create another one.'
+          : 'The client id the consumer calls with, as the plan reads it and without prefix: the client id claim of the token for a jwt or an oauth2-remote plan, the client id DN attribute of the certificate for an mtls plan. The subscription provisions the api key of that consumer, enabled only while the subscription is enabled. Leave it empty to let any consumer of the plan call without being tied to this subscription.',
+        // at the top level: NgForm builds the props of the input from them, over the ones of props
+        placeholder: 'client-1',
+        disabled: !!isEdition,
+      },
       token_refs: {
         type: 'any',
         label: 'Token refs',
@@ -133,7 +148,7 @@ const SUBSCRIPTION_FORM_SETTINGS = {
       type: 'group',
       name: 'Ownership',
       collapsable: false,
-      fields: ['owner_ref', 'plan_ref', isEdition ? 'token_refs' : undefined].filter((f) => f),
+      fields: ['owner_ref', 'plan_ref', 'client_id', isEdition ? 'token_refs' : undefined].filter((f) => f),
     },
     {
       type: 'group',
@@ -316,7 +331,7 @@ export function SubscriptionDesigner(props) {
       </div>
       <NgForm
         value={isDraft ? draftSubscription.content : subscription}
-        schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
+        schema={SUBSCRIPTION_FORM_SETTINGS.schema(item, true)}
         flow={SUBSCRIPTION_FORM_SETTINGS.flow(true)}
         onChange={(res) =>
           isDraft
@@ -384,7 +399,7 @@ export function NewSubscription(props) {
 
       <NgForm
         value={subscription}
-        schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
+        schema={SUBSCRIPTION_FORM_SETTINGS.schema(item, false)}
         flow={SUBSCRIPTION_FORM_SETTINGS.flow(false)}
         onChange={(newSub) => {
           setSubscription(newSub);

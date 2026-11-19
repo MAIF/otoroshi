@@ -29,9 +29,22 @@ trait ApikeyFromPlanConfig {
   def planId: Option[String]
   def throttlingStrategy: Option[ThrottlingStrategyConfig]
   def apikey: ApikeyAccessModeConfiguration
+  // the access mode of the plan when its keys are the identities of the consumers of a token or a certificate:
+  // jwt, mtls or oauth2-remote. None for the keys of the expression extractor
+  def accessMode: Option[String] = None
 }
 
 object ApikeyFromPlan {
+
+  // the metadata of the key of a consumer of a jwt, mtls or oauth2-remote plan, whether the extractor of the plan
+  // minted it on the fly or a subscription provisioned it: the key is the identity of a consumer, not a credential
+  // handed to it, and its plan is found without parsing its client id
+  def consumerMetadata(apiId: String, planId: String, accessMode: String): Map[String, String] = Map(
+    "api_id"        -> apiId,
+    "plan_id"       -> planId,
+    "access_mode"   -> accessMode,
+    "plan_consumer" -> "true"
+  )
 
   def json(config: ApikeyFromPlanConfig): JsObject = Json.obj(
     "create_if_missing"   -> config.createIfMissing,
@@ -94,7 +107,12 @@ object ApikeyFromPlan {
         planId <- config.planId
       } yield ApiRef(apiId, planId, ""),
       tags = template.tags,
-      metadata = template.metadata ++ Map("created_by" -> "apikey-extractor") ++ extraMetadata
+      // the metadata of a consumer come last, so that neither the template nor the user profile overrides them
+      metadata = template.metadata ++ Map("created_by" -> "apikey-extractor") ++ extraMetadata ++ (for {
+        mode   <- config.accessMode
+        apiId  <- config.apiId
+        planId <- config.planId
+      } yield consumerMetadata(apiId, planId, mode)).getOrElse(Map.empty)
     )
     if (config.createIfMissing) {
       apk.save()
@@ -292,6 +310,7 @@ case class NgJwtApikeyExtractorConfig(
     apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration()
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
+  override def accessMode: Option[String] = Some("jwt")
   override def json: JsValue = Json.obj(
     "verifier"         -> verifier,
     "client_id_path"   -> clientIdPath,
@@ -444,6 +463,7 @@ case class NgClientCertApikeyExtractorConfig(
     apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration()
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
+  override def accessMode: Option[String] = Some("mtls")
   override def json: JsValue = Json.obj(
     "regex_subject_dns" -> regexSubjectDNs,
     "regex_issuer_dns"  -> regexIssuerDNs,
@@ -557,6 +577,7 @@ case class NgOidcApikeyExtractorConfig(
     audiences: Seq[String] = Seq.empty
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
+  override def accessMode: Option[String] = Some("oauth2-remote")
   override def json: JsValue = Json.obj(
     "ref"                -> ref.map(_.json).getOrElse(JsNull).asValue,
     "client_id_path"     -> clientIdPath,
