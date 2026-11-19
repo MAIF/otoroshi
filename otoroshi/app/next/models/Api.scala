@@ -395,11 +395,14 @@ case class ApiDocumentationResourceRef(raw: JsObject) {
 trait ApiAccessModeConfiguration {
   def apiKind: ApiKind
   def plugins: NgPlugins = NgPlugins(Seq.empty) // TODO: implement for each kind with dedicated plugin when needed
+  // the restrictions of the api key of each consumer of the plan, enforced by the consumer enforcer
+  def restrictions: Restrictions = Restrictions()
 }
 
 case class KeylessAccessModeConfiguration(
   expr: Option[String] = None,
-  createIfMissing: Boolean = true
+  createIfMissing: Boolean = true,
+  override val restrictions: Restrictions = Restrictions()
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Keyless
 }
@@ -409,7 +412,8 @@ object KeylessAccessModeConfiguration {
     override def reads(json: JsValue): JsResult[KeylessAccessModeConfiguration] = Try {
       KeylessAccessModeConfiguration(
         expr = json.selectAsOptString("expr"),
-        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
+        restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions())
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -417,7 +421,8 @@ object KeylessAccessModeConfiguration {
     }
     override def writes(o: KeylessAccessModeConfiguration): JsValue             = Json.obj(
       "expr"              -> o.expr,
-      "create_if_missing" -> o.createIfMissing
+      "create_if_missing" -> o.createIfMissing,
+      "restrictions"      -> o.restrictions.json
     )
   }
 }
@@ -427,7 +432,8 @@ case class JWTAccessModeConfiguration(
     clientIdPath: Option[String] = Some("client_id"),
     createIfMissing: Boolean = true,
     // only the consumers with an enabled subscription to the plan are served, create_if_missing is then ignored
-    subscriptionRequired: Boolean = false
+    subscriptionRequired: Boolean = false,
+    override val restrictions: Restrictions = Restrictions()
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.JWT
 }
@@ -439,7 +445,8 @@ object JWTAccessModeConfiguration {
         verifier = json.select("verifier").asOpt[String],
         clientIdPath = json.select("client_id_path").asOpt[String],
         createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
-        subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false)
+        subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false),
+        restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions())
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -449,7 +456,8 @@ object JWTAccessModeConfiguration {
       "verifier" -> o.verifier,
       "client_id_path" -> o.clientIdPath,
       "create_if_missing" -> o.createIfMissing,
-      "subscription_required" -> o.subscriptionRequired
+      "subscription_required" -> o.subscriptionRequired,
+      "restrictions" -> o.restrictions.json
     )
   }
 }
@@ -460,7 +468,8 @@ case class MtlsAccessModeConfiguration(
     clientIdField: Option[String] = None,
     createIfMissing: Boolean = true,
     // only the consumers with an enabled subscription to the plan are served, create_if_missing is then ignored
-    subscriptionRequired: Boolean = false
+    subscriptionRequired: Boolean = false,
+    override val restrictions: Restrictions = Restrictions()
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Mtls
 }
@@ -473,7 +482,8 @@ object MtlsAccessModeConfiguration {
         regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         clientIdField = json.select("client_id_field").asOpt[String].filter(_.trim.nonEmpty),
         createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
-        subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false)
+        subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false),
+        restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions())
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -484,7 +494,8 @@ object MtlsAccessModeConfiguration {
       "regex_issuer_dns"  -> o.regexIssuerDNs,
       "client_id_field"   -> o.clientIdField,
       "create_if_missing" -> o.createIfMissing,
-      "subscription_required" -> o.subscriptionRequired
+      "subscription_required" -> o.subscriptionRequired,
+      "restrictions"      -> o.restrictions.json
     )
   }
 }
@@ -500,7 +511,8 @@ case class OAuth2RemoteAccessModeConfiguration(
     // a token must carry one of them in aud. Not checked when empty
     audiences: Seq[String] = Seq.empty,
     // only the consumers with an enabled subscription to the plan are served, create_if_missing is then ignored
-    subscriptionRequired: Boolean = false
+    subscriptionRequired: Boolean = false,
+    override val restrictions: Restrictions = Restrictions()
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Remote
 }
@@ -527,7 +539,8 @@ object OAuth2RemoteAccessModeConfiguration {
         createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
         issuer = readIssuer(json),
         audiences = readAudiences(json),
-        subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false)
+        subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false),
+        restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions())
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -541,7 +554,8 @@ object OAuth2RemoteAccessModeConfiguration {
       "create_if_missing" -> o.createIfMissing,
       "issuer"            -> o.issuer,
       "audiences"         -> o.audiences,
-      "subscription_required" -> o.subscriptionRequired
+      "subscription_required" -> o.subscriptionRequired,
+      "restrictions"      -> o.restrictions.json
     )
   }
 }
@@ -579,7 +593,7 @@ case class ApikeyAccessModeConfiguration(
     readOnly: Boolean = false,
     allowClientIdOnly: Boolean = false,
     constrainedServicesOnly: Boolean = false,
-    restrictions: Restrictions = Restrictions(),
+    override val restrictions: Restrictions = Restrictions(),
     validUntil: Option[DateTime] = None,
     rotation: ApiKeyRotation = ApiKeyRotation(),
     tags: Seq[String] = Seq.empty[String],
@@ -846,10 +860,17 @@ case class ApiPlan(raw: JsObject) {
   def consumerClientIdPrefix(apiId: String): Option[String] =
     ApiPlan.consumerClientIdKind(accessModeConfigurationType).map(kind => s"${kind}_${apiId}_${id}_")
   // the apikey settings a plan hands over when an apikey has to be minted for a consumer. only an
-  // apikey plan carries a full template, the other kinds only have what the plan itself declares.
+  // apikey plan carries a full template, the other kinds only have what the plan itself declares and the
+  // restrictions of their access mode.
   lazy val apikeyTemplate: ApikeyAccessModeConfiguration = accessModeConfiguration match {
     case Some(conf: ApikeyAccessModeConfiguration) => conf
-    case _                                         => ApikeyAccessModeConfiguration(tags = tags, metadata = metadata)
+    // the restrictions of the access mode of the other kinds, none for an oauth2-local plan
+    case conf                                      =>
+      ApikeyAccessModeConfiguration(
+        tags = tags,
+        metadata = metadata,
+        restrictions = conf.map(_.restrictions).getOrElse(Restrictions())
+      )
   }
   lazy val plugins: Option[ApiPlanPlugins] =
     raw.select("plugins").asOpt[JsObject].flatMap(o => ApiPlanPlugins.format.reads(o).asOpt)

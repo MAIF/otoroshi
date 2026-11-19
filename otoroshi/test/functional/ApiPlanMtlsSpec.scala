@@ -144,7 +144,8 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
   // call. header names come back lowercased.
   private def tlsCall(
       host: String,
-      clientCert: Option[(PrivateKey, Array[X509Certificate])]
+      clientCert: Option[(PrivateKey, Array[X509Certificate])],
+      path: String = "/"
   ): Option[(Int, Map[String, String])] = {
     val ctx    = clientSslContext(clientCert)
     val socket = ctx.getSocketFactory.createSocket().asInstanceOf[SSLSocket]
@@ -157,7 +158,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       socket.setSSLParameters(params)
       socket.startHandshake()
       val out    = socket.getOutputStream
-      out.write(s"GET / HTTP/1.1\r\nHost: $host\r\nConnection: close\r\n\r\n".getBytes("UTF-8"))
+      out.write(s"GET $path HTTP/1.1\r\nHost: $host\r\nConnection: close\r\n\r\n".getBytes("UTF-8"))
       out.flush()
       val in         = new BufferedReader(new InputStreamReader(socket.getInputStream))
       val statusLine = in.readLine()
@@ -343,6 +344,29 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         // its own identity
         call(Some(otherClient)) mustBe Some(200)
         ApiPlanApikeySeen.get("mtls-open") mustBe Some(s"mtls_${api.id}_plan-mtls-open_other-client")
+      } finally undeploy(api)
+    }
+
+    "apply the restrictions of an mtls plan to its consumers" in {
+      val forbidden = Json.obj(
+        "enabled"   -> true,
+        "allowLast" -> true,
+        "allowed"   -> Json.arr(),
+        "notFound"  -> Json.arr(),
+        "forbidden" -> Json.arr(Json.obj("method" -> "*", "path" -> "/admin/.*"))
+      )
+      val api       = deployApi(
+        "plan-mtls-restricted",
+        Json.obj(
+          "regex_subject_dns" -> Json.arr(".*CN=mtls-client.*"),
+          "client_id_field"   -> "CN",
+          "restrictions"      -> forbidden
+        ),
+        "mtls-restricted"
+      )
+      try {
+        tlsCall(apiDomain, Some(matchingClient), "/users").map(_._1) mustBe Some(200)
+        tlsCall(apiDomain, Some(matchingClient), "/admin/users").map(_._1) mustBe Some(403)
       } finally undeploy(api)
     }
 
@@ -628,9 +652,11 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
     def planPlugin: Option[String]                     = headers.get("x-plan-plugin")
   }
 
-  private def demoHttpCall(how: String, headers: (String, String)*): DemoCall = {
+  private def demoHttpCall(how: String, headers: (String, String)*): DemoCall = demoHttpCallOn("/", how, headers*)
+
+  private def demoHttpCallOn(path: String, how: String, headers: (String, String)*): DemoCall = {
     val resp = ws
-      .url(s"http://127.0.0.1:$port/")
+      .url(s"http://127.0.0.1:$port$path")
       .withHttpHeaders(Seq("Host" -> demoDomain) ++ headers*)
       .get()
       .futureValue
@@ -903,6 +929,32 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
           }
         }
       }
+    }
+
+    "apply the restrictions of an oauth2-remote plan to its consumers" in {
+      deployDemo(
+        "oauth2-remote-restrictions",
+        Map.empty,
+        configs = Map(
+          "oauth2-remote" -> Json.obj(
+            "restrictions" -> Json.obj(
+              "enabled"   -> true,
+              "allowLast" -> true,
+              "allowed"   -> Json.arr(),
+              "notFound"  -> Json.arr(),
+              "forbidden" -> Json.arr(Json.obj("method" -> "*", "path" -> "/admin/.*"))
+            )
+          )
+        )
+      )
+      // a consumer the plan has not seen yet: minted with the restrictions of the plan
+      val token = s"Bearer ${demoJwt(demoOidcSecret, "iss" -> "demo-idp", "client_id" -> "consumer-restricted")}"
+      val home  = demoHttpCallOn("/", "oidc token, client_id claim", "Authorization" -> token)
+      withClue("on an allowed path") {
+        home.status mustBe 200
+        home.plan mustBe Some(s"$demoPrefix-oauth2-remote-plan")
+      }
+      withClue("on a forbidden path")(demoHttpCallOn("/admin/users", "oidc token", "Authorization" -> token).status mustBe 403)
     }
 
     "only serve the subscribed consumers of an oauth2-remote plan that requires a subscription" in {

@@ -328,6 +328,9 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
     }
   }
 
+  // a restriction every access mode can carry
+  private val forbiddenAdmin = Restrictions(enabled = true, forbidden = Seq(RestrictionPath("*", "/admin/.*")))
+
   "KeylessAccessModeConfiguration" should {
 
     val format = KeylessAccessModeConfiguration.fmt
@@ -335,12 +338,23 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
     "write a configuration" in {
       format.writes(KeylessAccessModeConfiguration(Some("${req.ip}"), createIfMissing = true)) mustBe Json.obj(
         "expr"              -> "${req.ip}",
-        "create_if_missing" -> true
+        "create_if_missing" -> true,
+        "restrictions"      -> Restrictions().json
       )
     }
 
     "write a missing expression as null" in {
-      format.writes(KeylessAccessModeConfiguration()) mustBe Json.obj("expr" -> JsNull, "create_if_missing" -> true)
+      format.writes(KeylessAccessModeConfiguration()) mustBe Json.obj(
+        "expr"              -> JsNull,
+        "create_if_missing" -> true,
+        "restrictions"      -> Restrictions().json
+      )
+    }
+
+    "read and write restrictions, none when absent" in {
+      readOk(format, Json.obj()).restrictions mustBe Restrictions()
+      readOk(format, Json.obj("restrictions" -> forbiddenAdmin.json)).restrictions mustBe forbiddenAdmin
+      roundTrip(format, KeylessAccessModeConfiguration(restrictions = forbiddenAdmin)).restrictions mustBe forbiddenAdmin
     }
 
     "round trip a configuration" in {
@@ -361,6 +375,12 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
 
     val format = JWTAccessModeConfiguration.fmt
 
+    "read and write restrictions, none when absent" in {
+      readOk(format, Json.obj()).restrictions mustBe Restrictions()
+      readOk(format, Json.obj("restrictions" -> forbiddenAdmin.json)).restrictions mustBe forbiddenAdmin
+      roundTrip(format, JWTAccessModeConfiguration(restrictions = forbiddenAdmin)).restrictions mustBe forbiddenAdmin
+    }
+
     "default to the client_id claim" in {
       JWTAccessModeConfiguration() mustBe JWTAccessModeConfiguration(None, Some("client_id"), createIfMissing = true)
     }
@@ -370,7 +390,8 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
         "verifier"              -> "v1",
         "client_id_path"        -> "sub",
         "create_if_missing"     -> true,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "restrictions"          -> Restrictions().json
       )
     }
 
@@ -401,6 +422,12 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
 
     val format = MtlsAccessModeConfiguration.fmt
 
+    "read and write restrictions, none when absent" in {
+      readOk(format, Json.obj()).restrictions mustBe Restrictions()
+      readOk(format, Json.obj("restrictions" -> forbiddenAdmin.json)).restrictions mustBe forbiddenAdmin
+      roundTrip(format, MtlsAccessModeConfiguration(restrictions = forbiddenAdmin)).restrictions mustBe forbiddenAdmin
+    }
+
     val full = MtlsAccessModeConfiguration(
       regexSubjectDNs = Seq("CN=client.*"),
       regexIssuerDNs = Seq("CN=Otoroshi CA"),
@@ -414,7 +441,8 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
         "regex_issuer_dns"  -> Json.arr("CN=Otoroshi CA"),
         "client_id_field"   -> "CN",
         "create_if_missing" -> true,
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "restrictions"          -> Restrictions().json
       )
     }
 
@@ -449,6 +477,12 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
 
     val format = OAuth2RemoteAccessModeConfiguration.fmt
 
+    "read and write restrictions, none when absent" in {
+      readOk(format, Json.obj()).restrictions mustBe Restrictions()
+      readOk(format, Json.obj("restrictions" -> forbiddenAdmin.json)).restrictions mustBe forbiddenAdmin
+      roundTrip(format, OAuth2RemoteAccessModeConfiguration(restrictions = forbiddenAdmin)).restrictions mustBe forbiddenAdmin
+    }
+
     val full = OAuth2RemoteAccessModeConfiguration(Some("auth-1"), Some("azp"), fetchUser = true, "profile", createIfMissing = true)
 
     "write a configuration" in {
@@ -460,7 +494,8 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
         "create_if_missing" -> true,
         "issuer"            -> JsNull,
         "audiences"         -> Json.arr(),
-        "subscription_required" -> false
+        "subscription_required" -> false,
+        "restrictions"          -> Restrictions().json
       )
     }
 

@@ -411,6 +411,7 @@ subscribed to which plan.
 |----------|------|---------|-------------|
 | `expr` | string | `${req.ip}` | Expression building the consumer identity of a public call |
 | `create_if_missing` | boolean | `true` | Persist the generated API key |
+| `restrictions` | object | no restriction | The [restrictions](./apikeys.mdx#restrictions) of the API key of each consumer: the paths and methods it is allowed, forbidden or not found on, enforced at the end of the access validation. Changing them, or the `rateLimiting` of the plan, rewrites the API keys already generated for the plan |
 
 :::warning
 A missing value resolves to `no-header-<field>` and puts every such caller on one shared quota. Use
@@ -425,6 +426,7 @@ an empty default (`${req.headers.x-consumer:}`) to have those calls rejected ins
 | `client_id_path` | string | `client_id` | Claim holding the client id of the consumer. A JSON path such as `$.azp` works too |
 | `create_if_missing` | boolean | `true` | Persist the generated API key |
 | `subscription_required` | boolean | `false` | Only the consumers with an `enabled` [subscription](#subscriptions) to the plan, whose `client_id` is the one they call with, are served; the others get `401`. `create_if_missing` is then ignored. Off, every valid token (or certificate) is a consumer of the plan |
+| `restrictions` | object | no restriction | The [restrictions](./apikeys.mdx#restrictions) of the API key of each consumer: the paths and methods it is allowed, forbidden or not found on, enforced at the end of the access validation. Changing them, or the `rateLimiting` of the plan, rewrites the API keys already generated for the plan |
 
 ### mTLS access mode configuration
 
@@ -435,6 +437,7 @@ an empty default (`${req.headers.x-consumer:}`) to have those calls rejected ins
 | `client_id_field` | string | `null` | DN attribute holding the client id (`UID`, `CN`, ...). Left empty, the identity is derived from the whole subject and the serial number. A certificate missing the named attribute is rejected |
 | `create_if_missing` | boolean | `true` | Persist the generated API key |
 | `subscription_required` | boolean | `false` | Only the consumers with an `enabled` [subscription](#subscriptions) to the plan, whose `client_id` is the one they call with, are served; the others get `401`. `create_if_missing` is then ignored. Off, every valid token (or certificate) is a consumer of the plan |
+| `restrictions` | object | no restriction | The [restrictions](./apikeys.mdx#restrictions) of the API key of each consumer: the paths and methods it is allowed, forbidden or not found on, enforced at the end of the access validation. Changing them, or the `rateLimiting` of the plan, rewrites the API keys already generated for the plan |
 
 ### OAuth2 remote access mode configuration
 
@@ -448,6 +451,7 @@ an empty default (`${req.headers.x-consumer:}`) to have those calls rejected ins
 | `issuer` | string | | The `iss` a token must carry, compared exactly: the `issuer` of the discovery document of the authorization server. Not checked when absent |
 | `audiences` | array of string | `[]` | The token must carry at least one of them in its `aud` claim. A token without `aud` is refused. Not checked when empty |
 | `subscription_required` | boolean | `false` | Only the consumers with an `enabled` [subscription](#subscriptions) to the plan, whose `client_id` is the one they call with, are served; the others get `401`. `create_if_missing` is then ignored. Off, every valid token (or certificate) is a consumer of the plan |
+| `restrictions` | object | no restriction | The [restrictions](./apikeys.mdx#restrictions) of the API key of each consumer: the paths and methods it is allowed, forbidden or not found on, enforced at the end of the access validation. Changing them, or the `rateLimiting` of the plan, rewrites the API keys already generated for the plan |
 
 A token refused for its issuer or its audience is not identified by the plan, and nothing is minted for it: another
 plan of the API can still identify the call (a second `oauth2-remote` plan of the same module for another audience

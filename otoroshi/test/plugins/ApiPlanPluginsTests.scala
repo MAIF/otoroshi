@@ -238,7 +238,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
         "name"                           -> "plan-tpl",
         "status"                         -> "published",
         "access_mode_configuration_type" -> "jwt",
-        "access_mode_configuration"      -> Json.obj("verifier" -> "verifier_1"),
+        "access_mode_configuration"      -> Json.obj("verifier" -> "verifier_1", "restrictions" -> forbiddenAdmin.json),
         "tags"                           -> Json.arr("from-plan"),
         "metadata"                       -> Json.obj("origin" -> "plan")
       )
@@ -247,7 +247,14 @@ class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
     val cfg   = slotOf(route, NgPluginHelper.pluginId[NgJwtApikeyExtractor]).get.config.raw
     cfg.select("apikey").select("tags").as[Seq[String]] mustBe Seq("from-plan")
     cfg.select("apikey").select("metadata").select("origin").asString mustBe "plan"
+    // and the restrictions of its access mode
+    otoroshi.models.Restrictions.format.reads(cfg.select("apikey").select("restrictions").get).get mustBe forbiddenAdmin
   }
+
+  private val forbiddenAdmin = otoroshi.models.Restrictions(
+    enabled = true,
+    forbidden = Seq(otoroshi.models.RestrictionPath("*", "/admin/.*"))
+  )
 
   def severalPublishedPlansStack(): Unit = {
     val route = routeOf(
@@ -812,6 +819,173 @@ class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
         env.datastores.apiKeyDataStore.delete(key.clientId).futureValue
       }
       undeploy(base)
+    }
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  // the restrictions of a keyless, jwt, mtls or oauth2-remote plan
+  // -----------------------------------------------------------------------------------------------
+
+  private def callPath(api: Api, method: String, path: String, headers: Seq[(String, String)] = Seq.empty): Int = ws
+    .url(s"http://127.0.0.1:$port$path")
+    .withHttpHeaders(Seq("Host" -> api.domain) ++ headers*)
+    .withMethod(method)
+    .execute()
+    .futureValue
+    .status
+
+  private def restrictionsVerifier(): String = {
+    val verifierId = s"verifier_${IdGenerator.uuid}"
+    createOtoroshiVerifier(
+      GlobalJwtVerifier(
+        id = verifierId,
+        name = verifierId,
+        desc = verifierId,
+        strict = true,
+        source = InHeader(name = "Authorization", remove = "Bearer "),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = PassThrough(verificationSettings = VerificationSettings())
+      )
+    ).futureValue
+    verifierId
+  }
+
+  private def bearer(clientId: String): (String, String) =
+    "Authorization" -> s"Bearer ${JWT.create().withClaim("client_id", clientId).sign(Algorithm.HMAC512("secret"))}"
+
+  private def waitFor(what: String)(cond: => Boolean): Unit = {
+    val deadline = System.currentTimeMillis() + 15000
+    while (!cond && System.currentTimeMillis() < deadline) await(100.millis)
+    withClue(what)(cond mustBe true)
+  }
+
+  // the restrictions of a jwt plan apply to its consumers, and their keys carry them
+  def jwtPlanRestrictions(): Unit = {
+    val verifierId = restrictionsVerifier()
+    val api        = apiWith(
+      Seq(plan("plan-rs-jwt", "jwt", Json.obj("verifier" -> verifierId, "restrictions" -> forbiddenAdmin.json)))
+    )
+    deploy(api)
+    try {
+      callPath(api, "GET", "/users", Seq(bearer("client-1"))) mustBe 200
+      callPath(api, "GET", "/admin/users", Seq(bearer("client-1"))) mustBe 403
+      val key = env.datastores.apiKeyDataStore.findById(s"jwt_${api.id}_plan-rs-jwt_client-1").futureValue
+      key.map(_.restrictions) mustBe Some(forbiddenAdmin)
+    } finally undeploy(api)
+  }
+
+  // the restrictions of a keyless plan apply to the anonymous callers
+  def keylessPlanRestrictions(): Unit = {
+    val noPost = otoroshi.models.Restrictions(
+      enabled = true,
+      forbidden = Seq(otoroshi.models.RestrictionPath("POST", "/.*"))
+    )
+    val api    = apiWith(Seq(plan("plan-rs-kl", "keyless", Json.obj("restrictions" -> noPost.json))))
+    deploy(api)
+    try {
+      callPath(api, "GET", "/x") mustBe 200
+      callPath(api, "POST", "/x") mustBe 403
+    } finally undeploy(api)
+  }
+
+  // the same restrictions on an apikey plan and on a jwt plan of one api answer the same calls the same way
+  def sameRestrictionsOnEveryKind(): Unit = {
+    val verifierId = restrictionsVerifier()
+    val api        = apiWith(
+      Seq(
+        plan("plan-rs-ak", "apikey", Json.obj("restrictions" -> forbiddenAdmin.json)),
+        plan("plan-rs-jwt2", "jwt", Json.obj("verifier" -> verifierId, "restrictions" -> forbiddenAdmin.json))
+      )
+    )
+    deploy(api)
+    val subscriptionsPath = "/apis/apis.otoroshi.io/v1/apisubscriptions"
+    try {
+      val template         = otoroshiApiCall("GET", s"$subscriptionsPath/_template").futureValue._1.as[JsObject]
+      val (created, _)     = otoroshiApiCall(
+        "POST",
+        subscriptionsPath,
+        Some(
+          template ++ Json.obj(
+            "id"                -> "sub-rs-ak",
+            "name"              -> "sub-rs-ak",
+            "api_ref"           -> api.id,
+            "plan_ref"          -> "plan-rs-ak",
+            "owner_ref"         -> "client-1",
+            "subscription_kind" -> "apikey",
+            "status"            -> "enabled"
+          )
+        )
+      ).futureValue
+      val clientId         = created.select("token_refs").as[Seq[JsValue]].head.select("apikey").asString
+      val apikey           = env.datastores.apiKeyDataStore.findById(clientId).futureValue.get
+      waitFor("the router sees the api key of the subscription")(env.proxyState.apikey(clientId).isDefined)
+      val withApikey       = Seq("Otoroshi-Client-Id" -> apikey.clientId, "Otoroshi-Client-Secret" -> apikey.clientSecret)
+      Seq("/users", "/admin/users").map(path => callPath(api, "GET", path, withApikey)) mustBe
+      Seq("/users", "/admin/users").map(path => callPath(api, "GET", path, Seq(bearer("client-2"))))
+      callPath(api, "GET", "/admin/users", withApikey) mustBe 403
+    } finally {
+      otoroshiApiCall("DELETE", s"$subscriptionsPath/sub-rs-ak").futureValue
+      undeploy(api)
+    }
+  }
+
+  // the consumers already minted follow the restrictions and the rate limiting of their plan; the keys of another
+  // plan and the keys saved by hand are left alone
+  def restrictionsReachMintedConsumers(): Unit = {
+    val verifierId = restrictionsVerifier()
+    val jwtConf    = Json.obj("verifier" -> verifierId)
+    val api        = apiWith(Seq(plan("plan-rs-up", "jwt", jwtConf), plan("plan-rs-other", "keyless")))
+    val keyId      = s"jwt_${api.id}_plan-rs-up_client-1"
+    val otherId    = s"keyless_${api.id}_plan-rs-other_127.0.0.1"
+    val byHand     = otoroshi.models.ApiKey(
+      clientId = s"by-hand_${IdGenerator.uuid}",
+      clientSecret = "secret",
+      clientName = "by hand",
+      authorizedEntities = Seq(otoroshi.models.ApiIdentifier(api.id)),
+      metadata = Map("created_by" -> "apikey-extractor")
+    )
+    deploy(api)
+    try {
+      createOtoroshiApiKey(byHand).futureValue
+      // minted before the restrictions are set
+      callPath(api, "GET", "/admin/users", Seq(bearer("client-1"))) mustBe 200
+      callPath(api, "GET", "/x") mustBe 200
+      waitFor("the keys are minted") {
+        env.datastores.apiKeyDataStore.findById(keyId).futureValue.isDefined &&
+        env.datastores.apiKeyDataStore.findById(otherId).futureValue.isDefined
+      }
+      val otherBefore  = env.datastores.apiKeyDataStore.findById(otherId).futureValue.map(_.json)
+      val byHandBefore = env.datastores.apiKeyDataStore.findById(byHand.clientId).futureValue.map(_.json)
+      val mintedBefore = env.datastores.apiKeyDataStore.findById(keyId).futureValue.get
+
+      val strategy   = FixedWindowStrategyConfig(windowDurationMs = 60000L, quota = AllowedQuota(window = 50))
+      val restricted = api.copy(
+        plans = Seq(
+          ApiPlan(
+            plan("plan-rs-up", "jwt", jwtConf ++ Json.obj("restrictions" -> forbiddenAdmin.json)).raw ++
+            Json.obj("rateLimiting" -> Json.obj("strategy" -> strategy.json))
+          ),
+          plan("plan-rs-other", "keyless")
+        )
+      )
+      otoroshiApiCall("PUT", s"/apis/apis.otoroshi.io/v1/apis/${api.id}", Some(restricted.json)).futureValue._2 mustBe 200
+
+      val minted = env.datastores.apiKeyDataStore.findById(keyId).futureValue.get
+      minted.restrictions mustBe forbiddenAdmin
+      minted.throttlingStrategy mustBe Some(strategy)
+      // everything else of the key is kept
+      minted.copy(restrictions = mintedBefore.restrictions, throttlingStrategy = mintedBefore.throttlingStrategy).json mustBe
+      mintedBefore.json
+      waitFor("the router sees the restrictions of the key")(
+        env.proxyState.apikey(keyId).map(_.restrictions).contains(forbiddenAdmin)
+      )
+      callPath(restricted, "GET", "/admin/users", Seq(bearer("client-1"))) mustBe 403
+
+      env.datastores.apiKeyDataStore.findById(otherId).futureValue.map(_.json) mustBe otherBefore
+      env.datastores.apiKeyDataStore.findById(byHand.clientId).futureValue.map(_.json) mustBe byHandBefore
+    } finally {
+      Seq(keyId, otherId, byHand.clientId).foreach(id => env.datastores.apiKeyDataStore.delete(id).futureValue)
+      undeploy(api)
     }
   }
 }

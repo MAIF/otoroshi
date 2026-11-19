@@ -147,7 +147,7 @@ const ApiKeysConstants = {
           ),
         },
       },
-      flow: ['enabled', 'allowLast', 'allowed', 'notFound'],
+      flow: ['enabled', 'allowLast', 'allowed', 'forbidden', 'notFound'],
     },
     rotation: {
       type: 'form',
@@ -211,6 +211,8 @@ const AccessModePluginConfigurationForm = {
   },
   jwt: {
     schema: {
+      // the restrictions of the apikey of each consumer of the plan
+      restrictions: ApiKeysConstants.schema.restrictions,
       verifier: {
         label: 'JWT verifier',
         type: 'JwtVerifierWizard',
@@ -239,7 +241,7 @@ const AccessModePluginConfigurationForm = {
         help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
-    flow: ['verifier', 'client_id_path', 'subscription_required', 'create_if_missing'],
+    flow: ['verifier', 'client_id_path', 'subscription_required', 'create_if_missing', 'restrictions'],
   },
   'oauth2-local': {
     schema: NgClientCredentialTokenEndpoint.config_schema,
@@ -247,6 +249,8 @@ const AccessModePluginConfigurationForm = {
   },
   'oauth2-remote': {
     schema: {
+      // the restrictions of the apikey of each consumer of the plan
+      restrictions: ApiKeysConstants.schema.restrictions,
       verifier: {
         label: 'Authentication module',
         type: 'AuthenticationWizard',
@@ -309,10 +313,13 @@ const AccessModePluginConfigurationForm = {
       'user_metadata_key',
       'subscription_required',
       'create_if_missing',
+      'restrictions',
     ],
   },
   mtls: {
     schema: {
+      // the restrictions of the apikey of each consumer of the plan
+      restrictions: ApiKeysConstants.schema.restrictions,
       regex_subject_dns: {
         type: 'array',
         label: 'Subject DN patterns',
@@ -343,10 +350,19 @@ const AccessModePluginConfigurationForm = {
         help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
-    flow: ['regex_subject_dns', 'regex_issuer_dns', 'client_id_field', 'subscription_required', 'create_if_missing'],
+    flow: [
+      'regex_subject_dns',
+      'regex_issuer_dns',
+      'client_id_field',
+      'subscription_required',
+      'create_if_missing',
+      'restrictions',
+    ],
   },
   keyless: {
     schema: {
+      // the restrictions of the apikey of each consumer of the plan
+      restrictions: ApiKeysConstants.schema.restrictions,
       expr: {
         type: 'string',
         label: 'Consumer expression',
@@ -359,7 +375,7 @@ const AccessModePluginConfigurationForm = {
         help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
-    flow: ['expr', 'create_if_missing'],
+    flow: ['expr', 'create_if_missing', 'restrictions'],
   },
   public: {
     schema: {},

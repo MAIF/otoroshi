@@ -43,9 +43,42 @@ object ApiConsistencyService {
       for {
         _ <- Future.sequence(deletedPlans.map(plan => deleteSubscriptionsByPlan(newApi, plan, isDraft)))
         _ <- Future.sequence(updatedPlans.map(plan => updateSubscriptionsByPlan(newApi, plan, isDraft)))
+        _ <- if (isDraft) Future.unit else updateMintedConsumersByPlan(newApi, oldById, updatedPlans.toSeq)
       } yield newApi
     } else {
       newApi.vfuture
+    }
+  }
+
+  // the restrictions and the rate limiting of a keyless, jwt, mtls or oauth2-remote plan belong to the plan: the keys its
+  // extractor minted for its consumers, which have no other source for them, follow their changes. Everything else of
+  // these keys (secret, enabled flag, validity, tags, metadata, counters) is kept. The keys provisioned by the
+  // subscriptions of the plan are rewritten with them by updateSubscriptionsByPlan
+  private def updateMintedConsumersByPlan(api: Api, oldById: Map[String, ApiPlan], updatedPlans: Seq[ApiPlan])(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Unit] = {
+    val changed = updatedPlans.filter { plan =>
+      ApiPlan.consumerClientIdKind(plan.accessModeConfigurationType).isDefined &&
+      oldById.get(plan.id).exists { old =>
+        old.apikeyTemplate.restrictions != plan.apikeyTemplate.restrictions || old.rateLimiting != plan.rateLimiting
+      }
+    }
+    if (changed.isEmpty) Future.unit
+    else {
+      env.datastores.apiKeyDataStore.findAll().flatMap { keys =>
+        changed
+          .flatMap { plan =>
+            val ref = otoroshi.next.models.ApiRef(api.id, plan.id, "")
+            keys
+              .filter(key => key.metadata.get("created_by").contains("apikey-extractor") && key.apiRef.contains(ref))
+              .map(key =>
+                key.copy(restrictions = plan.apikeyTemplate.restrictions, throttlingStrategy = plan.rateLimiting)
+              )
+          }
+          .mapAsync(_.save())
+          .map(_ => ())
+      }
     }
   }
 

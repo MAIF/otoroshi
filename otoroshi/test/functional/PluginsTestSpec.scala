@@ -217,6 +217,24 @@ class ApiPlanSubscriptionRequiredSpec extends PluginsTestSpecBase {
   }
 }
 
+// the restrictions of the plans of every kind: sbt "testOnly functional.ApiPlanRestrictionsSpec"
+class ApiPlanRestrictionsSpec extends PluginsTestSpecBase {
+  s"the restrictions of an api plan" should {
+    "apply to the consumers of a jwt plan" in {
+      new ApiPlanPluginsTests(this).jwtPlanRestrictions()
+    }
+    "apply to the anonymous callers of a keyless plan" in {
+      new ApiPlanPluginsTests(this).keylessPlanRestrictions()
+    }
+    "answer the same calls the same way on an apikey plan and on a jwt plan" in {
+      new ApiPlanPluginsTests(this).sameRestrictionsOnEveryKind()
+    }
+    "reach the consumers already minted, with the rate limiting of the plan" in {
+      new ApiPlanPluginsTests(this).restrictionsReachMintedConsumers()
+    }
+  }
+}
+
 // an api without a published plan is not open: sbt "testOnly functional.ApiWithoutServedPlanSpec"
 class ApiWithoutServedPlanSpec extends PluginsTestSpecBase {
   s"an api without a published plan" should {
