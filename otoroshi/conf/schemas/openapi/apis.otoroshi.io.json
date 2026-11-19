@@ -588,7 +588,7 @@
           "deprecated",
           "closed"
         ],
-        "description": "The lifecycle state of the plan: `staging` while it is designed, `published` when its access mode applies to the routes of the api, `deprecated` when it accepts no new subscription, `closed` when its `apikey` and `oauth2-local` subscriptions are deleted, with their api keys, on their next update. Subscriptions can be created on a plan in `staging` or `published` only. Read case insensitively, an unknown value is read as `closed`. Defaults to `published`",
+        "description": "The lifecycle state of the plan: `staging` while it is designed, its access mode not applied, `published` when its access mode applies to the routes of the api, `deprecated` when it accepts no new subscription but its access mode still applies to the routes of the api for its consumers, `closed` when its access mode is not applied anymore and its `apikey` and `oauth2-local` subscriptions are deleted, with their api keys, on their next update. Subscriptions can be created on a plan in `staging` or `published` only. Read case insensitively, an unknown value is read as `closed`. Defaults to `published`",
         "example": "published"
       },
       "access_mode_configuration_type": {

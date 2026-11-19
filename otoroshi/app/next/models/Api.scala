@@ -772,6 +772,8 @@ case class ApiPlan(raw: JsObject) {
     case "deprecated" => ApiPlanStatus.Deprecated
     case _            => ApiPlanStatus.Closed
   }
+  // whether the plan installs its access plugins on the routes of its api
+  def isServed: Boolean                                                             = ApiPlanStatus.isServed(status)
   lazy val tags: Seq[String]                                                        = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val metadata: Map[String, String]                                            = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
   lazy val validation: ApiPlanValidation                               = raw
@@ -1512,6 +1514,10 @@ object ApiPlanStatus {
     override def name: String       = "closed"
     override def orderPosition: Int = 4
   }
+
+  // a served plan puts its extractor on the routes of its api and its consumers are enforced: a published plan, and a
+  // deprecated one, which takes no new subscription but keeps its consumers. A staging or a closed plan is not served
+  def isServed(status: ApiPlanStatus): Boolean = status == Published || status == Deprecated
 }
 
 case class ApiBackend(id: String, name: String, backend: NgBackend, client: String)
@@ -1998,15 +2004,16 @@ case class Api(
 
   private def applyPlansPolicies(routeWithApi: RouteWithApi): NgRoute = {
     val routeApiPlans = routeWithApi.api.plans
-    val publishedPlans = routeApiPlans.filter(plan => plan.status == ApiPlanStatus.Published)
-    val route          = routeWithApi.route.copy(
+    // published and deprecated plans: a deprecated plan takes no new subscription, but its consumers keep calling
+    val servedPlans   = routeApiPlans.filter(_.isServed)
+    val route         = routeWithApi.route.copy(
       plugins = addPluginsToFlow(
         routeWithApi.route.plugins,
-        dedupePlugins(publishedPlans.flatMap(plan => pluginsForPlan(plan, routeWithApi.api)))
+        dedupePlugins(servedPlans.flatMap(plan => pluginsForPlan(plan, routeWithApi.api)))
       )
     )
 
-    if (publishedPlans.nonEmpty) {
+    if (servedPlans.nonEmpty) {
       route.copy(
         plugins = addPluginsToFlow(
           route.plugins,

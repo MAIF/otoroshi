@@ -338,7 +338,7 @@ Plans (also referred to as consumers in the UI) define security policies and pri
 | `id` | string | Unique identifier of the plan |
 | `name` | string | Display name of the plan |
 | `description` | string | Description of the plan |
-| `status` | string | Plan status: `staging`, `published`, `deprecated`, or `closed` |
+| `status` | string | Plan status: `staging`, `published`, `deprecated`, or `closed`. See [plan statuses](#plan-statuses) |
 | `access_mode_configuration_type` | string | Access mode type (see below) |
 | `access_mode_configuration` | object | Access mode configuration (depends on type) |
 | `rateLimiting` | object | Rate limiting of the plan: `{ "strategy": { ... } }`. Every consumer of the plan is rate limited with that strategy. Defaults to the legacy strategy with the default quotas |
@@ -349,9 +349,23 @@ Plans (also referred to as consumers in the UI) define security policies and pri
 | `tags` | array of string | Tags |
 | `metadata` | object | Metadata |
 
+### Plan statuses
+
+A plan is **served** when it is `published` or `deprecated`: it installs its access plugins on the routes of the API,
+and its consumers are identified and enforced.
+
+| Status | On the routes of the API | Subscriptions |
+|--------|--------------------------|---------------|
+| `staging` | not served: installs nothing | can be created |
+| `published` | served | can be created |
+| `deprecated` | served: its consumers keep calling, with their quotas | no new subscription; the existing ones can be updated |
+| `closed` | not served | deleted with their API keys |
+
+An API with no published or deprecated plan gets no consumer enforcer: its routes are open to anyone.
+
 ### Access modes
 
-Whatever the access mode, a published plan turns the caller into a **consumer**, and a consumer is
+Whatever the access mode, a served plan turns the caller into a **consumer**, and a consumer is
 always an API key: the quotas, restrictions and rotation of the plan are enforced the same way for a
 public plan and for a plan asking for client credentials. See
 [API consumers and plugin flows](../topics/api-consumers.md) for the whole picture.
@@ -365,7 +379,7 @@ public plan and for a plan asking for client credentials. See
 | `oauth2-local` | OAuth2 client credentials flow with local token generation. Clients obtain a JWT to call other routes | `ApikeyCalls` + client credentials endpoint |
 | `oauth2-remote` | OAuth2 token verified against the OIDC settings of an auth. module. The consumer is the client id claim of the token | `NgOidcApikeyExtractor` |
 
-Every published plan also adds `NgApiConsumerEnforcer` on the routes of the API. It runs last, requires
+Every published or deprecated plan also adds `NgApiConsumerEnforcer` on the routes of the API. It runs last, requires
 a consumer, and is the only place where a call is counted against the quotas of the plan.
 
 All the access modes but `apikey` and `oauth2-local` generate an API key for a consumer they have

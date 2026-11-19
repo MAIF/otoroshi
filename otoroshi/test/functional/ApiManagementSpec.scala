@@ -92,19 +92,26 @@ class ApiManagementSpec extends OtoroshiSpec {
 
   private def subscriptionTemplate: JsObject = ok(call("GET", s"$subscriptions/_template")).as[JsObject]
 
-  // a subscription to a plan of the callable api, created through the admin api
-  private def createSubscription(sub: String, status: String, plan: String = "plan-x", kind: String = "apikey"): Unit = {
-    val body = subscriptionTemplate ++ Json.obj(
+  private def subscriptionBody(sub: String, status: String, plan: String, kind: String, api: String): JsObject =
+    subscriptionTemplate ++ Json.obj(
       "id"                -> sub,
       "name"              -> sub,
-      "api_ref"           -> callable,
+      "api_ref"           -> api,
       "plan_ref"          -> plan,
       "owner_ref"         -> "client-1",
       "subscription_kind" -> kind,
       "status"            -> status
     )
-    ok(call("POST", subscriptions, Some(body)), 201)
-  }
+
+  // a subscription to a plan of the callable api, created through the admin api
+  private def createSubscription(
+      sub: String,
+      status: String,
+      plan: String = "plan-x",
+      kind: String = "apikey",
+      api: String = callable
+  ): Unit =
+    ok(call("POST", subscriptions, Some(subscriptionBody(sub, status, plan, kind, api))), 201)
 
   private def statusOf(sub: String): String = (ok(call("GET", s"$subscriptions/$sub")) \ "status").as[String]
 
@@ -471,6 +478,50 @@ class ApiManagementSpec extends OtoroshiSpec {
       apikeyStatus(removedKey) mustBe 404
       ok(call("GET", s"$subscriptions/sub-plans-x"))
       (ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$keptKey")) \ "enabled").as[Boolean] mustBe true
+    }
+    "refuse new subscriptions to a deprecated plan, and keep managing the existing ones" in {
+      createApi("api-mgmt-deprecated", "staging")
+      createSubscription("sub-before-deprecation", "enabled", api = "api-mgmt-deprecated")
+      val api   = ok(call("GET", s"$apis/api-mgmt-deprecated")).as[JsObject]
+      val plans = (api \ "plans").as[Seq[JsObject]].map { p =>
+        if ((p \ "id").as[String] == "plan-x") p ++ Json.obj("status" -> "deprecated") else p
+      }
+      ok(call("PUT", s"$apis/api-mgmt-deprecated", Some(api ++ Json.obj("plans" -> plans))))
+
+      val created = call(
+        "POST",
+        subscriptions,
+        Some(subscriptionBody("sub-after-deprecation", "enabled", "plan-x", "apikey", "api-mgmt-deprecated"))
+      )
+      withClue(created.body[String]) {
+        created.status mustBe 400
+        (created.json \ "error").as[String] mustBe "wrong status plan"
+      }
+      call("GET", s"$subscriptions/sub-after-deprecation").status mustBe 404
+
+      val subscribed = call(
+        "POST",
+        s"$apis/api-mgmt-deprecated/plans/plan-x/subscribe",
+        Some(subscriptionBody("sub-subscribed-deprecated", "enabled", "plan-x", "apikey", "api-mgmt-deprecated"))
+      )
+      withClue(subscribed.body[String]) {
+        subscribed.status mustBe 400
+        (subscribed.json \ "error").as[String] mustBe "plan is not published"
+      }
+      call("GET", s"$subscriptions/sub-subscribed-deprecated").status mustBe 404
+
+      // the subscriptions made before keep being managed, their api keys with them
+      val current = ok(call("GET", s"$subscriptions/sub-before-deprecation")).as[JsObject]
+      ok(
+        call(
+          "PUT",
+          s"$subscriptions/sub-before-deprecation",
+          Some(current ++ Json.obj("metadata" -> Json.obj("contract" -> "c-42")))
+        )
+      )
+      val key = ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/${keyOf("sub-before-deprecation")}"))
+      (key \ "metadata" \ "contract").as[String] mustBe "c-42"
+      (key \ "enabled").as[Boolean] mustBe true
     }
     "shutdown" in {
       backendServer.stop()

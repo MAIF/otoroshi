@@ -529,6 +529,122 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
     }
   }
 
+  // the six calls of the demo, one per kind of plan, and what each one gets when the plan of its kind serves it
+  private case class Expected(call: DemoCall, kind: String, consumer: String)
+
+  private def demoCalls(demoClient: (PrivateKey, Array[X509Certificate])): Seq[Expected] = Seq(
+    Expected(demoHttpCall("no credential at all"), "keyless", s"keyless_$demoPrefix-keyless-plan_127.0.0.1"),
+    Expected(
+      demoHttpCall(
+        "Otoroshi-Client-Id / Secret",
+        "Otoroshi-Client-Id"     -> demoApikeyId,
+        "Otoroshi-Client-Secret" -> demoApikeySecret
+      ),
+      "apikey",
+      demoApikeyId
+    ),
+    Expected(
+      demoHttpCall(
+        "Bearer token, client_id claim",
+        "Authorization" -> s"Bearer ${demoJwt(demoJwtSecret, "iss" -> "demo", "client_id" -> "consumer-from-token")}"
+      ),
+      "jwt",
+      s"jwt_$demoPrefix-jwt-plan_consumer-from-token"
+    ),
+    Expected(
+      demoMtlsCall("client certificate", demoClient),
+      "mtls",
+      s"mtls_$demoPrefix-mtls-plan_demo-consumer"
+    ),
+    // the apikey doubles as the signing key: ApikeyCalls reads the clientId claim, looks the
+    // apikey up, then validates the HS512 signature against its own clientSecret
+    Expected(
+      demoHttpCall(
+        "apikey as a signed jwt",
+        "Authorization" -> s"Bearer ${demoJwt(demoOauth2Secret, "clientId" -> demoOauth2ApikeyId)}"
+      ),
+      "oauth2-local",
+      demoOauth2ApikeyId
+    ),
+    Expected(
+      demoHttpCall(
+        "oidc token, client_id claim",
+        "Authorization" -> s"Bearer ${demoJwt(demoOidcSecret, "iss" -> "demo-idp", "client_id" -> "consumer-from-oidc")}"
+      ),
+      "oauth2-remote",
+      s"oauth2_$demoPrefix-oauth2-remote-plan_consumer-from-oidc"
+    )
+  )
+
+  private def report(results: Seq[Expected]): String = results
+    .map { e =>
+      s"  ${e.call.how.padTo(30, ' ')} -> ${e.call.status} ${e.call.consumer.getOrElse("no consumer")}" +
+      s" (plan ${e.call.plan.getOrElse("none")}, plan plugin ${e.call.planPlugin.getOrElse("none")})"
+    }
+    .mkString("\n", "\n", "\n")
+
+  // the call is served by the plan of the kind given
+  private def mustBeServedBy(e: Expected, kind: String, consumer: String): Unit =
+    withClue(s"call '${e.call.how}': ") {
+      e.call.status mustBe 200
+      // an identity is what every plan is supposed to produce
+      e.call.consumer mustBe Some(consumer)
+      e.call.plan mustBe Some(s"$demoPrefix-$kind-plan")
+      // and the chain of that very plan ran on the call
+      e.call.planPlugin mustBe Some(s"from-$kind-plan")
+    }
+
+  // every call is served by the plan of its kind
+  private def mustAllBeServed(results: Seq[Expected]): Unit =
+    withClue(report(results)) {
+      results.foreach(e => mustBeServedBy(e, e.kind, e.consumer))
+    }
+
+  // what the demo needs around the api: its backend, the userinfo endpoint of the oauth2-remote plan, the
+  // certificates of the mtls plan, the verifier of the jwt plan, the auth module of the oauth2-remote plan and the
+  // keys of the apikey and oauth2-local plans
+  private case class Demo(
+      backendServer: TargetService,
+      oidcServer: TargetService,
+      client: (PrivateKey, Array[X509Certificate]),
+      verifier: GlobalJwtVerifier,
+      authModule: GenericOauth2ModuleConfig,
+      api: Api,
+      apikey: ApiKey,
+      oauth2Apikey: ApiKey
+  )
+  private var demo: Demo = scala.compiletime.uninitialized
+
+  private val allDemoKinds = Seq("keyless", "apikey", "jwt", "mtls", "oauth2-local", "oauth2-remote")
+
+  // the demo api with the plans of the kinds given in the status given, and without the plans dropped. The scenario
+  // reaches the route through the metadata of the api, which tells when the router serves this version of the api
+  private def deployDemo(scenario: String, statuses: Map[String, String], dropped: Set[String] = Set.empty): Unit = {
+    given Env = otoEnv
+    val api   = demo.api.copy(
+      metadata = demo.api.metadata + ("scenario" -> scenario),
+      plans = demo.api.plans
+        .filterNot(plan => dropped.exists(kind => plan.id == s"$demoPrefix-$kind-plan"))
+        .map { plan =>
+          statuses.collectFirst { case (kind, status) if plan.id == s"$demoPrefix-$kind-plan" => status } match {
+            case Some(status) => ApiPlan(plan.raw ++ Json.obj("status" -> status))
+            case None         => plan
+          }
+        }
+    )
+    otoEnv.datastores.apiDataStore.set(api).futureValue mustBe true
+    awaitCond(30.seconds) {
+      otoEnv.proxyState
+        .allRoutes()
+        .exists(route => route.apiRef.exists(_.id == api.id) && route.metadata.get("scenario").contains(scenario))
+    }
+    withClue(s"the route of the scenario '$scenario' reaches the router") {
+      otoEnv.proxyState
+        .allRoutes()
+        .exists(route => route.apiRef.exists(_.id == api.id) && route.metadata.get("scenario").contains(scenario)) mustBe true
+    }
+  }
+
   "An api publishing one plan of each kind" should {
 
     "serve one consumer of each kind on a single route" in {
@@ -596,6 +712,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       val api          = demoApi(backendServer.port)
       val apikey       = demoApikey(demoApikeyId, demoApikeySecret, s"$demoPrefix-apikey-plan")
       val oauth2Apikey = demoApikey(demoOauth2ApikeyId, demoOauth2Secret, s"$demoPrefix-oauth2-local-plan")
+      demo = Demo(backendServer, oidcServer, demoClient, verifier, authModule, api, apikey, oauth2Apikey)
 
       otoEnv.datastores.globalJwtVerifierDataStore.set(verifier).futureValue
       otoEnv.datastores.authConfigsDataStore.set(authModule).futureValue
@@ -603,91 +720,72 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       otoEnv.datastores.apiKeyDataStore.set(oauth2Apikey).futureValue
       otoEnv.datastores.apiDataStore.set(api).futureValue
 
-      try {
-        // the proxy state job is what turns the api into a route and publishes the other entities
-        awaitCond(30.seconds) {
-          otoEnv.proxyState.allRoutes().exists(_.apiRef.exists(_.id == api.id)) &&
-          otoEnv.proxyState.apikey(demoApikeyId).isDefined &&
-          otoEnv.proxyState.apikey(demoOauth2ApikeyId).isDefined &&
-          otoEnv.proxyState.jwtVerifier(demoVerifierId).isDefined &&
-          otoEnv.proxyState.authModule(demoAuthModuleId).isDefined
+      // the proxy state job is what turns the api into a route and publishes the other entities
+      awaitCond(30.seconds) {
+        otoEnv.proxyState.allRoutes().exists(_.apiRef.exists(_.id == api.id)) &&
+        otoEnv.proxyState.apikey(demoApikeyId).isDefined &&
+        otoEnv.proxyState.apikey(demoOauth2ApikeyId).isDefined &&
+        otoEnv.proxyState.jwtVerifier(demoVerifierId).isDefined &&
+        otoEnv.proxyState.authModule(demoAuthModuleId).isDefined
+      }
+
+      val results = demoCalls(demoClient)
+      mustAllBeServed(results)
+      // fetch_user of the oauth2-remote plan: the profile of the token holder travels as apikey
+      // metadata, so it reaches the backend through the expression language
+      withClue(report(results)) {
+        results.last.call.user.exists(_.contains("consumer-from-oidc")) mustBe true
+      }
+    }
+
+    // a deprecated plan takes no new subscription, but keeps serving its consumers
+    "keep serving the consumers of a deprecated plan, whatever its kind" in {
+      allDemoKinds.foreach { kind =>
+        withClue(s"the $kind plan deprecated: ") {
+          deployDemo(s"deprecated-$kind", Map(kind -> "deprecated"))
+          mustAllBeServed(demoCalls(demo.client))
         }
+      }
+    }
 
-        case class Expected(call: DemoCall, kind: String, consumer: String)
-        val results = Seq(
-          Expected(demoHttpCall("no credential at all"), "keyless", s"keyless_$demoPrefix-keyless-plan_127.0.0.1"),
-          Expected(
-            demoHttpCall(
-              "Otoroshi-Client-Id / Secret",
-              "Otoroshi-Client-Id"     -> demoApikeyId,
-              "Otoroshi-Client-Secret" -> demoApikeySecret
-            ),
-            "apikey",
-            demoApikeyId
-          ),
-          Expected(
-            demoHttpCall(
-              "Bearer token, client_id claim",
-              "Authorization" -> s"Bearer ${demoJwt(demoJwtSecret, "iss" -> "demo", "client_id" -> "consumer-from-token")}"
-            ),
-            "jwt",
-            s"jwt_$demoPrefix-jwt-plan_consumer-from-token"
-          ),
-          Expected(
-            demoMtlsCall("client certificate", demoClient),
-            "mtls",
-            s"mtls_$demoPrefix-mtls-plan_demo-consumer"
-          ),
-          // the apikey doubles as the signing key: ApikeyCalls reads the clientId claim, looks the
-          // apikey up, then validates the HS512 signature against its own clientSecret
-          Expected(
-            demoHttpCall(
-              "apikey as a signed jwt",
-              "Authorization" -> s"Bearer ${demoJwt(demoOauth2Secret, "clientId" -> demoOauth2ApikeyId)}"
-            ),
-            "oauth2-local",
-            demoOauth2ApikeyId
-          ),
-          Expected(
-            demoHttpCall(
-              "oidc token, client_id claim",
-              "Authorization" -> s"Bearer ${demoJwt(demoOidcSecret, "iss" -> "demo-idp", "client_id" -> "consumer-from-oidc")}"
-            ),
-            "oauth2-remote",
-            s"oauth2_$demoPrefix-oauth2-remote-plan_consumer-from-oidc"
-          )
-        )
+    "serve every consumer when every plan is deprecated" in {
+      deployDemo("all-deprecated", allDemoKinds.map(_ -> "deprecated").toMap)
+      mustAllBeServed(demoCalls(demo.client))
+    }
 
-        val report = results
-          .map { e =>
-            s"  ${e.call.how.padTo(30, ' ')} -> ${e.call.status} ${e.call.consumer.getOrElse("no consumer")}" +
-            s" (plan ${e.call.plan.getOrElse("none")}, plan plugin ${e.call.planPlugin.getOrElse("none")})"
+    "still require a consumer when every plan is deprecated and none is keyless" in {
+      deployDemo("all-deprecated-no-keyless", allDemoKinds.map(_ -> "deprecated").toMap, dropped = Set("keyless"))
+      val results = demoCalls(demo.client)
+      withClue(report(results)) {
+        results.head.call.status mustBe 401
+        results.tail.foreach(e => mustBeServedBy(e, e.kind, e.consumer))
+      }
+    }
+
+    "not identify the consumers of a staging or a closed plan" in {
+      Seq("staging", "closed").foreach { status =>
+        withClue(s"the jwt plan $status: ") {
+          deployDemo(s"jwt-$status", Map("jwt" -> status))
+          val results = demoCalls(demo.client)
+          withClue(report(results)) {
+            val jwtCall = results.find(_.kind == "jwt").get
+            mustBeServedBy(jwtCall, "keyless", s"keyless_$demoPrefix-keyless-plan_127.0.0.1")
+            results.filterNot(_.kind == "jwt").foreach(e => mustBeServedBy(e, e.kind, e.consumer))
           }
-          .mkString("\n", "\n", "\n")
-
-        withClue(report) {
-          results.foreach { e =>
-            withClue(s"call '${e.call.how}': ") {
-              e.call.status mustBe 200
-              // an identity is what every plan is supposed to produce
-              e.call.consumer mustBe Some(e.consumer)
-              e.call.plan mustBe Some(s"$demoPrefix-${e.kind}-plan")
-              // and the chain of that very plan ran on the call
-              e.call.planPlugin mustBe Some(s"from-${e.kind}-plan")
-            }
-          }
-          // fetch_user of the oauth2-remote plan: the profile of the token holder travels as apikey
-          // metadata, so it reaches the backend through the expression language
-          results.last.call.user.exists(_.contains("consumer-from-oidc")) mustBe true
         }
-      } finally {
-        otoEnv.datastores.apiDataStore.delete(api).futureValue
-        otoEnv.datastores.apiKeyDataStore.delete(apikey).futureValue
-        otoEnv.datastores.apiKeyDataStore.delete(oauth2Apikey).futureValue
-        otoEnv.datastores.globalJwtVerifierDataStore.delete(verifier).futureValue
-        otoEnv.datastores.authConfigsDataStore.delete(authModule).futureValue
-        backendServer.stop()
-        oidcServer.stop()
+      }
+    }
+
+    "clean up" in {
+      given Env = otoEnv
+      if (demo != null) {
+        otoEnv.datastores.apiDataStore.delete(demo.api).futureValue
+        otoEnv.datastores.apiKeyDataStore.delete(demo.apikey).futureValue
+        otoEnv.datastores.apiKeyDataStore.delete(demo.oauth2Apikey).futureValue
+        otoEnv.datastores.globalJwtVerifierDataStore.delete(demo.verifier).futureValue
+        otoEnv.datastores.authConfigsDataStore.delete(demo.authModule).futureValue
+        demo.backendServer.stop()
+        demo.oidcServer.stop()
         await(2.seconds)
       }
     }

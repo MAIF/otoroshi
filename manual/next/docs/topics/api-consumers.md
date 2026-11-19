@@ -26,8 +26,8 @@ for an API key.
 
 ## Every plan identifies a consumer
 
-When an API is deployed, each **published** plan adds its own *apikey extractor* to every route of
-the API, plus one shared `Api consumer enforcer` at the very end of the access validation phase.
+When an API is deployed, each **published** or **deprecated** plan adds its own *apikey extractor* to every route of
+the API (a deprecated plan takes no new subscription, but its consumers keep calling), plus one shared `Api consumer enforcer` at the very end of the access validation phase.
 
 | Plan kind | Plugin added | Identity comes from | Generated client id |
 |-----------|--------------|---------------------|---------------------|
@@ -97,12 +97,12 @@ another plugin, a failed JWT verification, a restriction — never consumes quot
 over a user session: a caller that went through an auth. module *and* carries an API key is
 enforced against the API key.
 
-APIs with at least one published plan also get `Send otoroshi headers back`, so the caller receives
+APIs with at least one published or deprecated plan also get `Send otoroshi headers back`, so the caller receives
 the usual `Otoroshi-*` response headers, remaining quotas included.
 
 ### Several plans on the same route
 
-All the published plans of an API are applied on all its routes, and every extractor writes to the same
+All the published and deprecated plans of an API are applied on all its routes, and every extractor writes to the same
 place: **the first plugin that identifies a consumer wins**. The order is fixed by the plugin index
 of each extractor:
 
@@ -145,7 +145,7 @@ a consumer identity to callers that have none. They all share the same settings 
 
 An extractor only **identifies** the caller. To also enforce the quotas and the restrictions of the
 resulting API key, add `cp:otoroshi.next.plugins.NgApiConsumerEnforcer` after it, like a published
-plan does.
+or deprecated plan does.
 
 ```json
 {
