@@ -208,6 +208,15 @@ class OtoBearerAuthSpec extends PluginsTestSpecBase {
 }
 
 // api subscriptions against the kind of their plan: sbt "testOnly functional.ApiSubscriptionKindSpec"
+// a plan that requires a subscription: sbt "testOnly functional.ApiPlanSubscriptionRequiredSpec"
+class ApiPlanSubscriptionRequiredSpec extends PluginsTestSpecBase {
+  s"api plans" should {
+    "only serve the consumers of a jwt plan that subscribed, when it requires a subscription" in {
+      new ApiPlanPluginsTests(this).jwtSubscriptionRequired()
+    }
+  }
+}
+
 class ApiSubscriptionKindSpec extends PluginsTestSpecBase {
   s"api subscriptions" should {
     "be of the kind of their plan, and get an apikey from an apikey or an oauth2-local plan" in {

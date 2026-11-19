@@ -105,7 +105,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "api_id"              -> "api_1",
         "plan_id"             -> "plan_1",
         "throttling_strategy" -> legacyThrottling.json,
-        "apikey"              -> ApikeyAccessModeConfiguration().json
+        "apikey"              -> ApikeyAccessModeConfiguration().json,
+        "subscription_required" -> false
       )
     }
 
@@ -115,7 +116,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "api_id"              -> JsNull,
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
-        "apikey"              -> ApikeyAccessModeConfiguration().json
+        "apikey"              -> ApikeyAccessModeConfiguration().json,
+        "subscription_required" -> false
       )
     }
   }
@@ -158,7 +160,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "api_id"              -> JsNull,
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
-        "apikey"              -> ApikeyAccessModeConfiguration().json
+        "apikey"              -> ApikeyAccessModeConfiguration().json,
+        "subscription_required" -> false
       )
     }
 
@@ -172,7 +175,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "api_id"              -> "api_1",
         "plan_id"             -> "plan_gold",
         "throttling_strategy" -> fixedWindow.json,
-        "apikey"              -> template.json
+        "apikey"              -> template.json,
+        "subscription_required" -> false
       )
     }
 
@@ -302,7 +306,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "api_id"              -> JsNull,
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
-        "apikey"              -> ApikeyAccessModeConfiguration().json
+        "apikey"              -> ApikeyAccessModeConfiguration().json,
+        "subscription_required" -> false
       )
     }
 
@@ -418,7 +423,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "api_id"              -> JsNull,
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
-        "apikey"              -> ApikeyAccessModeConfiguration().json
+        "apikey"              -> ApikeyAccessModeConfiguration().json,
+        "subscription_required" -> false
       )
     }
 
@@ -433,7 +439,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "api_id"              -> "api_1",
         "plan_id"             -> "plan_mtls",
         "throttling_strategy" -> legacyThrottling.json,
-        "apikey"              -> template.json
+        "apikey"              -> template.json,
+        "subscription_required" -> false
       )
     }
 
@@ -570,7 +577,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "api_id"              -> JsNull,
         "plan_id"             -> JsNull,
         "throttling_strategy" -> JsNull,
-        "apikey"              -> ApikeyAccessModeConfiguration().json
+        "apikey"              -> ApikeyAccessModeConfiguration().json,
+        "subscription_required" -> false
       )
     }
 
@@ -589,7 +597,8 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
         "api_id"              -> "api_1",
         "plan_id"             -> "plan_oidc",
         "throttling_strategy" -> fixedWindow.json,
-        "apikey"              -> template.json
+        "apikey"              -> template.json,
+        "subscription_required" -> false
       )
     }
 
@@ -711,6 +720,28 @@ class ApiManagementPluginConfigsSpec extends PluginConfigFormatSpec {
       val plugin = new NgOidcApikeyExtractor()
       plugin.configFlow mustBe NgOidcApikeyExtractorConfig.configFlow
       plugin.configSchema mustBe NgOidcApikeyExtractorConfig.configSchema
+    }
+  }
+
+  "subscription_required" should {
+    "default to false, and be read and written by the jwt, client certificate and oidc extractors" in {
+      NgJwtApikeyExtractorConfig(verifier = "v1").subscriptionRequired mustBe false
+      NgClientCertApikeyExtractorConfig().subscriptionRequired mustBe false
+      NgOidcApikeyExtractorConfig().subscriptionRequired mustBe false
+      val jwt  = NgJwtApikeyExtractorConfig(verifier = "v1", subscriptionRequired = true)
+      val cert = NgClientCertApikeyExtractorConfig(subscriptionRequired = true)
+      val oidc = NgOidcApikeyExtractorConfig(subscriptionRequired = true)
+      (NgJwtApikeyExtractorConfig.format.writes(jwt) \ "subscription_required").as[Boolean] mustBe true
+      (NgClientCertApikeyExtractorConfig.format.writes(cert) \ "subscription_required").as[Boolean] mustBe true
+      (NgOidcApikeyExtractorConfig.format.writes(oidc) \ "subscription_required").as[Boolean] mustBe true
+      roundTrip(NgJwtApikeyExtractorConfig.format, jwt).subscriptionRequired mustBe true
+      roundTrip(NgClientCertApikeyExtractorConfig.format, cert).subscriptionRequired mustBe true
+      roundTrip(NgOidcApikeyExtractorConfig.format, oidc).subscriptionRequired mustBe true
+    }
+
+    "always be false for the expression extractor" in {
+      NgExpressionApikeyExtractorConfig().subscriptionRequired mustBe false
+      NgExpressionApikeyExtractorConfig.format.reads(Json.obj("subscription_required" -> true)).get.subscriptionRequired mustBe false
     }
   }
 

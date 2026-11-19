@@ -93,7 +93,10 @@ filling the datastore with one entry per caller.
 
 :::warning
 `create_if_missing: false` does **not** mean *only accept API keys that already exist*. It only
-decides whether the identity is persisted.
+decides whether the identity is persisted. To only serve the consumers that subscribed to a `jwt`,
+`mtls` or `oauth2-remote` plan, turn `subscription_required` on: the plan then generates nothing, and
+only the API key provisioned by an `enabled` subscription of the plan, for the client id the caller is
+identified with, serves the call. See [subscriptions](../entities/apis.mdx#subscriptions).
 :::
 
 ### The consumer enforcer

@@ -227,13 +227,19 @@ const AccessModePluginConfigurationForm = {
         help: 'Claim holding the client id of the consumer. A json path such as $.azp works too.',
         props: { placeholder: 'client_id' },
       },
+      subscription_required: {
+        type: 'bool',
+        label: 'Subscription required',
+        help: 'Only serve the consumers with an enabled subscription to this plan, whose client id is the one they call with: the others get a 401, and no apikey is ever created for them. Disabled, every valid token (or certificate) is a consumer of the plan.',
+      },
       create_if_missing: {
         type: 'bool',
         label: 'Create the apikey if missing',
+        visible: (props) => !props?.subscription_required,
         help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
-    flow: ['verifier', 'client_id_path', 'create_if_missing'],
+    flow: ['verifier', 'client_id_path', 'subscription_required', 'create_if_missing'],
   },
   'oauth2-local': {
     schema: NgClientCredentialTokenEndpoint.config_schema,
@@ -282,9 +288,15 @@ const AccessModePluginConfigurationForm = {
         visible: (props) => props?.fetch_user,
         props: { placeholder: 'user_profile' },
       },
+      subscription_required: {
+        type: 'bool',
+        label: 'Subscription required',
+        help: 'Only serve the consumers with an enabled subscription to this plan, whose client id is the one they call with: the others get a 401, and no apikey is ever created for them. Disabled, every valid token (or certificate) is a consumer of the plan.',
+      },
       create_if_missing: {
         type: 'bool',
         label: 'Create the apikey if missing',
+        visible: (props) => !props?.subscription_required,
         help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
@@ -295,6 +307,7 @@ const AccessModePluginConfigurationForm = {
       'audiences',
       'fetch_user',
       'user_metadata_key',
+      'subscription_required',
       'create_if_missing',
     ],
   },
@@ -318,13 +331,19 @@ const AccessModePluginConfigurationForm = {
         help: 'DN attribute holding the client id, UID or CN for instance. Left empty, the identity is derived from the whole subject and the serial number. A certificate missing the named attribute is rejected.',
         props: { placeholder: 'UID' },
       },
+      subscription_required: {
+        type: 'bool',
+        label: 'Subscription required',
+        help: 'Only serve the consumers with an enabled subscription to this plan, whose client id is the one they call with: the others get a 401, and no apikey is ever created for them. Disabled, every valid token (or certificate) is a consumer of the plan.',
+      },
       create_if_missing: {
         type: 'bool',
         label: 'Create the apikey if missing',
+        visible: (props) => !props?.subscription_required,
         help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
-    flow: ['regex_subject_dns', 'regex_issuer_dns', 'client_id_field', 'create_if_missing'],
+    flow: ['regex_subject_dns', 'regex_issuer_dns', 'client_id_field', 'subscription_required', 'create_if_missing'],
   },
   keyless: {
     schema: {

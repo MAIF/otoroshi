@@ -387,6 +387,12 @@ never seen, and they all share the `create_if_missing` flag for that. When it is
 the generated API key is persisted and shows up in the UI. When it is off, the identity only lives
 for the duration of the call. In both cases the caller is served and its consumption is counted.
 
+A `jwt`, `mtls` or `oauth2-remote` plan with `subscription_required` generates nothing: only the consumers whose
+[subscription](#subscriptions) to the plan is `enabled`, and carries the client id they call with, are served. Any
+other caller is not identified by the plan: another plan of the API can still identify it (a `keyless` plan, as for any
+call without credentials), otherwise the call gets `401`, and the analytics of the call tell which client id is not
+subscribed to which plan.
+
 ### Keyless access mode configuration
 
 | Property | Type | Default | Description |
@@ -406,6 +412,7 @@ an empty default (`${req.headers.x-consumer:}`) to have those calls rejected ins
 | `verifier` | string | | ID of the [JWT verifier](./jwt-verifiers.md) validating the token |
 | `client_id_path` | string | `client_id` | Claim holding the client id of the consumer. A JSON path such as `$.azp` works too |
 | `create_if_missing` | boolean | `true` | Persist the generated API key |
+| `subscription_required` | boolean | `false` | Only the consumers with an `enabled` [subscription](#subscriptions) to the plan, whose `client_id` is the one they call with, are served; the others get `401`. `create_if_missing` is then ignored. Off, every valid token (or certificate) is a consumer of the plan |
 
 ### mTLS access mode configuration
 
@@ -415,6 +422,7 @@ an empty default (`${req.headers.x-consumer:}`) to have those calls rejected ins
 | `regex_issuer_dns` | array of string | `[]` | Regex patterns the issuer DN may match. A certificate matching either list is accepted. Both lists empty means any trusted certificate is accepted |
 | `client_id_field` | string | `null` | DN attribute holding the client id (`UID`, `CN`, ...). Left empty, the identity is derived from the whole subject and the serial number. A certificate missing the named attribute is rejected |
 | `create_if_missing` | boolean | `true` | Persist the generated API key |
+| `subscription_required` | boolean | `false` | Only the consumers with an `enabled` [subscription](#subscriptions) to the plan, whose `client_id` is the one they call with, are served; the others get `401`. `create_if_missing` is then ignored. Off, every valid token (or certificate) is a consumer of the plan |
 
 ### OAuth2 remote access mode configuration
 
@@ -427,6 +435,7 @@ an empty default (`${req.headers.x-consumer:}`) to have those calls rejected ins
 | `create_if_missing` | boolean | `true` | Persist the generated API key |
 | `issuer` | string | | The `iss` a token must carry, compared exactly: the `issuer` of the discovery document of the authorization server. Not checked when absent |
 | `audiences` | array of string | `[]` | The token must carry at least one of them in its `aud` claim. A token without `aud` is refused. Not checked when empty |
+| `subscription_required` | boolean | `false` | Only the consumers with an `enabled` [subscription](#subscriptions) to the plan, whose `client_id` is the one they call with, are served; the others get `401`. `create_if_missing` is then ignored. Off, every valid token (or certificate) is a consumer of the plan |
 
 A token refused for its issuer or its audience is not identified by the plan, and nothing is minted for it: another
 plan of the API can still identify the call (a second `oauth2-remote` plan of the same module for another audience

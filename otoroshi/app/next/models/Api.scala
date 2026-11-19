@@ -403,6 +403,8 @@ case class JWTAccessModeConfiguration(
     verifier: Option[String] = None,
     clientIdPath: Option[String] = Some("client_id"),
     createIfMissing: Boolean = true,
+    // only the consumers with an enabled subscription to the plan are served, create_if_missing is then ignored
+    subscriptionRequired: Boolean = false
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.JWT
 }
@@ -414,6 +416,7 @@ object JWTAccessModeConfiguration {
         verifier = json.select("verifier").asOpt[String],
         clientIdPath = json.select("client_id_path").asOpt[String],
         createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
+        subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -423,6 +426,7 @@ object JWTAccessModeConfiguration {
       "verifier" -> o.verifier,
       "client_id_path" -> o.clientIdPath,
       "create_if_missing" -> o.createIfMissing,
+      "subscription_required" -> o.subscriptionRequired
     )
   }
 }
@@ -431,7 +435,9 @@ case class MtlsAccessModeConfiguration(
     regexSubjectDNs: Seq[String] = Seq.empty,
     regexIssuerDNs: Seq[String] = Seq.empty,
     clientIdField: Option[String] = None,
-    createIfMissing: Boolean = true
+    createIfMissing: Boolean = true,
+    // only the consumers with an enabled subscription to the plan are served, create_if_missing is then ignored
+    subscriptionRequired: Boolean = false
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Mtls
 }
@@ -443,7 +449,8 @@ object MtlsAccessModeConfiguration {
         regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         clientIdField = json.select("client_id_field").asOpt[String].filter(_.trim.nonEmpty),
-        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
+        createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
+        subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -453,7 +460,8 @@ object MtlsAccessModeConfiguration {
       "regex_subject_dns" -> o.regexSubjectDNs,
       "regex_issuer_dns"  -> o.regexIssuerDNs,
       "client_id_field"   -> o.clientIdField,
-      "create_if_missing" -> o.createIfMissing
+      "create_if_missing" -> o.createIfMissing,
+      "subscription_required" -> o.subscriptionRequired
     )
   }
 }
@@ -467,7 +475,9 @@ case class OAuth2RemoteAccessModeConfiguration(
     // the iss a token must carry: the issuer of the authorization server. Not checked when empty
     issuer: Option[String] = None,
     // a token must carry one of them in aud. Not checked when empty
-    audiences: Seq[String] = Seq.empty
+    audiences: Seq[String] = Seq.empty,
+    // only the consumers with an enabled subscription to the plan are served, create_if_missing is then ignored
+    subscriptionRequired: Boolean = false
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Remote
 }
@@ -493,7 +503,8 @@ object OAuth2RemoteAccessModeConfiguration {
         userMetadataKey = json.select("user_metadata_key").asOpt[String].getOrElse("user_profile"),
         createIfMissing = json.select("create_if_missing").asOpt[Boolean].getOrElse(true),
         issuer = readIssuer(json),
-        audiences = readAudiences(json)
+        audiences = readAudiences(json),
+        subscriptionRequired = json.select("subscription_required").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -506,7 +517,8 @@ object OAuth2RemoteAccessModeConfiguration {
       "user_metadata_key" -> o.userMetadataKey,
       "create_if_missing" -> o.createIfMissing,
       "issuer"            -> o.issuer,
-      "audiences"         -> o.audiences
+      "audiences"         -> o.audiences,
+      "subscription_required" -> o.subscriptionRequired
     )
   }
 }
@@ -2088,6 +2100,7 @@ case class Api(
               clientIdPrefix = plan.consumerClientIdPrefix(api.id).get,
               strict = false,
               createIfMissing = jwtConfig.createIfMissing,
+              subscriptionRequired = jwtConfig.subscriptionRequired,
               // an apikey minted from a token has to carry the very same quotas, restrictions and
               // rotation as one obtained through a subscription on that plan
               apiId = api.id.some,
@@ -2114,6 +2127,7 @@ case class Api(
               clientIdPrefix = plan.consumerClientIdPrefix(api.id).get,
               strict = false,
               createIfMissing = mtlsConfig.createIfMissing,
+              subscriptionRequired = mtlsConfig.subscriptionRequired,
               apiId = api.id.some,
               planId = plan.id.some,
               throttlingStrategy = plan.rateLimiting,
@@ -2139,6 +2153,7 @@ case class Api(
               userMetadataKey = oidcConfig.userMetadataKey,
               strict = false,
               createIfMissing = oidcConfig.createIfMissing,
+              subscriptionRequired = oidcConfig.subscriptionRequired,
               apiId = api.id.some,
               planId = plan.id.some,
               throttlingStrategy = plan.rateLimiting,

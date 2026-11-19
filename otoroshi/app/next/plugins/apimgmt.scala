@@ -4,7 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import otoroshi.env.Env
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.models.{ApiIdentifier, ApiKey, InHeader, InQueryParam, JwtTokenLocation, LocalJwtVerifier, RouteIdentifier}
-import otoroshi.next.models.{ApiRef, ApikeyAccessModeConfiguration, OAuth2RemoteAccessModeConfiguration}
+import otoroshi.next.models.{ApiRef, ApiSubscriptionEnabled, ApikeyAccessModeConfiguration, OAuth2RemoteAccessModeConfiguration}
 import otoroshi.next.plugins.api.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.Base64Codec
@@ -29,6 +29,9 @@ trait ApikeyFromPlanConfig {
   def planId: Option[String]
   def throttlingStrategy: Option[ThrottlingStrategyConfig]
   def apikey: ApikeyAccessModeConfiguration
+  // only the consumers with an enabled subscription to the plan are identified: nothing is minted for the others.
+  // Only applies with api_id and plan_id
+  def subscriptionRequired: Boolean
   // the access mode of the plan when its keys are the identities of the consumers of a token or a certificate:
   // jwt, mtls or oauth2-remote. None for the keys of the expression extractor
   def accessMode: Option[String] = None
@@ -51,12 +54,15 @@ object ApikeyFromPlan {
     "api_id"              -> config.apiId,
     "plan_id"             -> config.planId,
     "throttling_strategy" -> config.throttlingStrategy.map(_.json),
-    "apikey"              -> config.apikey.json
+    "apikey"              -> config.apikey.json,
+    "subscription_required" -> config.subscriptionRequired
   )
 
   def createIfMissing(json: JsValue): Boolean                            =
     json.select("create_if_missing").asOpt[Boolean].getOrElse(true)
   def apiId(json: JsValue): Option[String]                               = json.select("api_id").asOpt[String]
+  def subscriptionRequired(json: JsValue): Boolean                       =
+    json.select("subscription_required").asOpt[Boolean].getOrElse(false)
   def planId(json: JsValue): Option[String]                              = json.select("plan_id").asOpt[String]
   def throttlingStrategy(json: JsValue): Option[ThrottlingStrategyConfig] =
     json.select("throttling_strategy").asOpt(using ThrottlingStrategyConfig.fmt)
@@ -309,6 +315,56 @@ object ApikeyFromPlan {
     }
   }
 
+  // the key of the consumer of a plan that requires a subscription: provisioned for this client id by a subscription
+  // of the plan that is enabled. A key minted on the fly, or saved by hand, is not
+  private def provisionedBySubscription(apikey: ApiKey, clientId: String, apiId: String, planId: String)(using
+      env: Env
+  ): Boolean =
+    apikey.apiRef.exists { ref =>
+      ref.api == apiId && ref.plan == planId && ref.subscription.nonEmpty &&
+      env.proxyState.apiSubscription(ref.subscription).exists { sub =>
+        sub.status == ApiSubscriptionEnabled && sub.apiRef == apiId && sub.planRef == planId &&
+        sub.tokenRefs.exists(_.select("apikey").asOpt[String].contains(clientId))
+      }
+    }
+
+  // the consumers of a plan that requires a subscription: the key provisioned by an enabled subscription of the plan
+  // serves the call, the others are not identified. The refusal goes to the analytics of the call: the consumer
+  // enforcer tells it when no other plan identifies the caller
+  private def resolveSubscribed(clientId: String, apiId: String, planId: String, ctx: NgAccessContext)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Result] = {
+    env.proxyState.apikey(clientId) match {
+      case Some(apikey) if provisionedBySubscription(apikey, clientId, apiId, planId) =>
+        if (apikey.isActive()) {
+          // identification only, like any other consumer: NgApiConsumerEnforcer enforces the key
+          ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+          Results.Ok(Json.obj()).vfuture
+        } else {
+          Alerts.send(
+            RevokedApiKeyUsageAlert(
+              env.snowflakeGenerator.nextIdStr(),
+              DateTime.now(),
+              env.env,
+              ctx.request,
+              apikey,
+              None,
+              env
+            )
+          )
+          Results.Unauthorized(Json.obj("error" -> "unknown_apikey")).vfuture
+        }
+      case _                                                                         =>
+        val notSubscribed = Json.obj("not_subscribed" -> Json.obj("plan" -> planId, "client_id" -> clientId))
+        ctx.attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
+          case Some(obj) => obj ++ notSubscribed
+          case None      => notSubscribed
+        }
+        Results.Unauthorized(Json.obj("error" -> "not_subscribed")).vfuture
+    }
+  }
+
   // the key names another api or another plan than the ones of the extractor
   private def belongsElsewhere(apikey: ApiKey, config: ApikeyFromPlanConfig): Boolean =
     (config.apiId, config.planId) match {
@@ -337,6 +393,13 @@ object ApikeyFromPlan {
     // overwrite the identity a credential just established.
     if (ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).isDefined) {
       return Results.Ok(Json.obj()).vfuture
+    }
+    // a plan that requires a subscription mints nothing: only the consumers it provisioned a key for are served. A
+    // plugin used on its own, without api_id and plan_id, behaves as before
+    (config.apiId, config.planId) match {
+      case (Some(apiId), Some(planId)) if config.subscriptionRequired =>
+        return resolveSubscribed(clientId, apiId, planId, ctx)
+      case _                                                          =>
     }
     //env.datastores.apiKeyDataStore
     //  .findById(clientId)
@@ -429,7 +492,8 @@ case class NgJwtApikeyExtractorConfig(
     apiId: Option[String] = None,
     planId: Option[String] = None,
     throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
-    apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration()
+    apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration(),
+    subscriptionRequired: Boolean = false
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   override def accessMode: Option[String] = Some("jwt")
@@ -454,7 +518,8 @@ object NgJwtApikeyExtractorConfig {
         apiId = ApikeyFromPlan.apiId(json),
         planId = ApikeyFromPlan.planId(json),
         throttlingStrategy = ApikeyFromPlan.throttlingStrategy(json),
-        apikey = ApikeyFromPlan.apikeyTemplate(json)
+        apikey = ApikeyFromPlan.apikeyTemplate(json),
+        subscriptionRequired = ApikeyFromPlan.subscriptionRequired(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -518,6 +583,8 @@ case class NgExpressionApikeyExtractorConfig(
     apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration()
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
+  // the identity of a keyless consumer is an expression on the request, no subscription can be tied to it
+  override def subscriptionRequired: Boolean = false
   override def json: JsValue = Json.obj(
     "expression"       -> expression,
     "client_id_prefix" -> clientIdPrefix,
@@ -582,7 +649,8 @@ case class NgClientCertApikeyExtractorConfig(
     apiId: Option[String] = None,
     planId: Option[String] = None,
     throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
-    apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration()
+    apikey: ApikeyAccessModeConfiguration = ApikeyAccessModeConfiguration(),
+    subscriptionRequired: Boolean = false
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   override def accessMode: Option[String] = Some("mtls")
@@ -609,7 +677,8 @@ object NgClientCertApikeyExtractorConfig {
         apiId = ApikeyFromPlan.apiId(json),
         planId = ApikeyFromPlan.planId(json),
         throttlingStrategy = ApikeyFromPlan.throttlingStrategy(json),
-        apikey = ApikeyFromPlan.apikeyTemplate(json)
+        apikey = ApikeyFromPlan.apikeyTemplate(json),
+        subscriptionRequired = ApikeyFromPlan.subscriptionRequired(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -696,7 +765,8 @@ case class NgOidcApikeyExtractorConfig(
     // the iss a token must carry, not checked when empty
     issuer: Option[String] = None,
     // a token must carry one of them in aud, not checked when empty
-    audiences: Seq[String] = Seq.empty
+    audiences: Seq[String] = Seq.empty,
+    subscriptionRequired: Boolean = false
 ) extends NgPluginConfig
     with ApikeyFromPlanConfig {
   override def accessMode: Option[String] = Some("oauth2-remote")
@@ -764,6 +834,7 @@ object NgOidcApikeyExtractorConfig {
         planId = ApikeyFromPlan.planId(json),
         throttlingStrategy = ApikeyFromPlan.throttlingStrategy(json),
         apikey = ApikeyFromPlan.apikeyTemplate(json),
+        subscriptionRequired = ApikeyFromPlan.subscriptionRequired(json),
         issuer = OAuth2RemoteAccessModeConfiguration.readIssuer(json),
         audiences = OAuth2RemoteAccessModeConfiguration.readAudiences(json)
       )
@@ -984,11 +1055,19 @@ class NgApiConsumerEnforcer extends NgAccessValidator {
         ctx.attrs.get(otoroshi.plugins.Keys.UserKey) match {
           case Some(_) => NgAccess.NgAllowed.vfuture
           case None    =>
+            // a plan that requires a subscription refused the caller: the reason says who and on which plan
+            val reason = ctx.attrs
+              .get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
+              .flatMap(_.select("not_subscribed").asOpt[JsObject])
+              .map { refused =>
+                s"client id '${refused.select("client_id").asString}' is not subscribed to plan '${refused.select("plan").asString}'"
+              }
+              .getOrElse("no consumer identified on the call")
             error(
               Results.Unauthorized,
               "You're not authorized here !",
               "errors.auth.unauthorized",
-              "no consumer identified on the call"
+              reason
             )
         }
     }

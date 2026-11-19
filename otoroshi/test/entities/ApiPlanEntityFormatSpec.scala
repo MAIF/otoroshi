@@ -367,10 +367,17 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
 
     "write a configuration" in {
       format.writes(JWTAccessModeConfiguration(Some("v1"), Some("sub"), createIfMissing = true)) mustBe Json.obj(
-        "verifier"          -> "v1",
-        "client_id_path"    -> "sub",
-        "create_if_missing" -> true
+        "verifier"              -> "v1",
+        "client_id_path"        -> "sub",
+        "create_if_missing"     -> true,
+        "subscription_required" -> false
       )
+    }
+
+    "read and write subscription_required, false when absent" in {
+      readOk(format, Json.obj()).subscriptionRequired mustBe false
+      readOk(format, Json.obj("subscription_required" -> true)).subscriptionRequired mustBe true
+      roundTrip(format, JWTAccessModeConfiguration(Some("v1"), subscriptionRequired = true)).subscriptionRequired mustBe true
     }
 
     "round trip a configuration" in {
@@ -406,8 +413,15 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
         "regex_subject_dns" -> Json.arr("CN=client.*"),
         "regex_issuer_dns"  -> Json.arr("CN=Otoroshi CA"),
         "client_id_field"   -> "CN",
-        "create_if_missing" -> true
+        "create_if_missing" -> true,
+        "subscription_required" -> false
       )
+    }
+
+    "read and write subscription_required, false when absent" in {
+      readOk(format, Json.obj()).subscriptionRequired mustBe false
+      readOk(format, Json.obj("subscription_required" -> true)).subscriptionRequired mustBe true
+      roundTrip(format, full.copy(subscriptionRequired = true)).subscriptionRequired mustBe true
     }
 
     "round trip a configuration" in {
@@ -445,8 +459,15 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
         "user_metadata_key" -> "profile",
         "create_if_missing" -> true,
         "issuer"            -> JsNull,
-        "audiences"         -> Json.arr()
+        "audiences"         -> Json.arr(),
+        "subscription_required" -> false
       )
+    }
+
+    "read and write subscription_required, false when absent" in {
+      readOk(format, Json.obj()).subscriptionRequired mustBe false
+      readOk(format, Json.obj("subscription_required" -> true)).subscriptionRequired mustBe true
+      roundTrip(format, full.copy(subscriptionRequired = true)).subscriptionRequired mustBe true
     }
 
     "round trip a configuration" in {

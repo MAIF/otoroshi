@@ -1,6 +1,9 @@
 package plugins
 
-import functional.PluginsTestSpec
+import functional.PluginsTestSpecBase
+import org.apache.pekko.actor.Props
+import otoroshi.events.GatewayEvent
+import otoroshi.models.ApiKey
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.models.{EntityLocation, GlobalJwtVerifier, HSAlgoSettings, InHeader, PassThrough, VerificationSettings}
@@ -11,7 +14,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.*
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters.*
 
@@ -51,7 +54,7 @@ class ApiPlanApikeyProbe extends otoroshi.next.plugins.api.NgRequestTransformer 
   }
 }
 
-class ApiPlanPluginsTests(parent: PluginsTestSpec) {
+class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
   import parent.*
 
   // -----------------------------------------------------------------------------------------------
@@ -551,5 +554,155 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
       "${req.ip}",
       "${req.headers.x-consumer}"
     )
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  // a plan that requires a subscription
+  // -----------------------------------------------------------------------------------------------
+
+  // a jwt plan that requires a subscription only serves the consumers its subscriptions provisioned a key for
+  def jwtSubscriptionRequired(): Unit = {
+    ApiPlanApikeySeen.reset()
+    val subscriptionsPath = "/apis/apis.otoroshi.io/v1/apisubscriptions"
+    val verifierId        = s"verifier_${IdGenerator.uuid}"
+    createOtoroshiVerifier(
+      GlobalJwtVerifier(
+        id = verifierId,
+        name = verifierId,
+        desc = verifierId,
+        strict = true,
+        source = InHeader(name = "Authorization", remove = "Bearer "),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = PassThrough(verificationSettings = VerificationSettings())
+      )
+    ).futureValue
+
+    def jwtConf(required: Boolean) =
+      Json.obj("verifier" -> verifierId, "client_id_path" -> "client_id", "subscription_required" -> required)
+    // another plan of the api on the same verifier, not served: its subscriptions do not open the plan under test
+    val otherPlan = ApiPlan(plan("plan-sub-other", "jwt", jwtConf(true)).raw ++ Json.obj("status" -> "staging"))
+    val base      = apiWith(
+      Seq(plan("plan-sub-jwt", "jwt", jwtConf(false)), otherPlan),
+      flowPlugins = NgPlugins(Seq(probe("sub-jwt")))
+    )
+    // every variant gets a route id of its own: the configs of the plugins of a route are cached by route id
+    def variant(plans: ApiPlan*): Api =
+      base.copy(plans = plans, routes = base.routes.map(_.copy(id = s"apiroute_${IdGenerator.uuid}")))
+    val required = variant(plan("plan-sub-jwt", "jwt", jwtConf(true)), otherPlan)
+
+    // the extractor of the plan carries the option
+    routeOf(required).plugins.slots
+      .filter(_.plugin == NgPluginHelper.pluginId[NgJwtApikeyExtractor])
+      .map(_.config.raw.select("subscription_required").asOpt[Boolean]) mustBe Seq(Some(true))
+
+    val events    = new ConcurrentLinkedQueue[GatewayEvent]()
+    val collector = env.analyticsActorSystem.actorOf(Props(new ClientIpAddressTests.EventsCollector(events)))
+    env.analyticsActorSystem.eventStream.subscribe(collector, classOf[GatewayEvent])
+
+    def keyOf(clientId: String): String = s"jwt_${base.id}_plan-sub-jwt_$clientId"
+    def call(clientId: String): Int = {
+      val token = JWT.create().withClaim("client_id", clientId).sign(Algorithm.HMAC512("secret"))
+      callApi(base, Seq("Authorization" -> s"Bearer $token")).status
+    }
+    def stored(clientId: String): Option[ApiKey] = env.datastores.apiKeyDataStore.findById(keyOf(clientId)).futureValue
+    def waitUntil(what: String)(cond: => Boolean): Unit = {
+      val deadline = System.currentTimeMillis() + 15000
+      while (!cond && System.currentTimeMillis() < deadline) await(100.millis)
+      withClue(what)(cond mustBe true)
+    }
+    // the extractor reads the key and the subscription from the proxy state
+    def awaitState(subscription: String, status: Option[String], clientId: String): Unit = waitUntil(
+      s"the proxy state holds the subscription $subscription as $status and the key of $clientId as stored"
+    ) {
+      env.proxyState.apiSubscription(subscription).map(_.status.name) == status &&
+      env.proxyState.apikey(keyOf(clientId)).map(_.enabled) == stored(clientId).map(_.enabled)
+    }
+    val template = otoroshiApiCall("GET", s"$subscriptionsPath/_template").futureValue._1.as[JsObject]
+    def subscribe(id: String, planId: String, clientId: String): Unit = {
+      val (body, status) = otoroshiApiCall(
+        "POST",
+        subscriptionsPath,
+        Some(
+          template ++ Json.obj(
+            "id"                -> id,
+            "name"              -> id,
+            "api_ref"           -> base.id,
+            "plan_ref"          -> planId,
+            "owner_ref"         -> "client-1",
+            "subscription_kind" -> "jwt",
+            "status"            -> "enabled",
+            "client_id"         -> clientId
+          )
+        )
+      ).futureValue
+      withClue(body.stringify)(status mustBe 201)
+    }
+    def setStatus(id: String, status: String): Unit = {
+      val current = otoroshiApiCall("GET", s"$subscriptionsPath/$id").futureValue._1.as[JsObject]
+      otoroshiApiCall("PUT", s"$subscriptionsPath/$id", Some(current ++ Json.obj("status" -> status))).futureValue._2 mustBe 200
+    }
+
+    // the option off: any valid token is a consumer, its key is minted on the fly
+    deploy(variant(plan("plan-sub-jwt", "jwt", jwtConf(false)), otherPlan))
+    try {
+      call("client-2") mustBe 200
+      waitUntil("the key of client-2 is minted")(stored("client-2").isDefined)
+      waitUntil("the proxy state holds the key of client-2")(env.proxyState.apikey(keyOf("client-2")).isDefined)
+      val mintedBefore = stored("client-2").map(_.json)
+
+      deploy(required)
+
+      // no subscription: not identified by the plan, nothing is minted, and the event says why
+      call("client-1") mustBe 401
+      stored("client-1") mustBe None
+      waitUntil("the event of the refused call") {
+        events.asScala.exists(_.extraAnalyticsData.exists(_.select("apikey_rejection_reason").asOpt[String].contains(
+          s"client id '${keyOf("client-1")}' is not subscribed to plan 'plan-sub-jwt'"
+        )))
+      }
+
+      // an enabled subscription with the client id of the caller: served, as the key it provisioned
+      subscribe("sub-required-c1", "plan-sub-jwt", "client-1")
+      awaitState("sub-required-c1", Some("enabled"), "client-1")
+      ApiPlanApikeySeen.reset()
+      call("client-1") mustBe 200
+      ApiPlanApikeySeen.get("sub-jwt") mustBe Some(keyOf("client-1"))
+      stored("client-1").flatMap(_.apiRef).map(_.subscription) mustBe Some("sub-required-c1")
+
+      Seq("disabled" -> 401, "pending" -> 401, "enabled" -> 200).foreach { case (status, expected) =>
+        setStatus("sub-required-c1", status)
+        awaitState("sub-required-c1", Some(status), "client-1")
+        withClue(status)(call("client-1") mustBe expected)
+      }
+      otoroshiApiCall("DELETE", s"$subscriptionsPath/sub-required-c1").futureValue._2 mustBe 200
+      awaitState("sub-required-c1", None, "client-1")
+      call("client-1") mustBe 401
+
+      // the key minted on the fly while the option was off is not a subscription, and is left as it is
+      call("client-2") mustBe 401
+      stored("client-2").map(_.json) mustBe mintedBefore
+
+      // a subscription to another plan of the api does not open this one
+      subscribe("sub-required-c3", "plan-sub-other", "client-3")
+      waitUntil("the proxy state holds the subscription to the other plan") {
+        env.proxyState.apiSubscription("sub-required-c3").isDefined
+      }
+      call("client-3") mustBe 401
+
+      // with a keyless plan next to it, an unsubscribed token is served by the keyless plan, as any caller the jwt
+      // plan does not identify
+      deploy(variant(plan("plan-sub-jwt", "jwt", jwtConf(true)), otherPlan, plan("plan-sub-kl", "keyless")))
+      ApiPlanApikeySeen.reset()
+      call("client-4") mustBe 200
+      ApiPlanApikeySeen.get("sub-jwt") mustBe Some(s"keyless_${base.id}_plan-sub-kl_127.0.0.1")
+    } finally {
+      env.analyticsActorSystem.eventStream.unsubscribe(collector)
+      env.analyticsActorSystem.stop(collector)
+      otoroshiApiCall("DELETE", s"$subscriptionsPath/sub-required-c3").futureValue
+      env.datastores.apiKeyDataStore.findAll().futureValue.filter(_.apiRef.exists(_.api == base.id)).foreach { key =>
+        env.datastores.apiKeyDataStore.delete(key.clientId).futureValue
+      }
+      undeploy(base)
+    }
   }
 }

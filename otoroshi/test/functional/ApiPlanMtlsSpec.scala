@@ -346,6 +346,62 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       } finally undeploy(api)
     }
 
+    "only serve the certificate of a consumer that subscribed, when the plan requires a subscription" in {
+      given Env         = otoEnv
+      val api           = deployApi(
+        "plan-mtls-required",
+        Json.obj(
+          "regex_subject_dns"     -> Json.arr(".*CN=mtls-client.*"),
+          "client_id_field"       -> "CN",
+          "subscription_required" -> true
+        ),
+        "mtls-required"
+      )
+      val keyId         = s"mtls_${api.id}_plan-mtls-required_mtls-client"
+      val subscriptions = "/apis/apis.otoroshi.io/v1/apisubscriptions"
+      def awaitState(status: Option[String]): Unit = awaitCond(30.seconds) {
+        otoEnv.proxyState.apiSubscription("sub-mtls-required").map(_.status.name) == status &&
+        otoEnv.proxyState.apikey(keyId).map(_.enabled) ==
+          otoEnv.datastores.apiKeyDataStore.findById(keyId).futureValue.map(_.enabled)
+      }
+      try {
+        // no subscription: not served, and nothing is minted
+        call(Some(matchingClient)) mustBe Some(401)
+        otoEnv.datastores.apiKeyDataStore.findById(keyId).futureValue mustBe None
+
+        val template = otoroshiApiCall("GET", s"$subscriptions/_template").futureValue._1.as[JsObject]
+        otoroshiApiCall(
+          "POST",
+          subscriptions,
+          Some(
+            template ++ Json.obj(
+              "id"                -> "sub-mtls-required",
+              "name"              -> "sub-mtls-required",
+              "api_ref"           -> api.id,
+              "plan_ref"          -> "plan-mtls-required",
+              "owner_ref"         -> "client-1",
+              "subscription_kind" -> "mtls",
+              "status"            -> "enabled",
+              "client_id"         -> "mtls-client"
+            )
+          )
+        ).futureValue._2 mustBe 201
+        awaitState(Some("enabled"))
+        call(Some(matchingClient)) mustBe Some(200)
+
+        val current = otoroshiApiCall("GET", s"$subscriptions/sub-mtls-required").futureValue._1.as[JsObject]
+        otoroshiApiCall("PUT", s"$subscriptions/sub-mtls-required", Some(current ++ Json.obj("status" -> "disabled")))
+          .futureValue
+          ._2 mustBe 200
+        awaitState(Some("disabled"))
+        call(Some(matchingClient)) mustBe Some(401)
+      } finally {
+        otoroshiApiCall("DELETE", s"$subscriptions/sub-mtls-required").futureValue
+        otoEnv.datastores.apiKeyDataStore.delete(keyId).futureValue
+        undeploy(api)
+      }
+    }
+
     "let a subscription with the client id of a certificate decide for its consumer" in {
       given Env         = otoEnv
       val api           = deployApi(
@@ -678,7 +734,12 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
 
   // the demo api with the plans of the kinds given in the status given, and without the plans dropped. The scenario
   // reaches the route through the metadata of the api, which tells when the router serves this version of the api
-  private def deployDemo(scenario: String, statuses: Map[String, String], dropped: Set[String] = Set.empty): Unit = {
+  private def deployDemo(
+      scenario: String,
+      statuses: Map[String, String],
+      dropped: Set[String] = Set.empty,
+      configs: Map[String, JsObject] = Map.empty
+  ): Unit = {
     given Env = otoEnv
     val api   = demo.api.copy(
       metadata = demo.api.metadata + ("scenario" -> scenario),
@@ -690,6 +751,15 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
             case None         => plan
           }
         }
+        .map { plan =>
+          configs.collectFirst { case (kind, conf) if plan.id == s"$demoPrefix-$kind-plan" => conf } match {
+            case Some(conf) =>
+              ApiPlan(plan.raw ++ Json.obj("access_mode_configuration" -> (plan.raw.select("access_mode_configuration").asOpt[JsObject].getOrElse(Json.obj()) ++ conf)))
+            case None       => plan
+          }
+        },
+      // one route id per scenario: the configs of the plugins of a route are cached for a few seconds by route id
+      routes = demo.api.routes.map(_.copy(id = s"$demoPrefix-route-$scenario"))
     )
     otoEnv.datastores.apiDataStore.set(api).futureValue mustBe true
     awaitCond(30.seconds) {
@@ -832,6 +902,59 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
             results.filterNot(_.kind == "jwt").foreach(e => mustBeServedBy(e, e.kind, e.consumer))
           }
         }
+      }
+    }
+
+    "only serve the subscribed consumers of an oauth2-remote plan that requires a subscription" in {
+      given Env         = otoEnv
+      val subscriptions = "/apis/apis.otoroshi.io/v1/apisubscriptions"
+      val planId        = s"$demoPrefix-oauth2-remote-plan"
+      val consumer      = s"oauth2_${demoPrefix}_${planId}_consumer-from-oidc"
+      // without the keyless plan, that would serve the call of a token the oauth2-remote plan does not identify
+      deployDemo(
+        "oauth2-remote-subscription-required",
+        Map.empty,
+        dropped = Set("keyless"),
+        configs = Map("oauth2-remote" -> Json.obj("subscription_required" -> true))
+      )
+      def oidcCall(): DemoCall = demoHttpCall(
+        "oidc token, client_id claim",
+        "Authorization" -> s"Bearer ${demoJwt(demoOidcSecret, "iss" -> "demo-idp", "client_id" -> "consumer-from-oidc")}"
+      )
+      // the key minted on the fly by the previous scenarios is not a subscription
+      withClue("without subscription")(oidcCall().status mustBe 401)
+
+      val template          = otoroshiApiCall("GET", s"$subscriptions/_template").futureValue._1.as[JsObject]
+      val (created, status) = otoroshiApiCall(
+        "POST",
+        subscriptions,
+        Some(
+          template ++ Json.obj(
+            "id"                -> "sub-demo-oidc",
+            "name"              -> "sub-demo-oidc",
+            "api_ref"           -> demoPrefix,
+            "plan_ref"          -> planId,
+            "owner_ref"         -> "client-1",
+            "subscription_kind" -> "oauth2-remote",
+            "status"            -> "enabled",
+            "client_id"         -> "consumer-from-oidc"
+          )
+        )
+      ).futureValue
+      withClue(created.stringify)(status mustBe 201)
+      try {
+        awaitCond(30.seconds) {
+          otoEnv.proxyState.apiSubscription("sub-demo-oidc").isDefined &&
+          otoEnv.proxyState.apikey(consumer).flatMap(_.apiRef).map(_.subscription).contains("sub-demo-oidc")
+        }
+        val served = oidcCall()
+        withClue("with an enabled subscription") {
+          served.status mustBe 200
+          served.consumer mustBe Some(consumer)
+          served.plan mustBe Some(planId)
+        }
+      } finally {
+        otoroshiApiCall("DELETE", s"$subscriptions/sub-demo-oidc").futureValue
       }
     }
 

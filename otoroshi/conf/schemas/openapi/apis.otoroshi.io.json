@@ -958,6 +958,10 @@
       "create_if_missing": {
         "type": "boolean",
         "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. `true` when the configuration does not say, and for a plan without any configuration"
+      },
+      "subscription_required": {
+        "type": "boolean",
+        "description": "Only the consumers with an `enabled` subscription to the plan, whose `client_id` is the one they call with, are served; the others get `401`. `create_if_missing` is then ignored. Defaults to `false`: every valid token (or certificate) is a consumer of the plan"
       }
     },
     "example": {
@@ -1001,6 +1005,10 @@
       "create_if_missing": {
         "type": "boolean",
         "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. `true` when the configuration does not say, and for a plan without any configuration"
+      },
+      "subscription_required": {
+        "type": "boolean",
+        "description": "Only the consumers with an `enabled` subscription to the plan, whose `client_id` is the one they call with, are served; the others get `401`. `create_if_missing` is then ignored. Defaults to `false`: every valid token (or certificate) is a consumer of the plan"
       }
     },
     "example": {
@@ -1065,6 +1073,10 @@
       "create_if_missing": {
         "type": "boolean",
         "description": "Whether the api key minted for a consumer seen for the first time is stored, and shows up in the api keys of otoroshi. Otherwise it only lives for the duration of the call. Either way the call is served and counted. `true` when the configuration does not say, and for a plan without any configuration"
+      },
+      "subscription_required": {
+        "type": "boolean",
+        "description": "Only the consumers with an `enabled` subscription to the plan, whose `client_id` is the one they call with, are served; the others get `401`. `create_if_missing` is then ignored. Defaults to `false`: every valid token (or certificate) is a consumer of the plan"
       },
       "issuer": {
         "type": "string",
