@@ -583,11 +583,12 @@ You can deploy multiple catalogs in a single request by adding more entries to t
 An API (`apis.otoroshi.io/Api`) written by a catalog does not go through a draft: the source plays the role of the draft, and each deploy of the catalog is a deploy of the API.
 
 - The API is created in the `state` of the source: a source can hold a `published` API, and its routes are served after the deploy.
-- The fields locked in production (`domain`, `contextPath`, `routes`, `backends`, `flows`, `documentation`, `testing`) take the content of the source. A deploy that changes what is live adds an entry, owned by `remote_catalog=<catalog_id>`, to the deployment history of the API. An unchanged source adds none.
+- The fields locked in production (`domain`, `contextPath`, `routes`, `backends`, `flows`, `documentation`, `testing`) take the content of the source. A deploy that changes what is live (one of these fields, or the `plans`) adds an entry, owned by `remote_catalog=<catalog_id>`, to the deployment history of the API. An unchanged source adds none.
+- A source that sets `metadata.deployment_ref` on its API (a commit sha, a release number, a tag: at most 256 characters) gets it as the `ref` of every deployment of that API, and a new `deployment_ref` adds a deployment even when nothing else changed: `deployments[0].ref` of the live API tells which version of the source is live.
 - The state transitions are the ones of a deploy: a `published` API cannot go back to `staging`, and a `removed` API has to be reopened in `staging` first.
 - The deployment history and the secret of the testing header stay the ones of the live API, whatever the source holds.
 - An edit of the API from the backoffice is replaced by the source at the next deploy of the catalog.
-- An API removed from the source is deleted with its routes. The subscriptions that are not in the source, their apikeys and the draft of the API are not deleted.
+- An API removed from the source is deleted with its routes, its subscriptions, the apikeys they hold and the apikeys its plans minted for their consumers. The draft of the API is not deleted.
 
 ### Dry-run (test)
 

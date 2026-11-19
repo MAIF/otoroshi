@@ -289,4 +289,113 @@ class RemoteCatalogsApisTests(parent: PluginsTestSpecBase) {
     engine.undeploy(subsCatalog).futureValue
     Files.walk(subsRoot).sorted(java.util.Comparator.reverseOrder()).forEach(Files.delete)
   }
+
+  // the deployments of an api written as code: the ref of the version of the source, the plans, and the last five kept
+  private val refsRoot: Path = Files.createTempDirectory("remoteCatalogDeploymentRefsTest")
+  private val refsApiId      = s"api_${IdGenerator.uuid}"
+  private val refsCatalog    = catalog.copy(
+    id = s"remote-catalog_${IdGenerator.uuid}",
+    sourceConfig = Json.obj("path" -> refsRoot.toAbsolutePath.toString)
+  )
+
+  private def writeRefsSource(ref: String, quota: Long, path: String = "/v1"): Unit = {
+    given otoroshi.env.Env = env
+    val flow               = ApiFlows.empty
+    val backend            = ApiBackend.empty.copy(id = "backend")
+    val api                = Api(
+      location = EntityLocation.default,
+      id = refsApiId,
+      name = refsApiId,
+      description = "",
+      domain = s"$refsApiId.oto.tools",
+      contextPath = "",
+      version = "1.0.0",
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      groups = Seq.empty,
+      state = ApiPublished,
+      blueprint = ApiBlueprint.REST,
+      testing = ApiTesting(),
+      backends = Seq(backend),
+      flows = Seq(flow),
+      plans = Seq(
+        ApiPlan(
+          Json.obj(
+            "id"                             -> "plan-public",
+            "name"                           -> "public",
+            "status"                         -> "published",
+            "access_mode_configuration_type" -> "keyless",
+            "access_mode_configuration"      -> Json.obj("create_if_missing" -> false),
+            "rateLimiting"                   -> Json.obj(
+              "strategy" -> otoroshi.next.plugins
+                .FixedWindowStrategyConfig(quota = otoroshi.next.plugins.AllowedQuota(window = quota))
+                .json
+            )
+          )
+        )
+      ),
+      routes = Seq(
+        ApiRoute(
+          id = s"apiroute_$refsApiId",
+          frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(path))),
+          flowRef = flow.id,
+          backend = backend.id
+        )
+      ),
+      metadata = Map("deployment_ref" -> ref)
+    )
+    Files.write(
+      refsRoot.resolve("api.json"),
+      (api.json.as[JsObject] - "testing" ++ Json.obj("kind" -> "apis.otoroshi.io/Api")).stringify.getBytes
+    )
+  }
+
+  private def deployRefs(): Seq[ApiDeployment] = {
+    val report = engine.deploy(refsCatalog, Json.obj()).futureValue.toOption.get
+    apiResult(report).errors mustBe empty
+    env.proxyState.sync().futureValue
+    env.datastores.apiDataStore.findById(refsApiId).futureValue.get.deployments
+  }
+
+  private def quotaOf(deployment: ApiDeployment): Long =
+    deployment.apiDefinition
+      .select("plans")
+      .as[Seq[JsObject]]
+      .head
+      .select("rateLimiting")
+      .select("strategy")
+      .select("quota")
+      .select("window")
+      .as[Long]
+
+  try {
+    writeRefsSource("r1", 10)
+    val first = deployRefs()
+    first.map(_.ref) mustBe Seq(Some("r1"))
+    quotaOf(first.head) mustBe 10
+
+    // the same source deployed again adds nothing
+    deployRefs() mustBe first
+
+    // a new version of the source, with no other change, is a deployment
+    writeRefsSource("r2", 10)
+    deployRefs().map(_.ref) mustBe Seq(Some("r2"), Some("r1"))
+
+    // a change of the quota of a plan only is a deployment, with the new quota
+    writeRefsSource("r2", 20)
+    val quotaChanged = deployRefs()
+    quotaChanged.map(_.ref) mustBe Seq(Some("r2"), Some("r2"), Some("r1"))
+    quotaOf(quotaChanged.head) mustBe 20
+
+    // without the setting, the last five are kept
+    Seq("r3", "r4", "r5").foreach { ref =>
+      writeRefsSource(ref, 20)
+      deployRefs()
+    }
+    deployRefs().map(_.ref) mustBe Seq(Some("r5"), Some("r4"), Some("r3"), Some("r2"), Some("r2"))
+  } finally {
+    engine.undeploy(refsCatalog).futureValue
+    Files.walk(refsRoot).sorted(java.util.Comparator.reverseOrder()).forEach(Files.delete)
+  }
 }

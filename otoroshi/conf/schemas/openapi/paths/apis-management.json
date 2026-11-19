@@ -1460,7 +1460,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Deploy the draft of an api",
-      "description": "Replaces the api with its draft: everything comes from the draft except the id, the documentation and the clients, which are the ones of the api, and the routes, whose ids get the `_prod` suffix. A draft in the `staging` state is published, otherwise the api keeps its state; an api in a state that cannot be deployed (a removed api) is refused. The deployment of the body, with a slim definition of the draft instead of its `apiDefinition`, becomes the first of the `deployments` of the api, which keeps the last five. An `ApiDeploymentEvent` analytics event is sent. The admin behind the credentials has to be able to write the api.",
+      "description": "Replaces the api with its draft: everything comes from the draft except the id, the documentation and the clients, which are the ones of the api, and the routes, whose ids get the `_prod` suffix. A draft in the `staging` state is published, otherwise the api keeps its state; an api in a state that cannot be deployed (a removed api) is refused. The deployment of the body, with a slim definition of the draft instead of its `apiDefinition`, becomes the first of the `deployments` of the api, which keeps the last `otoroshi.apis.deployments-history-size` (5 by default): the `ref` of the body is kept, and the slim definition holds the plans of the draft. An `ApiDeploymentEvent` analytics event is sent, with the `deploymentId` and the `ref` of the deployment: the full history is the stream of these events sent to the data exporters. The admin behind the credentials has to be able to write the api.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.createNewVersion",
       "parameters": [
         {
@@ -1480,7 +1480,7 @@
         }
       ],
       "requestBody": {
-        "description": "The deployment. Its `id` is generated and its `at` is now when absent; its `apiDefinition` is required but replaced by a slim definition of the deployed draft",
+        "description": "The deployment. Its `id` is generated and its `at` is now when absent; its `apiDefinition` is required but replaced by a slim definition of the deployed draft; its `ref`, the version deployed in the tool that deploys, is kept",
         "required": true,
         "content": {
           "application/json": {
@@ -1502,7 +1502,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body is not valid json, it is not a deployment (`bad entity`), the api cannot be deployed from its state (`invalid_deploy_transition`), or it could not be saved",
+          "description": "The credentials are missing, the body is not valid json, it is not a deployment (`bad entity`), its `ref` is longer than 256 characters (`bad_request`), the api cannot be deployed from its state (`invalid_deploy_transition`), or it could not be saved",
           "content": {
             "application/json": {
               "schema": {

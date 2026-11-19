@@ -225,10 +225,31 @@ case class ApiDeployment(
     owner: String,
     at: DateTime,
     apiDefinition: JsValue,
-    version: String
+    version: String,
+    // the identifier, in the tool that deployed, of the version deployed (a commit sha, a release number, a tag).
+    // Otoroshi does not interpret it
+    ref: Option[String] = None
 )
 
 object ApiDeployment {
+
+  val maxRefLength = 256
+
+  // a trimmed ref, a blank one is no ref
+  def readRef(value: Option[String]): Option[String] = value.map(_.trim).filter(_.nonEmpty)
+
+  def refTooLong(ref: Option[String]): Boolean = ref.exists(_.length > maxRefLength)
+
+  val refTooLongError: JsObject = Json.obj(
+    "error"             -> "bad_request",
+    "error_description" -> s"the ref of a deployment is longer than $maxRefLength characters"
+  )
+
+  // how many deployments an api keeps, the last ones: the full history is the stream of the ApiDeploymentEvent
+  // sent to the data exporters
+  def historySize(env: Env): Int =
+    env.configuration.getOptional[Int]("otoroshi.apis.deployments-history-size").getOrElse(5).max(1)
+
   val _fmt: Format[ApiDeployment] = new Format[ApiDeployment] {
     override def reads(json: JsValue): JsResult[ApiDeployment] = Try {
       ApiDeployment(
@@ -237,7 +258,8 @@ object ApiDeployment {
         owner = json.select("owner").asString,
         at = json.select("at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         apiDefinition = json.select("apiDefinition").as[JsValue],
-        version = json.select("version").asOptString.getOrElse("0.0.1")
+        version = json.select("version").asOptString.getOrElse("0.0.1"),
+        ref = readRef(json.select("ref").asOpt[String])
       )
     } match {
       case Failure(ex)    =>
@@ -251,7 +273,8 @@ object ApiDeployment {
       "owner"         -> o.owner,
       "at"            -> o.at.getMillis,
       "apiDefinition" -> o.apiDefinition,
-      "version"       -> o.version
+      "version"       -> o.version,
+      "ref"           -> o.ref
     )
   }
 }
@@ -2461,14 +2484,19 @@ object Api {
     diffs.toSeq
   }
 
-  // the design a deploy puts in production: only the fields locked in production are useful for rollback
-  // and audit, so the subscriptions, clients, plans, testing and metadata are left out
+  // the design a deploy puts in production: the fields locked in production, and the plans, which decide who gets in
+  // and how much (an audit or a comparison of two deployments needs them). The subscriptions, clients, testing and
+  // metadata are left out
   def deploymentDefinition(api: Api): JsValue = Json.obj(
     "routes"        -> JsArray(api.routes.map(ApiRoute._fmt.writes)),
     "backends"      -> JsArray(api.backends.map(ApiBackend._fmt.writes)),
     "flows"         -> JsArray(api.flows.map(ApiFlows._fmt.writes)),
-    "documentation" -> api.documentation.map(ApiDocumentation._fmt.writes).getOrElse[JsValue](JsNull)
+    "documentation" -> api.documentation.map(ApiDocumentation._fmt.writes).getOrElse[JsValue](JsNull),
+    "plans"         -> JsArray(api.plans.map(_.raw))
   )
+
+  // the ref a source puts on the api it writes, given to its deployments
+  def deploymentRef(api: Api): Option[String] = ApiDeployment.readRef(api.metadata.get("deployment_ref"))
 
   // a remote catalog marks what it writes with its id in `created_by`
   def isWrittenByCatalog(api: Api): Boolean =
@@ -2494,11 +2522,17 @@ object Api {
         deployments = old.deployments,
         testing = entity.testing.copy(headerValue = old.testing.headerValue)
       )
-      val deployed = isLive(api.state) && (!isLive(old.state) || diffProtectedFields(old, api).nonEmpty)
+      // a new version of the source put live, or a change of the plans of a live api, is a deployment too
+      val deployed = isLive(api.state) && (
+        !isLive(old.state) ||
+        diffProtectedFields(old, api).nonEmpty ||
+        old.plans.map(_.raw) != api.plans.map(_.raw) ||
+        deploymentRef(api) != old.deployments.headOption.flatMap(_.ref)
+      )
       (if (deployed) withDeployment(api, env) else api).rightf
   }
 
-  // records the design of the api as its last deployment, the last five are kept as for a deploy
+  // records the design of the api as its last deployment, the last ones are kept as for a deploy
   private def withDeployment(api: Api, env: Env): Api = {
     val deployment = ApiDeployment(
       id = IdGenerator.namedId("api_deployment", env),
@@ -2506,9 +2540,10 @@ object Api {
       owner = api.metadata.getOrElse("created_by", ""),
       at = DateTime.now(),
       apiDefinition = deploymentDefinition(api),
-      version = api.version
+      version = api.version,
+      ref = deploymentRef(api)
     )
-    api.copy(deployments = (deployment +: api.deployments).slice(0, 5))
+    api.copy(deployments = (deployment +: api.deployments).slice(0, ApiDeployment.historySize(env)))
   }
 
   def writeValidator(
@@ -2540,7 +2575,9 @@ object Api {
             apiDefinition = deployment.apiDefinition,
             version = api.version,
             `@service` = api.name,
-            `@serviceId` = api.id
+            `@serviceId` = api.id,
+            deploymentId = deployment.id,
+            ref = deployment.ref
           ).toAnalytics()
         }
         oldEntity match {
@@ -2567,6 +2604,9 @@ object Api {
       env: Env
   ): Future[Either[JsValue, Api]] = {
     oldEntity match {
+      // the ref a source gives to the deployments of its api
+      case _ if ApiDeployment.refTooLong(deploymentRef(entity)) =>
+        (ApiDeployment.refTooLongError ++ Json.obj("http_status_code" -> 400)).leftf
       case _ if isWrittenByCatalog(entity) => catalogDeploy(entity, oldEntity.map(_._1), env)
       case None      =>
         // Create path: API must start in staging.

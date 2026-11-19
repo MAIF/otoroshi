@@ -2100,7 +2100,7 @@
       },
       "apiDefinition": {
         "type": "object",
-        "description": "The design that was deployed: the fields of the api locked in production. It is kept as it is sent",
+        "description": "The design that was deployed: the fields of the api locked in production, and its plans. It is kept as it is sent",
         "properties": {
           "routes": {
             "type": "array",
@@ -2131,6 +2131,13 @@
             ],
             "nullable": true,
             "description": "The documentation of the api, `null` for none"
+          },
+          "plans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiPlan"
+            },
+            "description": "The plans that were deployed, as stored in the `plans` of the api: their access modes, quotas and plugins decide who got in and how much. Absent from the deployments recorded before 18.0.x"
           }
         },
         "example": {
@@ -2160,6 +2167,13 @@
         "type": "string",
         "description": "The version of the api that was deployed. Defaults to `0.0.1`",
         "example": "1.0.0"
+      },
+      "ref": {
+        "type": "string",
+        "nullable": true,
+        "maxLength": 256,
+        "description": "The identifier, in the tool that deployed, of the version deployed: a commit sha, a release number, a tag. Otoroshi does not interpret it. Kept from the body of `POST /apis/apis.otoroshi.io/v1/apis/{apiId}/deployments`, taken from the `deployment_ref` metadata of the api for the deploys of a remote catalog. Trimmed, a blank value is read as `null`; longer than 256 characters is refused with a `400`. `null` when not given",
+        "example": "release-42"
       }
     },
     "example": {

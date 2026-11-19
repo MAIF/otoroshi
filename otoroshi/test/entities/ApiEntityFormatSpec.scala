@@ -674,12 +674,13 @@ class ApiEntityFormatSpec extends EntityFormatSpec {
       Api.diffProtectedFields(full, changed) mustBe empty
     }
 
-    "write the locked fields only in a deployment definition" in {
+    "write the locked fields and the plans, as stored, in a deployment definition" in {
       Api.deploymentDefinition(full) mustBe Json.obj(
         "routes"        -> Json.arr(ApiRoute._fmt.writes(route)),
         "backends"      -> Json.arr(ApiBackend._fmt.writes(backend)),
         "flows"         -> Json.arr(ApiFlows._fmt.writes(flow)),
-        "documentation" -> ApiDocumentation._fmt.writes(documentation)
+        "documentation" -> ApiDocumentation._fmt.writes(documentation),
+        "plans"         -> JsArray(full.plans.map(_.raw))
       )
     }
 
@@ -1033,12 +1034,25 @@ class ApiEntityFormatSpec extends EntityFormatSpec {
         "owner"         -> "admin",
         "at"            -> 1700000000000L,
         "apiDefinition" -> Json.obj("routes" -> Json.arr()),
-        "version"       -> "1.0.0"
+        "version"       -> "1.0.0",
+        "ref"           -> JsNull
       )
     }
 
     "round trip a deployment" in {
       roundTrip(format, deployment)
+    }
+
+    "write and round trip the ref of a deployment" in {
+      (written(format, deployment.copy(ref = Some("release-42"))) \ "ref").as[String] mustBe "release-42"
+      roundTrip(format, deployment.copy(ref = Some("release-42"))).ref mustBe Some("release-42")
+    }
+
+    "read a deployment stored without ref, a null or a blank one, as without ref, and trim the others" in {
+      readOk(format, written(format, deployment) - "ref") mustBe deployment
+      readOk(format, written(format, deployment) ++ Json.obj("ref" -> JsNull)).ref mustBe None
+      readOk(format, written(format, deployment) ++ Json.obj("ref" -> "  ")).ref mustBe None
+      readOk(format, written(format, deployment) ++ Json.obj("ref" -> " r1 ")).ref mustBe Some("r1")
     }
 
     "read a deployment without id, date nor version with the defaults" in {

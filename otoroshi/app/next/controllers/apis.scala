@@ -717,6 +717,8 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
           case Some(api) =>
             ApiDeployment._fmt.reads(ctx.request.body) match {
               case JsError(_)               => Results.BadRequest(Json.obj("error" -> "bad entity")).future
+              case JsSuccess(deployment, _) if ApiDeployment.refTooLong(deployment.ref) =>
+                Results.BadRequest(ApiDeployment.refTooLongError).future
               case JsSuccess(deployment, _) =>
                 env.datastores.draftsDataStore.findById(apiId) flatMap {
                   case None               => Results.NotFound(Json.obj("error" -> "the api has no draft to deploy")).future
@@ -744,7 +746,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                           val slimApiDefinition: JsValue = Api.deploymentDefinition(apiDraft)
                           val slimDeployment            = deployment.copy(apiDefinition = slimApiDefinition)
                           val updatedApi                 = apiDraft.copy(
-                            deployments = (Seq(slimDeployment) ++ api.deployments).slice(0, 5),
+                            deployments = (Seq(slimDeployment) ++ api.deployments).slice(0, ApiDeployment.historySize(env)),
                             id = api.id,
                             routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
                             state = targetState,
@@ -767,7 +769,9 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                                 apiDefinition = slimDeployment.apiDefinition,
                                 version = api.version,
                                 `@service` = api.name,
-                                `@serviceId` = apiId
+                                `@serviceId` = apiId,
+                                deploymentId = slimDeployment.id,
+                                ref = slimDeployment.ref
                               ).toAnalytics()
 
                               if (result) {

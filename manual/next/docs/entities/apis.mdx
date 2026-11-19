@@ -709,7 +709,7 @@ When testing is enabled:
 
 ## Deployments
 
-Deployments track the history of API publications. Each time an API is published (its state transitions from staging to published), a deployment record is created.
+Deployments track the history of API publications. Each deploy of the draft (`POST .../apis/{apiId}/deployments`), and each deploy of a remote catalog that changes what is live, adds a deployment record first in the `deployments` of the API.
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -717,8 +717,14 @@ Deployments track the history of API publications. Each time an API is published
 | `apiRef` | string | Reference to the API |
 | `owner` | string | Who performed the deployment |
 | `at` | number | Timestamp of the deployment |
-| `apiDefinition` | object | Snapshot of the API definition at deployment time |
+| `apiDefinition` | object | Snapshot of what was deployed: the `routes`, `backends`, `flows` and `documentation` of the API, and its `plans` (their access modes, quotas and plugins decide who gets in and how much) |
 | `version` | string | Version of the API at deployment time |
+| `ref` | string | The identifier, in the tool that deployed, of the version deployed: a commit sha, a release number, a tag. Kept from the body of `POST .../deployments`, taken from the `deployment_ref` metadata of the API for the deploys of a remote catalog. At most 256 characters, `null` when not given |
+
+`deployments[0].ref` tells which version of the source is live. The API keeps the last
+`otoroshi.apis.deployments-history-size` deployments (env. `OTOROSHI_APIS_DEPLOYMENTS_HISTORY_SIZE`, 5 by default). The
+full history is the stream of `ApiDeploymentEvent` sent to the [data exporters](./data-exporters.mdx), each one with the
+`deploymentId` and the `ref` of its deployment.
 
 ## OpenAPI import
 

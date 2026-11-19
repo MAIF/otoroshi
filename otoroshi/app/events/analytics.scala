@@ -1049,7 +1049,11 @@ case class ApiDeploymentEvent(
     apiDefinition: JsValue,
     version: String,
     `@service`: String,
-    `@serviceId`: String
+    `@serviceId`: String,
+    // the id of the deployment in the history of the api, and the ref of the version deployed: the full history can be
+    // rebuilt from the exported events
+    deploymentId: String = "",
+    ref: Option[String] = None
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
@@ -1068,6 +1072,8 @@ object ApiDeploymentEvent {
       "owner"         -> o.owner,
       "at"            -> o.at,
       "apiDefinition" -> o.apiDefinition,
-      "version"       -> o.version
+      "version"       -> o.version,
+      "deploymentId"  -> o.deploymentId,
+      "ref"           -> o.ref
     )
 }

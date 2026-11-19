@@ -3,7 +3,9 @@ package functional
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.{Actor, Props}
 import otoroshi.env.Env
+import otoroshi.events.ApiDeploymentEvent
 import otoroshi.models.{
   ApiIdentifier,
   ApiKey,
@@ -22,7 +24,9 @@ import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.*
 import play.api.libs.ws.{readableAsString, WSAuthScheme, WSResponse}
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.*
+import scala.jdk.CollectionConverters.*
 
 // the operations of the management of the apis: the api keys of an api, its plans and subscriptions, its routes
 class ApiManagementSpec extends OtoroshiSpec {
@@ -33,6 +37,7 @@ class ApiManagementSpec extends OtoroshiSpec {
       ConfigFactory
         .parseString(s"""
           |otoroshi.next.state-sync-interval = 5
+          |otoroshi.apis.deployments-history-size = 10
           |""".stripMargin)
         .resolve()
     ).withFallback(configuration)
@@ -931,9 +936,91 @@ class ApiManagementSpec extends OtoroshiSpec {
       storedApikey(s"jwt_${partnerB}_plan_partner_c1").isDefined mustBe true
       storedApikey(s"keyless_${partnerB}_plan_free_127.0.0.1").isDefined mustBe true
     }
+    "record the ref of the version deployed and the plans of the draft in a deployment" in {
+      given env: Env = otoroshiComponents.env
+      createApi("api-mgmt-deploy", "staging")
+      val draft      = ok(call("GET", s"$apis/api-mgmt-deploy")).as[JsObject]
+      ok(
+        call(
+          "POST",
+          "/apis/proxy.otoroshi.io/v1/drafts",
+          Some(
+            Json.obj(
+              "id"          -> "api-mgmt-deploy",
+              "kind"        -> "apis",
+              "name"        -> "api-mgmt-deploy",
+              "description" -> "",
+              "content"     -> draft
+            )
+          )
+        ),
+        201
+      )
+      val events    = new ConcurrentLinkedQueue[ApiDeploymentEvent]()
+      val collector = env.analyticsActorSystem.actorOf(Props(new ApiManagementSpec.DeploymentEvents(events)))
+      env.analyticsActorSystem.eventStream.subscribe(collector, classOf[ApiDeploymentEvent])
+      def deploy(ref: Option[String]) = call(
+        "POST",
+        s"$apis/api-mgmt-deploy/deployments",
+        Some(
+          Json.obj("apiRef" -> "api-mgmt-deploy", "owner" -> "my-gitops-tool", "apiDefinition" -> Json.obj()) ++
+          ref.map(r => Json.obj("ref" -> r)).getOrElse(Json.obj())
+        )
+      )
+      try {
+        val deployed = ok(deploy(Some("release-42")), 201)
+        val head     = (deployed \ "deployments" \ 0).as[JsObject]
+        (head \ "ref").as[String] mustBe "release-42"
+        (head \ "apiDefinition" \ "plans").as[Seq[JsObject]].map(plan => (plan \ "id").as[String]) mustBe Seq("plan-x")
+        (ok(call("GET", s"$apis/api-mgmt-deploy")) \ "deployments" \ 0 \ "ref").as[String] mustBe "release-42"
+        waitUntil("the event of the deployment")(events.asScala.exists(_.ref.contains("release-42")))
+        events.asScala.find(_.ref.contains("release-42")).map(_.deploymentId) mustBe Some((head \ "id").as[String])
+
+        val withoutRef = ok(deploy(None), 201)
+        (withoutRef \ "deployments" \ 0 \ "ref").toOption mustBe Some(JsNull)
+        (withoutRef \ "deployments" \ 1 \ "ref").as[String] mustBe "release-42"
+
+        val tooLong = deploy(Some("r" * 257))
+        withClue(tooLong.body[String]) {
+          tooLong.status mustBe 400
+          (tooLong.json \ "error").as[String] mustBe "bad_request"
+        }
+      } finally {
+        env.analyticsActorSystem.eventStream.unsubscribe(collector)
+        env.analyticsActorSystem.stop(collector)
+      }
+    }
+    "keep the last deployments-history-size deployments of an api" in {
+      (1 to 10).foreach { i =>
+        ok(
+          call(
+            "POST",
+            s"$apis/api-mgmt-deploy/deployments",
+            Some(
+              Json.obj("apiRef" -> "api-mgmt-deploy", "owner" -> "me", "apiDefinition" -> Json.obj(), "ref" -> s"r$i")
+            )
+          ),
+          201
+        )
+      }
+      // 12 deployments, the setting of this spec keeps 10
+      val deployments = (ok(call("GET", s"$apis/api-mgmt-deploy")) \ "deployments").as[Seq[JsObject]]
+      deployments.size mustBe 10
+      deployments.map(d => (d \ "ref").asOpt[String]) mustBe (10 to 1 by -1).map(i => Some(s"r$i"))
+    }
     "shutdown" in {
       backendServer.stop()
       stopAll()
+    }
+  }
+}
+
+object ApiManagementSpec {
+  // the deployment events sent by the deploys of the spec
+  class DeploymentEvents(events: ConcurrentLinkedQueue[ApiDeploymentEvent]) extends Actor {
+    override def receive: Receive = {
+      case event: ApiDeploymentEvent => events.add(event)
+      case _                         => ()
     }
   }
 }
