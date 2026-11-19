@@ -1,23 +1,18 @@
 package otoroshi.next.controllers
 
 import org.apache.pekko.kafka.ConsumerSettings
-import play.api.libs.ws.WSBodyWritables.given
-import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import otoroshi.actions.BackOfficeActionAuth
 import otoroshi.env.Env
 import otoroshi.events.{KafkaConfig, KafkaSettings}
-import otoroshi.next.models.{NgRoute, NgRouteComposition, NgTarget, NgTlsConfig}
-import otoroshi.next.plugins.ForceHttpsTraffic
-import otoroshi.next.utils.JsonHelpers
+import otoroshi.next.models.{NgRoute, NgRouteComposition}
+import otoroshi.next.utils.{TryIt, TryItRequest}
 import otoroshi.utils.syntax.implicits.*
-import otoroshi.utils.http.ResponseImplicits.*
 import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 
 import java.time.temporal.ChronoUnit
-import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
@@ -82,28 +77,8 @@ class TryItController(
 
   def call(entity: Option[String] = None) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-      val requestId                = UUID.randomUUID().toString
-      env.proxyState.enableReportFor(requestId)
-      val jsonBody                 = bodyRaw.utf8String.parseJson
-      val method                   = jsonBody.select("method").asOpt[String].map(_.toUpperCase()).getOrElse("GET")
-      val path                     = jsonBody.select("path").asOpt[String].getOrElse("/")
-      val _headers                 = jsonBody.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-      val cookies                  =
-        jsonBody.select("cookies").asOpt[Seq[JsObject]].map(_.map(JsonHelpers.cookieFromJson)).getOrElse(Seq.empty).toSeq
-      // only a certificate the user can read is used as client certificate
-      val clientCert               = jsonBody
-        .select("client_cert")
-        .asOpt[String]
-        .filter(id => env.proxyState.certificate(id).exists(c => ctx.canUserRead(c)))
-      val bodyBase64               = jsonBody.select("base_64").asOpt[Boolean].getOrElse(false)
-      val body: Option[ByteString] = jsonBody.select("body").asOpt[String].filter(_.nonEmpty).map { rb =>
-        if (bodyBase64) {
-          rb.byteString.decodeBase64
-        } else {
-          rb.byteString
-        }
-      }
-
+      val jsonBody       = bodyRaw.utf8String.parseJson
+      val request        = TryItRequest.lenient(jsonBody)
       val isServiceTryIt = entity.contains("service")
 
       val routeFromIdOpt: Option[Either[NgRouteComposition, NgRoute]]   = jsonBody
@@ -126,89 +101,19 @@ class TryItController(
             else
               NgRoute.fmt.reads(json.parseJson).asOpt.map(e => Right(e))
           })
-      val maybeRoute                                                    = routeFromIdOpt.orElse(routeFromJsonOpt)
-      val routeFromId: Option[String]                                   = routeFromIdOpt.flatMap {
-        case Left(ngService: NgRouteComposition) =>
-          jsonBody.select("frontend_idx").asOpt[Int] match {
-            case Some(idx) => ngService.routes.lift(idx).flatMap(_.frontend.domains.map(_.domainLowerCase).headOption)
-            case _         => ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domainLowerCase).headOption)
-          }
-        case Right(ngRoute: NgRoute)             => ngRoute.frontend.domains.map(_.domainLowerCase).headOption
-      }
-      val routeFromJson: Option[String]                                 = routeFromJsonOpt.flatMap {
-        case Left(ngService: NgRouteComposition) =>
-          ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domainLowerCase).headOption)
-        case Right(ngRoute: NgRoute)             => ngRoute.frontend.domains.map(_.domainLowerCase).headOption
-      }
+      // the frontend_idx only picks a route of a composition found by its id
+      val tried                                                         = routeFromIdOpt
+        .map(route => (route, request))
+        .orElse(routeFromJsonOpt.map(route => (route, request.copy(frontendIdx = None))))
 
-      routeFromId.orElse(routeFromJson) match {
-        case None           => InternalServerError(Json.obj("error" -> "route not found !")).vfuture
-        case Some(hostname) => {
-          val headers   = _headers ++ Map(
-            "Otoroshi-Try-It-Request-Id" -> requestId,
-            "Host"                       -> hostname
-          )
-          val isHttps   = maybeRoute.exists {
-            case Left(ngService: NgRouteComposition) => ngService.plugins.hasPlugin[ForceHttpsTraffic]
-            case Right(ngRoute: NgRoute)             => ngRoute.plugins.hasPlugin[ForceHttpsTraffic]
+      val notFound = NotFound(Json.obj("error" -> "route not found"))
+      tried match {
+        case None                   => notFound.vfuture
+        case Some((route, request)) =>
+          TryIt.run(route, request, e => ctx.canUserRead(e)).map {
+            case None         => notFound
+            case Some(result) => Ok(result)
           }
-          val url       =
-            if (isHttps) s"https://${hostname}:${env.httpsPort}${path}" else s"http://${hostname}:${env.port}${path}"
-          val target    = NgTarget(
-            id = s"tryit-${requestId}",
-            hostname = hostname,
-            port = if (isHttps) env.httpsPort else env.port,
-            tls = isHttps,
-            ipAddress = "127.0.0.1".some,
-            backup = false,
-            tlsConfig = NgTlsConfig(
-              certs = clientCert.toSeq,
-              enabled = true,
-              loose = true,
-              trustAll = true
-            )
-          ).legacy
-          val wsRequest = env.gatewayClient
-            .akkaUrlWithTarget(url, target)
-            .withFollowRedirects(false)
-            .withMethod(method)
-            .addHttpHeaders(headers.toSeq*)
-            .withCookies(cookies*)
-            .withRequestTimeout(1.minute)
-          val respF     = body match {
-            case None          => wsRequest.execute()
-            case Some(content) => wsRequest.withBody(Source(content.grouped(32 * 1024).toList)).execute()
-          }
-
-          val curl =
-            s"curl -X $method $url ${headers.map { case (key, value) => s"""-H "$key: $value"""" }.mkString(" ")}"
-          respF.flatMap { resp =>
-            // the report carries the full json of the route that handled the call: only for a route the user can read
-            val report: JsValue = env.proxyState
-              .report(requestId)
-              .map(_.json)
-              .filter(r =>
-                (r \\ "found_route").flatMap(_.select("id").asOpt[String]).forall { id =>
-                  env.proxyState.route(id).forall(route => ctx.canUserRead(route))
-                }
-              )
-              .getOrElse(JsNull)
-            val status          = resp.status
-            val headers         = resp.headers.view.mapValues(_.last).toMap
-            resp.bodyAsSource.runFold(ByteString.empty)(_ ++ _).map { respBodyRaw =>
-              Ok(
-                Json.obj(
-                  "status"       -> status,
-                  "headers"      -> headers,
-                  "body_base_64" -> respBodyRaw.encodeBase64.utf8String,
-                  "cookies"      -> JsArray(resp.safeCookies(env).toSeq.map(c => JsonHelpers.wsCookieToJson(c))),
-                  "report"       -> report,
-                  "curl"         -> curl
-                )
-              )
-            }
-          }
-        }
       }
     }
   }

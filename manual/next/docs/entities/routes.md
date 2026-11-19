@@ -295,7 +295,62 @@ GET    /api/routes/:id       # Get a route
 PUT    /api/routes/:id       # Update a route
 DELETE /api/routes/:id       # Delete a route
 PATCH  /api/routes/:id       # Partially update a route
+POST   /api/routes/:id/_tryit                         # Try a request on a route
+POST   /apis/proxy.otoroshi.io/v1/routes/:id/_tryit   # Same, on the new admin API
 ```
+
+## Trying a request on a route
+
+The tester of the route designer sends a request through a route and answers its response together with the execution report of the call. The admin API does the same, so that a script or a CI pipeline can answer "why was this call refused" without a human in the backoffice:
+
+```sh
+curl -X POST 'http://otoroshi-api.oto.tools:8080/apis/proxy.otoroshi.io/v1/routes/my-route/_tryit' \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "method": "POST",
+    "path": "/users",
+    "headers": { "Content-Type": "application/json" },
+    "body": "eyJuYW1lIjoiam9obiJ9",
+    "base_64": true
+  }'
+```
+
+Every field of the body is optional, an empty body sends a `GET` on the path of the first domain of the route:
+
+| Field | Description |
+|-------|-------------|
+| `method` | the http method, `GET` by default |
+| `path` | the path, with its query string, starting with `/`. The path of the first domain of the route by default |
+| `headers` | an object of strings. `Host` is always the first domain of the route |
+| `cookies` | an array of cookies, each with a `name` and a `value` |
+| `body` | the body, as text, or in base64 when `base_64` is `true` |
+| `client_cert` | the id of a certificate of the store, presented as the client certificate of the request, for a route that checks it (mTLS) |
+
+The answer holds the `status`, the `headers`, the `cookies` and the body (`body_base_64`) of the response, a `curl` command sending the same request, and the execution `report` of the call. A call refused by a plugin is still a successful trial: its `status` is the one of the refusal, and the report says which plugin refused it.
+
+A few things to know about a trial:
+
+* the request is sent by the node that answers the admin API, to its own gateway port, from `127.0.0.1`. A rule based on the ip address of the client, like an ip allowed list or the `${req.ip}` expression of a keyless plan, sees that address
+* the route tried has to be served: a disabled route, or one whose last write has not reached the proxy state yet, is not found (`404`)
+* the admin API key has to be able to read the route (`403` otherwise), and a `client_cert` it cannot read is refused (`400`), not silently ignored
+* the report is only answered when the key can read the route that handled the call: the route found for the domain and the path, which may be another one when several routes match them
+* an audit event `ACCESS_SERVICE_TRYIT` is sent, with the method and the path of the request, but neither its headers nor its body
+
+### Reading the report
+
+The `steps` of the report are the steps of the engine, in the order they ran, each with its `duration`:
+
+| Step | What its `ctx` holds |
+|------|----------------------|
+| `find-route` | the route that handled the call (`found_route`, its full json), the path it matched (`matched_path`) and the parameters of that path (`params`) |
+| `call-pre-route-plugins` | the pre route plugins |
+| `call-access-validator-plugins` | the access validators, each one `allowed` or `denied` with the status of the refusal. On a route of an api, the extractors of its plans and the api consumer enforcer run here |
+| `transform-request` | the request transformers |
+| `call-backend` | the call to the backend |
+| `transform-response` | the response transformers |
+
+The `ctx` of a step that runs plugins lists them in `plugins`: the id of each one (`plugin`), how long it took, what it was given (`execution_debug.in`) and what it answered (`execution_debug.out`, whose `result.kind` is `successful`, `allowed`, `denied` or `failure`). A call refused by a plugin stops at the step of that plugin.
 
 ## Related entities
 

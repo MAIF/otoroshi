@@ -103,6 +103,208 @@
       }
     }
   },
+  "/apis/proxy.otoroshi.io/v1/routes/{id}/_tryit": {
+    "post": {
+      "tags": [
+        "route",
+        "proxy.otoroshi.io"
+      ],
+      "summary": "Try a request on a route",
+      "description": "Sends a request through the route, the way the tester of the backoffice does, and answers its response with the execution report of the call: every step of the engine, every plugin that ran with what it was given, what it answered and how long it took, and the route that handled the call (the `found_route` of the `find-route` step). The request is sent by the node that answers the admin api, to its own gateway port, from `127.0.0.1`: an ip address based rule, or the `${req.ip}` expression of a keyless plan, sees that address. `Host` is the first domain of the route, and the request is sent over https when the route forces https. The report is only answered when the admin behind the credentials can read the route that handled the call, which is not always the route tried when several routes match the same domain and path. A trial is not proxied through a load balancer and runs on that node only. An audit event `ACCESS_SERVICE_TRYIT` is sent, with the method and the path of the request but neither its headers nor its body.",
+      "operationId": "otoroshi.next.controllers.adminapi.NgRoutesController.tryIt",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The id of the route",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "route_3d1e2b4a-7c5f-4e6a-9b8d-0f1a2b3c4d5e"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The request to send through the route. Every field is optional, the body itself too",
+        "required": false,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TryItRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The trial was sent: the response of the route, whatever its status, with the execution report of the call",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TryItResponse"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not a json object, one of its fields does not have the expected type (`headers` not an object of strings, a `path` that does not start with `/`, ...), `base_64` is `true` and `body` is not base64, or `client_cert` names a certificate that does not exist or that the admin behind the credentials cannot read",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot read the route",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No route the proxy state serves has this id: an unknown id, a disabled route, or a route whose last write has not reached the proxy state yet (`route not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/routes/{id}/_tryit": {
+    "post": {
+      "tags": [
+        "route",
+        "proxy.otoroshi.io"
+      ],
+      "summary": "Try a request on a route (legacy admin api)",
+      "description": "The same trial as `POST /apis/proxy.otoroshi.io/v1/routes/{id}/_tryit`, on the legacy admin api. Sends a request through the route, the way the tester of the backoffice does, and answers its response with the execution report of the call: every step of the engine, every plugin that ran with what it was given, what it answered and how long it took, and the route that handled the call (the `found_route` of the `find-route` step). The request is sent by the node that answers the admin api, to its own gateway port, from `127.0.0.1`: an ip address based rule, or the `${req.ip}` expression of a keyless plan, sees that address. `Host` is the first domain of the route, and the request is sent over https when the route forces https. The report is only answered when the admin behind the credentials can read the route that handled the call, which is not always the route tried when several routes match the same domain and path. A trial is not proxied through a load balancer and runs on that node only. An audit event `ACCESS_SERVICE_TRYIT` is sent, with the method and the path of the request but neither its headers nor its body.",
+      "operationId": "otoroshi.next.controllers.adminapi.NgRoutesController.legacyTryIt",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The id of the route",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "route_3d1e2b4a-7c5f-4e6a-9b8d-0f1a2b3c4d5e"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The request to send through the route. Every field is optional, the body itself too",
+        "required": false,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TryItRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The trial was sent: the response of the route, whatever its status, with the execution report of the call",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TryItResponse"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not a json object, one of its fields does not have the expected type (`headers` not an object of strings, a `path` that does not start with `/`, ...), `base_64` is `true` and `body` is not base64, or `client_cert` names a certificate that does not exist or that the admin behind the credentials cannot read",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot read the route",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No route the proxy state serves has this id: an unknown id, a disabled route, or a route whose last write has not reached the proxy state yet (`route not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "/apis/proxy.otoroshi.io/v1/drafts/{id}/live": {
     "get": {
       "tags": [

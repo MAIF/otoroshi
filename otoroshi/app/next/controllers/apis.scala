@@ -299,6 +299,17 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
+  // the trial of the backoffice tester, on the route the proxy state serves for a route of the api: the routes of an
+  // api that is not published or deprecated are not served, so they are not found
+  def tryItRoute(apiId: String, routeId: String) = ApiAction.async(parse.byteString) { ctx =>
+    ctx.canReadService(apiId) {
+      env.proxyState.route(routeId).filter(_.apiRef.exists(_.id == apiId)) match {
+        case None        => AdminApiTryIt.notFound.vfuture
+        case Some(route) => AdminApiTryIt.run(ctx, route)
+      }
+    }
+  }
+
   // the default settings of a client: the api is not read, only the access to it is checked
   def getHttpClientSettings(apiId: String) = ApiAction.async { ctx =>
     ctx.canReadService(apiId) {

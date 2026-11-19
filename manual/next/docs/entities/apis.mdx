@@ -741,6 +741,26 @@ When testing is enabled:
 2. Each draft route requires the testing header (`X-OTOROSHI-TESTING: <value>`) to be accessible
 3. This allows you to test changes without affecting published routes
 
+### Trying a request on a route of the API
+
+The admin API sends a request through a route of a published or deprecated API and answers its response with the execution report of the call, like the tester of the backoffice. It is the way to see, from a script or a CI pipeline, which plan extractor identified the caller, why the api consumer enforcer refused it, and which plugins of the plan ran:
+
+```sh
+curl -X POST 'http://otoroshi-api.oto.tools:8080/apis/apis.otoroshi.io/v1/apis/my-api/routes/route_list_users/_tryit' \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "headers": {
+      "Otoroshi-Client-Id": "my-client-id",
+      "Otoroshi-Client-Secret": "my-client-secret"
+    }
+  }'
+```
+
+Without a `path`, the request calls the path of the route under the context path of the API. The admin API key has to be able to read the API. The routes of an API in `staging`, a route of another API, or a route the API does not hold are not found (`404`).
+
+The extractors of the plans and the api consumer enforcer are access validators: the `call-access-validator-plugins` step of the report lists each of them, `allowed` or `denied` with the status of the refusal. The request is sent from `127.0.0.1`, which is what the `${req.ip}` expression of a keyless plan sees. The body of the trial and the rest of the report are described in [trying a request on a route](./routes.md#trying-a-request-on-a-route).
+
 ## Deployments
 
 Deployments track the history of API publications. Each deploy of the draft (`POST .../apis/{apiId}/deployments`), and each deploy of a remote catalog that changes what is live, adds a deployment record first in the `deployments` of the API.
@@ -936,6 +956,12 @@ GET    /api/apis/:id                 # Get an API by ID
 PUT    /api/apis/:id                 # Update an API
 DELETE /api/apis/:id                 # Delete an API
 PATCH  /api/apis/:id                 # Partially update an API
+```
+
+A request can be tried on a route of an API:
+
+```
+POST   /apis/apis.otoroshi.io/v1/apis/:id/routes/:routeId/_tryit   # Try a request on a route of an API
 ```
 
 Subscriptions are managed at:

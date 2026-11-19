@@ -17,7 +17,7 @@ import otoroshi.models.{
   VerificationSettings
 }
 import otoroshi.next.models.*
-import otoroshi.next.plugins.{AllowedQuota, ApikeyFromPlan, FixedWindowStrategyConfig}
+import otoroshi.next.plugins.{AllowedQuota, ApikeyCalls, ApikeyFromPlan, FixedWindowStrategyConfig, NgApiConsumerEnforcer}
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
@@ -405,6 +405,83 @@ class ApiManagementSpec extends OtoroshiSpec {
       env.datastores.apiDataStore.set(api).futureValue mustBe true
       waitUntil("the route of the api reaches the router") {
         env.proxyState.allRoutes().exists(_.apiRef.exists(_.id == callable))
+      }
+    }
+    "try a request on a route of an api through the admin api, and say which plan plugins ran" in {
+      given env: Env = otoroshiComponents.env
+      val enforcer    = otoroshi.next.plugins.api.NgPluginHelper.pluginId[NgApiConsumerEnforcer]
+      val apikeyCalls = otoroshi.next.plugins.api.NgPluginHelper.pluginId[ApikeyCalls]
+      def tryRoute(api: String, route: String, body: JsValue = Json.obj()): WSResponse =
+        call("POST", s"$apis/$api/routes/$route/_tryit", Some(body))
+      // the access validators of the call, in the order they ran, with what they answered
+      def validators(answer: JsValue): Seq[(String, Option[String])] =
+        (answer \ "report" \ "steps")
+          .as[Seq[JsObject]]
+          .find(step => (step \ "task").as[String] == "call-access-validator-plugins")
+          .map(step =>
+            (step \ "ctx" \ "plugins")
+              .as[Seq[JsObject]]
+              .map(p => (p \ "plugin").as[String] -> (p \ "execution_debug" \ "out" \ "result" \ "kind").asOpt[String])
+          )
+          .getOrElse(Seq.empty)
+
+      // without credentials, the api consumer enforcer refuses the call
+      val anonymous = ok(tryRoute(callable, "route-callable"))
+      withClue(anonymous.stringify) {
+        (anonymous \ "status").as[Int] mustBe 401
+        validators(anonymous).toMap.get(enforcer) mustBe Some(Some("denied"))
+      }
+
+      // with the api key of a subscription, the plan identifies the caller and the enforcer lets it through
+      createSubscription("sub-tryit", "enabled")
+      try {
+        val key        = storedKeyOf("sub-tryit")
+        waitUntil(s"the router sees the api key ${key.clientId}") {
+          env.proxyState.apikey(key.clientId).exists(_.enabled)
+        }
+        val subscribed = ok(
+          tryRoute(
+            callable,
+            "route-callable",
+            Json.obj(
+              "headers" -> Json.obj("Otoroshi-Client-Id" -> key.clientId, "Otoroshi-Client-Secret" -> key.clientSecret)
+            )
+          )
+        )
+        withClue(subscribed.stringify) {
+          (subscribed \ "status").as[Int] mustBe 200
+          val ran = validators(subscribed)
+          val ids = ran.map(_._1)
+          ids must contain(apikeyCalls)
+          ids.indexOf(apikeyCalls) must be < ids.indexOf(enforcer)
+          ran.filter(v => v._1 == apikeyCalls || v._1 == enforcer).map(_._2).toSet mustBe Set(Some("allowed"))
+        }
+      } finally {
+        call("DELETE", s"$subscriptions/sub-tryit")
+      }
+
+      // a route of another api and an api that does not exist are not found
+      tryRoute("api-mgmt-a", "route-callable").status mustBe 404
+      tryRoute("api-tryit-missing", "route-callable").status mustBe 404
+      tryRoute(callable, "route-tryit-missing").status mustBe 404
+
+      // the routes of an api in staging are not served, so they cannot be tried
+      val published = env.datastores.apiDataStore.findById(callable).futureValue.get
+      val staging   = published.copy(
+        id = "api-mgmt-tryit-staging",
+        name = "api-mgmt-tryit-staging",
+        domain = "api-mgmt-tryit-staging.oto.tools",
+        state = ApiStaging,
+        plans = Seq.empty,
+        routes = published.routes.map(_.copy(id = "route-tryit-staging"))
+      )
+      env.datastores.apiDataStore.set(staging).futureValue mustBe true
+      try {
+        await(1.second)
+        env.proxyState.route("route-tryit-staging") mustBe None
+        tryRoute("api-mgmt-tryit-staging", "route-tryit-staging").status mustBe 404
+      } finally {
+        env.datastores.apiDataStore.delete(staging.id).futureValue
       }
     }
     "disable the api key of a subscription that is pending, deprecated or in a custom status" in {

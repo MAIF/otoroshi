@@ -197,5 +197,336 @@
         "owner": "team-users"
       }
     }
+  },
+  "TryItCookie": {
+    "type": "object",
+    "description": "A cookie of a trial: one the request sends, or one the response sets",
+    "required": [
+      "name",
+      "value"
+    ],
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name of the cookie",
+        "example": "session"
+      },
+      "value": {
+        "type": "string",
+        "description": "The value of the cookie",
+        "example": "8f2b0c1e"
+      },
+      "domain": {
+        "type": "string",
+        "nullable": true,
+        "description": "The domain of the cookie",
+        "example": "api.oto.tools"
+      },
+      "path": {
+        "type": "string",
+        "nullable": true,
+        "description": "The path of the cookie",
+        "example": "/"
+      },
+      "max_age": {
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "description": "The lifetime of the cookie, in seconds",
+        "example": 3600
+      },
+      "secure": {
+        "type": "boolean",
+        "description": "Whether the cookie is only sent over https. Defaults to `false`",
+        "example": false
+      },
+      "http_only": {
+        "type": "boolean",
+        "description": "Whether the cookie is hidden from the scripts of the page. Defaults to `false`",
+        "example": true
+      },
+      "sameSite": {
+        "type": "string",
+        "nullable": true,
+        "description": "The same site policy of a cookie the response sets, when it has one",
+        "example": "Lax"
+      }
+    }
+  },
+  "TryItRequest": {
+    "type": "object",
+    "description": "The request of a trial, sent through the route by the node answering the admin api, from `127.0.0.1`. Every field is optional: an empty body is a `GET` on the path of the first domain of the route",
+    "properties": {
+      "method": {
+        "type": "string",
+        "description": "The http method of the request. Defaults to `GET`",
+        "default": "GET",
+        "example": "POST"
+      },
+      "path": {
+        "type": "string",
+        "description": "The path of the request, with its query string, starting with `/`. Defaults to the path of the first domain of the route: for a route of an api, the context path of the api followed by the path of the route",
+        "example": "/users?page=1"
+      },
+      "headers": {
+        "type": "object",
+        "description": "The headers of the request. `Host` is the first domain of the route, whatever the headers say",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Content-Type": "application/json",
+          "Otoroshi-Client-Id": "kx8e4lq2v9twb3hd",
+          "Otoroshi-Client-Secret": "9fk2mz8q0lw1xv3c"
+        }
+      },
+      "cookies": {
+        "type": "array",
+        "description": "The cookies of the request",
+        "items": {
+          "$ref": "#/components/schemas/TryItCookie"
+        }
+      },
+      "body": {
+        "type": "string",
+        "description": "The body of the request, as text, or encoded in base64 when `base_64` is `true`. No body when absent or empty",
+        "example": "eyJhIjoxfQ=="
+      },
+      "base_64": {
+        "type": "boolean",
+        "description": "Whether `body` is encoded in base64, for a binary body. Defaults to `false`",
+        "default": false,
+        "example": true
+      },
+      "client_cert": {
+        "type": "string",
+        "description": "The id of a certificate of the store that the request presents as its client certificate, for a route that checks the client certificate (mtls). The admin behind the credentials has to be able to read it",
+        "example": "otoroshi-client"
+      }
+    },
+    "example": {
+      "method": "POST",
+      "path": "/users",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "eyJhIjoxfQ==",
+      "base_64": true
+    }
+  },
+  "ExecutionReportStep": {
+    "type": "object",
+    "description": "A step of the engine in the handling of a call",
+    "properties": {
+      "task": {
+        "type": "string",
+        "description": "The name of the step, in the order the engine runs them: `start-handling`, `check-concurrent-requests`, `find-route`, `compute-plugins`, `check-global-maintenance`, `call-before-request-callbacks`, `extract-tracking-id`, `call-pre-route-plugins`, `call-access-validator-plugins`, `update-apikey-quotas`, `choose-backend`, `transform-request`, `call-backend`, `transform-response`, `stream-response`, `trigger-analytics`. A call refused by a plugin stops at the step of that plugin",
+        "example": "call-access-validator-plugins"
+      },
+      "start": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the step started, in milliseconds since the epoch",
+        "example": 1795095010554
+      },
+      "start_fmt": {
+        "type": "string",
+        "description": "When the step started, as an ISO 8601 date",
+        "example": "2026-11-19T14:30:10.554+01:00"
+      },
+      "stop": {
+        "type": "integer",
+        "format": "int64",
+        "description": "When the step stopped, in milliseconds since the epoch",
+        "example": 1795095010556
+      },
+      "stop_fmt": {
+        "type": "string",
+        "description": "When the step stopped, as an ISO 8601 date",
+        "example": "2026-11-19T14:30:10.556+01:00"
+      },
+      "duration": {
+        "type": "integer",
+        "format": "int64",
+        "description": "How long the step took, in milliseconds",
+        "example": 2
+      },
+      "duration_ns": {
+        "type": "integer",
+        "format": "int64",
+        "description": "How long the step took, in nanoseconds",
+        "example": 2134567
+      },
+      "ctx": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "What the step did. For `find-route`, the route that handled the call (`found_route`, its full json), the path it matched (`matched_path`) and the parameters of that path (`params`). For a step that runs plugins (`call-pre-route-plugins`, `call-access-validator-plugins`, `transform-request`, `transform-response`, ...), the sequence of those plugins: `plugins` lists each of them (`plugin`, its id, `name`, `duration`) with what it was given and what it answered (`execution_debug.in` and `execution_debug.out`, where `out.result.kind` is `successful` or `failure` for a transformer, `allowed`, `denied` (with the `status` of the refusal) or `failure` for an access validator)",
+        "example": {
+          "size": 1,
+          "kind": "access-validator-plugins",
+          "plugins": [
+            {
+              "plugin": "cp:otoroshi.next.plugins.NgApiConsumerEnforcer",
+              "name": "Api consumer enforcer",
+              "duration": 0,
+              "execution_debug": {
+                "in": {},
+                "out": {
+                  "result": {
+                    "kind": "denied"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "ExecutionReport": {
+    "type": "object",
+    "description": "The execution report of a call: every step the engine went through, with the plugins of each phase, what they were given, what they answered and how long they took",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The id of the report, the snowflake of the request",
+        "example": "1795095010554000001"
+      },
+      "creation": {
+        "type": "string",
+        "description": "When the request reached the engine, as an ISO 8601 date",
+        "example": "2026-11-19T14:30:10.550+01:00"
+      },
+      "termination": {
+        "type": "string",
+        "description": "When the engine was done with the call, as an ISO 8601 date",
+        "example": "2026-11-19T14:30:10.570+01:00"
+      },
+      "duration": {
+        "type": "integer",
+        "format": "int64",
+        "description": "How long the call took, in milliseconds",
+        "example": 20
+      },
+      "duration_ns": {
+        "type": "integer",
+        "format": "int64",
+        "description": "How long the call took, in nanoseconds",
+        "example": 20123456
+      },
+      "overhead": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The time spent by otoroshi on the call, without the call to the backend, in milliseconds",
+        "example": 3
+      },
+      "overhead_ns": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The time spent by otoroshi on the call, without the call to the backend, in nanoseconds",
+        "example": 3123456
+      },
+      "overhead_in": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The time spent by otoroshi before the call to the backend, in milliseconds",
+        "example": 2
+      },
+      "overhead_in_ns": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The time spent by otoroshi before the call to the backend, in nanoseconds",
+        "example": 2123456
+      },
+      "overhead_out": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The time spent by otoroshi after the call to the backend, in milliseconds",
+        "example": 1
+      },
+      "overhead_out_ns": {
+        "type": "integer",
+        "format": "int64",
+        "description": "The time spent by otoroshi after the call to the backend, in nanoseconds",
+        "example": 1000000
+      },
+      "state": {
+        "type": "string",
+        "description": "How the handling of the call ended",
+        "enum": [
+          "Created",
+          "Running",
+          "Successful",
+          "Failed"
+        ],
+        "example": "Successful"
+      },
+      "steps": {
+        "type": "array",
+        "description": "The steps of the engine, in the order they ran",
+        "items": {
+          "$ref": "#/components/schemas/ExecutionReportStep"
+        }
+      }
+    }
+  },
+  "TryItResponse": {
+    "type": "object",
+    "description": "The response of a trial, with the execution report of the call",
+    "required": [
+      "status",
+      "headers",
+      "body_base_64",
+      "cookies",
+      "report",
+      "curl"
+    ],
+    "properties": {
+      "status": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The http status of the response the route answered. A call a plugin refused is answered with its status, the trial itself succeeds",
+        "example": 401
+      },
+      "headers": {
+        "type": "object",
+        "description": "The headers of the response, the last value of each",
+        "additionalProperties": {
+          "type": "string",
+          "description": "The value of the header"
+        },
+        "example": {
+          "Content-Type": "application/json"
+        }
+      },
+      "body_base_64": {
+        "type": "string",
+        "description": "The body of the response, encoded in base64",
+        "example": "eyJlcnJvciI6InVuYXV0aG9yaXplZCJ9"
+      },
+      "cookies": {
+        "type": "array",
+        "description": "The cookies the response sets",
+        "items": {
+          "$ref": "#/components/schemas/TryItCookie"
+        }
+      },
+      "report": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ExecutionReport"
+          }
+        ],
+        "nullable": true,
+        "description": "The execution report of the call. `null` when the route that handled the call, the one of the `find-route` step, is not one the admin behind the credentials can read, or when no route handled it"
+      },
+      "curl": {
+        "type": "string",
+        "description": "A curl command that sends the same request",
+        "example": "curl -X GET http://api.oto.tools:8080/users -H \"Otoroshi-Try-It-Request-Id: 0b6e0c3a-4f5d-4b0e-9b2e-6c1d2e3f4a5b\" -H \"Host: api.oto.tools\""
+      }
+    }
   }
 }

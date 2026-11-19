@@ -555,7 +555,8 @@ class OpenApiConformanceSpec(configurationSpec: => Configuration) extends Otoros
     ("post", "/api/certificates/_bundle"),
     ("post", "/api/certificates/_dedupLetsEncrypt"),
     ("delete", "/api/apps-sessions-module/{id}"),
-    ("post", "/api/new/resources")
+    ("post", "/api/new/resources"),
+    ("post", "/api/routes/{id}/_tryit")
   )
 
   private val expectedOperations: Seq[(String, String)] = {

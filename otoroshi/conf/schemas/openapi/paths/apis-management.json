@@ -1273,6 +1273,117 @@
       }
     }
   },
+  "/apis/apis.otoroshi.io/v1/apis/{id}/routes/{routeId}/_tryit": {
+    "post": {
+      "tags": [
+        "api",
+        "apis.otoroshi.io"
+      ],
+      "summary": "Try a request on a route of an api",
+      "description": "Sends a request through the route otoroshi serves for one of the `routes` of the api, and answers its response with the execution report of the call: which plan extractor identified the caller, why the api consumer enforcer refused it, which plugins of the plan ran. Without a path, the request calls the path of the route under the context path of the api. Like the tester of the backoffice, the report holds every step of the engine and every plugin that ran with what it was given, what it answered and how long it took. The request is sent by the node that answers the admin api, to its own gateway port, from `127.0.0.1`: an ip address based rule, or the `${req.ip}` expression of a keyless plan, sees that address. `Host` is the first domain of the route, and the request is sent over https when the route forces https. The report is only answered when the admin behind the credentials can read the route that handled the call, which is not always the route tried when several routes match the same domain and path. A trial is not proxied through a load balancer and runs on that node only. An audit event `ACCESS_SERVICE_TRYIT` is sent, with the method and the path of the request but neither its headers nor its body.",
+      "operationId": "otoroshi.next.controllers.adminapi.ApisController.tryItRoute",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The `id` of the api, as listed by `GET /apis/apis.otoroshi.io/v1/apis`",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "api_dev_5f44c8d7-014f-4bdb-9685-2806a4b38974"
+          }
+        },
+        {
+          "name": "routeId",
+          "in": "path",
+          "description": "The id of the route, one of the `routes` of the api",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "route_list_users"
+          }
+        }
+      ],
+      "security": [
+        {
+          "otoroshi_auth": []
+        }
+      ],
+      "requestBody": {
+        "description": "The request to send through the route. Every field is optional, the body itself too",
+        "required": false,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TryItRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The trial was sent: the response of the route, whatever its status, with the execution report of the call",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TryItResponse"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "The credentials are missing, the body is not a json object, one of its fields does not have the expected type (`headers` not an object of strings, a `path` that does not start with `/`, ...), `base_64` is `true` and `body` is not base64, or `client_cert` names a certificate that does not exist or that the admin behind the credentials cannot read",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "The credentials are wrong, or the global configuration makes the admin api read only (`apiReadOnly`) and the call is not a GET",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "The admin behind the credentials cannot read the api",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No entity has this id, or the api does not serve the route: a route the api does not hold, a route of another api, or the routes of an api that is not `published` nor `deprecated`, which otoroshi does not serve (`route not found`)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "The quotas of the credentials, or the number of calls allowed per ip address, are exceeded",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "/apis/apis.otoroshi.io/v1/apis/_openapi": {
     "post": {
       "tags": [

@@ -247,6 +247,19 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
+  // the trial of the backoffice tester, on a route the proxy state serves: a disabled route, or one whose write has
+  // not reached the proxy state yet, is not found
+  def tryIt(id: String) = ApiAction.async(parse.byteString) { ctx =>
+    env.proxyState.route(id) match {
+      case None                                   => AdminApiTryIt.notFound.vfuture
+      case Some(route) if !ctx.canUserRead(route) => ctx.fforbidden
+      case Some(route)                            => AdminApiTryIt.run(ctx, route)
+    }
+  }
+
+  // the same trial, on the legacy admin api
+  def legacyTryIt(id: String) = tryIt(id)
+
   def domainsAndCertificates() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     import otoroshi.ssl.SSLImplicits.*
 
