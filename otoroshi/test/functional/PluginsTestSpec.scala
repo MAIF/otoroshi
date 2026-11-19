@@ -1380,3 +1380,12 @@ class BrotliResponseCompressorSpec extends PluginsTestSpecBase {
     }
   }
 }
+
+// the fields of a certificate read from its chain: sbt "testOnly functional.CertificatesFromChainSpec"
+class CertificatesFromChainSpec extends PluginsTestSpecBase {
+  s"certificates" should {
+    "be answered by the ocsp responder with the validity of their chain" in {
+      new OcspProjectionFromChainTests(this)
+    }
+  }
+}

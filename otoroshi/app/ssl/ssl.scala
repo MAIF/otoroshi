@@ -468,6 +468,10 @@ object Cert {
 
   lazy val logger = Logger("otoroshi-cert")
 
+  // the certificate with the fields read from its chain (subject, domain, sans, from, to, ca, selfSigned). A certificate
+  // whose chain cannot be read, like the one of the template, is kept as it is
+  def enrichedWhenReadable(cert: Cert): Cert = Try(cert.enrich()).getOrElse(cert)
+
   def apply(name: String, cert: String, privateKey: String): Cert = {
     Cert(
       id = IdGenerator.token(32),
@@ -1797,6 +1801,8 @@ object DynamicSSLEngineProvider {
   private def rebuildContexts(env: Env, fingerprint: String): Unit = {
     allUnrevokedCertSeq
       .filter(r => r.serialNumberLng.isDefined && CertParentHelper.fromOtoroshiRootCa(r.certificate.get))
+      // the validity is the one of the chain, whatever wrote the certificate
+      .map(Cert.enrichedWhenReadable)
       .foreach(crt =>
         _ocspProjectionCertificates.put(
           crt.serialNumberLng.get,

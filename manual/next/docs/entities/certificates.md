@@ -83,6 +83,8 @@ The available actions from the UI are:
 | `tags` | array of string | `[]` | Tags |
 | `metadata` | object | `{}` | Key/value metadata |
 
+`subject`, `domain`, `sans`, `from`, `to`, `ca`, `selfSigned` and `valid` are read from the chain when the certificate is written, and replace the values the body gives them. It is the case for every write: `/api/certificates`, and the creation, update, upsert, patch and bulk writes of `/apis/pki.otoroshi.io/v1/certificates`. Only `/api/certificates?enrich=false` stores them as written. A certificate whose chain cannot be read, like the template, is stored as written.
+
 ## Certificate creation
 
 ### From Let's Encrypt

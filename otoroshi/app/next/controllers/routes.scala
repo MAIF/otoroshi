@@ -289,8 +289,16 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         }
       }
     }
-    val jsonCerts        =
-      JsArray(certs.filter(_.isUsable).filterNot(_.ca).filterNot(_.keypair).filterNot(_.client).flatMap(certToJson))
+    // the validity and the ca flag are the ones of the chain, whatever wrote the certificate
+    val jsonCerts        = JsArray(
+      certs
+        .map(Cert.enrichedWhenReadable)
+        .filter(_.isUsable)
+        .filterNot(_.ca)
+        .filterNot(_.keypair)
+        .filterNot(_.client)
+        .flatMap(certToJson)
+    )
     val jsonTrustedCerts = JsArray(
       env.datastores.globalConfigDataStore
         .latest()

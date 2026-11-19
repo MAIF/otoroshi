@@ -869,7 +869,8 @@ class OtoroshiResources(env: Env) {
       "certificate",
       "pki.otoroshi.io",
       ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApiWithState[Cert](
+      // the fields read from the chain are stored as /api/certificates stores them, whatever the write
+      GenericResourceAccessApiWithStateAndWriteValidation[Cert](
         Cert._fmt,
         classOf[Cert],
         env.datastores.certificatesDataStore.key,
@@ -883,7 +884,9 @@ class OtoroshiResources(env: Env) {
             .json,
         stateAll = () => env.proxyState.allCertificates(),
         stateOne = id => env.proxyState.certificate(id),
-        stateUpdate = seq => env.proxyState.updateCertificates(seq)
+        stateUpdate = seq => env.proxyState.updateCertificates(seq),
+        writeValidator = (entity, _, _, _, _, _, _) => Cert.enrichedWhenReadable(entity).rightf,
+        writeChecker = (entity, _, _, _, _, _, _) => Cert.enrichedWhenReadable(entity).rightf
       )
     ),
     //////

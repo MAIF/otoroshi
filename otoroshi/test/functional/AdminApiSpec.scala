@@ -11,6 +11,7 @@ import otoroshi.utils.syntax.implicits.*
 
 import java.io.File
 import java.nio.file.Files
+import scala.concurrent.duration.*
 
 class AdminApiSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
@@ -94,6 +95,23 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
       monthlyQuota = 100,
       metadata = Map.empty
     )
+
+    // a call of the admin api, answered as it is
+    def generic(
+        method: String,
+        path: String,
+        body: Option[String] = None,
+        secret: String = "admin-api-apikey-secret",
+        contentType: String = "application/json"
+    ): WSResponse = {
+      val req = ws
+        .url(s"http://localhost:$port$path")
+        .withHttpHeaders("Host" -> "otoroshi-api.oto.tools", "Accept" -> contentType)
+        .withAuth("admin-api-apikey-id", secret, WSAuthScheme.BASIC)
+        .withMethod(method)
+      body.map(b => req.addHttpHeaders("Content-Type" -> contentType).withBody(b)).getOrElse(req).execute().futureValue
+    }
+    def errorOf(resp: WSResponse): String = (Json.parse(resp.body[String]) \ "error").as[String]
 
     "warm up" in {
       startOtoroshi()
@@ -342,21 +360,6 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
     }
 
     "answer the writes of the generic api with the status and the header of what they did" in {
-      def generic(
-          method: String,
-          path: String,
-          body: Option[String] = None,
-          secret: String = "admin-api-apikey-secret",
-          contentType: String = "application/json"
-      ): WSResponse = {
-        val req = ws
-          .url(s"http://localhost:$port$path")
-          .withHttpHeaders("Host" -> "otoroshi-api.oto.tools", "Accept" -> contentType)
-          .withAuth("admin-api-apikey-id", secret, WSAuthScheme.BASIC)
-          .withMethod(method)
-        body.map(b => req.addHttpHeaders("Content-Type" -> contentType).withBody(b)).getOrElse(req).execute().futureValue
-      }
-      def errorOf(resp: WSResponse): String = (Json.parse(resp.body[String]) \ "error").as[String]
       val routes   = "/apis/proxy.otoroshi.io/v1/routes"
       val template = Json.parse(generic("GET", s"$routes/_template").body[String]).as[JsObject]
       def route(id: String, name: String = "generic-writes"): JsObject = template ++ Json.obj("id" -> id, "name" -> name)
@@ -418,6 +421,102 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
         (backStatus, backHeader) mustBe (200, Some("false"))
       } finally {
         generic("DELETE", upserted)
+      }
+    }
+
+    "store the certificates written through the generic api with the fields of their chain" in {
+      val certificates = "/apis/pki.otoroshi.io/v1/certificates"
+      // a self-signed certificate for two names, valid 30 days, generated without being stored
+      val generated    = Json.parse(
+        generic(
+          "POST",
+          "/api/pki/certs?persist=false",
+          Some(
+            Json.stringify(
+              Json.obj(
+                "hosts"    -> Json.arr("probe.example.test", "alt.example.test"),
+                "key"      -> Json.obj("algo" -> "rsa", "size" -> 2048),
+                "subject"  -> "CN=probe.example.test",
+                "duration" -> 30.days.toMillis
+              )
+            )
+          )
+        ).body[String]
+      )
+      val template     = Json.parse(generic("GET", s"$certificates/_template").body[String]).as[JsObject]
+      // the chain of the certificate, with fields that say nothing of it
+      def body(id: String): JsObject = template ++ Json.obj(
+        "id"         -> id,
+        "chain"      -> (generated \ "chain").as[String],
+        "privateKey" -> (generated \ "privateKey").as[String],
+        "subject"    -> "",
+        "domain"     -> "",
+        "sans"       -> Json.arr(),
+        "selfSigned" -> false,
+        "ca"         -> false,
+        "from"       -> 0L,
+        "to"         -> 0L
+      )
+      val emptied      = Json.arr(
+        Json.obj("op" -> "replace", "path" -> "/subject", "value" -> ""),
+        Json.obj("op" -> "replace", "path" -> "/sans", "value" -> Json.arr()),
+        Json.obj("op" -> "replace", "path" -> "/to", "value" -> 0L)
+      )
+      def fromChain(id: String): JsObject = {
+        val stored = Json.parse(generic("GET", s"$certificates/$id").body[String])
+        JsObject(
+          Seq("subject", "domain", "sans", "from", "to", "ca", "selfSigned").map(k => k -> (stored \ k).as[JsValue])
+        )
+      }
+      def ndjson(lines: JsValue*): Option[String] = Some(lines.map(Json.stringify).mkString("\n"))
+      val ids          = Seq("ref", "post", "upsert", "bulk", "empty").map(n => s"generic-cert-$n")
+      try {
+        // what /api/certificates stores
+        generic("POST", "/api/certificates", Some(Json.stringify(body("generic-cert-ref")))).status mustBe 201
+        val reference = fromChain("generic-cert-ref")
+        withClue(reference.toString) {
+          (reference \ "subject").as[String] must include("CN=probe.example.test")
+          (reference \ "sans").as[Seq[String]] must contain allOf ("probe.example.test", "alt.example.test")
+          (reference \ "selfSigned").as[Boolean] mustBe true
+          ((reference \ "to").as[Long] - (reference \ "from").as[Long]) mustBe 30.days.toMillis +- 1.day.toMillis
+        }
+        def storedLikeTheReference(what: String, id: String): Unit =
+          withClue(what) { fromChain(id) mustBe reference }
+
+        generic("POST", certificates, Some(Json.stringify(body("generic-cert-post")))).status mustBe 201
+        storedLikeTheReference("create", "generic-cert-post")
+        generic("PUT", s"$certificates/generic-cert-post", Some(Json.stringify(body("generic-cert-post")))).status mustBe 200
+        storedLikeTheReference("update", "generic-cert-post")
+        generic("PATCH", s"$certificates/generic-cert-post", Some(Json.stringify(emptied))).status mustBe 200
+        storedLikeTheReference("patch", "generic-cert-post")
+
+        val upsert = generic("POST", s"$certificates/generic-cert-upsert", Some(Json.stringify(body("generic-cert-upsert"))))
+        upsert.status mustBe 201
+        storedLikeTheReference("upsert creation", "generic-cert-upsert")
+        // the stored certificate is the same as before: the fields of the body are not the ones stored
+        val again  = generic("POST", s"$certificates/generic-cert-upsert", Some(Json.stringify(body("generic-cert-upsert"))))
+        (again.status, again.header("Otoroshi-Entity-Updated")) mustBe (200, Some("false"))
+        storedLikeTheReference("upsert update", "generic-cert-upsert")
+
+        val bulk = "application/x-ndjson"
+        generic("POST", s"$certificates/_bulk", ndjson(body("generic-cert-bulk")), contentType = bulk).status mustBe 200
+        storedLikeTheReference("bulk create", "generic-cert-bulk")
+        generic("PUT", s"$certificates/_bulk", ndjson(body("generic-cert-bulk")), contentType = bulk).status mustBe 200
+        storedLikeTheReference("bulk update", "generic-cert-bulk")
+        generic(
+          "PATCH",
+          s"$certificates/_bulk",
+          ndjson(Json.obj("id" -> "generic-cert-bulk", "patch" -> emptied)),
+          contentType = bulk
+        ).status mustBe 200
+        storedLikeTheReference("bulk patch", "generic-cert-bulk")
+
+        // a certificate whose chain cannot be read, like the template, is stored as it is written
+        val empty = generic("POST", certificates, Some(Json.stringify(template ++ Json.obj("id" -> "generic-cert-empty", "subject" -> "as written"))))
+        withClue(empty.body[String]) { empty.status mustBe 201 }
+        (Json.parse(generic("GET", s"$certificates/generic-cert-empty").body[String]) \ "subject").as[String] mustBe "as written"
+      } finally {
+        ids.foreach(id => generic("DELETE", s"$certificates/$id"))
       }
     }
 
