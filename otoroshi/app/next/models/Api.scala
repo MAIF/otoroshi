@@ -1074,6 +1074,38 @@ object ApiSubscription {
   val METADATA_AND_TAGS_SEPARATOR = " | "
   val CORE_METADATA               = Seq("updated_at")
 
+  private val logger = Logger("otoroshi-api-subscriptions")
+
+  // revokes the api keys a subscription to an apikey or an oauth2-local plan was given (its token_refs): they were
+  // minted for it and are nobody else's, so they are deleted, not disabled. A key whose apiRef is another
+  // subscription's is not this one's anymore and is left alone. The other kinds hold no key
+  def deleteKeys(subscription: ApiSubscription)(using env: Env): Future[Either[String, Unit]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    subscription.subscriptionKind match {
+      case ApiKind.Apikey | ApiKind.OAuth2Local =>
+        val ownRef = ApiRef(api = subscription.apiRef, plan = subscription.planRef, subscription = subscription.id)
+        subscription.tokenRefs
+          .flatMap(ref => ref.select("apikey").asOpt[String])
+          .mapAsync { clientId =>
+            env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+              case None                                             => ().vfuture
+              case Some(apikey) if apikey.apiRef.exists(_ != ownRef) =>
+                logger.warn(
+                  s"api key '$clientId' of subscription '${subscription.id}' belongs to ${apikey.apiRef.get.json.stringify}, it is not deleted with the subscription"
+                )
+                ().vfuture
+              case Some(_)                                          => env.datastores.apiKeyDataStore.delete(clientId).map(_ => ())
+            }
+          }
+          .map(_ => Right(()): Either[String, Unit])
+          .recover { case e: Throwable =>
+            logger.error(s"failed to delete the api keys of subscription '${subscription.id}'", e)
+            Left(s"failed to delete the api keys of subscription '${subscription.id}'")
+          }
+      case _                                    => Right(()).vfuture
+    }
+  }
+
   private def generateNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
                                                                                                 env: Env
   ) = {
@@ -1211,18 +1243,16 @@ object ApiSubscription {
         case ApiKind.Apikey | ApiKind.OAuth2Local if plan.status == ApiPlanStatus.Closed =>
           // Cascade-delete the subscription AND the apikeys it points at.
           // Otherwise the apikey lingers in the datastore unreachable from
-          // its owning subscription.
-          val apikeyIds          = subscription.tokenRefs.flatMap(ref => (ref \ "apikey").asOpt[String])
-          val deleteApikeys      = Future.sequence(apikeyIds.map { id =>
-            env.datastores.apiKeyDataStore.delete(id).recover { case _ => false }
-          })
-          val deleteSubscription =
-            if (isDraft) env.datastores.draftsDataStore.delete(subscription.id)
-            else env.datastores.apiSubscriptionDataStore.delete(subscription.id)
-          for {
-            _ <- deleteApikeys
-            _ <- deleteSubscription
-          } yield subscription.right
+          // its owning subscription. A subscription whose keys could not be
+          // deleted is kept.
+          deleteKeys(subscription).flatMap {
+            case Left(err) => err.leftf
+            case Right(_)  =>
+              val deleteSubscription =
+                if (isDraft) env.datastores.draftsDataStore.delete(subscription.id)
+                else env.datastores.apiSubscriptionDataStore.delete(subscription.id)
+              deleteSubscription.map(_ => subscription.right)
+          }
         case ApiKind.Apikey | ApiKind.OAuth2Local                                        =>
           updateApikeyFromPlan(api, plan, subscription)
             .map(results =>
@@ -1349,10 +1379,29 @@ object ApiSubscription {
       action: DeleteAction,
       env: Env
   ): Future[Either[JsValue, Unit]] = {
-//    implicit val ec = env.otoroshiExecutionContext
-//    implicit val e  = env
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    implicit val e: Env               = env
 
-    ().rightf
+    // the api keys of the subscription go with it: a subscription whose keys could not be deleted is kept, so that
+    // it never disappears while its keys still give access
+    deleteKeys(subscription).map {
+      case Left(error) => Left(Json.obj("error" -> error, "http_status_code" -> 500))
+      case Right(_)    => Right(())
+    }
+  }
+
+  // what deleteMany removes without any validation (remote catalogs, kubernetes jobs) loses its api keys too: a
+  // subscription whose keys could not be deleted fails the whole deletion, and nothing is deleted
+  def beforeDeleteMany(subscriptions: Seq[ApiSubscription], env: Env): Future[Unit] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    implicit val e: Env               = env
+
+    subscriptions.mapAsync(sub => deleteKeys(sub)).flatMap { results =>
+      results.collect { case Left(error) => error } match {
+        case Seq()  => ().vfuture
+        case errors => Future.failed(new RuntimeException(errors.mkString(", ")))
+      }
+    }
   }
 
   def fromJsons(value: JsValue): ApiSubscription =
@@ -2223,7 +2272,12 @@ object Api {
           ).toAnalytics()
         }
         oldEntity match {
-          case Some(old) => ApiConsistencyService.applyApiChanges(old._1, api, isDraft = false).map(_.right)
+          case Some(old) =>
+            ApiConsistencyService
+              .applyApiChanges(old._1, api, isDraft = false)
+              .map(a => Right(a): Either[JsValue, Api])
+              // the api is not written: a plan whose subscriptions keep their api keys stays in it, to be retried
+              .recover { case t: Throwable => Left(Json.obj("error" -> t.getMessage, "http_status_code" -> 500)) }
           case None      => api.rightf
         }
       case left       => left.vfuture

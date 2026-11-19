@@ -5,11 +5,14 @@ import otoroshi.api.WriteAction.Update
 import otoroshi.env.Env
 import otoroshi.models.Draft
 import otoroshi.storage.BasicStore
-import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSeqOfA, BetterSyntax}
+import play.api.Logger
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ApiConsistencyService {
+
+  private val logger = Logger("otoroshi-api-consistency-service")
 
   def applyApiChanges(oldApi: Api, newApi: Api, isDraft: Boolean)(using env: Env): Future[Api] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -63,9 +66,37 @@ object ApiConsistencyService {
          plan,
          api,
          fnDraft = None,
-         Some(subs => env.datastores.apiSubscriptionDataStore.deleteByIds(subs.map(_.id)))
+         Some(subs => deleteSubscriptionsAndKeys(api, plan, subs))
        ))
       .map(_ => api)
+  }
+
+  // the api keys of the subscriptions go with them. A subscription whose keys could not be deleted is kept, and the
+  // write of the api fails, so that the plan stays in the api and the next write of the api retries it
+  private def deleteSubscriptionsAndKeys(api: Api, plan: ApiPlan, subs: Seq[ApiSubscription])(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Unit] = {
+    subs.mapAsync(sub => ApiSubscription.deleteKeys(sub).map(result => (sub, result))).flatMap { results =>
+      val (deletable, kept) = results.partition(_._2.isRight)
+      val deleted           =
+        if (deletable.isEmpty) ().vfuture
+        else env.datastores.apiSubscriptionDataStore.deleteByIds(deletable.map(_._1.id)).map(_ => ())
+      deleted.flatMap { _ =>
+        if (kept.isEmpty) ().vfuture
+        else {
+          val ids = kept.map(_._1.id).mkString(", ")
+          logger.error(
+            s"the api keys of the subscriptions $ids to the plan '${plan.id}' removed from api '${api.id}' could not be deleted, the subscriptions are kept"
+          )
+          Future.failed(
+            new RuntimeException(
+              s"the api keys of the subscriptions $ids to the plan '${plan.id}' could not be deleted, retry the write of the api"
+            )
+          )
+        }
+      }
+    }
   }
 
   private def _batchSubscriptionsUpdates[A](

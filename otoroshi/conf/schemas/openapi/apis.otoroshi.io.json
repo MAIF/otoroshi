@@ -151,7 +151,7 @@
         "items": {
           "$ref": "#/components/schemas/ApiPlan"
         },
-        "description": "The consumer plans of the api: who can call it and how. The access plugins of the published plans are added to every route of the api, the plugins of a plan apply to the calls of its consumers. An entry that is not an object is left out"
+        "description": "The consumer plans of the api: who can call it and how. The access plugins of the published plans are added to every route of the api, the plugins of a plan apply to the calls of its consumers. Removing a plan from the api deletes its subscriptions and their api keys; when some api keys could not be deleted, their subscriptions are kept and the write of the api answers a `500`, to be retried. An entry that is not an object is left out"
       },
       "routes": {
         "type": "array",
@@ -2317,7 +2317,7 @@
     }
   },
   "apis.otoroshi.io.ApiSubscription": {
-    "description": "A subscription of a consumer to a plan of an api. A subscription to an `apikey` or an `oauth2-local` plan is given an api key built from the plan, referenced in `token_refs`; the other access modes build their consumer at call time. A subscription is written only when its api is in `staging` or `published` and holds its plan, and is created only on a plan in `staging` or `published`, of the access mode of the subscription",
+    "description": "A subscription of a consumer to a plan of an api. A subscription to an `apikey` or an `oauth2-local` plan is given an api key built from the plan, referenced in `token_refs`; the other access modes build their consumer at call time. A subscription is written only when its api is in `staging` or `published` and holds its plan, and is created only on a plan in `staging` or `published`, of the access mode of the subscription. Deleting a subscription (by id, all of them, in bulk, or when a remote catalog or the kubernetes job removes it) deletes the api keys of its `token_refs`, except the ones whose `apiRef` is another subscription. A subscription whose api keys could not be deleted is kept, and the deletion answers a `500`",
     "type": "object",
     "required": [
       "id",
@@ -2428,7 +2428,7 @@
         "type": "array",
         "items": {
           "type": "object",
-          "description": "A credential of the subscription. Otoroshi writes `{\"apikey\": \"<client id>\"}` for the api key it minted, and keeps the api keys referenced that way in sync with the plan",
+          "description": "A credential of the subscription. Otoroshi writes `{\"apikey\": \"<client id>\"}` for the api key it minted, keeps the api keys referenced that way in sync with the plan, and deletes them with the subscription",
           "properties": {
             "apikey": {
               "type": "string",

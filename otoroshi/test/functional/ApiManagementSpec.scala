@@ -116,24 +116,43 @@ class ApiManagementSpec extends OtoroshiSpec {
   private def keyEnabled(sub: String): Boolean =
     (ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/${keyOf(sub)}")) \ "enabled").as[Boolean]
 
-  // a call to the callable api with the api key of the subscription, once the router sees the key as it is stored:
-  // a key the router does not know yet would be refused too
-  private def callWithKeyOf(sub: String): Int = {
+  private def storedKeyOf(sub: String): ApiKey = {
     given env: Env = otoroshiComponents.env
-    val stored     = env.datastores.apiKeyDataStore.findById(keyOf(sub)).futureValue.get
-    waitUntil(s"the router sees the api key ${stored.clientId} enabled = ${stored.enabled}") {
-      env.proxyState.apikey(stored.clientId).map(_.enabled).contains(stored.enabled)
-    }
+    env.datastores.apiKeyDataStore.findById(keyOf(sub)).futureValue.get
+  }
+
+  private def callWith(key: ApiKey): Int =
     ws.url(s"http://127.0.0.1:$port/")
       .withHttpHeaders(
         "Host"                   -> callableDomain,
-        "Otoroshi-Client-Id"     -> stored.clientId,
-        "Otoroshi-Client-Secret" -> stored.clientSecret
+        "Otoroshi-Client-Id"     -> key.clientId,
+        "Otoroshi-Client-Secret" -> key.clientSecret
       )
       .get()
       .futureValue
       .status
+
+  // a call to the callable api with the api key of the subscription, once the router sees the key as it is stored:
+  // a key the router does not know yet would be refused too
+  private def callWithKeyOf(sub: String): Int = {
+    given env: Env = otoroshiComponents.env
+    val stored     = storedKeyOf(sub)
+    waitUntil(s"the router sees the api key ${stored.clientId} enabled = ${stored.enabled}") {
+      env.proxyState.apikey(stored.clientId).map(_.enabled).contains(stored.enabled)
+    }
+    callWith(stored)
   }
+
+  // a call with the credentials of a deleted api key, once the router does not see it anymore
+  private def callWithDeleted(key: ApiKey): Int = {
+    given env: Env = otoroshiComponents.env
+    waitUntil(s"the router does not see the api key ${key.clientId} anymore") {
+      env.proxyState.apikey(key.clientId).isEmpty
+    }
+    callWith(key)
+  }
+
+  private def apikeyStatus(clientId: String): Int = call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$clientId").status
 
   "The management of the apis" should {
     "warm up" in {
@@ -344,6 +363,114 @@ class ApiManagementSpec extends OtoroshiSpec {
 
       Seq(pendingKey, enabledKey).foreach(key => env.datastores.apiKeyDataStore.delete(key.clientId).futureValue)
       Seq(pendingSub, enabledSub).foreach(sub => store.delete(sub.id).futureValue)
+    }
+    "delete the api key of a subscription deleted by id" in {
+      createSubscription("sub-deleted", "enabled")
+      callWithKeyOf("sub-deleted") mustBe 200
+      val key = storedKeyOf("sub-deleted")
+      ok(call("DELETE", s"$subscriptions/sub-deleted"))
+      apikeyStatus(key.clientId) mustBe 404
+      callWithDeleted(key) mustBe 401
+    }
+    "delete the api keys of the subscriptions deleted in bulk" in {
+      createSubscription("sub-bulk-1", "enabled")
+      createSubscription("sub-bulk-2", "enabled")
+      val keys = Seq(storedKeyOf("sub-bulk-1"), storedKeyOf("sub-bulk-2"))
+      callWithKeyOf("sub-bulk-1") mustBe 200
+      val resp = ws
+        .url(s"http://127.0.0.1:$port$subscriptions/_bulk")
+        .withHttpHeaders(
+          "Host"         -> "otoroshi-api.oto.tools",
+          "Accept"       -> "application/x-ndjson",
+          "Content-Type" -> "application/x-ndjson"
+        )
+        .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+        .withMethod("DELETE")
+        .withBody(Seq("sub-bulk-1", "sub-bulk-2").map(id => Json.obj("id" -> id).stringify).mkString("\n"))
+        .execute()
+        .futureValue
+      withClue(resp.body[String]) {
+        resp.status mustBe 200
+        resp.body[String].split("\n").filter(_.trim.nonEmpty).map(l => (Json.parse(l) \ "deleted").as[Boolean]).toSeq mustBe
+        Seq(true, true)
+      }
+      call("GET", s"$subscriptions/sub-bulk-1").status mustBe 404
+      keys.foreach(key => apikeyStatus(key.clientId) mustBe 404)
+      callWithDeleted(keys.head) mustBe 401
+    }
+    "delete the api key of a deleted subscription to an oauth2-local plan" in {
+      createSubscription("sub-oauth2-deleted", "enabled", plan = "plan-oauth2", kind = "oauth2-local")
+      val key = keyOf("sub-oauth2-deleted")
+      apikeyStatus(key) mustBe 200
+      ok(call("DELETE", s"$subscriptions/sub-oauth2-deleted"))
+      apikeyStatus(key) mustBe 404
+    }
+    "keep the api key another subscription owns when a subscription pointing at it is deleted" in {
+      given env: Env = otoroshiComponents.env
+      createSubscription("sub-owner", "enabled")
+      val owned = keyOf("sub-owner")
+      // a stale reference, written straight to the datastore: an update through the admin api would rewrite the key
+      val stale = ApiSubscription.format
+        .reads(
+          subscriptionTemplate ++ Json.obj(
+            "id"                -> "sub-stale",
+            "name"              -> "sub-stale",
+            "api_ref"           -> callable,
+            "plan_ref"          -> "plan-x",
+            "owner_ref"         -> "client-1",
+            "subscription_kind" -> "apikey",
+            "status"            -> "enabled",
+            "token_refs"        -> Json.arr(Json.obj("apikey" -> owned))
+          )
+        )
+        .get
+      stale.save().futureValue mustBe true
+      ok(call("DELETE", s"$subscriptions/sub-stale"))
+      call("GET", s"$subscriptions/sub-stale").status mustBe 404
+      val kept = ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$owned"))
+      (kept \ "enabled").as[Boolean] mustBe true
+      (kept \ "apiRef" \ "sub").as[String] mustBe "sub-owner"
+      callWithKeyOf("sub-owner") mustBe 200
+    }
+    "delete the subscriptions of a plan removed from an api, and their api keys, and only them" in {
+      val template = ok(call("GET", s"$apis/_template")).as[JsObject]
+      val planY    = plan ++ Json.obj("id" -> "plan-y", "name" -> "plan y")
+      ok(
+        call(
+          "POST",
+          apis,
+          Some(
+            template ++ Json.obj(
+              "id"    -> "api-mgmt-plans",
+              "name"  -> "api-mgmt-plans",
+              "state" -> "staging",
+              "plans" -> Json.arr(plan, planY)
+            )
+          )
+        ),
+        201
+      )
+      def subscribeTo(planId: String, sub: String): String = {
+        val body = subscriptionTemplate ++ Json.obj(
+          "id"                -> sub,
+          "name"              -> sub,
+          "api_ref"           -> "api-mgmt-plans",
+          "plan_ref"          -> planId,
+          "owner_ref"         -> "client-1",
+          "subscription_kind" -> "apikey",
+          "status"            -> "enabled"
+        )
+        ok(call("POST", subscriptions, Some(body)), 201)
+        keyOf(sub)
+      }
+      val keptKey    = subscribeTo("plan-x", "sub-plans-x")
+      val removedKey = subscribeTo("plan-y", "sub-plans-y")
+      val api        = ok(call("GET", s"$apis/api-mgmt-plans")).as[JsObject]
+      ok(call("PUT", s"$apis/api-mgmt-plans", Some(api ++ Json.obj("plans" -> Json.arr(plan)))))
+      call("GET", s"$subscriptions/sub-plans-y").status mustBe 404
+      apikeyStatus(removedKey) mustBe 404
+      ok(call("GET", s"$subscriptions/sub-plans-x"))
+      (ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$keptKey")) \ "enabled").as[Boolean] mustBe true
     }
     "shutdown" in {
       backendServer.stop()

@@ -186,4 +186,95 @@ class RemoteCatalogsApisTests(parent: PluginsTestSpecBase) {
     target.stop()
     Files.walk(tempRoot).sorted(java.util.Comparator.reverseOrder()).forEach(Files.delete)
   }
+
+  // a subscription written as code is given an api key, and removed from its source, it is deleted with that key
+  private val subsRoot: Path = Files.createTempDirectory("remoteCatalogSubscriptionsTest")
+  private val subsApiId      = s"api_${IdGenerator.uuid}"
+  private val subId          = s"api-subscription_${IdGenerator.uuid}"
+  private val subFile: Path  = subsRoot.resolve("subscription.json")
+  private val subsCatalog    = catalog.copy(
+    id = s"remote-catalog_${IdGenerator.uuid}",
+    sourceConfig = Json.obj("path" -> subsRoot.toAbsolutePath.toString)
+  )
+
+  private def deploySubs(): DeployReport = {
+    val report = engine.deploy(subsCatalog, Json.obj()).futureValue.toOption.get
+    env.proxyState.sync().futureValue
+    report
+  }
+
+  private def subResult(report: DeployReport) =
+    report.results
+      .find(_.entityKind == "apis.otoroshi.io/ApiSubscription")
+      .getOrElse(fail(s"no result for subscriptions in ${report.json.stringify}"))
+
+  try {
+    given otoroshi.env.Env = env
+    val subsApi            = Api(
+      location = EntityLocation.default,
+      id = subsApiId,
+      name = subsApiId,
+      description = "",
+      domain = s"$subsApiId.oto.tools",
+      contextPath = "",
+      version = "1.0.0",
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      groups = Seq.empty,
+      state = ApiPublished,
+      blueprint = ApiBlueprint.REST,
+      testing = ApiTesting(),
+      plans = Seq(
+        ApiPlan(
+          Json.obj(
+            "id"                             -> "plan-gold",
+            "name"                           -> "gold",
+            "status"                         -> "published",
+            "access_mode_configuration_type" -> "apikey",
+            "access_mode_configuration"      -> Json.obj("enabled" -> true)
+          )
+        )
+      )
+    )
+    Files.write(
+      subsRoot.resolve("api.json"),
+      (subsApi.json.as[JsObject] - "testing" ++ Json.obj("kind" -> "apis.otoroshi.io/Api")).stringify.getBytes
+    )
+    val template = otoroshiApiCall("GET", "/apis/apis.otoroshi.io/v1/apisubscriptions/_template").futureValue._1.as[JsObject]
+    Files.write(
+      subFile,
+      (template ++ Json.obj(
+        "kind"              -> "apis.otoroshi.io/ApiSubscription",
+        "id"                -> subId,
+        "name"              -> subId,
+        "api_ref"           -> subsApiId,
+        "plan_ref"          -> "plan-gold",
+        "owner_ref"         -> "client-1",
+        "subscription_kind" -> "apikey",
+        "status"            -> "enabled"
+      )).stringify.getBytes
+    )
+
+    val deployed = deploySubs()
+    subResult(deployed).created mustBe 1
+    subResult(deployed).errors mustBe empty
+    val clientId = env.datastores.apiSubscriptionDataStore
+      .findById(subId)
+      .futureValue
+      .get
+      .tokenRefs
+      .flatMap(_.select("apikey").asOpt[String])
+      .head
+    env.datastores.apiKeyDataStore.findById(clientId).futureValue.map(_.enabled) mustBe Some(true)
+
+    Files.delete(subFile)
+    val removed = deploySubs()
+    subResult(removed).deleted mustBe 1
+    env.datastores.apiSubscriptionDataStore.findById(subId).futureValue mustBe None
+    env.datastores.apiKeyDataStore.findById(clientId).futureValue mustBe None
+  } finally {
+    engine.undeploy(subsCatalog).futureValue
+    Files.walk(subsRoot).sorted(java.util.Comparator.reverseOrder()).forEach(Files.delete)
+  }
 }

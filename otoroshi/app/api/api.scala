@@ -460,13 +460,28 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       }
   }
 
-  // no validation as it's only used by kubernetes jobs
+  // called by deleteMany with the entities it is about to delete, for what has to go with them. When it is not given,
+  // the entities are not even read
+  def beforeDeleteMany: Option[(Seq[T], Env) => Future[Unit]] = None
+
+  // no validation as it's only used by kubernetes jobs and remote catalogs
   def deleteMany(version: String, ids: Seq[String])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
     if (ids.nonEmpty) {
-      env.datastores.rawDataStore.del(ids.map(id => key(id))).map(_ => ())
+      val keys   = ids.map(id => key(id))
+      val before = beforeDeleteMany match {
+        case None    => ().vfuture
+        case Some(f) =>
+          env.datastores.rawDataStore.mget(keys).flatMap { items =>
+            f(
+              items.flatten.map(item => format.reads(item.utf8String.parseJson)).collect { case JsSuccess(e, _) => e },
+              env
+            )
+          }
+      }
+      before.flatMap(_ => env.datastores.rawDataStore.del(keys).map(_ => ()))
     } else {
       ().vfuture
     }
@@ -630,6 +645,28 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
   ): Future[Either[JsValue, Unit]] = {
     deleteValidator.apply(entity, body, singularName, id, action, env)
   }
+}
+
+// the access of the api subscriptions: what deleteMany deletes without any validation loses its api keys too. A
+// subclass rather than a new parameter of the case class, whose constructor the admin extensions are compiled against
+class ApiSubscriptionsResourceAccess(env: Env)
+    extends GenericResourceAccessApiWithStateAndWriteValidation[ApiSubscription](
+      ApiSubscription.format,
+      classOf[ApiSubscription],
+      env.datastores.apiSubscriptionDataStore.key,
+      env.datastores.apiSubscriptionDataStore.extractId,
+      json => json.select("id").asString,
+      () => "id",
+      (_v, _p, _a) => env.datastores.apiSubscriptionDataStore.template(env).json,
+      stateAll = () => env.proxyState.allApiSubscriptions(),
+      stateOne = id => env.proxyState.apiSubscription(id),
+      stateUpdate = seq => env.proxyState.updateApiSubscriptions(seq),
+      writeValidator = ApiSubscription.writeValidator,
+      deleteValidator = ApiSubscription.deleteValidator,
+      writeChecker = ApiSubscription.writeChecker
+    ) {
+  override def beforeDeleteMany: Option[(Seq[ApiSubscription], Env) => Future[Unit]] =
+    Some(ApiSubscription.beforeDeleteMany)
 }
 
 class OtoroshiResources(env: Env) {
@@ -1165,21 +1202,7 @@ class OtoroshiResources(env: Env) {
       "apisubscription",
       "apis.otoroshi.io",
       ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApiWithStateAndWriteValidation[ApiSubscription](
-        ApiSubscription.format,
-        classOf[ApiSubscription],
-        env.datastores.apiSubscriptionDataStore.key,
-        env.datastores.apiSubscriptionDataStore.extractId,
-        json => json.select("id").asString,
-        () => "id",
-        (_v, _p, _a) => env.datastores.apiSubscriptionDataStore.template(env).json,
-        stateAll = () => env.proxyState.allApiSubscriptions(),
-        stateOne = id => env.proxyState.apiSubscription(id),
-        stateUpdate = seq => env.proxyState.updateApiSubscriptions(seq),
-        writeValidator = ApiSubscription.writeValidator,
-        deleteValidator = ApiSubscription.deleteValidator,
-        writeChecker = ApiSubscription.writeChecker
-      )
+      new ApiSubscriptionsResourceAccess(env)
     ),
     //////
     Resource(
