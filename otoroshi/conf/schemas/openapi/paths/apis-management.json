@@ -1848,7 +1848,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Subscribe to a plan of an api",
-      "description": "Saves the subscription of the body, in the `pending` state, as a draft subscription with `version=Draft`. The api of the path has to be enabled, neither deprecated nor removed, and the plan of the path published. The subscription is then checked against its own `api_ref` and `plan_ref`: the api has to be in the `staging` or `published` state, the plan in the `staging` or `published` state, and the `subscription_kind` has to be the access mode of the plan. For an `apikey` or an `oauth2-local` plan, an api key is minted from the plan and referenced in the `token_refs` of the subscription. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "description": "Saves the subscription of the body, in the `pending` state, as a draft subscription with `version=Draft`. The api of the path has to be enabled, neither deprecated nor removed, and the plan of the path published. The subscription is then checked against its own `api_ref` and `plan_ref`: the api has to be in the `staging` or `published` state, the plan in the `staging` or `published` state, and the `subscription_kind` has to be the access mode of the plan. For an `apikey` or an `oauth2-local` plan, an api key is minted from the plan and referenced in the `token_refs` of the subscription. Whatever the body says, the subscription is saved `pending` and its api key created disabled: `confirm` enables both. The admin behind the credentials has to be able to write the api. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.subscribe",
       "parameters": [
         {
@@ -1888,7 +1888,7 @@
         }
       ],
       "requestBody": {
-        "description": "The subscription to save, as an api subscription entity. Its `status` is replaced by `pending`, and its `api_ref`, `plan_ref` and `subscription_kind` are checked against the api and the plan they reference",
+        "description": "The subscription to save, as an api subscription entity. Its `status` is replaced by `pending` (its api key is created disabled), and its `api_ref`, `plan_ref` and `subscription_kind` are checked against the api and the plan they reference",
         "required": true,
         "content": {
           "application/json": {
@@ -1900,7 +1900,7 @@
       },
       "responses": {
         "200": {
-          "description": "The subscription is saved in the `pending` state, with the api key minted for it when its plan needs one: the body is `{\"done\": true}`",
+          "description": "The subscription is saved in the `pending` state, with the api key minted for it, disabled, when its plan needs one: the body is `{\"done\": true}`",
           "content": {
             "application/json": {
               "schema": {

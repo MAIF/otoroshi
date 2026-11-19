@@ -1110,8 +1110,11 @@ object ApiSubscription {
       tags = configPlan.tags ++ subscription.tags
     )
 
+    // only an enabled subscription gives access: a pending one (not confirmed yet), a disabled, a deprecated or a
+    // custom one gets a disabled key. Create, update, plan changes and confirm all build the key here, so the key
+    // follows the status of its subscription
     defaultApikey
-      .copy(enabled = subscription.status != ApiSubscriptionDisabled)
+      .copy(enabled = subscription.status == ApiSubscriptionEnabled)
   }
 
   private def createNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
@@ -2594,6 +2597,63 @@ trait ApiSubscriptionDataStore extends BasicStore[ApiSubscription] {
       .getOrElse {
         defaultSubscription
       }
+  }
+
+  def keysFollowStatusMigrationKey(using env: Env): String =
+    s"${env.storageRoot}:migrations:apisubscriptions:keys-follow-status"
+
+  // the api keys of the subscriptions to an apikey or an oauth2-local plan used to be enabled for every status but
+  // `disabled`. Only `enabled` gives access now: the keys stored before that, of the subscriptions in any other status,
+  // are disabled once. Nothing else of the keys or of the subscriptions is changed
+  def migrate()(using ec: ExecutionContext, env: Env): Future[Unit] = {
+    val logger = Logger("otoroshi-apisubscriptions-migration")
+    env.datastores.rawDataStore.get(keysFollowStatusMigrationKey).flatMap {
+      case Some(_) => ().vfuture
+      case None    =>
+        findAll()
+          .flatMap { subscriptions =>
+            subscriptions
+              .filter(sub =>
+                sub.status != ApiSubscriptionEnabled &&
+                (sub.subscriptionKind == ApiKind.Apikey || sub.subscriptionKind == ApiKind.OAuth2Local)
+              )
+              .flatmapAsync { sub =>
+                sub.tokenRefs
+                  .flatMap(ref => ref.select("apikey").asOpt[String])
+                  .mapAsync { clientId =>
+                    env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+                      case Some(apikey) if apikey.enabled =>
+                        apikey.copy(enabled = false).save().map(saved => Some((sub, clientId, saved)))
+                      case _                              => None.vfuture
+                    }
+                  }
+                  .map(_.flatten)
+              }
+          }
+          .flatMap { results =>
+            val (done, failed) = results.partition(_._3)
+            done.groupBy(_._1).foreach { case (sub, keys) =>
+              logger.warn(
+                s"the api keys ${keys.map(_._2).mkString(", ")} of the subscription '${sub.id}' (status '${sub.status.name}') were disabled"
+              )
+            }
+            if (done.nonEmpty) {
+              logger.warn(s"${done.size} api keys of subscriptions that are not 'enabled' were disabled")
+            }
+            if (failed.nonEmpty) {
+              // not recorded, so that the migration runs again at the next start
+              logger.error(s"unable to disable the api keys ${failed.map(_._2).mkString(", ")}, will retry at the next start")
+              ().vfuture
+            } else {
+              env.datastores.rawDataStore
+                .set(keysFollowStatusMigrationKey, ByteString(DateTime.now().toString), None)
+                .map(_ => ())
+            }
+          }
+          .recover { case e: Throwable =>
+            logger.error("error while disabling the api keys of the subscriptions that are not 'enabled'", e)
+          }
+    }
   }
 }
 

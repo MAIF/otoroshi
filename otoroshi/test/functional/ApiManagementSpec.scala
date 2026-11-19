@@ -1,17 +1,32 @@
 package functional
 
+import com.typesafe.config.ConfigFactory
+import otoroshi.env.Env
+import otoroshi.models.{ApiIdentifier, ApiKey, EntityLocation}
+import otoroshi.next.models.*
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.*
 import play.api.libs.ws.{readableAsString, WSAuthScheme, WSResponse}
 
+import scala.concurrent.duration.*
+
 // the operations of the management of the apis: the api keys of an api, its plans and subscriptions, its routes
 class ApiManagementSpec extends OtoroshiSpec {
 
-  override def getTestConfiguration(configuration: Configuration): Configuration = configuration
+  // the routes of an api and its api keys reach the router through the proxy state
+  override def getTestConfiguration(configuration: Configuration): Configuration =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
+          |otoroshi.next.state-sync-interval = 5
+          |""".stripMargin)
+        .resolve()
+    ).withFallback(configuration)
 
-  private val apis = "/apis/apis.otoroshi.io/v1/apis"
+  private val apis          = "/apis/apis.otoroshi.io/v1/apis"
+  private val subscriptions = "/apis/apis.otoroshi.io/v1/apisubscriptions"
 
   private def call(method: String, path: String, body: Option[JsValue] = None): WSResponse = {
     val req = ws
@@ -55,6 +70,70 @@ class ApiManagementSpec extends OtoroshiSpec {
 
   private def keyOf(sub: String): String =
     (ok(call("GET", s"/apis/apis.otoroshi.io/v1/apisubscriptions/$sub")) \ "token_refs" \ 0 \ "apikey").as[String]
+
+  // a published api with a backend, so that it can be called, holding the apikey plan and an oauth2-local plan
+  private val callable           = "api-mgmt-callable"
+  private val callableDomain     = "api-mgmt-callable.oto.tools"
+  private lazy val backendServer = TargetService(None, "/", "application/json", _ => """{"ok":true}""")
+
+  private val oauth2LocalPlan = Json.obj(
+    "id"                             -> "plan-oauth2",
+    "name"                           -> "plan oauth2",
+    "status"                         -> "published",
+    "access_mode_configuration_type" -> "oauth2-local",
+    "access_mode_configuration"      -> Json.obj("default_key_pair" -> "otoroshi-jwt-signing", "expiration" -> 3600)
+  )
+
+  private def waitUntil(what: String)(cond: => Boolean): Unit = {
+    val deadline = System.currentTimeMillis() + 15000
+    while (!cond && System.currentTimeMillis() < deadline) await(100.millis)
+    withClue(what)(cond mustBe true)
+  }
+
+  private def subscriptionTemplate: JsObject = ok(call("GET", s"$subscriptions/_template")).as[JsObject]
+
+  // a subscription to a plan of the callable api, created through the admin api
+  private def createSubscription(sub: String, status: String, plan: String = "plan-x", kind: String = "apikey"): Unit = {
+    val body = subscriptionTemplate ++ Json.obj(
+      "id"                -> sub,
+      "name"              -> sub,
+      "api_ref"           -> callable,
+      "plan_ref"          -> plan,
+      "owner_ref"         -> "client-1",
+      "subscription_kind" -> kind,
+      "status"            -> status
+    )
+    ok(call("POST", subscriptions, Some(body)), 201)
+  }
+
+  private def statusOf(sub: String): String = (ok(call("GET", s"$subscriptions/$sub")) \ "status").as[String]
+
+  private def setStatus(sub: String, status: String): Unit = {
+    val current = ok(call("GET", s"$subscriptions/$sub")).as[JsObject]
+    ok(call("PUT", s"$subscriptions/$sub", Some(current ++ Json.obj("status" -> status))))
+  }
+
+  private def keyEnabled(sub: String): Boolean =
+    (ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/${keyOf(sub)}")) \ "enabled").as[Boolean]
+
+  // a call to the callable api with the api key of the subscription, once the router sees the key as it is stored:
+  // a key the router does not know yet would be refused too
+  private def callWithKeyOf(sub: String): Int = {
+    given env: Env = otoroshiComponents.env
+    val stored     = env.datastores.apiKeyDataStore.findById(keyOf(sub)).futureValue.get
+    waitUntil(s"the router sees the api key ${stored.clientId} enabled = ${stored.enabled}") {
+      env.proxyState.apikey(stored.clientId).map(_.enabled).contains(stored.enabled)
+    }
+    ws.url(s"http://127.0.0.1:$port/")
+      .withHttpHeaders(
+        "Host"                   -> callableDomain,
+        "Otoroshi-Client-Id"     -> stored.clientId,
+        "Otoroshi-Client-Secret" -> stored.clientSecret
+      )
+      .get()
+      .futureValue
+      .status
+  }
 
   "The management of the apis" should {
     "warm up" in {
@@ -112,7 +191,162 @@ class ApiManagementSpec extends OtoroshiSpec {
       call("GET", s"$apis/api-that-does-not-exist/http-client-settings/_template").status mustBe 404
       ok(call("GET", s"$apis/api-mgmt-a/http-client-settings/_template"))
     }
+    "set up a published api that can be called" in {
+      given env: Env = otoroshiComponents.env
+      backendServer.await()
+      val apiBackend = ApiBackend(
+        id = "backend-callable",
+        name = "backend",
+        backend = NgBackend.empty.copy(
+          targets = Seq(NgTarget(id = "target_1", hostname = "127.0.0.1", port = backendServer.port, tls = false))
+        ),
+        client = "default_backend_client"
+      )
+      val flow       = ApiFlows.empty
+      val api        = Api(
+        location = EntityLocation.default,
+        id = callable,
+        name = callable,
+        description = "",
+        domain = callableDomain,
+        contextPath = "",
+        version = "0.0.1",
+        debugFlow = false,
+        capture = false,
+        exportReporting = false,
+        groups = Seq.empty,
+        state = ApiPublished,
+        blueprint = ApiBlueprint.REST,
+        testing = ApiTesting(),
+        backends = Seq(apiBackend),
+        flows = Seq(flow),
+        plans = Seq(ApiPlan(plan), ApiPlan(oauth2LocalPlan)),
+        routes = Seq(
+          ApiRoute(
+            id = "route-callable",
+            frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(callableDomain))),
+            flowRef = flow.id,
+            backend = apiBackend.id
+          )
+        )
+      )
+      env.datastores.apiDataStore.set(api).futureValue mustBe true
+      waitUntil("the route of the api reaches the router") {
+        env.proxyState.allRoutes().exists(_.apiRef.exists(_.id == callable))
+      }
+    }
+    "disable the api key of a subscription that is pending, deprecated or in a custom status" in {
+      Seq("pending", "under_review", "deprecated").foreach { status =>
+        val sub = s"sub-created-$status"
+        createSubscription(sub, status)
+        withClue(status) {
+          keyEnabled(sub) mustBe false
+          callWithKeyOf(sub) mustBe 401
+        }
+      }
+    }
+    "enable the api key of a subscription created enabled" in {
+      createSubscription("sub-created-enabled", "enabled")
+      keyEnabled("sub-created-enabled") mustBe true
+      callWithKeyOf("sub-created-enabled") mustBe 200
+    }
+    "make the api key of a subscription follow its status" in {
+      createSubscription("sub-follow", "pending")
+      keyEnabled("sub-follow") mustBe false
+      callWithKeyOf("sub-follow") mustBe 401
+      setStatus("sub-follow", "enabled")
+      keyEnabled("sub-follow") mustBe true
+      callWithKeyOf("sub-follow") mustBe 200
+      setStatus("sub-follow", "under_review")
+      keyEnabled("sub-follow") mustBe false
+      callWithKeyOf("sub-follow") mustBe 401
+      setStatus("sub-follow", "disabled")
+      keyEnabled("sub-follow") mustBe false
+      callWithKeyOf("sub-follow") mustBe 401
+    }
+    "subscribe pending, with a disabled api key whatever the body says, until the subscription is confirmed" in {
+      val body = subscriptionTemplate ++ Json.obj(
+        "id"                -> "sub-subscribed-enabled",
+        "name"              -> "sub-subscribed-enabled",
+        "api_ref"           -> callable,
+        "plan_ref"          -> "plan-x",
+        "owner_ref"         -> "client-1",
+        "subscription_kind" -> "apikey",
+        "status"            -> "enabled"
+      )
+      ok(call("POST", s"$apis/$callable/plans/plan-x/subscribe", Some(body)))
+      statusOf("sub-subscribed-enabled") mustBe "pending"
+      keyEnabled("sub-subscribed-enabled") mustBe false
+      callWithKeyOf("sub-subscribed-enabled") mustBe 401
+      ok(call("POST", s"$apis/$callable/subscriptions/sub-subscribed-enabled/confirm", Some(Json.obj())), 204)
+      statusOf("sub-subscribed-enabled") mustBe "enabled"
+      keyEnabled("sub-subscribed-enabled") mustBe true
+      callWithKeyOf("sub-subscribed-enabled") mustBe 200
+    }
+    "disable the api key of a pending subscription to an oauth2-local plan" in {
+      createSubscription("sub-oauth2-pending", "pending", plan = "plan-oauth2", kind = "oauth2-local")
+      keyEnabled("sub-oauth2-pending") mustBe false
+    }
+    "disable once the enabled api keys of the stored subscriptions that are not enabled" in {
+      given env: Env = otoroshiComponents.env
+      // what an older version left: subscriptions holding an enabled api key whatever their status
+      def stored(sub: String, status: String): (ApiSubscription, ApiKey) = {
+        val key          = ApiKey(
+          clientId = s"$sub-key",
+          clientSecret = "secret",
+          clientName = s"$sub-key",
+          authorizedEntities = Seq(ApiIdentifier(callable)),
+          enabled = true
+        )
+        val subscription = ApiSubscription.format
+          .reads(
+            subscriptionTemplate ++ Json.obj(
+              "id"                -> sub,
+              "name"              -> sub,
+              "api_ref"           -> callable,
+              "plan_ref"          -> "plan-x",
+              "owner_ref"         -> "client-1",
+              "subscription_kind" -> "apikey",
+              "status"            -> status,
+              "token_refs"        -> Json.arr(Json.obj("apikey" -> key.clientId))
+            )
+          )
+          .get
+        key.save().futureValue mustBe true
+        subscription.save().futureValue mustBe true
+        (subscription, env.datastores.apiKeyDataStore.findById(key.clientId).futureValue.get)
+      }
+      def keyOfStore(key: ApiKey): ApiKey = env.datastores.apiKeyDataStore.findById(key.clientId).futureValue.get
+      def subOfStore(sub: ApiSubscription): JsValue =
+        env.datastores.apiSubscriptionDataStore.findById(sub.id).futureValue.get.json
+
+      val (pendingSub, pendingKey) = stored("sub-migrated-pending", "pending")
+      val (enabledSub, enabledKey) = stored("sub-migrated-enabled", "enabled")
+      val store                    = env.datastores.apiSubscriptionDataStore
+      // the migration runs at startup, before these subscriptions were stored
+      waitUntil("the migration ran at startup") {
+        env.datastores.rawDataStore.get(store.keysFollowStatusMigrationKey).futureValue.nonEmpty
+      }
+      env.datastores.rawDataStore.del(Seq(store.keysFollowStatusMigrationKey)).futureValue
+
+      store.migrate().futureValue
+      keyOfStore(pendingKey).json mustBe pendingKey.copy(enabled = false).json
+      keyOfStore(enabledKey).json mustBe enabledKey.json
+      subOfStore(pendingSub) mustBe pendingSub.json
+      subOfStore(enabledSub) mustBe enabledSub.json
+      env.datastores.rawDataStore.get(store.keysFollowStatusMigrationKey).futureValue must not be empty
+
+      // recorded: it does not run again, a key enabled since then stays enabled
+      pendingKey.save().futureValue mustBe true
+      store.migrate().futureValue
+      keyOfStore(pendingKey).json mustBe pendingKey.json
+      subOfStore(pendingSub) mustBe pendingSub.json
+
+      Seq(pendingKey, enabledKey).foreach(key => env.datastores.apiKeyDataStore.delete(key.clientId).futureValue)
+      Seq(pendingSub, enabledSub).foreach(sub => store.delete(sub.id).futureValue)
+    }
     "shutdown" in {
+      backendServer.stop()
       stopAll()
     }
   }

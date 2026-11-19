@@ -553,7 +553,7 @@ End-users (developers, portals, machines) can subscribe to published plans. A su
 | `id` | string | Unique identifier |
 | `name` | string | Display name |
 | `description` | string | Description |
-| `enabled` | boolean | Whether the subscription is active |
+| `status` | string | Only `enabled` gives access: with any other status (`pending` until it is confirmed, `disabled`, `deprecated`, or a custom value) the API keys of the subscription are disabled. Defaults to `disabled` |
 | `api_ref` | string | Reference to the parent API |
 | `plan_ref` | string | Reference to the plan |
 | `owner_ref` | string | Reference to the subscribing client |
@@ -568,6 +568,11 @@ A subscription to an `apikey` or an `oauth2-local` plan is given an API key buil
 referenced in `token_refs` as `{"apikey": "<client id>"}`: the consumers of these plans call with an
 API key, and a subscription is the only way to get one. The other access modes build their consumer at call time, their subscriptions
 have nothing to generate.
+
+The API key of a subscription follows its `status`: it is enabled only while the subscription is `enabled`, and disabled
+as soon as the subscription is set to any other status. `POST .../apis/{apiId}/plans/{planId}/subscribe` saves the subscription
+`pending` whatever its body says, with its API key disabled: `POST .../apis/{apiId}/subscriptions/{subId}/confirm`
+enables both.
 
 ### Subscription dates
 
@@ -587,12 +592,12 @@ have nothing to generate.
   "id": "subscription_abc123",
   "name": "ACME Corp subscription",
   "description": "Free tier subscription for ACME Corp",
-  "enabled": true,
+  "status": "enabled",
   "api_ref": "api_users_service",
   "plan_ref": "plan_free_tier",
   "owner_ref": "client_acme",
   "subscription_kind": "apikey",
-  "token_refs": ["apikey_xyz789"],
+  "token_refs": [{ "apikey": "apikey_xyz789" }],
   "dates": {
     "created_at": 1710000000000,
     "processed_at": 1710000000000,

@@ -550,12 +550,15 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
             result match {
               case Left(errorResult)   => errorResult.vfuture
               case Right(subscription) =>
+                // pending before the validation, which mints the api key from the status: whatever the body says,
+                // the key is created disabled, and confirm enables it
+                val pending = subscription.copy(status = ApiSubscriptionPending)
                 ApiSubscription
-                  .validate(subscription.apiRef, subscription, Create, isDraft = isDraft)
+                  .validate(pending.apiRef, pending, Create, isDraft = isDraft)
                   .flatMap {
                     case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
                     case Right(sub)  =>
-                      saveSubscription(sub.copy(status = ApiSubscriptionPending)).map {
+                      saveSubscription(sub).map {
                         case true  => Ok(Json.obj("done" -> true))
                         case false => BadRequest(Json.obj("error" -> "something bad happened"))
                       }
