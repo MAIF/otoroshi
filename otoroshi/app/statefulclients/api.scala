@@ -9,7 +9,7 @@ import play.api.libs.json.*
 import java.util.concurrent.Executors
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 trait StatefulClientConfig[A] {
   def isOpen(client: A): Boolean
@@ -97,14 +97,16 @@ class StatefulClientsManager(env: Env) {
       .flatMap(str => str.parseJson.asOpt[Seq[JsObject]])
       .getOrElse(Seq.empty).toSeq
       .toList
-    val dynConfigs        = env.datastores.globalConfigDataStore
-      .latest()(using env.otoroshiExecutionContext, env)
-      .plugins
-      .config
-      .select("stateful-clients")
-      .asOpt[Seq[JsObject]]
-      .getOrElse(Seq.empty).toSeq
-      .toList
+    // on the first start of an empty datastore, the global config may not be written yet: it then declares no client
+    val dynConfigs        = Try(env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)) match {
+      case Failure(_)      => List.empty
+      case Success(config) =>
+        config.plugins.config
+          .select("stateful-clients")
+          .asOpt[Seq[JsObject]]
+          .getOrElse(Seq.empty)
+          .toList
+    }
     val configs           = staticConfigs ++ staticJsonConfigs ++ dynConfigs
     configs.flatMap { config =>
       val id       = config.select("id").asString

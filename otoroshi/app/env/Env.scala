@@ -1983,13 +1983,19 @@ class Env(
   }(using otoroshiExecutionContext)
 
   timeout(1000.millis).andThen { case _ =>
-    jobManager.start()
-    statefulClientsManager.start()
+    // each subsystem starts on its own: one that fails to start does not keep the next ones from starting
+    def startSubsystem(name: String)(start: => Any): Unit =
+      Try(start) match {
+        case Failure(e) => logger.error(s"error while starting $name", e)
+        case Success(_) => ()
+      }
+    // the analytics runtime depends on nothing, it is initialized first
+    startSubsystem("the analytics runtime")(
+      otoroshi.next.analytics.queries.AnalyticsRuntime.init(otoroshi.next.analytics.queries.CoreQueries.all)(using this)
+    )
+    startSubsystem("the job manager")(jobManager.start())
+    startSubsystem("the stateful clients manager")(statefulClientsManager.start())
     otoroshiEventsActor ! StartExporters
-    // Initialize the analytics runtime once Env is available.
-    otoroshi.next.analytics.queries.AnalyticsRuntime.init(
-      otoroshi.next.analytics.queries.CoreQueries.all
-    )(using this)
   }(using otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {
