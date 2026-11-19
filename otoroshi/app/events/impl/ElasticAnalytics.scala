@@ -139,7 +139,7 @@ object ElasticTemplates                 {
       |    }
       |  }
       |}
-    """
+    """.stripMargin
 
   val indexTemplate_v7 =
     """{
@@ -275,7 +275,7 @@ object ElasticTemplates                 {
       |    }
       |  }
       |}
-    """
+    """.stripMargin
 
   val indexTemplate_v7_8 = Json
     .parse("""{
