@@ -3,12 +3,12 @@ package functional
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.{DataInOut, GatewayEvent, Header, Location}
+import otoroshi.events.{DataInOut, GatewayEvent, Header, Identity, Location}
 import otoroshi.models.{GlobalJwtVerifier, HSAlgoSettings, RemainingQuotas}
 import otoroshi.next.models.*
 import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
 import play.api.Configuration
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 
 // what a data exporter receives for a proxied request: by default neither the credentials the request carried nor
 // the secrets of the configurations embedded in the event, the rest untouched; everything as it is when
@@ -18,7 +18,9 @@ object GatewayEventSecretsSpec {
   val secrets: Seq[String] =
     Seq("request-token", "apikey-secret", "response-session", "request-session", "plugin-secret", "verifier-secret")
 
-  def exported(env: Env): JsValue = {
+  def exported(env: Env): JsValue = event(env).toJson(using env)
+
+  def event(env: Env): GatewayEvent = {
     val route    = NgFakeRoute
       .route("event-secrets")
       .copy(plugins =
@@ -82,7 +84,7 @@ object GatewayEventSecretsSpec {
       userAgentInfo = None,
       geolocationInfo = None,
       extraAnalyticsData = None
-    ).toJson(using env)
+    )
   }
 
   def headerValue(json: JsValue, key: String): Option[String] =
@@ -102,6 +104,27 @@ class GatewayEventSecretsSpec extends PluginsTestSpecBase {
       text must include("visible-value")
       (json \ "route" \ "id").as[String] mustBe "event-secrets"
       (json \ "matcheJwtVerifier" \ "id").as[String] mustBe "event-secrets-verifier"
+    }
+
+    "carry the api, the plan and the subscription of the apikey of the call in its identity" in {
+      val identity = Identity("APIKEY", "client-1", "client 1", Seq.empty, Map.empty)
+      def identityOf(id: Identity): JsValue =
+        (GatewayEventSecretsSpec.event(env).copy(identity = Some(id)).toJson(using env) \ "identity").as[JsValue]
+      val withRef  = identityOf(identity.copy(apiRef = Some(ApiRef("my-api", "plan_gold", "sub_1"))))
+      (withRef \ "apiRef").as[JsValue] mustBe Json.obj("api" -> "my-api", "plan" -> "plan_gold", "sub" -> "sub_1")
+      (withRef \ "identity").as[String] mustBe "client-1"
+      (identityOf(identity) \ "apiRef").as[JsValue] mustBe JsNull
+      Identity.format.reads(withRef).asOpt.flatMap(_.apiRef) mustBe Some(ApiRef("my-api", "plan_gold", "sub_1"))
+      Identity.format.reads(identity.json.as[JsObject] - "apiRef").asOpt mustBe Some(identity)
+      Identity.fromApikey(
+        otoroshi.models.ApiKey(
+          clientId = "client-2",
+          clientSecret = "secret",
+          clientName = "client 2",
+          authorizedEntities = Seq.empty,
+          apiRef = Some(ApiRef("my-api", "plan_free", ""))
+        )
+      ).apiRef mustBe Some(ApiRef("my-api", "plan_free", ""))
     }
   }
 }

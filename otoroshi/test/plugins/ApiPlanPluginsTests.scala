@@ -1,6 +1,6 @@
 package plugins
 
-import functional.PluginsTestSpecBase
+import functional.{PluginsTestSpecBase, TargetService}
 import org.apache.pekko.actor.Props
 import otoroshi.events.GatewayEvent
 import otoroshi.models.ApiKey
@@ -1201,6 +1201,127 @@ class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
     } finally {
       env.circuitBeakersHolder.consumerScopeTtl = 10.minutes
       backendServer.stop()
+    }
+  }
+
+  // the identity of the gateway events of a call names the api, the plan and the subscription of its apikey, the error
+  // events included, so that the usage can be counted per plan and per subscription
+  def gatewayEventsCarryTheApiRef(): Unit = {
+    val events     = new ConcurrentLinkedQueue[GatewayEvent]()
+    val collector  = env.analyticsActorSystem.actorOf(Props(new ClientIpAddressTests.EventsCollector(events)))
+    env.analyticsActorSystem.eventStream.subscribe(collector, classOf[GatewayEvent])
+    val verifierId = s"verifier_${IdGenerator.uuid}"
+    createOtoroshiVerifier(
+      GlobalJwtVerifier(
+        id = verifierId,
+        name = verifierId,
+        desc = verifierId,
+        strict = true,
+        source = InHeader(name = "Authorization", remove = "Bearer "),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> "foo")))
+      )
+    ).futureValue
+    val api               = apiWith(
+      Seq(
+        // one call per window: the second call of the subscription is refused by the quota of the plan
+        withFields(plan("plan_ev_ak", "apikey", Json.obj("enabled" -> true)), "rateLimiting" -> windowOf(1)),
+        plan("plan_ev_jwt", "jwt", Json.obj("verifier" -> verifierId, "client_id_path" -> "client_id")),
+        plan("plan_ev_kl", "keyless")
+      )
+    )
+    val subscriptionsPath = "/apis/apis.otoroshi.io/v1/apisubscriptions"
+    val subscriptionId    = s"sub_ev_${IdGenerator.token(8)}"
+    // the identities of the events of a route for a client id, as an exporter gets them
+    def identities(routeId: String, clientId: String): Seq[(Int, JsValue)] = events.asScala.toSeq
+      .filter(e => e.route.exists(_.id == routeId) && e.identity.exists(_.identity == clientId))
+      .map(e => (e.status, (e.toJson(using env) \ "identity").as[JsValue]))
+    def apiRefsOf(clientId: String, count: Int): Seq[(Int, JsValue)] = {
+      waitFor(s"$count events of $clientId")(identities(api.routes.head.id, clientId).size >= count)
+      identities(api.routes.head.id, clientId).map { case (status, identity) => (status, (identity \ "apiRef").as[JsValue]) }
+    }
+    deploy(api)
+    try {
+      callApi(api).status mustBe 200
+      apiRefsOf(s"keyless_${api.id}_plan_ev_kl_127.0.0.1", 1).map(_._2) mustBe Seq(
+        Json.obj("api" -> api.id, "plan" -> "plan_ev_kl", "sub" -> "")
+      )
+
+      val token = JWT.create().withIssuer("foo").withClaim("client_id", "consumer-ev").sign(Algorithm.HMAC512("secret"))
+      callApi(api, Seq("Authorization" -> s"Bearer $token")).status mustBe 200
+      apiRefsOf(s"jwt_${api.id}_plan_ev_jwt_consumer-ev", 1).map(_._2) mustBe Seq(
+        Json.obj("api" -> api.id, "plan" -> "plan_ev_jwt", "sub" -> "")
+      )
+
+      val template     = otoroshiApiCall("GET", s"$subscriptionsPath/_template").futureValue._1.as[JsObject]
+      val (created, _) = otoroshiApiCall(
+        "POST",
+        subscriptionsPath,
+        Some(
+          template ++ Json.obj(
+            "id"                -> subscriptionId,
+            "name"              -> subscriptionId,
+            "api_ref"           -> api.id,
+            "plan_ref"          -> "plan_ev_ak",
+            "owner_ref"         -> "client-1",
+            "subscription_kind" -> "apikey",
+            "status"            -> "enabled"
+          )
+        )
+      ).futureValue
+      val clientId     = created.select("token_refs").as[Seq[JsValue]].head.select("apikey").asString
+      val apikey       = env.datastores.apiKeyDataStore.findById(clientId).futureValue.get
+      waitFor("the router sees the api key of the subscription")(env.proxyState.apikey(clientId).isDefined)
+      val withApikey   = Seq("Otoroshi-Client-Id" -> apikey.clientId, "Otoroshi-Client-Secret" -> apikey.clientSecret)
+      callApi(api, withApikey).status mustBe 200
+      callApi(api, withApikey).status mustBe 429
+      val subscribed = Json.obj("api" -> api.id, "plan" -> "plan_ev_ak", "sub" -> subscriptionId)
+      apiRefsOf(clientId, 2).sortBy(_._1) mustBe Seq(200 -> subscribed, 429 -> subscribed)
+    } finally {
+      otoroshiApiCall("DELETE", s"$subscriptionsPath/$subscriptionId").futureValue
+      undeploy(api)
+    }
+
+    // a classic apikey on a route of its own: no api ref, the rest of the identity as before
+    val backend = TargetService.full(None, "/", "application/json", _ => (200, "{}", List.empty)).await()
+    val route   = NgRoute.empty.copy(
+      id = s"route_ev_${IdGenerator.token(8)}",
+      frontend = NgRoute.empty.frontend.copy(domains = Seq(NgDomainAndPath(s"ev-classic-${IdGenerator.token(8).toLowerCase}.oto.tools"))),
+      backend = NgRoute.empty.backend.copy(
+        targets = Seq(NgTarget(id = "target_1", hostname = "127.0.0.1", port = backend.port, tls = false))
+      ),
+      plugins = NgPlugins(Seq(NgPluginInstance(plugin = NgPluginHelper.pluginId[ApikeyCalls])))
+    )
+    val classic = ApiKey(
+      clientId = s"ev_classic_${IdGenerator.token(8)}",
+      clientSecret = "ev-classic-secret",
+      clientName = "ev classic",
+      authorizedEntities = Seq(otoroshi.models.RouteIdentifier(route.id)),
+      tags = Seq("classic")
+    )
+    createOtoroshiRoute(route).futureValue
+    env.datastores.apiKeyDataStore.set(classic).futureValue
+    try {
+      waitFor("the router sees the classic api key")(env.proxyState.apikey(classic.clientId).isDefined)
+      ws.url(s"http://127.0.0.1:$port/")
+        .withHttpHeaders(
+          "Host"                   -> route.frontend.domains.head.domain,
+          "Otoroshi-Client-Id"     -> classic.clientId,
+          "Otoroshi-Client-Secret" -> classic.clientSecret
+        )
+        .get()
+        .futureValue
+      waitFor("the event of the classic api key")(identities(route.id, classic.clientId).nonEmpty)
+      val identity = identities(route.id, classic.clientId).head._2
+      (identity \ "apiRef").as[JsValue] mustBe JsNull
+      (identity \ "label").as[String] mustBe "ev classic"
+      (identity \ "tags").as[Seq[String]] mustBe Seq("classic")
+    } finally {
+      env.datastores.apiKeyDataStore.delete(classic.clientId).futureValue
+      deleteOtoroshiRoute(route).futureValue
+      backend.stop()
+      env.analyticsActorSystem.eventStream.unsubscribe(collector)
+      env.analyticsActorSystem.stop(collector)
     }
   }
 }

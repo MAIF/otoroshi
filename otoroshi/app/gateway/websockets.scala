@@ -269,27 +269,7 @@ class WebSocketHandler()(using env: Env) {
               otoroshiHeadersIn = resp.otoroshiHeadersIn,
               otoroshiHeadersOut = resp.otoroshiHeadersOut,
               extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
-              identity = apiKey
-                .map(k =>
-                  Identity(
-                    identityType = "APIKEY",
-                    identity = k.clientId,
-                    label = k.clientName,
-                    tags = k.tags,
-                    metadata = k.metadata
-                  )
-                )
-                .orElse(
-                  paUsr.map(k =>
-                    Identity(
-                      identityType = "PRIVATEAPP",
-                      identity = k.email,
-                      label = k.name,
-                      tags = k.tags,
-                      metadata = k.metadata
-                    )
-                  )
-                ),
+              identity = Identity.of(apiKey, paUsr),
               responseChunked = false,
               `@serviceId` = descriptor.id,
               `@service` = descriptor.name,

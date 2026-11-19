@@ -4109,27 +4109,7 @@ class ProxyEngine() extends RequestHandler {
         otoroshiHeadersIn = request.headers.toSeq.map(Header.apply),
         otoroshiHeadersOut = Seq.empty,
         extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
-        identity = apiKey
-          .map(k =>
-            Identity(
-              identityType = "APIKEY",
-              identity = k.clientId,
-              label = k.clientName,
-              tags = k.tags,
-              metadata = k.metadata
-            )
-          )
-          .orElse(
-            paUsr.map(k =>
-              Identity(
-                identityType = "PRIVATEAPP",
-                identity = k.email,
-                label = k.name,
-                tags = k.tags,
-                metadata = k.metadata
-              )
-            )
-          ),
+        identity = Identity.of(apiKey, paUsr),
         responseChunked = false,
         `@serviceId` = route.id,
         `@service` = route.name,
@@ -4306,27 +4286,7 @@ class ProxyEngine() extends RequestHandler {
           otoroshiHeadersIn = request.headers.toSeq.map(Header.apply),
           otoroshiHeadersOut = response.headers.toSeq.map(Header.apply),
           extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
-          identity = apiKey
-            .map(k =>
-              Identity(
-                identityType = "APIKEY",
-                identity = k.clientId,
-                label = k.clientName,
-                tags = k.tags,
-                metadata = k.metadata
-              )
-            )
-            .orElse(
-              paUsr.map(k =>
-                Identity(
-                  identityType = "PRIVATEAPP",
-                  identity = k.email,
-                  label = k.name,
-                  tags = k.tags,
-                  metadata = k.metadata
-                )
-              )
-            ),
+          identity = Identity.of(apiKey, paUsr),
           responseChunked = isChunked,
           `@serviceId` = route.id,
           `@service` = route.name,

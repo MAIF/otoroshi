@@ -227,6 +227,19 @@ object ElasticTemplates                 {
       |          },
       |          "identity": {
       |            "type": "keyword"
+      |          },
+      |          "apiRef": {
+      |            "properties": {
+      |              "api": {
+      |                "type": "keyword"
+      |              },
+      |              "plan": {
+      |                "type": "keyword"
+      |              },
+      |              "sub": {
+      |                "type": "keyword"
+      |              }
+      |            }
       |          }
       |        }
       |      },
@@ -402,6 +415,19 @@ object ElasticTemplates                 {
       |          },
       |          "identity": {
       |            "type": "keyword"
+      |          },
+      |          "apiRef": {
+      |            "properties": {
+      |              "api": {
+      |                "type": "keyword"
+      |              },
+      |              "plan": {
+      |                "type": "keyword"
+      |              },
+      |              "sub": {
+      |                "type": "keyword"
+      |              }
+      |            }
       |          }
       |        }
       |      },

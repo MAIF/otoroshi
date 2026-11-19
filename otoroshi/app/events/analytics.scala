@@ -275,7 +275,10 @@ case class Identity(
     identity: String,
     label: String,
     tags: Seq[String],
-    metadata: Map[String, String]
+    metadata: Map[String, String],
+    // the api, plan and subscription of the apikey of the call, so that its usage can be counted per plan and per
+    // subscription. The subscription is empty for a consumer a plan mints on the fly
+    apiRef: Option[otoroshi.next.models.ApiRef] = None
 ) {
   def json: JsValue = Identity.format.writes(this)
 }
@@ -287,7 +290,8 @@ object Identity {
       "identity"     -> o.identity,
       "label"        -> o.label,
       "metadata"     -> o.metadata,
-      "tags"         -> o.tags
+      "tags"         -> o.tags,
+      "apiRef"       -> o.apiRef.map(_.json).getOrElse(JsNull).as[JsValue]
     )
     override def reads(json: JsValue): JsResult[Identity] = scala.util.Try {
       Identity(
@@ -295,38 +299,42 @@ object Identity {
         identity = json.select("identity").asString,
         label = json.select("label").asString,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        apiRef = json.select("apiRef").asOpt[JsObject].flatMap(ref => otoroshi.next.models.ApiRef.format.reads(ref).asOpt)
       )
     } match {
       case Success(s) => JsSuccess(s)
       case Failure(e) => JsError(e.getMessage)
     }
   }
-  def from(attrs: TypedMap): Option[Identity] = {
-    val apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).orElse(attrs.get(otoroshi.plugins.Keys.ErrorApiKeyKey))
-    val paUsr  = attrs.get(otoroshi.plugins.Keys.UserKey)
-    apiKey
-      .map(k =>
-        Identity(
-          identityType = "APIKEY",
-          identity = k.clientId,
-          label = k.clientName,
-          tags = k.tags,
-          metadata = k.metadata
-        )
-      )
-      .orElse(
-        paUsr.map(k =>
-          Identity(
-            identityType = "PRIVATEAPP",
-            identity = k.email,
-            label = k.name,
-            tags = k.tags,
-            metadata = k.metadata
-          )
-        )
-      )
-  }
+
+  // the identity of a call made with an apikey, the same in every event
+  def fromApikey(apikey: ApiKey): Identity = Identity(
+    identityType = "APIKEY",
+    identity = apikey.clientId,
+    label = apikey.clientName,
+    tags = apikey.tags,
+    metadata = apikey.metadata,
+    apiRef = apikey.apiRef
+  )
+
+  def fromPrivateAppsUser(user: PrivateAppsUser): Identity = Identity(
+    identityType = "PRIVATEAPP",
+    identity = user.email,
+    label = user.name,
+    tags = user.tags,
+    metadata = user.metadata
+  )
+
+  // the apikey of the call first, then the user of a private app
+  def of(apikey: Option[ApiKey], user: Option[PrivateAppsUser]): Option[Identity] =
+    apikey.map(fromApikey).orElse(user.map(fromPrivateAppsUser))
+
+  def from(attrs: TypedMap): Option[Identity] =
+    of(
+      attrs.get(otoroshi.plugins.Keys.ApiKeyKey).orElse(attrs.get(otoroshi.plugins.Keys.ErrorApiKeyKey)),
+      attrs.get(otoroshi.plugins.Keys.UserKey)
+    )
 }
 
 case class Location(host: String, scheme: String, uri: String)

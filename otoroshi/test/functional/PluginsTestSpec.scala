@@ -218,6 +218,15 @@ class ApiPlanSubscriptionRequiredSpec extends PluginsTestSpecBase {
 }
 
 // the plan of a call, its quota counter and its circuit breaker: sbt "testOnly functional.ApiPlanEnforcementSettingsSpec"
+// the gateway events of the calls of an api: sbt "testOnly functional.ApiPlanGatewayEventsSpec"
+class ApiPlanGatewayEventsSpec extends PluginsTestSpecBase {
+  s"the gateway events of an api" should {
+    "name the api, the plan and the subscription of the apikey of each call" in {
+      new ApiPlanPluginsTests(this).gatewayEventsCarryTheApiRef()
+    }
+  }
+}
+
 class ApiPlanEnforcementSettingsSpec extends PluginsTestSpecBase {
   s"an api plan" should {
     "apply to the calls of its selection only, between keyless plans" in {

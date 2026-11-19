@@ -136,7 +136,8 @@ The highest-volume event. It describes a full request/response round-trip with t
     "identity": "client-id",
     "label": "my-apikey",
     "metadata": { },
-    "tags": [ ]
+    "tags": [ ],
+    "apiRef": { "api": "my-api", "plan": "plan_gold", "sub": "sub_xxx" } // the api, plan and subscription of the apikey, or null
   },
   "remainingQuotas": { /* per-window / per-day / per-month quota counters */ },
   "gwError": null,                     // gateway error message, or null
@@ -148,6 +149,8 @@ The highest-volume event. It describes a full request/response round-trip with t
   "extraInfos": null
 }
 ```
+
+The `identity.apiRef` of a call made with the apikey of an [api](./apis.mdx) consumer tells which api, plan and subscription it was used under, as the apikey says it at the time of the call: the events can be counted per plan and per subscription without looking the apikeys up later, when a key may have moved to another plan or been deleted. `sub` is empty for the consumers a plan mints on the fly (keyless, jwt, mTLS and OAuth2 remote plans without a subscription), and `apiRef` is `null` for a classic apikey and for the user of a private app. The error events of a call, like the `429` of a plan whose quota is exceeded, carry the same identity.
 
 ### AuditEvent &mdash; admin / operational actions
 
