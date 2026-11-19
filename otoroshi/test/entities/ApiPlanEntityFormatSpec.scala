@@ -604,6 +604,15 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
 
     val format = ApikeyAccessModeConfiguration.fmt
 
+    "read and write the validity of the keys, none when absent or not a positive number" in {
+      readOk(format, Json.obj()).validity mustBe None
+      readOk(format, Json.obj("validity" -> 7776000000L)).validity mustBe Some(7776000000L)
+      readOk(format, Json.obj("validity" -> 0)).validity mustBe None
+      readOk(format, Json.obj("validity" -> -1)).validity mustBe None
+      readOk(format, Json.obj("validity" -> "90d")).validity mustBe None
+      (format.writes(ApikeyAccessModeConfiguration(validity = Some(86400000L))) \ "validity").as[Long] mustBe 86400000L
+    }
+
     "write a configuration" in {
       format.writes(apikeyConfig) mustBe Json.obj(
         "clientNamePattern"       -> "${plan.name}-client",
@@ -618,6 +627,7 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
         "restrictions"            -> apikeyConfig.restrictions.json,
         "rotation"                -> apikeyConfig.rotation.json,
         "validUntil"              -> 4102444800000L,
+        "validity"                -> JsNull,
         "tags"                    -> Json.arr("gold"),
         "metadata"                -> Json.obj("tier" -> "gold")
       )
@@ -637,6 +647,7 @@ class ApiPlanEntityFormatSpec extends EntityFormatSpec {
         "restrictions"            -> Restrictions().json,
         "rotation"                -> ApiKeyRotation().json,
         "validUntil"              -> JsNull,
+        "validity"                -> JsNull,
         "tags"                    -> Json.arr(),
         "metadata"                -> Json.obj()
       )

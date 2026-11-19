@@ -935,8 +935,16 @@
         "type": "integer",
         "format": "int64",
         "nullable": true,
-        "description": "The date after which the api keys are disabled, a timestamp in milliseconds. `null` for none",
+        "description": "The date after which the api keys are disabled, a timestamp in milliseconds. `null` for none. With a `validity`, a key expires at the earlier of the two",
         "example": 1823628715286
+      },
+      "validity": {
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "minimum": 1,
+        "description": "How long an api key of the plan is valid, in milliseconds, counted from the first time the key is enabled (the creation of an enabled subscription, or its confirmation): the key gets the earlier of that date and `validUntil`, and the start in its `validity_started_at` metadata. From then on, the date of the key is its own: writing its `validUntil` renews or shortens it, and neither the updates of its subscription nor a change of the plan put it back. `null` for none: the keys get `validUntil` on every update",
+        "example": 7776000000
       },
       "tags": {
         "type": "array",
@@ -985,6 +993,7 @@
         "nextSecret": null
       },
       "validUntil": null,
+      "validity": null,
       "tags": [
         "free-tier"
       ],

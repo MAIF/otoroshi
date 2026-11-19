@@ -1189,6 +1189,111 @@ class ApiManagementSpec extends OtoroshiSpec {
         call("DELETE", s"$apis/$external")
       }
     }
+    "count the validity of the keys of a plan from their first enablement, then let each key own its date" in {
+      val day       = 24L * 3600 * 1000
+      def planJson(validity: Option[JsValue], validUntil: Option[Long] = None, description: String = "gold"): JsObject =
+        Json.obj(
+          "id"                             -> "plan-x",
+          "name"                           -> "plan x",
+          "description"                    -> description,
+          "status"                         -> "published",
+          "access_mode_configuration_type" -> "apikey",
+          "access_mode_configuration"      -> (Json.obj("enabled" -> true) ++
+            validity.map(v => Json.obj("validity" -> v)).getOrElse(Json.obj()) ++
+            validUntil.map(v => Json.obj("validUntil" -> v)).getOrElse(Json.obj()))
+        )
+      def createApiWith(id: String, plan: JsObject): Unit = {
+        val template = ok(call("GET", s"$apis/_template")).as[JsObject]
+        ok(call("POST", apis, Some(template ++ Json.obj("id" -> id, "name" -> id, "state" -> "staging", "plans" -> Json.arr(plan)))), 201)
+      }
+      def setPlan(id: String, plan: JsObject): Unit = {
+        val current = ok(call("GET", s"$apis/$id")).as[JsObject]
+        ok(call("PUT", s"$apis/$id", Some(current ++ Json.obj("plans" -> Json.arr(plan)))))
+      }
+      def key(sub: String): JsValue           = ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/${keyOf(sub)}"))
+      def validUntilOf(sub: String): Long     = (key(sub) \ "validUntil").as[Long]
+      def startedAt(sub: String): Option[String] = (key(sub) \ "metadata" \ "validity_started_at").asOpt[String]
+      def touchSubscription(sub: String, team: String): Unit = {
+        val current = ok(call("GET", s"$subscriptions/$sub")).as[JsObject]
+        ok(call("PUT", s"$subscriptions/$sub", Some(current ++ Json.obj("metadata" -> Json.obj("team" -> team)))))
+      }
+      def setKeyValidUntil(sub: String, at: Long): Unit = {
+        val current = key(sub).as[JsObject]
+        ok(call("PUT", s"/apis/apim.otoroshi.io/v1/apikeys/${keyOf(sub)}", Some(current ++ Json.obj("validUntil" -> at))))
+      }
+      def around(expected: Long, actual: Long): Unit =
+        withClue(s"expected about $expected, got $actual (${actual - expected} ms off)")(math.abs(actual - expected) < 10000L mustBe true)
+
+      val api = "api-mgmt-validity"
+      createApiWith(api, planJson(Some(JsNumber(90 * day))))
+
+      // created enabled: valid 90 days from now, the start recorded on the key
+      createSubscription("sub-validity-enabled", "enabled", api = api)
+      around(System.currentTimeMillis() + 90 * day, validUntilOf("sub-validity-enabled"))
+      startedAt("sub-validity-enabled") must not be empty
+      val firstDate = validUntilOf("sub-validity-enabled")
+      touchSubscription("sub-validity-enabled", "client-1")
+      validUntilOf("sub-validity-enabled") mustBe firstDate
+
+      // a date written on the key survives the updates of its subscription and of its plan
+      val renewed = System.currentTimeMillis() + 10 * day
+      setKeyValidUntil("sub-validity-enabled", renewed)
+      touchSubscription("sub-validity-enabled", "client-2")
+      setPlan(api, planJson(Some(JsNumber(90 * day)), description = "gold, again"))
+      validUntilOf("sub-validity-enabled") mustBe renewed
+
+      // subscribed pending: the validity starts at the confirmation, not while it waits
+      subscribe(api, "sub-validity-pending")
+      startedAt("sub-validity-pending") mustBe None
+      await(3.seconds)
+      ok(call("POST", s"$apis/$api/subscriptions/sub-validity-pending/confirm", Some(Json.obj())), 204)
+      around(System.currentTimeMillis() + 90 * day, validUntilOf("sub-validity-pending"))
+      startedAt("sub-validity-pending") must not be empty
+
+      // the validUntil of the template caps the validity, whichever comes first
+      val soon  = System.currentTimeMillis() + 20 * day
+      setPlan(api, planJson(Some(JsNumber(90 * day)), validUntil = Some(soon)))
+      createSubscription("sub-validity-capped", "enabled", api = api)
+      validUntilOf("sub-validity-capped") mustBe soon
+      val later = System.currentTimeMillis() + 200 * day
+      setPlan(api, planJson(Some(JsNumber(90 * day)), validUntil = Some(later)))
+      createSubscription("sub-validity-uncapped", "enabled", api = api)
+      around(System.currentTimeMillis() + 90 * day, validUntilOf("sub-validity-uncapped"))
+
+      // a shorter validity applies to the keys not started yet only
+      val uncapped = validUntilOf("sub-validity-uncapped")
+      setPlan(api, planJson(Some(JsNumber(30 * day))))
+      validUntilOf("sub-validity-uncapped") mustBe uncapped
+      validUntilOf("sub-validity-enabled") mustBe renewed
+      createSubscription("sub-validity-shorter", "enabled", api = api)
+      around(System.currentTimeMillis() + 30 * day, validUntilOf("sub-validity-shorter"))
+
+      // without validity, the date of the template is put back on the key at every update, as before
+      val absolute = "api-mgmt-validity-absolute"
+      val planDate = System.currentTimeMillis() + 60 * day
+      createApiWith(absolute, planJson(None, validUntil = Some(planDate)))
+      createSubscription("sub-validity-absolute", "enabled", api = absolute)
+      validUntilOf("sub-validity-absolute") mustBe planDate
+      startedAt("sub-validity-absolute") mustBe None
+      setKeyValidUntil("sub-validity-absolute", System.currentTimeMillis() + 5 * day)
+      touchSubscription("sub-validity-absolute", "client-1")
+      validUntilOf("sub-validity-absolute") mustBe planDate
+
+      // a validity is a positive number of milliseconds
+      Seq(JsNumber(0), JsNumber(-1), JsString("90d")).foreach { validity =>
+        val template = ok(call("GET", s"$apis/_template")).as[JsObject]
+        val refused  = call(
+          "POST",
+          apis,
+          Some(template ++ Json.obj("id" -> "api-mgmt-validity-bad", "name" -> "bad", "state" -> "staging", "plans" -> Json.arr(planJson(Some(validity)))))
+        )
+        withClue(s"$validity: ${refused.body[String]}") {
+          refused.status mustBe 400
+          (refused.json \ "error").as[String] mustBe "invalid_plan"
+          (refused.json \ "error_description").as[String] mustBe "plan 'plan-x': validity must be a positive number of milliseconds"
+        }
+      }
+    }
     "shutdown" in {
       backendServer.stop()
       stopAll()

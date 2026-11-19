@@ -531,9 +531,25 @@ the audience of the API.
 | `constrainedServicesOnly` | boolean | Restrict to constrained services only |
 | `restrictions` | object | Access restrictions (allowed/forbidden paths and methods) |
 | `rotation` | object | Key rotation configuration (`enabled`, `rotationEvery`, `gracePeriod`) |
-| `validUntil` | number | Expiration timestamp (milliseconds) |
+| `validUntil` | number | Expiration timestamp (milliseconds), the same for every key of the plan |
+| `validity` | number | How long a key is valid, in milliseconds, counted from the first time it is enabled. Combined with `validUntil`, the key expires at the earlier of the two |
 | `tags` | array of string | Tags for generated keys |
 | `metadata` | object | Metadata for generated keys |
+
+#### Validity of the keys
+
+With a `validity`, each key of the plan gets its own expiry, counted from the moment it is first enabled: the creation of an `enabled` subscription, or the confirmation of a `pending` one (the validity does not run while a subscription waits for its approval). The key gets the earlier of that moment plus the `validity` and the `validUntil` of the plan, and the start of its validity in its `validity_started_at` metadata.
+
+From then on, the `validUntil` of the key is its own. Writing it renews or shortens the key, and that date survives the updates of the subscription and of the plan, capped by the `validUntil` of the plan when that one is earlier. Changing or removing the `validity` of the plan never extends nor resets the keys already started: it applies to the keys not started yet. Without `validity`, the `validUntil` of the plan is put back on the keys at every update, as before.
+
+```json
+"access_mode_configuration": {
+  "enabled": true,
+  "validity": 7776000000
+}
+```
+
+The keys of this plan are valid 90 days from their subscription. An api key past its `validUntil` is not active anymore: its calls are refused.
 
 ### Rate limiting
 

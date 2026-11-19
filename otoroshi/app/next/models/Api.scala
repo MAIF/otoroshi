@@ -632,7 +632,10 @@ case class ApikeyAccessModeConfiguration(
     validUntil: Option[DateTime] = None,
     rotation: ApiKeyRotation = ApiKeyRotation(),
     tags: Seq[String] = Seq.empty[String],
-    metadata: Map[String, String] = Map.empty[String, String]
+    metadata: Map[String, String] = Map.empty[String, String],
+    // how long a key is valid, in milliseconds, counted from the first time it is enabled. Combined with validUntil,
+    // the key expires at the earlier of the two
+    validity: Option[Long] = None
 ) extends ApiAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Apikey
   def json: JsValue = {
@@ -664,6 +667,7 @@ case class ApikeyAccessModeConfiguration(
       "restrictions"            -> restrictions.json,
       "rotation"                -> rotation.json,
       "validUntil"              -> validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
+      "validity"                -> validity.map(JsNumber(_)).getOrElse(JsNull).as[JsValue],
       "tags"                    -> JsArray(tags.map(JsString.apply)),
       "metadata"                -> JsObject(metadata.filter(_._1.nonEmpty).view.mapValues(JsString.apply).toMap)
     )
@@ -731,6 +735,8 @@ object ApikeyAccessModeConfiguration {
             .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(ApiKeyRotation()),
           validUntil = (json \ "validUntil").asOpt[Long].map(l => new DateTime(l)),
+          // the write of an api refuses a validity that is not a positive number of milliseconds
+          validity = (json \ "validity").asOpt[Long].filter(_ > 0),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
@@ -1329,9 +1335,40 @@ object ApiSubscription {
     // only an enabled subscription gives access: a pending one (not confirmed yet), a disabled, a deprecated or a
     // custom one gets a disabled key. Create, update, plan changes and confirm all build the key here, so the key
     // follows the status of its subscription
-    defaultApikey
-      .copy(enabled = subscription.status == ApiSubscriptionEnabled)
+    withValidity(defaultApikey.copy(enabled = subscription.status == ApiSubscriptionEnabled), None, configPlan)
   }
+
+  // the start of the validity of a key, in milliseconds: from then on, the date of the key is its own
+  val VALIDITY_STARTED_AT_KEY = "validity_started_at"
+
+  // the earlier of two expiries, none meaning never
+  private def earlier(a: Option[DateTime], b: Option[DateTime]): Option[DateTime] = (a, b) match {
+    case (Some(x), Some(y)) => Some(if (x.isBefore(y)) x else y)
+    case _                  => a.orElse(b)
+  }
+
+  // the validUntil of a key built from the template of a plan. A key whose validity has started keeps its own date,
+  // capped by the one of the template, whatever the plan says later: a date written on it (a renewal) survives the
+  // updates of its subscription and of its plan. Otherwise, with a validity in the template, the validity starts the
+  // first time the key is enabled, not while its subscription waits for an approval. Without, the template decides
+  private def withValidity(built: ApiKey, existing: Option[ApiKey], template: ApikeyAccessModeConfiguration): ApiKey =
+    existing.flatMap(_.metadata.get(VALIDITY_STARTED_AT_KEY)) match {
+      case Some(startedAt) =>
+        built.copy(
+          validUntil = earlier(existing.flatMap(_.validUntil), template.validUntil),
+          metadata = built.metadata + (VALIDITY_STARTED_AT_KEY -> startedAt)
+        )
+      case None            =>
+        template.validity match {
+          case Some(validity) if built.enabled =>
+            val now = DateTime.now()
+            built.copy(
+              validUntil = earlier(Some(now.plus(validity)), template.validUntil),
+              metadata = built.metadata + (VALIDITY_STARTED_AT_KEY -> now.getMillis.toString)
+            )
+          case _                               => built.copy(validUntil = template.validUntil)
+        }
+    }
 
   private def createNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
                                                                                               env: Env
@@ -1385,11 +1422,15 @@ object ApiSubscription {
       plan: ApiPlan,
       subscription: ApiSubscription
   ): ApiKey =
-    built.copy(
-      clientId = existing.clientId,
-      clientSecret = existing.clientSecret,
-      metadata = built.metadata ++ removeManagedMetadata(existing.metadata) ++ consumerMetadata(api, plan, subscription),
-      tags = built.tags ++ removeManagedTags(existing.metadata, existing.tags)
+    withValidity(
+      built.copy(
+        clientId = existing.clientId,
+        clientSecret = existing.clientSecret,
+        metadata = built.metadata ++ removeManagedMetadata(existing.metadata) ++ consumerMetadata(api, plan, subscription),
+        tags = built.tags ++ removeManagedTags(existing.metadata, existing.tags)
+      ),
+      Some(existing),
+      plan.apikeyTemplate
     )
 
   private def removeManagedMetadata(currentApikeyMetadata: Map[String, String]): Map[String, String] = {
@@ -2597,7 +2638,18 @@ object Api {
   // the plans that cannot be enforced as written: a selection on a plan whose callers present a key naming its plan, or
   // one that cannot be read
   def invalidPlan(api: Api): Option[String] =
-    api.plans.iterator.flatMap(plan => invalidSelection(plan).orElse(invalidMtlsSettings(plan))).nextOption()
+    api.plans.iterator
+      .flatMap(plan => invalidSelection(plan).orElse(invalidMtlsSettings(plan)).orElse(invalidValidity(plan)))
+      .nextOption()
+
+  // the validity of the keys of a plan is a positive number of milliseconds
+  private def invalidValidity(plan: ApiPlan): Option[String] =
+    plan.raw.select("access_mode_configuration").select("validity").asOpt[JsValue] match {
+      case None | Some(JsNull)                                                     => None
+      case Some(JsNumber(value)) if value.isWhole && value.isValidLong && value > 0 => None
+      case Some(_)                                                                 =>
+        Some(s"plan '${plan.id}': validity must be a positive number of milliseconds")
+    }
 
   // the ids of trusted_ca_refs are not checked to exist: an import or a catalog may write the api before its
   // certificates, and a missing one refuses every certificate at call time

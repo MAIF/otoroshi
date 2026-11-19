@@ -5,7 +5,7 @@ import { Button } from '../../components/Button';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import PageTitle from '../../components/PageTitle';
 import { Row } from '../../components/Row';
-import { ArrayInput, Table } from '../../components/inputs';
+import { ArrayInput, NumberInput, Table } from '../../components/inputs';
 import { RestrictionPath } from '../../components/Restrictions';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import SimpleLoader from './SimpleLoader';
@@ -60,6 +60,8 @@ const ACCESS_MODE_LABELS = {
   jwt: 'JWT',
 };
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
 const ApiKeysConstants = {
   schema: {
     clientNamePattern: {
@@ -80,6 +82,21 @@ const ApiKeysConstants = {
       props: {
         help: 'Auto disable apikey after this date',
       },
+    },
+    // stored in milliseconds, edited in days. An empty field is no validity, not a validity of 0
+    validity: {
+      renderer: (props) => (
+        <NumberInput
+          label="Validity"
+          help="How long a key of the plan is valid, counted from the first time it is enabled: the creation of an enabled subscription, or its confirmation. Combined with Valid until, the key expires at the earlier of the two. From then on the expiry of the key is its own: write the Valid until of the key to renew it. Empty: every key gets Valid until."
+          suffix="days"
+          min={0}
+          step="any"
+          placeholder="90"
+          value={props.value ? props.value / DAY_IN_MS : ''}
+          onChange={(days) => props.onChange(days > 0 ? Math.round(days * DAY_IN_MS) : null)}
+        />
+      ),
     },
     readOnly: {
       type: 'bool',
@@ -622,6 +639,7 @@ function AccessModeConfiguration({ value, hide, onConfirm, accessModeType }) {
           'clientNamePattern',
           'description',
           'validUntil',
+          'validity',
           'readOnly',
           'allowClientIdOnly',
           'constrainedServicesOnly',
