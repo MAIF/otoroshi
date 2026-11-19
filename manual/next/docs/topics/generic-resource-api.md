@@ -303,18 +303,19 @@ Two helpers are available to build clients, forms or generators:
 |------------------------------|---------------|----------------------------------------------------------------------------------|
 | `X-Pages`                    | List endpoints | Total number of pages, given the current `pageSize`. `-1` for non-paginated      |
 | `Otoroshi-Api-Deprecated`    | Any           | `yes` if the requested resource version is marked deprecated. Plan your migration |
-| `Otoroshi-Entity-Updated`    | `POST /:id`   | `true` / `false` — whether the upsert actually changed the stored entity         |
+| `Otoroshi-Entity-Updated`    | `POST /:id`   | `true` / `false` — whether the upsert actually changed the stored entity. `true` on a creation (`201`). The stored entity is compared before and after the write, without the `created_at` and `updated_at` of its `metadata`: writing the same entity again answers `false` |
 
 ## Status codes
 
 | Code | When                                                                                |
 |------|-------------------------------------------------------------------------------------|
 | 200  | Successful read, update, delete                                                     |
-| 201  | Successful create (`POST /apis/{group}/{version}/{entity}`)                         |
+| 201  | Successful create (`POST /apis/{group}/{version}/{entity}`, or an upsert `POST /apis/{group}/{version}/{entity}/{id}` that creates the entity) |
 | 204  | `DELETE /apis/{group}/{version}/{entity}` (delete all)                              |
 | 400  | Validation error, unsupported content type, bad request body                        |
 | 401  | Authentication missing / invalid, or operation forbidden by RBAC or resource flags  |
-| 404  | Resource (kind or `id`) not found                                                   |
+| 404  | Resource (kind or `id`) not found, `PUT` on an `id` that does not exist included (a `PUT` never creates: the upsert does) |
+| 409  | `POST /apis/{group}/{version}/{entity}` with an `id` already used. A line of `POST .../_bulk` for such an `id` has `"status": 409` |
 | 5xx  | Storage / unexpected internal errors                                                |
 
 Errors are always JSON objects of the form:

@@ -317,7 +317,8 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           case Left(err)    => err.leftf
           case Right(value) => {
             val idKey     = idFieldName()
-            val updateKey = if (id.isDefined) "updated_at" else "created_at"
+            // a creation is stamped as such, through the upsert too
+            val updateKey = if (action == WriteAction.Create) "created_at" else "updated_at"
             val finalBody = format
               .writes(value)
               .asObject
@@ -510,6 +511,9 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           }
       }
   }
+
+  // the json of an entity as findOne answers it: read and written back by the format of the resource
+  def normalized(json: JsValue): JsValue = format.reads(json).map(v => format.writes(v)).getOrElse(json)
 
   def allJson(): Seq[JsValue]                = all().map(v => format.writes(v))   //.map(_.json)
   def oneJson(id: String): Option[JsValue]   = one(id).map(v => format.writes(v)) //.map(_.json)
@@ -1295,6 +1299,24 @@ class OtoroshiResources(env: Env) {
   lazy val coreResources =
     (nativeResources ++ env.adminExtensions.coreResources()).map(r => OpenApiSchemas.carriedBy(env, r))
 
+}
+
+object GenericApiController {
+
+  // whether a write changed the stored entity: the json stored before it and the one it stored, without the timestamps
+  // every write stamps. The defaults and the normalisations of the format and of the write validators are covered
+  def changed(before: JsValue, after: JsValue): Boolean = withoutStamps(before) != withoutStamps(after)
+
+  private def withoutStamps(json: JsValue): JsValue = json match {
+    case obj: JsObject =>
+      obj.value.get("metadata") match {
+        case Some(metadata: JsObject) =>
+          val rest = metadata - "created_at" - "updated_at"
+          if (rest.value.isEmpty) obj - "metadata" else obj ++ Json.obj("metadata" -> rest)
+        case _                        => obj
+      }
+    case other         => other
+  }
 }
 
 class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: ControllerComponents)(using env: Env)
@@ -2136,7 +2158,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                     case Some(_) =>
                       Json
                         .obj(
-                          "status"            -> 400,
+                          "status"            -> 409,
                           "error"             -> "bad_entity",
                           "error_description" -> "entity already exists",
                           "entity"            -> entity
@@ -2499,8 +2521,8 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
             resource.access.findOne(version, id).flatMap {
               case Some(oldEntity) =>
                 result(
-                  Results.Unauthorized,
-                  Json.obj("error" -> "unauthorized", "error_description" -> "resource already exists"),
+                  Results.Conflict,
+                  Json.obj("error" -> "conflict", "error_description" -> "resource already exists"),
                   ctx.request,
                   resource.some
                 )
@@ -2668,7 +2690,13 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                             body,
                             s"${resource.singularName}Created".some
                           )
-                          result(Results.Created, resource.access.readableJson(res, ctx), ctx.request, resource.some)
+                          result(
+                            Results.Created,
+                            resource.access.readableJson(res, ctx),
+                            ctx.request,
+                            resource.some,
+                            Map("Otoroshi-Entity-Updated" -> "true")
+                          )
                       }
                   case Some(old) if !canUserWriteStored(ctx, resource, old) =>
                     result(
@@ -2678,9 +2706,6 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                       resource.some
                     )
                   case Some(old) =>
-                    val oldEntity  = resource.access.format.reads(old).get
-                    val newEntity  = resource.access.format.reads(body).get
-                    val hasChanged = oldEntity == newEntity
                     resource.access
                       .create(version, resource.singularName, id.some, body, WriteAction.Update, old.some)
                       .flatMap {
@@ -2695,10 +2720,10 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                           )
                           result(
                             Results.Ok,
-                            res,
+                            resource.access.readableJson(res, ctx),
                             ctx.request,
                             resource.some,
-                            Map("Otoroshi-Entity-Updated" -> hasChanged.toString)
+                            Map("Otoroshi-Entity-Updated" -> GenericApiController.changed(old, resource.access.normalized(res)).toString)
                           )
                       }
                 }
@@ -2718,13 +2743,10 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
           case Right(__body) => {
             val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
             resource.access.findOne(version, id).flatMap {
+              // a PUT never creates, creating with an id is the job of the upsert. Nothing exists, so answering before
+              // the rights check discloses nothing
               case None                                                             =>
-                result(
-                  Results.Unauthorized,
-                  Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
-                  ctx.request,
-                  resource.some
-                )
+                result(Results.NotFound, notFoundBody, ctx.request, resource.some)
               case Some(oldEntity) if !canUserWriteStored(ctx, resource, oldEntity) =>
                 result(
                   Results.Unauthorized,

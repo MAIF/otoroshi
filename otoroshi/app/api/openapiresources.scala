@@ -245,8 +245,9 @@ object OpenApiResourcePaths {
           Seq(prettyParameter),
           Seq(
             "201" -> response(s"The $single created", entityContent(resource)),
-            "400" -> error(s"The body is not a $single, the $single is not valid, or the credentials are missing")
-          ) :+ ("401" -> error(s"The credentials are wrong, they do not give access to this $single, or a $single with this id already exists")),
+            "400" -> error(s"The body is not a $single, the $single is not valid, or the credentials are missing"),
+            "409" -> error(s"A $single with this id already exists")
+          ) :+ ("401" -> error(s"The credentials are wrong, or they do not give access to this $single")),
           Some(entityBody(resource, s"The $single to create"))
         )
       ),
@@ -285,18 +286,25 @@ object OpenApiResourcePaths {
           resource,
           "upsertById",
           s"Create or replace a $single",
-          s"Creates the $single with this id, or replaces it when it exists. The id of the path wins over the one of the body. The `Otoroshi-Entity-Updated` header of an update tells whether the $single was already the same.",
+          s"Creates the $single with this id, or replaces it when it exists. The id of the path wins over the one of the body. The `Otoroshi-Entity-Updated` header tells whether the write changed the stored $single, so that writing the same $single again can be told apart from a change.",
           Seq(idParameter(resource), prettyParameter),
           Seq(
             "200" -> (response(s"The $single replaced", entityContent(resource)) ++ Json.obj(
               "headers" -> Json.obj(
                 "Otoroshi-Entity-Updated" -> Json.obj(
-                  "description" -> s"`true` when the $single sent is the one that was already stored",
+                  "description" -> s"`true` when the write changed the stored $single, `false` when the $single stored is the same as before. The timestamps of its `metadata` (`created_at`, `updated_at`) are not compared",
                   "schema"      -> Json.obj("type" -> "string", "enum" -> Json.arr("true", "false"))
                 )
               )
             )),
-            "201" -> response(s"The $single created", entityContent(resource)),
+            "201" -> (response(s"The $single created", entityContent(resource)) ++ Json.obj(
+              "headers" -> Json.obj(
+                "Otoroshi-Entity-Updated" -> Json.obj(
+                  "description" -> s"`true`: the $single did not exist",
+                  "schema"      -> Json.obj("type" -> "string", "enum" -> Json.arr("true"))
+                )
+              )
+            )),
             "400" -> response(
               s"The body is not a $single, the $single is not valid, or the credentials are missing",
               json(ref("BadEntityResponse"))
@@ -320,7 +328,7 @@ object OpenApiResourcePaths {
               s"The body is not a $single, the $single is not valid, or the credentials are missing",
               json(ref("BadEntityResponse"))
             )
-          ) :+ ("401" -> error(s"The credentials are wrong, they do not give access to this $single, or no $single has this id")),
+          ) :+ ("401" -> error(s"The credentials are wrong, or they do not give access to this $single")),
           Some(entityBody(resource, s"The $single that replaces the stored one"))
         )
       ),

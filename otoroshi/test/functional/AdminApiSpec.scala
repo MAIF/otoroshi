@@ -5,7 +5,8 @@ import otoroshi.models.*
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import play.api.libs.json.{JsArray, JsSuccess, Json, Reads}
+import play.api.libs.json.{JsArray, JsObject, JsSuccess, JsValue, Json, Reads}
+import play.api.libs.ws.{readableAsString, writeableOf_String, WSAuthScheme, WSResponse}
 import otoroshi.utils.syntax.implicits.*
 
 import java.io.File
@@ -337,6 +338,86 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
         //[REMOVE SERVICEDESC] status2 mustBe 404
         //[REMOVE SERVICEDESC] status3 mustBe 404
         status4 mustBe 404
+      }
+    }
+
+    "answer the writes of the generic api with the status and the header of what they did" in {
+      def generic(
+          method: String,
+          path: String,
+          body: Option[String] = None,
+          secret: String = "admin-api-apikey-secret",
+          contentType: String = "application/json"
+      ): WSResponse = {
+        val req = ws
+          .url(s"http://localhost:$port$path")
+          .withHttpHeaders("Host" -> "otoroshi-api.oto.tools", "Accept" -> contentType)
+          .withAuth("admin-api-apikey-id", secret, WSAuthScheme.BASIC)
+          .withMethod(method)
+        body.map(b => req.addHttpHeaders("Content-Type" -> contentType).withBody(b)).getOrElse(req).execute().futureValue
+      }
+      def errorOf(resp: WSResponse): String = (Json.parse(resp.body[String]) \ "error").as[String]
+      val routes   = "/apis/proxy.otoroshi.io/v1/routes"
+      val template = Json.parse(generic("GET", s"$routes/_template").body[String]).as[JsObject]
+      def route(id: String, name: String = "generic-writes"): JsObject = template ++ Json.obj("id" -> id, "name" -> name)
+
+      // a PUT never creates: a missing id is not found, whatever the kind
+      Seq(
+        s"$routes/generic-missing-route"                          -> route("generic-missing-route"),
+        "/apis/apim.otoroshi.io/v1/apikeys/generic-missing-key"    -> Json.obj("clientId" -> "generic-missing-key", "clientSecret" -> "s", "clientName" -> "k"),
+        "/apis/apis.otoroshi.io/v1/apis/generic-missing-api"       -> Json.obj("id" -> "generic-missing-api", "name" -> "a")
+      ).foreach { case (path, body) =>
+        val resp = generic("PUT", path, Some(Json.stringify(body)))
+        withClue(s"$path: ${resp.body[String]}") {
+          resp.status mustBe 404
+          errorOf(resp) mustBe "not_found"
+        }
+      }
+
+      // a POST of an id already used is a conflict, in bulk too
+      generic("POST", routes, Some(Json.stringify(route("generic-conflict-route")))).status mustBe 201
+      try {
+        val again = generic("POST", routes, Some(Json.stringify(route("generic-conflict-route"))))
+        withClue(again.body[String]) {
+          again.status mustBe 409
+          errorOf(again) mustBe "conflict"
+        }
+        val bulk  = generic(
+          "POST",
+          s"$routes/_bulk",
+          Some(Json.stringify(route("generic-conflict-route"))),
+          contentType = "application/x-ndjson"
+        )
+        withClue(bulk.body[String]) {
+          (Json.parse(bulk.body[String].linesIterator.next()) \ "status").as[Int] mustBe 409
+        }
+        // wrong credentials are still wrong credentials
+        generic("POST", routes, Some(Json.stringify(route("generic-conflict-route"))), secret = "wrong").status mustBe 401
+        generic("PUT", s"$routes/generic-missing-route", Some(Json.stringify(route("generic-missing-route"))), secret = "wrong").status mustBe 401
+      } finally {
+        generic("DELETE", s"$routes/generic-conflict-route")
+      }
+
+      // the upsert tells whether it changed the stored entity
+      val upserted = s"$routes/generic-upsert-route"
+      def upsert(body: JsValue): (Int, Option[String], JsValue) = {
+        val resp = generic("POST", upserted, Some(Json.stringify(body)))
+        (resp.status, resp.header("Otoroshi-Entity-Updated"), Json.parse(resp.body[String]))
+      }
+      try {
+        val (createdStatus, createdHeader, created) = upsert(route("generic-upsert-route"))
+        createdStatus mustBe 201
+        createdHeader mustBe Some("true")
+        (created \ "metadata" \ "created_at").asOpt[String] must not be empty
+        val (sameStatus, sameHeader, _)             = upsert(route("generic-upsert-route"))
+        (sameStatus, sameHeader) mustBe (200, Some("false"))
+        val (renamedStatus, renamedHeader, _)       = upsert(route("generic-upsert-route", name = "renamed"))
+        (renamedStatus, renamedHeader) mustBe (200, Some("true"))
+        val readBack                                = Json.parse(generic("GET", upserted).body[String])
+        val (backStatus, backHeader, _)             = upsert(readBack)
+        (backStatus, backHeader) mustBe (200, Some("false"))
+      } finally {
+        generic("DELETE", upserted)
       }
     }
 
