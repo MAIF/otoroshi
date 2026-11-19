@@ -31,16 +31,29 @@ the API (a deprecated plan takes no new subscription, but its consumers keep cal
 
 | Plan kind | Plugin added | Identity comes from | Generated client id |
 |-----------|--------------|---------------------|---------------------|
-| `keyless` | `Expression apikey extractor` | an [expression](./expression-language.mdx), `${req.ip}` by default | `keyless_<plan id>_<value>` |
+| `keyless` | `Expression apikey extractor` | an [expression](./expression-language.mdx), `${req.ip}` by default | `keyless_<api id>_<plan id>_<value>` |
 | `apikey` | `Apikey calls` | client credentials (basic auth, headers, client id, bearer, signed JWT) | the client id of the API key |
 | `oauth2-local` | `Apikey calls` | a token delivered by the client credentials endpoint of the plan | the client id of the API key |
-| `jwt` | `Jwt apikey extractor` | a claim of a token verified by a [JWT verifier](../entities/jwt-verifiers.md) | `jwt_<plan id>_<claim value>` |
-| `mtls` | `Client certificate apikey extractor` | the client certificate of the TLS connection | `mtls_<plan id>_<DN attribute, or a value derived from the subject and the serial number>` |
-| `oauth2-remote` | `OIDC apikey extractor` | a claim of a token verified against the OIDC settings of an [auth. module](../entities/auth-modules.md), of the `issuer` and one of the `audiences` of the plan when they are set | `oauth2_<plan id>_<claim value>` |
+| `jwt` | `Jwt apikey extractor` | a claim of a token verified by a [JWT verifier](../entities/jwt-verifiers.md) | `jwt_<api id>_<plan id>_<claim value>` |
+| `mtls` | `Client certificate apikey extractor` | the client certificate of the TLS connection | `mtls_<api id>_<plan id>_<DN attribute, or a value derived from the subject and the serial number>` |
+| `oauth2-remote` | `OIDC apikey extractor` | a claim of a token verified against the OIDC settings of an [auth. module](../entities/auth-modules.md), of the `issuer` and one of the `audiences` of the plan when they are set | `oauth2_<api id>_<plan id>_<claim value>` |
 
-The client id of a generated identity is always prefixed with the kind and the id of the plan. Two
-APIs sitting behind the same identity provider therefore never share a consumer, and a value coming
-from a request can never resolve to the client id of a real API key.
+The client id of a generated identity is always prefixed with the kind, the id of the API and the id of
+the plan (the id of a plan is only unique in its API). Two APIs sitting behind the same identity provider,
+even with plans of the same id, therefore never share a consumer, and a value coming from a request can
+never resolve to the client id of a real API key. An API key found under that client id whose `apiRef`
+names another API or another plan (saved by hand under that id) is refused with `401 unknown_apikey` and
+raises a *revoked apikey usage* alert: the settings of another plan are never enforced in place of the
+ones of the plan.
+
+Deleting an API deletes the API keys generated for the consumers of its plans, its subscriptions and the
+API keys they hold. The API keys of the other APIs are untouched.
+
+:::note
+Before 18.0.x the prefix did not carry the id of the API (`jwt_<plan id>_<claim value>`). The API keys
+generated with that prefix are renamed once, at startup, with everything else kept (secret, enabled flag,
+settings): their quota counters, keyed by client id, start again from zero.
+:::
 
 ### What the plan hands over
 

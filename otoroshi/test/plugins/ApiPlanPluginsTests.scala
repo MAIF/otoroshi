@@ -132,7 +132,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
     val cfg   = slot.get.config.raw
     cfg.select("expression").asString mustBe "${req.headers.x-consumer}"
     // the prefix is scoped by plan, so two keyless plans of the same api do not share a counter
-    cfg.select("client_id_prefix").asString mustBe "keyless_plan-keyless_"
+    cfg.select("client_id_prefix").asString mustBe s"keyless_${api.id}_plan-keyless_"
     cfg.select("api_id").asString mustBe api.id
     cfg.select("plan_id").asString mustBe "plan-keyless"
     cfg.select("create_if_missing").asOpt[Boolean] mustBe Some(true)
@@ -162,7 +162,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
     cfg.select("client_id_path").asString mustBe "$.azp"
     // the client id comes from a token, so it is namespaced by plan just like the keyless and the
     // mtls ones: two apis behind the same idp must not share a consumer identity
-    cfg.select("client_id_prefix").asString mustBe "jwt_plan-jwt_"
+    cfg.select("client_id_prefix").asString mustBe s"jwt_${api.id}_plan-jwt_"
     cfg.select("create_if_missing").asOpt[Boolean] mustBe Some(false)
     cfg.select("api_id").asString mustBe api.id
     cfg.select("plan_id").asString mustBe "plan-jwt"
@@ -190,7 +190,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
     cfg.select("regex_subject_dns").as[Seq[String]] mustBe Seq(".*CN=client.*")
     cfg.select("regex_issuer_dns").as[Seq[String]] mustBe Seq(".*CN=ca.*")
     cfg.select("client_id_field").asString mustBe "UID"
-    cfg.select("client_id_prefix").asString mustBe "mtls_plan-mtls_"
+    cfg.select("client_id_prefix").asString mustBe s"mtls_${api.id}_plan-mtls_"
     cfg.select("api_id").asString mustBe api.id
   }
 
@@ -314,7 +314,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
       resp.status mustBe 200
       // a public call with no credential at all still reaches the backend with a consumer identity
       // derived from its ip, so the quotas of the plan can be enforced
-      ApiPlanApikeySeen.get("e2e-keyless") mustBe Some("keyless_plan-e2e-kl_127.0.0.1")
+      ApiPlanApikeySeen.get("e2e-keyless") mustBe Some(s"keyless_${api.id}_plan-e2e-kl_127.0.0.1")
     } finally undeploy(api)
   }
 
@@ -327,19 +327,19 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
     deploy(api)
     try {
       callApi(api, Seq("X-Consumer" -> "team-a")).status mustBe 200
-      ApiPlanApikeySeen.get("e2e-keyless-expr") mustBe Some("keyless_plan-e2e-kl2_team-a")
+      ApiPlanApikeySeen.get("e2e-keyless-expr") mustBe Some(s"keyless_${api.id}_plan-e2e-kl2_team-a")
 
       // two callers resolving to different values get two distinct identities, hence two counters
       ApiPlanApikeySeen.reset()
       callApi(api, Seq("X-Consumer" -> "team-b")).status mustBe 200
-      ApiPlanApikeySeen.get("e2e-keyless-expr") mustBe Some("keyless_plan-e2e-kl2_team-b")
+      ApiPlanApikeySeen.get("e2e-keyless-expr") mustBe Some(s"keyless_${api.id}_plan-e2e-kl2_team-b")
 
       // a missing header does not fail the expression: the EL resolves it to "no-header-<field>",
       // so every caller omitting it lands on one shared identity, hence one shared quota bucket
       ApiPlanApikeySeen.reset()
       callApi(api).status mustBe 200
       ApiPlanApikeySeen.get("e2e-keyless-expr") mustBe Some(
-        "keyless_plan-e2e-kl2_no-header-x-consumer"
+        s"keyless_${api.id}_plan-e2e-kl2_no-header-x-consumer"
       )
     } finally undeploy(api)
   }
@@ -358,7 +358,7 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
       ApiPlanApikeySeen.get("e2e-keyless-empty") mustBe None
 
       callApi(api, Seq("X-Consumer" -> "team-c")).status mustBe 200
-      ApiPlanApikeySeen.get("e2e-keyless-empty") mustBe Some("keyless_plan-e2e-kl3_team-c")
+      ApiPlanApikeySeen.get("e2e-keyless-empty") mustBe Some(s"keyless_${api.id}_plan-e2e-kl3_team-c")
     } finally undeploy(api)
   }
 
@@ -392,11 +392,11 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
       val resp = callApi(api, Seq("Authorization" -> s"Bearer $token"))
       resp.status mustBe 200
       // the client id carried by the token becomes the consumer identity, in the namespace of the plan
-      ApiPlanApikeySeen.get("e2e-jwt") mustBe Some("jwt_plan-e2e-jwt_consumer-from-token")
+      ApiPlanApikeySeen.get("e2e-jwt") mustBe Some(s"jwt_${api.id}_plan-e2e-jwt_consumer-from-token")
       // create_if_missing is on by default, so that identity is also persisted as a real apikey
       await(2.seconds)
       env.datastores.apiKeyDataStore
-        .findById("jwt_plan-e2e-jwt_consumer-from-token")
+        .findById(s"jwt_${api.id}_plan-e2e-jwt_consumer-from-token")
         .futureValue
         .isDefined mustBe true
 
@@ -449,10 +449,10 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
       // identified and served either way, so the plan can hand its quotas to a caller without
       // filling the datastore with one entry per client id of the idp
       callApi(api, Seq("Authorization" -> s"Bearer $token")).status mustBe 200
-      ApiPlanApikeySeen.get("e2e-jwt-nocreate") mustBe Some("jwt_plan-e2e-jwt2_unknown-consumer")
+      ApiPlanApikeySeen.get("e2e-jwt-nocreate") mustBe Some(s"jwt_${api.id}_plan-e2e-jwt2_unknown-consumer")
       await(2.seconds)
       env.datastores.apiKeyDataStore
-        .findById("jwt_plan-e2e-jwt2_unknown-consumer")
+        .findById(s"jwt_${api.id}_plan-e2e-jwt2_unknown-consumer")
         .futureValue
         .isDefined mustBe false
     } finally undeploy(api)
@@ -512,12 +512,12 @@ class ApiPlanPluginsTests(parent: PluginsTestSpec) {
 
       // a caller presenting a credential keeps the identity of that credential
       callApi(api, Seq("Authorization" -> s"Bearer $token")).status mustBe 200
-      ApiPlanApikeySeen.get("mix") mustBe Some("jwt_plan-mix-jwt_consumer-from-token")
+      ApiPlanApikeySeen.get("mix") mustBe Some(s"jwt_${api.id}_plan-mix-jwt_consumer-from-token")
 
       // a caller presenting nothing falls back on the public plan
       ApiPlanApikeySeen.reset()
       callApi(api).status mustBe 200
-      ApiPlanApikeySeen.get("mix") mustBe Some("keyless_plan-mix-kl_127.0.0.1")
+      ApiPlanApikeySeen.get("mix") mustBe Some(s"keyless_${api.id}_plan-mix-kl_127.0.0.1")
     } finally undeploy(api)
   }
 

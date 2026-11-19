@@ -15,7 +15,7 @@ import otoroshi.models.{
   VerificationSettings
 }
 import otoroshi.next.models.*
-import otoroshi.next.plugins.{AllowedQuota, FixedWindowStrategyConfig}
+import otoroshi.next.plugins.{AllowedQuota, ApikeyFromPlan, FixedWindowStrategyConfig}
 import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.*
@@ -178,7 +178,7 @@ class ApiManagementSpec extends OtoroshiSpec {
   private val jwtDomain    = "api-mgmt-jwt.oto.tools"
   private val jwtSecret    = "api-mgmt-jwt-secret"
   private val jwtVerifier  = "api-mgmt-jwt-verifier"
-  private val jwtKeyPrefix = "jwt_plan-jwt_"
+  private val jwtKeyPrefix = "jwt_api-mgmt-jwt_plan-jwt_"
 
   private def jwtStrategy(quota: Long): FixedWindowStrategyConfig =
     FixedWindowStrategyConfig(windowDurationMs = 60000L, quota = AllowedQuota(quota, quota * 10, quota * 100))
@@ -230,6 +230,77 @@ class ApiManagementSpec extends OtoroshiSpec {
 
   private val jwtConsumerMetadata =
     Map("api_id" -> jwtApi, "plan_id" -> "plan-jwt", "access_mode" -> "jwt", "plan_consumer" -> "true")
+
+  // two published apis with plans of the same ids: a jwt plan on the verifier of the jwt api, and a keyless plan
+  private val partnerA = "api-mgmt-partner-a"
+  private val partnerB = "api-mgmt-partner-b"
+
+  private def partnerDomain(api: String): String = s"$api.oto.tools"
+
+  private def partnerApi(id: String, quota: Long): Api = {
+    given env: Env = otoroshiComponents.env
+    val apiBackend = ApiBackend(
+      id = s"backend-$id",
+      name = "backend",
+      backend = NgBackend.empty.copy(
+        targets = Seq(NgTarget(id = "target_1", hostname = "127.0.0.1", port = backendServer.port, tls = false))
+      ),
+      client = "default_backend_client"
+    )
+    val flow       = ApiFlows.empty
+    val strategy   = Json.obj("strategy" -> jwtStrategy(quota).json)
+    Api(
+      location = EntityLocation.default,
+      id = id,
+      name = id,
+      description = "",
+      domain = partnerDomain(id),
+      contextPath = "",
+      version = "0.0.1",
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      groups = Seq.empty,
+      state = ApiPublished,
+      blueprint = ApiBlueprint.REST,
+      testing = ApiTesting(),
+      backends = Seq(apiBackend),
+      flows = Seq(flow),
+      plans = Seq(
+        ApiPlan(jwtPlan(quota) ++ Json.obj("id" -> "plan_partner", "name" -> "partner")),
+        ApiPlan(
+          Json.obj(
+            "id"                             -> "plan_free",
+            "name"                           -> "free",
+            "status"                         -> "published",
+            "access_mode_configuration_type" -> "keyless",
+            "access_mode_configuration"      -> Json.obj("expr" -> "${req.ip}", "create_if_missing" -> true),
+            "rateLimiting"                   -> strategy
+          )
+        )
+      ),
+      routes = Seq(
+        ApiRoute(
+          id = s"route-$id",
+          frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(partnerDomain(id)))),
+          flowRef = flow.id,
+          backend = apiBackend.id
+        )
+      )
+    )
+  }
+
+  // a call to a partner api, with the token of a client id or without any credential
+  private def callPartner(api: String, clientId: Option[String]): Int =
+    ws.url(s"http://127.0.0.1:$port/")
+      .withHttpHeaders(
+        Seq("Host" -> partnerDomain(api)) ++ clientId.map(id =>
+          "Authorization" -> s"Bearer ${JWT.create().withClaim("client_id", id).sign(Algorithm.HMAC512(jwtSecret))}"
+        )*
+      )
+      .get()
+      .futureValue
+      .status
 
   "The management of the apis" should {
     "warm up" in {
@@ -715,6 +786,150 @@ class ApiManagementSpec extends OtoroshiSpec {
     "provision nothing for a subscription to a jwt plan without client_id" in {
       ok(call("POST", subscriptions, Some(jwtSubscription("sub-jwt-none", "enabled", None))), 201)
       (ok(call("GET", s"$subscriptions/sub-jwt-none")) \ "token_refs").as[Seq[JsValue]] mustBe empty
+    }
+    "set up two apis with plans of the same ids" in {
+      given env: Env = otoroshiComponents.env
+      env.datastores.apiDataStore.set(partnerApi(partnerA, 2)).futureValue mustBe true
+      env.datastores.apiDataStore.set(partnerApi(partnerB, 100)).futureValue mustBe true
+      waitUntil("the routes of the partner apis reach the router") {
+        Seq(partnerA, partnerB).forall(id => env.proxyState.allRoutes().exists(_.apiRef.exists(_.id == id)))
+      }
+    }
+    "not share the consumers of jwt plans of the same id between two apis" in {
+      Seq(callPartner(partnerA, Some("c1")), callPartner(partnerA, Some("c1"))) mustBe Seq(200, 200)
+      callPartner(partnerA, Some("c1")) mustBe 429
+      callPartner(partnerB, Some("c1")) mustBe 200
+      waitUntil("the keys minted for c1 are stored") {
+        storedApikey(s"jwt_${partnerA}_plan_partner_c1").isDefined && storedApikey(s"jwt_${partnerB}_plan_partner_c1").isDefined
+      }
+      storedApikey(s"jwt_${partnerA}_plan_partner_c1").flatMap(_.apiRef).map(_.api) mustBe Some(partnerA)
+      storedApikey(s"jwt_${partnerB}_plan_partner_c1").flatMap(_.apiRef).map(_.api) mustBe Some(partnerB)
+      storedApikey("jwt_plan_partner_c1") mustBe None
+    }
+    "not share the consumers of keyless plans of the same id between two apis" in {
+      Seq(callPartner(partnerA, None), callPartner(partnerA, None)) mustBe Seq(200, 200)
+      callPartner(partnerA, None) mustBe 429
+      callPartner(partnerB, None) mustBe 200
+      waitUntil("the keys minted for the ip of the caller are stored") {
+        storedApikey(s"keyless_${partnerA}_plan_free_127.0.0.1").isDefined &&
+        storedApikey(s"keyless_${partnerB}_plan_free_127.0.0.1").isDefined
+      }
+    }
+    // on the jwt api, whose only plan is the jwt one: on an api with a keyless plan, a call the jwt plan does not
+    // identify is identified by the keyless plan, as it would be without any token
+    "refuse a key of another api saved under the client id of a consumer" in {
+      given env: Env = otoroshiComponents.env
+      val elsewhere  = ApiKey(
+        clientId = s"${jwtKeyPrefix}c7",
+        clientSecret = "elsewhere-secret",
+        clientName = "elsewhere",
+        authorizedEntities = Seq(ApiIdentifier("api-mgmt-elsewhere")),
+        apiRef = Some(ApiRef("api-mgmt-elsewhere", "plan-jwt", "")),
+        enabled = true
+      )
+      elsewhere.save().futureValue mustBe true
+      waitUntil("the router sees the key saved by hand")(env.proxyState.apikey(elsewhere.clientId).isDefined)
+      val before     = storedApikey(elsewhere.clientId).map(_.json)
+      callJwtApi("c7") mustBe 401
+      storedApikey(elsewhere.clientId).map(_.json) mustBe before
+      env.datastores.apiKeyDataStore.delete(elsewhere.clientId).futureValue
+    }
+    "rename once the keys minted before the api id was in their client id" in {
+      given env: Env = otoroshiComponents.env
+      val marker     = ApikeyFromPlan.consumerKeysMigrationKey
+      waitUntil("the migration ran at startup")(env.datastores.rawDataStore.get(marker).futureValue.nonEmpty)
+      // what an older version minted on the fly, disabled by hand since
+      val minted     = ApiKey(
+        clientId = "jwt_plan_partner_c3",
+        clientSecret = "c3-secret",
+        clientName = "c3",
+        authorizedEntities = Seq(ApiIdentifier(partnerA)),
+        apiRef = Some(ApiRef(partnerA, "plan_partner", "")),
+        metadata = Map("created_by" -> "apikey-extractor"),
+        enabled = false
+      )
+      // and what a subscription of an older version provisioned
+      val provisioned = ApiKey(
+        clientId = "jwt_plan_partner_c5",
+        clientSecret = "c5-secret",
+        clientName = "c5",
+        authorizedEntities = Seq(ApiIdentifier(partnerA)),
+        apiRef = Some(ApiRef(partnerA, "plan_partner", "sub-migrated-consumer")),
+        metadata = Map("plan_consumer" -> "true"),
+        enabled = true
+      )
+      val subscription = ApiSubscription.format
+        .reads(
+          jwtSubscription("sub-migrated-consumer", "enabled", Some("c5")) ++ Json.obj(
+            "api_ref"    -> partnerA,
+            "plan_ref"   -> "plan_partner",
+            "token_refs" -> Json.arr(Json.obj("apikey" -> provisioned.clientId))
+          )
+        )
+        .get
+      // a key without apiRef is not a consumer of a plan
+      val unrelated  = ApiKey(
+        clientId = "jwt_plan_partner_c6",
+        clientSecret = "c6-secret",
+        clientName = "c6",
+        authorizedEntities = Seq(ApiIdentifier(partnerA)),
+        metadata = Map("created_by" -> "apikey-extractor")
+      )
+      Seq(minted, provisioned, unrelated).foreach(key => key.save().futureValue mustBe true)
+      subscription.save().futureValue mustBe true
+      val mintedBefore    = storedApikey(minted.clientId).get
+      val unrelatedBefore = storedApikey(unrelated.clientId).get
+      env.datastores.rawDataStore.del(Seq(marker)).futureValue
+
+      ApikeyFromPlan.migrateConsumerKeys().futureValue
+      storedApikey("jwt_plan_partner_c3") mustBe None
+      storedApikey(s"jwt_${partnerA}_plan_partner_c3").map(_.json) mustBe Some(
+        mintedBefore.copy(clientId = s"jwt_${partnerA}_plan_partner_c3").json
+      )
+      storedApikey(s"jwt_${partnerA}_plan_partner_c3").map(_.enabled) mustBe Some(false)
+      storedApikey("jwt_plan_partner_c5") mustBe None
+      storedApikey(s"jwt_${partnerA}_plan_partner_c5").map(_.clientSecret) mustBe Some("c5-secret")
+      env.datastores.apiSubscriptionDataStore.findById("sub-migrated-consumer").futureValue.map(_.tokenRefs) mustBe Some(
+        Seq(Json.obj("apikey" -> s"jwt_${partnerA}_plan_partner_c5"))
+      )
+      storedApikey("jwt_plan_partner_c6").map(_.json) mustBe Some(unrelatedBefore.json)
+      env.datastores.rawDataStore.get(marker).futureValue must not be empty
+
+      // recorded: a key of the old shape stored since is left as it is
+      minted.save().futureValue mustBe true
+      ApikeyFromPlan.migrateConsumerKeys().futureValue
+      storedApikey("jwt_plan_partner_c3").isDefined mustBe true
+      Seq(minted, unrelated).foreach(key => env.datastores.apiKeyDataStore.delete(key.clientId).futureValue)
+    }
+    "delete what was minted for an api with it, and only for it" in {
+      ok(
+        call(
+          "POST",
+          subscriptions,
+          Some(
+            jwtSubscription("sub-partner-c4", "enabled", Some("c4")) ++
+            Json.obj("api_ref" -> partnerA, "plan_ref" -> "plan_partner")
+          )
+        ),
+        201
+      )
+      storedApikey(s"jwt_${partnerA}_plan_partner_c4").map(_.enabled) mustBe Some(true)
+
+      ok(call("DELETE", s"$apis/$partnerA"))
+      call("GET", s"$apis/$partnerA").status mustBe 404
+      Seq(
+        s"jwt_${partnerA}_plan_partner_c1",
+        s"jwt_${partnerA}_plan_partner_c3",
+        s"jwt_${partnerA}_plan_partner_c4",
+        s"jwt_${partnerA}_plan_partner_c5",
+        s"keyless_${partnerA}_plan_free_127.0.0.1"
+      ).foreach(id => withClue(id)(storedApikey(id) mustBe None))
+      Seq("sub-partner-c4", "sub-migrated-consumer").foreach { id =>
+        withClue(id)(call("GET", s"$subscriptions/$id").status mustBe 404)
+      }
+      // the keys of the other api, and a key that is not a consumer of the api, are untouched
+      storedApikey(s"jwt_${partnerB}_plan_partner_c1").isDefined mustBe true
+      storedApikey(s"keyless_${partnerB}_plan_free_127.0.0.1").isDefined mustBe true
     }
     "shutdown" in {
       backendServer.stop()

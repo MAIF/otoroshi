@@ -669,6 +669,26 @@ class ApiSubscriptionsResourceAccess(env: Env)
     Some(ApiSubscription.beforeDeleteMany)
 }
 
+// the access of the apis: an api deleted without any validation by deleteMany loses what was minted for it too
+class ApisResourceAccess(env: Env)
+    extends GenericResourceAccessApiWithStateAndWriteValidation[Api](
+      Api.format,
+      classOf[Api],
+      env.datastores.apiDataStore.key,
+      env.datastores.apiDataStore.extractId,
+      json => json.select("id").asString,
+      () => "id",
+      (_v, _p, _a) => env.datastores.apiDataStore.template(env).json,
+      stateAll = () => env.proxyState.allApis(),
+      stateOne = id => env.proxyState.api(id),
+      stateUpdate = seq => env.proxyState.updateApis(seq),
+      writeValidator = Api.writeValidator,
+      deleteValidator = Api.deleteValidator,
+      writeChecker = Api.writeChecker
+    ) {
+  override def beforeDeleteMany: Option[(Seq[Api], Env) => Future[Unit]] = Some(Api.beforeDeleteMany)
+}
+
 class OtoroshiResources(env: Env) {
   // the resources of otoroshi itself, without any admin extension
   private lazy val nativeResources = Seq(
@@ -1180,20 +1200,7 @@ class OtoroshiResources(env: Env) {
       "api",
       "apis.otoroshi.io",
       ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApiWithStateAndWriteValidation[Api](
-        Api.format,
-        classOf[Api],
-        env.datastores.apiDataStore.key,
-        env.datastores.apiDataStore.extractId,
-        json => json.select("id").asString,
-        () => "id",
-        (_v, _p, _a) => env.datastores.apiDataStore.template(env).json,
-        stateAll = () => env.proxyState.allApis(),
-        stateOne = id => env.proxyState.api(id),
-        stateUpdate = seq => env.proxyState.updateApis(seq),
-        writeValidator = Api.writeValidator,
-        writeChecker = Api.writeChecker
-      )
+      new ApisResourceAccess(env)
     ),
     //////
     Resource(

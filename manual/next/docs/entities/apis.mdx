@@ -600,7 +600,7 @@ API key, and a subscription is the only way to get one. The `keyless` access mod
 subscriptions have nothing to generate.
 
 The `jwt`, `mtls` and `oauth2-remote` access modes build their consumer at call time too, as the API key
-`<prefix><client id>` (`jwt_<plan id>_`, `mtls_<plan id>_` or `oauth2_<plan id>_`, the client id being the claim at
+`<prefix><client id>` (`jwt_<api id>_<plan id>_`, `mtls_<api id>_<plan id>_` or `oauth2_<api id>_<plan id>_`, the client id being the claim at
 `client_id_path` of the token, or the `client_id_field` of the certificate). A subscription to one of these plans
 with a `client_id` provisions that very API key, and references it in `token_refs`: the subscription then decides for
 that consumer. A key the plan already minted on the fly for it is taken over (same client id and secret), a key of
@@ -618,7 +618,8 @@ the API keys of its `token_refs`, except the ones whose `apiRef` is another subs
 the API anymore. The API key of a `jwt`, `mtls` or `oauth2-remote` subscription is **disabled**, not deleted: the plan
 would mint it again, enabled, at the next call. A subscription whose API keys could not be revoked is kept, and the
 deletion answers a `500`. Removing a plan from an API deletes its subscriptions and revokes their API keys in the same
-way. Closing a plan deletes its subscriptions and their API keys, whatever their kind.
+way. Closing a plan deletes its subscriptions and their API keys, whatever their kind. Deleting an API deletes its
+subscriptions, the API keys they hold, and the API keys its plans generated for their consumers.
 
 ### Subscription dates
 

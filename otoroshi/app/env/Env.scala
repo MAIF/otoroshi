@@ -1994,8 +1994,9 @@ class Env(
       for {
         _ <- datastores.globalConfigDataStore.migrate()
       } yield ()
-      // on its own: a failure of the migration of the global config does not hold it back
+      // on their own: a failure of the migration of the global config does not hold them back
       datastores.apiSubscriptionDataStore.migrate()
+      otoroshi.next.plugins.ApikeyFromPlan.migrateConsumerKeys()
     }
   }(using otoroshiExecutionContext)
 

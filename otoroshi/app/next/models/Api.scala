@@ -805,14 +805,11 @@ case class ApiPlan(raw: JsObject) {
     .asOpt[JsObject]
     .flatMap(o => ApiPlanVisibility.format.reads(o).asOpt)
     .getOrElse(ApiPlanVisibility.Public)
-  // the prefix of the client ids of the api keys of the consumers of a jwt, mtls or oauth2-remote plan: the extractor
-  // of the plan and the subscriptions to it agree on the key of a consumer through it
-  lazy val consumerClientIdPrefix: Option[String] = accessModeConfigurationType match {
-    case "jwt"           => Some(s"jwt_${id}_")
-    case "mtls"          => Some(s"mtls_${id}_")
-    case "oauth2-remote" => Some(s"oauth2_${id}_")
-    case _               => None
-  }
+  // the prefix of the client ids of the api keys the extractor of a keyless, jwt, mtls or oauth2-remote plan mints for
+  // its consumers, and the subscriptions to it provision: <kind>_<api id>_<plan id>_. The id of a plan is only unique
+  // in its api, so the api id keeps two apis with a plan of the same id from sharing their consumers
+  def consumerClientIdPrefix(apiId: String): Option[String] =
+    ApiPlan.consumerClientIdKind(accessModeConfigurationType).map(kind => s"${kind}_${apiId}_${id}_")
   // the apikey settings a plan hands over when an apikey has to be minted for a consumer. only an
   // apikey plan carries a full template, the other kinds only have what the plan itself declares.
   lazy val apikeyTemplate: ApikeyAccessModeConfiguration = accessModeConfiguration match {
@@ -1252,7 +1249,7 @@ object ApiSubscription {
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    (plan.consumerClientIdPrefix, subscription.clientId) match {
+    (plan.consumerClientIdPrefix(api.id), subscription.clientId) match {
       case (Some(prefix), Some(clientId)) =>
         val keyId = s"$prefix$clientId"
         val built = generateNewApikeyFromPlan(api, plan, subscription, Some(keyId))
@@ -1647,6 +1644,17 @@ object ApiKind {
   }
 }
 
+object ApiPlan {
+  // the first part of the client ids of the consumers of a plan, by access mode
+  def consumerClientIdKind(accessMode: String): Option[String] = accessMode match {
+    case "keyless"       => Some("keyless")
+    case "jwt"           => Some("jwt")
+    case "mtls"          => Some("mtls")
+    case "oauth2-remote" => Some("oauth2")
+    case _               => None
+  }
+}
+
 trait ApiPlanStatus  {
   def name: String
   def orderPosition: Int
@@ -2024,7 +2032,7 @@ case class Api(
             // can be enforced per caller without asking for any credential
             NgExpressionApikeyExtractorConfig(
               expression = keylessConfig.expr.getOrElse("${req.ip}"),
-              clientIdPrefix = s"keyless_${plan.id}_",
+              clientIdPrefix = plan.consumerClientIdPrefix(api.id).get,
               strict = false,
               createIfMissing = keylessConfig.createIfMissing,
               apiId = api.id.some,
@@ -2077,7 +2085,7 @@ case class Api(
             NgJwtApikeyExtractorConfig(
               verifier = jwtConfig.verifier.getOrElse(""),
               clientIdPath = jwtConfig.clientIdPath.getOrElse("client_id"),
-              clientIdPrefix = plan.consumerClientIdPrefix.get,
+              clientIdPrefix = plan.consumerClientIdPrefix(api.id).get,
               strict = false,
               createIfMissing = jwtConfig.createIfMissing,
               // an apikey minted from a token has to carry the very same quotas, restrictions and
@@ -2103,7 +2111,7 @@ case class Api(
               regexSubjectDNs = mtlsConfig.regexSubjectDNs,
               regexIssuerDNs = mtlsConfig.regexIssuerDNs,
               clientIdField = mtlsConfig.clientIdField,
-              clientIdPrefix = plan.consumerClientIdPrefix.get,
+              clientIdPrefix = plan.consumerClientIdPrefix(api.id).get,
               strict = false,
               createIfMissing = mtlsConfig.createIfMissing,
               apiId = api.id.some,
@@ -2126,7 +2134,7 @@ case class Api(
             NgOidcApikeyExtractorConfig(
               ref = oidcConfig.verifier,
               clientIdPath = oidcConfig.clientIdPath.getOrElse("client_id"),
-              clientIdPrefix = plan.consumerClientIdPrefix.get,
+              clientIdPrefix = plan.consumerClientIdPrefix(api.id).get,
               fetchUser = oidcConfig.fetchUser,
               userMetadataKey = oidcConfig.userMetadataKey,
               strict = false,
@@ -2308,6 +2316,60 @@ case class Api(
 object Api {
 
   private val logger = Logger("otoroshi-api-model")
+
+  // what was minted for an api goes with it: its subscriptions and the keys they hold, and the keys the extractors of
+  // its plans minted for their consumers. The keys of the other apis are untouched. An api whose subscriptions or keys
+  // could not be deleted is kept, so that nothing minted for it outlives it
+  def deleteMintedFor(api: Api)(using env: Env): Future[Either[String, Unit]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    def minted(apikey: ApiKey): Boolean =
+      apikey.apiRef.exists(_.api == api.id) &&
+      (apikey.metadata.get("created_by").contains("apikey-extractor") ||
+      apikey.metadata.get("plan_consumer").contains("true"))
+    (for {
+      subscriptions <- env.datastores.apiSubscriptionDataStore.findAll()
+      results       <- subscriptions.filter(_.apiRef == api.id).mapAsync { sub =>
+                         ApiSubscription.deleteKeys(sub).flatMap {
+                           case Left(error) => (Left(error): Either[String, Unit]).vfuture
+                           case Right(_)    =>
+                             env.datastores.apiSubscriptionDataStore.delete(sub.id).map(_ => Right(()): Either[String, Unit])
+                         }
+                       }
+      keys          <- env.datastores.apiKeyDataStore.findAll()
+      _             <- keys.filter(minted).mapAsync(apikey => env.datastores.apiKeyDataStore.delete(apikey.clientId))
+    } yield results.collectFirst { case Left(error) => error }.toLeft(())).recover { case e: Throwable =>
+      logger.error(s"failed to delete the subscriptions and the api keys of api '${api.id}'", e)
+      Left(s"failed to delete the subscriptions and the api keys of api '${api.id}'")
+    }
+  }
+
+  def deleteValidator(
+      api: Api,
+      body: JsValue,
+      singularName: String,
+      id: String,
+      action: DeleteAction,
+      env: Env
+  ): Future[Either[JsValue, Unit]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    deleteMintedFor(api)(using env).map {
+      case Left(error) => Left(Json.obj("error" -> error, "http_status_code" -> 500))
+      case Right(_)    => Right(())
+    }
+  }
+
+  // what deleteMany removes without any validation (remote catalogs, kubernetes jobs) loses what was minted for it too:
+  // an api whose subscriptions or keys could not be deleted fails the whole deletion, and nothing is deleted
+  def beforeDeleteMany(apis: Seq[Api], env: Env): Future[Unit] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    implicit val e: Env               = env
+    apis.mapAsync(api => deleteMintedFor(api)).flatMap { results =>
+      results.collect { case Left(error) => error } match {
+        case Seq()  => ().vfuture
+        case errors => Future.failed(new RuntimeException(errors.mkString(", ")))
+      }
+    }
+  }
 
   def isValidStateTransition(from: ApiState, to: ApiState, viaDeploy: Boolean): Boolean = (from, to) match {
     // staging

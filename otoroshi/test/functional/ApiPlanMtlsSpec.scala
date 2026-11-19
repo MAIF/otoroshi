@@ -284,7 +284,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       try {
         call(Some(matchingClient)) mustBe Some(200)
         // the named DN attribute becomes the consumer identity
-        ApiPlanApikeySeen.get("mtls-cn") mustBe Some("mtls_plan-mtls-cn_mtls-client")
+        ApiPlanApikeySeen.get("mtls-cn") mustBe Some(s"mtls_${api.id}_plan-mtls-cn_mtls-client")
       } finally undeploy(api)
     }
 
@@ -326,7 +326,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         call(Some(matchingClient)) mustBe Some(200)
         val first = ApiPlanApikeySeen.get("mtls-derived")
         first.isDefined mustBe true
-        first.get.startsWith("mtls_plan-mtls-derived_") mustBe true
+        first.get.startsWith(s"mtls_${api.id}_plan-mtls-derived_") mustBe true
 
         // the same certificate always maps to the same consumer, so its quotas add up
         ApiPlanApikeySeen.reset()
@@ -342,7 +342,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         // with no pattern the handshake is the only requirement, but each certificate still gets
         // its own identity
         call(Some(otherClient)) mustBe Some(200)
-        ApiPlanApikeySeen.get("mtls-open") mustBe Some("mtls_plan-mtls-open_other-client")
+        ApiPlanApikeySeen.get("mtls-open") mustBe Some(s"mtls_${api.id}_plan-mtls-open_other-client")
       } finally undeploy(api)
     }
 
@@ -353,7 +353,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         Json.obj("regex_subject_dns" -> Json.arr(".*CN=mtls-client.*"), "client_id_field" -> "CN"),
         "mtls-sub"
       )
-      val keyId         = "mtls_plan-mtls-sub_mtls-client"
+      val keyId         = s"mtls_${api.id}_plan-mtls-sub_mtls-client"
       val subscriptions = "/apis/apis.otoroshi.io/v1/apisubscriptions"
       // a call with the certificate, once the router sees the key of the consumer as it is stored
       def callAsStored(): Option[Int] = {
@@ -592,7 +592,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
   private case class Expected(call: DemoCall, kind: String, consumer: String)
 
   private def demoCalls(demoClient: (PrivateKey, Array[X509Certificate])): Seq[Expected] = Seq(
-    Expected(demoHttpCall("no credential at all"), "keyless", s"keyless_$demoPrefix-keyless-plan_127.0.0.1"),
+    Expected(demoHttpCall("no credential at all"), "keyless", s"keyless_${demoPrefix}_$demoPrefix-keyless-plan_127.0.0.1"),
     Expected(
       demoHttpCall(
         "Otoroshi-Client-Id / Secret",
@@ -608,12 +608,12 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         "Authorization" -> s"Bearer ${demoJwt(demoJwtSecret, "iss" -> "demo", "client_id" -> "consumer-from-token")}"
       ),
       "jwt",
-      s"jwt_$demoPrefix-jwt-plan_consumer-from-token"
+      s"jwt_${demoPrefix}_$demoPrefix-jwt-plan_consumer-from-token"
     ),
     Expected(
       demoMtlsCall("client certificate", demoClient),
       "mtls",
-      s"mtls_$demoPrefix-mtls-plan_demo-consumer"
+      s"mtls_${demoPrefix}_$demoPrefix-mtls-plan_demo-consumer"
     ),
     // the apikey doubles as the signing key: ApikeyCalls reads the clientId claim, looks the
     // apikey up, then validates the HS512 signature against its own clientSecret
@@ -631,7 +631,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         "Authorization" -> s"Bearer ${demoJwt(demoOidcSecret, "iss" -> "demo-idp", "client_id" -> "consumer-from-oidc")}"
       ),
       "oauth2-remote",
-      s"oauth2_$demoPrefix-oauth2-remote-plan_consumer-from-oidc"
+      s"oauth2_${demoPrefix}_$demoPrefix-oauth2-remote-plan_consumer-from-oidc"
     )
   )
 
@@ -828,7 +828,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
           val results = demoCalls(demo.client)
           withClue(report(results)) {
             val jwtCall = results.find(_.kind == "jwt").get
-            mustBeServedBy(jwtCall, "keyless", s"keyless_$demoPrefix-keyless-plan_127.0.0.1")
+            mustBeServedBy(jwtCall, "keyless", s"keyless_${demoPrefix}_$demoPrefix-keyless-plan_127.0.0.1")
             results.filterNot(_.kind == "jwt").foreach(e => mustBeServedBy(e, e.kind, e.consumer))
           }
         }
@@ -1015,7 +1015,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       val served = claimsCall(claimsJwt("client-1", Some("demo-idp"), Seq("my-api")))
       withClue(served.how) {
         served.status mustBe 200
-        served.consumer mustBe Some("oauth2_claims-plan_client-1")
+        served.consumer mustBe Some(s"oauth2_${claimsPrefix}_claims-plan_client-1")
         served.plan mustBe Some("claims-plan")
       }
       val severalAudiences = claimsCall(claimsJwt("client-1", Some("demo-idp"), Seq("other-api", "my-api")))
@@ -1024,7 +1024,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       // refused before the client id is read: nothing is minted for it
       val otherIssuer = claimsCall(claimsJwt("client-refused", Some("other-idp"), Seq("my-api")))
       withClue(otherIssuer.how)(otherIssuer.status mustBe 401)
-      storedKey("oauth2_claims-plan_client-refused") mustBe None
+      storedKey(s"oauth2_${claimsPrefix}_claims-plan_client-refused") mustBe None
 
       Seq(
         "another audience" -> claimsJwt("client-refused", Some("demo-idp"), Seq("other-api")),
@@ -1034,7 +1034,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         val refused = claimsCall(token)
         withClue(s"$what: ${refused.how}")(refused.status mustBe 401)
       }
-      storedKey("oauth2_claims-plan_client-refused") mustBe None
+      storedKey(s"oauth2_${claimsPrefix}_claims-plan_client-refused") mustBe None
 
       // without issuer nor audiences, as before: any token signed with the keys of the module
       deployClaimsApi("no-claims", claimsPlan("claims-plan", Json.obj()))
@@ -1048,7 +1048,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
         val call = claimsCall(token)
         withClue(call.how) {
           call.status mustBe 200
-          call.consumer mustBe Some("oauth2_claims-plan_client-1")
+          call.consumer mustBe Some(s"oauth2_${claimsPrefix}_claims-plan_client-1")
         }
       }
     }
@@ -1068,7 +1068,7 @@ class ApiPlanMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
       withClue(toB.how) {
         toB.status mustBe 200
         toB.plan mustBe Some("claims-plan-b")
-        toB.consumer mustBe Some("oauth2_claims-plan-b_client-2")
+        toB.consumer mustBe Some(s"oauth2_${claimsPrefix}_claims-plan-b_client-2")
       }
       val toNone = claimsCall(claimsJwt("client-2", Some("demo-idp"), Seq("api-c")))
       withClue(toNone.how)(toNone.status mustBe 401)

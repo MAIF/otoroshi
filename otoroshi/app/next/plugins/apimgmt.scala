@@ -210,6 +210,112 @@ object ApikeyFromPlan {
     }
   }
 
+  private val logger = play.api.Logger("otoroshi-apikey-from-plan")
+
+  // the keys an extractor minted for a consumer, and the ones a subscription provisioned for it
+  private def mintedForConsumer(apikey: ApiKey): Boolean =
+    apikey.metadata.get("created_by").contains("apikey-extractor") || apikey.metadata.get("plan_consumer").contains("true")
+
+  def consumerKeysMigrationKey(using env: Env): String =
+    s"${env.storageRoot}:migrations:apikeys:consumer-prefix-with-api"
+
+  // the new client id of a key named <kind>_<plan id>_<client id>, before the api id was in the prefix
+  def renamedConsumerClientId(apikey: ApiKey): Option[String] =
+    apikey.apiRef.filter(ref => mintedForConsumer(apikey) && ref.api.nonEmpty && ref.plan.nonEmpty).flatMap { ref =>
+      Seq("keyless", "jwt", "mtls", "oauth2").collectFirst {
+        case kind
+            if apikey.clientId.startsWith(s"${kind}_${ref.plan}_") &&
+              !apikey.clientId.startsWith(s"${kind}_${ref.api}_${ref.plan}_") =>
+          s"${kind}_${ref.api}_${ref.plan}_${apikey.clientId.stripPrefix(s"${kind}_${ref.plan}_")}"
+      }
+    }
+
+  // the keys minted for the consumers of keyless, jwt, mtls and oauth2-remote plans used to be named
+  // <kind>_<plan id>_<client id>, shared by every api with a plan of the same id. They are renamed once
+  // <kind>_<api id>_<plan id>_<client id>, with everything else kept (secret, enabled flag, settings, apiRef), and the
+  // token_refs of the subscription that provisioned one follow. Their quota counters, keyed by client id, start again
+  // from zero. The keys without apiRef are left alone
+  def migrateConsumerKeys()(using env: Env, ec: ExecutionContext): Future[Unit] = {
+    env.datastores.rawDataStore.get(consumerKeysMigrationKey).flatMap {
+      case Some(_) => ().vfuture
+      case None    =>
+        env.datastores.apiKeyDataStore
+          .findAll()
+          .flatMap { keys =>
+            val renames = keys.flatMap(key => renamedConsumerClientId(key).map(id => (key, id)))
+            renames.mapAsync { case (key, newId) => migrateConsumerKey(key, newId) }.flatMap { results =>
+              if (renames.nonEmpty) {
+                logger.warn(
+                  s"${results.count(identity)} api keys of plan consumers renamed with the id of their api in their client id, their quotas start again from zero"
+                )
+              }
+              if (results.exists(!_)) {
+                // not recorded, so that the migration runs again at the next start
+                logger.error("some api keys of plan consumers could not be renamed, will retry at the next start")
+                ().vfuture
+              } else {
+                env.datastores.rawDataStore
+                  .set(consumerKeysMigrationKey, org.apache.pekko.util.ByteString(DateTime.now().toString), None)
+                  .map(_ => ())
+              }
+            }
+          }
+          .recover { case e: Throwable =>
+            logger.error("error while renaming the api keys of plan consumers", e)
+          }
+    }
+  }
+
+  private def migrateConsumerKey(key: ApiKey, newId: String)(using env: Env, ec: ExecutionContext): Future[Boolean] =
+    env.datastores.apiKeyDataStore
+      .findById(newId)
+      .flatMap {
+        case Some(_) =>
+          logger.warn(s"api key '$newId' exists already, '${key.clientId}' is not renamed")
+          true.vfuture
+        case None    =>
+          key.copy(clientId = newId).save().flatMap {
+            case false => false.vfuture
+            case true  =>
+              for {
+                _ <- renameInSubscription(key, newId)
+                _ <- env.datastores.apiKeyDataStore.delete(key.clientId)
+              } yield {
+                logger.warn(s"api key '${key.clientId}' renamed '$newId'")
+                true
+              }
+          }
+      }
+      .recover { case e: Throwable =>
+        logger.error(s"unable to rename the api key '${key.clientId}'", e)
+        false
+      }
+
+  private def renameInSubscription(key: ApiKey, newId: String)(using env: Env, ec: ExecutionContext): Future[Unit] = {
+    def isOld(ref: JsValue): Boolean = ref.select("apikey").asOpt[String].contains(key.clientId)
+    key.apiRef.map(_.subscription).filter(_.nonEmpty) match {
+      case None        => ().vfuture
+      case Some(subId) =>
+        env.datastores.apiSubscriptionDataStore.findById(subId).flatMap {
+          case Some(sub) if sub.tokenRefs.exists(isOld) =>
+            sub
+              .copy(tokenRefs = sub.tokenRefs.map { ref =>
+                if (isOld(ref)) ref.asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj("apikey" -> newId) else ref
+              })
+              .save()
+              .map(_ => ())
+          case _                                        => ().vfuture
+        }
+    }
+  }
+
+  // the key names another api or another plan than the ones of the extractor
+  private def belongsElsewhere(apikey: ApiKey, config: ApikeyFromPlanConfig): Boolean =
+    (config.apiId, config.planId) match {
+      case (Some(apiId), Some(planId)) => apikey.apiRef.exists(ref => ref.api != apiId || ref.plan != planId)
+      case _                           => false
+    }
+
   // resolves the apikey behind a client id. an existing one always wins, so that a revoked or
   // disabled apikey cannot be resurrected by minting a fresh one over it. otherwise the apikey is
   // built from the plan settings, and create_if_missing decides whether it reaches the datastore:
@@ -240,6 +346,22 @@ object ApikeyFromPlan {
         case None                           => apikeyFor(clientId, config, ctx, extraMetadata).some
       }
       .flatMap {
+        // a key of another api or of another plan under the client id of a consumer of this plan (saved by hand
+        // under that id): its settings are never enforced in place of the ones of the plan
+        case Some(apikey) if belongsElsewhere(apikey, config) => {
+          Alerts.send(
+            RevokedApiKeyUsageAlert(
+              env.snowflakeGenerator.nextIdStr(),
+              DateTime.now(),
+              env.env,
+              ctx.request,
+              apikey,
+              None,
+              env
+            )
+          )
+          Results.Unauthorized(Json.obj("error" -> "unknown_apikey")).vfuture
+        }
         case Some(apikey) if apikey.isActive() => {
           // identification only: the restrictions and the quotas of that apikey are enforced by
           // NgApiConsumerEnforcer, once every other access validator of the route has passed
