@@ -255,8 +255,9 @@ class UserRightsPoliciesSpec(name: String, configurationSpec: => Configuration) 
         superAdmin,
         policyJson("SomeOne@oto.tools", "replace", UserRights.empty).some
       )
+      // the id of a policy is the email of its user in lower case: this one is already used
       withClue(s"${Json.stringify(body)} ") {
-        status mustBe 401
+        status mustBe 409
       }
       call("DELETE", s"$policies/someone@oto.tools", superAdmin)._2 mustBe 200
     }
