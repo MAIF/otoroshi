@@ -705,9 +705,14 @@ as soon as the subscription is set to any other status. `POST .../apis/{apiId}/p
 `pending` whatever its body says, with its API key disabled: `POST .../apis/{apiId}/subscriptions/{subId}/confirm`
 enables both.
 
+A subscription only manages the API keys it minted: the ones whose `apiRef` is the subscription, and the ones minted
+before the API keys had an `apiRef` (authorized on the API of the subscription, with the metadata a subscription writes on
+its keys). An API key of another subscription, or an API key no subscription minted, named in its `token_refs` is left
+alone: an update of the subscription or of its plan does not rebuild it, a deletion does not revoke it, and a new
+subscription does not list it in its `token_refs`.
+
 Deleting a subscription (by id, all of them, in bulk, or when a remote catalog or the Kubernetes job removes it) deletes
-the API keys of its `token_refs`, except the ones whose `apiRef` is another subscription: its consumers cannot call
-the API anymore. The API key of a `jwt`, `mtls` or `oauth2-remote` subscription is **disabled**, not deleted: the plan
+the API keys it minted: its consumers cannot call the API anymore. The API key of a `jwt`, `mtls` or `oauth2-remote` subscription is **disabled**, not deleted: the plan
 would mint it again, enabled, at the next call. A subscription whose API keys could not be revoked is kept, and the
 deletion answers a `500`. Removing a plan from an API deletes its subscriptions and revokes their API keys in the same
 way. Closing a plan deletes its subscriptions and their API keys, whatever their kind. Deleting an API deletes its

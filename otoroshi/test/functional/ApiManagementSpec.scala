@@ -178,6 +178,15 @@ class ApiManagementSpec extends OtoroshiSpec {
 
   private def apikeyStatus(clientId: String): Int = call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$clientId").status
 
+  // the metadata a subscription writes on the keys it mints, the only thing telling them from 17.15.0 to
+  // 18.0.0-preview3, before the keys had an apiRef
+  private val legacyKeyMetadata: Map[String, String] = Map(
+    ApiSubscription.PLAN_METADATA_KEY         -> "",
+    ApiSubscription.SUBSCRIPTION_METADATA_KEY -> "",
+    ApiSubscription.PLAN_TAGS_KEY             -> "",
+    ApiSubscription.SUBSCRIPTION_TAGS_KEY     -> ""
+  )
+
   // a published api with a jwt plan reading the client_id claim of the tokens of one verifier
   private val jwtApi       = "api-mgmt-jwt"
   private val jwtDomain    = "api-mgmt-jwt.oto.tools"
@@ -538,14 +547,17 @@ class ApiManagementSpec extends OtoroshiSpec {
     }
     "disable once the enabled api keys of the stored subscriptions that are not enabled" in {
       given env: Env = otoroshiComponents.env
-      // what an older version left: subscriptions holding an enabled api key whatever their status
-      def stored(sub: String, status: String): (ApiSubscription, ApiKey) = {
+      // what an older version left: subscriptions holding an enabled api key whatever their status, a key minted
+      // before the apiRef existed (no apiRef, the metadata a subscription writes on its keys). Not minted, a key no
+      // subscription minted that a subscription points at
+      def stored(sub: String, status: String, minted: Boolean = true): (ApiSubscription, ApiKey) = {
         val key          = ApiKey(
           clientId = s"$sub-key",
           clientSecret = "secret",
           clientName = s"$sub-key",
           authorizedEntities = Seq(ApiIdentifier(callable)),
-          enabled = true
+          enabled = true,
+          metadata = if (minted) legacyKeyMetadata else Map.empty
         )
         val subscription = ApiSubscription.format
           .reads(
@@ -571,6 +583,7 @@ class ApiManagementSpec extends OtoroshiSpec {
 
       val (pendingSub, pendingKey) = stored("sub-migrated-pending", "pending")
       val (enabledSub, enabledKey) = stored("sub-migrated-enabled", "enabled")
+      val (foreignSub, foreignKey) = stored("sub-migrated-foreign", "pending", minted = false)
       val store                    = env.datastores.apiSubscriptionDataStore
       // the migration runs at startup, before these subscriptions were stored
       waitUntil("the migration ran at startup") {
@@ -581,8 +594,11 @@ class ApiManagementSpec extends OtoroshiSpec {
       store.migrate().futureValue
       keyOfStore(pendingKey).json mustBe pendingKey.copy(enabled = false).json
       keyOfStore(enabledKey).json mustBe enabledKey.json
+      // a key no subscription minted is not the one of the subscription pointing at it: left enabled
+      keyOfStore(foreignKey).json mustBe foreignKey.json
       subOfStore(pendingSub) mustBe pendingSub.json
       subOfStore(enabledSub) mustBe enabledSub.json
+      subOfStore(foreignSub) mustBe foreignSub.json
       env.datastores.rawDataStore.get(store.keysFollowStatusMigrationKey).futureValue must not be empty
 
       // recorded: it does not run again, a key enabled since then stays enabled
@@ -591,8 +607,8 @@ class ApiManagementSpec extends OtoroshiSpec {
       keyOfStore(pendingKey).json mustBe pendingKey.json
       subOfStore(pendingSub) mustBe pendingSub.json
 
-      Seq(pendingKey, enabledKey).foreach(key => env.datastores.apiKeyDataStore.delete(key.clientId).futureValue)
-      Seq(pendingSub, enabledSub).foreach(sub => store.delete(sub.id).futureValue)
+      Seq(pendingKey, enabledKey, foreignKey).foreach(key => env.datastores.apiKeyDataStore.delete(key.clientId).futureValue)
+      Seq(pendingSub, enabledSub, foreignSub).foreach(sub => store.delete(sub.id).futureValue)
     }
     "delete the api key of a subscription deleted by id" in {
       createSubscription("sub-deleted", "enabled")
@@ -661,6 +677,86 @@ class ApiManagementSpec extends OtoroshiSpec {
       (kept \ "enabled").as[Boolean] mustBe true
       (kept \ "apiRef" \ "sub").as[String] mustBe "sub-owner"
       callWithKeyOf("sub-owner") mustBe 200
+    }
+    "leave alone the api keys a subscription did not mint, when it is created, updated or deleted pointing at them" in {
+      given env: Env = otoroshiComponents.env
+      createSubscription("sub-key-owner", "enabled")
+      val owned                   = storedKeyOf("sub-key-owner")
+      // a key no subscription minted, authorized on the very api of the subscription
+      ApiKey(
+        clientId = "api-mgmt-classic-key",
+        clientSecret = "classic-secret",
+        clientName = "classic key",
+        authorizedEntities = Seq(ApiIdentifier(callable)),
+        metadata = Map("team" -> "classic"),
+        enabled = true
+      ).save().futureValue mustBe true
+      val classic                 = env.datastores.apiKeyDataStore.findById("api-mgmt-classic-key").futureValue.get
+      def unchanged(key: ApiKey): Unit =
+        withClue(key.clientId)(env.datastores.apiKeyDataStore.findById(key.clientId).futureValue.map(_.json) mustBe Some(key.json))
+      val foreignRefs             = Seq(Json.obj("apikey" -> owned.clientId), Json.obj("apikey" -> classic.clientId))
+
+      // created pointing at them: it gets a key of its own, and only lists that one
+      val body                    = subscriptionBody("sub-key-taker", "enabled", "plan-x", "apikey", callable)
+      ok(call("POST", subscriptions, Some(body ++ Json.obj("token_refs" -> foreignRefs))), 201)
+      val own                     = keyOf("sub-key-taker")
+      (ok(call("GET", s"$subscriptions/sub-key-taker")) \ "token_refs").as[Seq[JsObject]] mustBe Seq(Json.obj("apikey" -> own))
+      Seq(owned, classic).foreach(unchanged)
+
+      // updated pointing at them: only its own key is rebuilt from its plan
+      val current                 = ok(call("GET", s"$subscriptions/sub-key-taker")).as[JsObject]
+      ok(call("PUT", s"$subscriptions/sub-key-taker", Some(current ++ Json.obj("token_refs" -> (foreignRefs :+ Json.obj("apikey" -> own))))))
+      Seq(owned, classic).foreach(unchanged)
+      callWithKeyOf("sub-key-owner") mustBe 200
+
+      // deleted pointing at them: only its own key is deleted
+      ok(call("DELETE", s"$subscriptions/sub-key-taker"))
+      apikeyStatus(own) mustBe 404
+      Seq(owned, classic).foreach(unchanged)
+      callWithKeyOf("sub-key-owner") mustBe 200
+
+      env.datastores.apiKeyDataStore.delete(classic.clientId).futureValue
+      ok(call("DELETE", s"$subscriptions/sub-key-owner"))
+    }
+    "keep managing the api keys a subscription minted before they had an apiRef" in {
+      given env: Env = otoroshiComponents.env
+      // what 17.15.0 to 18.0.0-preview3 minted for a subscription: no apiRef, authorized on the api of the subscription
+      ApiKey(
+        clientId = "api-mgmt-legacy-key",
+        clientSecret = "legacy-secret",
+        clientName = "legacy key",
+        authorizedEntities = Seq(ApiIdentifier(callable)),
+        metadata = legacyKeyMetadata,
+        enabled = true
+      ).save().futureValue mustBe true
+      ApiSubscription.format
+        .reads(
+          subscriptionTemplate ++ Json.obj(
+            "id"                -> "sub-legacy",
+            "name"              -> "sub-legacy",
+            "api_ref"           -> callable,
+            "plan_ref"          -> "plan-x",
+            "owner_ref"         -> "client-1",
+            "subscription_kind" -> "apikey",
+            "status"            -> "enabled",
+            "token_refs"        -> Json.arr(Json.obj("apikey" -> "api-mgmt-legacy-key"))
+          )
+        )
+        .get
+        .save()
+        .futureValue mustBe true
+
+      // an update rebuilds it from the plan, its secret kept, as before: it now points at its subscription
+      val current = ok(call("GET", s"$subscriptions/sub-legacy")).as[JsObject]
+      ok(call("PUT", s"$subscriptions/sub-legacy", Some(current ++ Json.obj("name" -> "sub-legacy updated"))))
+      val rebuilt = env.datastores.apiKeyDataStore.findById("api-mgmt-legacy-key").futureValue.get
+      rebuilt.apiRef.map(_.subscription) mustBe Some("sub-legacy")
+      rebuilt.clientSecret mustBe "legacy-secret"
+      callWithKeyOf("sub-legacy") mustBe 200
+
+      // a deletion deletes it, as before
+      ok(call("DELETE", s"$subscriptions/sub-legacy"))
+      apikeyStatus("api-mgmt-legacy-key") mustBe 404
     }
     "delete the subscriptions of a plan removed from an api, and their api keys, and only them" in {
       val template = ok(call("GET", s"$apis/_template")).as[JsObject]

@@ -1239,24 +1239,42 @@ object ApiSubscription {
       ApikeyFromPlan.consumerMetadata(api.id, plan.id, subscription.subscriptionKind.name)
     else Map.empty
 
-  // applies f to the api keys of the token_refs of a subscription that are still its own: a key whose apiRef is
-  // another subscription's is not, and is left alone
+  // a key of the token_refs of a subscription is its own when it was minted for it: its apiRef names the subscription
+  // (whatever the plan, which an update can change). The keys minted before the apiRef existed, from 17.15.0 to
+  // 18.0.0-preview3, have none: such a key is its own when it is authorized on the api of the subscription and carries
+  // the metadata a subscription writes on its keys. Any other key, the key of another subscription or a key no
+  // subscription minted, is not: whoever can write a subscription can name any client id in its token_refs
+  def ownsKey(subscription: ApiSubscription, apikey: ApiKey): Boolean = apikey.apiRef match {
+    case Some(ref) => ref.subscription == subscription.id
+    case None      =>
+      apikey.authorizedEntities.contains(ApiIdentifier(subscription.apiRef)) &&
+      apikey.metadata.contains(SUBSCRIPTION_METADATA_KEY)
+  }
+
+  private def notOwnedWarning(subscription: ApiSubscription, apikey: ApiKey, participle: String): Unit = {
+    val owner = apikey.apiRef match {
+      case Some(ref) => s"belongs to ${ref.json.stringify}"
+      case None      => "was not minted by a subscription of its api"
+    }
+    logger.warn(
+      s"api key '${apikey.clientId}' of subscription '${subscription.id}' $owner, it is not $participle with the subscription"
+    )
+  }
+
+  // applies f to the api keys of the token_refs of a subscription that are its own (ownsKey), the others are left alone
   private def onOwnKeys(subscription: ApiSubscription, verb: String, participle: String)(
       f: ApiKey => Future[Any]
   )(using env: Env): Future[Either[String, Unit]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    val ownRef                        = ApiRef(api = subscription.apiRef, plan = subscription.planRef, subscription = subscription.id)
     subscription.tokenRefs
       .flatMap(ref => ref.select("apikey").asOpt[String])
       .mapAsync { clientId =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-          case None                                             => ().vfuture
-          case Some(apikey) if apikey.apiRef.exists(_ != ownRef) =>
-            logger.warn(
-              s"api key '$clientId' of subscription '${subscription.id}' belongs to ${apikey.apiRef.get.json.stringify}, it is not $participle with the subscription"
-            )
+          case None                                            => ().vfuture
+          case Some(apikey) if !ownsKey(subscription, apikey) =>
+            notOwnedWarning(subscription, apikey, participle)
             ().vfuture
-          case Some(apikey)                                     => f(apikey).map(_ => ())
+          case Some(apikey)                                    => f(apikey).map(_ => ())
         }
       }
       .map(_ => Right(()): Either[String, Unit])
@@ -1377,12 +1395,30 @@ object ApiSubscription {
 
     val defaultApikey = generateNewApikeyFromPlan(api, plan, subscription)
 
-    defaultApikey.save().map {
-      case false => "failed to create the apikey".left
-      case true  =>
-        subscription
-          .copy(tokenRefs = subscription.tokenRefs :+ Json.obj("apikey" -> defaultApikey.clientId))
-          .right
+    // a key of the token_refs that is not its own (ownsKey) is left alone and not listed: the subscription gets its
+    // own key, and does not claim one that serves nothing on its api. A ref to a key that does not exist is kept, as
+    // before
+    val ownRefs: Future[Seq[JsValue]] = subscription.tokenRefs.flatmapAsync { ref =>
+      ref.select("apikey").asOpt[String] match {
+        case None           => Seq(ref).vfuture
+        case Some(clientId) =>
+          env.datastores.apiKeyDataStore.findById(clientId).map {
+            case Some(apikey) if !ownsKey(subscription, apikey) =>
+              notOwnedWarning(subscription, apikey, "listed")
+              Seq.empty
+            case _                                               => Seq(ref)
+          }
+      }
+    }
+
+    ownRefs.flatMap { refs =>
+      defaultApikey.save().map {
+        case false => "failed to create the apikey".left
+        case true  =>
+          subscription
+            .copy(tokenRefs = refs :+ Json.obj("apikey" -> defaultApikey.clientId))
+            .right
+      }
     }
   }
 
@@ -1469,7 +1505,11 @@ object ApiSubscription {
         env.datastores.apiKeyDataStore
           .findById(apikeyId)
           .flatMap {
-            case Some(apikey) =>
+            // rebuilt from the plan of this subscription, the key would become its own: only its own keys are
+            case Some(apikey) if !ownsKey(subscription, apikey) =>
+              notOwnedWarning(subscription, apikey, "updated")
+              false.rightf
+            case Some(apikey)                                    =>
               rebuildApikey(
                 apikey,
                 generateNewApikeyFromPlan(api, plan, subscription, Some(apikey.clientId)),
@@ -1478,7 +1518,7 @@ object ApiSubscription {
                 subscription
               ).save()
                 .map(_.right)
-            case None         => s"apikey with $apikeyId not found".leftf
+            case None                                            => s"apikey with $apikeyId not found".leftf
           }
       )
     )
@@ -3208,9 +3248,11 @@ trait ApiSubscriptionDataStore extends BasicStore[ApiSubscription] {
                   .flatMap(ref => ref.select("apikey").asOpt[String])
                   .mapAsync { clientId =>
                     env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-                      case Some(apikey) if apikey.enabled =>
+                      // only the keys of the subscription: a key of another one, or a key no subscription minted, is
+                      // not its to disable
+                      case Some(apikey) if apikey.enabled && ApiSubscription.ownsKey(sub, apikey) =>
                         apikey.copy(enabled = false).save().map(saved => Some((sub, clientId, saved)))
-                      case _                              => None.vfuture
+                      case _                                                                     => None.vfuture
                     }
                   }
                   .map(_.flatten)
