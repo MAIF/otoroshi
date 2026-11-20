@@ -1240,17 +1240,29 @@ sealed trait JwtVerifier extends AsJson {
     }
   }
 
+  // sendEvent = false: the caller does not refuse the call when the verification fails (an extractor of a plan
+  // that lets the call go on to the next plan), so the error result it gets back is not sent as an event
   def verifyGen[A](
       request: RequestHeader,
       desc: ServiceDescriptor,
       apikey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
-      attrs: TypedMap
+      attrs: TypedMap,
+      sendEvent: Boolean = true
   )(
       f: JwtInjection => Future[Either[Result, A]]
   )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-    internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
+    internalVerify(
+      request,
+      desc.some,
+      apikey,
+      user,
+      elContext,
+      attrs,
+      sendEvent = sendEvent,
+      sendBadAlgorithmEvent = sendEvent
+    )(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
       case Right(goodResult) => goodResult
     }
@@ -1262,16 +1274,29 @@ sealed trait JwtVerifier extends AsJson {
       apikey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
-      attrs: TypedMap
+      attrs: TypedMap,
+      sendEvent: Boolean = true
   )(
       f: JwtInjection => Future[Result]
   )(using ec: ExecutionContext, env: Env): Future[Result] = {
-    internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
+    internalVerify(
+      request,
+      desc.some,
+      apikey,
+      user,
+      elContext,
+      attrs,
+      sendEvent = sendEvent,
+      sendBadAlgorithmEvent = sendEvent
+    )(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
   }
 
+  // the 'error.bad.input.algorithm.name' error has always been sent whatever sendEvent says, and a RefJwtVerifier,
+  // that only lets its last verifier send an event, still sends it for each of them: sendBadAlgorithmEvent keeps
+  // that as is, and only a caller that does not want any event at all turns it off
   private[models] def internalVerify[A](
       request: RequestHeader,
       descOpt: Option[ServiceDescriptor],
@@ -1279,14 +1304,15 @@ sealed trait JwtVerifier extends AsJson {
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
       attrs: TypedMap,
-      sendEvent: Boolean
+      sendEvent: Boolean,
+      sendBadAlgorithmEvent: Boolean = true
   )(
       f: JwtInjection => Future[A]
   )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     if (isAsync) {
-      internalVerifyAsync(request, descOpt, apikey, user, elContext, attrs, sendEvent)(f)
+      internalVerifyAsync(request, descOpt, apikey, user, elContext, attrs, sendEvent, sendBadAlgorithmEvent)(f)
     } else {
-      internalVerifySync(request, descOpt, apikey, user, elContext, attrs, sendEvent) match {
+      internalVerifySync(request, descOpt, apikey, user, elContext, attrs, sendEvent, sendBadAlgorithmEvent) match {
         case Left(result)     => result.left.vfuture
         case Right(injection) => f(injection).map(a => a.right)
       }
@@ -1300,7 +1326,8 @@ sealed trait JwtVerifier extends AsJson {
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
       attrs: TypedMap,
-      sendEvent: Boolean
+      sendEvent: Boolean,
+      sendBadAlgorithmEvent: Boolean = true
   )(using ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = env.metrics.withTimer(
     "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-sync"
   ) {
@@ -1414,7 +1441,8 @@ sealed trait JwtVerifier extends AsJson {
                 request,
                 descOpt,
                 None,
-                attrs = attrs
+                attrs = attrs,
+                sendEvent = sendBadAlgorithmEvent
               )
               .left[JwtInjection]
           case Some(algorithm) => {
@@ -1603,7 +1631,8 @@ sealed trait JwtVerifier extends AsJson {
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
       attrs: TypedMap,
-      sendEvent: Boolean
+      sendEvent: Boolean,
+      sendBadAlgorithmEvent: Boolean = true
   )(
       f: JwtInjection => Future[A]
   )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync(
@@ -1730,7 +1759,8 @@ sealed trait JwtVerifier extends AsJson {
                 request,
                 descOpt,
                 None,
-                attrs = attrs
+                attrs = attrs,
+                sendEvent = sendBadAlgorithmEvent
               )
               .left[A]
           case Some(algorithm) => {
@@ -1975,11 +2005,12 @@ case class RefJwtVerifier(
       apikey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
-      attrs: TypedMap
+      attrs: TypedMap,
+      sendEvent: Boolean
   )(
       f: JwtInjection => Future[Result]
   )(using ec: ExecutionContext, env: Env): Future[Result] = {
-    verifyGen(request, desc, apikey, user, elContext, attrs)(c => f(c).map(Right.apply)).map {
+    verifyGen(request, desc, apikey, user, elContext, attrs, sendEvent)(c => f(c).map(Right.apply)).map {
       case Left(r)  => r
       case Right(r) => r
     }
@@ -2004,7 +2035,8 @@ case class RefJwtVerifier(
       apikey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
-      attrs: TypedMap
+      attrs: TypedMap,
+      sendEvent: Boolean
   )(
       f: JwtInjection => Future[Either[Result, A]]
   )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
@@ -2034,7 +2066,16 @@ case class RefJwtVerifier(
                 .flatMap {
                   case Some(verifier) =>
                     verifier
-                      .internalVerify(request, desc.some, apikey, user, elContext, attrs, queue.isEmpty)(f)
+                      .internalVerify(
+                        request,
+                        desc.some,
+                        apikey,
+                        user,
+                        elContext,
+                        attrs,
+                        sendEvent && queue.isEmpty,
+                        sendBadAlgorithmEvent = sendEvent
+                      )(f)
                       .map {
                         case Left(result)  =>
                           last.set(Left(result))

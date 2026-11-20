@@ -54,6 +54,15 @@ object ApikeyFromPlan {
     "plan_consumer" -> "true"
   )
 
+  // set to false by the plans of an api on the plugins they install to identify the caller (and never stored): such a
+  // plugin only tries, a caller it does not identify goes on to the next plan, so the error it crafted on the way is
+  // not the outcome of the call and is not sent as an event. A call refused in the end gets the event of the plugin
+  // refusing it, the consumer enforcer. Without the key, a route configured by hand, the plugin sends it as it always did
+  val SendEventWhenUnidentifiedKey: String = "send_event_when_unidentified"
+
+  def sendEventWhenUnidentified(ctx: NgAccessContext): Boolean =
+    ctx.config.select(SendEventWhenUnidentifiedKey).asOpt[Boolean].getOrElse(true)
+
   def json(config: ApikeyFromPlanConfig): JsObject = Json.obj(
     "create_if_missing"   -> config.createIfMissing,
     "api_id"              -> config.apiId,
@@ -643,7 +652,10 @@ class NgJwtApikeyExtractor extends ApikeyExtractorPlugin {
             None,
             None,
             ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
-            ctx.attrs
+            ctx.attrs,
+            // the verifier only answers 400s, that a non strict extractor lets through: a strict one refuses the call
+            // and keeps the event of the verifier
+            sendEvent = config.strict || ApikeyFromPlan.sendEventWhenUnidentified(ctx)
           ) { jwtInjection =>
             jwtInjection.decodedToken match {
               case None        => Results.Unauthorized(Json.obj()).future
@@ -1175,7 +1187,9 @@ class NgOidcApikeyExtractor extends ApikeyExtractorPlugin {
                     ctx.apikey,
                     ctx.user,
                     ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-                    ctx.attrs
+                    ctx.attrs,
+                    // same as the jwt extractor: only 400s, let through when not strict
+                    sendEvent = config.strict || ApikeyFromPlan.sendEventWhenUnidentified(ctx)
                   ) { jwtInjection =>
                     jwtInjection.decodedToken match {
                       case None        => failure(config.strict, "You have to provide a valid apikey").rightf
@@ -1245,7 +1259,15 @@ class NgApiConsumerEnforcer extends NgAccessValidator {
     def error(status: Results.Status, message: String, code: String, reason: String): Future[NgAccess] = {
       val key        = "apikey_rejection_reason"
       val finalAttrs = ctx.attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
-        case Some(obj @ JsObject(_)) => obj ++ Json.obj(key -> reason)
+        case Some(obj @ JsObject(_)) =>
+          // the reason an ApikeyCalls left there when it could not identify the caller: the ApikeyCalls of a plan does
+          // not send its own event, so it is kept under a key of its own in the event of the refusal
+          val withPrevious = obj.value.get(key) match {
+            case Some(JsString(previous)) if previous != reason =>
+              obj ++ Json.obj("apikey_identification_reason" -> previous)
+            case _                                              => obj
+          }
+          withPrevious ++ Json.obj(key -> reason)
         case None                    => Json.obj(key -> reason)
       }
       Errors

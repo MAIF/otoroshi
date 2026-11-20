@@ -2238,7 +2238,7 @@ case class Api(
                   //   clientId = NgApikeyExtractorClientId(enabled = false),
                   //   jwt = NgApikeyExtractorJwt(enabled = true)
                   // )
-                ).json.asObject,
+                ).json.asObject ++ Json.obj(ApikeyFromPlan.SendEventWhenUnidentifiedKey -> false),
             //  ),
             pluginIndex = PluginIndex(
               validateAccess = 2.00.some
@@ -2266,7 +2266,7 @@ case class Api(
               throttlingStrategy = plan.rateLimiting,
               apikey = plan.apikeyTemplate,
               selection = plan.selection
-            ).json,
+            ).json.asObject ++ Json.obj(ApikeyFromPlan.SendEventWhenUnidentifiedKey -> false),
             pluginIndex = PluginIndex(
               validateAccess = 2.01.some
             ).some
@@ -2323,7 +2323,7 @@ case class Api(
               selection = plan.selection,
               issuer = oidcConfig.issuer,
               audiences = oidcConfig.audiences
-            ).json,
+            ).json.asObject ++ Json.obj(ApikeyFromPlan.SendEventWhenUnidentifiedKey -> false),
             pluginIndex = PluginIndex(
               validateAccess = 2.03.some
             ).some

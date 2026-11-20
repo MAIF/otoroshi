@@ -110,7 +110,8 @@ identified with, serves the call. See [subscriptions](../entities/apis.mdx#subsc
 only place where a call made through a plan is **counted**:
 
 1. it requires a consumer — no API key and no authenticated user means `401`
-   (`errors.auth.unauthorized`, with `apikey_rejection_reason: no consumer identified on the call`);
+   (`errors.auth.unauthorized`, with `apikey_rejection_reason: no consumer identified on the call`, and the reason
+   an `apikey` or `oauth2-local` plan gave for not identifying the caller under `apikey_identification_reason`);
 2. it applies the [restrictions](../entities/apikeys.mdx#restrictions) of the API key;
 3. it triggers [secret rotation](../entities/apikeys.mdx#automatic-secret-rotation) when due;
 4. it consumes one unit of the throttling strategy of the API key, answering `429`
@@ -121,6 +122,12 @@ Because the count happens at the very end of access validation, a call rejected 
 another plugin, a failed JWT verification, a restriction — never consumes quota. An API key wins
 over a user session: a caller that went through an auth. module *and* carries an API key is
 enforced against the API key.
+
+A call is exported once to the [data exporters](../entities/data-exporters.mdx), served or refused: a plan that does
+not identify the caller sends no gateway event of its own and lets the next plan try, so the event of the call is the
+one of its response, the refusal of the enforcer when no plan identified the caller. This is how the plans of an API
+configure their plugins: an `Apikeys`, a `Jwt apikey extractor` or an `OIDC apikey extractor` put on a route by hand,
+not strict, still sends the event of the error it lets through, as before.
 
 The routes of every published or deprecated API get it, and `Send otoroshi headers back`, so the caller receives
 the usual `Otoroshi-*` response headers, remaining quotas included. An API without a published or deprecated

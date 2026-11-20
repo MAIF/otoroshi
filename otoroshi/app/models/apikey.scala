@@ -2373,7 +2373,11 @@ object ApiKeyHelper {
       service: String,
       route: Option[NgRoute],
       incrementQuotas: Boolean,
-      routingEnabled: Boolean
+      routingEnabled: Boolean,
+      // false when the caller only tries to identify the consumer and lets the call go on when no apikey is found
+      // (a non mandatory ApikeyCalls): 'no apikey' and 'invalid apikey tuple' then send no event, as the call is
+      // not refused there. Every other error refuses the call, and its event is the event of the call
+      sendEventWhenUnidentified: Boolean = true
   )(using
       ec: ExecutionContext,
       env: Env
@@ -2385,7 +2389,8 @@ object ApiKeyHelper {
         status: Results.Status,
         message: String,
         code: String,
-        extraAnalyticsMessage: Option[String]
+        extraAnalyticsMessage: Option[String],
+        sendEvent: Boolean = true
     ): Future[Either[Result, ApiKey]] = {
       val finalAttrs = extraAnalyticsMessage match {
         case None          => attrs
@@ -2404,7 +2409,8 @@ object ApiKeyHelper {
           req,
           None /* TODO: pass the service None */,
           code.some,
-          attrs = finalAttrs
+          attrs = finalAttrs,
+          sendEvent = sendEvent
         )
         .map(Left.apply)
     }
@@ -2423,12 +2429,24 @@ object ApiKeyHelper {
 
     detectApikeyTuple(req, constraints, attrs) match {
       case None              =>
-        error(Results.BadRequest, "no apikey", "errors.no.api.key", "no apikey detected in the http request".some)
+        error(
+          Results.BadRequest,
+          "no apikey",
+          "errors.no.api.key",
+          "no apikey detected in the http request".some,
+          sendEvent = sendEventWhenUnidentified
+        )
       case Some(apikeyTuple) =>
         attrs.putIfAbsent(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey -> apikeyTuple)
         validateApikeyTuple(req, apikeyTuple, constraints, service, attrs) match {
           case Left((None, additionalMessage))                                      =>
-            error(Results.BadRequest, "invalid apikey tuple", "errors.invalid.api.key.tuple", additionalMessage)
+            error(
+              Results.BadRequest,
+              "invalid apikey tuple",
+              "errors.invalid.api.key.tuple",
+              additionalMessage,
+              sendEvent = sendEventWhenUnidentified
+            )
           case Left((Some(apikey), additionalMessage))                              =>
             sendRevokedApiKeyAlert(apikey)
             error(Results.Unauthorized, "bad apikey", "errors.bad.api.key", additionalMessage)

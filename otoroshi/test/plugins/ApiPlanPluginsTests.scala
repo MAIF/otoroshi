@@ -6,7 +6,9 @@ import otoroshi.events.GatewayEvent
 import otoroshi.models.ApiKey
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import otoroshi.models.{EntityLocation, GlobalJwtVerifier, HSAlgoSettings, InHeader, PassThrough, VerificationSettings}
+import com.nimbusds.jose.jwk.KeyType
+import otoroshi.models.{EntityLocation, GlobalJwtVerifier, HSAlgoSettings, InHeader, JWKSAlgoSettings, PassThrough, VerificationSettings}
+import otoroshi.utils.http.MtlsConfig
 import otoroshi.next.models.*
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -1320,6 +1322,263 @@ class ApiPlanPluginsTests(parent: PluginsTestSpecBase) {
       env.datastores.apiKeyDataStore.delete(classic.clientId).futureValue
       deleteOtoroshiRoute(route).futureValue
       backend.stop()
+      env.analyticsActorSystem.eventStream.unsubscribe(collector)
+      env.analyticsActorSystem.stop(collector)
+    }
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  // one call, one gateway event (#2962)
+  // -----------------------------------------------------------------------------------------------
+
+  // the gateway events of a call to a host, as an exporter gets them. The error event of a jwt verifier has no route:
+  // the host of the call is the one thing every event of the call carries
+  private def eventsOfCall(events: ConcurrentLinkedQueue[GatewayEvent], host: String, count: Int)(
+      call: => Int
+  ): (Int, Seq[GatewayEvent]) = {
+    events.clear()
+    val status = call
+    waitFor(s"$count event(s) of the call to $host")(events.asScala.count(_.to.host == host) >= count)
+    // leaves the time to come to an event that should not be there
+    await(1.second)
+    (status, events.asScala.toSeq.filter(_.to.host == host))
+  }
+
+  private def describe(events: Seq[GatewayEvent]): String =
+    events.map(e => s"${e.status} ${e.gwError.getOrElse("")}".trim).mkString("[", ", ", "]")
+
+  private def hsVerifier(issuer: String): String = {
+    val verifierId = s"verifier_${IdGenerator.uuid}"
+    createOtoroshiVerifier(
+      GlobalJwtVerifier(
+        id = verifierId,
+        name = verifierId,
+        desc = verifierId,
+        strict = true,
+        source = InHeader(name = "Authorization", remove = "Bearer "),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> issuer)))
+      )
+    ).futureValue
+    verifierId
+  }
+
+  private def emptyJwks(): TargetService = TargetService
+    .full(
+      None,
+      "/.well-known/jwks.json",
+      "application/json",
+      _ => (200, Json.obj("keys" -> Json.arr()).stringify, List.empty)
+    )
+    .await()
+
+  // a jwks verifier with an empty key set: no token has its key there, so it answers every token the error a token of
+  // another idp gets ('error.bad.input.algorithm.name')
+  private def emptyJwksVerifier(jwks: TargetService): String = {
+    val verifierId = s"verifier_${IdGenerator.uuid}"
+    createOtoroshiVerifier(
+      GlobalJwtVerifier(
+        id = verifierId,
+        name = verifierId,
+        desc = verifierId,
+        strict = true,
+        source = InHeader(name = "Authorization", remove = "Bearer "),
+        algoSettings = JWKSAlgoSettings(
+          url = s"http://127.0.0.1:${jwks.port}/.well-known/jwks.json",
+          headers = Map.empty,
+          timeout = 2.seconds,
+          ttl = 1.hour,
+          kty = KeyType.RSA,
+          proxy = None,
+          tlsConfig = MtlsConfig()
+        ),
+        strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> "another-idp")))
+      )
+    ).futureValue
+    verifierId
+  }
+
+  // signed for the hs verifier, with the kid of a key the jwks verifier does not have
+  private def tokenOf(clientId: String, secret: String = "secret"): String = JWT
+    .create()
+    .withKeyId("kid-of-another-idp")
+    .withIssuer("foo")
+    .withClaim("client_id", clientId)
+    .sign(Algorithm.HMAC512(secret))
+
+  // the plans of an api try to identify the caller one after the other, and the ones that do not identify it send no
+  // event of their own: a call is exported once, served or refused, and its refusal says why
+  def oneEventPerCallOfAnApi(): Unit = {
+    val events            = new ConcurrentLinkedQueue[GatewayEvent]()
+    val collector         = env.analyticsActorSystem.actorOf(Props(new ClientIpAddressTests.EventsCollector(events)))
+    env.analyticsActorSystem.eventStream.subscribe(collector, classOf[GatewayEvent])
+    val jwks              = emptyJwks()
+    val api               = apiWith(
+      Seq(
+        plan("plan_one_ak", "apikey", Json.obj("enabled" -> true)),
+        plan("plan_one_jwt", "jwt", Json.obj("verifier" -> hsVerifier("foo"), "client_id_path" -> "client_id")),
+        plan("plan_one_jwks", "jwt", Json.obj("verifier" -> emptyJwksVerifier(jwks), "client_id_path" -> "client_id"))
+      )
+    )
+    val subscriptionsPath = "/apis/apis.otoroshi.io/v1/apisubscriptions"
+    val subscriptionId    = s"sub_one_${IdGenerator.token(8)}"
+    def call(count: Int, headers: (String, String)*): (Int, Seq[GatewayEvent]) =
+      eventsOfCall(events, api.domain, count)(callApi(api, headers).status)
+    deploy(api)
+    try {
+      val template     = otoroshiApiCall("GET", s"$subscriptionsPath/_template").futureValue._1.as[JsObject]
+      val (created, _) = otoroshiApiCall(
+        "POST",
+        subscriptionsPath,
+        Some(
+          template ++ Json.obj(
+            "id"                -> subscriptionId,
+            "name"              -> subscriptionId,
+            "api_ref"           -> api.id,
+            "plan_ref"          -> "plan_one_ak",
+            "owner_ref"         -> "client-1",
+            "subscription_kind" -> "apikey",
+            "status"            -> "enabled"
+          )
+        )
+      ).futureValue
+      val clientId     = created.select("token_refs").as[Seq[JsValue]].head.select("apikey").asString
+      val apikey       = env.datastores.apiKeyDataStore.findById(clientId).futureValue.get
+      waitFor("the router sees the api key of the subscription")(env.proxyState.apikey(clientId).isDefined)
+
+      // a consumer of the apikey plan, that the two jwt plans do not recognise
+      val (byApikey, ofApikey) =
+        call(1, "Otoroshi-Client-Id" -> apikey.clientId, "Otoroshi-Client-Secret" -> apikey.clientSecret)
+      byApikey mustBe 200
+      withClue(describe(ofApikey))(ofApikey.map(_.status) mustBe Seq(200))
+      ofApikey.head.identity.map(_.identity) mustBe Some(apikey.clientId)
+
+      // a consumer of the hs jwt plan, that the apikey plan and the jwks plan do not recognise
+      val (byToken, ofToken) = call(1, "Authorization" -> s"Bearer ${tokenOf("consumer-one")}")
+      byToken mustBe 200
+      withClue(describe(ofToken))(ofToken.map(_.status) mustBe Seq(200))
+      ofToken.head.identity.map(_.identity) mustBe Some(s"jwt_${api.id}_plan_one_jwt_consumer-one")
+
+      // no plan recognises the caller: the only event is the refusal of the consumer enforcer, that keeps the reason
+      // the apikey plan gave
+      val (byNobody, ofNobody) = call(1)
+      byNobody mustBe 401
+      withClue(describe(ofNobody))(ofNobody.map(_.status) mustBe Seq(401))
+      val reasons              = ofNobody.head.extraAnalyticsData.getOrElse(Json.obj())
+      reasons.select("apikey_rejection_reason").asOpt[String] mustBe Some("no consumer identified on the call")
+      reasons.select("apikey_identification_reason").asOpt[String] mustBe Some("no apikey detected in the http request")
+
+      // a token that none of the jwt plans can verify is refused once as well
+      val (byBadToken, ofBadToken) = call(1, "Authorization" -> s"Bearer ${tokenOf("consumer-one", "wrong")}")
+      byBadToken mustBe 401
+      withClue(describe(ofBadToken))(ofBadToken.map(_.status) mustBe Seq(401))
+
+      // a wrong secret is refused by the apikey plan itself: its error is the event of the call, as before
+      val (byWrongSecret, ofWrongSecret) =
+        call(1, "Otoroshi-Client-Id" -> apikey.clientId, "Otoroshi-Client-Secret" -> "wrong-secret")
+      byWrongSecret mustBe 401
+      withClue(describe(ofWrongSecret))(ofWrongSecret.map(_.status) mustBe Seq(401))
+      withClue(describe(ofWrongSecret))(ofWrongSecret.head.gwError.exists(_.contains("bad apikey")) mustBe true)
+    } finally {
+      otoroshiApiCall("DELETE", s"$subscriptionsPath/$subscriptionId").futureValue
+      undeploy(api)
+      jwks.stop()
+      env.analyticsActorSystem.eventStream.unsubscribe(collector)
+      env.analyticsActorSystem.stop(collector)
+    }
+  }
+
+  // the routes configured by hand, as they are stored, keep the events they always had: only the plans of an api tell
+  // their plugins not to send the error of a caller they do not identify
+  def handMadeRoutesKeepTheirEvents(): Unit = {
+    val events         = new ConcurrentLinkedQueue[GatewayEvent]()
+    val collector      = env.analyticsActorSystem.actorOf(Props(new ClientIpAddressTests.EventsCollector(events)))
+    env.analyticsActorSystem.eventStream.subscribe(collector, classOf[GatewayEvent])
+    val backend        = TargetService.full(None, "/", "application/json", _ => (200, "{}", List.empty)).await()
+    val jwks           = emptyJwks()
+    val verifierId     = hsVerifier("foo")
+    val jwksVerifierId = emptyJwksVerifier(jwks)
+    def routeWith(name: String, plugin: String, config: JsValue): NgRoute = NgRoute.empty.copy(
+      id = s"route_${name}_${IdGenerator.token(8)}",
+      frontend = NgRoute.empty.frontend.copy(
+        domains = Seq(NgDomainAndPath(s"$name-${IdGenerator.token(8).toLowerCase}.oto.tools"))
+      ),
+      backend = NgRoute.empty.backend.copy(
+        targets = Seq(NgTarget(id = "target_1", hostname = "127.0.0.1", port = backend.port, tls = false))
+      ),
+      plugins = NgPlugins(Seq(NgPluginInstance(plugin = plugin, config = NgPluginInstanceConfig(config.asObject))))
+    )
+    val mandatoryApikey  =
+      routeWith("ev-mandatory-apikey", NgPluginHelper.pluginId[ApikeyCalls], NgApikeyCallsConfig().json)
+    val optionalApikey   =
+      routeWith("ev-optional-apikey", NgPluginHelper.pluginId[ApikeyCalls], NgApikeyCallsConfig(mandatory = false).json)
+    val jwtVerification  = routeWith(
+      "ev-jwt-verification",
+      NgPluginHelper.pluginId[JwtVerification],
+      NgJwtVerificationConfig(verifiers = Seq(verifierId)).json
+    )
+    val twoVerifiers     = routeWith(
+      "ev-two-verifiers",
+      NgPluginHelper.pluginId[JwtVerification],
+      NgJwtVerificationConfig(verifiers = Seq(jwksVerifierId, verifierId)).json
+    )
+    val strictExtractor  = routeWith(
+      "ev-strict-extractor",
+      NgPluginHelper.pluginId[NgJwtApikeyExtractor],
+      NgJwtApikeyExtractorConfig(verifier = verifierId).json
+    )
+    val lenientExtractor = routeWith(
+      "ev-lenient-extractor",
+      NgPluginHelper.pluginId[NgJwtApikeyExtractor],
+      NgJwtApikeyExtractorConfig(verifier = verifierId, strict = false).json
+    )
+    val routes           =
+      Seq(mandatoryApikey, optionalApikey, jwtVerification, twoVerifiers, strictExtractor, lenientExtractor)
+    def call(route: NgRoute, count: Int, headers: (String, String)*): (Int, Seq[GatewayEvent]) = {
+      val host = route.frontend.domains.head.domain
+      eventsOfCall(events, host, count)(
+        ws.url(s"http://127.0.0.1:$port/").withHttpHeaders(Seq("Host" -> host) ++ headers*).get().futureValue.status
+      )
+    }
+    def statuses(of: Seq[GatewayEvent]): Seq[Int] = of.map(_.status).sorted
+    routes.foreach(route => createOtoroshiRoute(route).futureValue)
+    try {
+      waitFor("the router sees the routes")(routes.forall(route => env.proxyState.route(route.id).isDefined))
+
+      // a mandatory ApikeyCalls refuses a call without apikey: one event, its error
+      val (mandatoryStatus, ofMandatory) = call(mandatoryApikey, 1)
+      mandatoryStatus mustBe 400
+      withClue(describe(ofMandatory))(statuses(ofMandatory) mustBe Seq(400))
+
+      // a non mandatory ApikeyCalls lets the call go on, and sends the event of its error
+      val (optionalStatus, ofOptional) = call(optionalApikey, 2)
+      optionalStatus mustBe 200
+      withClue(describe(ofOptional))(statuses(ofOptional) mustBe Seq(200, 400))
+
+      // a JwtVerification with a strict verifier refuses a call without token: one event, its error
+      val (verificationStatus, ofVerification) = call(jwtVerification, 1)
+      verificationStatus mustBe 400
+      withClue(describe(ofVerification))(statuses(ofVerification) mustBe Seq(400))
+
+      // a JwtVerification with two verifiers: the error of the first one, that has no key for the token, is sent when
+      // the second one lets the call through
+      val (twoStatus, ofTwo) = call(twoVerifiers, 2, "Authorization" -> s"Bearer ${tokenOf("consumer-one")}")
+      twoStatus mustBe 200
+      withClue(describe(ofTwo))(statuses(ofTwo) mustBe Seq(200, 400))
+
+      // a strict extractor refuses a call without token, and the event is the error of its verifier
+      val (strictStatus, ofStrict) = call(strictExtractor, 1)
+      strictStatus mustBe 401
+      withClue(describe(ofStrict))(statuses(ofStrict) mustBe Seq(400))
+
+      // a non strict extractor lets the call go on, and sends the error of its verifier
+      val (lenientStatus, ofLenient) = call(lenientExtractor, 2)
+      lenientStatus mustBe 200
+      withClue(describe(ofLenient))(statuses(ofLenient) mustBe Seq(200, 400))
+    } finally {
+      routes.foreach(route => deleteOtoroshiRoute(route).futureValue)
+      backend.stop()
+      jwks.stop()
       env.analyticsActorSystem.eventStream.unsubscribe(collector)
       env.analyticsActorSystem.stop(collector)
     }

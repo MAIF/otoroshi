@@ -224,6 +224,12 @@ class ApiPlanGatewayEventsSpec extends PluginsTestSpecBase {
     "name the api, the plan and the subscription of the apikey of each call" in {
       new ApiPlanPluginsTests(this).gatewayEventsCarryTheApiRef()
     }
+    "be one per call, served or refused, whatever the number of plans that do not identify the caller" in {
+      new ApiPlanPluginsTests(this).oneEventPerCallOfAnApi()
+    }
+    "stay as they were on the routes configured by hand" in {
+      new ApiPlanPluginsTests(this).handMadeRoutesKeepTheirEvents()
+    }
   }
 }
 

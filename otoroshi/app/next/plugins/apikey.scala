@@ -211,7 +211,9 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
               routeId,
               ctx.route.some,
               config.updateQuotas,
-              config.routing.enabled
+              config.routing.enabled,
+              // the two errors let through below: on the ApikeyCalls of a plan, the call goes on to the next plan
+              sendEventWhenUnidentified = ApikeyFromPlan.sendEventWhenUnidentified(ctx)
             )
             .map {
               case Left(result)
