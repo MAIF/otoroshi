@@ -13,7 +13,9 @@ on:
 
 jobs:
   playwright:
-    runs-on: ubuntu-latest
+    # pinned: the os libs of chromium installed below are the packages of ubuntu 24.04. ubuntu-latest moved to 26.04
+    # (2026-11-18), which has none of them under these names (libvpx9, ...), and failed before any test ran
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
 
     env:

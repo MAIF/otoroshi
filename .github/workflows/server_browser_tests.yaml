@@ -24,7 +24,10 @@ on:
 
 jobs:
   browser-tests:
-    runs-on: ubuntu-latest
+    # pinned: the os libs of chromium installed below are the packages of ubuntu 24.04, and playwright-java 1.44 does
+    # not know any later release. ubuntu-latest moved to 26.04 (2026-11-18), which has none of these packages under these
+    # names (libvpx9, ...), and failed before any test ran
+    runs-on: ubuntu-24.04
     # Hard cap: a hung browser driver fails here in <=1h instead of GitHub's 6h max.
     timeout-minutes: 60
 
