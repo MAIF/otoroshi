@@ -107,10 +107,10 @@ test('publishes from staging, deployment payload is slim, draft is wiped', async
     expect(latest.apiRef).toBe(apiId);
     expect(typeof latest.at).toBe('number');
 
-    // A.5 — slim payload: only the design-time fields are stored.
+    // A.5 — slim payload: only the design-time fields are stored, and the plans deployed (#2946).
     const apiDef = latest.apiDefinition;
     const keys = Object.keys(apiDef).sort();
-    expect(keys).toEqual(['backends', 'documentation', 'flows', 'routes']);
+    expect(keys).toEqual(['backends', 'documentation', 'flows', 'plans', 'routes']);
 
     // B.4 (revised) — the draft is KEPT after publish so testing routes
     // (X-OTOROSHI-TESTING) continue to serve without a UI roundtrip via
@@ -228,6 +228,17 @@ test('testing header gates dev vs prod traffic at the gateway', async () => {
         },
         flow_ref: flowId,
         backend: backendId,
+      },
+    ],
+    // an api without a published plan refuses the anonymous calls (#2942): a keyless plan opens it to them, in prod
+    // and on the testing routes of its draft
+    plans: [
+      {
+        id: 'plan_keyless',
+        name: 'Free keyless plan',
+        status: 'published',
+        access_mode_configuration_type: 'keyless',
+        access_mode_configuration: { create_if_missing: true },
       },
     ],
   };

@@ -352,7 +352,9 @@ test('publish flow + apikey plan in draft only gates draft route but not prod', 
     trackedApis.add(apiId);
     const headerValue = 'pub-' + Math.random().toString(36).slice(2, 10);
     const domain = `pub-${apiId.slice(-8)}.oto.tools`;
-    await setUpFullApi(page, apiId, { domain, headerValue, plan: null });
+    // an api without a published plan refuses the anonymous calls (#2942): the keyless plan serves them in prod, and the
+    // draft below replaces it with an apikey plan
+    await setUpFullApi(page, apiId, { domain, headerValue, plan: KEYLESS_PLAN() });
 
     await page.goto(`/bo/dashboard/apis/${apiId}?version=staging`);
     await page.getByTestId('publish-this-version').click();
