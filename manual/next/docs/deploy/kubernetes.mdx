@@ -107,17 +107,7 @@ The chart sets no `JAVA_OPTS` by default: the image sizes the JVM from `resource
 
 The chart also creates a `proxy.otoroshi.io/v1` Certificate for the Otoroshi services, signed by the Otoroshi intermediate CA (`certificate.issuer`). It always covers the in-cluster service names, as cluster mode mTLS between the workers and the leader API relies on them, plus `otoroshi.<env.domain>`, `otoroshi-api.<env.domain>` and `privateapps.<env.domain>`. Turn those public ones off with `certificate.publicHosts.*` when you already have a certificate for these domains: when two certificates match the same host, the one Otoroshi presents at handshake time is not deterministic.
 
-:::warning
-Helm v3 only installs CRDs (under the chart's `crds/` directory) on the **first** `helm install`. When upgrading Otoroshi to a newer version, **re-apply the CRDs manually**:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/master/kubernetes/helm/otoroshi/crds/crds.yaml
-# or, via otoroshictl (includes any custom extension CRDs):
-otoroshictl resources crds | kubectl apply -f -
-```
-
-See the [updating rbac and crds](#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl) section below.
-:::
+Helm does not upgrade the CRDs of a release: see [upgrading with Helm](#upgrading-with-helm) before an upgrade.
 
 For the full list of values (pod scheduling, security contexts, extraEnv, extra volumes, JAVA_OPTS, autoscaling, NetworkPolicy, …), see [`values.yaml`](https://github.com/MAIF/otoroshi/blob/master/kubernetes/helm/otoroshi/values.yaml).
 
@@ -211,6 +201,39 @@ You can also create several secrets for each placeholder, mount them to the otor
 ```
 
 you can use the same trick in the config. file itself
+
+### Upgrading with Helm
+
+```sh
+helm repo update
+helm upgrade my-otoroshi otoroshi/otoroshi -f my-values.yaml
+```
+
+:::warning
+Helm only installs CRDs (under the chart's `crds/` directory) on the **first** `helm install`. When upgrading Otoroshi to a newer version, **re-apply the CRDs manually**:
+
+```sh
+kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/master/kubernetes/helm/otoroshi/crds/crds.yaml
+# or, via otoroshictl (includes any custom extension CRDs):
+otoroshictl resources crds | kubectl apply -f -
+```
+
+See the [updating rbac and crds](#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl) section below.
+:::
+
+Otoroshi rewrites two fields of its admission webhooks at runtime: `clientConfig.caBundle`, where it injects its CA, and `failurePolicy`, which it switches from `Ignore` to `Fail` once it can answer. So the chart renders the live values of these two fields, read with `lookup`, and its defaults (`""` and `Ignore`) only on the first install.
+
+Helm 4 applies the manifests with server-side apply: `helm install` defaults to `--server-side=true`, and `helm upgrade` keeps the method of the previous release. With the charts up to 18.0.1, which always render `""` and `Ignore`, the upgrade of a release installed with Helm 4 fails with:
+
+```
+Error: UPGRADE FAILED: conflict occurred while applying object /otoroshi-admission-webhook-validation admissionregistration.k8s.io/v1, Kind=ValidatingWebhookConfiguration: Apply failed with 2 conflicts: conflicts with "pekko-http" using admissionregistration.k8s.io/v1:
+- .webhooks[name="otoroshi-admission-webhook.otoroshi.io"].failurePolicy
+- .webhooks[name="otoroshi-admission-webhook.otoroshi.io"].clientConfig.caBundle
+```
+
+`pekko-http` is Otoroshi. Helm applies the other resources anyway, the Deployments included, and the webhook keeps the values Otoroshi set, but the release is marked `failed`. Upgrade with a newer chart, or pass `--force-conflicts`: Helm resets the two fields, and Otoroshi sets them again on the next run of its CRDs job (`syncIntervalSeconds`, 60 seconds by default).
+
+Tools that render the chart with `helm template`, like Argo CD, get no answer from `lookup` and always render the defaults: tell them to ignore these two fields (with Argo CD, `ignoreDifferences` on `.webhooks[].clientConfig.caBundle` and `.webhooks[].failurePolicy`, and the `RespectIgnoreDifferences=true` sync option).
 
 ### Note on bare metal kubernetes cluster installation
 

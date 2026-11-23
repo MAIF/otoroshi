@@ -4,9 +4,16 @@ KubernetesConfig of the deployment templates: the sinks that answer these calls 
 match a Host of `<otoroshiServiceName>.<namespace>.svc[.cluster.local]` (see
 KubernetesAdmissionWebhookCRDValidator.matches), and the certificate Otoroshi generates
 for that endpoint is issued for those two SANs only (see createWebhookCerts).
+
+`clientConfig.caBundle` and `failurePolicy` are rewritten at runtime by Otoroshi (field
+manager `pekko-http`, see KubernetesCRDsJob.patchValidatingAdmissionWebhook): it injects
+its CA and switches the webhook to `Fail` once it can answer. The chart renders the live
+values of these two fields, and `""` / `Ignore` only on the first install. Rendering other
+values would reset them on each upgrade, and is a conflict with Helm 4 server-side apply.
 */}}
 {{- $webhookServiceName := ternary .Values.cluster.workerServiceName .Values.service.name .Values.cluster.enabled -}}
 {{- if .Values.webhooks.validation }}
+{{- $live := include "otoroshi.liveWebhook" (dict "kind" "ValidatingWebhookConfiguration" "name" "otoroshi-admission-webhook-validation" "webhook" "otoroshi-admission-webhook.otoroshi.io") | fromJson }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -35,13 +42,14 @@ webhooks:
         namespace: {{ .Release.Namespace }}
         path: "/apis/webhooks/validation"
         port: {{ .Values.service.https }}
-      caBundle: "" # injected at runtime
-    failurePolicy: Ignore
+      caBundle: {{ dig "clientConfig" "caBundle" "" $live | quote }} # injected at runtime, see above
+    failurePolicy: {{ dig "failurePolicy" "Ignore" $live }}
     sideEffects: None
     admissionReviewVersions: 
       - "v1"
 {{- end }}
 {{- if .Values.webhooks.sidecarInject }}
+{{- $live := include "otoroshi.liveWebhook" (dict "kind" "MutatingWebhookConfiguration" "name" "otoroshi-admission-webhook-injector" "webhook" "otoroshi-admission-webhook-injector.otoroshi.io") | fromJson }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
@@ -75,8 +83,8 @@ webhooks:
         namespace: {{ .Release.Namespace }}
         path: "/apis/webhooks/inject"
         port: {{ .Values.service.https }}
-      caBundle: "" # injected at runtime
-    failurePolicy: Ignore
+      caBundle: {{ dig "clientConfig" "caBundle" "" $live | quote }} # injected at runtime, see above
+    failurePolicy: {{ dig "failurePolicy" "Ignore" $live }}
     sideEffects: None
     admissionReviewVersions: 
       - "v1"

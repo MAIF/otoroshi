@@ -241,3 +241,18 @@ so they stay stable across `helm upgrade`. Returns a dict with: password, client
 {{- $creds := dict "password" $password "clientId" $clientId "clientSecret" $clientSecret "otoroshiSecret" $otoroshiSecret -}}
 {{- $creds | toJson -}}
 {{- end }}
+
+{{/*
+The live entry `webhook` of the admission webhook configuration `kind` / `name`, as JSON: `{}` on
+the first install, and under `helm template` or a client dry-run, where lookup answers nothing.
+Called with a dict: kind, name, webhook.
+*/}}
+{{- define "otoroshi.liveWebhook" -}}
+{{- $found := dict -}}
+{{- with (lookup "admissionregistration.k8s.io/v1" .kind "" .name) -}}
+  {{- range (.webhooks | default list) -}}
+    {{- if eq .name $.webhook }}{{- $found = . -}}{{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $found | toJson -}}
+{{- end }}
