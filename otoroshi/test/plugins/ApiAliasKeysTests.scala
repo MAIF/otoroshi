@@ -1028,4 +1028,41 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       dropKeys(own.clientId, other.clientId)
     } finally undeploy(apiA)
   }
+
+  // a credential deleted by hand leaves the subscriptions that shared it: the ones who could write them still delete
+  // them, the credential they cannot be checked against is gone
+  def subscriptionOfDeletedCredential(): Unit = {
+    val owner = newOwner()
+    val apiA  = apiWith(plan("plan_a"))
+    deploy(apiA)
+    try {
+      val own = ApiKey(
+        clientId = IdGenerator.lowerCaseToken(16),
+        clientSecret = IdGenerator.lowerCaseToken(64),
+        clientName = s"credential of $owner",
+        authorizedEntities = Seq.empty,
+        sharedCredential = Some(SharedCredential(owner)),
+        location = EntityLocation(tenant, Seq(team))
+      )
+      own.save().futureValue mustBe true
+      val (sub, status) =
+        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiA, "plan_a", owner, Seq(shared(own.clientId))) ++ located)
+      withClue(sub)(status mustBe 201)
+      val path = s"$subscriptionsPath/${idOf(sub)}"
+      // while the credential is there, its author rewrites the subscription
+      waitFor("the credential in the proxy state")(env.proxyState.apikey(own.clientId).isDefined)
+      val (rewritten, rewrittenStatus) = asUser(scoped, "PUT", path, subscription(idOf(sub)))
+      withClue(rewritten)(rewrittenStatus mustBe 200)
+
+      dropKeys(own.clientId)
+      waitFor("the credential out of the proxy state")(env.proxyState.apikey(own.clientId).isEmpty)
+      aliasesOf(own.clientId) mustBe empty
+
+      // its alias went with the credential: like any subscription whose api key is gone, it is not rewritten, by
+      // anyone, and its author is told why instead of being refused the access
+      refusedWith(asUser(scoped, "PUT", path, subscription(idOf(sub))), 400, "not found")
+      val (deleted, deletedStatus) = asUser(scoped, "DELETE", path, JsNull)
+      withClue(deleted)(deletedStatus mustBe 200)
+    } finally undeploy(apiA)
+  }
 }

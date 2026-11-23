@@ -1352,13 +1352,23 @@ object ApiSubscription {
       using env: Env
   ): Boolean =
     sharedCredentials(subscription).exists(clientId =>
-      if (creating && env.proxyState.apikey(clientId).isEmpty) false else !canUserShare(clientId, user)
+      if (env.proxyState.apikey(clientId).isEmpty && (creating || sharedDeletedCredential(subscription, clientId))) false
+      else !canUserShare(clientId, user)
     ) ||
     // the credential of the owner is not named: the ones the proxy state has are the ones that would be shared. A
     // credential created since the last sync of the proxy state is not seen here: the creation of a subscription
     // checks the ones of the datastore too (sharesStoredCredentialMoreThan)
     (sharesOwnerCredential(subscription) &&
     ownerCredentials(env.proxyState.allApikeys(), subscription).exists(apikey => !canUserShare(apikey.clientId, user)))
+
+  // whether the credential a stored subscription shares was deleted: the proxy state has the subscription sharing it,
+  // and not the credential, which was there before the subscription. A credential deleted by hand takes its aliases and
+  // leaves its subscriptions: there is nothing left to check the rights against, and the ones who can write such a
+  // subscription update and delete it, or only a super admin would. The proxy state reads the api keys before the
+  // subscriptions: a credential and its subscription both created between these two reads look the same until the next
+  // sync, and the shared entry, the api and the owner of a subscription never change (checkSharedCredential)
+  private def sharedDeletedCredential(subscription: ApiSubscription, credential: String)(using env: Env): Boolean =
+    env.proxyState.apiSubscription(subscription.id).exists(stored => sharedCredential(stored).contains(credential))
 
   // the same, of the credential a subscription shares, read from the datastore like the validation reads it
   // (checkShareable, withOwnerCredential): the one that is shared is the one that is checked, whatever the proxy state
@@ -1586,8 +1596,10 @@ object ApiSubscription {
   private val ownerCredentialReservationTtl      = 10.seconds
   private val ownerCredentialReservationAttempts = 20
 
+  // a key space of its own: under the one of an entity (apis, apikeys), the reservation would be read with the entities
+  // (findAll), and it is not one
   private def ownerCredentialReservation(subscription: ApiSubscription)(using env: Env): String =
-    s"${env.storageRoot}:apis:shared-credentials:${subscription.location.tenant.value}:${subscription.ownerRef}"
+    s"${env.storageRoot}:shared-credential-reservations:${subscription.location.tenant.value}:${subscription.ownerRef}"
 
   private def ownerCredentialBeingCreated(subscription: ApiSubscription): String =
     s"the shared credential of owner '${subscription.ownerRef}' is being created by another subscription: try again"

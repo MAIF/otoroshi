@@ -138,7 +138,8 @@ class HMACValidator extends NgAccessValidator {
 
     ((secret match {
       case Some(value) if value.nonEmpty => Some(value)
-      case _                             => ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.clientSecret)
+      // the secret the consumer knows: the one of the credential an alias key shares, or the one of the key itself
+      case _                             => ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.secretHolder.clientSecret)
     }) match {
       case None         =>
         if (logger.isDebugEnabled) logger.debug("No api key found and no secret found in configuration of the plugin")
