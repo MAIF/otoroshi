@@ -52,16 +52,7 @@ build () {
   cd $LOCATION/otoroshi
   sbt ';clean;compile;testOnly PluginDocNextTests; testOnly PluginDocNgTests'
   cd $LOCATION/manual
-  # cp -R $LOCATION/kubernetes $LOCATION/manual/next/docs/snippets
-  # rm -rf $LOCATION/manual/next/docs/snippets/kubernetes/.old
-  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/readme.md
-  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/base/readme.md
-  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster/readme.md
-  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster-baremetal/readme.md
-  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/readme.md
-  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple/readme.md
-  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple-baremetal/readme.md
-  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/readme.md
+  # the kubernetes manifests shown in the doc are not copied: the doc includes them from kubernetes/ directly
   # node indexer.js
   rm $LOCATION/manual/next/docs/snippets/reference.conf
   rm $LOCATION/manual/next/docs/snippets/reference-env.conf

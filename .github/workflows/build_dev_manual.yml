@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'manual/**'
+      # the doc includes the kustomize manifests from there
+      - 'kubernetes/kustomize/**'
     branches:
       - master
     tags:
@@ -11,6 +13,8 @@ on:
   pull_request:
     paths:
       - 'manual/**'
+      # the doc includes the kustomize manifests from there
+      - 'kubernetes/kustomize/**'
     branches:
       - master
 
