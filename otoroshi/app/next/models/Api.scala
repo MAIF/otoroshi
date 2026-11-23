@@ -1271,19 +1271,35 @@ object ApiSubscription {
     )
   }
 
-  // the entry of the token_refs of a subscription sharing the api key of another subscription of its owner,
-  // {"apikey": "<client id>", "shared": true}: the subscription gets an api key of its own, built from its plan, that
-  // the consumer calls through the credential it shares (an alias key, ApiRef.credential). The shared key is not the
+  // the entry of the token_refs of a subscription sharing the credential of its owner, an api key attached to nothing
+  // that is only called through the alias keys of the subscriptions sharing it (ApiKey.sharedCredential):
+  // {"apikey": "<client id>", "shared": true} names it, {"shared": true} takes the one of the owner of the
+  // subscription, created when there is none. The subscription gets an api key of its own, built from its plan, that
+  // the consumer calls through the credential (an alias key, ApiRef.credential). The credential is not the
   // subscription's: it is never updated, disabled or deleted with it
   val SHARED_REF_KEY = "shared"
 
   def isSharedRef(ref: JsValue): Boolean =
     ref.select(SHARED_REF_KEY).asOpt[Boolean].contains(true) && ref.select("apikey").asOpt[String].isDefined
 
+  // {"shared": true}: the credential of the owner, whatever its client id
+  def isOwnerCredentialRef(ref: JsValue): Boolean =
+    ref.select(SHARED_REF_KEY).asOpt[Boolean].contains(true) && ref.select("apikey").asOpt[String].isEmpty
+
+  def sharesOwnerCredential(subscription: ApiSubscription): Boolean = subscription.tokenRefs.exists(isOwnerCredentialRef)
+
   def sharedCredentials(subscription: ApiSubscription): Seq[String] =
     subscription.tokenRefs.collect { case ref if isSharedRef(ref) => ref.select("apikey").asString }
 
   def sharedCredential(subscription: ApiSubscription): Option[String] = sharedCredentials(subscription).headOption
+
+  // the credentials of the owner of a subscription: the shared credentials of that owner located in the tenant of the
+  // subscription. The owner_ref is free text: the credential of another tenant with the same owner is not one of them
+  def ownerCredentials(apikeys: Seq[ApiKey], subscription: ApiSubscription): Seq[ApiKey] =
+    apikeys.filter(apikey =>
+      apikey.sharedCredential.exists(_.owner == subscription.ownerRef) &&
+      apikey.location.tenant == subscription.location.tenant
+    )
 
   // the consumers of an apikey and of an oauth2-local plan call with an api key, the only ones that share one
   def sharesCredentials(kind: ApiKind): Boolean = kind == ApiKind.Apikey || kind == ApiKind.OAuth2Local
@@ -1292,13 +1308,18 @@ object ApiSubscription {
   def aliasesOf(credential: String)(using env: Env, ec: ExecutionContext): Future[Seq[ApiKey]] =
     env.datastores.apiKeyDataStore.findAliasesOf(Seq(credential))
 
-  // whether an alias key is the one a subscription minted sharing its credential: an alias serves, and keeps its
-  // credential, only while its subscription exists and shares it. An alias written by hand does neither
+  // whether an alias key is the one a subscription minted sharing its credential: an alias only serves while its
+  // subscription exists, shares the credential, and lists the alias among its own keys (whatever the plan, which an
+  // update can change, like ownsKey). An alias written by hand does not, even one naming a subscription that shares
+  // the credential
   def mintedAlias(subscription: ApiSubscription, alias: ApiKey): Boolean =
     alias.apiRef.exists { ref =>
       ref.subscription == subscription.id && ref.api == subscription.apiRef && ref.credential.exists { credential =>
         subscription.tokenRefs.exists(tokenRef =>
           isSharedRef(tokenRef) && tokenRef.select("apikey").asOpt[String].contains(credential)
+        ) &&
+        subscription.tokenRefs.exists(tokenRef =>
+          !isSharedRef(tokenRef) && tokenRef.select("apikey").asOpt[String].contains(alias.clientId)
         )
       }
     }
@@ -1323,38 +1344,10 @@ object ApiSubscription {
   // a subscription sharing api keys its author cannot write: refused, and its stored version is not rewritten nor
   // deleted by that author. The drafts share nothing (checkSharedCredential)
   def sharesMoreThan(subscription: ApiSubscription, user: otoroshi.models.BackOfficeUser)(using env: Env): Boolean =
-    sharedCredentials(subscription).exists(clientId => !canUserShare(clientId, user))
-
-  // what goes with a key a subscription releases (deleted, or closed with its plan). A key whose credential other
-  // subscriptions share is kept as a credential authorized on no api, disabled, for its aliases. An alias key goes, and
-  // takes with it the credential it shared when that credential was only kept for its aliases and has no other one
-  private def releaseKey(apikey: ApiKey)(using env: Env, ec: ExecutionContext): Future[Any] = {
-    val store = env.datastores.apiKeyDataStore
-    apikey.apiRef.flatMap(_.credential) match {
-      case Some(credential) =>
-        store.delete(apikey.clientId).flatMap { _ =>
-          mintedAliasesOf(credential).flatMap {
-            case aliases if aliases.exists(_.clientId != apikey.clientId) => ().vfuture
-            case _                                                       =>
-              store.findById(credential).flatMap {
-                case Some(kept) if isKeptForAliases(kept) => store.delete(kept.clientId)
-                case _                                    => ().vfuture
-              }
-          }
-        }
-      case None             =>
-        // deleted, the key takes with it the aliases written by hand (KvApiKeyDataStore.deleteByIds)
-        mintedAliasesOf(apikey.clientId).flatMap {
-          case Seq() => store.delete(apikey.clientId)
-          case _     =>
-            logger.info(s"api key '${apikey.clientId}' is kept for the subscriptions that share it, authorized on no api")
-            apikey.copy(enabled = false, authorizedEntities = Seq.empty, apiRef = None).save()
-        }
-    }
-  }
-
-  // a credential kept for its aliases only, once its own subscription is gone
-  private def isKeptForAliases(apikey: ApiKey): Boolean = apikey.apiRef.isEmpty && apikey.authorizedEntities.isEmpty
+    sharedCredentials(subscription).exists(clientId => !canUserShare(clientId, user)) ||
+    // the credential of the owner is not named: the ones the proxy state has are the ones that would be shared
+    (sharesOwnerCredential(subscription) &&
+    ownerCredentials(env.proxyState.allApikeys(), subscription).exists(apikey => !canUserShare(apikey.clientId, user)))
 
   // applies f to the api keys of the token_refs of a subscription that are its own (ownsKey), the others are left alone
   private def onOwnKeys(subscription: ApiSubscription, verb: String, participle: String)(
@@ -1384,9 +1377,8 @@ object ApiSubscription {
   // longer resolves them
   def deleteKeys(subscription: ApiSubscription)(using env: Env): Future[Either[String, Unit]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    if (holdsKeys(subscription) && sharesCredentials(subscription.subscriptionKind))
-      onOwnKeys(subscription, "delete", "deleted")(apikey => releaseKey(apikey))
-    else if (holdsKeys(subscription))
+    // the credential a subscription shares is not its own: it stays, and is deleted by hand
+    if (holdsKeys(subscription))
       onOwnKeys(subscription, "delete", "deleted")(apikey => env.datastores.apiKeyDataStore.delete(apikey.clientId))
     else Right(()).vfuture
   }
@@ -1490,9 +1482,55 @@ object ApiSubscription {
         }
     }
 
+  // the credential of the owner of a subscription sharing it without naming it ({"shared": true}): the one there is,
+  // or a new one, attached to nothing, located where the subscription is. The entry then names it, like any other
+  private def withOwnerCredential(subscription: ApiSubscription)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[String, ApiSubscription]] = {
+    def naming(credential: ApiKey): ApiSubscription = subscription.copy(tokenRefs = subscription.tokenRefs.map { ref =>
+      if (isOwnerCredentialRef(ref)) Json.obj("apikey" -> credential.clientId, SHARED_REF_KEY -> true) else ref
+    })
+    if (!sharesOwnerCredential(subscription)) subscription.rightf
+    else
+      env.datastores.apiKeyDataStore.findAll(force = true).flatMap { apikeys =>
+        ownerCredentials(apikeys, subscription) match {
+          case Seq(credential) => naming(credential).rightf
+          case Seq()           =>
+            val credential = ApiKey(
+              clientId = IdGenerator.lowerCaseToken(16),
+              clientSecret = IdGenerator.lowerCaseToken(64),
+              clientName = s"credential of ${subscription.ownerRef}",
+              description = s"The shared credential of '${subscription.ownerRef}', called through the api keys of its subscriptions",
+              authorizedEntities = Seq.empty,
+              sharedCredential = Some(SharedCredential(subscription.ownerRef)),
+              location = subscription.location
+            )
+            credential.save().map {
+              case true  => naming(credential).right
+              case false => "failed to create the shared credential".left
+            }
+          case _               => severalOwnerCredentials(subscription).leftf
+        }
+      }
+  }
+
+  private def severalOwnerCredentials(subscription: ApiSubscription): String =
+    s"owner '${subscription.ownerRef}' has several shared credentials: name one with {\"apikey\": \"<client id>\", \"shared\": true}"
+
   private def createNewApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
+      env: Env
+  ): Future[Either[String, ApiSubscription]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    withOwnerCredential(subscription).flatMap {
+      case Left(error)  => error.leftf
+      case Right(named) => mintApikeyFromPlan(api, plan, named)
+    }
+  }
+
+  private def mintApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
                                                                                               env: Env
-  ) = {
+  ): Future[Either[String, ApiSubscription]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     val defaultApikey = generateNewApikeyFromPlan(api, plan, subscription)
@@ -1756,66 +1794,72 @@ object ApiSubscription {
       }
   }
 
-  // a subscription shares one api key at most, the key of an apikey or oauth2-local subscription of the same owner,
-  // that does not call its api yet and has no alias on it. It is chosen at the creation and never changes, so that an
-  // alias key never changes its credential. The rights of the author on that key are checked by the admin api
+  // an apikey or oauth2-local subscription shares one credential at most: a shared credential of its owner
+  // (ApiKey.sharedCredential), that has no alias on its api yet. It is chosen at the creation and never changes, so
+  // that an alias key never changes its credential, and the subscription keeps its api and its owner, the ones the
+  // credential was checked for. The rights of the author on the credential are checked by the admin api
   // (ApiSubscriptionsResourceAccess.grantsMoreThan) and by subscribe
   private def checkSharedCredential(api: Api, entity: ApiSubscription, action: WriteAction, isDraft: Boolean)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, Unit]] = {
-    val shared = sharedCredentials(entity)
+    val shared        = sharedCredentials(entity)
+    val ofOwner       = entity.tokenRefs.count(isOwnerCredentialRef)
+    val sharesNothing = shared.isEmpty && ofOwner == 0
     action match {
       // the keys of a draft are real keys, authorized on the api the draft shares its id with: a draft would open the
-      // live api to the credential. A key is shared by the subscription itself
-      case _ if isDraft                                                   =>
-        if (shared.isEmpty) Right(()).vfuture
+      // live api to the credential. A credential is shared by the subscription itself
+      case _ if isDraft                                              =>
+        if (sharesNothing) Right(()).vfuture
         else Left("the draft of a subscription cannot share an api key: share it with the subscription").vfuture
-      case WriteAction.Create if shared.isEmpty                           => Right(()).vfuture
-      case _ if shared.size > 1                                           => Left("a subscription shares one api key at most").vfuture
-      case _ if shared.nonEmpty && !sharesCredentials(entity.subscriptionKind) =>
+      case WriteAction.Create if sharesNothing                       => Right(()).vfuture
+      case _ if shared.size + ofOwner > 1                            => Left("a subscription shares one api key at most").vfuture
+      case _ if !sharesNothing && !sharesCredentials(entity.subscriptionKind) =>
         Left(s"a subscription of kind '${entity.subscriptionKind.name}' cannot share an api key").vfuture
-      case WriteAction.Update                                             =>
+      case WriteAction.Update                                        =>
         env.datastores.apiSubscriptionDataStore.findById(entity.id).map {
-          case Some(stored) if sharedCredential(stored) != shared.headOption =>
+          // the stored subscription names its credential, {"shared": true} would be another one
+          case Some(stored) if ofOwner > 0 || sharedCredential(stored) != shared.headOption                              =>
             Left("the api key a subscription shares cannot change: delete the subscription and create another one")
-          case _                                                             => Right(())
+          case Some(stored) if shared.nonEmpty && (stored.apiRef != entity.apiRef || stored.ownerRef != entity.ownerRef) =>
+            Left(
+              "the api and the owner of a subscription that shares an api key cannot change: delete the subscription and create another one"
+            )
+          case _                                                                                                           => Right(())
         }
-      case WriteAction.Create                                             => checkShareable(api, entity, shared.head)
+      case WriteAction.Create if ofOwner > 0                         =>
+        env.datastores.apiKeyDataStore.findAll(force = true).flatMap { apikeys =>
+          ownerCredentials(apikeys, entity) match {
+            // created with the subscription
+            case Seq()           => Right(()).vfuture
+            case Seq(credential) => checkShareable(api, entity, credential.clientId)
+            case _               => Left(severalOwnerCredentials(entity)).vfuture
+          }
+        }
+      case WriteAction.Create                                        => checkShareable(api, entity, shared.head)
     }
   }
 
+  // only a shared credential is shared, never the api key of a subscription: by the subscriptions of its owner, once
+  // per api
   private def checkShareable(api: Api, entity: ApiSubscription, credentialId: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, Unit]] = {
     env.datastores.apiKeyDataStore.findById(credentialId).flatMap {
-      case None                                                            => Left(s"api key '$credentialId' not found").vfuture
-      case Some(credential) if credential.apiRef.exists(_.credential.isDefined) =>
+      case None                                                     => Left(s"api key '$credentialId' not found").vfuture
+      case Some(credential) if credential.sharedCredential.isEmpty =>
         Left(
-          s"api key '$credentialId' shares the api key '${credential.apiRef.flatMap(_.credential).get}': share that one"
+          s"api key '$credentialId' is not a shared credential: only an api key created as one, attached to nothing, is shared"
         ).vfuture
-      case Some(credential) if credential.authorizedOnApi(api.id)          =>
-        Left(s"api key '$credentialId' already calls api '${api.id}'").vfuture
-      case Some(credential)                                                =>
-        aliasesOf(credentialId).flatMap {
+      case Some(credential) if !credential.sharedCredential.exists(_.owner == entity.ownerRef) =>
+        Left(s"api key '$credentialId' belongs to another owner").vfuture
+      case Some(_)                                                  =>
+        // the aliases their subscription minted: one written by hand serves nothing, and refuses nothing
+        mintedAliasesOf(credentialId).map {
           case aliases if aliases.exists(_.apiRef.exists(_.api == api.id)) =>
-            Left(s"api key '$credentialId' is already shared with a subscription to api '${api.id}'").vfuture
-          case aliases if credential.apiRef.isEmpty && aliases.isEmpty      =>
-            Left(s"api key '$credentialId' was not minted by a subscription").vfuture
-          case aliases                                                      =>
-            // the subscription of the key, then the ones of its aliases
-            val holders = (credential.apiRef.map(_.subscription).toSeq ++ aliases.flatMap(_.apiRef.map(_.subscription))).distinct
-            holders.mapAsync(id => env.datastores.apiSubscriptionDataStore.findById(id)).map(_.flatten).map { subscriptions =>
-              val holder = credential.apiRef.flatMap(ref => subscriptions.find(_.id == ref.subscription))
-              if (credential.apiRef.isDefined && holder.isEmpty)
-                Left(s"the subscription of api key '$credentialId' does not exist anymore")
-              else if (holder.exists(sub => !sharesCredentials(sub.subscriptionKind)))
-                Left(s"api key '$credentialId' is not the api key of an apikey or oauth2-local subscription")
-              else if (subscriptions.exists(_.ownerRef != entity.ownerRef))
-                Left(s"api key '$credentialId' belongs to another owner")
-              else Right(())
-            }
+            Left(s"api key '$credentialId' is already shared with a subscription to api '${api.id}'")
+          case _                                                           => Right(())
         }
     }
   }

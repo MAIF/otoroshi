@@ -361,7 +361,8 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
   // read only for a key found but not authorized on the route: a credential without alias costs one read of a map, a
   // call never reads the datastore
   override def findAliasForFromCache(credential: ApiKey, serviceId: String)(using env: Env): Option[ApiKey] = {
-    if (!env.proxyState.hasApikeyAliases(credential.clientId)) None
+    // only a shared credential calls through alias keys
+    if (credential.sharedCredential.isEmpty || !env.proxyState.hasApikeyAliases(credential.clientId)) None
     else {
       env.proxyState.route(serviceId).flatMap(_.apiRef) match {
         case None         => None
@@ -370,8 +371,9 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
             .apikeyAlias(credential.clientId, apiRef.id)
             .flatMap(aliasId => env.proxyState.apikey(aliasId))
             // the alias has to be authorized on the api itself, its apiRef alone authorizes it (authorizedOnApi), and
-            // minted by a subscription that still shares the credential: an alias written by hand serves nothing
-            .filter(alias =>
+            // minted by a subscription that still shares the credential: an alias written by hand serves nothing, and
+            // does not hide the one of the subscription
+            .find(alias =>
               alias.apiRef.exists { ref =>
                 ref.api == apiRef.id && ref.credential.contains(credential.clientId) &&
                 env.proxyState

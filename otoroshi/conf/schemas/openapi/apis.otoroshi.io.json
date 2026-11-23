@@ -2587,16 +2587,16 @@
         "type": "array",
         "items": {
           "type": "object",
-          "description": "A credential of the subscription. Otoroshi writes `{\"apikey\": \"<client id>\"}` for the api key it minted (or provisioned for the `client_id` of a `jwt`, `mtls` or `oauth2-remote` subscription), keeps the api keys it minted that are referenced that way in sync with the plan and with the status of the subscription, and revokes them with the subscription. A key of another subscription, or a key no subscription minted, is left alone. An `apikey` or `oauth2-local` subscription can share, at its creation, the api key of another `apikey` or `oauth2-local` subscription of the same `owner_ref` with `{\"apikey\": \"<client id>\", \"shared\": true}`: it still gets an api key of its own, built from its plan, whose `apiRef.credential` is the shared client id (an alias), and its consumer calls the api with the client id and the secret of the shared api key. The author has to be allowed to write the shared api key, which must not call the api of the subscription yet nor be shared with another subscription to it. The draft of a subscription shares no api key. The shared entry never changes, and the shared api key is never updated, disabled or deleted with the subscription: deleting the subscription that minted it while others share it keeps it, disabled and authorized on no api, until its last alias goes",
+          "description": "A credential of the subscription. Otoroshi writes `{\"apikey\": \"<client id>\"}` for the api key it minted (or provisioned for the `client_id` of a `jwt`, `mtls` or `oauth2-remote` subscription), keeps the api keys it minted that are referenced that way in sync with the plan and with the status of the subscription, and revokes them with the subscription. A key of another subscription, or a key no subscription minted, is left alone. An `apikey` or `oauth2-local` subscription can share, at its creation, the shared credential of its owner (an api key with a `sharedCredential` whose `owner` is its `owner_ref`), named with `{\"apikey\": \"<client id>\", \"shared\": true}`, or not, with `{\"shared\": true}`: the credential of that owner located in the tenant of the subscription is taken, created when there is none, and the stored entry names it. The subscription still gets an api key of its own, built from its plan, whose `apiRef.credential` is the client id of the credential (an alias), and its consumer calls the api with the client id and the secret of the credential. The author has to be allowed to write the credential, which must not be shared with another subscription to the same api yet. The api key of a subscription is never shared. The draft of a subscription shares nothing. The shared entry, the api and the owner of such a subscription never change, and the credential is never updated, disabled or deleted with the subscription",
           "properties": {
             "apikey": {
               "type": "string",
-              "description": "The client id of an api key of the subscription, or of the api key it shares",
+              "description": "The client id of an api key of the subscription, or of the shared credential it shares",
               "example": "kx8e4lq2v9twb3hd"
             },
             "shared": {
               "type": "boolean",
-              "description": "`true` on the entry naming the api key of another subscription this one shares (one at most, on an `apikey` or `oauth2-local` subscription, given at its creation). Absent on the other entries",
+              "description": "`true` on the entry of the shared credential of the subscription (one at most, on an `apikey` or `oauth2-local` subscription, given at its creation): with `apikey`, the credential it names, without, the one of its owner. Absent on the other entries",
               "example": true
             }
           },

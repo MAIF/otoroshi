@@ -11,10 +11,10 @@ class ApiAliasKeysSpec extends PluginsTestSpecBase {
       aliases.oneCredentialSeveralApis()
     }
     "follow the secret of the credential on every api" in { aliases.newSecretCallsEveryApi() }
-    "only be minted for a key of the same owner, once per api" in { aliases.sharingChecks() }
-    "follow their own subscription, and keep the credential for its aliases" in { aliases.lifecycle() }
-    "only share a key its author can write" in { aliases.sharingRights() }
-    "only be written by hand by the users who can write their credential" in { aliases.aliasesWrittenByHand() }
+    "only be minted for a shared credential of the same owner, once per api" in { aliases.sharingChecks() }
+    "follow their own subscription, and the credential they share" in { aliases.lifecycle() }
+    "only share a credential their author can write" in { aliases.sharingRights() }
+    "only be written by hand by the users who can write their credential, which stays one" in { aliases.aliasesWrittenByHand() }
     "go with their credential" in { aliases.deletedCredentialTakesItsAliases() }
   }
 }

@@ -120,6 +120,20 @@
         "nullable": true,
         "description": "The api, plan and subscription the api key was minted for, when it comes from the subscription to a plan of an api (`apis.otoroshi.io`): it then gets the plugins of the plan. Null otherwise"
       },
+      "sharedCredential": {
+        "type": "object",
+        "description": "Only on a shared credential: the api key of a consumer, authorized on nothing by itself, that the subscriptions of that consumer share (`{\"apikey\": \"<client id>\", \"shared\": true}`, or `{\"shared\": true}`, in their `token_refs`). Each of them gets an alias key (`apiRef.credential`), and the consumer calls every api with the client id and the secret of the credential. Its secret, its rotation, its expiry and its `enabled` flag are its own: disabled, it calls nothing. An api key is created as a shared credential, with no `authorizedEntities` and no `apiRef`, and stays one, for the same owner (an update changing it is refused). It is never deleted with a subscription, and deleting it deletes its alias keys. Absent on the other api keys",
+        "required": [
+          "owner"
+        ],
+        "properties": {
+          "owner": {
+            "type": "string",
+            "description": "The consumer the credential belongs to: the `owner_ref` of the subscriptions that share it",
+            "example": "client_acme"
+          }
+        }
+      },
       "plugins": {
         "allOf": [
           {
@@ -436,7 +450,7 @@
       },
       "credential": {
         "type": "string",
-        "description": "Only on the api key of a subscription that shares the api key of another subscription (`{\"apikey\": \"<client id>\", \"shared\": true}` in its `token_refs`): the client id of that shared api key, the credential. The api key is then an alias: the consumer calls the api with the client id and the secret of the credential (its rotation and its expiry included), and is identified as this api key, with the quotas, the restrictions and the plugins of this plan. Called with its own client id, an alias is refused. Written by the subscription that mints the alias, it never changes (an update changing it is refused), and writing an api key with a `credential` requires the rights to write that credential. An alias only serves while the subscription named by `sub` exists and shares the credential, and on the api it is authorized on. Deleting the credential deletes its aliases. Absent on the other api keys",
+        "description": "Only on the api key of a subscription that shares a credential (`{\"apikey\": \"<client id>\", \"shared\": true}` in its `token_refs`): the client id of that shared credential (an api key with a `sharedCredential`). The api key is then an alias: the consumer calls the api with the client id and the secret of the credential (its rotation, its expiry and its `enabled` flag included), and is identified as this api key, with the quotas, the restrictions and the plugins of this plan. Called with its own client id, an alias is refused. Written by the subscription that mints the alias, it never changes (an update changing it is refused), and writing an api key with a `credential` requires the rights to write that credential. An alias only serves while the subscription named by `sub` exists, shares the credential and lists the alias in its `token_refs`, and on the api it is authorized on. Deleting the credential deletes its aliases. Absent on the other api keys",
         "example": "kx8e4lq2v9twb3hd"
       }
     },

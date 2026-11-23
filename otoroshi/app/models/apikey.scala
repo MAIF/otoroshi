@@ -181,6 +181,19 @@ case class RouteCompositionIdentifier(id: String) extends EntityIdentifier {
   override def isRouteComposition: Boolean = true
 }
 
+// what makes an api key a shared credential: the key of a consumer (owner, the owner_ref of its subscriptions),
+// authorized on nothing by itself, that the subscriptions of that consumer share. Each of them gets an alias key
+// (ApiRef.credential) the consumer calls through the credential. Its secret, its rotation, its expiry and its enabled
+// flag are its own, and are the ones of every call made through its aliases
+case class SharedCredential(owner: String) {
+  def json: JsValue = Json.obj("owner" -> owner)
+}
+
+object SharedCredential {
+  def reads(json: JsValue): Option[SharedCredential] =
+    json.asOpt[JsObject].flatMap(_.select("owner").asOpt[String]).filter(_.trim.nonEmpty).map(SharedCredential.apply)
+}
+
 case class ApiKey(
     clientId: String,     // = IdGenerator.token(16),
     clientSecret: String, // = IdGenerator.token(64),
@@ -199,6 +212,7 @@ case class ApiKey(
     validUntil: Option[DateTime] = None,
     rotation: ApiKeyRotation = ApiKeyRotation(),
     apiRef: Option[ApiRef] = None,
+    sharedCredential: Option[SharedCredential] = None,
     plugins: Option[NgPluginsWithOverride] = None,
     tags: Seq[String] = Seq.empty[String],
     metadata: Map[String, String] = Map.empty[String, String],
@@ -237,11 +251,11 @@ case class ApiKey(
     case Some(ref) if ref.credential.isDefined => env.proxyState.apikey(ref.credential.get).getOrElse(this)
     case _                                     => this
   }
-  // this key as the credential shared by an alias key (ApiRef.credential): the secret, the rotation and the expiry of
-  // the credential are checked, the alias decides whether its subscription calls (enabled). Not the status of the
-  // subscription of the credential, which only gives access to its own api
+  // this key as the credential shared by an alias key (ApiRef.credential): the secret, the rotation, the expiry and
+  // the enabled flag of the credential are checked, like for any api key (a disabled credential calls nothing), and the
+  // alias decides whether its own subscription calls (enabled)
   def asCredentialOf(alias: ApiKey): ApiKey               = copy(
-    enabled = alias.enabled && validUntil.forall(date => date.isAfterNow),
+    enabled = enabled && alias.enabled && validUntil.forall(date => date.isAfterNow),
     allowClientIdOnly = allowClientIdOnly && alias.allowClientIdOnly
   )
   def authorizedOn(identifier: EntityIdentifier): Boolean = authorizedEntities.contains(identifier)
@@ -597,7 +611,11 @@ object ApiKey {
         "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
         "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
         "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).view.mapValues(JsString.apply).toMap)
-      )
+      ) ++ (apk.sharedCredential match {
+        // written only on a shared credential: the json of the other keys is unchanged
+        case Some(credential) => Json.obj("sharedCredential" -> credential.json)
+        case None             => Json.obj()
+      })
     }
     override def reads(json: JsValue): JsResult[ApiKey] =
       Try {
@@ -662,6 +680,7 @@ object ApiKey {
               .getOrElse(ApiKeyRotation()),
             validUntil = rawValidUntil,
             apiRef = (json \ "apiRef").asOpt[JsObject].flatMap(o => ApiRef.format.reads(o).asOpt),
+            sharedCredential = (json \ "sharedCredential").asOpt[JsValue].flatMap(SharedCredential.reads),
             plugins = (json \ "plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt),
             tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             // read entry by entry: one value that is not a string must not drop the whole map, and with it the
@@ -683,14 +702,21 @@ object ApiKey {
   }
   def toJson(value: ApiKey): JsValue                 = _fmt.writes(value)
 
-  // what the admin api refuses of a write of an api key, about alias keys (ApiRef.credential): a new key under the client
-  // id of a credential that aliases still name (they would call with its secret), and a change of the credential of a
-  // key, set by the subscription that mints the alias once and for all
+  // what the admin api refuses of a write of an api key, about shared credentials and their alias keys: a change of
+  // the credential of an alias (ApiRef.credential), set by the subscription that mints it once and for all, a key
+  // that becomes or stops being a shared credential, or changes its owner (a credential is created as one, and its
+  // aliases are the ones of its owner), and a shared credential that is not attached to nothing (authorized on an
+  // entity, or minted by a plan). A new key under the client id of a credential that aliases still name is a matter of
+  // rights (ApiActionContext.canUserGrantApikeyRights)
   def aliasWriteError(updated: ApiKey, stored: Option[ApiKey])(using env: Env): Option[String] = stored match {
-    case None if env.proxyState.hasApikeyAliases(updated.clientId)                              =>
-      Some(s"api key '${updated.clientId}' is the credential of alias keys")
     case Some(old) if old.apiRef.flatMap(_.credential) != updated.apiRef.flatMap(_.credential) =>
       Some("the credential of an alias key cannot change")
+    case Some(old) if old.sharedCredential != updated.sharedCredential                         =>
+      Some("an api key is created as a shared credential, for one owner, and stays one")
+    case _ if updated.sharedCredential.isDefined && updated.apiRef.isDefined                   =>
+      Some("a shared credential is not the api key of a plan")
+    case _ if updated.sharedCredential.isDefined && updated.authorizedEntities.nonEmpty        =>
+      Some("a shared credential is authorized on nothing: its alias keys are")
     case _                                                                                      => None
   }
   def fromJsons(value: JsValue): ApiKey              =

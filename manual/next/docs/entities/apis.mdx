@@ -679,7 +679,7 @@ End-users (developers, portals, machines) can subscribe to published plans. A su
 | `plan_ref` | string | Reference to the plan |
 | `owner_ref` | string | Reference to the subscribing client |
 | `subscription_kind` | string | Kind of subscription: `apikey`, `mtls`, `keyless`, `oauth2-local`, `oauth2-remote`, `jwt`. It has to be the access mode of the plan |
-| `token_refs` | array of string | References to generated credentials (API key IDs, certificate IDs, etc.), and to the API key the subscription shares, if any (see [One API key for several APIs](#one-api-key-for-several-apis)) |
+| `token_refs` | array of string | References to generated credentials (API key IDs, certificate IDs, etc.), and to the shared credential the subscription shares, if any (see [One API key for several APIs](#one-api-key-for-several-apis)) |
 | `client_id` | string | For a `jwt`, `mtls` or `oauth2-remote` subscription: the client id its consumer calls with, as the plan reads it, without prefix. See below |
 | `dates` | object | Lifecycle timestamps (see below) |
 | `tags` | array of string | Tags |
@@ -721,8 +721,21 @@ subscriptions, the API keys they hold, and the API keys its plans generated for 
 ### One API key for several APIs
 
 A consumer can call several APIs with one credential (one client id and one secret), each API through a subscription of
-its own, with the quotas, the restrictions and the plugins of its own plan. The first subscription gets its API key `K` as
-usual. Every other subscription, to another API, **shares** `K` by naming it in its `token_refs` at its creation:
+its own, with the quotas, the restrictions and the plugins of its own plan. That credential is a **shared credential**:
+an API key `K` that belongs to the consumer and to no subscription, authorized on nothing by itself, marked with
+`sharedCredential.owner`, the `owner_ref` of the subscriptions of that consumer.
+
+```json
+{
+  "clientId": "K",
+  "clientSecret": "...",
+  "clientName": "credential of client_acme",
+  "authorizedEntities": [],
+  "sharedCredential": { "owner": "client_acme" }
+}
+```
+
+A subscription **shares** it with an entry of its `token_refs`, at its creation:
 
 ```json
 {
@@ -730,39 +743,48 @@ usual. Every other subscription, to another API, **shares** `K` by naming it in 
   "plan_ref": "plan_gold",
   "owner_ref": "client_acme",
   "subscription_kind": "apikey",
-  "token_refs": [{ "apikey": "K", "shared": true }]
+  "token_refs": [{ "shared": true }]
 }
 ```
 
-The subscription still gets an API key of its own, `K_b`, built from its plan exactly like any other, and listed next to
-the shared one: `[{"apikey": "K", "shared": true}, {"apikey": "K_b"}]`. `K_b` is an **alias**: its `apiRef.credential` is
+- `{"shared": true}` takes the credential of the owner of the subscription: the shared credential whose owner is its
+  `owner_ref`, located in the tenant of the subscription. When there is none, it is created with the subscription,
+  where the subscription is located: the first subscription of a consumer creates its credential, the next ones share
+  it. An owner with several credentials there names the one it shares (`400` otherwise).
+- `{"apikey": "K", "shared": true}` names the credential, created beforehand through the API keys.
+
+The subscription gets an API key of its own, `K_b`, built from its plan exactly like any other, and listed next to the
+credential: `[{"apikey": "K", "shared": true}, {"apikey": "K_b"}]`. `K_b` is an **alias**: its `apiRef.credential` is
 `K`. The consumer calls the API of the subscription with the client id and the secret of `K`, and the call is identified as
 `K_b`: the throttling strategy and the quotas of the plan of the subscription (its own counter), its restrictions, its
 plugins, and the `apiRef` of the gateway events are the ones of `K_b`, whose `apiRef.credential` tells the credential the
-consumer called with. Called with its own client id, an alias is refused: it has no secret of its own.
+consumer called with. The backend of each API sees the client id of its own alias. Called with its own client id, an
+alias is refused: it has no secret of its own.
 
-- Only an `apikey` or an `oauth2-local` subscription shares an API key, one at most, and only the API key of another
-  `apikey` or `oauth2-local` subscription with the same `owner_ref`. The shared API key must not call the API of the
-  subscription yet, nor be shared with another subscription to it. Otherwise the subscription is refused with a `400`.
-  The draft of a subscription shares no API key (`400`): its API keys are real ones, they would open the live API.
-- The author of the subscription must be allowed to write the shared API key: a user who cannot is refused with a `400`
-  by the admin API, a `403` by `subscribe`, and cannot update or delete such a subscription either. The `owner_ref`,
-  free text, is not enough.
-- The shared entry is given at the creation and never changes (`400`): delete the subscription and create another one.
-- The secret is the one of the credential: its rotation and its expiry follow the plan that minted `K`, and a new
-  secret of `K` calls every API. The validity of the plan of the subscription applies to `K_b`, which has no rotation.
-- Suspending, closing or deleting a subscription disables or deletes its own API key only. Suspending the subscription
-  of `K` stops the calls to its own API, not the ones made through its aliases. Deleting it while other subscriptions
-  share `K` keeps `K`, disabled and authorized on no API, for its aliases: it can still be shared, and it is deleted with
-  its last alias. To revoke the credential everywhere, change its secret or delete `K`: deleting `K`, by any means,
-  deletes its aliases, and no API key can be created under the client id of a credential that aliases still name.
-- `apiRef.credential` is written by the subscription that mints the alias, and never changes (`400`). An alias only
-  serves while the subscription named by its `apiRef` exists and shares its credential, and on the API it is authorized
-  on: an alias written through the API keys (which requires the rights to write its credential) serves nothing, and
-  does not keep its credential once the subscription of the credential is deleted.
+- Only an `apikey` or an `oauth2-local` subscription shares a credential, one at most, and only a shared credential
+  whose owner is its `owner_ref`, that no other subscription to the same API shares yet. The API key of a subscription
+  is never shared. Otherwise the subscription is refused with a `400`. The draft of a subscription shares nothing
+  (`400`): its API keys are real ones, they would open the live API.
+- The author of the subscription must be allowed to write the credential, named or not: a user who cannot is refused
+  with a `400` by the admin API, a `403` by `subscribe`, and cannot update or delete such a subscription either. The
+  `owner_ref`, free text, is not enough.
+- The shared entry is given at the creation and never changes, nor do the API and the owner of the subscription
+  (`400`): delete the subscription and create another one.
+- The credential is its own: its secret, its rotation, its expiry and its `enabled` flag are set on `K`, and are the
+  ones of every call. A new secret of `K` calls every API, and a disabled or expired `K` calls none, like any API key.
+  The validity of the plan of a subscription applies to its alias, which has no rotation.
+- Suspending, closing or deleting a subscription disables or deletes its own alias only: the other APIs are still
+  called. The credential is never updated, disabled or deleted with a subscription, not even with the last one: it is
+  deleted by hand. Deleting `K`, by any means, deletes its aliases, and only a super admin can create an API key under
+  the client id of a credential that aliases still name (an import, a restoration).
+- An API key is created as a shared credential, with no `authorizedEntities` and no `apiRef`, and stays one, for the
+  same owner (`400`). `apiRef.credential` is written by the subscription that mints the alias, and never changes
+  (`400`). An alias only serves while its credential is a shared credential, the subscription named by its `apiRef`
+  exists, shares that credential and lists the alias in its `token_refs`, and on the API it is authorized on: an alias
+  written through the API keys (which requires the rights to write its credential) serves nothing.
 
-A call made with `K` on an API it is not authorized on looks for its alias in the proxy state, next to the API keys: it
-never reads the datastore, and a call that uses no alias costs what it cost before. An alias serves once the proxy state
+A call made with `K` looks for its alias on the API in the proxy state, next to the API keys: it never reads the
+datastore, and a call that uses no alias costs what it cost before. An alias serves once the proxy state
 is synchronized, like any new API key.
 
 The `jwt`, `mtls` and `oauth2-remote` plans need none of this: one token or one certificate already calls several

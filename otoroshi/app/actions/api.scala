@@ -29,12 +29,20 @@ object ApiActionContext {
   // granting rights: refuse to write an apikey that would grant more than the writer already has. an apikey
   // authorized on the admin api without rights metadata has no restriction at all: only super admins write those.
   // An alias key (ApiRef.credential) gives the access of the credential it shares: only the users who can write that
-  // credential write it
+  // credential write it. A key under the client id of a credential that is gone while aliases still name it would call
+  // through them with a secret of its own: only a super admin writes it (an import, a restoration, whatever the order
+  // of the keys)
   def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
-    canUserGrantOwnRights(apikey, user) && (apikey.apiRef.flatMap(_.credential) match {
+    canUserGrantOwnRights(apikey, user) && !takesOverCredential(apikey, user) &&
+    (apikey.apiRef.flatMap(_.credential) match {
       case None             => true
       case Some(credential) => canUserWriteCredential(credential, user)
     })
+
+  // read from the proxy state, like the aliases themselves: the client id has aliases, and no key
+  private def takesOverCredential(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    if (env.bypassUserRightsCheck || user.rights.superAdmin) false
+    else env.proxyState.hasApikeyAliases(apikey.clientId) && env.proxyState.apikey(apikey.clientId).isEmpty
 
   // the rights an apikey grants by itself
   private def canUserGrantOwnRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {

@@ -22,7 +22,7 @@ import otoroshi.api.WriteAction
 import otoroshi.api.WriteAction.Create
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
-import otoroshi.models.{Draft, EntityKind}
+import otoroshi.models.{ApiKey, Draft, EntityKind}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
@@ -558,14 +558,24 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
               subscription <- validateBody(ctx)
             } yield subscription
 
-            // the api key a subscription shares (an alias key) is shared by the ones who can write it
-            def canShare(subscription: ApiSubscription): Future[Boolean] =
-              ApiSubscription
+            // the credential a subscription shares (an alias key) is shared by the ones who can write it: the one it
+            // names, or the one of its owner when it names none ({"shared": true})
+            def canShare(subscription: ApiSubscription): Future[Boolean] = {
+              val named = ApiSubscription
                 .sharedCredentials(subscription)
-                .mapAsync { clientId =>
-                  env.datastores.apiKeyDataStore.findById(clientId).map(_.forall(apikey => ctx.canUserWrite(apikey)))
-                }
-                .map(_.forall(identity))
+                .mapAsync(clientId => env.datastores.apiKeyDataStore.findById(clientId))
+                .map(_.flatten)
+              val owned =
+                if (!ApiSubscription.sharesOwnerCredential(subscription)) Seq.empty[ApiKey].vfuture
+                else
+                  env.datastores.apiKeyDataStore
+                    .findAll(force = true)
+                    .map(apikeys => ApiSubscription.ownerCredentials(apikeys, subscription))
+              for {
+                namedKeys <- named
+                ownedKeys <- owned
+              } yield (namedKeys ++ ownedKeys).forall(apikey => ctx.canUserWrite(apikey))
+            }
 
             result match {
               case Left(errorResult)   => errorResult.vfuture
