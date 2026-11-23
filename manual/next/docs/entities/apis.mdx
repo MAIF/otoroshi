@@ -748,9 +748,13 @@ A subscription **shares** it with an entry of its `token_refs`, at its creation:
 ```
 
 - `{"shared": true}` takes the credential of the owner of the subscription: the shared credential whose owner is its
-  `owner_ref`, located in the tenant of the subscription. When there is none, it is created with the subscription,
-  where the subscription is located: the first subscription of a consumer creates its credential, the next ones share
-  it. An owner with several credentials there names the one it shares (`400` otherwise).
+  `owner_ref`, located in the tenant of the subscription, that a subscription created (`sharedCredential.minted`).
+  When there is none, it is created with the subscription, where the subscription is located: the first subscription
+  of a consumer creates its credential, the next ones share it. The `owner_ref` is free text: a shared credential
+  written by hand for an owner is never taken that way, it is shared by the subscriptions that name it, and only a
+  super admin writes a `minted` one by hand (an import, a restoration). An owner with several credentials there names the one it shares (`400` otherwise). Subscriptions of an owner
+  created at the same time share one credential too: the first one creates it, and one that cannot share it yet (it
+  is located in other teams) is refused with a `400`, to create again.
 - `{"apikey": "K", "shared": true}` names the credential, created beforehand through the API keys.
 
 The subscription gets an API key of its own, `K_b`, built from its plan exactly like any other, and listed next to the

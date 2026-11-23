@@ -16,5 +16,11 @@ class ApiAliasKeysSpec extends PluginsTestSpecBase {
     "only share a credential their author can write" in { aliases.sharingRights() }
     "only be written by hand by the users who can write their credential, which stays one" in { aliases.aliasesWrittenByHand() }
     "go with their credential" in { aliases.deletedCredentialTakesItsAliases() }
+    "not share a credential written by hand for an owner, unless it is named" in { aliases.plantedCredential() }
+    "share a credential written a moment ago with the ones who can write it" in { aliases.credentialJustCreated() }
+    "share one credential when the subscriptions of an owner are created at once" in {
+      aliases.subscriptionsCreatedAtOnce()
+    }
+    "be called with the token an oauth2-local subscription exchanges the credential for" in { aliases.oauth2Local() }
   }
 }

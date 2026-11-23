@@ -33,7 +33,7 @@ object ApiActionContext {
   // through them with a secret of its own: only a super admin writes it (an import, a restoration, whatever the order
   // of the keys)
   def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
-    canUserGrantOwnRights(apikey, user) && !takesOverCredential(apikey, user) &&
+    canUserGrantOwnRights(apikey, user) && !takesOverCredential(apikey, user) && !mintsCredential(apikey, user) &&
     (apikey.apiRef.flatMap(_.credential) match {
       case None             => true
       case Some(credential) => canUserWriteCredential(credential, user)
@@ -43,6 +43,13 @@ object ApiActionContext {
   private def takesOverCredential(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
     if (env.bypassUserRightsCheck || user.rights.superAdmin) false
     else env.proxyState.hasApikeyAliases(apikey.clientId) && env.proxyState.apikey(apikey.clientId).isEmpty
+
+  // a minted credential (SharedCredential.minted) is the one the subscriptions of its owner share without naming it:
+  // written by hand, it would be shared by the subscriptions of a consumer that never asked for it. Only a super admin
+  // writes one the proxy state does not have as such yet (an import, a restoration)
+  private def mintsCredential(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    if (env.bypassUserRightsCheck || user.rights.superAdmin || !apikey.sharedCredential.exists(_.minted)) false
+    else !env.proxyState.apikey(apikey.clientId).exists(_.sharedCredential == apikey.sharedCredential)
 
   // the rights an apikey grants by itself
   private def canUserGrantOwnRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
@@ -58,7 +65,12 @@ object ApiActionContext {
   def canUserWriteCredential(clientId: String, user: BackOfficeUser)(using env: Env): Boolean =
     env.bypassUserRightsCheck || user.rights.superAdmin || env.proxyState
       .apikey(clientId)
-      .exists(credential => canUserWriteApikeyItself(credential, user) && canUserGrantOwnRights(credential, user))
+      .exists(credential => canUserWriteCredential(credential, user))
+
+  // the same, of a credential that was read already (from the datastore)
+  def canUserWriteCredential(credential: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    env.bypassUserRightsCheck || user.rights.superAdmin ||
+    (canUserWriteApikeyItself(credential, user) && canUserGrantOwnRights(credential, user))
 
   // what canUserWrite checks of the location of an apikey, without a request: its own tenant, its teams and its kind
   private def canUserWriteApikeyItself(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {

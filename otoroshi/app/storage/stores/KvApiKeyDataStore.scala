@@ -388,7 +388,9 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   // an alias key never outlives its credential: anyone could create a key under the client id of a deleted credential,
   // with a secret of its own, and call through its aliases. The aliases of the deleted keys go with them, read with one
-  // scan of the keys per call (uncached: an alias is a key like any other, written a moment ago)
+  // scan of the keys per call (uncached: an alias is a key like any other, written a moment ago). That scan is paid by
+  // every deletion of an api key, even one that has no alias, and once per key when they are deleted one by one
+  // (ApiSubscription.onOwnKeys): it is accepted, deleting api keys is an admin operation, never on the path of a call
   override def delete(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean] = deleteByIds(Seq(id))
 
   override def deleteByIds(ids: Seq[String])(using ec: ExecutionContext, env: Env): Future[Boolean] =

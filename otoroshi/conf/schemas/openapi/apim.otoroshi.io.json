@@ -131,6 +131,11 @@
             "type": "string",
             "description": "The consumer the credential belongs to: the `owner_ref` of the subscriptions that share it",
             "example": "client_acme"
+          },
+          "minted": {
+            "type": "boolean",
+            "description": "`true` on the credential a subscription created for its owner (`{\"shared\": true}` in its `token_refs`): the only one the next subscriptions of that owner share without naming it. A shared credential written by hand is shared by the subscriptions that name it. Only a subscription and a super admin write a minted credential, and it never changes. Absent on the other shared credentials",
+            "example": true
           }
         }
       },

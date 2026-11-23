@@ -169,13 +169,18 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
   // an owner of its own for each test: its credentials are only deleted by hand
   private def newOwner(): String = s"client-${IdGenerator.lowerCaseToken(8)}"
 
-  private def credentialOf(owner: String, location: EntityLocation = EntityLocation.default): ApiKey = {
+  // minted: as if a subscription had created it, the only ones {"shared": true} takes
+  private def credentialOf(
+      owner: String,
+      location: EntityLocation = EntityLocation.default,
+      minted: Boolean = false
+  ): ApiKey = {
     val credential = ApiKey(
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),
       clientName = s"credential of $owner",
       authorizedEntities = Seq.empty,
-      sharedCredential = Some(SharedCredential(owner)),
+      sharedCredential = Some(SharedCredential(owner, minted)),
       location = location
     )
     credential.save().futureValue mustBe true
@@ -216,7 +221,7 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       withClue(subA)(statusA mustBe 201)
       // the credential of the owner is created with its first subscription, attached to nothing
       val k               = sharedOf(subA)
-      k.sharedCredential mustBe Some(SharedCredential(owner))
+      k.sharedCredential mustBe Some(SharedCredential(owner, minted = true))
       k.authorizedEntities mustBe empty
       k.apiRef mustBe None
       k.enabled mustBe true
@@ -316,7 +321,7 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
     val apiC  = apiWith(plan("plan_c"), plan("plan_free", kind = "keyless"))
     deploy(apiA, apiB, apiC)
     try {
-      val k             = credentialOf(owner)
+      val k             = credentialOf(owner, minted = true)
       val (other, _)    = subscribe(apiC, "plan_c", owner)
       val otherKey      = ownKeyOf(subscription(idOf(other)))
       val (subB, statB) = subscribe(apiB, "plan_b", owner, Seq(shared(k.clientId)))
@@ -339,7 +344,7 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       refused(subscribe(apiC, "plan_free", owner, Seq(ownerShared), kind = "keyless"), "cannot share")
 
       // an owner with several credentials names the one it shares
-      val k2            = credentialOf(owner)
+      val k2            = credentialOf(owner, minted = true)
       refused(subscribe(apiA, "plan_a", owner, Seq(ownerShared)), "several shared credentials")
       val (subA, statA) = subscribe(apiA, "plan_a", owner, Seq(shared(k2.clientId)))
       withClue(subA)(statA mustBe 201)
@@ -385,7 +390,7 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
     val apiC  = apiWith(plan("plan_c"))
     deploy(apiA, apiB, apiC)
     try {
-      val k         = credentialOf(owner)
+      val k         = credentialOf(owner, minted = true)
       val (subA, _) = subscribe(apiA, "plan_a", owner, Seq(shared(k.clientId)))
       val ka        = ownKeyOf(subscription(idOf(subA)))
       val (subB, _) = subscribe(apiB, "plan_b", owner, Seq(shared(k.clientId)))
@@ -432,7 +437,7 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       key(ka.clientId) mustBe None
       val left = key(k.clientId).get
       left.enabled mustBe true
-      left.sharedCredential mustBe Some(SharedCredential(owner))
+      left.sharedCredential mustBe Some(SharedCredential(owner, minted = true))
       synced(ka.clientId)(_.isEmpty)
       call(apiA, k.clientId, k.clientSecret) mustBe 401
 
@@ -566,7 +571,7 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
 
       // the credential of the owner in the tenant of the user, in a team it does not write: not shared either, even
       // when the subscription does not name it
-      val k2 = credentialOf(owner, EntityLocation(tenant, Seq(TeamId("alias-other-team"))))
+      val k2 = credentialOf(owner, EntityLocation(tenant, Seq(TeamId("alias-other-team"))), minted = true)
       refusedWith(
         asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiB, "plan_b", owner, Seq(ownerShared)) ++ located),
         400,
@@ -587,14 +592,14 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
 
       // an owner without credential in the tenant of the subscription gets one there, whatever the other tenants have
       val lone            = newOwner()
-      val elsewhere       = credentialOf(lone)
+      val elsewhere       = credentialOf(lone, minted = true)
       val (subL, statusL) =
         asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiA, "plan_a", lone, Seq(ownerShared)) ++ located)
       withClue(subL)(statusL mustBe 201)
       val k3              = sharedOf(subL)
       k3.clientId must not be elsewhere.clientId
       k3.location mustBe EntityLocation(tenant, Seq(team))
-      k3.sharedCredential mustBe Some(SharedCredential(lone))
+      k3.sharedCredential mustBe Some(SharedCredential(lone, minted = true))
 
       Seq(subL, subA, subB).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
       dropKeys(k.clientId, k2.clientId, k3.clientId, elsewhere.clientId)
@@ -797,5 +802,230 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
     // the credential is written only when there is one, the json of the other keys is unchanged
     ka.apiRef.get.json mustBe Json.obj("api" -> "api-a", "plan" -> "plan-a", "sub" -> "sub-a")
     ApiRef.format.reads(kb.apiRef.get.json).get mustBe kb.apiRef.get
+  }
+
+  // the consumers of an oauth2-local plan exchange their api key for a token (the client credentials flow) and call
+  // with it: the shared credential is the one exchanged, and its token calls every api the credential is shared on,
+  // through the alias of each, with the quotas of its own plan
+  def oauth2Local(): Unit = {
+    import otoroshi.next.plugins.{NgClientCredentialTokenEndpoint, NgClientCredentialTokenEndpointConfig}
+    import otoroshi.next.plugins.api.NgPluginHelper
+
+    val owner         = newOwner()
+    val apiA          = apiWith(plan("plan_oauth", kind = "oauth2-local", quota = Some(2)))
+    val apiB          = apiWith(plan("plan_b", quota = Some(3)))
+    val tokenEndpoint = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[NgClientCredentialTokenEndpoint],
+          config = NgPluginInstanceConfig(NgClientCredentialTokenEndpointConfig.default.json.as[JsObject])
+        )
+      )
+    ).futureValue
+    deploy(apiA, apiB)
+
+    // the client credentials flow: the status of the token endpoint, and the token it gave
+    def token(clientId: String, secret: String): (Int, Option[String]) = {
+      val response = ws
+        .url(s"http://127.0.0.1:$port/")
+        .withHttpHeaders(
+          "Host"         -> tokenEndpoint.frontend.domains.head.domain,
+          "Content-Type" -> "application/x-www-form-urlencoded"
+        )
+        .post(s"grant_type=client_credentials&client_id=$clientId&client_secret=$secret")
+        .futureValue
+      (response.status, Try(response.json.select("access_token").asOpt[String]).toOption.flatten)
+    }
+
+    def callWith(api: Api, accessToken: String): Int = ws
+      .url(s"http://127.0.0.1:$port/")
+      .withHttpHeaders("Host" -> api.domain, "Authorization" -> s"Bearer $accessToken")
+      .get()
+      .futureValue
+      .status
+
+    try {
+      // an oauth2-local subscription shares the credential of its owner like an apikey one, and creates it
+      val (subA, statusA) = subscribe(apiA, "plan_oauth", owner, Seq(ownerShared), kind = "oauth2-local")
+      withClue(subA)(statusA mustBe 201)
+      val k               = sharedOf(subA)
+      k.sharedCredential mustBe Some(SharedCredential(owner, minted = true))
+      val ka              = ownKeyOf(subscription(idOf(subA)))
+      ka.apiRef mustBe Some(ApiRef(apiA.id, "plan_oauth", idOf(subA), Some(k.clientId)))
+      ka.authorizedEntities mustBe Seq(ApiIdentifier(apiA.id))
+      // an apikey subscription of the same owner shares the same credential
+      val (subB, statusB) = subscribe(apiB, "plan_b", owner, Seq(ownerShared))
+      withClue(subB)(statusB mustBe 201)
+      sharedOf(subB).clientId mustBe k.clientId
+      val kb              = ownKeyOf(subscription(idOf(subB)))
+      ready(k, apiA, subA, ka)
+      ready(k, apiB, subB, kb)
+
+      // the credential is exchanged for a token, that names it
+      val (tokenStatus, maybeToken) = token(k.clientId, k.clientSecret)
+      tokenStatus mustBe 200
+      val accessToken               = maybeToken.get
+      JWT.decode(accessToken).getClaim("cid").asString() mustBe k.clientId
+      // a wrong secret gets none
+      token(k.clientId, "wrong-secret") mustBe (401, None)
+
+      // the token calls both apis, each on the counter of its own plan, the one the secret of the credential counts on
+      callWith(apiA, accessToken) mustBe 200
+      call(apiA, k.clientId, k.clientSecret) mustBe 200
+      callWith(apiA, accessToken) mustBe 429
+      callWith(apiB, accessToken) mustBe 200
+      callWith(apiB, accessToken) mustBe 200
+
+      // an alias has no secret of its own: it is exchanged for nothing
+      Seq(ka, kb).foreach(alias => token(alias.clientId, alias.clientSecret) mustBe (401, None))
+
+      // suspended, the oauth2-local subscription is not called anymore, the other one still is
+      update(idOf(subA), Json.obj("status" -> "disabled"))._2 mustBe 200
+      synced(ka.clientId)(_.exists(!_.enabled))
+      callWith(apiA, accessToken) mustBe 401
+      callWith(apiB, accessToken) mustBe 200
+
+      // a disabled credential is exchanged for nothing, and the tokens it was given call nothing
+      k.copy(enabled = false).save().futureValue mustBe true
+      synced(k.clientId)(_.exists(!_.enabled))
+      token(k.clientId, k.clientSecret) mustBe (401, None)
+      callWith(apiB, accessToken) mustBe 401
+
+      Seq(subB, subA).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
+      dropKeys(k.clientId)
+    } finally {
+      undeploy(apiA, apiB)
+      deleteOtoroshiRoute(tokenEndpoint).futureValue
+    }
+  }
+
+  // the subscriptions of an owner created at once share one credential: the first one to reserve it creates it
+  def subscriptionsCreatedAtOnce(): Unit = {
+    val owner = newOwner()
+    val apis  = (1 to 5).map(_ => apiWith(plan("plan_x")))
+    deploy(apis*)
+    try {
+      // started together, then awaited
+      val calls   = apis.map(api =>
+        otoroshiApiCall("POST", subscriptionsPath, Some(subscriptionBody(api, "plan_x", owner, Seq(ownerShared))))
+      )
+      val results = calls.map(_.futureValue)
+      results.foreach { case (body, status) => withClue(body)(status mustBe 201) }
+      val subs    = results.map(_._1)
+      subs.map(sub => sharedOf(sub).clientId).distinct must have size 1
+      val k       = sharedOf(subs.head)
+      ApiSubscription
+        .ownerCredentials(env.datastores.apiKeyDataStore.findAll(force = true).futureValue, stored(subs.head))
+        .map(_.clientId) mustBe Seq(k.clientId)
+      // each of them calls its api with that credential
+      apis.zip(subs).foreach { case (api, sub) =>
+        ready(k, api, sub, ownKeyOf(subscription(idOf(sub))))
+        call(api, k.clientId, k.clientSecret) mustBe 200
+      }
+      subs.foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
+      dropKeys(k.clientId)
+    } finally {
+      undeploy(apis*)
+    }
+  }
+
+  // the owner_ref is free text: a shared credential written by hand for an owner, by someone who knows its secret, is
+  // not the one the subscriptions of that owner share without naming it. Only the one a subscription minted is, and
+  // nobody writes a minted one by hand
+  def plantedCredential(): Unit = {
+    val owner = newOwner()
+    val apiA  = apiWith(plan("plan_a"))
+    val apiB  = apiWith(plan("plan_b"))
+    deploy(apiA, apiB)
+    try {
+      // a user writes, where it can, a shared credential for an owner
+      val planted = ApiKey(
+        clientId = IdGenerator.lowerCaseToken(16),
+        clientSecret = IdGenerator.lowerCaseToken(64),
+        clientName = s"planted credential of $owner",
+        authorizedEntities = Seq.empty,
+        sharedCredential = Some(SharedCredential(owner)),
+        location = EntityLocation(tenant, Seq(team))
+      )
+      val (created, createdStatus) = asUser(scoped, "POST", apikeysPath, planted.toJson.as[JsObject] ++ located)
+      withClue(created)(createdStatus mustBe 201)
+      synced(planted.clientId)(_.isDefined)
+
+      // but not as the one a subscription minted, nor does its own become one
+      val forged = planted.copy(
+        clientId = IdGenerator.lowerCaseToken(16),
+        sharedCredential = Some(SharedCredential(owner, minted = true))
+      )
+      refusedWith(
+        asUser(scoped, "POST", apikeysPath, forged.toJson.as[JsObject] ++ located),
+        400,
+        "you can't grant rights you don't have yourself"
+      )
+      key(forged.clientId) mustBe None
+      asUser(
+        scoped,
+        "PUT",
+        s"$apikeysPath/${planted.clientId}",
+        forged.copy(clientId = planted.clientId).toJson.as[JsObject] ++ located
+      )._2 mustBe 400
+      key(planted.clientId).get.sharedCredential mustBe Some(SharedCredential(owner))
+
+      // the first subscription of the owner, whoever writes it, does not take the planted credential: it mints its own
+      val (subA, statusA) = subscribe(apiA, "plan_a", owner, Seq(ownerShared))
+      withClue(subA)(statusA mustBe 201)
+      val k               = sharedOf(subA)
+      k.clientId must not be planted.clientId
+      k.sharedCredential mustBe Some(SharedCredential(owner, minted = true))
+      // and the next ones share that one
+      val (subB, statusB) = subscribe(apiB, "plan_b", owner, Seq(ownerShared))
+      withClue(subB)(statusB mustBe 201)
+      sharedOf(subB).clientId mustBe k.clientId
+      aliasesOf(planted.clientId) mustBe empty
+      ready(k, apiA, subA, ownKeyOf(subscription(idOf(subA))))
+      ready(k, apiB, subB, ownKeyOf(subscription(idOf(subB))))
+      Seq(apiA, apiB).foreach { api =>
+        call(api, k.clientId, k.clientSecret) mustBe 200
+        call(api, planted.clientId, planted.clientSecret) must not be 200
+      }
+
+      Seq(subB, subA).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
+      dropKeys(k.clientId, planted.clientId)
+    } finally undeploy(apiA, apiB)
+  }
+
+  // a credential written a moment ago, that the proxy state does not have yet, is shared by the ones who can write it:
+  // its rights are read from the datastore
+  def credentialJustCreated(): Unit = {
+    val owner = newOwner()
+    val apiA  = apiWith(plan("plan_a"))
+    deploy(apiA)
+    try {
+      def credential(location: EntityLocation) = ApiKey(
+        clientId = IdGenerator.lowerCaseToken(16),
+        clientSecret = IdGenerator.lowerCaseToken(64),
+        clientName = s"credential of $owner",
+        authorizedEntities = Seq.empty,
+        sharedCredential = Some(SharedCredential(owner)),
+        location = location
+      )
+      // one the user cannot write, saved a moment ago: still refused
+      val other = credential(EntityLocation(tenant, Seq(TeamId("alias-other-team"))))
+      other.save().futureValue mustBe true
+      refusedWith(
+        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiA, "plan_a", owner, Seq(shared(other.clientId))) ++ located),
+        400,
+        "you can't grant rights you don't have yourself"
+      )
+      // its own, saved a moment ago: shared at once
+      val own   = credential(EntityLocation(tenant, Seq(team)))
+      own.save().futureValue mustBe true
+      val (sub, status) =
+        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiA, "plan_a", owner, Seq(shared(own.clientId))) ++ located)
+      withClue(sub)(status mustBe 201)
+      sharedOf(sub).clientId mustBe own.clientId
+
+      unsubscribe(idOf(sub)) mustBe 200
+      dropKeys(own.clientId, other.clientId)
+    } finally undeploy(apiA)
   }
 }

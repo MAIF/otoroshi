@@ -574,7 +574,11 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
               for {
                 namedKeys <- named
                 ownedKeys <- owned
-              } yield (namedKeys ++ ownedKeys).forall(apikey => ctx.canUserWrite(apikey))
+                // read from the datastore as they are: a credential that was just minted is not refused because the
+                // proxy state does not have it as such yet (ApiActionContext.canUserGrantApikeyRights)
+              } yield (namedKeys ++ ownedKeys).forall(apikey =>
+                ctx.canUserWrite(apikey.copy(sharedCredential = apikey.sharedCredential.map(_.copy(minted = false))))
+              )
             }
 
             result match {

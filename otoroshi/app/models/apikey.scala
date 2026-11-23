@@ -185,13 +185,24 @@ case class RouteCompositionIdentifier(id: String) extends EntityIdentifier {
 // authorized on nothing by itself, that the subscriptions of that consumer share. Each of them gets an alias key
 // (ApiRef.credential) the consumer calls through the credential. Its secret, its rotation, its expiry and its enabled
 // flag are its own, and are the ones of every call made through its aliases
-case class SharedCredential(owner: String) {
-  def json: JsValue = Json.obj("owner" -> owner)
+//
+// minted: the credential a subscription created for its owner ({"shared": true} in its token_refs), the only one the
+// next subscriptions of that owner take without naming it. The owner is free text: a credential written by hand for an
+// owner is not the one of that owner until a subscription names it, or anyone could write the credential the
+// subscriptions of another consumer would share, and call with a secret it knows. Only a subscription and a super
+// admin write a minted credential (ApiActionContext.canUserGrantApikeyRights)
+case class SharedCredential(owner: String, minted: Boolean = false) {
+  // written only on a minted credential: the json of the other ones is unchanged
+  def json: JsValue = if (minted) Json.obj("owner" -> owner, "minted" -> true) else Json.obj("owner" -> owner)
 }
 
 object SharedCredential {
   def reads(json: JsValue): Option[SharedCredential] =
-    json.asOpt[JsObject].flatMap(_.select("owner").asOpt[String]).filter(_.trim.nonEmpty).map(SharedCredential.apply)
+    json
+      .asOpt[JsObject]
+      .flatMap(_.select("owner").asOpt[String])
+      .filter(_.trim.nonEmpty)
+      .map(owner => SharedCredential(owner, json.select("minted").asOpt[Boolean].contains(true)))
 }
 
 case class ApiKey(
@@ -241,8 +252,12 @@ case class ApiKey(
   // is still ahead of us, exactly like the `enabled` flag computed by the json format
   def isActive(): Boolean                                 = enabled && validUntil.forall(date => date.isAfterNow)
   def isInactive(): Boolean                               = !isActive()
+  // an alias key (ApiRef.credential) has no secret of its own: it is called with the secret of the credential it
+  // shares, checked on that credential (asCredentialOf). Whatever checks a secret against the alias itself refuses it:
+  // the token endpoints of the client credentials flow, the basic auth of the api keys, the legacy extractors
+  def isAlias: Boolean                                    = apiRef.exists(_.credential.isDefined)
   def isValid(value: String): Boolean                     =
-    enabled && (Signatures.constantTimeEquals(value, clientSecret) ||
+    enabled && !isAlias && (Signatures.constantTimeEquals(value, clientSecret) ||
       (rotation.enabled && rotation.nextSecret.exists(secret => Signatures.constantTimeEquals(value, secret))))
   def isInvalid(value: String): Boolean                   = !isValid(value)
   // the key whose secret a call proves: the credential an alias key shares, or the key itself. Its rotation is the one
@@ -460,8 +475,9 @@ case class ApiKey(
 
   // like the next secret in isValid, the next bearer is only valid while the secret is rotating
   def checkBearer(value: String): Boolean = {
-    Signatures.constantTimeEquals(value, toBearer()) ||
-    (rotation.enabled && rotation.nextSecret.isDefined && Signatures.constantTimeEquals(value, toNextBearer()))
+    // an alias key has no secret of its own (isAlias), nor a bearer made of it
+    !isAlias && (Signatures.constantTimeEquals(value, toBearer()) ||
+    (rotation.enabled && rotation.nextSecret.isDefined && Signatures.constantTimeEquals(value, toNextBearer())))
   }
 }
 

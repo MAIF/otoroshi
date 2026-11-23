@@ -1293,11 +1293,13 @@ object ApiSubscription {
 
   def sharedCredential(subscription: ApiSubscription): Option[String] = sharedCredentials(subscription).headOption
 
-  // the credentials of the owner of a subscription: the shared credentials of that owner located in the tenant of the
-  // subscription. The owner_ref is free text: the credential of another tenant with the same owner is not one of them
+  // the credentials of the owner of a subscription: the shared credentials of that owner a subscription minted
+  // (SharedCredential.minted), located in the tenant of the subscription. The owner_ref is free text: the credential of
+  // another tenant with the same owner is not one of them, nor is one written by hand for that owner, which is only
+  // shared when it is named
   def ownerCredentials(apikeys: Seq[ApiKey], subscription: ApiSubscription): Seq[ApiKey] =
     apikeys.filter(apikey =>
-      apikey.sharedCredential.exists(_.owner == subscription.ownerRef) &&
+      apikey.sharedCredential.exists(credential => credential.owner == subscription.ownerRef && credential.minted) &&
       apikey.location.tenant == subscription.location.tenant
     )
 
@@ -1343,11 +1345,40 @@ object ApiSubscription {
 
   // a subscription sharing api keys its author cannot write: refused, and its stored version is not rewritten nor
   // deleted by that author. The drafts share nothing (checkSharedCredential)
-  def sharesMoreThan(subscription: ApiSubscription, user: otoroshi.models.BackOfficeUser)(using env: Env): Boolean =
-    sharedCredentials(subscription).exists(clientId => !canUserShare(clientId, user)) ||
-    // the credential of the owner is not named: the ones the proxy state has are the ones that would be shared
+  // creating: the subscription is being created, and the credentials the proxy state does not have yet (written a
+  // moment ago) are left to the check made on the datastore (sharesStoredCredentialMoreThan). A stored subscription is
+  // only rewritten or deleted by the ones who can write a credential the proxy state has
+  def sharesMoreThan(subscription: ApiSubscription, user: otoroshi.models.BackOfficeUser, creating: Boolean = false)(
+      using env: Env
+  ): Boolean =
+    sharedCredentials(subscription).exists(clientId =>
+      if (creating && env.proxyState.apikey(clientId).isEmpty) false else !canUserShare(clientId, user)
+    ) ||
+    // the credential of the owner is not named: the ones the proxy state has are the ones that would be shared. A
+    // credential created since the last sync of the proxy state is not seen here: the creation of a subscription
+    // checks the ones of the datastore too (sharesStoredCredentialMoreThan)
     (sharesOwnerCredential(subscription) &&
     ownerCredentials(env.proxyState.allApikeys(), subscription).exists(apikey => !canUserShare(apikey.clientId, user)))
+
+  // the same, of the credential a subscription shares, read from the datastore like the validation reads it
+  // (checkShareable, withOwnerCredential): the one that is shared is the one that is checked, whatever the proxy state
+  // has. The one it names, and the one of its owner when it names none ({"shared": true})
+  def sharesStoredCredentialMoreThan(subscription: ApiSubscription, user: otoroshi.models.BackOfficeUser)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Boolean] = {
+    def cannotWrite(apikey: ApiKey): Boolean = !otoroshi.actions.ApiActionContext.canUserWriteCredential(apikey, user)
+    sharedCredentials(subscription)
+      .mapAsync(clientId => env.datastores.apiKeyDataStore.findById(clientId))
+      .flatMap { named =>
+        if (named.flatten.exists(cannotWrite)) true.vfuture
+        else if (!sharesOwnerCredential(subscription)) false.vfuture
+        else
+          env.datastores.apiKeyDataStore
+            .findAll(force = true)
+            .map(apikeys => ownerCredentials(apikeys, subscription).exists(cannotWrite))
+      }
+  }
 
   // applies f to the api keys of the token_refs of a subscription that are its own (ownsKey), the others are left alone
   private def onOwnKeys(subscription: ApiSubscription, verb: String, participle: String)(
@@ -1487,33 +1518,92 @@ object ApiSubscription {
   private def withOwnerCredential(subscription: ApiSubscription)(using
       env: Env,
       ec: ExecutionContext
-  ): Future[Either[String, ApiSubscription]] = {
-    def naming(credential: ApiKey): ApiSubscription = subscription.copy(tokenRefs = subscription.tokenRefs.map { ref =>
-      if (isOwnerCredentialRef(ref)) Json.obj("apikey" -> credential.clientId, SHARED_REF_KEY -> true) else ref
-    })
-    if (!sharesOwnerCredential(subscription)) subscription.rightf
+  ): Future[Either[String, (ApiSubscription, Option[String])]] = {
+    // the subscription naming its credential, and the client id of that credential when it was created here
+    def naming(credential: ApiKey, created: Boolean = false): (ApiSubscription, Option[String]) =
+      (
+        subscription.copy(tokenRefs = subscription.tokenRefs.map { ref =>
+          if (isOwnerCredentialRef(ref)) Json.obj("apikey" -> credential.clientId, SHARED_REF_KEY -> true) else ref
+        }),
+        if (created) Some(credential.clientId) else None
+      )
+    if (!sharesOwnerCredential(subscription)) (subscription, None).rightf
     else
       env.datastores.apiKeyDataStore.findAll(force = true).flatMap { apikeys =>
         ownerCredentials(apikeys, subscription) match {
           case Seq(credential) => naming(credential).rightf
           case Seq()           =>
-            val credential = ApiKey(
-              clientId = IdGenerator.lowerCaseToken(16),
-              clientSecret = IdGenerator.lowerCaseToken(64),
-              clientName = s"credential of ${subscription.ownerRef}",
-              description = s"The shared credential of '${subscription.ownerRef}', called through the api keys of its subscriptions",
-              authorizedEntities = Seq.empty,
-              sharedCredential = Some(SharedCredential(subscription.ownerRef)),
-              location = subscription.location
-            )
-            credential.save().map {
-              case true  => naming(credential).right
-              case false => "failed to create the shared credential".left
-            }
+            // two subscriptions of an owner created at once both find no credential: the one that reserves it creates
+            // it, the other one shares what was reserved
+            val clientId    = IdGenerator.lowerCaseToken(16)
+            val reservation = ownerCredentialReservation(subscription)
+            env.datastores.rawDataStore
+              .setnx(reservation, ByteString(clientId), Some(ownerCredentialReservationTtl.toMillis))
+              .flatMap {
+                case true  =>
+                  val credential = ApiKey(
+                    clientId = clientId,
+                    clientSecret = IdGenerator.lowerCaseToken(64),
+                    clientName = s"credential of ${subscription.ownerRef}",
+                    description = s"The shared credential of '${subscription.ownerRef}', called through the api keys of its subscriptions",
+                    authorizedEntities = Seq.empty,
+                    sharedCredential = Some(SharedCredential(subscription.ownerRef, minted = true)),
+                    location = subscription.location
+                  )
+                  credential.save().flatMap {
+                    case true  => naming(credential, created = true).rightf
+                    // nothing was created: the next subscription reserves it again
+                    case false =>
+                      env.datastores.rawDataStore
+                        .del(Seq(reservation))
+                        .map(_ => "failed to create the shared credential".left)
+                  }
+                case false =>
+                  env.datastores.rawDataStore.get(reservation).flatMap {
+                    case None           => ownerCredentialBeingCreated(subscription).leftf
+                    case Some(reserved) =>
+                      reservedOwnerCredential(reserved.utf8String, ownerCredentialReservationAttempts).map {
+                        // where this subscription would have created it: its author writes there. Anywhere else, the
+                        // rights of the author on the credential were not checked (it did not exist yet): the
+                        // subscription is created again, and finds it like any other
+                        case Some(credential)
+                            if ownerCredentials(Seq(credential), subscription).nonEmpty &&
+                              credential.location.teams.toSet == subscription.location.teams.toSet =>
+                          naming(credential).right
+                        case _ => ownerCredentialBeingCreated(subscription).left
+                      }
+                  }
+              }
           case _               => severalOwnerCredentials(subscription).leftf
         }
       }
   }
+
+  // the reservation of the credential of an owner in a tenant, the client id of the credential that is being created
+  // for it: what makes its creation by {"shared": true} happen once. It only has to outlive the time a subscription
+  // takes between its read of the api keys and its own reservation, and expires by itself: the credential it names is
+  // then found among the api keys. A credential deleted by hand is created again once its reservation has expired
+  private val ownerCredentialReservationTtl      = 10.seconds
+  private val ownerCredentialReservationAttempts = 20
+
+  private def ownerCredentialReservation(subscription: ApiSubscription)(using env: Env): String =
+    s"${env.storageRoot}:apis:shared-credentials:${subscription.location.tenant.value}:${subscription.ownerRef}"
+
+  private def ownerCredentialBeingCreated(subscription: ApiSubscription): String =
+    s"the shared credential of owner '${subscription.ownerRef}' is being created by another subscription: try again"
+
+  // the credential another subscription reserved, once it is written
+  private def reservedOwnerCredential(clientId: String, attempts: Int)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Option[ApiKey]] =
+    env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+      case None if attempts > 0 =>
+        org.apache.pekko.pattern.after(100.millis, env.otoroshiScheduler)(
+          reservedOwnerCredential(clientId, attempts - 1)
+        )
+      case found                => found.vfuture
+    }
 
   private def severalOwnerCredentials(subscription: ApiSubscription): String =
     s"owner '${subscription.ownerRef}' has several shared credentials: name one with {\"apikey\": \"<client id>\", \"shared\": true}"
@@ -1523,8 +1613,18 @@ object ApiSubscription {
   ): Future[Either[String, ApiSubscription]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
     withOwnerCredential(subscription).flatMap {
-      case Left(error)  => error.leftf
-      case Right(named) => mintApikeyFromPlan(api, plan, named)
+      case Left(error)             => error.leftf
+      case Right((named, created)) =>
+        mintApikeyFromPlan(api, plan, named).flatMap {
+          // the credential created for a subscription that is refused goes with it, and its reservation: nobody asked
+          // for it, and the next subscription of the owner creates its own
+          case Left(error) if created.isDefined =>
+            for {
+              _ <- env.datastores.apiKeyDataStore.delete(created.get)
+              _ <- env.datastores.rawDataStore.del(Seq(ownerCredentialReservation(named)))
+            } yield error.left
+          case other                            => other.vfuture
+        }
     }
   }
 

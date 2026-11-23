@@ -253,9 +253,25 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     case _                                  => false
   }
 
-  def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(using
+  // grantsMoreThan when the entity is created: what the proxy state does not have yet can be left to
+  // grantsMoreThanStored
+  def grantsMoreThanAtCreation(json: JsValue, user: BackOfficeUser)(using env: Env): Boolean = grantsMoreThan(json, user)
+
+  // what grantsMoreThan cannot tell from the proxy state, which is late on the datastore: read from the datastore,
+  // when an entity is created
+  def grantsMoreThanStored(json: JsValue, user: BackOfficeUser)(using ec: ExecutionContext, env: Env): Future[Boolean] =
+    false.vfuture
+
+  def validateToJson(
+      json: JsValue,
+      singularName: String,
+      f: => Either[String, Option[BackOfficeUser]],
+      creation: Boolean = false
+  )(using
       env: Env
   ): JsResult[JsValue] = {
+    def grantsMore(user: BackOfficeUser): Boolean =
+      if (creation) grantsMoreThanAtCreation(json, user) else grantsMoreThan(json, user)
     def readEntity(): JsResult[JsValue] = format.reads(json) match {
       case e: JsError             => e
       case JsSuccess(value, path) => JsSuccess(value.json, path)
@@ -263,7 +279,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     f match {
       case Left(err)         => JsError(err)
       case Right(None)       => readEntity()
-      case Right(Some(user)) if grantsMoreThan(json, user) => JsError("you can't grant rights you don't have yourself")
+      case Right(Some(user)) if grantsMore(user) => JsError("you can't grant rights you don't have yourself")
       case Right(Some(user)) => {
         val envValidators: Seq[JsonValidator]  =
           env.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ env.adminEntityValidators
@@ -682,6 +698,25 @@ class ApiSubscriptionsResourceAccess(env: Env)
     ApiSubscription.format.reads(json) match {
       case JsSuccess(subscription, _) => ApiSubscription.sharesMoreThan(subscription, user)
       case _                          => false
+    }
+
+  // a credential written a moment ago is not in the proxy state yet: its rights are checked on the datastore
+  // (grantsMoreThanStored), a subscription sharing it is not refused before
+  override def grantsMoreThanAtCreation(json: JsValue, user: BackOfficeUser)(using env: Env): Boolean =
+    ApiSubscription.format.reads(json) match {
+      case JsSuccess(subscription, _) => ApiSubscription.sharesMoreThan(subscription, user, creating = true)
+      case _                          => false
+    }
+
+  // the credential of its owner a subscription shares without naming it ({"shared": true}) is the one of the datastore,
+  // the one the validation takes (ApiSubscription.withOwnerCredential): the proxy state may not have it yet
+  override def grantsMoreThanStored(json: JsValue, user: BackOfficeUser)(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] =
+    ApiSubscription.format.reads(json) match {
+      case JsSuccess(subscription, _) => ApiSubscription.sharesStoredCredentialMoreThan(subscription, user)
+      case _                          => false.vfuture
     }
 }
 
@@ -2215,7 +2250,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                         .byteString
                         .future
                     case None    => {
-                      resource.access.validateToJson(entity, resource.singularName, ctx.backOfficeUser) match {
+                      resource.access.validateToJson(entity, resource.singularName, ctx.backOfficeUser, creation = true) match {
                         case JsError(errs)   =>
                           Json
                             .obj(
@@ -2230,8 +2265,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                             .byteString
                             .vfuture
                         case JsSuccess(_, _) =>
-                          resource.access
-                            .create(version, resource.singularName, None, entity, WriteAction.Create, None)
+                          createGranted(ctx, resource, version, None, entity)
                             .map {
                               case Left(error)          =>
                                 refusedBulkLine(error, entity)
@@ -2522,6 +2556,27 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     }
   }
 
+  // creates an entity, unless it grants its author more than it has according to the datastore
+  // (ResourceAccessApi.grantsMoreThanStored), refused like validateToJson refuses what grantsMoreThan tells
+  private def createGranted(
+      ctx: ApiActionContext[?],
+      resource: Resource,
+      version: String,
+      id: Option[String],
+      body: JsValue
+  ): Future[Either[JsValue, JsValue]] = {
+    def create() = resource.access.create(version, resource.singularName, id, body, WriteAction.Create, None)
+    ctx.backOfficeUser match {
+      case Right(Some(user)) if !user.rights.superAdmin =>
+        resource.access.grantsMoreThanStored(body, user).flatMap {
+          case true  =>
+            Json.obj("error" -> "you can't grant rights you don't have yourself", "http_status_code" -> 400).leftf
+          case false => create()
+        }
+      case _                                            => create()
+    }
+  }
+
   private def getStatus(err: JsValue): Results.Status = {
     err.select("http_status_code").asOptInt match {
       case None       => Results.InternalServerError
@@ -2575,7 +2630,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                   resource.some
                 )
               case None            => {
-                resource.access.validateToJson(body, resource.singularName, ctx.backOfficeUser) match {
+                resource.access.validateToJson(body, resource.singularName, ctx.backOfficeUser, creation = true) match {
                   case JsError(errs)   =>
                     result(
                       Results.BadRequest,
@@ -2587,8 +2642,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                       resource.some
                     )
                   case JsSuccess(_, _) =>
-                    resource.access
-                      .create(version, resource.singularName, None, body, WriteAction.Create, None)
+                    createGranted(ctx, resource, version, None, body)
                       .flatMap {
                         case Left(err)  => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                         case Right(res) =>
@@ -2726,8 +2780,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
               case JsSuccess(body, _)                              => {
                 resource.access.findOne(version, id).flatMap {
                   case None      =>
-                    resource.access
-                      .create(version, resource.singularName, Some(id), body, WriteAction.Create, None)
+                    createGranted(ctx, resource, version, Some(id), body)
                       .flatMap {
                         case Left(err)  => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                         case Right(res) =>
