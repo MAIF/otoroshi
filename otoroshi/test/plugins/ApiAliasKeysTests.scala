@@ -471,11 +471,17 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
         .futureValue
         .left
         .toOption mustBe Some("the draft of a subscription cannot share an api key: share it with the subscription")
-      // the admin api answers the refusal of the draft of a subscription with a 500, its error being a string
-      otoroshiApiCall("POST", draftsPath, Some(draft)).futureValue._2 must not be 201
-      asUser(scoped, "POST", draftsPath, draft ++ located)._2 must not be 201
+      refusedWith(otoroshiApiCall("POST", draftsPath, Some(draft)).futureValue, 400, "cannot share an api key")
+      refusedWith(asUser(scoped, "POST", draftsPath, draft ++ located), 400, "cannot share an api key")
       env.datastores.draftsDataStore.findById(idOf(body)).futureValue mustBe None
       aliasesOf(k.clientId) mustBe empty
+      // as any other refusal of the draft of a subscription
+      val unknownPlan = body ++ Json.obj("plan_ref" -> "no-such-plan", "token_refs" -> Json.arr())
+      refusedWith(
+        otoroshiApiCall("POST", draftsPath, Some(draft ++ Json.obj("content" -> unknownPlan))).futureValue,
+        400,
+        "plan not found"
+      )
       env.datastores.draftsDataStore.delete(apiB.id).futureValue
 
       // once the key is located where the user writes, it shares it
