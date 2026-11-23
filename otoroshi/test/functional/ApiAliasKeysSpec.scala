@@ -22,8 +22,12 @@ class ApiAliasKeysSpec extends PluginsTestSpecBase {
       aliases.subscriptionsCreatedAtOnce()
     }
     "be called with the token an oauth2-local subscription exchanges the credential for" in { aliases.oauth2Local() }
-    "leave subscriptions their author still deletes when their credential is deleted" in {
+    "leave subscriptions their author still updates and deletes when their credential is deleted" in {
       aliases.subscriptionOfDeletedCredential()
+    }
+    "not be found by the extractors that do not resolve their credential" in { aliases.aliasesAndLegacyExtractors() }
+    "be minted once when a credential is shared on one api by subscriptions created at once" in {
+      aliases.sameApiAtOnce()
     }
   }
 }

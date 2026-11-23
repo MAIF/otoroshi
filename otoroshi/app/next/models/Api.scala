@@ -1419,9 +1419,12 @@ object ApiSubscription {
   def deleteKeys(subscription: ApiSubscription)(using env: Env): Future[Either[String, Unit]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
     // the credential a subscription shares is not its own: it stays, and is deleted by hand
-    if (holdsKeys(subscription))
-      onOwnKeys(subscription, "delete", "deleted")(apikey => env.datastores.apiKeyDataStore.delete(apikey.clientId))
-    else Right(()).vfuture
+    val deleted =
+      if (holdsKeys(subscription))
+        onOwnKeys(subscription, "delete", "deleted")(apikey => env.datastores.apiKeyDataStore.delete(apikey.clientId))
+      else Right(()).vfuture
+    // its alias is gone: the api is free for the credential again (reservingAlias)
+    deleted.flatMap(result => releaseAliasReservation(subscription).map(_ => result))
   }
 
   // what a deleted subscription does to its api keys. The keys minted for an apikey or an oauth2-local subscription
@@ -1627,7 +1630,7 @@ object ApiSubscription {
     withOwnerCredential(subscription).flatMap {
       case Left(error)             => error.leftf
       case Right((named, created)) =>
-        mintApikeyFromPlan(api, plan, named).flatMap {
+        reservingAlias(api, named)(mintApikeyFromPlan(api, plan, named)).flatMap {
           // the credential created for a subscription that is refused goes with it, and its reservation: nobody asked
           // for it, and the next subscription of the owner creates its own
           case Left(error) if created.isDefined =>
@@ -1639,6 +1642,57 @@ object ApiSubscription {
         }
     }
   }
+
+  // a credential is shared once per api (checkShareable), and two subscriptions sharing it on one api created at once
+  // both find no alias there: the one that reserves the pair mints its alias, the other one is refused. The reservation
+  // holds the id of its subscription, only has to outlive the time a subscription takes to be stored once its alias is
+  // minted, and expires by itself. It goes with a subscription that is refused, and with the keys of the one that
+  // made it (deleteKeys), so that the api is subscribed again at once
+  private def aliasReservation(credential: String, api: String)(using env: Env): String =
+    s"${env.storageRoot}:shared-credential-reservations:aliases:$credential:$api"
+
+  private def alreadyShared(credential: String, api: String): String =
+    s"api key '$credential' is already shared with a subscription to api '$api'"
+
+  private def reservingAlias(api: Api, subscription: ApiSubscription)(
+      mint: => Future[Either[String, ApiSubscription]]
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, ApiSubscription]] =
+    sharedCredential(subscription) match {
+      case None             => mint
+      case Some(credential) =>
+        val reservation = aliasReservation(credential, api.id)
+        def release()   = env.datastores.rawDataStore.del(Seq(reservation))
+        env.datastores.rawDataStore
+          .setnx(reservation, ByteString(subscription.id), Some(ownerCredentialReservationTtl.toMillis))
+          .flatMap {
+            case false =>
+              s"api key '$credential' is being shared with another subscription to api '${api.id}': try again".leftf
+            case true  =>
+              // the subscription that held the pair before may be stored by now: the check of checkShareable, again
+              mintedAliasesOf(credential).flatMap {
+                case aliases if aliases.exists(_.apiRef.exists(_.api == api.id)) =>
+                  release().map(_ => alreadyShared(credential, api.id).left)
+                case _                                                           =>
+                  mint.flatMap {
+                    case left @ Left(_) => release().map(_ => left)
+                    case right          => right.vfuture
+                  }
+              }
+          }
+    }
+
+  // the reservation a subscription made of the api for the credential it shares, when it still holds it
+  private def releaseAliasReservation(subscription: ApiSubscription)(using env: Env, ec: ExecutionContext): Future[Unit] =
+    sharedCredential(subscription) match {
+      case None             => ().vfuture
+      case Some(credential) =>
+        val reservation = aliasReservation(credential, subscription.apiRef)
+        env.datastores.rawDataStore.get(reservation).flatMap {
+          case Some(holder) if holder.utf8String == subscription.id =>
+            env.datastores.rawDataStore.del(Seq(reservation)).map(_ => ())
+          case _                                                    => ().vfuture
+        }
+    }
 
   private def mintApikeyFromPlan(api: Api, plan: ApiPlan, subscription: ApiSubscription)(using
                                                                                               env: Env
@@ -1765,6 +1819,13 @@ object ApiSubscription {
       case ref @ JsObject(values) if values.contains("apikey") && !isSharedRef(ref) => values("apikey").asString
     }
 
+    // a shared credential deleted by hand took the alias of the subscription with it: there is no key left to rebuild,
+    // and the subscription is still updated. Any other key that is gone refuses the update, as before
+    val credentialGone: Future[Boolean] = sharedCredential(subscription) match {
+      case Some(credential) => env.datastores.apiKeyDataStore.findById(credential).map(_.isEmpty)
+      case None             => false.vfuture
+    }
+
     Future.sequence(
       apikeys.map(apikeyId =>
         env.datastores.apiKeyDataStore
@@ -1783,7 +1844,8 @@ object ApiSubscription {
                 subscription
               ).save()
                 .map(_.right)
-            case None                                            => s"apikey with $apikeyId not found".leftf
+            case None                                            =>
+              credentialGone.map(gone => if (gone) false.right else s"apikey with $apikeyId not found".left)
           }
       )
     )
@@ -1969,8 +2031,7 @@ object ApiSubscription {
       case Some(_)                                                  =>
         // the aliases their subscription minted: one written by hand serves nothing, and refuses nothing
         mintedAliasesOf(credentialId).map {
-          case aliases if aliases.exists(_.apiRef.exists(_.api == api.id)) =>
-            Left(s"api key '$credentialId' is already shared with a subscription to api '${api.id}'")
+          case aliases if aliases.exists(_.apiRef.exists(_.api == api.id)) => Left(alreadyShared(credentialId, api.id))
           case _                                                           => Right(())
         }
     }

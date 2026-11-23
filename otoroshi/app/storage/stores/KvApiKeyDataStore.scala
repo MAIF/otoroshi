@@ -287,6 +287,11 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       env: Env
   ): Future[Option[ApiKey]] = {
     findById(clientId).flatMap {
+      // an alias key (ApiRef.credential) is only called through the credential it shares, which the extractors reading
+      // the datastore do not resolve: they find no key, whatever they check of it (its secret, a jwt signed with it,
+      // its client id alone)
+      case Some(apiKey) if apiKey.isAlias                                                                   =>
+        FastFuture.successful(None)
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) =>
         opt.vfuture
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))             => opt.vfuture

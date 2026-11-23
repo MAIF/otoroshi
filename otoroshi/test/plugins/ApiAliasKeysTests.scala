@@ -1058,11 +1058,68 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       waitFor("the credential out of the proxy state")(env.proxyState.apikey(own.clientId).isEmpty)
       aliasesOf(own.clientId) mustBe empty
 
-      // its alias went with the credential: like any subscription whose api key is gone, it is not rewritten, by
-      // anyone, and its author is told why instead of being refused the access
-      refusedWith(asUser(scoped, "PUT", path, subscription(idOf(sub))), 400, "not found")
+      // its alias went with the credential: there is no key left to rebuild, and its author still rewrites the
+      // subscription, which mints no other alias
+      val (again, againStatus) = asUser(scoped, "PUT", path, subscription(idOf(sub)) ++ Json.obj("name" -> "renamed"))
+      withClue(again)(againStatus mustBe 200)
+      subscription(idOf(sub)).select("name").asString mustBe "renamed"
+      aliasesOf(own.clientId) mustBe empty
       val (deleted, deletedStatus) = asUser(scoped, "DELETE", path, JsNull)
       withClue(deleted)(deletedStatus mustBe 200)
+    } finally undeploy(apiA)
+  }
+
+  // an alias key is only called through its credential: the extractors reading the datastore, which do not resolve the
+  // credential (the legacy ones: secret, jwt signed with the secret, client id alone), find no key for it
+  def aliasesAndLegacyExtractors(): Unit = {
+    val owner = newOwner()
+    val apiA  = apiWith(plan("plan_a"))
+    val apiB  = apiWith(plan("plan_b"))
+    deploy(apiA, apiB)
+    try {
+      val k          = credentialOf(owner, minted = true)
+      val (subA, sa) = subscribe(apiA, "plan_a", owner, Seq(shared(k.clientId)))
+      withClue(subA)(sa mustBe 201)
+      val (subB, sb) = subscribe(apiB, "plan_b", owner)
+      withClue(subB)(sb mustBe 201)
+      val alias      = ownKeyOf(subscription(idOf(subA)))
+      val plain      = ownKeyOf(subscription(idOf(subB)))
+      alias.isAlias mustBe true
+      env.datastores.apiKeyDataStore.findAuthorizeKeyFor(alias.clientId, apiA.id).futureValue mustBe None
+      env.datastores.apiKeyDataStore.findAuthorizeKeyFor(plain.clientId, apiB.id).futureValue.map(_.clientId) mustBe Some(
+        plain.clientId
+      )
+      Seq(subA, subB).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
+      dropKeys(k.clientId)
+    } finally undeploy(apiA, apiB)
+  }
+
+  // two subscriptions sharing a credential on one api, created at once, both find no alias there: one of them only
+  // mints its alias, and the api is subscribed again as soon as that subscription is deleted
+  def sameApiAtOnce(): Unit = {
+    val owner = newOwner()
+    val apiA  = apiWith(plan("plan_a"), plan("plan_b"))
+    deploy(apiA)
+    try {
+      val k       = credentialOf(owner, minted = true)
+      // started together, then awaited
+      val calls   = Seq("plan_a", "plan_b", "plan_a", "plan_b").map(planId =>
+        otoroshiApiCall("POST", subscriptionsPath, Some(subscriptionBody(apiA, planId, owner, Seq(shared(k.clientId)))))
+      )
+      val results = calls.map(_.futureValue)
+      val created = results.filter(_._2 == 201)
+      withClue(results)(created must have size 1)
+      results.filterNot(_._2 == 201).foreach { case (body, status) =>
+        withClue(body)(status mustBe 400)
+        body.select("error").asString must (include("already shared") or include("is being shared"))
+      }
+      aliasesOf(k.clientId).map(_.clientId) mustBe Seq(ownKeyOf(subscription(idOf(created.head._1))).clientId)
+
+      unsubscribe(idOf(created.head._1)) mustBe 200
+      val (again, againStatus) = subscribe(apiA, "plan_b", owner, Seq(shared(k.clientId)))
+      withClue(again)(againStatus mustBe 201)
+      unsubscribe(idOf(again)) mustBe 200
+      dropKeys(k.clientId)
     } finally undeploy(apiA)
   }
 }
