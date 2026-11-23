@@ -1600,9 +1600,10 @@ object ApiSubscription {
   private val ownerCredentialReservationAttempts = 20
 
   // a key space of its own: under the one of an entity (apis, apikeys), the reservation would be read with the entities
-  // (findAll), and it is not one
+  // (findAll), and it is not one. Under a prefix of its own too (owners): the owner_ref is free text, and without it a
+  // tenant named like the prefix of the reservations of the aliases (aliasReservation) would write their keys
   private def ownerCredentialReservation(subscription: ApiSubscription)(using env: Env): String =
-    s"${env.storageRoot}:shared-credential-reservations:${subscription.location.tenant.value}:${subscription.ownerRef}"
+    s"${env.storageRoot}:shared-credential-reservations:owners:${subscription.location.tenant.value}:${subscription.ownerRef}"
 
   private def ownerCredentialBeingCreated(subscription: ApiSubscription): String =
     s"the shared credential of owner '${subscription.ownerRef}' is being created by another subscription: try again"
@@ -1826,29 +1827,30 @@ object ApiSubscription {
       case None             => false.vfuture
     }
 
-    Future.sequence(
-      apikeys.map(apikeyId =>
-        env.datastores.apiKeyDataStore
-          .findById(apikeyId)
-          .flatMap {
-            // rebuilt from the plan of this subscription, the key would become its own: only its own keys are
-            case Some(apikey) if !ownsKey(subscription, apikey) =>
-              notOwnedWarning(subscription, apikey, "updated")
-              false.rightf
-            case Some(apikey)                                    =>
-              rebuildApikey(
-                apikey,
-                generateNewApikeyFromPlan(api, plan, subscription, Some(apikey.clientId)),
-                api,
-                plan,
-                subscription
-              ).save()
-                .map(_.right)
-            case None                                            =>
-              credentialGone.map(gone => if (gone) false.right else s"apikey with $apikeyId not found".left)
-          }
-      )
-    )
+    for {
+      found   <- Future.sequence(apikeys.map(apikeyId => env.datastores.apiKeyDataStore.findById(apikeyId).map(apikeyId -> _)))
+      gone    <- credentialGone
+      // a subscription mints one alias: the only key the deleted credential took. The alias is deleted, nothing tells
+      // which of several missing keys it was, and none of them is excused then
+      aliasGone = gone && found.count(_._2.isEmpty) == 1
+      results <- Future.sequence(found.map {
+                   // rebuilt from the plan of this subscription, the key would become its own: only its own keys are
+                   case (_, Some(apikey)) if !ownsKey(subscription, apikey) =>
+                     notOwnedWarning(subscription, apikey, "updated")
+                     false.rightf
+                   case (_, Some(apikey))                                    =>
+                     rebuildApikey(
+                       apikey,
+                       generateNewApikeyFromPlan(api, plan, subscription, Some(apikey.clientId)),
+                       api,
+                       plan,
+                       subscription
+                     ).save()
+                       .map(_.right)
+                   case (_, None) if aliasGone                               => false.rightf
+                   case (apikeyId, None)                                     => s"apikey with $apikeyId not found".leftf
+                 })
+    } yield results
   }
 
   def handleSubscriptionChanged(
