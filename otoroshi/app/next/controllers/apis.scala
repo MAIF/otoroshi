@@ -558,22 +558,36 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
               subscription <- validateBody(ctx)
             } yield subscription
 
+            // the api key a subscription shares (an alias key) is shared by the ones who can write it
+            def canShare(subscription: ApiSubscription): Future[Boolean] =
+              ApiSubscription
+                .sharedCredentials(subscription)
+                .mapAsync { clientId =>
+                  env.datastores.apiKeyDataStore.findById(clientId).map(_.forall(apikey => ctx.canUserWrite(apikey)))
+                }
+                .map(_.forall(identity))
+
             result match {
               case Left(errorResult)   => errorResult.vfuture
               case Right(subscription) =>
                 // pending before the validation, which mints the api key from the status: whatever the body says,
                 // the key is created disabled, and confirm enables it
                 val pending = subscription.copy(status = ApiSubscriptionPending)
-                ApiSubscription
-                  .validate(pending.apiRef, pending, Create, isDraft = isDraft)
-                  .flatMap {
-                    case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
-                    case Right(sub)  =>
-                      saveSubscription(sub).map {
-                        case true  => Ok(Json.obj("done" -> true))
-                        case false => BadRequest(Json.obj("error" -> "something bad happened"))
+                canShare(pending).flatMap {
+                  case false =>
+                    Forbidden(Json.obj("error" -> "you cannot share an api key you cannot write")).vfuture
+                  case true  =>
+                    ApiSubscription
+                      .validate(pending.apiRef, pending, Create, isDraft = isDraft)
+                      .flatMap {
+                        case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
+                        case Right(sub)  =>
+                          saveSubscription(sub).map {
+                            case true  => Ok(Json.obj("done" -> true))
+                            case false => BadRequest(Json.obj("error" -> "something bad happened"))
+                          }
                       }
-                  }
+                }
             }
         }
       }

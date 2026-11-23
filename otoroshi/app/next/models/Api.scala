@@ -78,12 +78,21 @@ object ApiPlanPlugins {
   }
 }
 
-case class ApiRef(api: String, plan: String, subscription: String) {
-  def json: JsValue = Json.obj(
-    "api" -> api,
-    "plan" -> plan,
-    "sub" -> subscription,
-  )
+// credential: the client id of the api key of another subscription this one shares (an alias key): the consumer calls
+// the api of this subscription with that client id and its secret, and is identified as this api key, with the quotas,
+// the restrictions and the plugins of this plan. None for every other api key
+case class ApiRef(api: String, plan: String, subscription: String, credential: Option[String] = None) {
+  def json: JsValue = {
+    val base = Json.obj(
+      "api"  -> api,
+      "plan" -> plan,
+      "sub"  -> subscription
+    )
+    credential match {
+      case Some(clientId) => base ++ Json.obj("credential" -> clientId)
+      case None           => base
+    }
+  }
 }
 
 object ApiRef {
@@ -94,6 +103,7 @@ object ApiRef {
         api = json.selectAsString("api"),
         plan = json.selectAsString("plan"),
         subscription = json.selectAsString("sub"),
+        credential = json.select("credential").asOpt[String].filter(_.trim.nonEmpty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -1261,12 +1271,71 @@ object ApiSubscription {
     )
   }
 
+  // the entry of the token_refs of a subscription sharing the api key of another subscription of its owner,
+  // {"apikey": "<client id>", "shared": true}: the subscription gets an api key of its own, built from its plan, that
+  // the consumer calls through the credential it shares (an alias key, ApiRef.credential). The shared key is not the
+  // subscription's: it is never updated, disabled or deleted with it
+  val SHARED_REF_KEY = "shared"
+
+  def isSharedRef(ref: JsValue): Boolean =
+    ref.select(SHARED_REF_KEY).asOpt[Boolean].contains(true) && ref.select("apikey").asOpt[String].isDefined
+
+  def sharedCredentials(subscription: ApiSubscription): Seq[String] =
+    subscription.tokenRefs.collect { case ref if isSharedRef(ref) => ref.select("apikey").asString }
+
+  def sharedCredential(subscription: ApiSubscription): Option[String] = sharedCredentials(subscription).headOption
+
+  // the consumers of an apikey and of an oauth2-local plan call with an api key, the only ones that share one
+  def sharesCredentials(kind: ApiKind): Boolean = kind == ApiKind.Apikey || kind == ApiKind.OAuth2Local
+
+  // the alias keys of a credential, read from the datastore
+  def aliasesOf(credential: String)(using env: Env, ec: ExecutionContext): Future[Seq[ApiKey]] =
+    env.datastores.apiKeyDataStore.findAll().map(_.filter(_.apiRef.exists(_.credential.contains(credential))))
+
+  // whether a user can share an api key: the rights to write it, read from the proxy state. A key the proxy state does
+  // not have yet is only shared by a super admin
+  def canUserShare(credential: String, user: otoroshi.models.BackOfficeUser)(using env: Env): Boolean =
+    env.bypassUserRightsCheck || user.rights.superAdmin || env.proxyState
+      .apikey(credential)
+      .exists(apikey => otoroshi.actions.ApiActionContext.canUserWriteApikey(apikey, user))
+
+  // what goes with a key a subscription releases (deleted, or closed with its plan). A key whose credential other
+  // subscriptions share is kept as a credential authorized on no api, disabled, for its aliases. An alias key goes, and
+  // takes with it the credential it shared when that credential was only kept for its aliases and has no other one
+  private def releaseKey(apikey: ApiKey)(using env: Env, ec: ExecutionContext): Future[Any] = {
+    val store = env.datastores.apiKeyDataStore
+    apikey.apiRef.flatMap(_.credential) match {
+      case Some(credential) =>
+        store.delete(apikey.clientId).flatMap { _ =>
+          aliasesOf(credential).flatMap {
+            case aliases if aliases.exists(_.clientId != apikey.clientId) => ().vfuture
+            case _                                                       =>
+              store.findById(credential).flatMap {
+                case Some(kept) if isKeptForAliases(kept) => store.delete(kept.clientId)
+                case _                                    => ().vfuture
+              }
+          }
+        }
+      case None             =>
+        aliasesOf(apikey.clientId).flatMap {
+          case Seq() => store.delete(apikey.clientId)
+          case _     =>
+            logger.info(s"api key '${apikey.clientId}' is kept for the subscriptions that share it, authorized on no api")
+            apikey.copy(enabled = false, authorizedEntities = Seq.empty, apiRef = None).save()
+        }
+    }
+  }
+
+  // a credential kept for its aliases only, once its own subscription is gone
+  private def isKeptForAliases(apikey: ApiKey): Boolean = apikey.apiRef.isEmpty && apikey.authorizedEntities.isEmpty
+
   // applies f to the api keys of the token_refs of a subscription that are its own (ownsKey), the others are left alone
   private def onOwnKeys(subscription: ApiSubscription, verb: String, participle: String)(
       f: ApiKey => Future[Any]
   )(using env: Env): Future[Either[String, Unit]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
     subscription.tokenRefs
+      .filterNot(isSharedRef)
       .flatMap(ref => ref.select("apikey").asOpt[String])
       .mapAsync { clientId =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
@@ -1288,7 +1357,9 @@ object ApiSubscription {
   // longer resolves them
   def deleteKeys(subscription: ApiSubscription)(using env: Env): Future[Either[String, Unit]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    if (holdsKeys(subscription))
+    if (holdsKeys(subscription) && sharesCredentials(subscription.subscriptionKind))
+      onOwnKeys(subscription, "delete", "deleted")(apikey => releaseKey(apikey))
+    else if (holdsKeys(subscription))
       onOwnKeys(subscription, "delete", "deleted")(apikey => env.datastores.apiKeyDataStore.delete(apikey.clientId))
     else Right(()).vfuture
   }
@@ -1324,6 +1395,10 @@ object ApiSubscription {
 
     val keyId = clientId.getOrElse(IdGenerator.lowerCaseToken(16))
 
+    // the key of a subscription sharing the key of another one is an alias: the consumer calls with the credential,
+    // whose secret rotates with the plan that minted it, the alias has no secret of its own to rotate
+    val credential = sharedCredential(subscription)
+
     val defaultApikey = ApiKey(
       enabled = false,
       clientId = keyId,
@@ -1337,10 +1412,10 @@ object ApiSubscription {
       readOnly = configPlan.readOnly,
       constrainedServicesOnly = configPlan.constrainedServicesOnly,
       restrictions = configPlan.restrictions,
-      rotation = configPlan.rotation,
+      rotation = if (credential.isDefined) configPlan.rotation.copy(enabled = false, nextSecret = None) else configPlan.rotation,
       authorizedEntities = Seq(ApiIdentifier(api.id)),
       throttlingStrategy = plan.rateLimiting,
-      apiRef = ApiRef(api = api.id, plan = plan.id, subscription = subscription.id).some,
+      apiRef = ApiRef(api = api.id, plan = plan.id, subscription = subscription.id, credential = credential).some,
       metadata = (configPlan.metadata ++ subscription.metadata +
         (PLAN_METADATA_KEY         -> configPlan.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
         (SUBSCRIPTION_METADATA_KEY -> subscription.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
@@ -1400,7 +1475,9 @@ object ApiSubscription {
     // before
     val ownRefs: Future[Seq[JsValue]] = subscription.tokenRefs.flatmapAsync { ref =>
       ref.select("apikey").asOpt[String] match {
-        case None           => Seq(ref).vfuture
+        case None                       => Seq(ref).vfuture
+        // the credential the subscription shares, checked by check
+        case Some(_) if isSharedRef(ref) => Seq(ref).vfuture
         case Some(clientId) =>
           env.datastores.apiKeyDataStore.findById(clientId).map {
             case Some(apikey) if !ownsKey(subscription, apikey) =>
@@ -1497,7 +1574,7 @@ object ApiSubscription {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     val apikeys: Seq[String] = subscription.tokenRefs.collect {
-      case JsObject(values) if values.contains("apikey") => values("apikey").asString
+      case ref @ JsObject(values) if values.contains("apikey") && !isSharedRef(ref) => values("apikey").asString
     }
 
     Future.sequence(
@@ -1635,6 +1712,69 @@ object ApiSubscription {
           checkClientId(entity, action).map(_.map(_ => (api, plan)))
         case other                                                                      => other.vfuture
       }
+      .flatMap {
+        case Right((api, plan)) => checkSharedCredential(api, entity, action).map(_.map(_ => (api, plan)))
+        case other              => other.vfuture
+      }
+  }
+
+  // a subscription shares one api key at most, the key of an apikey or oauth2-local subscription of the same owner,
+  // that does not call its api yet and has no alias on it. It is chosen at the creation and never changes, so that an
+  // alias key never changes its credential. The rights of the author on that key are checked by the admin api
+  // (ApiSubscriptionsResourceAccess.grantsMoreThan) and by subscribe
+  private def checkSharedCredential(api: Api, entity: ApiSubscription, action: WriteAction)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[String, Unit]] = {
+    val shared = sharedCredentials(entity)
+    action match {
+      case WriteAction.Create if shared.isEmpty                           => Right(()).vfuture
+      case _ if shared.size > 1                                           => Left("a subscription shares one api key at most").vfuture
+      case _ if shared.nonEmpty && !sharesCredentials(entity.subscriptionKind) =>
+        Left(s"a subscription of kind '${entity.subscriptionKind.name}' cannot share an api key").vfuture
+      case WriteAction.Update                                             =>
+        env.datastores.apiSubscriptionDataStore.findById(entity.id).map {
+          case Some(stored) if sharedCredential(stored) != shared.headOption =>
+            Left("the api key a subscription shares cannot change: delete the subscription and create another one")
+          case _                                                             => Right(())
+        }
+      case WriteAction.Create                                             => checkShareable(api, entity, shared.head)
+    }
+  }
+
+  private def checkShareable(api: Api, entity: ApiSubscription, credentialId: String)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[String, Unit]] = {
+    env.datastores.apiKeyDataStore.findById(credentialId).flatMap {
+      case None                                                            => Left(s"api key '$credentialId' not found").vfuture
+      case Some(credential) if credential.apiRef.exists(_.credential.isDefined) =>
+        Left(
+          s"api key '$credentialId' shares the api key '${credential.apiRef.flatMap(_.credential).get}': share that one"
+        ).vfuture
+      case Some(credential) if credential.authorizedOnApi(api.id)          =>
+        Left(s"api key '$credentialId' already calls api '${api.id}'").vfuture
+      case Some(credential)                                                =>
+        aliasesOf(credentialId).flatMap {
+          case aliases if aliases.exists(_.apiRef.exists(_.api == api.id)) =>
+            Left(s"api key '$credentialId' is already shared with a subscription to api '${api.id}'").vfuture
+          case aliases if credential.apiRef.isEmpty && aliases.isEmpty      =>
+            Left(s"api key '$credentialId' was not minted by a subscription").vfuture
+          case aliases                                                      =>
+            // the subscription of the key, then the ones of its aliases
+            val holders = (credential.apiRef.map(_.subscription).toSeq ++ aliases.flatMap(_.apiRef.map(_.subscription))).distinct
+            holders.mapAsync(id => env.datastores.apiSubscriptionDataStore.findById(id)).map(_.flatten).map { subscriptions =>
+              val holder = credential.apiRef.flatMap(ref => subscriptions.find(_.id == ref.subscription))
+              if (credential.apiRef.isDefined && holder.isEmpty)
+                Left(s"the subscription of api key '$credentialId' does not exist anymore")
+              else if (holder.exists(sub => !sharesCredentials(sub.subscriptionKind)))
+                Left(s"api key '$credentialId' is not the api key of an apikey or oauth2-local subscription")
+              else if (subscriptions.exists(_.ownerRef != entity.ownerRef))
+                Left(s"api key '$credentialId' belongs to another owner")
+              else Right(())
+            }
+        }
+    }
   }
 
   // the client_id of a subscription to a jwt, mtls or oauth2-remote plan names the key of one consumer of the plan: no

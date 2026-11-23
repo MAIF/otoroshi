@@ -222,7 +222,7 @@ object ApikeyFromPlan {
     if (restricted) {
       errResult
     } else {
-      env.datastores.apiKeyDataStore.keyRotation(apikey).map { rotationInfos =>
+      env.datastores.apiKeyDataStore.keyRotation(apikey.secretHolder).map { rotationInfos =>
         rotationInfos.foreach { i =>
           attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
         }

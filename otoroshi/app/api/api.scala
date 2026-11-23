@@ -675,6 +675,15 @@ class ApiSubscriptionsResourceAccess(env: Env)
     ) {
   override def beforeDeleteMany: Option[(Seq[ApiSubscription], Env) => Future[Unit]] =
     Some(ApiSubscription.beforeDeleteMany)
+
+  // a subscription sharing the api key of another one (an alias key) gives the credential of that key access to the api
+  // of the subscription: only the users who can write that key write such a subscription
+  override def grantsMoreThan(json: JsValue, user: BackOfficeUser)(using env: Env): Boolean =
+    ApiSubscription.format.reads(json) match {
+      case JsSuccess(subscription, _) =>
+        ApiSubscription.sharedCredentials(subscription).exists(clientId => !ApiSubscription.canUserShare(clientId, user))
+      case _                          => false
+    }
 }
 
 // the access of the apis: an api deleted without any validation by deleteMany loses what was minted for it too

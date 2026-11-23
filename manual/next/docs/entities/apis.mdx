@@ -679,7 +679,7 @@ End-users (developers, portals, machines) can subscribe to published plans. A su
 | `plan_ref` | string | Reference to the plan |
 | `owner_ref` | string | Reference to the subscribing client |
 | `subscription_kind` | string | Kind of subscription: `apikey`, `mtls`, `keyless`, `oauth2-local`, `oauth2-remote`, `jwt`. It has to be the access mode of the plan |
-| `token_refs` | array of string | References to generated credentials (API key IDs, certificate IDs, etc.) |
+| `token_refs` | array of string | References to generated credentials (API key IDs, certificate IDs, etc.), and to the API key the subscription shares, if any (see [One API key for several APIs](#one-api-key-for-several-apis)) |
 | `client_id` | string | For a `jwt`, `mtls` or `oauth2-remote` subscription: the client id its consumer calls with, as the plan reads it, without prefix. See below |
 | `dates` | object | Lifecycle timestamps (see below) |
 | `tags` | array of string | Tags |
@@ -717,6 +717,50 @@ would mint it again, enabled, at the next call. A subscription whose API keys co
 deletion answers a `500`. Removing a plan from an API deletes its subscriptions and revokes their API keys in the same
 way. Closing a plan deletes its subscriptions and their API keys, whatever their kind. Deleting an API deletes its
 subscriptions, the API keys they hold, and the API keys its plans generated for their consumers.
+
+### One API key for several APIs
+
+A consumer can call several APIs with one credential (one client id and one secret), each API through a subscription of
+its own, with the quotas, the restrictions and the plugins of its own plan. The first subscription gets its API key `K` as
+usual. Every other subscription, to another API, **shares** `K` by naming it in its `token_refs` at its creation:
+
+```json
+{
+  "api_ref": "api_orders",
+  "plan_ref": "plan_gold",
+  "owner_ref": "client_acme",
+  "subscription_kind": "apikey",
+  "token_refs": [{ "apikey": "K", "shared": true }]
+}
+```
+
+The subscription still gets an API key of its own, `K_b`, built from its plan exactly like any other, and listed next to
+the shared one: `[{"apikey": "K", "shared": true}, {"apikey": "K_b"}]`. `K_b` is an **alias**: its `apiRef.credential` is
+`K`. The consumer calls the API of the subscription with the client id and the secret of `K`, and the call is identified as
+`K_b`: the throttling strategy and the quotas of the plan of the subscription (its own counter), its restrictions, its
+plugins, and the `apiRef` of the gateway events are the ones of `K_b`, whose `apiRef.credential` tells the credential the
+consumer called with. Called with its own client id, an alias is refused: it has no secret of its own.
+
+- Only an `apikey` or an `oauth2-local` subscription shares an API key, one at most, and only the API key of another
+  `apikey` or `oauth2-local` subscription with the same `owner_ref`. The shared API key must not call the API of the
+  subscription yet, nor be shared with another subscription to it. Otherwise the subscription is refused with a `400`.
+- The author of the subscription must be allowed to write the shared API key: a user who cannot is refused with a `400`
+  by the admin API, a `403` by `subscribe`, and cannot update or delete such a subscription either. The `owner_ref`,
+  free text, is not enough.
+- The shared entry is given at the creation and never changes (`400`): delete the subscription and create another one.
+- The secret is the one of the credential: its rotation and its expiry follow the plan that minted `K`, and a new
+  secret of `K` calls every API. The validity of the plan of the subscription applies to `K_b`, which has no rotation.
+- Suspending, closing or deleting a subscription disables or deletes its own API key only. Suspending the subscription
+  of `K` stops the calls to its own API, not the ones made through its aliases. Deleting it while other subscriptions
+  share `K` keeps `K`, disabled and authorized on no API, for its aliases: it can still be shared, and it is deleted with
+  its last alias. To revoke the credential everywhere, change its secret or delete `K`.
+
+A call made with `K` on an API it is not authorized on looks for its alias in the proxy state, next to the API keys: it
+never reads the datastore, and a call that uses no alias costs what it cost before. An alias serves once the proxy state
+is synchronized, like any new API key.
+
+The `jwt`, `mtls` and `oauth2-remote` plans need none of this: one token or one certificate already calls several
+APIs, each plan identifying the consumer with an API key of its own.
 
 ### Subscription dates
 

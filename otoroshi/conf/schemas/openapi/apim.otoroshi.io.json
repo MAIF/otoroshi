@@ -433,6 +433,11 @@
         "type": "string",
         "description": "The id of the subscription to the plan (`apis.otoroshi.io/v1/apisubscriptions`) that minted the api key",
         "example": "api-subscription_dev_2a8e6b54-0f1c-4d0b-8b4d-3f6c1f4e9a77"
+      },
+      "credential": {
+        "type": "string",
+        "description": "Only on the api key of a subscription that shares the api key of another subscription (`{\"apikey\": \"<client id>\", \"shared\": true}` in its `token_refs`): the client id of that shared api key, the credential. The api key is then an alias: the consumer calls the api with the client id and the secret of the credential (its rotation and its expiry included), and is identified as this api key, with the quotas, the restrictions and the plugins of this plan. Called with its own client id, an alias is refused. Absent on the other api keys",
+        "example": "kx8e4lq2v9twb3hd"
       }
     },
     "example": {

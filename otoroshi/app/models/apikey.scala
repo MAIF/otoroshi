@@ -231,6 +231,19 @@ case class ApiKey(
     enabled && (Signatures.constantTimeEquals(value, clientSecret) ||
       (rotation.enabled && rotation.nextSecret.exists(secret => Signatures.constantTimeEquals(value, secret))))
   def isInvalid(value: String): Boolean                   = !isValid(value)
+  // the key whose secret a call proves: the credential an alias key shares, or the key itself. Its rotation is the one
+  // of the call
+  def secretHolder(using env: Env): ApiKey                = apiRef match {
+    case Some(ref) if ref.credential.isDefined => env.proxyState.apikey(ref.credential.get).getOrElse(this)
+    case _                                     => this
+  }
+  // this key as the credential shared by an alias key (ApiRef.credential): the secret, the rotation and the expiry of
+  // the credential are checked, the alias decides whether its subscription calls (enabled). Not the status of the
+  // subscription of the credential, which only gives access to its own api
+  def asCredentialOf(alias: ApiKey): ApiKey               = copy(
+    enabled = alias.enabled && validUntil.forall(date => date.isAfterNow),
+    allowClientIdOnly = allowClientIdOnly && alias.allowClientIdOnly
+  )
   def authorizedOn(identifier: EntityIdentifier): Boolean = authorizedEntities.contains(identifier)
   def authorizedOnService(id: String): Boolean            = authorizedEntities.contains(ServiceDescriptorIdentifier(id))
   def authorizedOnGroup(id: String): Boolean              = authorizedEntities.contains(ServiceGroupIdentifier(id))
@@ -747,6 +760,11 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       env: Env
   ): Future[Option[ApiKey]]
   def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(using env: Env): Option[ApiKey]
+  // whether an api key of the proxy state is authorized on a route, a route composition or a service
+  def isAuthorizedFromCache(apiKey: ApiKey, serviceId: String)(using env: Env): Boolean
+  // the alias key of a shared credential on the api of a route (ApiRef.credential), from the proxy state: what
+  // identifies a call made with the credential on an api it is not authorized on
+  def findAliasForFromCache(credential: ApiKey, serviceId: String)(using env: Env): Option[ApiKey]
   def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Long]
   def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(using
       ec: ExecutionContext,
@@ -2207,9 +2225,8 @@ object ApiKeyHelper {
       // route it was validated for
       case Some((validatedFor, either)) if validatedFor == service => either
       case _                                                       => {
-        env.datastores.apiKeyDataStore.findAuthorizeKeyForFromCache(apikeyTuple.clientId, service) match {
-          case None         => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
-          case Some(apikey) =>
+        // the checks of the tuple against the key it names, or against the credential an alias key shares
+        def check(apikey: ApiKey): Either[(Option[ApiKey], Option[String]), ApiKey] =
             apikeyTuple match {
               case ApikeyTuple(_, None, None, _, None) if apikey.allowClientIdOnly && apikey.enabled                => apikey.right
               case ApikeyTuple(_, None, None, _, Some(otoBearer)) if apikey.allowClientIdOnly && apikey.enabled && apikey.checkBearer(otoBearer) => apikey.right
@@ -2361,6 +2378,28 @@ object ApiKeyHelper {
               }
               case _                                                                                                => (apikey.some, s"unmatched ApikeyTuple(${apikeyTuple.redactedJson.stringify})".some).left
             }
+        env.proxyState.apikey(apikeyTuple.clientId) match {
+          case None                                                                                     =>
+            (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
+          case Some(apikey) if env.datastores.apiKeyDataStore.isAuthorizedFromCache(apikey, service) =>
+            apikey.apiRef match {
+              // an alias key is called through the credential it shares, it has no secret of its own
+              case Some(ref) if ref.credential.isDefined =>
+                (apikey.some, s"apikey '${apikey.clientId}' is an alias, call with the credential it shares".some).left
+              case _                                     => check(apikey)
+            }
+          // the only place where the credential of an alias key is looked for: a key found, but not authorized on the
+          // api of the route
+          case Some(credential)                                                                         =>
+            env.datastores.apiKeyDataStore.findAliasForFromCache(credential, service) match {
+              case None        => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
+              case Some(alias) =>
+                check(credential.asCredentialOf(alias)) match {
+                  case Right(_)                   => alias.right
+                  case Left((Some(_), message)) => (alias.some, message).left
+                  case left                       => left
+                }
+            }
         }
       }
     }
@@ -2463,7 +2502,7 @@ object ApiKeyHelper {
             if (restricted) {
               errResult.map(v => Left(v))
             } else {
-              env.datastores.apiKeyDataStore.keyRotation(apikey).map { rotationInfos =>
+              env.datastores.apiKeyDataStore.keyRotation(apikey.secretHolder).map { rotationInfos =>
                 rotationInfos.foreach { i =>
                   attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                 }

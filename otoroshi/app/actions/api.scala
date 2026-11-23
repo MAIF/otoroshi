@@ -34,6 +34,19 @@ object ApiActionContext {
     else canUserGrantRightsMetadata(apikey, user)
   }
 
+  // what canUserWrite checks for an apikey, without a request: the location of the apikey (its own tenant), its kind and
+  // the rights it grants
+  def canUserWriteApikey(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
+    val tenant = apikey.location.tenant
+    val teams  = apikey.location.teams
+    env.bypassUserRightsCheck || user.rights.superAdmin || (
+      user.rights.canWriteTenant(tenant) &&
+      user.rights.canWriteTeams(tenant, teams) &&
+      user.rights.canWriteKinds(tenant, teams, Seq(apikeysKind)) &&
+      canUserGrantApikeyRights(apikey, user)
+    )
+  }
+
   private def canUserGrantRightsMetadata(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
     apikey.metadata.get(ApiKey.accessRightsMetadataKey) match {
       case None      =>

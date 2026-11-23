@@ -325,33 +325,52 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   override def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(using env: Env): Option[ApiKey] = {
     env.proxyState.apikey(clientId) match {
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) => opt
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))             => opt
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId))  => opt
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ApiIdentifier(serviceId))               => opt
-      case Some(apiKey)                                                                                     => {
-        env.proxyState.route(serviceId) match {
-          case None          =>
-            env.proxyState.routeComposition(serviceId) match {
-              case None            => None
-              case Some(routeComp) => {
-                val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
-                groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
-              }
-            }
-          case Some(service) => {
-            val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
-            service.apiRef match {
-              case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef.id) => apiKey.some
-              case _                                                           => {
-                val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
-                identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
-              }
+      case opt @ Some(apiKey) if isAuthorizedFromCache(apiKey, serviceId) => opt
+      case _                                                              => None
+    }
+  }
+
+  override def isAuthorizedFromCache(apiKey: ApiKey, serviceId: String)(using env: Env): Boolean = {
+    if (apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId))) true
+    else if (apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))) true
+    else if (apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId))) true
+    else if (apiKey.authorizedEntities.contains(ApiIdentifier(serviceId))) true
+    else {
+      env.proxyState.route(serviceId) match {
+        case None          =>
+          env.proxyState.routeComposition(serviceId) match {
+            case None            => false
+            case Some(routeComp) =>
+              val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
+              groups.exists(sgi => apiKey.authorizedEntities.contains(sgi))
+          }
+        case Some(service) => {
+          val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
+          service.apiRef match {
+            case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef.id) => true
+            case _                                                           => {
+              val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
+              identifiers.exists(sgi => apiKey.authorizedEntities.contains(sgi))
             }
           }
         }
       }
-      case _                                                                                                => None
+    }
+  }
+
+  // read only for a key found but not authorized on the route: a credential without alias costs one read of a map, a
+  // call never reads the datastore
+  override def findAliasForFromCache(credential: ApiKey, serviceId: String)(using env: Env): Option[ApiKey] = {
+    if (!env.proxyState.hasApikeyAliases(credential.clientId)) None
+    else {
+      env.proxyState.route(serviceId).flatMap(_.apiRef) match {
+        case None         => None
+        case Some(apiRef) =>
+          env.proxyState
+            .apikeyAlias(credential.clientId, apiRef.id)
+            .flatMap(aliasId => env.proxyState.apikey(aliasId))
+            .filter(alias => alias.apiRef.exists(ref => ref.api == apiRef.id && ref.credential.contains(credential.clientId)))
+      }
     }
   }
 
