@@ -27,23 +27,39 @@ object ApiActionContext {
 
   // an apikey carries the admin api rights of its holder in its own metadata, so writing one is also
   // granting rights: refuse to write an apikey that would grant more than the writer already has. an apikey
-  // authorized on the admin api without rights metadata has no restriction at all: only super admins write those
-  def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
+  // authorized on the admin api without rights metadata has no restriction at all: only super admins write those.
+  // An alias key (ApiRef.credential) gives the access of the credential it shares: only the users who can write that
+  // credential write it
+  def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    canUserGrantOwnRights(apikey, user) && (apikey.apiRef.flatMap(_.credential) match {
+      case None             => true
+      case Some(credential) => canUserWriteCredential(credential, user)
+    })
+
+  // the rights an apikey grants by itself
+  private def canUserGrantOwnRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
     // its rights are the ones of its owner, whatever the apikey says
     if (PersonalAdminApikey.isPersonal(apikey)) PersonalAdminApikey.canWrite(user)
     else canUserGrantRightsMetadata(apikey, user)
   }
 
-  // what canUserWrite checks for an apikey, without a request: the location of the apikey (its own tenant), its kind and
-  // the rights it grants
-  def canUserWriteApikey(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
+  // whether a user can write the apikey of a client id, read from the proxy state: what sharing it with an alias key
+  // requires. The credential is checked by itself, without the credential it would share: a credential is never an
+  // alias, and two forged keys naming each other do not loop. An apikey the proxy state does not have yet is only
+  // written by a super admin
+  def canUserWriteCredential(clientId: String, user: BackOfficeUser)(using env: Env): Boolean =
+    env.bypassUserRightsCheck || user.rights.superAdmin || env.proxyState
+      .apikey(clientId)
+      .exists(credential => canUserWriteApikeyItself(credential, user) && canUserGrantOwnRights(credential, user))
+
+  // what canUserWrite checks of the location of an apikey, without a request: its own tenant, its teams and its kind
+  private def canUserWriteApikeyItself(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
     val tenant = apikey.location.tenant
     val teams  = apikey.location.teams
     env.bypassUserRightsCheck || user.rights.superAdmin || (
       user.rights.canWriteTenant(tenant) &&
       user.rights.canWriteTeams(tenant, teams) &&
-      user.rights.canWriteKinds(tenant, teams, Seq(apikeysKind)) &&
-      canUserGrantApikeyRights(apikey, user)
+      user.rights.canWriteKinds(tenant, teams, Seq(apikeysKind))
     )
   }
 

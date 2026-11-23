@@ -682,6 +682,17 @@ object ApiKey {
       } get
   }
   def toJson(value: ApiKey): JsValue                 = _fmt.writes(value)
+
+  // what the admin api refuses of a write of an api key, about alias keys (ApiRef.credential): a new key under the client
+  // id of a credential that aliases still name (they would call with its secret), and a change of the credential of a
+  // key, set by the subscription that mints the alias once and for all
+  def aliasWriteError(updated: ApiKey, stored: Option[ApiKey])(using env: Env): Option[String] = stored match {
+    case None if env.proxyState.hasApikeyAliases(updated.clientId)                              =>
+      Some(s"api key '${updated.clientId}' is the credential of alias keys")
+    case Some(old) if old.apiRef.flatMap(_.credential) != updated.apiRef.flatMap(_.credential) =>
+      Some("the credential of an alias key cannot change")
+    case _                                                                                      => None
+  }
   def fromJsons(value: JsValue): ApiKey              =
     try {
       _fmt.reads(value).get
@@ -765,6 +776,10 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   // the alias key of a shared credential on the api of a route (ApiRef.credential), from the proxy state: what
   // identifies a call made with the credential on an api it is not authorized on
   def findAliasForFromCache(credential: ApiKey, serviceId: String)(using env: Env): Option[ApiKey]
+  // the alias keys of credentials, read from the datastore
+  def findAliasesOf(credentials: Seq[String])(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]]
+  // deletes the alias keys of credentials, what a deleted credential takes with it
+  def deleteAliasesOf(credentials: Seq[String])(using ec: ExecutionContext, env: Env): Future[Unit]
   def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Long]
   def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(using
       ec: ExecutionContext,

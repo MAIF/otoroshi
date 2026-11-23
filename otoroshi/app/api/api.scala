@@ -680,8 +680,7 @@ class ApiSubscriptionsResourceAccess(env: Env)
   // of the subscription: only the users who can write that key write such a subscription
   override def grantsMoreThan(json: JsValue, user: BackOfficeUser)(using env: Env): Boolean =
     ApiSubscription.format.reads(json) match {
-      case JsSuccess(subscription, _) =>
-        ApiSubscription.sharedCredentials(subscription).exists(clientId => !ApiSubscription.canUserShare(clientId, user))
+      case JsSuccess(subscription, _) => ApiSubscription.sharesMoreThan(subscription, user)
       case _                          => false
     }
 }
@@ -721,11 +720,41 @@ class ApiKeysResourceAccess(env: Env)
       stateAll = () => env.proxyState.allApikeys(),
       stateOne = id => env.proxyState.apikey(id),
       stateUpdate = seq => env.proxyState.updateApikeys(seq),
-      writeValidator = (entity, _, oldEntity, _, _, _, _) =>
-        ApiKey.keepingStoredSecrets(entity, oldEntity.map(_._1)).rightf,
-      writeChecker = (entity, _, oldEntity, _, _, _, _) =>
-        ApiKey.keepingStoredSecrets(entity, oldEntity.map(_._1)).rightf
+      writeValidator = (entity, _, oldEntity, _, _, _, env) =>
+        ApiKeysResourceAccess.validated(entity, oldEntity.map(_._1))(using env),
+      writeChecker = (entity, _, oldEntity, _, _, _, env) =>
+        ApiKeysResourceAccess.validated(entity, oldEntity.map(_._1))(using env)
     ) {
+
+  // the generic api deletes the apikeys straight from the datastore: the aliases of the deleted keys go with them, as
+  // with the apikeys datastore (KvApiKeyDataStore.deleteByIds)
+  override def deleteOne(version: String, id: String, singularName: String)(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Unit]] =
+    super.deleteOne(version, id, singularName).flatMap {
+      case Right(_) => env.datastores.apiKeyDataStore.deleteAliasesOf(Seq(id)).map(_ => Right(()))
+      case left     => left.vfuture
+    }
+
+  override def deleteMany(version: String, ids: Seq[String])(using ec: ExecutionContext, env: Env): Future[Unit] =
+    super.deleteMany(version, ids).flatMap(_ => env.datastores.apiKeyDataStore.deleteAliasesOf(ids))
+
+  // the deleted keys are not known here: every alias whose credential is gone goes
+  override def deleteAll(version: String, singularName: String, canWrite: JsValue => Boolean)(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Unit]] =
+    super.deleteAll(version, singularName, canWrite).flatMap {
+      case Right(_) =>
+        env.datastores.apiKeyDataStore.findAll(force = true).flatMap { keys =>
+          val ids    = keys.map(_.clientId).toSet
+          val absent = keys.flatMap(_.apiRef.flatMap(_.credential)).filterNot(ids.contains).distinct
+          env.datastores.apiKeyDataStore.deleteAliasesOf(absent).map(_ => Right(()))
+        }
+      case left     => left.vfuture
+    }
+
   override def readableJson(json: JsValue, ctx: ApiActionContextCapable)(using env: Env): JsValue =
     ApiKey._fmt.reads(json) match {
       case JsSuccess(apikey, _) if ctx.canUserReadApikeySecret(apikey) => json
@@ -735,6 +764,13 @@ class ApiKeysResourceAccess(env: Env)
 }
 
 object ApiKeysResourceAccess {
+  // what the generic api writes: the stored secrets of a key written back masked, and nothing an alias key refuses
+  def validated(entity: ApiKey, stored: Option[ApiKey])(using env: Env): Future[Either[JsValue, ApiKey]] =
+    ApiKey.aliasWriteError(entity, stored) match {
+      case Some(error) => Json.obj("error" -> error, "http_status_code" -> 400).leftf
+      case None        => ApiKey.keepingStoredSecrets(entity, stored).rightf
+    }
+
   // the bearers of an apikey are part of its json in the generic api
   val format: Format[ApiKey] = new Format[ApiKey] {
     override def reads(json: JsValue): JsResult[ApiKey] = ApiKey._fmt.reads(json)

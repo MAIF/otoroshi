@@ -436,7 +436,7 @@
       },
       "credential": {
         "type": "string",
-        "description": "Only on the api key of a subscription that shares the api key of another subscription (`{\"apikey\": \"<client id>\", \"shared\": true}` in its `token_refs`): the client id of that shared api key, the credential. The api key is then an alias: the consumer calls the api with the client id and the secret of the credential (its rotation and its expiry included), and is identified as this api key, with the quotas, the restrictions and the plugins of this plan. Called with its own client id, an alias is refused. Absent on the other api keys",
+        "description": "Only on the api key of a subscription that shares the api key of another subscription (`{\"apikey\": \"<client id>\", \"shared\": true}` in its `token_refs`): the client id of that shared api key, the credential. The api key is then an alias: the consumer calls the api with the client id and the secret of the credential (its rotation and its expiry included), and is identified as this api key, with the quotas, the restrictions and the plugins of this plan. Called with its own client id, an alias is refused. Written by the subscription that mints the alias, it never changes (an update changing it is refused), and writing an api key with a `credential` requires the rights to write that credential. An alias only serves while the subscription named by `sub` exists and shares the credential, and on the api it is authorized on. Deleting the credential deletes its aliases. Absent on the other api keys",
         "example": "kx8e4lq2v9twb3hd"
       }
     },

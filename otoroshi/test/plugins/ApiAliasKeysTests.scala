@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import functional.PluginsTestSpecBase
 import org.apache.pekko.actor.Props
 import otoroshi.events.GatewayEvent
+import otoroshi.api.WriteAction
 import otoroshi.models.*
 import otoroshi.next.models.*
 import otoroshi.next.plugins.{AllowedQuota, FixedWindowStrategyConfig}
@@ -371,48 +372,69 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
     } finally undeploy(apiA, apiB, apiC)
   }
 
+  // the users of the admin api: one who only writes in its own tenant and team, where none of the keys minted here are
+  // located, and a super admin
+  private val tenant = TenantId("alias-tenant")
+  private val team   = TeamId("alias-team")
+  private val scoped = BackOfficeUser(
+    randomId = "alias@otoroshi.io",
+    name = "alias@otoroshi.io",
+    email = "alias@otoroshi.io",
+    profile = Json.obj(),
+    authConfigId = "basic",
+    simpleLogin = true,
+    tags = Seq.empty,
+    metadata = Map.empty,
+    rights = UserRights(Seq(UserRight(TenantAccess(tenant.value), Seq(TeamAccess(team.value))))),
+    adminEntityValidators = Map()
+  )
+  private val superAdmin = scoped.copy(
+    randomId = "alias-admin@otoroshi.io",
+    name = "alias-admin@otoroshi.io",
+    email = "alias-admin@otoroshi.io",
+    rights = UserRights(Seq(UserRight(TenantAccess("*"), Seq(TeamAccess("*")))))
+  )
+  private val located = Json.obj("_loc" -> Json.obj("tenant" -> tenant.value, "teams" -> Json.arr(team.value)))
+
+  private val apikeysPath = "/apis/apim.otoroshi.io/v1/apikeys"
+  private val draftsPath  = "/apis/proxy.otoroshi.io/v1/drafts"
+
+  private def asUser(user: BackOfficeUser, method: String, path: String, payload: JsValue): (JsValue, Int) = {
+    val token    = JWT
+      .create()
+      .withClaim("user", Json.stringify(user.toJson))
+      .withExpiresAt(java.time.Instant.now().plusSeconds(30))
+      .sign(Algorithm.HMAC512(env.otoroshiSecret))
+    val response = ws
+      .url(s"http://localhost:$port$path")
+      .withHttpHeaders(
+        "Host"                     -> "otoroshi-api.oto.tools",
+        "Accept"                   -> "application/json",
+        "Content-Type"             -> "application/json",
+        "Otoroshi-Admin-Profile"   -> Base64.getUrlEncoder.encodeToString(
+          Json.stringify(user.profile).getBytes(StandardCharsets.UTF_8)
+        ),
+        "Otoroshi-Tenant"          -> tenant.value,
+        "Otoroshi-BackOffice-User" -> token
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .withMethod(method)
+      .withBody(Json.stringify(payload))
+      .execute()
+      .futureValue
+    (Try(response.json).getOrElse(JsNull), response.status)
+  }
+
+  private def aliasesOf(credential: String): Seq[ApiKey] =
+    env.datastores.apiKeyDataStore.findAll(force = true).futureValue.filter(_.apiRef.exists(_.credential.contains(credential)))
+
+  private def refusedWith(response: (JsValue, Int), status: Int, message: String): Unit = {
+    withClue(response._1)(response._2 mustBe status)
+    response._1.toString must include(message)
+  }
+
   // sharing a key requires the rights to write it, the owner_ref being free text
   def sharingRights(): Unit = {
-    val tenant = TenantId("alias-tenant")
-    val team   = TeamId("alias-team")
-    val user   = BackOfficeUser(
-      randomId = "alias@otoroshi.io",
-      name = "alias@otoroshi.io",
-      email = "alias@otoroshi.io",
-      profile = Json.obj(),
-      authConfigId = "basic",
-      simpleLogin = true,
-      tags = Seq.empty,
-      metadata = Map.empty,
-      rights = UserRights(Seq(UserRight(TenantAccess(tenant.value), Seq(TeamAccess(team.value))))),
-      adminEntityValidators = Map()
-    )
-    def asUser(method: String, path: String, payload: JsValue): (JsValue, Int) = {
-      val token    = JWT
-        .create()
-        .withClaim("user", Json.stringify(user.toJson))
-        .withExpiresAt(java.time.Instant.now().plusSeconds(30))
-        .sign(Algorithm.HMAC512(env.otoroshiSecret))
-      val response = ws
-        .url(s"http://localhost:$port$path")
-        .withHttpHeaders(
-          "Host"                     -> "otoroshi-api.oto.tools",
-          "Accept"                   -> "application/json",
-          "Content-Type"             -> "application/json",
-          "Otoroshi-Admin-Profile"   -> Base64.getUrlEncoder.encodeToString(
-            Json.stringify(user.profile).getBytes(StandardCharsets.UTF_8)
-          ),
-          "Otoroshi-Tenant"          -> tenant.value,
-          "Otoroshi-BackOffice-User" -> token
-        )
-        .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
-        .withMethod(method)
-        .withBody(Json.stringify(payload))
-        .execute()
-        .futureValue
-      (Try(response.json).getOrElse(JsNull), response.status)
-    }
-
     val apiA = apiWith(plan("plan_a"))
     val apiB = apiWith(plan("plan_b"))
     deploy(apiA, apiB)
@@ -420,21 +442,164 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       val (subA, _) = subscribe(apiA, "plan_a", "client-1")
       val k         = ownKeyOf(subscription(idOf(subA)))
       synced(k.clientId)(_.isDefined)
-      val located   = Json.obj("_loc" -> Json.obj("tenant" -> tenant.value, "teams" -> Json.arr(team.value)))
 
       // the user writes subscriptions where it is located, not the key it would share
-      val refused = asUser("POST", subscriptionsPath, subscriptionBody(apiB, "plan_b", "client-1", Seq(shared(k.clientId))) ++ located)
-      withClue(refused._1)(refused._2 mustBe 400)
-      refused._1.toString must include("you can't grant rights you don't have yourself")
+      refusedWith(
+        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiB, "plan_b", "client-1", Seq(shared(k.clientId))) ++ located),
+        400,
+        "you can't grant rights you don't have yourself"
+      )
+
+      // the draft of a subscription shares nothing, whoever writes it: its keys are real keys of the live api
+      given otoroshi.env.Env = env
+      env.datastores.draftsDataStore
+        .set(Draft(id = apiB.id, kind = "api", content = apiB.json, name = apiB.id, description = ""))
+        .futureValue
+      waitFor("the proxy state sees the draft of the api")(env.proxyState.draft(apiB.id).isDefined)
+      val body  = subscriptionBody(apiB, "plan_b", "client-1", Seq(shared(k.clientId)))
+      val draft = Json.obj(
+        "id"          -> idOf(body),
+        "name"        -> "draft",
+        "description" -> "",
+        "kind"        -> "api-subscription",
+        "content"     -> body,
+        "metadata"    -> Json.obj(),
+        "tags"        -> Json.arr()
+      )
+      ApiSubscription
+        .check(apiB.id, ApiSubscription.format.reads(body).get, WriteAction.Create, isDraft = true)
+        .futureValue
+        .left
+        .toOption mustBe Some("the draft of a subscription cannot share an api key: share it with the subscription")
+      // the admin api answers the refusal of the draft of a subscription with a 500, its error being a string
+      otoroshiApiCall("POST", draftsPath, Some(draft)).futureValue._2 must not be 201
+      asUser(scoped, "POST", draftsPath, draft ++ located)._2 must not be 201
+      env.datastores.draftsDataStore.findById(idOf(body)).futureValue mustBe None
+      aliasesOf(k.clientId) mustBe empty
+      env.datastores.draftsDataStore.delete(apiB.id).futureValue
 
       // once the key is located where the user writes, it shares it
       key(k.clientId).get.copy(location = EntityLocation(tenant, Seq(team))).save().futureValue
       synced(k.clientId)(_.exists(_.location.tenant == tenant))
       val (created, status) =
-        asUser("POST", subscriptionsPath, subscriptionBody(apiB, "plan_b", "client-1", Seq(shared(k.clientId))) ++ located)
+        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiB, "plan_b", "client-1", Seq(shared(k.clientId))) ++ located)
       withClue(created)(status mustBe 201)
 
       Seq(created, subA).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
+    } finally undeploy(apiA, apiB)
+  }
+
+  // an alias written through the api keys: it gives the access of its credential, so it takes the rights to write the
+  // credential, its credential never changes, and it serves only once authorized on its api
+  def aliasesWrittenByHand(): Unit = {
+    val apiA = apiWith(plan("plan_a"))
+    val apiB = apiWith(plan("plan_b"))
+    deploy(apiA, apiB)
+    try {
+      val (subA, _) = subscribe(apiA, "plan_a", "client-1")
+      val k         = ownKeyOf(subscription(idOf(subA)))
+      synced(k.clientId)(_.isDefined)
+      call(apiB, k.clientId, k.clientSecret) must not be 200
+
+      def forged(authorized: Boolean) = ApiKey(
+        clientId = s"forged-${IdGenerator.lowerCaseToken(8)}",
+        clientSecret = "whatever",
+        clientName = "forged",
+        authorizedEntities = if (authorized) Seq(ApiIdentifier(apiB.id)) else Seq.empty,
+        apiRef = Some(ApiRef(apiB.id, "plan_b", "no-such-subscription", Some(k.clientId))),
+        location = EntityLocation(tenant, Seq(team))
+      )
+
+      // a user who cannot write the credential cannot write an alias of it
+      refusedWith(asUser(scoped, "POST", apikeysPath, forged(authorized = true).toJson), 400, "you can't grant rights you don't have yourself")
+      aliasesOf(k.clientId) mustBe empty
+
+      // a super admin can: an import, a restoration. Minted by no subscription sharing the credential, the alias serves
+      // nothing, authorized on the api or not
+      val byAdmin           = forged(authorized = true)
+      val (created, status) = asUser(superAdmin, "POST", apikeysPath, byAdmin.toJson)
+      withClue(created)(status mustBe 201)
+      waitFor("the alias index")(env.proxyState.apikeyAlias(k.clientId, apiB.id).contains(byAdmin.clientId))
+      call(apiB, k.clientId, k.clientSecret) must not be 200
+
+      // the credential of an alias never changes
+      refusedWith(
+        otoroshiApiCall(
+          "PUT",
+          s"$apikeysPath/${byAdmin.clientId}",
+          Some(key(byAdmin.clientId).get.copy(apiRef = byAdmin.apiRef.map(_.copy(credential = Some("another-key")))).toJson)
+        ).futureValue,
+        400,
+        "the credential of an alias key cannot change"
+      )
+      key(byAdmin.clientId).get.apiRef.flatMap(_.credential) mustBe Some(k.clientId)
+
+      // nor does it keep its credential: the subscription of the credential deleted, both go
+      unsubscribe(idOf(subA)) mustBe 200
+      key(k.clientId) mustBe None
+      key(byAdmin.clientId) mustBe None
+    } finally undeploy(apiA, apiB)
+  }
+
+  // a credential deleted by hand takes its aliases with it: nobody calls them again with a key created under its
+  // client id, a secret of its own
+  def deletedCredentialTakesItsAliases(): Unit = {
+    val apiA = apiWith(plan("plan_a"))
+    val apiB = apiWith(plan("plan_b"))
+    deploy(apiA, apiB)
+    try {
+      def sharedPair(): (JsValue, ApiKey, JsValue, ApiKey) = {
+        val (subA, _) = subscribe(apiA, "plan_a", "client-1")
+        val k         = ownKeyOf(subscription(idOf(subA)))
+        val (subB, _) = subscribe(apiB, "plan_b", "client-1", Seq(shared(k.clientId)))
+        val kb        = ownKeyOf(subscription(idOf(subB)))
+        waitFor("the alias index")(env.proxyState.apikeyAlias(k.clientId, apiB.id).contains(kb.clientId))
+        call(apiB, k.clientId, k.clientSecret) mustBe 200
+        (subA, k, subB, kb)
+      }
+
+      // through the generic api
+      val (subA, k, subB, kb) = sharedPair()
+      otoroshiApiCall("DELETE", s"$apikeysPath/${k.clientId}").futureValue._2 mustBe 200
+      key(k.clientId) mustBe None
+      key(kb.clientId) mustBe None
+      synced(k.clientId)(_.isEmpty)
+      waitFor("the alias index forgets the credential")(!env.proxyState.hasApikeyAliases(k.clientId))
+
+      // a user of another tenant takes the client id: it calls nothing
+      val takeover          = ApiKey(
+        clientId = k.clientId,
+        clientSecret = "the-secret-of-the-attacker",
+        clientName = "takeover",
+        authorizedEntities = Seq.empty,
+        location = EntityLocation(tenant, Seq(team))
+      )
+      val (created, status) = asUser(scoped, "POST", apikeysPath, takeover.toJson)
+      withClue(created)(status mustBe 201)
+      synced(k.clientId)(_.exists(_.clientSecret == "the-secret-of-the-attacker"))
+      call(apiB, k.clientId, "the-secret-of-the-attacker") must not be 200
+      env.datastores.apiKeyDataStore.delete(k.clientId).futureValue
+      Seq(subB, subA).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
+
+      // through the typed api
+      val (subA2, k2, subB2, kb2) = sharedPair()
+      otoroshiApiCall("DELETE", s"/api/apikeys/${k2.clientId}").futureValue._2 mustBe 200
+      key(k2.clientId) mustBe None
+      key(kb2.clientId) mustBe None
+      Seq(subB2, subA2).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
+
+      // an alias that outlived its credential, removed without its aliases: no key is created under its client id
+      val (subA3, k3, subB3, kb3) = sharedPair()
+      env.datastores.rawDataStore.del(Seq(env.datastores.apiKeyDataStore.key(k3.clientId))).futureValue
+      synced(k3.clientId)(_.isEmpty)
+      env.proxyState.hasApikeyAliases(k3.clientId) mustBe true
+      refusedWith(
+        asUser(superAdmin, "POST", apikeysPath, takeover.copy(clientId = k3.clientId).toJson),
+        400,
+        "is the credential of alias keys"
+      )
+      env.datastores.apiKeyDataStore.delete(kb3.clientId).futureValue
+      Seq(subB3, subA3).foreach(sub => unsubscribe(idOf(sub)))
     } finally undeploy(apiA, apiB)
   }
 

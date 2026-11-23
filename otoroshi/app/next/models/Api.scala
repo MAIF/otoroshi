@@ -1290,14 +1290,40 @@ object ApiSubscription {
 
   // the alias keys of a credential, read from the datastore
   def aliasesOf(credential: String)(using env: Env, ec: ExecutionContext): Future[Seq[ApiKey]] =
-    env.datastores.apiKeyDataStore.findAll().map(_.filter(_.apiRef.exists(_.credential.contains(credential))))
+    env.datastores.apiKeyDataStore.findAliasesOf(Seq(credential))
+
+  // whether an alias key is the one a subscription minted sharing its credential: an alias serves, and keeps its
+  // credential, only while its subscription exists and shares it. An alias written by hand does neither
+  def mintedAlias(subscription: ApiSubscription, alias: ApiKey): Boolean =
+    alias.apiRef.exists { ref =>
+      ref.subscription == subscription.id && ref.api == subscription.apiRef && ref.credential.exists { credential =>
+        subscription.tokenRefs.exists(tokenRef =>
+          isSharedRef(tokenRef) && tokenRef.select("apikey").asOpt[String].contains(credential)
+        )
+      }
+    }
+
+  // the aliases of a credential whose subscription still shares it, read from the datastore
+  private def mintedAliasesOf(credential: String)(using env: Env, ec: ExecutionContext): Future[Seq[ApiKey]] =
+    aliasesOf(credential).flatMap { aliases =>
+      aliases
+        .mapAsync { alias =>
+          env.datastores.apiSubscriptionDataStore
+            .findById(alias.apiRef.map(_.subscription).getOrElse(""))
+            .map(_.filter(subscription => mintedAlias(subscription, alias)).map(_ => alias))
+        }
+        .map(_.flatten)
+    }
 
   // whether a user can share an api key: the rights to write it, read from the proxy state. A key the proxy state does
   // not have yet is only shared by a super admin
   def canUserShare(credential: String, user: otoroshi.models.BackOfficeUser)(using env: Env): Boolean =
-    env.bypassUserRightsCheck || user.rights.superAdmin || env.proxyState
-      .apikey(credential)
-      .exists(apikey => otoroshi.actions.ApiActionContext.canUserWriteApikey(apikey, user))
+    otoroshi.actions.ApiActionContext.canUserWriteCredential(credential, user)
+
+  // a subscription sharing api keys its author cannot write: refused, and its stored version is not rewritten nor
+  // deleted by that author. The drafts share nothing (checkSharedCredential)
+  def sharesMoreThan(subscription: ApiSubscription, user: otoroshi.models.BackOfficeUser)(using env: Env): Boolean =
+    sharedCredentials(subscription).exists(clientId => !canUserShare(clientId, user))
 
   // what goes with a key a subscription releases (deleted, or closed with its plan). A key whose credential other
   // subscriptions share is kept as a credential authorized on no api, disabled, for its aliases. An alias key goes, and
@@ -1307,7 +1333,7 @@ object ApiSubscription {
     apikey.apiRef.flatMap(_.credential) match {
       case Some(credential) =>
         store.delete(apikey.clientId).flatMap { _ =>
-          aliasesOf(credential).flatMap {
+          mintedAliasesOf(credential).flatMap {
             case aliases if aliases.exists(_.clientId != apikey.clientId) => ().vfuture
             case _                                                       =>
               store.findById(credential).flatMap {
@@ -1317,7 +1343,8 @@ object ApiSubscription {
           }
         }
       case None             =>
-        aliasesOf(apikey.clientId).flatMap {
+        // deleted, the key takes with it the aliases written by hand (KvApiKeyDataStore.deleteByIds)
+        mintedAliasesOf(apikey.clientId).flatMap {
           case Seq() => store.delete(apikey.clientId)
           case _     =>
             logger.info(s"api key '${apikey.clientId}' is kept for the subscriptions that share it, authorized on no api")
@@ -1489,12 +1516,23 @@ object ApiSubscription {
     }
 
     ownRefs.flatMap { refs =>
-      defaultApikey.save().map {
-        case false => "failed to create the apikey".left
+      defaultApikey.save().flatMap {
+        case false => "failed to create the apikey".leftf
         case true  =>
-          subscription
-            .copy(tokenRefs = refs :+ Json.obj("apikey" -> defaultApikey.clientId))
-            .right
+          val created = subscription.copy(tokenRefs = refs :+ Json.obj("apikey" -> defaultApikey.clientId))
+          sharedCredential(subscription) match {
+            case None             => created.rightf
+            // a credential deleted while its alias was minted took none of it: the alias goes, and the subscription
+            // is refused
+            case Some(credential) =>
+              env.datastores.apiKeyDataStore.findById(credential).flatMap {
+                case Some(_) => created.rightf
+                case None    =>
+                  env.datastores.apiKeyDataStore
+                    .delete(defaultApikey.clientId)
+                    .map(_ => s"api key '$credential' not found".left)
+              }
+          }
       }
     }
   }
@@ -1713,7 +1751,7 @@ object ApiSubscription {
         case other                                                                      => other.vfuture
       }
       .flatMap {
-        case Right((api, plan)) => checkSharedCredential(api, entity, action).map(_.map(_ => (api, plan)))
+        case Right((api, plan)) => checkSharedCredential(api, entity, action, isDraft).map(_.map(_ => (api, plan)))
         case other              => other.vfuture
       }
   }
@@ -1722,12 +1760,17 @@ object ApiSubscription {
   // that does not call its api yet and has no alias on it. It is chosen at the creation and never changes, so that an
   // alias key never changes its credential. The rights of the author on that key are checked by the admin api
   // (ApiSubscriptionsResourceAccess.grantsMoreThan) and by subscribe
-  private def checkSharedCredential(api: Api, entity: ApiSubscription, action: WriteAction)(using
+  private def checkSharedCredential(api: Api, entity: ApiSubscription, action: WriteAction, isDraft: Boolean)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, Unit]] = {
     val shared = sharedCredentials(entity)
     action match {
+      // the keys of a draft are real keys, authorized on the api the draft shares its id with: a draft would open the
+      // live api to the credential. A key is shared by the subscription itself
+      case _ if isDraft                                                   =>
+        if (shared.isEmpty) Right(()).vfuture
+        else Left("the draft of a subscription cannot share an api key: share it with the subscription").vfuture
       case WriteAction.Create if shared.isEmpty                           => Right(()).vfuture
       case _ if shared.size > 1                                           => Left("a subscription shares one api key at most").vfuture
       case _ if shared.nonEmpty && !sharesCredentials(entity.subscriptionKind) =>
@@ -2726,7 +2769,8 @@ object Api {
                          }
                        }
       keys          <- env.datastores.apiKeyDataStore.findAll()
-      _             <- keys.filter(minted).mapAsync(apikey => env.datastores.apiKeyDataStore.delete(apikey.clientId))
+      // at once: each deletion of an api key scans the keys for its aliases
+      _             <- env.datastores.apiKeyDataStore.deleteByIds(keys.filter(minted).map(_.clientId))
     } yield results.collectFirst { case Left(error) => error }.toLeft(())).recover { case e: Throwable =>
       logger.error(s"failed to delete the subscriptions and the api keys of api '${api.id}'", e)
       Left(s"failed to delete the subscriptions and the api keys of api '${api.id}'")

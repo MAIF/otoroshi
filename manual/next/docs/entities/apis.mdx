@@ -744,6 +744,7 @@ consumer called with. Called with its own client id, an alias is refused: it has
 - Only an `apikey` or an `oauth2-local` subscription shares an API key, one at most, and only the API key of another
   `apikey` or `oauth2-local` subscription with the same `owner_ref`. The shared API key must not call the API of the
   subscription yet, nor be shared with another subscription to it. Otherwise the subscription is refused with a `400`.
+  The draft of a subscription shares no API key (`400`): its API keys are real ones, they would open the live API.
 - The author of the subscription must be allowed to write the shared API key: a user who cannot is refused with a `400`
   by the admin API, a `403` by `subscribe`, and cannot update or delete such a subscription either. The `owner_ref`,
   free text, is not enough.
@@ -753,7 +754,12 @@ consumer called with. Called with its own client id, an alias is refused: it has
 - Suspending, closing or deleting a subscription disables or deletes its own API key only. Suspending the subscription
   of `K` stops the calls to its own API, not the ones made through its aliases. Deleting it while other subscriptions
   share `K` keeps `K`, disabled and authorized on no API, for its aliases: it can still be shared, and it is deleted with
-  its last alias. To revoke the credential everywhere, change its secret or delete `K`.
+  its last alias. To revoke the credential everywhere, change its secret or delete `K`: deleting `K`, by any means,
+  deletes its aliases, and no API key can be created under the client id of a credential that aliases still name.
+- `apiRef.credential` is written by the subscription that mints the alias, and never changes (`400`). An alias only
+  serves while the subscription named by its `apiRef` exists and shares its credential, and on the API it is authorized
+  on: an alias written through the API keys (which requires the rights to write its credential) serves nothing, and
+  does not keep its credential once the subscription of the credential is deleted.
 
 A call made with `K` on an API it is not authorized on looks for its alias in the proxy state, next to the API keys: it
 never reads the datastore, and a call that uses no alias costs what it cost before. An alias serves once the proxy state

@@ -215,6 +215,8 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
         ApiKey.fromJsonSafe(apiKeyJson) match {
           case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
           case JsSuccess(apiKey, _) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
+          case JsSuccess(apiKey, _) if ApiKey.aliasWriteError(apiKey, None).isDefined =>
+            BadRequest(Json.obj("error" -> ApiKey.aliasWriteError(apiKey, None).getOrElse(""))).asFuture
           case JsSuccess(apiKey, _)                              =>
             env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
               case Some(_) => BadRequest(Json.obj("error" -> "resource already exists")).asFuture
@@ -290,6 +292,8 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                       case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                         BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                       case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
+                      case JsSuccess(newApiKey, _) if ApiKey.aliasWriteError(newApiKey, Some(apiKey)).isDefined =>
+                        BadRequest(Json.obj("error" -> ApiKey.aliasWriteError(newApiKey, Some(apiKey)).getOrElse(""))).asFuture
                       case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                         sendAuditAndAlert(
                           "UPDATE_APIKEY",
@@ -355,6 +359,8 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                   case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                     BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                   case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
+                  case JsSuccess(newApiKey, _) if ApiKey.aliasWriteError(newApiKey, Some(apiKey)).isDefined =>
+                    BadRequest(Json.obj("error" -> ApiKey.aliasWriteError(newApiKey, Some(apiKey)).getOrElse(""))).asFuture
                   case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                     sendAuditAndAlert(
                       "UPDATE_APIKEY",

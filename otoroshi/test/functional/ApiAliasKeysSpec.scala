@@ -14,5 +14,7 @@ class ApiAliasKeysSpec extends PluginsTestSpecBase {
     "only be minted for a key of the same owner, once per api" in { aliases.sharingChecks() }
     "follow their own subscription, and keep the credential for its aliases" in { aliases.lifecycle() }
     "only share a key its author can write" in { aliases.sharingRights() }
+    "only be written by hand by the users who can write their credential" in { aliases.aliasesWrittenByHand() }
+    "go with their credential" in { aliases.deletedCredentialTakesItsAliases() }
   }
 }

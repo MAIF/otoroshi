@@ -369,10 +369,44 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
           env.proxyState
             .apikeyAlias(credential.clientId, apiRef.id)
             .flatMap(aliasId => env.proxyState.apikey(aliasId))
-            .filter(alias => alias.apiRef.exists(ref => ref.api == apiRef.id && ref.credential.contains(credential.clientId)))
+            // the alias has to be authorized on the api itself, its apiRef alone authorizes it (authorizedOnApi), and
+            // minted by a subscription that still shares the credential: an alias written by hand serves nothing
+            .filter(alias =>
+              alias.apiRef.exists { ref =>
+                ref.api == apiRef.id && ref.credential.contains(credential.clientId) &&
+                env.proxyState
+                  .apiSubscription(ref.subscription)
+                  .exists(subscription => otoroshi.next.models.ApiSubscription.mintedAlias(subscription, alias))
+              } &&
+              alias.authorizedEntities.contains(ApiIdentifier(apiRef.id))
+            )
       }
     }
   }
+
+  // an alias key never outlives its credential: anyone could create a key under the client id of a deleted credential,
+  // with a secret of its own, and call through its aliases. The aliases of the deleted keys go with them, read with one
+  // scan of the keys per call (uncached: an alias is a key like any other, written a moment ago)
+  override def delete(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean] = deleteByIds(Seq(id))
+
+  override def deleteByIds(ids: Seq[String])(using ec: ExecutionContext, env: Env): Future[Boolean] =
+    super.deleteByIds(ids).flatMap(deleted => deleteAliasesOf(ids).map(_ => deleted))
+
+  override def findAliasesOf(credentials: Seq[String])(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+    if (credentials.isEmpty) Seq.empty.vfuture
+    else {
+      val ids = credentials.toSet
+      findAll(force = true).map(_.filter(_.apiRef.exists(_.credential.exists(ids.contains))))
+    }
+
+  override def deleteAliasesOf(credentials: Seq[String])(using ec: ExecutionContext, env: Env): Future[Unit] =
+    findAliasesOf(credentials).flatMap {
+      case Seq()   => ().vfuture
+      case aliases =>
+        logger.info(s"deleting the alias keys ${aliases.map(_.clientId).mkString(", ")} of the deleted api keys")
+        // a credential is never an alias: nothing more to follow
+        super.deleteByIds(aliases.map(_.clientId)).map(_ => ())
+    }
 
   override def findAuthorizeKeyForBearer(bearer: String, serviceId: String)(using
       ec: ExecutionContext,
