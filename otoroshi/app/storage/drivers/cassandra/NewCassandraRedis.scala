@@ -392,6 +392,23 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     //}
   }
 
+  // a lightweight transaction, atomic: inserts the key unless a row holds it. The ttl is the one of cassandra, that
+  // deletes the row when it expires so that the key is set again (in seconds, rounded up), and it is written in the
+  // expirations table too, as setBS does, for pttl
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
+    val usingTtl = ttl.map(millis => s" USING TTL ${Math.max(1L, (millis + 999L) / 1000L)}").getOrElse("")
+    executeAsync(
+      s"INSERT INTO otoroshi.values (key, type, value) VALUES (:k, 'string', :value) IF NOT EXISTS$usingTtl;",
+      Map("k" -> key, "value" -> value.utf8String)
+    ).flatMap { rs =>
+      if (rs.wasApplied()) ttl.map(millis => pexpire(key, millis)).getOrElse(FastFuture.successful(true)).map(_ => true)
+      else FastFuture.successful(false)
+    }
+  }
+
   override def del(keys: String*): Future[Long] =
     FastFuture
       .sequence(

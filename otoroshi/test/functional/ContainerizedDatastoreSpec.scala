@@ -19,14 +19,14 @@ import scala.concurrent.duration.DurationInt
  *
  *   - start the container
  *   - boot a full otoroshi instance on top of it
- *   - exercise the datastore driver directly (raw get/set/incr/del)
+ *   - exercise the datastore driver directly (raw get/set/incr/del, setnx by writers at once)
  *   - create a route through the admin api (write), read it back (read) and actually call it
  *   - delete the route and check it's gone
  *
  * Concrete specs only provide the container and the otoroshi configuration pointing at it,
  * so each one can be run on its own (see PgDatastoreSpec / LettuceDatastoreSpec).
  */
-trait ContainerizedDatastoreSpec extends OtoroshiSpec with BeforeAndAfterAll {
+trait ContainerizedDatastoreSpec extends OtoroshiSpec with BeforeAndAfterAll with SetnxScenarios {
 
   def storeName: String
   def container: GenericContainer
@@ -70,6 +70,16 @@ trait ContainerizedDatastoreSpec extends OtoroshiSpec with BeforeAndAfterAll {
       store.del(Seq(key, counterKey, s"$key-ttl")).futureValue
       store.get(key).futureValue mustBe None
       store.exists(key).futureValue mustBe false
+    }
+
+    "set a key for one of the writers that set it at once" in {
+      given env: Env = otoroshiComponents.env
+      setnxOneWriterOfMany(env.datastores.redis)
+    }
+
+    "set a key again once it expired" in {
+      given env: Env = otoroshiComponents.env
+      setnxExpiredKey(env.datastores.redis)
     }
 
     "read and write hashes through the datastore driver" in {
