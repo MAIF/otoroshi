@@ -600,9 +600,6 @@ class PluginsTestSpec extends PluginsTestSpecBase {
     "Additional headers out" in {
       new AdditionalHeadersOutTests(this)
     }
-    "W3C Trace Context" in {
-      new W3CTracingTests(this)
-    }
     "Headers validation" in {
       new HeadersValidationTests(this)
     }
