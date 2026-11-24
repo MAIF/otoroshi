@@ -1219,6 +1219,48 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
     } finally undeploy(apiA)
   }
 
+  // every api key a user can write deleted at once (DELETE on the collection): the aliases of the keys that are
+  // deleted go with them, wherever they are located, and no other one. An alias whose credential was not there (an
+  // alias restored before its credential) is not the user's to delete
+  def deletedAtOnce(): Unit = {
+    val owner = newOwner()
+    val apiA  = apiWith(plan("plan_a"))
+    deploy(apiA)
+    try {
+      // a credential the user writes, shared by a subscription located elsewhere, like its alias
+      val k             = credentialOf(owner, EntityLocation(tenant, Seq(team)))
+      val (sub, status) = subscribe(apiA, "plan_a", owner, Seq(shared(k.clientId)))
+      withClue(sub)(status mustBe 201)
+      val alias         = ownKeyOf(subscription(idOf(sub)))
+      alias.location.tenant must not be tenant
+      // an alias restored before its credential, and an api key nobody shares, both located where the user writes
+      // nothing
+      val restored      = ApiKey(
+        clientId = s"restored-${IdGenerator.lowerCaseToken(8)}",
+        clientSecret = "whatever",
+        clientName = "restored",
+        authorizedEntities = Seq(ApiIdentifier(apiA.id)),
+        apiRef = Some(ApiRef(apiA.id, "plan_a", "a-subscription", Some(s"not-restored-yet-${IdGenerator.lowerCaseToken(8)}")))
+      )
+      val plain         = ApiKey(
+        clientId = IdGenerator.lowerCaseToken(16),
+        clientSecret = IdGenerator.lowerCaseToken(64),
+        clientName = "plain",
+        authorizedEntities = Seq.empty
+      )
+      Seq(restored, plain).foreach(_.save().futureValue mustBe true)
+
+      asUser(scoped, "DELETE", apikeysPath, JsNull)._2 mustBe 204
+      key(k.clientId) mustBe None
+      key(alias.clientId) mustBe None
+      key(restored.clientId).map(_.clientId) mustBe Some(restored.clientId)
+      key(plain.clientId).map(_.clientId) mustBe Some(plain.clientId)
+
+      unsubscribe(idOf(sub)) mustBe 200
+      dropKeys(restored.clientId, plain.clientId)
+    } finally undeploy(apiA)
+  }
+
   // a call signed with hmac is signed with the secret the consumer knows, the one of the credential, and checked with
   // it by the validator of the new engine and by the one of the old engine, behind its wrapper. The own secret of the
   // alias signs nothing

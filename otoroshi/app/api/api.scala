@@ -775,19 +775,23 @@ class ApiKeysResourceAccess(env: Env)
   override def deleteMany(version: String, ids: Seq[String])(using ec: ExecutionContext, env: Env): Future[Unit] =
     super.deleteMany(version, ids).flatMap(_ => env.datastores.apiKeyDataStore.deleteAliasesOf(ids))
 
-  // the deleted keys are not known here: every alias whose credential is gone goes
+  // the deleted keys are not told here: they are the ones that are gone afterwards, and their aliases go with them.
+  // An alias whose credential was not there before (an alias restored before its credential) is not one of them: it
+  // stays, whoever deletes the keys it can write
   override def deleteAll(version: String, singularName: String, canWrite: JsValue => Boolean)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Unit]] =
-    super.deleteAll(version, singularName, canWrite).flatMap {
-      case Right(_) =>
-        env.datastores.apiKeyDataStore.findAll(force = true).flatMap { keys =>
-          val ids    = keys.map(_.clientId).toSet
-          val absent = keys.flatMap(_.apiRef.flatMap(_.credential)).filterNot(ids.contains).distinct
-          env.datastores.apiKeyDataStore.deleteAliasesOf(absent).map(_ => Right(()))
-        }
-      case left     => left.vfuture
+    env.datastores.apiKeyDataStore.findAll(force = true).flatMap { before =>
+      super.deleteAll(version, singularName, canWrite).flatMap {
+        case Right(_) =>
+          env.datastores.apiKeyDataStore.findAll(force = true).flatMap { after =>
+            val remaining = after.map(_.clientId).toSet
+            val deleted   = before.map(_.clientId).filterNot(remaining.contains)
+            env.datastores.apiKeyDataStore.deleteAliasesOf(deleted).map(_ => Right(()))
+          }
+        case left     => left.vfuture
+      }
     }
 
   override def readableJson(json: JsValue, ctx: ApiActionContextCapable)(using env: Env): JsValue =

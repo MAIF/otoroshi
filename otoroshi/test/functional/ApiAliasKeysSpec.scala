@@ -32,6 +32,7 @@ class ApiAliasKeysSpec extends PluginsTestSpecBase {
     "be minted once when a credential is shared on one api by subscriptions created at once" in {
       aliases.sameApiAtOnce()
     }
+    "go with the api keys a user deletes at once, and only with them" in { aliases.deletedAtOnce() }
     "be signed with the secret of their credential, whichever hmac validator checks the call" in {
       aliases.hmacSignedWithTheCredential()
     }
