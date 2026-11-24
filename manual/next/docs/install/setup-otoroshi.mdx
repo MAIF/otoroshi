@@ -106,6 +106,15 @@ import TabItem from '@theme/TabItem';
 ```conf include=../snippets/datastores/pg.conf
 ```
 
+:::note Single quotes doubled by previous versions
+From 16.11.1 to 18.0.1, the PostgreSQL datastore stored the single quotes of some values doubled (`it's` was read back as `it''s`). The first instance that boots on a database fixes these rows:
+
+- the raw values whose single quotes all come in pairs get them back, once (the `<table>_migrations` table records it);
+- the json column of the entities that the optimized reads use is computed again from their value, at each boot.
+
+The value of an entity read with doubled quotes and saved again cannot be told apart from a value that holds pairs of quotes on purpose: it is not changed, and its key is logged in a warning so that you can check it.
+:::
+
 </TabItem>
 <TabItem value="cassandra" label="Cassandra">
 
