@@ -678,10 +678,9 @@ class ReactivePgRedis(
   }
 
   def setEntityKind(key: String, kind: String, value: String): Future[Unit] = {
-    val jsonValue = value.replace("'", "''")
     queryOne(
       s"""update  $schemaDotTable set kind = $$1, jvalue = $$3::jsonb where key = $$2;""",
-      Seq(kind, key, new JsonObject(jsonValue))
+      Seq(kind, key, new JsonObject(value))
     ) { row =>
       None
     }.map(_ => ())
@@ -1003,12 +1002,12 @@ class ReactivePgRedis(
         .map(v => millisecondsToInterval(v))
         .map(ttl => s", ttl = $ttl, ttl_starting_at = NOW()")
         .getOrElse("")
+      // the values are bound as they are: a bound parameter is not a sql literal, its quotes must not be doubled
       matchesEntity(key, value) match {
-        case Some((kind, _jsonValue)) =>
-          val jsonValue = _jsonValue.replace("'", "''")
+        case Some((kind, jsonValue)) =>
           queryOne(
             s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value, kind, jvalue)
-             |values ($$1, 'string', $ttl, NOW(), $$2, '$kind', '$jsonValue'::jsonb)
+             |values ($$1, 'string', $ttl, NOW(), $$2, $$3, $$4::jsonb)
              |ON CONFLICT (key)
              |DO
              |  update set type = 'string', value = $$2$maybeTtlUpdate, kind = $$3, jvalue = $$4::jsonb;
@@ -1017,8 +1016,7 @@ class ReactivePgRedis(
           ) { _ =>
             true.some
           }.map(_.getOrElse(true))
-        case None                     =>
-          val sanitizedValue = value.utf8String.replace("'", "''")
+        case None                    =>
           queryOne(
             s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value)
              |values ($$1, 'string', $ttl, NOW(), $$2)
@@ -1026,7 +1024,7 @@ class ReactivePgRedis(
              |DO
              |  update set type = 'string', value = $$2${maybeTtlUpdate};
              |""".stripMargin,
-            Seq(key, sanitizedValue)
+            Seq(key, value.utf8String)
           ) { _ =>
             true.some
           }.map(_.getOrElse(true))
@@ -1233,8 +1231,8 @@ class ReactivePgRedis(
           case Some(arr) => {
             val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
             queryRaw(
-              s"""update $schemaDotTable set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""",
-              Seq(key)
+              s"""update $schemaDotTable set type = 'list', lvalue = $$2::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""",
+              Seq(key, new JsonArray(newArr))
             ) { _ =>
               true
             }
