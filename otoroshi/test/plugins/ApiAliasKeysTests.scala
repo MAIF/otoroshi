@@ -1219,6 +1219,35 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
     } finally undeploy(apiA)
   }
 
+  // the credential a subscription created for its owner goes with it when it is refused, unless another subscription
+  // of that owner, created at once, shares it already or is about to: an alias names it, or an api is reserved for it
+  def credentialSharedByAnother(): Unit = {
+    val owner = newOwner()
+    val apiA  = apiWith(plan("plan_a"))
+    deploy(apiA)
+    try {
+      val k           = credentialOf(owner, minted = true)
+      def taken: Boolean = ApiSubscription.sharedByAnother(k.clientId).futureValue
+      taken mustBe false
+      // a subscription reserved an api for the credential: it is minting its alias
+      val reservation = s"${env.storageRoot}:shared-credential-reservations:aliases:${k.clientId}:${apiA.id}"
+      env.datastores.rawDataStore
+        .set(reservation, org.apache.pekko.util.ByteString("another-subscription"), Some(10000L))
+        .futureValue
+      taken mustBe true
+      env.datastores.rawDataStore.del(Seq(reservation)).futureValue
+      taken mustBe false
+      // a subscription shares it: its alias names it
+      val (sub, status) = subscribe(apiA, "plan_a", owner, Seq(shared(k.clientId)))
+      withClue(sub)(status mustBe 201)
+      taken mustBe true
+      // the subscription deleted, its alias and its reservation go: nothing shares the credential
+      unsubscribe(idOf(sub)) mustBe 200
+      taken mustBe false
+      dropKeys(k.clientId)
+    } finally undeploy(apiA)
+  }
+
   // every api key a user can write deleted at once (DELETE on the collection): the aliases of the keys that are
   // deleted go with them, wherever they are located, and no other one. An alias whose credential was not there (an
   // alias restored before its credential) is not the user's to delete

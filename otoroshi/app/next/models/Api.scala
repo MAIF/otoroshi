@@ -1637,16 +1637,34 @@ object ApiSubscription {
       case Right((named, created)) =>
         reservingAlias(api, named)(mintApikeyFromPlan(api, plan, named)).flatMap {
           // the credential created for a subscription that is refused goes with it, and its reservation: nobody asked
-          // for it, and the next subscription of the owner creates its own
+          // for it, and the next subscription of the owner creates its own. Unless a subscription of that owner created
+          // at once took it already (withOwnerCredential): it stays, or its alias would go with it
           case Left(error) if created.isDefined =>
-            for {
-              _ <- env.datastores.apiKeyDataStore.delete(created.get)
-              _ <- env.datastores.rawDataStore.del(Seq(ownerCredentialReservation(named)))
-            } yield error.left
+            sharedByAnother(created.get).flatMap {
+              case true  => error.leftf
+              case false =>
+                for {
+                  _ <- env.datastores.apiKeyDataStore.delete(created.get)
+                  _ <- env.datastores.rawDataStore.del(Seq(ownerCredentialReservation(named)))
+                } yield error.left
+            }
           case other                            => other.vfuture
         }
     }
   }
+
+  // whether a subscription shares a credential, or is about to: an alias names it, or an api is reserved for it
+  // (reservingAlias). A subscription that is refused releases its own reservation before it is told so: the ones that
+  // are left are the ones of the other subscriptions. The aliases are read first: a subscription reserves the api
+  // before it mints its alias
+  def sharedByAnother(credential: String)(using env: Env, ec: ExecutionContext): Future[Boolean] =
+    aliasesOf(credential).flatMap {
+      case Seq() =>
+        val reservations = aliasReservations(credential)
+        // one pattern for every credential: the in memory datastore keeps every pattern it compiles
+        env.datastores.rawDataStore.keys(s"$aliasReservationsPrefix*").map(_.exists(_.startsWith(reservations)))
+      case _     => true.vfuture
+    }
 
   // a credential is shared once per api (checkShareable), and two subscriptions sharing it on one api created at once
   // both find no alias there: the one that reserves the pair mints its alias, the other one is refused. The reservation
@@ -1654,7 +1672,13 @@ object ApiSubscription {
   // minted, and expires by itself. It goes with a subscription that is refused, and with the keys of the one that
   // made it (deleteKeys), so that the api is subscribed again at once
   private def aliasReservation(credential: String, api: String)(using env: Env): String =
-    s"${env.storageRoot}:shared-credential-reservations:aliases:$credential:$api"
+    s"${aliasReservations(credential)}$api"
+
+  // the prefix of the reservations of the apis for a credential, and the one of all of them
+  private def aliasReservations(credential: String)(using env: Env): String = s"$aliasReservationsPrefix$credential:"
+
+  private def aliasReservationsPrefix(using env: Env): String =
+    s"${env.storageRoot}:shared-credential-reservations:aliases:"
 
   private def alreadyShared(credential: String, api: String): String =
     s"api key '$credential' is already shared with a subscription to api '$api'"
