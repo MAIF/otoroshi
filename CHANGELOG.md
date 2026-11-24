@@ -6,6 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [18.1.0] - 2026-11-24
+
+
+https://github.com/MAIF/otoroshi/milestone/142?closed=1
+https://github.com/MAIF/otoroshi/compare/v18.0.1...v18.1.0
+https://github.com/MAIF/otoroshi/releases/tag/v18.1.0
+
+
+### Added 
+
+- Fine grained authorization for otoroshi users (#2927 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Let the user choose which entities a remote catalog can deploy (#2933 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- The audit and alert events are exported with the secrets they carry, like the secret of the admin api key of every audited admin api call (#2959 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Update Playframework and SBT (#2916 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Functional tests depend on the external echo backend request.otoroshi.io and fail randomly (#2822 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- On jwt, mtls and oauth2-remote plans any valid token or certificate is served, subscribed or not, and there is no way to require a subscription (#2943 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- The `restrictions` of a keyless, jwt, mtls or oauth2-remote plan are accepted and stored, but never enforced (#2944 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- An api plan cannot say which calls it applies to, what to do when its quota counter is unreachable, or that each of its consumers gets its own circuit breaker (#2945 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- An Api deployment cannot say which version of its source it deployed, leaves the plans out, and only the last five are kept (#2946 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- The request tester and its execution report are only reachable with a backoffice session: the admin API cannot send a trial request through a route or an api and get its trace (#2951 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- An mtls plan accepts a certificate that matches its subject patterns or its issuer patterns, never requiring both, and cannot name the authority that must have signed it (#2955 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- A gateway event does not say under which plan and subscription the apikey of the call was used (#2948 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- An Api can be written as code, without a draft, only by a tool that pretends to be a remote catalog (#2947 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- The keys of an apikey plan can only get an absolute validUntil: no validity counted from the subscription, and a date written on a key is put back to the plan's at the next update (#2953 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- One apikey for several Apis, each through a subscription of its own: alias keys (#2964 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- ACME: POST /api/pki/certs/_letencrypt answers None.get although the certificate is issued and saved (#2908 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- PostgreSQL datastore: hset writes an unreadable value, which breaks hgetall and the cluster state export (#2907 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Stripped path gets a double slash with the default backend root: plugins reading `relativeUri` fail, and the Coraza WAF hangs (#2918 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- UrlSanitizer collapses meaningful double slashes in the backend URL, query string included (#2919 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- A plugin throwing synchronously in a chain of plugins hangs the request until the circuit breaker times out (#2920 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- The content type of a backend response is lost when the backend does not send Content-Type in the canonical case (#2921 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- A tenant admin can rewrite or delete an admin or an apikey that has more rights than itself (#2935 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Disabling or deleting a subscription to a jwt, mtls or oauth2-remote plan does not cut its consumer off (#2937 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- The consumers minted for a jwt, mtls, oauth2-remote or keyless plan are shared by every Api with a plan of the same id, and outlive their Api (#2938 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- A subscription that is `pending`, `deprecated` or in a custom status gets an enabled api key, so its consumer can call the api before the subscription is confirmed (#2940 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Deleting an apikey or oauth2-local subscription leaves its api key enabled, and its consumer keeps calling the api (#2941 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- An api with no published plan serves every caller: putting its last plan in staging, deprecating it or closing it opens its routes (#2942 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Deprecating a plan cuts its consumers off, and an api whose plans are all deprecated serves anyone without counting (#2952 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- An oauth2-remote plan accepts any token signed with the keys of its auth module, whatever its issuer and its audience (#2954 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- The index template of otoroshi is never created on Elasticsearch 6 and 7.0 to 7.7: the v6 and v7 templates lost their stripMargin (#2960 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- A PUT on an entity that does not exist answers 401 unauthorized instead of 404, and a POST of an id already used 401 instead of 409 (#2949 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- A caller with narrowed rights can read the secret of a super admin apikey, and then act as super admin (#2957 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- The analytics runtime is never initialized when the first start writes the global config late: the stateful clients manager fails before it (#2961 fixed by )
+- A plan extractor that does not identify the caller sends an error GatewayEvent for a call that then succeeds (#2962 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- A subscription can take over, disable or delete an api key it did not mint through its token_refs (#2965 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- helm upgrade fails with Helm 4: server-side apply conflicts with Otoroshi on the caBundle and failurePolicy of the admission webhooks (#2966 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- setnx is not atomic on the PostgreSQL and Cassandra datastores (#2969 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- W3CTracing: requests without traceparent are attached to another request's trace (#2970 fixed by [j-pep1](https://github.com/j-pep1))
+- Otoroshi cannot boot nor run on the cassandra datastore (#2975 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Documentation 
+
+- The kubernetes manifests shown in the documentation are a stale copy of kubernetes/, from before the kustomize reorganization (#2967 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Contributors
+
+* @mathieuancelin
+* @davlgd
+* @j-pep1
+
 ## [18.0.1] - 2026-10-26
 
 
