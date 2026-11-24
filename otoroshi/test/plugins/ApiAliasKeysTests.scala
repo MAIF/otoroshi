@@ -751,7 +751,8 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       synced(k.clientId)(_.isEmpty)
       waitFor("the alias index forgets the credential")(!env.proxyState.hasApikeyAliases(k.clientId))
 
-      // a user of another tenant takes the client id, as a shared credential of the owner: it calls nothing
+      // the subscription stays, and still names the credential and its alias: a user of another tenant takes neither
+      // client id, or the alias written again under the one the subscription lists would be the one it minted
       val takeover          = ApiKey(
         clientId = k.clientId,
         clientSecret = "the-secret-of-the-attacker",
@@ -760,12 +761,44 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
         sharedCredential = k.sharedCredential,
         location = EntityLocation(tenant, Seq(team))
       )
+      val realias           = ApiKey(
+        clientId = kb.clientId,
+        clientSecret = "whatever",
+        clientName = "realias",
+        authorizedEntities = Seq(ApiIdentifier(apiB.id)),
+        apiRef = Some(ApiRef(apiB.id, "plan_b", idOf(subB), Some(k.clientId))),
+        location = EntityLocation(tenant, Seq(team))
+      )
+      waitFor("the proxy state forgets the alias")(env.proxyState.apikey(kb.clientId).isEmpty)
+      env.proxyState.namedBySharingSubscription(k.clientId) mustBe true
+      env.proxyState.namedBySharingSubscription(kb.clientId) mustBe true
+      Seq(takeover, realias).foreach { apikey =>
+        refusedWith(asUser(scoped, "POST", apikeysPath, apikey.toJson), 400, "you can't grant rights you don't have yourself")
+        key(apikey.clientId) mustBe None
+      }
+      // a super admin writes both again (a restoration), and the subscription calls again
+      val restoredK         = takeover.copy(clientSecret = "restored-by-a-super-admin")
+      Seq(restoredK, realias).foreach { apikey =>
+        val (restored, restoredStatus) = asUser(superAdmin, "POST", apikeysPath, apikey.toJson)
+        withClue(restored)(restoredStatus mustBe 201)
+        synced(apikey.clientId)(_.isDefined)
+      }
+      ready(k, apiB, subB, kb)
+      call(apiB, k.clientId, restoredK.clientSecret) mustBe 200
+      unsubscribe(idOf(subB)) mustBe 200
+      key(kb.clientId) mustBe None
+      dropKeys(k.clientId)
+
+      // the subscription deleted, nothing names the client id: a user takes it, as a shared credential of the owner,
+      // and it calls nothing
+      waitFor("the proxy state forgets the subscription and the credential")(
+        !env.proxyState.namedBySharingSubscription(k.clientId) && env.proxyState.apikey(k.clientId).isEmpty
+      )
       val (created, status) = asUser(scoped, "POST", apikeysPath, takeover.toJson)
       withClue(created)(status mustBe 201)
       synced(k.clientId)(_.exists(_.clientSecret == "the-secret-of-the-attacker"))
       call(apiB, k.clientId, "the-secret-of-the-attacker") must not be 200
       dropKeys(k.clientId)
-      unsubscribe(idOf(subB)) mustBe 200
 
       // through the typed api
       val (k2, subB2, kb2) = sharedPair()

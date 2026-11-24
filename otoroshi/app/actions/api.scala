@@ -30,8 +30,9 @@ object ApiActionContext {
   // authorized on the admin api without rights metadata has no restriction at all: only super admins write those.
   // An alias key (ApiRef.credential) gives the access of the credential it shares: only the users who can write that
   // credential write it. A key under the client id of a credential that is gone while aliases still name it would call
-  // through them with a secret of its own: only a super admin writes it (an import, a restoration, whatever the order
-  // of the keys)
+  // through them with a secret of its own, and so would a credential and its alias written again under the client ids
+  // a subscription still names once its credential is deleted: only a super admin writes them (an import, a
+  // restoration, whatever the order of the keys)
   def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
     canUserGrantOwnRights(apikey, user) && !takesOverCredential(apikey, user) && !mintsCredential(apikey, user) &&
     (apikey.apiRef.flatMap(_.credential) match {
@@ -39,10 +40,16 @@ object ApiActionContext {
       case Some(credential) => canUserWriteCredential(credential, user)
     })
 
-  // read from the proxy state, like the aliases themselves: the client id has aliases, and no key
+  // read from the proxy state, like the aliases themselves: the client id has no key, and aliases name it as their
+  // credential, or a subscription sharing a credential names it in its token_refs. A deleted credential takes its
+  // aliases and leaves its subscriptions, which still name both: the alias written again under the id such a
+  // subscription lists would be the one it minted (ApiSubscription.mintedAlias), and a credential written again under
+  // the id it shares would keep the ones who write the subscription from updating and deleting it
   private def takesOverCredential(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
     if (env.bypassUserRightsCheck || user.rights.superAdmin) false
-    else env.proxyState.hasApikeyAliases(apikey.clientId) && env.proxyState.apikey(apikey.clientId).isEmpty
+    else
+      env.proxyState.apikey(apikey.clientId).isEmpty &&
+      (env.proxyState.hasApikeyAliases(apikey.clientId) || env.proxyState.namedBySharingSubscription(apikey.clientId))
 
   // a minted credential (SharedCredential.minted) is the one the subscriptions of its owner share without naming it:
   // written by hand, it would be shared by the subscriptions of a consumer that never asked for it. Only a super admin

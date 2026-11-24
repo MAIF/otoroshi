@@ -44,6 +44,19 @@ object NgProxyState {
     }
     aliases.toMap
   }
+
+  // the client ids the subscriptions sharing a credential name in their token_refs: their credential, and the api keys
+  // of their own (their alias). A deleted credential takes its aliases and leaves its subscriptions, which still name
+  // both: these ids are not free for anyone to write an api key under (ApiActionContext.canUserGrantApikeyRights)
+  def sharingSubscriptionsKeys(values: Seq[ApiSubscription]): Set[String] = {
+    val keys = Set.newBuilder[String]
+    values.foreach { subscription =>
+      if (ApiSubscription.sharedCredential(subscription).isDefined) {
+        subscription.tokenRefs.foreach(ref => ref.select("apikey").asOpt[String].foreach(keys += _))
+      }
+    }
+    keys.result()
+  }
 }
 
 class NgProxyState(env: Env) {
@@ -98,6 +111,9 @@ class NgProxyState(env: Env) {
   // client ids of the alias keys naming that api. Built with the api keys, read when a key is called on an api it is not
   // authorized on
   private val apikeyAliasesRef  = new AtomicReference[Map[String, Map[String, Seq[String]]]](Map.empty)
+  // the client ids the subscriptions sharing a credential name in their token_refs
+  // (NgProxyState.sharingSubscriptionsKeys). Built with the subscriptions, read when an api key is written
+  private val sharingSubscriptionsKeysRef = new AtomicReference[Set[String]](Set.empty)
 
   def enableReportFor(id: String): Unit = {
     tryItEnabledReports.put(id, ())
@@ -164,6 +180,9 @@ class NgProxyState(env: Env) {
   }
   def apikeyAlias(credential: String, api: String): Seq[String]               =
     apikeyAliasesRef.get().get(credential).flatMap(_.get(api)).getOrElse(Seq.empty)
+  // whether a subscription sharing a credential names a client id in its token_refs: its credential, or its own key
+  def namedBySharingSubscription(clientId: String): Boolean                   =
+    sharingSubscriptionsKeysRef.get().contains(clientId)
   def jwtVerifier(id: String): Option[GlobalJwtVerifier]                      = jwtVerifiers.get(id)
   def certificate(id: String): Option[Cert]                                   = certificates.get(id)
   def authModule(id: String): Option[AuthModuleConfig]                        = authModules.get(id)
@@ -266,6 +285,7 @@ class NgProxyState(env: Env) {
     apiSubscriptions
       .addAll(values.map(v => (v.id, v)))
       .remAll(apiSubscriptions.keySet.toSeq.diff(values.map(_.id)))
+    sharingSubscriptionsKeysRef.set(NgProxyState.sharingSubscriptionsKeys(values))
   }
 
   def updateRouteTemplates(values: Seq[RouteTemplate]): Unit = {

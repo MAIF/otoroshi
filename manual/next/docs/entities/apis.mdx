@@ -782,9 +782,10 @@ the credential of an alias: they find no API key for it.
   The validity of the plan of a subscription applies to its alias, which has no rotation.
 - Suspending, closing or deleting a subscription disables or deletes its own alias only: the other APIs are still
   called. The credential is never updated, disabled or deleted with a subscription, not even with the last one: it is
-  deleted by hand. Deleting `K`, by any means, deletes its aliases, and only a super admin can create an API key under
-  the client id of a credential that aliases still name (an import, a restoration). The subscriptions that shared `K`
-  stay, without an alias: they call nothing, and are still updated and deleted by the ones who can write them.
+  deleted by hand. Deleting `K`, by any means, deletes its aliases. The subscriptions that shared `K` stay, without an
+  alias: they call nothing, and are still updated and deleted by the ones who can write them. They still name `K` and
+  their alias: only a super admin can create an API key under the client id of a credential that aliases still name,
+  or under a client id such a subscription still names (an import, a restoration).
 - An API key is created as a shared credential, with no `authorizedEntities` and no `apiRef`, and stays one, for the
   same owner (`400`). `apiRef.credential` is written by the subscription that mints the alias, and never changes
   (`400`). An alias only serves while its credential is a shared credential, the subscription named by its `apiRef`
