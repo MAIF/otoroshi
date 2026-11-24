@@ -302,9 +302,10 @@ class BiscuitExtractor extends PreRouting {
       (client_id, client_sign) match {
         case (Some(client_id), Some(client_sign)) => {
           env.datastores.apiKeyDataStore.findById(client_id).flatMap {
-            case Some(apikey) if apikey.isInactive() && config.enforce =>
+            // an alias key (ApiRef.credential) has no secret of its own to sign with: it is refused like an inactive key
+            case Some(apikey) if (apikey.isInactive() || apikey.isAlias) && config.enforce =>
               unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "bad_apikey"))
-            case Some(apikey) if apikey.isInactive()                   => ().future
+            case Some(apikey) if apikey.isInactive() || apikey.isAlias => ().future
             case Some(apikey)                                          => {
               val nextSignedOk = apikey.rotation.nextSecret
                 .map(s => Signatures.hmacSha256Sign(client_id, s))

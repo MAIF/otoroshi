@@ -1159,7 +1159,8 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
   }
 
   // an alias key is only called through its credential: the extractors reading the datastore, which do not resolve the
-  // credential (the legacy ones: secret, jwt signed with the secret, client id alone), find no key for it
+  // credential (the legacy ones: secret, jwt signed with the secret, client id alone), find no key for it, and the
+  // plugins of the old engine that check a secret against the key itself refuse the one of an alias
   def aliasesAndLegacyExtractors(): Unit = {
     val owner = newOwner()
     val apiA  = apiWith(plan("plan_a"))
@@ -1178,6 +1179,12 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       env.datastores.apiKeyDataStore.findAuthorizeKeyFor(plain.clientId, apiB.id).futureValue.map(_.clientId) mustBe Some(
         plain.clientId
       )
+      // the api key auth module of the old engine, behind its wrapper, checks the secret against the key itself
+      val module                            = new otoroshi.plugins.apikeys.ApikeyAuthModule()
+      def onService(apikey: ApiKey): ApiKey =
+        apikey.copy(authorizedEntities = Seq(ServiceDescriptorIdentifier("service")))
+      module.validApikey(onService(plain), plain.clientSecret, "service", Seq.empty, Json.obj()) mustBe true
+      module.validApikey(onService(alias), alias.clientSecret, "service", Seq.empty, Json.obj()) mustBe false
       Seq(subA, subB).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
       dropKeys(k.clientId)
     } finally undeploy(apiA, apiB)

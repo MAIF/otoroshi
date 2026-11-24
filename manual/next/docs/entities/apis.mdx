@@ -764,8 +764,9 @@ credential: `[{"apikey": "K", "shared": true}, {"apikey": "K_b"}]`. `K_b` is an 
 `K_b`: the throttling strategy and the quotas of the plan of the subscription (its own counter), its restrictions, its
 plugins, and the `apiRef` of the gateway events are the ones of `K_b`, whose `apiRef.credential` tells the credential the
 consumer called with. The backend of each API sees the client id of its own alias. Called with its own client id, an
-alias is refused: it has no secret of its own. The biscuit extractor and the legacy API key extractors do not resolve
-the credential of an alias: they find no API key for it.
+alias is refused: it has no secret of its own. The biscuit extractors and the legacy API key extractors do not resolve
+the credential of an alias: they find no API key for it, and the plugins of the old engine that check a secret against
+the API key itself (client credentials, API key auth module) refuse the one of an alias.
 
 - Only an `apikey` or an `oauth2-local` subscription shares a credential, one at most, and only a shared credential
   whose owner is its `owner_ref`, that no other subscription to the same API shares yet. The API key of a subscription
