@@ -134,7 +134,7 @@
           },
           "minted": {
             "type": "boolean",
-            "description": "`true` on the credential a subscription created for its owner (`{\"shared\": true}` in its `token_refs`): the only one the next subscriptions of that owner share without naming it. A shared credential written by hand is shared by the subscriptions that name it. Only a subscription and a super admin write a minted credential, and it never changes. Absent on the other shared credentials",
+            "description": "`true` on the credential a subscription created for its owner (`{\"shared\": true}` in its `token_refs`): the only one the next subscriptions of that owner located where it is (the same tenant, the same teams) share without naming it. A shared credential written by hand is shared by the subscriptions that name it. Only a subscription and a super admin write a minted credential, and it never changes. Absent on the other shared credentials",
             "example": true
           }
         }

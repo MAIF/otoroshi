@@ -1294,13 +1294,15 @@ object ApiSubscription {
   def sharedCredential(subscription: ApiSubscription): Option[String] = sharedCredentials(subscription).headOption
 
   // the credentials of the owner of a subscription: the shared credentials of that owner a subscription minted
-  // (SharedCredential.minted), located in the tenant of the subscription. The owner_ref is free text: the credential of
-  // another tenant with the same owner is not one of them, nor is one written by hand for that owner, which is only
-  // shared when it is named
+  // (SharedCredential.minted), located where the subscription is, in its tenant and in its teams. The owner_ref is free
+  // text, and a subscription mints the credential of any owner where its author writes, who then reads its secret: the
+  // one located elsewhere, in another tenant or in other teams, is not the one the subscriptions of that owner take
+  // here, whoever writes them. Nor is one written by hand for that owner. Both are only shared when they are named
   def ownerCredentials(apikeys: Seq[ApiKey], subscription: ApiSubscription): Seq[ApiKey] =
     apikeys.filter(apikey =>
       apikey.sharedCredential.exists(credential => credential.owner == subscription.ownerRef && credential.minted) &&
-      apikey.location.tenant == subscription.location.tenant
+      apikey.location.tenant == subscription.location.tenant &&
+      apikey.location.teams.toSet == subscription.location.teams.toSet
     )
 
   // the consumers of an apikey and of an oauth2-local plan call with an api key, the only ones that share one
@@ -1576,12 +1578,9 @@ object ApiSubscription {
                     case None           => ownerCredentialBeingCreated(subscription).leftf
                     case Some(reserved) =>
                       reservedOwnerCredential(reserved.utf8String, ownerCredentialReservationAttempts).map {
-                        // where this subscription would have created it: its author writes there. Anywhere else, the
-                        // rights of the author on the credential were not checked (it did not exist yet): the
-                        // subscription is created again, and finds it like any other
-                        case Some(credential)
-                            if ownerCredentials(Seq(credential), subscription).nonEmpty &&
-                              credential.location.teams.toSet == subscription.location.teams.toSet =>
+                        // where this subscription would have created it (ownerCredentials): its author writes there.
+                        // The rights of the author on that credential were not checked (it did not exist yet)
+                        case Some(credential) if ownerCredentials(Seq(credential), subscription).nonEmpty =>
                           naming(credential).right
                         case _ => ownerCredentialBeingCreated(subscription).left
                       }
@@ -1592,18 +1591,23 @@ object ApiSubscription {
       }
   }
 
-  // the reservation of the credential of an owner in a tenant, the client id of the credential that is being created
-  // for it: what makes its creation by {"shared": true} happen once. It only has to outlive the time a subscription
-  // takes between its read of the api keys and its own reservation, and expires by itself: the credential it names is
-  // then found among the api keys. A credential deleted by hand is created again once its reservation has expired
+  // the reservation of the credential of an owner where a subscription is located (its tenant, its teams), the client
+  // id of the credential that is being created for it: what makes its creation by {"shared": true} happen once. It only
+  // has to outlive the time a subscription takes between its read of the api keys and its own reservation, and expires
+  // by itself: the credential it names is then found among the api keys. A credential deleted by hand is created again
+  // once its reservation has expired
   private val ownerCredentialReservationTtl      = 10.seconds
   private val ownerCredentialReservationAttempts = 20
 
   // a key space of its own: under the one of an entity (apis, apikeys), the reservation would be read with the entities
   // (findAll), and it is not one. Under a prefix of its own too (owners): the owner_ref is free text, and without it a
-  // tenant named like the prefix of the reservations of the aliases (aliasReservation) would write their keys
-  private def ownerCredentialReservation(subscription: ApiSubscription)(using env: Env): String =
-    s"${env.storageRoot}:shared-credential-reservations:owners:${subscription.location.tenant.value}:${subscription.ownerRef}"
+  // tenant named like the prefix of the reservations of the aliases (aliasReservation) would write their keys. The
+  // credential of an owner is the one of a location (ownerCredentials): the subscriptions of other teams reserve theirs
+  private def ownerCredentialReservation(subscription: ApiSubscription)(using env: Env): String = {
+    val tenant = subscription.location.tenant.value
+    val teams  = subscription.location.teams.map(_.value).distinct.sorted.mkString(",")
+    s"${env.storageRoot}:shared-credential-reservations:owners:$tenant:$teams:${subscription.ownerRef}"
+  }
 
   private def ownerCredentialBeingCreated(subscription: ApiSubscription): String =
     s"the shared credential of owner '${subscription.ownerRef}' is being created by another subscription: try again"

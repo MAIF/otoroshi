@@ -569,15 +569,23 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       aliasesOf(k.clientId) mustBe empty
       env.datastores.draftsDataStore.delete(apiB.id).futureValue
 
-      // the credential of the owner in the tenant of the user, in a team it does not write: not shared either, even
-      // when the subscription does not name it
+      // the credential of the owner in the tenant of the user, in a team it does not write: not shared either when it
+      // is named, and not the one of a subscription located elsewhere, which gets its own when it names none
       val k2 = credentialOf(owner, EntityLocation(tenant, Seq(TeamId("alias-other-team"))), minted = true)
       refusedWith(
-        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiB, "plan_b", owner, Seq(ownerShared)) ++ located),
+        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiB, "plan_b", owner, Seq(shared(k2.clientId))) ++ located),
         400,
         "you can't grant rights you don't have yourself"
       )
+      val (subO, statusO) =
+        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiB, "plan_b", owner, Seq(ownerShared)) ++ located)
+      withClue(subO)(statusO mustBe 201)
+      val own             = sharedOf(subO)
+      own.clientId must not be k2.clientId
+      own.location mustBe EntityLocation(tenant, Seq(team))
       aliasesOf(k2.clientId) mustBe empty
+      unsubscribe(idOf(subO)) mustBe 200
+      dropKeys(own.clientId)
 
       // once it is located where the user writes, it shares it, named or not
       key(k2.clientId).get.copy(location = EntityLocation(tenant, Seq(team))).save().futureValue
@@ -990,6 +998,54 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
 
       Seq(subB, subA).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
       dropKeys(k.clientId, planted.clientId)
+    } finally undeploy(apiA, apiB)
+  }
+
+  // the owner_ref is free text, and a subscription mints the credential of any owner where its author writes, who then
+  // reads its secret: it is not the one the subscriptions of that owner located in other teams share without naming
+  // it, whoever writes them. They get their own, where they are
+  def credentialMintedInOtherTeams(): Unit = {
+    val owner = newOwner()
+    val apiA  = apiWith(plan("plan_a"))
+    val apiB  = apiWith(plan("plan_b"))
+    deploy(apiA, apiB)
+    try {
+      // a user subscribes for an owner, where it writes: the credential is minted there, and it reads its secret
+      val (subA, statusA) =
+        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiA, "plan_a", owner, Seq(ownerShared)) ++ located)
+      withClue(subA)(statusA mustBe 201)
+      val theirs          = sharedOf(subA)
+      theirs.location mustBe EntityLocation(tenant, Seq(team))
+      theirs.sharedCredential mustBe Some(SharedCredential(owner, minted = true))
+      synced(theirs.clientId)(_.isDefined)
+      asUser(scoped, "GET", s"$apikeysPath/${theirs.clientId}", JsNull)._1.select("clientSecret").asOpt[String] mustBe Some(
+        theirs.clientSecret
+      )
+
+      // the subscription of that owner located in another team of the tenant does not take it, even written by a super
+      // admin, who could: it mints its own, where it is
+      val otherTeam       = EntityLocation(tenant, Seq(TeamId("alias-other-team")))
+      val inOtherTeam     = Json.obj("_loc" -> otherTeam.json)
+      val (subB, statusB) =
+        asUser(superAdmin, "POST", subscriptionsPath, subscriptionBody(apiB, "plan_b", owner, Seq(ownerShared)) ++ inOtherTeam)
+      withClue(subB)(statusB mustBe 201)
+      val k               = sharedOf(subB)
+      k.clientId must not be theirs.clientId
+      k.location mustBe otherTeam
+      k.sharedCredential mustBe Some(SharedCredential(owner, minted = true))
+      ready(k, apiB, subB, ownKeyOf(subscription(idOf(subB))))
+      call(apiB, k.clientId, k.clientSecret) mustBe 200
+      call(apiB, theirs.clientId, theirs.clientSecret) must not be 200
+
+      // the next subscription of that owner located there shares that one
+      val (subC, statusC) =
+        asUser(superAdmin, "POST", subscriptionsPath, subscriptionBody(apiA, "plan_a", owner, Seq(ownerShared)) ++ inOtherTeam)
+      withClue(subC)(statusC mustBe 201)
+      sharedOf(subC).clientId mustBe k.clientId
+      aliasesOf(theirs.clientId).map(_.clientId) mustBe Seq(ownKeyOf(subscription(idOf(subA))).clientId)
+
+      Seq(subC, subB, subA).foreach(sub => unsubscribe(idOf(sub)) mustBe 200)
+      dropKeys(k.clientId, theirs.clientId)
     } finally undeploy(apiA, apiB)
   }
 

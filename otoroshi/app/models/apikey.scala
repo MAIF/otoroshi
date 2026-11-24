@@ -187,7 +187,8 @@ case class RouteCompositionIdentifier(id: String) extends EntityIdentifier {
 // flag are its own, and are the ones of every call made through its aliases
 //
 // minted: the credential a subscription created for its owner ({"shared": true} in its token_refs), the only one the
-// next subscriptions of that owner take without naming it. The owner is free text: a credential written by hand for an
+// next subscriptions of that owner located where it is take without naming it (ApiSubscription.ownerCredentials). The
+// owner is free text: a credential written by hand for an
 // owner is not the one of that owner until a subscription names it, or anyone could write the credential the
 // subscriptions of another consumer would share, and call with a secret it knows. Only a subscription and a super
 // admin write a minted credential (ApiActionContext.canUserGrantApikeyRights)

@@ -17,6 +17,9 @@ class ApiAliasKeysSpec extends PluginsTestSpecBase {
     "only be written by hand by the users who can write their credential, which stays one" in { aliases.aliasesWrittenByHand() }
     "go with their credential" in { aliases.deletedCredentialTakesItsAliases() }
     "not share a credential written by hand for an owner, unless it is named" in { aliases.plantedCredential() }
+    "not share the credential a subscription minted for an owner in other teams, unless it is named" in {
+      aliases.credentialMintedInOtherTeams()
+    }
     "share a credential written a moment ago with the ones who can write it" in { aliases.credentialJustCreated() }
     "share one credential when the subscriptions of an owner are created at once" in {
       aliases.subscriptionsCreatedAtOnce()
