@@ -199,7 +199,10 @@ export class UserRightsEditor extends Component {
             </div>
           </div>
         </Field>
-        <Field label="Teams" help="The teams of the organization the right applies to, * for all of them">
+        <Field
+          label="Teams"
+          help="The teams of the organization the right applies to, * for all of them"
+        >
           {teams.map((team, ti) => (
             <div key={ti} className="d-flex mb-2" style={{ gap: 8 }}>
               <div style={{ flex: 3 }}>
@@ -353,7 +356,10 @@ export class RightsOverrideEditor extends Component {
   addUser = () => {
     const email = this.state.email.trim().toLowerCase();
     if (email && !this.value()[email]) {
-      this.props.onChange({ ...this.value(), [email]: [{ tenant: 'default:r', teams: ['default:r'] }] });
+      this.props.onChange({
+        ...this.value(),
+        [email]: [{ tenant: 'default:r', teams: ['default:r'] }],
+      });
     }
     this.setState({ email: '' });
   };

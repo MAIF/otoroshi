@@ -94,7 +94,10 @@ export class ApikeySharedCredentialInfo extends Component {
   row = (label, content) => (
     <div className="row mb-3">
       <label className="col-sm-2 col-form-label">{label}</label>
-      <div className="col-sm-10" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div
+        className="col-sm-10"
+        style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+      >
         {content}
       </div>
     </div>
@@ -111,8 +114,13 @@ export class ApikeySharedCredentialInfo extends Component {
 
   aliases = () => {
     if (this.state.loading) return <span>Loading ...</span>;
-    if (this.state.aliases.length === 0) return <span>No subscription shares this credential yet.</span>;
-    const cell = { padding: '6px 8px', borderBottom: '1px solid var(--border-color)', textAlign: 'left' };
+    if (this.state.aliases.length === 0)
+      return <span>No subscription shares this credential yet.</span>;
+    const cell = {
+      padding: '6px 8px',
+      borderBottom: '1px solid var(--border-color)',
+      textAlign: 'left',
+    };
     return (
       // no bootstrap table here: its white background is unreadable with the dark theme
       <table style={{ width: '100%', color: 'var(--text)' }}>
@@ -134,7 +142,9 @@ export class ApikeySharedCredentialInfo extends Component {
             const refs = (subscription || {}).token_refs || [];
             const minted =
               !!subscription &&
-              refs.some((ref) => ref && ref.shared === true && ref.apikey === alias.apiRef.credential) &&
+              refs.some(
+                (ref) => ref && ref.shared === true && ref.apikey === alias.apiRef.credential
+              ) &&
               refs.some((ref) => ref && ref.shared !== true && ref.apikey === alias.clientId);
             return (
               <tr key={alias.clientId}>
@@ -172,9 +182,11 @@ export class ApikeySharedCredentialInfo extends Component {
           {this.row(
             'Shared credential',
             <span>
-              This apikey is the shared credential of <strong>{apikey.sharedCredential.owner}</strong>. It is authorized
-              on nothing by itself: the consumer calls each api below with its client id and its secret, through the
-              alias key of its subscription. Disabled, expired or deleted, it stops every one of them.
+              This apikey is the shared credential of{' '}
+              <strong>{apikey.sharedCredential.owner}</strong>. It is authorized on nothing by
+              itself: the consumer calls each api below with its client id and its secret, through
+              the alias key of its subscription. Disabled, expired or deleted, it stops every one of
+              them.
             </span>
           )}
           {this.row('Shared by', this.aliases())}
@@ -185,9 +197,10 @@ export class ApikeySharedCredentialInfo extends Component {
       return this.row(
         'Alias key',
         <span>
-          This apikey is an alias of the shared credential {this.keyLink(credential)}: the consumer calls with the client
-          id and the secret of that credential, and is identified as this apikey, with the quotas and the plugins of its
-          plan. Called with its own client id and secret, it is refused.
+          This apikey is an alias of the shared credential {this.keyLink(credential)}: the consumer
+          calls with the client id and the secret of that credential, and is identified as this
+          apikey, with the quotas and the plugins of its plan. Called with its own client id and
+          secret, it is refused.
         </span>
       );
     }

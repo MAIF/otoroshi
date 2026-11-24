@@ -258,7 +258,13 @@ const AccessModePluginConfigurationForm = {
         help: 'Persist the apikey this plan builds for a client id that has none yet, so it shows up in the apikeys page and can be edited like any other. When disabled, that apikey only lives for the duration of the call. Either way the caller is identified, served, and its consumption counted.',
       },
     },
-    flow: ['verifier', 'client_id_path', 'subscription_required', 'create_if_missing', 'restrictions'],
+    flow: [
+      'verifier',
+      'client_id_path',
+      'subscription_required',
+      'create_if_missing',
+      'restrictions',
+    ],
   },
   'oauth2-local': {
     schema: NgClientCredentialTokenEndpoint.config_schema,
@@ -754,7 +760,9 @@ function PlanForm({ plan, onChange, flows = [] }) {
         type: 'any',
         label: 'Selection',
         visible: (value) =>
-          ['keyless', 'jwt', 'mtls', 'oauth2-remote'].includes(value?.access_mode_configuration_type),
+          ['keyless', 'jwt', 'mtls', 'oauth2-remote'].includes(
+            value?.access_mode_configuration_type
+          ),
         help: 'JSON path conditions a call has to meet for this plan to apply to it, all of them, as [{"path": "$.token.tier", "value": "gold"}]. They are evaluated against the request ($.request.method, path, domain, ip, headers, query), the claims of the token ($.token, jwt and oauth2-remote plans), the client certificate ($.certificate.subject_dn, issuer_dn, serial_number, mtls plans) and the client id the plan read ($.client_id). A plan whose selection fails identifies no one, and the next plan gets the call. Empty: every call this plan can identify.',
         props: {
           mode: 'jsonOrPlaintext',

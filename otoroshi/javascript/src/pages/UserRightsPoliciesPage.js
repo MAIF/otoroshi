@@ -73,8 +73,7 @@ export class UserRightsPoliciesPage extends Component {
       type: 'select',
       props: {
         label: 'Mode',
-        help:
-          'replace: the rights below are the rights of the users of the auth module below, the ones the module gives them are ignored. The other users with the same email (local admins, users of another auth module) keep their own rights, capped by the rights below. restrict: every user with the email keeps its own rights, capped by the rights below',
+        help: 'replace: the rights below are the rights of the users of the auth module below, the ones the module gives them are ignored. The other users with the same email (local admins, users of another auth module) keep their own rights, capped by the rights below. restrict: every user with the email keeps its own rights, capped by the rights below',
         possibleValues: [
           { label: 'Replace the rights of the auth module', value: 'replace' },
           { label: 'Restrict the rights of the auth module', value: 'restrict' },
@@ -89,8 +88,7 @@ export class UserRightsPoliciesPage extends Component {
         isClearable: true,
         valuesFrom: '/bo/api/proxy/api/auths',
         transformer: (a) => ({ value: a.id, label: a.name }),
-        help:
-          'The auth module whose users get the rights of the policy in replace mode. Empty for the backoffice auth module. An email alone is not an identity: the local admins and the users of the other auth modules with the same email are only restricted by the policy',
+        help: 'The auth module whose users get the rights of the policy in replace mode. Empty for the backoffice auth module. An email alone is not an identity: the local admins and the users of the other auth modules with the same email are only restricted by the policy',
       },
     },
     rights: {

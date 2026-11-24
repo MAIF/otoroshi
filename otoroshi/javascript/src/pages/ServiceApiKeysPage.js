@@ -1302,7 +1302,9 @@ const ApiKeysConstants = {
     //'>>>Location',
     '_loc',
     // read only, on a shared credential and on its alias keys
-    ...(apikey && (apikey.sharedCredential || (apikey.apiRef || {}).credential) ? ['sharedCredentialInfo', '---'] : []),
+    ...(apikey && (apikey.sharedCredential || (apikey.apiRef || {}).credential)
+      ? ['sharedCredentialInfo', '---']
+      : []),
     'clientId',
     'clientSecret',
     'bearer',

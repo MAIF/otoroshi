@@ -148,7 +148,9 @@ const SUBSCRIPTION_FORM_SETTINGS = {
       type: 'group',
       name: 'Ownership',
       collapsable: false,
-      fields: ['owner_ref', 'plan_ref', 'client_id', isEdition ? 'token_refs' : undefined].filter((f) => f),
+      fields: ['owner_ref', 'plan_ref', 'client_id', isEdition ? 'token_refs' : undefined].filter(
+        (f) => f
+      ),
     },
     {
       type: 'group',
