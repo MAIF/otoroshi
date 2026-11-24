@@ -377,9 +377,10 @@ export function NewSubscription(props) {
   if (!item || !subscription) return <SimpleLoader />;
 
   const updateSubscription = () => {
+    // the plan of the path is the one of the subscription, which the form can change: another one is refused
     return BackOfficeServices.subscribeToPlan(
       params.apiId,
-      props.plan.id,
+      subscription.plan_ref || props.plan.id,
       isDraft ? 'Draft' : 'Published',
       {
         ...subscription,

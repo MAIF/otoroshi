@@ -703,7 +703,9 @@ subscription cannot change (`400`): delete the subscription and create another o
 The API key of a subscription follows its `status`: it is enabled only while the subscription is `enabled`, and disabled
 as soon as the subscription is set to any other status. `POST .../apis/{apiId}/plans/{planId}/subscribe` saves the subscription
 `pending` whatever its body says, with its API key disabled: `POST .../apis/{apiId}/subscriptions/{subId}/confirm`
-enables both.
+enables both. Both work on the API of their path, whose rights they require: `subscribe` refuses a body whose `api_ref`
+or `plan_ref` is not the API or the plan of the path (`400`), and `confirm` does not find the subscription of another
+API (`404`).
 
 A subscription only manages the API keys it minted: the ones whose `apiRef` is the subscription, and the ones minted
 before the API keys had an `apiRef` (authorized on the API of the subscription, with the metadata a subscription writes on

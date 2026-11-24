@@ -339,6 +339,16 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
       .asOpt(using ApiSubscription.format)
       .toRight(BadRequest(Json.obj("error" -> "wrong subscription format")))
 
+  // the subscription of the body is one to the plan of the path, in the api of the path: the rights are the ones on
+  // that api, and that plan is the one that was validated. Naming another api or another plan in the body would
+  // subscribe to it with them
+  private def validateTarget(subscription: ApiSubscription, apiId: String, planId: String): Either[Result, Unit] =
+    if (subscription.apiRef != apiId)
+      Left(BadRequest(Json.obj("error" -> "the api of the subscription is not the api of the path")))
+    else if (subscription.planRef != planId)
+      Left(BadRequest(Json.obj("error" -> "the plan of the subscription is not the plan of the path")))
+    else Right(())
+
   def closePlan(apiId: String, planId: String) = {
     ApiAction.async(parse.json) { ctx =>
       ctx.canWriteService(apiId) {
@@ -556,6 +566,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
               validApi     <- validateApi(api)
               _validPlan   <- validatePlan(validApi, planId)
               subscription <- validateBody(ctx)
+              _            <- validateTarget(subscription, apiId, planId)
             } yield subscription
 
             // the credential a subscription shares (an alias key) is shared by the ones who can write it: the one it
