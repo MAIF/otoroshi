@@ -177,16 +177,13 @@ trait RedisLike {
       exSeconds: Option[Long] = None,
       pxMilliseconds: Option[Long] = None
   ): Future[Boolean]
+  // sets the key, with a ttl in milliseconds, only when it is absent (or expired), and tells whether it did. A writer
+  // takes a lock or a reservation with it: of several writers at once, one only must be answered true, so every driver
+  // implements it with an atomic operation of its database, never with `exists` then `set`
   def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
-  ): Future[Boolean] = {
-    // no comment !!!
-    exists(key).flatMap {
-      case true  => FastFuture.successful(false)
-      case false => setBS(key, value, None, ttl)
-    }
-  }
+  ): Future[Boolean]
   def setBS(
       key: String,
       value: ByteString,
@@ -766,7 +763,7 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
-    countWrite(key, "srem")
+    countWrite(key, "setnx")
     redis.setnxBS(key, value, ttl)
   }
 }

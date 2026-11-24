@@ -1033,6 +1033,36 @@ class ReactivePgRedis(
       }
     }
 
+  // one statement, atomic: inserts the key, or takes over the row of the key when it has expired (as for `exists`, an
+  // expired row the cleanup did not delete yet is absent), and returns it. A row that has not expired holds the key:
+  // nothing is written and nothing is returned
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] =
+    measure("pg.ops.setnx") {
+      val interval          = ttl.map(v => millisecondsToInterval(v)).getOrElse("'1000 years'::interval")
+      val (kind, jsonValue) = matchesEntity(key, value) match {
+        case Some((kind, json)) => (kind, new JsonObject(json))
+        case None               => ("", new JsonObject())
+      }
+      queryOne(
+        s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value, kind, jvalue)
+           |values ($$1, 'string', $interval, NOW(), $$2, $$3, $$4::jsonb)
+           |on conflict (key)
+           |do
+           |  update set type = 'string', ttl = excluded.ttl, ttl_starting_at = excluded.ttl_starting_at, counter = 0,
+           |    value = excluded.value, lvalue = '[]'::jsonb, svalue = '{}'::jsonb, mvalue = '{}'::jsonb,
+           |    kind = excluded.kind, jvalue = excluded.jvalue
+           |  where ($schemaDotTable.ttl_starting_at + $schemaDotTable.ttl) <= NOW()
+           |returning key;
+           |""".stripMargin,
+        Seq(key, value.utf8String, kind, jsonValue)
+      ) { row =>
+        row.optString("key")
+      }.map(_.isDefined)
+    }
+
   override def keys(pattern: String): Future[Seq[String]] =
     measure("pg.ops.keys") {
       val processed = pattern.replace("*", ".*")

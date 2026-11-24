@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import io.vertx.core.json.{JsonArray, JsonObject}
 import io.vertx.pgclient.{PgBuilder, PgConnectOptions}
 import io.vertx.sqlclient.Tuple
+import org.apache.pekko.util.ByteString
 import org.testcontainers.containers.wait.strategy.Wait
 import otoroshi.env.Env
 import otoroshi.security.IdGenerator
@@ -59,7 +60,10 @@ class PgDatastoreSpec extends ContainerizedDatastoreSpec {
   }
 
   // writes a row in the table of the datastore without going through the driver
-  private def insertRow(key: String, mvalue: JsonArray): Unit = {
+  private def insertRow(key: String, mvalue: JsonArray): Unit =
+    runSql("insert into otoroshi.entities (key, type, mvalue) values ($1, 'hash', $2::jsonb)", Tuple.of(key, mvalue))
+
+  private def runSql(query: String, params: Tuple): Unit = {
     val pool = PgBuilder
       .pool()
       .connectingTo(
@@ -73,8 +77,8 @@ class PgDatastoreSpec extends ContainerizedDatastoreSpec {
       .build()
     try {
       pool
-        .preparedQuery("insert into otoroshi.entities (key, type, mvalue) values ($1, 'hash', $2::jsonb)")
-        .execute(Tuple.of(key, mvalue))
+        .preparedQuery(query)
+        .execute(params)
         .toCompletionStage
         .toCompletableFuture
         .get(10, TimeUnit.SECONDS)
@@ -115,6 +119,28 @@ class PgDatastoreSpec extends ContainerizedDatastoreSpec {
       redis.hgetall(key).futureValue.view.mapValues(_.utf8String).toMap mustBe Map("a" -> "1")
 
       redis.del(key).futureValue
+    }
+
+    // the cleanup job deletes the expired rows every few seconds: until it does, the row of an expired key is there,
+    // and setnx takes it over as if the key was absent (#2969)
+    "set a key whose expired row is not deleted yet" in {
+      given env: Env = otoroshiComponents.env
+      val store      = env.datastores.rawDataStore
+      val key        = s"${env.storageRoot}:tests:setnx:${IdGenerator.uuid}"
+
+      runSql(
+        "insert into otoroshi.entities (key, type, value, ttl_starting_at, ttl) values ($1, 'string', 'expired', NOW() - interval '1 hour', '1 second'::interval)",
+        Tuple.of(key)
+      )
+      store.exists(key).futureValue mustBe false
+
+      store.setnx(key, ByteString("fresh"), Some(60000L)).futureValue mustBe true
+      store.get(key).futureValue.map(_.utf8String) mustBe Some("fresh")
+      store.pttl(key).futureValue must (be > 0L and be <= 60000L)
+      store.setnx(key, ByteString("other"), Some(60000L)).futureValue mustBe false
+      store.get(key).futureValue.map(_.utf8String) mustBe Some("fresh")
+
+      store.del(Seq(key)).futureValue
     }
   }
 }

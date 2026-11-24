@@ -143,6 +143,11 @@ class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike 
   override def sremBS(key: String, members: ByteString*): Future[Long]       = redis.sremBS(key, members*)
   override def scard(key: String): Future[Long]                              = redis.scard(key)
 
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = redis.setnxBS(key, value, ttl)
+
   override def typ(key: String): Future[String] = {
     rawGet(key) map {
       case Some(_: String)                                                     => "string"
