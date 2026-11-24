@@ -6,7 +6,7 @@ import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{Span, SpanKind, StatusCode}
 import io.opentelemetry.context.propagation.{ContextPropagators, TextMapGetter, TextMapPropagator, TextMapSetter}
-import io.opentelemetry.context.{Context, Scope}
+import io.opentelemetry.context.Context
 import io.opentelemetry.exporter.logging.LoggingSpanExporter
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
@@ -202,9 +202,8 @@ class W3CTracing extends NgRequestTransformer {
     }
   }
 
-  private val SpanKey   = TypedKey[Span]("otoroshi.next.plugins.W3CTracing.Span")
-  private val ScopesKey = TypedKey[Seq[Scope]]("otoroshi.next.plugins.W3CTracing.Scopes")
-  private val TraceKey  = TypedKey[Seq[(String, String)]]("otoroshi.next.plugins.W3CTracing.Trace")
+  private val SpanKey  = TypedKey[Span]("otoroshi.next.plugins.W3CTracing.Span")
+  private val TraceKey = TypedKey[Seq[(String, String)]]("otoroshi.next.plugins.W3CTracing.Trace")
 
   private val getter = new TextMapGetter[NgTransformerRequestContext] {
     override def keys(carrier: NgTransformerRequestContext): lang.Iterable[String] =
@@ -236,12 +235,13 @@ class W3CTracing extends NgRequestTransformer {
     val propagator = telemetry.getPropagators.getTextMapPropagator
     val tracer     = telemetry.getTracer("otoroshi")
 
-    val context = propagator.extract(Context.current(), ctx, getter)
+    // the context of the request only, never the one of the thread, so that a request without traceparent starts a new
+    // trace. Nothing is made current on the thread either: the steps of a request do not all run on the same thread,
+    // and a scope left open there was the parent of the next request handled on it
+    val context = propagator.extract(Context.root(), ctx, getter)
     val span    = tracer.spanBuilder("http_proxy").setParent(context).setSpanKind(SpanKind.SERVER).startSpan()
     val baggage = Baggage.fromContext(context)
-    val scope1  = span.makeCurrent()
-    val scope2  = baggage.makeCurrent()
-    val current = Context.current()
+    val current = context.`with`(span)
 
     span.setAttribute("lc", "otoroshi")
     span.addEvent("process_request")
@@ -278,9 +278,8 @@ class W3CTracing extends NgRequestTransformer {
       current
     }
 
-    ctx.attrs.put(ScopesKey -> Seq(scope1, scope2))
-    ctx.attrs.put(SpanKey   -> span)
-    ctx.attrs.put(TraceKey  -> Seq.empty)
+    ctx.attrs.put(SpanKey  -> span)
+    ctx.attrs.put(TraceKey -> Seq.empty)
 
     propagator.inject(newContext, ctx, setter)
     val headers = ctx.attrs.get(TraceKey).get
@@ -302,7 +301,6 @@ class W3CTracing extends NgRequestTransformer {
       span.setStatus(StatusCode.OK)
       span.end()
     }
-    ctx.attrs.get(ScopesKey).foreach(_.foreach(_.close()))
     ctx.otoroshiResponse.right.vfuture
   }
 
@@ -315,7 +313,6 @@ class W3CTracing extends NgRequestTransformer {
       span.setStatus(StatusCode.ERROR)
       span.end()
     }
-    ctx.attrs.get(ScopesKey).foreach(_.foreach(_.close()))
     ctx.otoroshiResponse.vfuture
   }
 }
