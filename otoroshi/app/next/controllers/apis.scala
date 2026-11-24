@@ -675,6 +675,10 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                 findSubscription().flatMap {
                   case None               =>
                     NotFound(Json.obj("error" -> "subscription not found")).future
+                  // the rights are the ones on the api of the path: the subscription of another api is not one of its
+                  // own, even when both apis have a plan with the same id
+                  case Some(subscription) if subscription.apiRef != apiId =>
+                    NotFound(Json.obj("error" -> "subscription not found")).future
                   case Some(subscription) =>
                     validatePlan(api, subscription.planRef) match {
                       case Left(_)  => BadRequest(Json.obj("error" -> "invalid plan")).future
