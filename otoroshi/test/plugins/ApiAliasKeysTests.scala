@@ -1218,4 +1218,55 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
       dropKeys(k.clientId)
     } finally undeploy(apiA)
   }
+
+  // a call signed with hmac is signed with the secret the consumer knows, the one of the credential, and checked with
+  // it by the validator of the new engine and by the one of the old engine, behind its wrapper. The own secret of the
+  // alias signs nothing
+  def hmacSignedWithTheCredential(): Unit = {
+    import otoroshi.next.plugins.api.NgPluginHelper
+    val owner     = newOwner()
+    def validatedBy(validator: NgPluginInstance): Api = {
+      val api = apiWith(plan("plan_a"))
+      api.copy(flows = api.flows.map(flow => flow.copy(plugins = flow.plugins.copy(slots = flow.plugins.slots :+ validator))))
+    }
+    val apiNg     = validatedBy(NgPluginInstance(plugin = NgPluginHelper.pluginId[otoroshi.next.plugins.HMACValidator]))
+    val apiLegacy = validatedBy(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[otoroshi.next.plugins.wrappers.AccessValidatorWrapper],
+        config = NgPluginInstanceConfig(Json.obj("plugin" -> "cp:otoroshi.plugins.hmac.HMACValidator"))
+      )
+    )
+    deploy(apiNg, apiLegacy)
+    try {
+      val k = credentialOf(owner, minted = true)
+      Seq("the hmac validator" -> apiNg, "the legacy hmac validator" -> apiLegacy).foreach { case (validator, api) =>
+        val (sub, status) = subscribe(api, "plan_a", owner, Seq(shared(k.clientId)))
+        withClue(sub)(status mustBe 201)
+        val alias         = ownKeyOf(subscription(idOf(sub)))
+        ready(k, api, sub, alias)
+        def signedWith(secret: String): Int = {
+          val base      = System.currentTimeMillis().toString
+          val signature = Base64.getEncoder.encodeToString(
+            otoroshi.utils.crypto.Signatures.hmac(otoroshi.plugins.hmac.HMACUtils.Algo("HMAC-SHA512"), base, secret)
+          )
+          ws
+            .url(s"http://127.0.0.1:$port/")
+            .withHttpHeaders(
+              "Host"                   -> api.domain,
+              "Otoroshi-Client-Id"     -> k.clientId,
+              "Otoroshi-Client-Secret" -> k.clientSecret,
+              "base"                   -> base,
+              "Authorization"          -> s"""hmac algorithm="HMAC-SHA512", headers="base", signature="$signature""""
+            )
+            .get()
+            .futureValue
+            .status
+        }
+        withClue(s"$validator, signed with the secret of the credential: ")(signedWith(k.clientSecret) mustBe 200)
+        withClue(s"$validator, signed with the own secret of the alias: ")(signedWith(alias.clientSecret) must not be 200)
+        unsubscribe(idOf(sub)) mustBe 200
+      }
+      dropKeys(k.clientId)
+    } finally undeploy(apiNg, apiLegacy)
+  }
 }
