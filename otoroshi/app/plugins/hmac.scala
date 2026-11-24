@@ -222,7 +222,8 @@ class HMACValidator extends AccessValidator {
   override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] =
     ((context.configFor("HMACAccessValidator") \ "secret").asOpt[String] match {
       case Some(value) if value.nonEmpty => Some(value)
-      case _                             => context.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.clientSecret)
+      // the secret the consumer knows: the one of the credential an alias key shares, or the one of the key itself
+      case _                             => context.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.secretHolder.clientSecret)
     }) match {
       case None         =>
         if (logger.isDebugEnabled) logger.debug("No api key found and no secret found in configuration of the plugin")

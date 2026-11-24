@@ -181,6 +181,31 @@ case class RouteCompositionIdentifier(id: String) extends EntityIdentifier {
   override def isRouteComposition: Boolean = true
 }
 
+// what makes an api key a shared credential: the key of a consumer (owner, the owner_ref of its subscriptions),
+// authorized on nothing by itself, that the subscriptions of that consumer share. Each of them gets an alias key
+// (ApiRef.credential) the consumer calls through the credential. Its secret, its rotation, its expiry and its enabled
+// flag are its own, and are the ones of every call made through its aliases
+//
+// minted: the credential a subscription created for its owner ({"shared": true} in its token_refs), the only one the
+// next subscriptions of that owner located where it is take without naming it (ApiSubscription.ownerCredentials). The
+// owner is free text: a credential written by hand for an
+// owner is not the one of that owner until a subscription names it, or anyone could write the credential the
+// subscriptions of another consumer would share, and call with a secret it knows. Only a subscription and a super
+// admin write a minted credential (ApiActionContext.canUserGrantApikeyRights)
+case class SharedCredential(owner: String, minted: Boolean = false) {
+  // written only on a minted credential: the json of the other ones is unchanged
+  def json: JsValue = if (minted) Json.obj("owner" -> owner, "minted" -> true) else Json.obj("owner" -> owner)
+}
+
+object SharedCredential {
+  def reads(json: JsValue): Option[SharedCredential] =
+    json
+      .asOpt[JsObject]
+      .flatMap(_.select("owner").asOpt[String])
+      .filter(_.trim.nonEmpty)
+      .map(owner => SharedCredential(owner, json.select("minted").asOpt[Boolean].contains(true)))
+}
+
 case class ApiKey(
     clientId: String,     // = IdGenerator.token(16),
     clientSecret: String, // = IdGenerator.token(64),
@@ -199,6 +224,7 @@ case class ApiKey(
     validUntil: Option[DateTime] = None,
     rotation: ApiKeyRotation = ApiKeyRotation(),
     apiRef: Option[ApiRef] = None,
+    sharedCredential: Option[SharedCredential] = None,
     plugins: Option[NgPluginsWithOverride] = None,
     tags: Seq[String] = Seq.empty[String],
     metadata: Map[String, String] = Map.empty[String, String],
@@ -227,10 +253,27 @@ case class ApiKey(
   // is still ahead of us, exactly like the `enabled` flag computed by the json format
   def isActive(): Boolean                                 = enabled && validUntil.forall(date => date.isAfterNow)
   def isInactive(): Boolean                               = !isActive()
+  // an alias key (ApiRef.credential) has no secret of its own: it is called with the secret of the credential it
+  // shares, checked on that credential (asCredentialOf). Whatever checks a secret against the alias itself refuses it:
+  // the token endpoints of the client credentials flow, the basic auth of the api keys, the legacy extractors
+  def isAlias: Boolean                                    = apiRef.exists(_.credential.isDefined)
   def isValid(value: String): Boolean                     =
-    enabled && (Signatures.constantTimeEquals(value, clientSecret) ||
+    enabled && !isAlias && (Signatures.constantTimeEquals(value, clientSecret) ||
       (rotation.enabled && rotation.nextSecret.exists(secret => Signatures.constantTimeEquals(value, secret))))
   def isInvalid(value: String): Boolean                   = !isValid(value)
+  // the key whose secret a call proves: the credential an alias key shares, or the key itself. Its rotation is the one
+  // of the call
+  def secretHolder(using env: Env): ApiKey                = apiRef match {
+    case Some(ref) if ref.credential.isDefined => env.proxyState.apikey(ref.credential.get).getOrElse(this)
+    case _                                     => this
+  }
+  // this key as the credential shared by an alias key (ApiRef.credential): the secret, the rotation, the expiry and
+  // the enabled flag of the credential are checked, like for any api key (a disabled credential calls nothing), and the
+  // alias decides whether its own subscription calls (enabled)
+  def asCredentialOf(alias: ApiKey): ApiKey               = copy(
+    enabled = enabled && alias.enabled && validUntil.forall(date => date.isAfterNow),
+    allowClientIdOnly = allowClientIdOnly && alias.allowClientIdOnly
+  )
   def authorizedOn(identifier: EntityIdentifier): Boolean = authorizedEntities.contains(identifier)
   def authorizedOnService(id: String): Boolean            = authorizedEntities.contains(ServiceDescriptorIdentifier(id))
   def authorizedOnGroup(id: String): Boolean              = authorizedEntities.contains(ServiceGroupIdentifier(id))
@@ -433,8 +476,9 @@ case class ApiKey(
 
   // like the next secret in isValid, the next bearer is only valid while the secret is rotating
   def checkBearer(value: String): Boolean = {
-    Signatures.constantTimeEquals(value, toBearer()) ||
-    (rotation.enabled && rotation.nextSecret.isDefined && Signatures.constantTimeEquals(value, toNextBearer()))
+    // an alias key has no secret of its own (isAlias), nor a bearer made of it
+    !isAlias && (Signatures.constantTimeEquals(value, toBearer()) ||
+    (rotation.enabled && rotation.nextSecret.isDefined && Signatures.constantTimeEquals(value, toNextBearer())))
   }
 }
 
@@ -584,7 +628,11 @@ object ApiKey {
         "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
         "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
         "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).view.mapValues(JsString.apply).toMap)
-      )
+      ) ++ (apk.sharedCredential match {
+        // written only on a shared credential: the json of the other keys is unchanged
+        case Some(credential) => Json.obj("sharedCredential" -> credential.json)
+        case None             => Json.obj()
+      })
     }
     override def reads(json: JsValue): JsResult[ApiKey] =
       Try {
@@ -649,6 +697,7 @@ object ApiKey {
               .getOrElse(ApiKeyRotation()),
             validUntil = rawValidUntil,
             apiRef = (json \ "apiRef").asOpt[JsObject].flatMap(o => ApiRef.format.reads(o).asOpt),
+            sharedCredential = (json \ "sharedCredential").asOpt[JsValue].flatMap(SharedCredential.reads),
             plugins = (json \ "plugins").asOpt[JsObject].flatMap(o => NgPluginsWithOverride.format.reads(o).asOpt),
             tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             // read entry by entry: one value that is not a string must not drop the whole map, and with it the
@@ -669,6 +718,24 @@ object ApiKey {
       } get
   }
   def toJson(value: ApiKey): JsValue                 = _fmt.writes(value)
+
+  // what the admin api refuses of a write of an api key, about shared credentials and their alias keys: a change of
+  // the credential of an alias (ApiRef.credential), set by the subscription that mints it once and for all, a key
+  // that becomes or stops being a shared credential, or changes its owner (a credential is created as one, and its
+  // aliases are the ones of its owner), and a shared credential that is not attached to nothing (authorized on an
+  // entity, or minted by a plan). A new key under the client id of a credential that aliases still name is a matter of
+  // rights (ApiActionContext.canUserGrantApikeyRights)
+  def aliasWriteError(updated: ApiKey, stored: Option[ApiKey])(using env: Env): Option[String] = stored match {
+    case Some(old) if old.apiRef.flatMap(_.credential) != updated.apiRef.flatMap(_.credential) =>
+      Some("the credential of an alias key cannot change")
+    case Some(old) if old.sharedCredential != updated.sharedCredential                         =>
+      Some("an api key is created as a shared credential, for one owner, and stays one")
+    case _ if updated.sharedCredential.isDefined && updated.apiRef.isDefined                   =>
+      Some("a shared credential is not the api key of a plan")
+    case _ if updated.sharedCredential.isDefined && updated.authorizedEntities.nonEmpty        =>
+      Some("a shared credential is authorized on nothing: its alias keys are")
+    case _                                                                                      => None
+  }
   def fromJsons(value: JsValue): ApiKey              =
     try {
       _fmt.reads(value).get
@@ -747,6 +814,15 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       env: Env
   ): Future[Option[ApiKey]]
   def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(using env: Env): Option[ApiKey]
+  // whether an api key of the proxy state is authorized on a route, a route composition or a service
+  def isAuthorizedFromCache(apiKey: ApiKey, serviceId: String)(using env: Env): Boolean
+  // the alias key of a shared credential on the api of a route (ApiRef.credential), from the proxy state: what
+  // identifies a call made with the credential on an api it is not authorized on
+  def findAliasForFromCache(credential: ApiKey, serviceId: String)(using env: Env): Option[ApiKey]
+  // the alias keys of credentials, read from the datastore
+  def findAliasesOf(credentials: Seq[String])(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]]
+  // deletes the alias keys of credentials, what a deleted credential takes with it
+  def deleteAliasesOf(credentials: Seq[String])(using ec: ExecutionContext, env: Env): Future[Unit]
   def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Long]
   def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(using
       ec: ExecutionContext,
@@ -2207,9 +2283,8 @@ object ApiKeyHelper {
       // route it was validated for
       case Some((validatedFor, either)) if validatedFor == service => either
       case _                                                       => {
-        env.datastores.apiKeyDataStore.findAuthorizeKeyForFromCache(apikeyTuple.clientId, service) match {
-          case None         => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
-          case Some(apikey) =>
+        // the checks of the tuple against the key it names, or against the credential an alias key shares
+        def check(apikey: ApiKey): Either[(Option[ApiKey], Option[String]), ApiKey] =
             apikeyTuple match {
               case ApikeyTuple(_, None, None, _, None) if apikey.allowClientIdOnly && apikey.enabled                => apikey.right
               case ApikeyTuple(_, None, None, _, Some(otoBearer)) if apikey.allowClientIdOnly && apikey.enabled && apikey.checkBearer(otoBearer) => apikey.right
@@ -2361,6 +2436,28 @@ object ApiKeyHelper {
               }
               case _                                                                                                => (apikey.some, s"unmatched ApikeyTuple(${apikeyTuple.redactedJson.stringify})".some).left
             }
+        env.proxyState.apikey(apikeyTuple.clientId) match {
+          case None                                                                                     =>
+            (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
+          case Some(apikey) if env.datastores.apiKeyDataStore.isAuthorizedFromCache(apikey, service) =>
+            apikey.apiRef match {
+              // an alias key is called through the credential it shares, it has no secret of its own
+              case Some(ref) if ref.credential.isDefined =>
+                (apikey.some, s"apikey '${apikey.clientId}' is an alias, call with the credential it shares".some).left
+              case _                                     => check(apikey)
+            }
+          // the only place where the credential of an alias key is looked for: a key found, but not authorized on the
+          // api of the route
+          case Some(credential)                                                                         =>
+            env.datastores.apiKeyDataStore.findAliasForFromCache(credential, service) match {
+              case None        => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
+              case Some(alias) =>
+                check(credential.asCredentialOf(alias)) match {
+                  case Right(_)                   => alias.right
+                  case Left((Some(_), message)) => (alias.some, message).left
+                  case left                       => left
+                }
+            }
         }
       }
     }
@@ -2463,7 +2560,7 @@ object ApiKeyHelper {
             if (restricted) {
               errResult.map(v => Left(v))
             } else {
-              env.datastores.apiKeyDataStore.keyRotation(apikey).map { rotationInfos =>
+              env.datastores.apiKeyDataStore.keyRotation(apikey.secretHolder).map { rotationInfos =>
                 rotationInfos.foreach { i =>
                   attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                 }

@@ -1959,7 +1959,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Subscribe to a plan of an api",
-      "description": "Saves the subscription of the body, in the `pending` state, as a draft subscription with `version=Draft`. The api of the path has to be enabled, neither deprecated nor removed, and the plan of the path published. The subscription is then checked against its own `api_ref` and `plan_ref`: the api has to be in the `staging` or `published` state, the plan in the `staging` or `published` state, and the `subscription_kind` has to be the access mode of the plan. For an `apikey` or an `oauth2-local` plan, an api key is minted from the plan and referenced in the `token_refs` of the subscription. Whatever the body says, the subscription is saved `pending` and its api key created disabled: `confirm` enables both. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "description": "Saves the subscription of the body, in the `pending` state, as a draft subscription with `version=Draft`. The api of the path has to be enabled, neither deprecated nor removed, and the plan of the path published. The `api_ref` and the `plan_ref` of the subscription have to be the api and the plan of the path: the rights are the ones on that api, and a body naming another api or another plan is refused. The subscription is then checked: the api has to be in the `staging` or `published` state, and the `subscription_kind` has to be the access mode of the plan. For an `apikey` or an `oauth2-local` plan, an api key is minted from the plan and referenced in the `token_refs` of the subscription. Whatever the body says, the subscription is saved `pending` and its api key created disabled: `confirm` enables both. The admin behind the credentials has to be able to write the api. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.subscribe",
       "parameters": [
         {
@@ -2021,7 +2021,7 @@
           }
         },
         "400": {
-          "description": "The credentials are missing, the body is not valid json or not a subscription (`wrong subscription format`), the api or the plan cannot be subscribed to (`api is disabled`, `plan not found`, `plan is not published`, `wrong status api`, `wrong status plan`, ...), or the subscription could not be saved",
+          "description": "The credentials are missing, the body is not valid json or not a subscription (`wrong subscription format`), the api or the plan cannot be subscribed to (`api is disabled`, `plan not found`, `plan is not published`, `wrong status api`, `wrong status plan`, ...), the subscription names another api or another plan than the ones of the path (`the api of the subscription is not the api of the path`, `the plan of the subscription is not the plan of the path`), or the subscription could not be saved",
           "content": {
             "application/json": {
               "schema": {
@@ -2090,7 +2090,7 @@
         "apis.otoroshi.io"
       ],
       "summary": "Confirm a subscription to an api",
-      "description": "Sets the state of the subscription to `enabled` (of the draft subscription with `version=Draft`). The api keys of a live subscription are updated from its plan and enabled with it. The api has to be enabled, neither deprecated nor removed, and the plan of the subscription published. The admin behind the credentials has to be able to write the api. An audit event is sent.",
+      "description": "Sets the state of the subscription to `enabled` (of the draft subscription with `version=Draft`). The api keys of a live subscription are updated from its plan and enabled with it. The api has to be enabled, neither deprecated nor removed, the subscription one of that api (its `api_ref`), and the plan of the subscription published. The admin behind the credentials has to be able to write the api. An audit event is sent.",
       "operationId": "otoroshi.next.controllers.adminapi.ApisController.confirmSubscription",
       "parameters": [
         {
@@ -2178,7 +2178,7 @@
           }
         },
         "404": {
-          "description": "No entity has this id, no api (no draft of an api with `version=Draft`) has it (`api not found`), or no subscription has the id of the path (`subscription not found`)",
+          "description": "No entity has this id, no api (no draft of an api with `version=Draft`) has it (`api not found`), or no subscription of the api has the id of the path (`subscription not found`): the subscription of another api is not found either",
           "content": {
             "application/json": {
               "schema": {

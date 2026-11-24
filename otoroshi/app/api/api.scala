@@ -253,9 +253,25 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     case _                                  => false
   }
 
-  def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(using
+  // grantsMoreThan when the entity is created: what the proxy state does not have yet can be left to
+  // grantsMoreThanStored
+  def grantsMoreThanAtCreation(json: JsValue, user: BackOfficeUser)(using env: Env): Boolean = grantsMoreThan(json, user)
+
+  // what grantsMoreThan cannot tell from the proxy state, which is late on the datastore: read from the datastore,
+  // when an entity is created
+  def grantsMoreThanStored(json: JsValue, user: BackOfficeUser)(using ec: ExecutionContext, env: Env): Future[Boolean] =
+    false.vfuture
+
+  def validateToJson(
+      json: JsValue,
+      singularName: String,
+      f: => Either[String, Option[BackOfficeUser]],
+      creation: Boolean = false
+  )(using
       env: Env
   ): JsResult[JsValue] = {
+    def grantsMore(user: BackOfficeUser): Boolean =
+      if (creation) grantsMoreThanAtCreation(json, user) else grantsMoreThan(json, user)
     def readEntity(): JsResult[JsValue] = format.reads(json) match {
       case e: JsError             => e
       case JsSuccess(value, path) => JsSuccess(value.json, path)
@@ -263,7 +279,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     f match {
       case Left(err)         => JsError(err)
       case Right(None)       => readEntity()
-      case Right(Some(user)) if grantsMoreThan(json, user) => JsError("you can't grant rights you don't have yourself")
+      case Right(Some(user)) if grantsMore(user) => JsError("you can't grant rights you don't have yourself")
       case Right(Some(user)) => {
         val envValidators: Seq[JsonValidator]  =
           env.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ env.adminEntityValidators
@@ -675,6 +691,33 @@ class ApiSubscriptionsResourceAccess(env: Env)
     ) {
   override def beforeDeleteMany: Option[(Seq[ApiSubscription], Env) => Future[Unit]] =
     Some(ApiSubscription.beforeDeleteMany)
+
+  // a subscription sharing the api key of another one (an alias key) gives the credential of that key access to the api
+  // of the subscription: only the users who can write that key write such a subscription
+  override def grantsMoreThan(json: JsValue, user: BackOfficeUser)(using env: Env): Boolean =
+    ApiSubscription.format.reads(json) match {
+      case JsSuccess(subscription, _) => ApiSubscription.sharesMoreThan(subscription, user)
+      case _                          => false
+    }
+
+  // a credential written a moment ago is not in the proxy state yet: its rights are checked on the datastore
+  // (grantsMoreThanStored), a subscription sharing it is not refused before
+  override def grantsMoreThanAtCreation(json: JsValue, user: BackOfficeUser)(using env: Env): Boolean =
+    ApiSubscription.format.reads(json) match {
+      case JsSuccess(subscription, _) => ApiSubscription.sharesMoreThan(subscription, user, creating = true)
+      case _                          => false
+    }
+
+  // the credential of its owner a subscription shares without naming it ({"shared": true}) is the one of the datastore,
+  // the one the validation takes (ApiSubscription.withOwnerCredential): the proxy state may not have it yet
+  override def grantsMoreThanStored(json: JsValue, user: BackOfficeUser)(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] =
+    ApiSubscription.format.reads(json) match {
+      case JsSuccess(subscription, _) => ApiSubscription.sharesStoredCredentialMoreThan(subscription, user)
+      case _                          => false.vfuture
+    }
 }
 
 // the access of the apis: an api deleted without any validation by deleteMany loses what was minted for it too
@@ -712,11 +755,45 @@ class ApiKeysResourceAccess(env: Env)
       stateAll = () => env.proxyState.allApikeys(),
       stateOne = id => env.proxyState.apikey(id),
       stateUpdate = seq => env.proxyState.updateApikeys(seq),
-      writeValidator = (entity, _, oldEntity, _, _, _, _) =>
-        ApiKey.keepingStoredSecrets(entity, oldEntity.map(_._1)).rightf,
-      writeChecker = (entity, _, oldEntity, _, _, _, _) =>
-        ApiKey.keepingStoredSecrets(entity, oldEntity.map(_._1)).rightf
+      writeValidator = (entity, _, oldEntity, _, _, _, env) =>
+        ApiKeysResourceAccess.validated(entity, oldEntity.map(_._1))(using env),
+      writeChecker = (entity, _, oldEntity, _, _, _, env) =>
+        ApiKeysResourceAccess.validated(entity, oldEntity.map(_._1))(using env)
     ) {
+
+  // the generic api deletes the apikeys straight from the datastore: the aliases of the deleted keys go with them, as
+  // with the apikeys datastore (KvApiKeyDataStore.deleteByIds)
+  override def deleteOne(version: String, id: String, singularName: String)(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Unit]] =
+    super.deleteOne(version, id, singularName).flatMap {
+      case Right(_) => env.datastores.apiKeyDataStore.deleteAliasesOf(Seq(id)).map(_ => Right(()))
+      case left     => left.vfuture
+    }
+
+  override def deleteMany(version: String, ids: Seq[String])(using ec: ExecutionContext, env: Env): Future[Unit] =
+    super.deleteMany(version, ids).flatMap(_ => env.datastores.apiKeyDataStore.deleteAliasesOf(ids))
+
+  // the deleted keys are not told here: they are the ones that are gone afterwards, and their aliases go with them.
+  // An alias whose credential was not there before (an alias restored before its credential) is not one of them: it
+  // stays, whoever deletes the keys it can write
+  override def deleteAll(version: String, singularName: String, canWrite: JsValue => Boolean)(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Unit]] =
+    env.datastores.apiKeyDataStore.findAll(force = true).flatMap { before =>
+      super.deleteAll(version, singularName, canWrite).flatMap {
+        case Right(_) =>
+          env.datastores.apiKeyDataStore.findAll(force = true).flatMap { after =>
+            val remaining = after.map(_.clientId).toSet
+            val deleted   = before.map(_.clientId).filterNot(remaining.contains)
+            env.datastores.apiKeyDataStore.deleteAliasesOf(deleted).map(_ => Right(()))
+          }
+        case left     => left.vfuture
+      }
+    }
+
   override def readableJson(json: JsValue, ctx: ApiActionContextCapable)(using env: Env): JsValue =
     ApiKey._fmt.reads(json) match {
       case JsSuccess(apikey, _) if ctx.canUserReadApikeySecret(apikey) => json
@@ -726,6 +803,13 @@ class ApiKeysResourceAccess(env: Env)
 }
 
 object ApiKeysResourceAccess {
+  // what the generic api writes: the stored secrets of a key written back masked, and nothing an alias key refuses
+  def validated(entity: ApiKey, stored: Option[ApiKey])(using env: Env): Future[Either[JsValue, ApiKey]] =
+    ApiKey.aliasWriteError(entity, stored) match {
+      case Some(error) => Json.obj("error" -> error, "http_status_code" -> 400).leftf
+      case None        => ApiKey.keepingStoredSecrets(entity, stored).rightf
+    }
+
   // the bearers of an apikey are part of its json in the generic api
   val format: Format[ApiKey] = new Format[ApiKey] {
     override def reads(json: JsValue): JsResult[ApiKey] = ApiKey._fmt.reads(json)
@@ -2170,7 +2254,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                         .byteString
                         .future
                     case None    => {
-                      resource.access.validateToJson(entity, resource.singularName, ctx.backOfficeUser) match {
+                      resource.access.validateToJson(entity, resource.singularName, ctx.backOfficeUser, creation = true) match {
                         case JsError(errs)   =>
                           Json
                             .obj(
@@ -2185,8 +2269,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                             .byteString
                             .vfuture
                         case JsSuccess(_, _) =>
-                          resource.access
-                            .create(version, resource.singularName, None, entity, WriteAction.Create, None)
+                          createGranted(ctx, resource, version, None, entity)
                             .map {
                               case Left(error)          =>
                                 refusedBulkLine(error, entity)
@@ -2477,6 +2560,27 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     }
   }
 
+  // creates an entity, unless it grants its author more than it has according to the datastore
+  // (ResourceAccessApi.grantsMoreThanStored), refused like validateToJson refuses what grantsMoreThan tells
+  private def createGranted(
+      ctx: ApiActionContext[?],
+      resource: Resource,
+      version: String,
+      id: Option[String],
+      body: JsValue
+  ): Future[Either[JsValue, JsValue]] = {
+    def create() = resource.access.create(version, resource.singularName, id, body, WriteAction.Create, None)
+    ctx.backOfficeUser match {
+      case Right(Some(user)) if !user.rights.superAdmin =>
+        resource.access.grantsMoreThanStored(body, user).flatMap {
+          case true  =>
+            Json.obj("error" -> "you can't grant rights you don't have yourself", "http_status_code" -> 400).leftf
+          case false => create()
+        }
+      case _                                            => create()
+    }
+  }
+
   private def getStatus(err: JsValue): Results.Status = {
     err.select("http_status_code").asOptInt match {
       case None       => Results.InternalServerError
@@ -2530,7 +2634,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                   resource.some
                 )
               case None            => {
-                resource.access.validateToJson(body, resource.singularName, ctx.backOfficeUser) match {
+                resource.access.validateToJson(body, resource.singularName, ctx.backOfficeUser, creation = true) match {
                   case JsError(errs)   =>
                     result(
                       Results.BadRequest,
@@ -2542,8 +2646,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
                       resource.some
                     )
                   case JsSuccess(_, _) =>
-                    resource.access
-                      .create(version, resource.singularName, None, body, WriteAction.Create, None)
+                    createGranted(ctx, resource, version, None, body)
                       .flatMap {
                         case Left(err)  => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                         case Right(res) =>
@@ -2681,8 +2784,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
               case JsSuccess(body, _)                              => {
                 resource.access.findOne(version, id).flatMap {
                   case None      =>
-                    resource.access
-                      .create(version, resource.singularName, Some(id), body, WriteAction.Create, None)
+                    createGranted(ctx, resource, version, Some(id), body)
                       .flatMap {
                         case Left(err)  => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                         case Right(res) =>

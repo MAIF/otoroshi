@@ -337,6 +337,36 @@ class ApiManagementSpec extends OtoroshiSpec {
       val subs = ok(call("POST", s"$apis/api-mgmt-a/plans/plan-x/subscriptions/preview-update", Some(Json.obj())))
       subs.as[Seq[JsObject]].map(s => (s \ "id").as[String]) mustBe Seq("sub-a")
     }
+    "not subscribe to another api, or to another plan, than the ones of the path" in {
+      val template                                   = ok(call("GET", "/apis/apis.otoroshi.io/v1/apisubscriptions/_template")).as[JsObject] - "status"
+      def subscribing(api: String, planId: String) = call(
+        "POST",
+        s"$apis/api-mgmt-a/plans/plan-x/subscribe",
+        Some(
+          template ++ Json.obj(
+            "id"                -> "sub-elsewhere",
+            "name"              -> "sub-elsewhere",
+            "api_ref"           -> api,
+            "plan_ref"          -> planId,
+            "subscription_kind" -> "apikey"
+          )
+        )
+      )
+      // the rights are the ones on the api of the path: both apis have a plan with the same id
+      val otherApi                                   = subscribing("api-mgmt-b", "plan-x")
+      withClue(otherApi.body[String])(otherApi.status mustBe 400)
+      (otherApi.json \ "error").as[String] mustBe "the api of the subscription is not the api of the path"
+      val otherPlan                                  = subscribing("api-mgmt-a", "another-plan")
+      withClue(otherPlan.body[String])(otherPlan.status mustBe 400)
+      (otherPlan.json \ "error").as[String] mustBe "the plan of the subscription is not the plan of the path"
+      call("GET", s"$subscriptions/sub-elsewhere").status mustBe 404
+    }
+    "not confirm the subscription of another api, whose plan has the same id" in {
+      val key = keyOf("sub-b")
+      ok(call("POST", s"$apis/api-mgmt-a/subscriptions/sub-b/confirm", Some(Json.obj())), 404)
+      (ok(call("GET", s"/apis/apis.otoroshi.io/v1/apisubscriptions/sub-b")) \ "status").as[String] mustBe "pending"
+      (ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$key")) \ "enabled").as[Boolean] mustBe false
+    }
     "enable the api key of a subscription it confirms" in {
       val key = keyOf("sub-a")
       (ok(call("GET", s"/apis/apim.otoroshi.io/v1/apikeys/$key")) \ "enabled").as[Boolean] mustBe false

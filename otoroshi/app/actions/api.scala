@@ -27,11 +27,73 @@ object ApiActionContext {
 
   // an apikey carries the admin api rights of its holder in its own metadata, so writing one is also
   // granting rights: refuse to write an apikey that would grant more than the writer already has. an apikey
-  // authorized on the admin api without rights metadata has no restriction at all: only super admins write those
-  def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
+  // authorized on the admin api without rights metadata has no restriction at all: only super admins write those.
+  // An alias key (ApiRef.credential) gives the access of the credential it shares: only the users who can write that
+  // credential write it. A key under the client id of a credential that is gone while aliases still name it would call
+  // through them with a secret of its own, and so would a credential and its alias written again under the client ids
+  // a subscription still names once its credential is deleted: only a super admin writes them (an import, a
+  // restoration, whatever the order of the keys)
+  def canUserGrantApikeyRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    canUserGrantOwnRights(apikey, user) && !takesOverCredential(apikey, user) && !mintsCredential(apikey, user) &&
+    (apikey.apiRef.flatMap(_.credential) match {
+      case None             => true
+      case Some(credential) => canUserWriteCredential(credential, user)
+    })
+
+  // read from the proxy state, like the aliases themselves: the client id has no key, and aliases name it as their
+  // credential, or a subscription sharing a credential names it in its token_refs. A deleted credential takes its
+  // aliases and leaves its subscriptions, which still name both: the alias written again under the id such a
+  // subscription lists would be the one it minted (ApiSubscription.mintedAlias), and a credential written again under
+  // the id it shares would keep the ones who write the subscription from updating and deleting it
+  private def takesOverCredential(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    if (env.bypassUserRightsCheck || user.rights.superAdmin) false
+    else
+      env.proxyState.apikey(apikey.clientId).isEmpty &&
+      (env.proxyState.hasApikeyAliases(apikey.clientId) || env.proxyState.namedBySharingSubscription(apikey.clientId))
+
+  // a minted credential (SharedCredential.minted) is the one the subscriptions of its owner share without naming it:
+  // written by hand, it would be shared by the subscriptions of a consumer that never asked for it. Only a super admin
+  // writes one the proxy state does not have as such yet (an import, a restoration)
+  private def mintsCredential(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    if (env.bypassUserRightsCheck || user.rights.superAdmin || !apikey.sharedCredential.exists(_.minted)) false
+    else !env.proxyState.apikey(apikey.clientId).exists(_.sharedCredential == apikey.sharedCredential)
+
+  // the rights an apikey grants by itself
+  private def canUserGrantOwnRights(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
     // its rights are the ones of its owner, whatever the apikey says
     if (PersonalAdminApikey.isPersonal(apikey)) PersonalAdminApikey.canWrite(user)
     else canUserGrantRightsMetadata(apikey, user)
+  }
+
+  // whether a user can write the apikey of a client id, read from the proxy state: what sharing it with an alias key
+  // requires. The credential is checked by itself, without the credential it would share: a credential is never an
+  // alias, and two forged keys naming each other do not loop. An apikey the proxy state does not have yet is only
+  // written by a super admin
+  def canUserWriteCredential(clientId: String, user: BackOfficeUser)(using env: Env): Boolean =
+    env.bypassUserRightsCheck || user.rights.superAdmin || env.proxyState
+      .apikey(clientId)
+      .exists(credential => canUserWriteCredential(credential, user))
+
+  // the same, of a credential that was read already (from the datastore)
+  def canUserWriteCredential(credential: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    env.bypassUserRightsCheck || user.rights.superAdmin ||
+    (canUserWriteApikeyItself(credential, user) && canUserGrantOwnRights(credential, user))
+
+  // what canUserWrite checks of the location of an apikey, without a request: its own tenant, its teams and its kind
+  private def canUserWriteApikeyItself(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    canUserWriteApikeysAt(apikey.location, user)
+
+  // whether a user can write an api key located somewhere, whatever that key grants. What the credential a subscription
+  // shares without naming it requires ({"shared": true}), whether it exists or not: it is the one of the location of
+  // the subscription (ApiSubscription.ownerCredentials), created there when there is none
+  def canUserWriteApikeysAt(location: EntityLocation, user: BackOfficeUser)(using env: Env): Boolean = {
+    val tenant = location.tenant
+    val teams  = location.teams
+    env.bypassUserRightsCheck || user.rights.superAdmin || (
+      user.rights.canWriteTenant(tenant) &&
+      user.rights.canWriteTeams(tenant, teams) &&
+      user.rights.canWriteKinds(tenant, teams, Seq(apikeysKind))
+    )
   }
 
   private def canUserGrantRightsMetadata(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {

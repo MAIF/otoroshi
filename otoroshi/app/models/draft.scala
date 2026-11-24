@@ -103,6 +103,9 @@ object Draft {
 
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
+    // a refusal of the generic api: the error, and the status it answers with, like ApiSubscription.writeValidator
+    def refused(error: String): JsValue = Json.obj("error" -> error, "http_status_code" -> 400)
+
     entity.id
       .split("_")
       .headOption
@@ -111,10 +114,10 @@ object Draft {
           ApiSubscription.format.reads(entity.content) match {
             case JsSuccess(value, _) =>
               validate(value).map {
-                case Left(r)  => JsString(r).left
+                case Left(r)  => refused(r).left
                 case Right(_) => entity.right
               }
-            case JsError(errors)     => JsString(errors.toString()).leftf
+            case JsError(errors)     => refused(errors.toString()).leftf
           }
         case _                  => entity.rightf
       }

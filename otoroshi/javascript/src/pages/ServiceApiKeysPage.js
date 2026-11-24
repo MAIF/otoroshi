@@ -4,7 +4,7 @@ import { nextClient } from '../services/BackOfficeServices';
 import { Table, SimpleBooleanInput } from '../components/inputs';
 //[REMOVE SERVICEDESC] import { ServiceSidebar } from '../components/ServiceSidebar';
 import { Restrictions } from '../components/Restrictions';
-import { ApikeyApiRefField } from '../components/ApikeyFlowFields';
+import { ApikeyApiRefField, ApikeySharedCredentialInfo } from '../components/ApikeyFlowFields';
 import { PluginsChainDrawer } from '../components/PluginsChainDrawer';
 
 import DesignerSidebar from './RouteDesigner/Sidebar';
@@ -1117,6 +1117,9 @@ const ApiKeysConstants = {
     apiRef: {
       type: ApikeyApiRefField,
     },
+    sharedCredentialInfo: {
+      type: ApikeySharedCredentialInfo,
+    },
     'plugins.overrides': {
       type: 'bool',
       props: {
@@ -1298,6 +1301,8 @@ const ApiKeysConstants = {
   formFlow: (apikey) => [
     //'>>>Location',
     '_loc',
+    // read only, on a shared credential and on its alias keys
+    ...(apikey && (apikey.sharedCredential || (apikey.apiRef || {}).credential) ? ['sharedCredentialInfo', '---'] : []),
     'clientId',
     'clientSecret',
     'bearer',

@@ -113,6 +113,8 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
           ApiKey.fromJsonSafe(apiKeyJson) match {
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
             case JsSuccess(apiKey, _) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
+            case JsSuccess(apiKey, _) if ApiKey.aliasWriteError(apiKey, None).isDefined =>
+              BadRequest(Json.obj("error" -> ApiKey.aliasWriteError(apiKey, None).getOrElse(""))).asFuture
             case JsSuccess(apiKey, _)                              =>
               env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
                 case Some(_) => BadRequest(Json.obj("error" -> "Apikey already exists")).asFuture
@@ -164,6 +166,8 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                   case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                     BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                   case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
+                  case JsSuccess(newApiKey, _) if ApiKey.aliasWriteError(newApiKey, Some(apiKey)).isDefined =>
+                    BadRequest(Json.obj("error" -> ApiKey.aliasWriteError(newApiKey, Some(apiKey)).getOrElse(""))).asFuture
                   case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                     env.datastores.apiKeyDataStore.findById(clientId).flatMap {
                       case None                                        => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
@@ -214,6 +218,8 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                 case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                   BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                 case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
+                case JsSuccess(newApiKey, _) if ApiKey.aliasWriteError(newApiKey, Some(apiKey)).isDefined =>
+                  BadRequest(Json.obj("error" -> ApiKey.aliasWriteError(newApiKey, Some(apiKey)).getOrElse(""))).asFuture
                 case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                   sendAuditAndAlert(
                     "UPDATE_APIKEY",
@@ -535,6 +541,8 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
           ApiKey.fromJsonSafe(apiKeyJson) match {
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
             case JsSuccess(apiKey, _) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
+            case JsSuccess(apiKey, _) if ApiKey.aliasWriteError(apiKey, None).isDefined =>
+              BadRequest(Json.obj("error" -> ApiKey.aliasWriteError(apiKey, None).getOrElse(""))).asFuture
             case JsSuccess(apiKey, _)                              =>
               env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
                 case Some(_) => BadRequest(Json.obj("error" -> "Apikey already exists")).asFuture
@@ -584,6 +592,8 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                 case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                   BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                 case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
+                case JsSuccess(newApiKey, _) if ApiKey.aliasWriteError(newApiKey, Some(apiKey)).isDefined =>
+                  BadRequest(Json.obj("error" -> ApiKey.aliasWriteError(newApiKey, Some(apiKey)).getOrElse(""))).asFuture
                 case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                   env.datastores.apiKeyDataStore.findById(clientId).flatMap {
                     case None                                        => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
@@ -636,6 +646,8 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                 case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                   BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                 case JsSuccess(newApiKey, _) if !ctx.canUserWrite(newApiKey)   => ctx.fforbidden
+                case JsSuccess(newApiKey, _) if ApiKey.aliasWriteError(newApiKey, Some(apiKey)).isDefined =>
+                  BadRequest(Json.obj("error" -> ApiKey.aliasWriteError(newApiKey, Some(apiKey)).getOrElse(""))).asFuture
                 case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                   sendAuditAndAlert(
                     "UPDATE_APIKEY",
@@ -724,6 +736,17 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
     if (ctx.canUserReadApikeySecret(entity)) writeEntity(entity) else ApiKey.withoutSecrets(writeEntity(entity))
 
   // an apikey written back with the masked credentials it was read with keeps the ones it has
+  // nothing an alias key refuses (ApiKey.aliasWriteError), against the key as it is stored
+  private def withoutAliasError(entity: ApiKey)(
+      f: => Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]]
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] =
+    env.datastores.apiKeyDataStore.findById(entity.clientId).flatMap { stored =>
+      ApiKey.aliasWriteError(entity, stored) match {
+        case Some(error) => Left(JsonApiError(400, Json.obj("error" -> error))).vfuture
+        case None        => f
+      }
+    }
+
   private def withStoredSecrets(entity: ApiKey)(using env: Env, ec: ExecutionContext): Future[ApiKey] =
     if (!ApiKey.carriesMaskedSecret(entity)) entity.vfuture
     else env.datastores.apiKeyDataStore.findById(entity.clientId).map(stored => ApiKey.keepingStoredSecrets(entity, stored))
@@ -765,7 +788,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
       _entity: ApiKey,
       req: RequestHeader
   )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] =
-    withStoredSecrets(_entity).flatMap { entity => env.datastores.apiKeyDataStore.set(entity).map {
+    withoutAliasError(_entity) { withStoredSecrets(_entity).flatMap { entity => env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
         Right(
           EntityAndContext(
@@ -786,13 +809,13 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
         )
       }
     }
-  }
+  } }
 
   override def updateEntityOps(
       _entity: ApiKey,
       req: RequestHeader
   )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] =
-    withStoredSecrets(_entity).flatMap { entity => env.datastores.apiKeyDataStore.set(entity).map {
+    withoutAliasError(_entity) { withStoredSecrets(_entity).flatMap { entity => env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
         Right(
           EntityAndContext(
@@ -813,7 +836,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
         )
       }
     }
-  }
+  } }
 
   override def deleteEntityOps(
       id: String,

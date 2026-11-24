@@ -246,6 +246,18 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     FastFuture.successful(true)
   }
 
+  // atomic, unlike the default of RedisLike (exists, then set): two writers at once, one of them only sets the key
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
+    val absent = store.putIfAbsent(key, value) == null
+    if (absent && ttl.isDefined) {
+      pexpire(key, ttl.get)
+    }
+    FastFuture.successful(absent)
+  }
+
   override def del(keys: String*): Future[Long] = {
     val value = keys
       .map { k =>
@@ -565,6 +577,18 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
       pexpire(key, pxMilliseconds.get)
     }
     true.future
+  }
+
+  // atomic, unlike the default of RedisLike (exists, then set): two writers at once, one of them only sets the key
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
+    val absent = memory.putIfAbsent(key, value).isEmpty
+    if (absent && ttl.isDefined) {
+      pexpire(key, ttl.get)
+    }
+    absent.future
   }
 
   override def del(keys: String*): Future[Long] = {

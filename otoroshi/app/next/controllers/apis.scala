@@ -22,7 +22,7 @@ import otoroshi.api.WriteAction
 import otoroshi.api.WriteAction.Create
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
-import otoroshi.models.{Draft, EntityKind}
+import otoroshi.models.{ApiKey, Draft, EntityKind, FakeEntityLocationSupport}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
@@ -339,6 +339,16 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
       .asOpt(using ApiSubscription.format)
       .toRight(BadRequest(Json.obj("error" -> "wrong subscription format")))
 
+  // the subscription of the body is one to the plan of the path, in the api of the path: the rights are the ones on
+  // that api, and that plan is the one that was validated. Naming another api or another plan in the body would
+  // subscribe to it with them
+  private def validateTarget(subscription: ApiSubscription, apiId: String, planId: String): Either[Result, Unit] =
+    if (subscription.apiRef != apiId)
+      Left(BadRequest(Json.obj("error" -> "the api of the subscription is not the api of the path")))
+    else if (subscription.planRef != planId)
+      Left(BadRequest(Json.obj("error" -> "the plan of the subscription is not the plan of the path")))
+    else Right(())
+
   def closePlan(apiId: String, planId: String) = {
     ApiAction.async(parse.json) { ctx =>
       ctx.canWriteService(apiId) {
@@ -556,7 +566,37 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
               validApi     <- validateApi(api)
               _validPlan   <- validatePlan(validApi, planId)
               subscription <- validateBody(ctx)
+              _            <- validateTarget(subscription, apiId, planId)
             } yield subscription
+
+            // the credential a subscription shares (an alias key) is shared by the ones who can write it: the one it
+            // names, or the one of its owner when it names none ({"shared": true})
+            def canShare(subscription: ApiSubscription): Future[Boolean] = {
+              val named = ApiSubscription
+                .sharedCredentials(subscription)
+                .mapAsync(clientId => env.datastores.apiKeyDataStore.findById(clientId))
+                .map(_.flatten)
+              val owned =
+                if (!ApiSubscription.sharesOwnerCredential(subscription)) Seq.empty[ApiKey].vfuture
+                else
+                  env.datastores.apiKeyDataStore
+                    .findAll(force = true)
+                    .map(apikeys => ApiSubscription.ownerCredentials(apikeys, subscription))
+              // the credential it does not name is located where the subscription is, created there when there is
+              // none. The one a subscription created at once writes after this check is not read here: the author has
+              // to be allowed to write an api key there, whether the credential exists or not
+              val there =
+                !ApiSubscription.sharesOwnerCredential(subscription) ||
+                ctx.canUserWrite(FakeEntityLocationSupport(subscription.location, Seq(ApiActionContext.apikeysKind)))
+              for {
+                namedKeys <- named
+                ownedKeys <- owned
+                // read from the datastore as they are: a credential that was just minted is not refused because the
+                // proxy state does not have it as such yet (ApiActionContext.canUserGrantApikeyRights)
+              } yield there && (namedKeys ++ ownedKeys).forall(apikey =>
+                ctx.canUserWrite(apikey.copy(sharedCredential = apikey.sharedCredential.map(_.copy(minted = false))))
+              )
+            }
 
             result match {
               case Left(errorResult)   => errorResult.vfuture
@@ -564,16 +604,21 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                 // pending before the validation, which mints the api key from the status: whatever the body says,
                 // the key is created disabled, and confirm enables it
                 val pending = subscription.copy(status = ApiSubscriptionPending)
-                ApiSubscription
-                  .validate(pending.apiRef, pending, Create, isDraft = isDraft)
-                  .flatMap {
-                    case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
-                    case Right(sub)  =>
-                      saveSubscription(sub).map {
-                        case true  => Ok(Json.obj("done" -> true))
-                        case false => BadRequest(Json.obj("error" -> "something bad happened"))
+                canShare(pending).flatMap {
+                  case false =>
+                    Forbidden(Json.obj("error" -> "you cannot share an api key you cannot write")).vfuture
+                  case true  =>
+                    ApiSubscription
+                      .validate(pending.apiRef, pending, Create, isDraft = isDraft)
+                      .flatMap {
+                        case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
+                        case Right(sub)  =>
+                          saveSubscription(sub).map {
+                            case true  => Ok(Json.obj("done" -> true))
+                            case false => BadRequest(Json.obj("error" -> "something bad happened"))
+                          }
                       }
-                  }
+                }
             }
         }
       }
@@ -646,6 +691,10 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
               case Right(_)          =>
                 findSubscription().flatMap {
                   case None               =>
+                    NotFound(Json.obj("error" -> "subscription not found")).future
+                  // the rights are the ones on the api of the path: the subscription of another api is not one of its
+                  // own, even when both apis have a plan with the same id
+                  case Some(subscription) if subscription.apiRef != apiId =>
                     NotFound(Json.obj("error" -> "subscription not found")).future
                   case Some(subscription) =>
                     validatePlan(api, subscription.planRef) match {

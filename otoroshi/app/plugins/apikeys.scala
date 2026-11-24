@@ -608,8 +608,10 @@ class ClientCredentialFlow extends RequestTransformer {
               case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, kind) => {
                 val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
                 possibleApiKey.flatMap {
+                  // an alias key (ApiRef.credential) has no secret of its own to exchange for a token: it is called with
+                  // the credential it shares
                   case Some(apiKey)
-                      if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret
+                      if !apiKey.isAlias && (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret
                         .contains(clientSecret)) && useJwtToken => {
 
                     val keyPairId       = apiKey.metadata.get("jwt-sign-keypair").orElse(defaultKeyPair)
@@ -682,7 +684,7 @@ class ClientCredentialFlow extends RequestTransformer {
                     }
                   }
                   case Some(apiKey)
-                      if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret
+                      if !apiKey.isAlias && (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret
                         .contains(clientSecret)) && !useJwtToken => {
                     val randomToken = IdGenerator.token(64)
                     env.datastores.rawDataStore
@@ -1141,8 +1143,10 @@ class ClientCredentialService extends RequestSink {
       case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, bearerKind) => {
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
         possibleApiKey.flatMap {
+          // an alias key (ApiRef.credential) has no secret of its own to exchange for a token: it is called with the
+          // credential it shares
           case Some(apiKey)
-              if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(
+              if !apiKey.isAlias && (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(
                 clientSecret
               )) && bearerKind == "biscuit" => {
 
@@ -1252,7 +1256,7 @@ class ClientCredentialService extends RequestSink {
             }
           }
           case Some(apiKey)
-              if apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(clientSecret) => {
+              if !apiKey.isAlias && (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(clientSecret)) => {
             val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
             val maybeKeyPair: Option[KeyPair] =
               DynamicSSLEngineProvider.certificates.get(keyPairId).map(_.cryptoKeyPair)
@@ -1473,8 +1477,10 @@ class ApikeyAuthModule extends PreRouting {
 
     import otoroshi.models.SeqImplicits.*
 
+    // an alias key (ApiRef.credential) has no secret of its own: it is called with the credential it shares
     val validSecret            =
-      apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password))
+      !apikey.isAlias &&
+      (apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password)))
     val validEntities          = apikey.authorizedOnServiceOrGroups(service, groups)
     val routing                = ApiKeyRouteMatcher.format.reads(config).getOrElse(ApiKeyRouteMatcher())
     val matchOnRole: Boolean   = Option(routing.oneTagIn)

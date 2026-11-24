@@ -287,6 +287,11 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       env: Env
   ): Future[Option[ApiKey]] = {
     findById(clientId).flatMap {
+      // an alias key (ApiRef.credential) is only called through the credential it shares, which the extractors reading
+      // the datastore do not resolve: they find no key, whatever they check of it (its secret, a jwt signed with it,
+      // its client id alone)
+      case Some(apiKey) if apiKey.isAlias                                                                   =>
+        FastFuture.successful(None)
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) =>
         opt.vfuture
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))             => opt.vfuture
@@ -325,35 +330,92 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   override def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(using env: Env): Option[ApiKey] = {
     env.proxyState.apikey(clientId) match {
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) => opt
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))             => opt
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId))  => opt
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ApiIdentifier(serviceId))               => opt
-      case Some(apiKey)                                                                                     => {
-        env.proxyState.route(serviceId) match {
-          case None          =>
-            env.proxyState.routeComposition(serviceId) match {
-              case None            => None
-              case Some(routeComp) => {
-                val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
-                groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
-              }
-            }
-          case Some(service) => {
-            val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
-            service.apiRef match {
-              case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef.id) => apiKey.some
-              case _                                                           => {
-                val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
-                identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
-              }
+      case opt @ Some(apiKey) if isAuthorizedFromCache(apiKey, serviceId) => opt
+      case _                                                              => None
+    }
+  }
+
+  override def isAuthorizedFromCache(apiKey: ApiKey, serviceId: String)(using env: Env): Boolean = {
+    if (apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId))) true
+    else if (apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))) true
+    else if (apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId))) true
+    else if (apiKey.authorizedEntities.contains(ApiIdentifier(serviceId))) true
+    else {
+      env.proxyState.route(serviceId) match {
+        case None          =>
+          env.proxyState.routeComposition(serviceId) match {
+            case None            => false
+            case Some(routeComp) =>
+              val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
+              groups.exists(sgi => apiKey.authorizedEntities.contains(sgi))
+          }
+        case Some(service) => {
+          val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
+          service.apiRef match {
+            case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef.id) => true
+            case _                                                           => {
+              val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
+              identifiers.exists(sgi => apiKey.authorizedEntities.contains(sgi))
             }
           }
         }
       }
-      case _                                                                                                => None
     }
   }
+
+  // read only for a key found but not authorized on the route: a credential without alias costs one read of a map, a
+  // call never reads the datastore
+  override def findAliasForFromCache(credential: ApiKey, serviceId: String)(using env: Env): Option[ApiKey] = {
+    // only a shared credential calls through alias keys
+    if (credential.sharedCredential.isEmpty || !env.proxyState.hasApikeyAliases(credential.clientId)) None
+    else {
+      env.proxyState.route(serviceId).flatMap(_.apiRef) match {
+        case None         => None
+        case Some(apiRef) =>
+          env.proxyState
+            .apikeyAlias(credential.clientId, apiRef.id)
+            .flatMap(aliasId => env.proxyState.apikey(aliasId))
+            // the alias has to be authorized on the api itself, its apiRef alone authorizes it (authorizedOnApi), and
+            // minted by a subscription that still shares the credential: an alias written by hand serves nothing, and
+            // does not hide the one of the subscription
+            .find(alias =>
+              alias.apiRef.exists { ref =>
+                ref.api == apiRef.id && ref.credential.contains(credential.clientId) &&
+                env.proxyState
+                  .apiSubscription(ref.subscription)
+                  .exists(subscription => otoroshi.next.models.ApiSubscription.mintedAlias(subscription, alias))
+              } &&
+              alias.authorizedEntities.contains(ApiIdentifier(apiRef.id))
+            )
+      }
+    }
+  }
+
+  // an alias key never outlives its credential: anyone could create a key under the client id of a deleted credential,
+  // with a secret of its own, and call through its aliases. The aliases of the deleted keys go with them, read with one
+  // scan of the keys per call (uncached: an alias is a key like any other, written a moment ago). That scan is paid by
+  // every deletion of an api key, even one that has no alias, and once per key when they are deleted one by one
+  // (ApiSubscription.onOwnKeys): it is accepted, deleting api keys is an admin operation, never on the path of a call
+  override def delete(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean] = deleteByIds(Seq(id))
+
+  override def deleteByIds(ids: Seq[String])(using ec: ExecutionContext, env: Env): Future[Boolean] =
+    super.deleteByIds(ids).flatMap(deleted => deleteAliasesOf(ids).map(_ => deleted))
+
+  override def findAliasesOf(credentials: Seq[String])(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+    if (credentials.isEmpty) Seq.empty.vfuture
+    else {
+      val ids = credentials.toSet
+      findAll(force = true).map(_.filter(_.apiRef.exists(_.credential.exists(ids.contains))))
+    }
+
+  override def deleteAliasesOf(credentials: Seq[String])(using ec: ExecutionContext, env: Env): Future[Unit] =
+    findAliasesOf(credentials).flatMap {
+      case Seq()   => ().vfuture
+      case aliases =>
+        logger.info(s"deleting the alias keys ${aliases.map(_.clientId).mkString(", ")} of the deleted api keys")
+        // a credential is never an alias: nothing more to follow
+        super.deleteByIds(aliases.map(_.clientId)).map(_ => ())
+    }
 
   override def findAuthorizeKeyForBearer(bearer: String, serviceId: String)(using
       ec: ExecutionContext,

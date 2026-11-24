@@ -27,6 +27,38 @@ import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
+object NgProxyState {
+  // the alias keys of the shared credentials, by credential then by api. Two aliases of a credential on one api are
+  // refused when a subscription shares it, a key written by hand could still make one: all of them are kept, so that
+  // the one its subscription minted is found whatever the others (KvApiKeyDataStore.findAliasForFromCache)
+  def apikeyAliases(values: Seq[ApiKey]): Map[String, Map[String, Seq[String]]] = {
+    val aliases = scala.collection.mutable.HashMap.empty[String, Map[String, Seq[String]]]
+    values.foreach { apikey =>
+      apikey.apiRef match {
+        case Some(ref) if ref.credential.isDefined =>
+          val credential = ref.credential.get
+          val byApi      = aliases.getOrElse(credential, Map.empty)
+          aliases.update(credential, byApi + (ref.api -> (byApi.getOrElse(ref.api, Seq.empty) :+ apikey.clientId)))
+        case _                                     => ()
+      }
+    }
+    aliases.toMap
+  }
+
+  // the client ids the subscriptions sharing a credential name in their token_refs: their credential, and the api keys
+  // of their own (their alias). A deleted credential takes its aliases and leaves its subscriptions, which still name
+  // both: these ids are not free for anyone to write an api key under (ApiActionContext.canUserGrantApikeyRights)
+  def sharingSubscriptionsKeys(values: Seq[ApiSubscription]): Set[String] = {
+    val keys = Set.newBuilder[String]
+    values.foreach { subscription =>
+      if (ApiSubscription.sharedCredential(subscription).isDefined) {
+        subscription.tokenRefs.foreach(ref => ref.select("apikey").asOpt[String].foreach(keys += _))
+      }
+    }
+    keys.result()
+  }
+}
+
 class NgProxyState(env: Env) {
 
   private val logger = Logger("otoroshi-proxy-state")
@@ -75,6 +107,13 @@ class NgProxyState(env: Env) {
 
   private val routesByDomain    = new UnboundedTrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
+  // the alias keys of the shared credentials (ApiRef.credential): client id of the credential -> id of an api ->
+  // client ids of the alias keys naming that api. Built with the api keys, read when a key is called on an api it is not
+  // authorized on
+  private val apikeyAliasesRef  = new AtomicReference[Map[String, Map[String, Seq[String]]]](Map.empty)
+  // the client ids the subscriptions sharing a credential name in their token_refs
+  // (NgProxyState.sharingSubscriptionsKeys). Built with the subscriptions, read when an api key is written
+  private val sharingSubscriptionsKeysRef = new AtomicReference[Set[String]](Set.empty)
 
   def enableReportFor(id: String): Unit = {
     tryItEnabledReports.put(id, ())
@@ -134,6 +173,16 @@ class NgProxyState(env: Env) {
   def route(id: String): Option[NgRoute]                                      = routes.get(id)
   def routeComposition(id: String): Option[NgRouteComposition]                = ngroutecompositions.get(id)
   def apikey(id: String): Option[ApiKey]                                      = apikeys.get(id)
+  // whether a credential is shared by an alias key, and the client ids of its aliases on an api
+  def hasApikeyAliases(credential: String): Boolean                           = {
+    val aliases = apikeyAliasesRef.get()
+    aliases.nonEmpty && aliases.contains(credential)
+  }
+  def apikeyAlias(credential: String, api: String): Seq[String]               =
+    apikeyAliasesRef.get().get(credential).flatMap(_.get(api)).getOrElse(Seq.empty)
+  // whether a subscription sharing a credential names a client id in its token_refs: its credential, or its own key
+  def namedBySharingSubscription(clientId: String): Boolean                   =
+    sharingSubscriptionsKeysRef.get().contains(clientId)
   def jwtVerifier(id: String): Option[GlobalJwtVerifier]                      = jwtVerifiers.get(id)
   def certificate(id: String): Option[Cert]                                   = certificates.get(id)
   def authModule(id: String): Option[AuthModuleConfig]                        = authModules.get(id)
@@ -236,6 +285,7 @@ class NgProxyState(env: Env) {
     apiSubscriptions
       .addAll(values.map(v => (v.id, v)))
       .remAll(apiSubscriptions.keySet.toSeq.diff(values.map(_.id)))
+    sharingSubscriptionsKeysRef.set(NgProxyState.sharingSubscriptionsKeys(values))
   }
 
   def updateRouteTemplates(values: Seq[RouteTemplate]): Unit = {
@@ -300,6 +350,7 @@ class NgProxyState(env: Env) {
 
   def updateApikeys(values: Seq[ApiKey]): Unit = {
     apikeys.addAll(values.map(v => (v.clientId, v))).remAll(apikeys.keySet.toSeq.diff(values.map(_.clientId)))
+    apikeyAliasesRef.set(NgProxyState.apikeyAliases(values))
   }
 
   def updateJwtVerifiers(values: Seq[GlobalJwtVerifier]): Unit = {
