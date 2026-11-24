@@ -80,9 +80,15 @@ object ApiActionContext {
     (canUserWriteApikeyItself(credential, user) && canUserGrantOwnRights(credential, user))
 
   // what canUserWrite checks of the location of an apikey, without a request: its own tenant, its teams and its kind
-  private def canUserWriteApikeyItself(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean = {
-    val tenant = apikey.location.tenant
-    val teams  = apikey.location.teams
+  private def canUserWriteApikeyItself(apikey: ApiKey, user: BackOfficeUser)(using env: Env): Boolean =
+    canUserWriteApikeysAt(apikey.location, user)
+
+  // whether a user can write an api key located somewhere, whatever that key grants. What the credential a subscription
+  // shares without naming it requires ({"shared": true}), whether it exists or not: it is the one of the location of
+  // the subscription (ApiSubscription.ownerCredentials), created there when there is none
+  def canUserWriteApikeysAt(location: EntityLocation, user: BackOfficeUser)(using env: Env): Boolean = {
+    val tenant = location.tenant
+    val teams  = location.teams
     env.bypassUserRightsCheck || user.rights.superAdmin || (
       user.rights.canWriteTenant(tenant) &&
       user.rights.canWriteTeams(tenant, teams) &&

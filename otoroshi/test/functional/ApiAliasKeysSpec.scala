@@ -32,6 +32,9 @@ class ApiAliasKeysSpec extends PluginsTestSpecBase {
     "be minted once when a credential is shared on one api by subscriptions created at once" in {
       aliases.sameApiAtOnce()
     }
+    "only share the credential of an owner without naming it where their author writes api keys" in {
+      aliases.ownerCredentialWithoutApikeyRights()
+    }
     "keep the credential of a refused subscription that another one shares, or is about to" in {
       aliases.credentialSharedByAnother()
     }

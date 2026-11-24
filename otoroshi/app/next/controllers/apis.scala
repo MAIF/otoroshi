@@ -22,7 +22,7 @@ import otoroshi.api.WriteAction
 import otoroshi.api.WriteAction.Create
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
-import otoroshi.models.{ApiKey, Draft, EntityKind}
+import otoroshi.models.{ApiKey, Draft, EntityKind, FakeEntityLocationSupport}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
@@ -571,12 +571,18 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                   env.datastores.apiKeyDataStore
                     .findAll(force = true)
                     .map(apikeys => ApiSubscription.ownerCredentials(apikeys, subscription))
+              // the credential it does not name is located where the subscription is, created there when there is
+              // none. The one a subscription created at once writes after this check is not read here: the author has
+              // to be allowed to write an api key there, whether the credential exists or not
+              val there =
+                !ApiSubscription.sharesOwnerCredential(subscription) ||
+                ctx.canUserWrite(FakeEntityLocationSupport(subscription.location, Seq(ApiActionContext.apikeysKind)))
               for {
                 namedKeys <- named
                 ownedKeys <- owned
                 // read from the datastore as they are: a credential that was just minted is not refused because the
                 // proxy state does not have it as such yet (ApiActionContext.canUserGrantApikeyRights)
-              } yield (namedKeys ++ ownedKeys).forall(apikey =>
+              } yield there && (namedKeys ++ ownedKeys).forall(apikey =>
                 ctx.canUserWrite(apikey.copy(sharedCredential = apikey.sharedCredential.map(_.copy(minted = false))))
               )
             }

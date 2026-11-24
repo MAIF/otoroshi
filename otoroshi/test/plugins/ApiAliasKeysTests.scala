@@ -1219,6 +1219,54 @@ class ApiAliasKeysTests(parent: PluginsTestSpecBase) {
     } finally undeploy(apiA)
   }
 
+  // sharing the credential of its owner without naming it requires the rights to write an api key where the
+  // subscription is located, whether that credential exists or not: it is created there, and the one a subscription
+  // created at once writes there is not read when the rights are checked
+  def ownerCredentialWithoutApikeyRights(): Unit = {
+    val owner = newOwner()
+    val apiA  = apiWith(plan("plan_a"))
+    deploy(apiA)
+    try {
+      // a user who writes the subscriptions of its team, and nothing else there
+      val subscriber = scoped.copy(
+        randomId = "alias-subscriber@otoroshi.io",
+        name = "alias-subscriber@otoroshi.io",
+        email = "alias-subscriber@otoroshi.io",
+        rights = UserRights(
+          Seq(
+            UserRight(
+              TenantAccess(tenant.value),
+              Seq(TeamAccess(team.value)),
+              EntityKindsAccess(read = Seq.empty, write = Seq("apis.otoroshi.io/apisubscriptions"))
+            )
+          )
+        )
+      )
+      def credentialsOfOwner: Seq[ApiKey] =
+        env.datastores.apiKeyDataStore.findAll(force = true).futureValue.filter(_.sharedCredential.exists(_.owner == owner))
+
+      // it subscribes
+      val (plainSub, plainStatus) =
+        asUser(subscriber, "POST", subscriptionsPath, subscriptionBody(apiA, "plan_a", owner) ++ located)
+      withClue(plainSub)(plainStatus mustBe 201)
+      // but shares no credential of an owner, not even the one its subscription would create
+      refusedWith(
+        asUser(subscriber, "POST", subscriptionsPath, subscriptionBody(apiA, "plan_a", owner, Seq(ownerShared)) ++ located),
+        400,
+        "you can't grant rights you don't have yourself"
+      )
+      credentialsOfOwner mustBe empty
+      // the one who writes the api keys of the team does
+      val (sub, status)           =
+        asUser(scoped, "POST", subscriptionsPath, subscriptionBody(apiA, "plan_a", owner, Seq(ownerShared)) ++ located)
+      withClue(sub)(status mustBe 201)
+      credentialsOfOwner.map(_.clientId) mustBe Seq(sharedOf(sub).clientId)
+
+      Seq(sub, plainSub).foreach(s => unsubscribe(idOf(s)) mustBe 200)
+      dropKeys(credentialsOfOwner.map(_.clientId)*)
+    } finally undeploy(apiA)
+  }
+
   // the credential a subscription created for its owner goes with it when it is refused, unless another subscription
   // of that owner, created at once, shares it already or is about to: an alias names it, or an api is reserved for it
   def credentialSharedByAnother(): Unit = {

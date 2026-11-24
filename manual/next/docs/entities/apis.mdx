@@ -775,7 +775,9 @@ the API key itself (client credentials, API key auth module) refuse the one of a
   (`400`): its API keys are real ones, they would open the live API.
 - The author of the subscription must be allowed to write the credential, named or not: a user who cannot is refused
   with a `400` by the admin API, a `403` by `subscribe`, and cannot update or delete such a subscription either. The
-  `owner_ref`, free text, is not enough.
+  `owner_ref`, free text, is not enough. With `{"shared": true}`, the credential is the one located where the
+  subscription is, created there when there is none: the author must be allowed to write API keys there, whether the
+  credential exists yet or not.
 - The shared entry is given at the creation and never changes, nor do the API and the owner of the subscription
   (`400`): delete the subscription and create another one.
 - The credential is its own: its secret, its rotation, its expiry and its `enabled` flag are set on `K`, and are the

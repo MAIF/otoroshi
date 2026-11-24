@@ -1359,9 +1359,14 @@ object ApiSubscription {
     ) ||
     // the credential of the owner is not named: the ones the proxy state has are the ones that would be shared. A
     // credential created since the last sync of the proxy state is not seen here: the creation of a subscription
-    // checks the ones of the datastore too (sharesStoredCredentialMoreThan)
-    (sharesOwnerCredential(subscription) &&
-    ownerCredentials(env.proxyState.allApikeys(), subscription).exists(apikey => !canUserShare(apikey.clientId, user)))
+    // checks the ones of the datastore too (sharesStoredCredentialMoreThan). The one a subscription created at once
+    // writes between these checks and the validation (withOwnerCredential) is read by none of them: it is located
+    // where the subscription is, like the one the subscription would create, and its author has to be allowed to write
+    // an api key there, whether the credential exists or not
+    (sharesOwnerCredential(subscription) && (
+      !otoroshi.actions.ApiActionContext.canUserWriteApikeysAt(subscription.location, user) ||
+      ownerCredentials(env.proxyState.allApikeys(), subscription).exists(apikey => !canUserShare(apikey.clientId, user))
+    ))
 
   // whether the credential a stored subscription shares was deleted: the proxy state has the subscription sharing it,
   // and not the credential, which was there before the subscription. A credential deleted by hand takes its aliases and
@@ -1578,8 +1583,9 @@ object ApiSubscription {
                     case None           => ownerCredentialBeingCreated(subscription).leftf
                     case Some(reserved) =>
                       reservedOwnerCredential(reserved.utf8String, ownerCredentialReservationAttempts).map {
-                        // where this subscription would have created it (ownerCredentials): its author writes there.
-                        // The rights of the author on that credential were not checked (it did not exist yet)
+                        // where this subscription would have created it (ownerCredentials). The rights of the author
+                        // on that credential were not checked, it did not exist yet: the ones to write an api key
+                        // there were (sharesMoreThan)
                         case Some(credential) if ownerCredentials(Seq(credential), subscription).nonEmpty =>
                           naming(credential).right
                         case _ => ownerCredentialBeingCreated(subscription).left
