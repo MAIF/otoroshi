@@ -105,13 +105,20 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     configuration.getOptionalWithFileSupport[String]("app.cassandra.authorizationId")
 
   private val sessionBuilder = {
+    // the supplier of a config loader returns the config of the driver without its root path, as app.cassandra is: the
+    // reference config of the driver it falls back on, for the settings app.cassandra leaves out, is taken under that
+    // root path too
     val loader = new DefaultDriverConfigLoader(() => {
       ConfigFactory.invalidateCaches()
       val config = configuration
         .getOptionalWithFileSupport[Configuration]("app.cassandra")
         .map(_.underlying)
         .getOrElse(Configuration.empty.underlying)
-        .withFallback(ConfigFactory.defaultReference())
+        .withFallback(
+          ConfigFactory
+            .defaultReference(classOf[CqlSession].getClassLoader)
+            .getConfig(DefaultDriverConfigLoader.DEFAULT_ROOT_PATH)
+        )
         .resolve()
       config
     })
@@ -161,8 +168,12 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
             val key   = row.getString("key")
             val value = row.getLong("value")
             if (value < time) {
+              // the expired key is deleted whatever its type, but only what was written before it expired: a key set
+              // again since is kept, and so is an expiration set again once the cleanup read this one. Counters take no
+              // timestamp
+              executeAsync(s"DELETE FROM otoroshi.values USING TIMESTAMP ${value * 1000L} where key = '$key';")
               executeAsync(s"DELETE FROM otoroshi.counters where key = '$key';")
-              executeAsync(s"DELETE FROM otoroshi.expirations where key = '$key';")
+              executeAsync(s"DELETE FROM otoroshi.expirations USING TIMESTAMP ${time * 1000L} where key = '$key';")
             }
           })
       }
@@ -360,11 +371,13 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
              s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', :value);",
              Map("value" -> value.utf8String)
            )
+      // a key set without ttl has no ttl anymore, as with redis: otherwise the cleanup would delete it once its former
+      // ttl is over
       b <- exSeconds
              .map(_ * 1000)
              .orElse(pxMilliseconds)
              .map(ttl => pexpire(key, ttl))
-             .getOrElse(FastFuture.successful(true))
+             .getOrElse(persist(key))
     } yield a.wasApplied() && b
     //((exSeconds, pxMilliseconds) match {
     //  case (Some(seconds), Some(_)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL $seconds;")
@@ -393,13 +406,15 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
   }
 
   // a lightweight transaction, atomic: inserts the key unless a row holds it. The ttl is the one of cassandra, that
-  // deletes the row when it expires so that the key is set again (in seconds, rounded up), and it is written in the
-  // expirations table too, as setBS does, for pttl
+  // deletes the row when it expires so that the key is set again, and it is written in the expirations table too, as
+  // setBS does, for pttl. Cassandra counts the ttl in whole seconds from the second the row is written in, so that a
+  // row written late in a second lives up to a second less than its ttl: the ttl is rounded up, plus one second, for
+  // the row to never be deleted before the ttl is over
   override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
-    val usingTtl = ttl.map(millis => s" USING TTL ${Math.max(1L, (millis + 999L) / 1000L)}").getOrElse("")
+    val usingTtl = ttl.map(millis => s" USING TTL ${Math.max(0L, (millis + 999L) / 1000L) + 1L}").getOrElse("")
     executeAsync(
       s"INSERT INTO otoroshi.values (key, type, value) VALUES (:k, 'string', :value) IF NOT EXISTS$usingTtl;",
       Map("k" -> key, "value" -> value.utf8String)
@@ -416,6 +431,8 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
           for {
             _ <- executeAsync(s"DELETE FROM otoroshi.values where key = '$k' IF EXISTS;")
             _ <- executeAsync(s"DELETE FROM otoroshi.counters where key = '$k';")
+            // the ttl of the key goes with it: the key set again without ttl must not be deleted by the cleanup
+            _ <- persist(k)
           } yield 1L
         }
       )
@@ -539,6 +556,14 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     } yield true // a.wasApplied() || b.wasApplied()
   }
 
+  // removes the ttl of the key, as the PERSIST command of redis does. The expiration is read first: deleting it whether
+  // the key has one or not would leave a tombstone for every key set without ttl in the table the cleanup reads in full
+  private def persist(key: String): Future[Boolean] =
+    getExpirationFromExpirationsTableAt(key).flatMap {
+      case -1L => FastFuture.successful(true)
+      case _   => executeAsync(s"DELETE FROM otoroshi.expirations where key = '$key';").map(_ => true)
+    }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply)*)
@@ -572,8 +597,9 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     smembers(key).map(_.size.toLong) // TODO: find something for that OUTCH !!!
   }
 
+  // SHOW VERSION is a command of cqlsh, not cql: the database is asked for its version with a query
   def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
-    executeAsync("SHOW VERSION").map(_ => Healthy).recover { case _ =>
+    executeAsync("SELECT release_version FROM system.local").map(_ => Healthy).recover { case _ =>
       Unreachable
     }
   }
