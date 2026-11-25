@@ -4,11 +4,13 @@ import com.dimafeng.testcontainers.GenericContainer
 import com.typesafe.config.ConfigFactory
 import io.vertx.core.json.{JsonArray, JsonObject}
 import io.vertx.pgclient.{PgBuilder, PgConnectOptions}
-import io.vertx.sqlclient.Tuple
+import io.vertx.sqlclient.{Pool, Row, RowSet, Tuple}
 import org.apache.pekko.util.ByteString
 import org.testcontainers.containers.wait.strategy.Wait
 import otoroshi.env.Env
+import otoroshi.models.{Tenant, TenantId}
 import otoroshi.security.IdGenerator
+import otoroshi.storage.drivers.reactivepg.{ReactivePgDataStores, ReactivePgRedis}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsValue, Json}
 
@@ -63,8 +65,14 @@ class PgDatastoreSpec extends ContainerizedDatastoreSpec {
   private def insertRow(key: String, mvalue: JsonArray): Unit =
     runSql("insert into otoroshi.entities (key, type, mvalue) values ($1, 'hash', $2::jsonb)", Tuple.of(key, mvalue))
 
-  private def runSql(query: String, params: Tuple): Unit = {
-    val pool = PgBuilder
+  // the kind and the jvalue of the row of a key: the jvalue is what the optimized reads of the entities return
+  private def entityColumns(key: String): (String, JsValue) = {
+    val row = runSql("select kind, jvalue from otoroshi.entities where key = $1", Tuple.of(key)).iterator().next()
+    (row.getString("kind"), Json.parse(row.getJsonObject("jvalue").encode()))
+  }
+
+  private def newPool(): Pool =
+    PgBuilder
       .pool()
       .connectingTo(
         new PgConnectOptions()
@@ -75,6 +83,9 @@ class PgDatastoreSpec extends ContainerizedDatastoreSpec {
           .setPassword(pgPassword)
       )
       .build()
+
+  private def runSql(query: String, params: Tuple): RowSet[Row] = {
+    val pool = newPool()
     try {
       pool
         .preparedQuery(query)
@@ -141,6 +152,128 @@ class PgDatastoreSpec extends ContainerizedDatastoreSpec {
       store.get(key).futureValue.map(_.utf8String) mustBe Some("fresh")
 
       store.del(Seq(key)).futureValue
+    }
+
+    // values are bound as they are: a single quote must not come back doubled
+    "store raw values with single quotes as they are" in {
+      given env: Env = otoroshiComponents.env
+      val store      = env.datastores.rawDataStore
+      val key        = s"${env.storageRoot}:tests:quotes:${IdGenerator.uuid}"
+
+      store.set(key, ByteString("it's"), None).futureValue mustBe true
+      store.get(key).futureValue.map(_.utf8String) mustBe Some("it's")
+      store.set(key, ByteString("it's 'quoted'"), Some(60000L)).futureValue mustBe true
+      store.get(key).futureValue.map(_.utf8String) mustBe Some("it's 'quoted'")
+
+      store.del(Seq(key)).futureValue
+    }
+
+    // the insert of an entity and its update write the same jvalue, the one the optimized reads (findAll) return
+    "store entities with single quotes as they are" in {
+      given env: Env = otoroshiComponents.env
+      val tenants    = env.datastores.tenantDataStore
+      val id         = s"tenant-quotes-${IdGenerator.uuid}"
+      val key        = tenants.key(id)
+      val created    = Tenant(TenantId(id), "it's", "default-src 'self'", metadata = Map("it's" -> "'self'"))
+      val updated    = created.copy(name = "it's updated")
+
+      tenants.set(created).futureValue mustBe true
+      val (kind, inserted) = entityColumns(key)
+      kind must not be empty
+      inserted mustBe created.json
+
+      tenants.set(updated).futureValue mustBe true
+      entityColumns(key)._2 mustBe updated.json
+      tenants.findById(id).futureValue.map(_.json) mustBe Some(updated.json)
+      tenants.findAll(force = true).futureValue.find(_.id.value == id).map(_.json) mustBe Some(updated.json)
+
+      // what fills the kind of a row written without one
+      env.datastores.redis.asInstanceOf[ReactivePgRedis].setEntityKind(key, kind, Json.stringify(created.json)).futureValue
+      entityColumns(key) mustBe (kind, created.json)
+
+      tenants.delete(id).futureValue
+    }
+
+    "store hashes, lists and sets with single quotes as they are" in {
+      given env: Env = otoroshiComponents.env
+      val pool       = newPool()
+      try {
+        // with avoidJsonPath (cockroachdb has no jsonb_path_query_array), ltrim writes the trimmed list itself
+        val withoutJsonPath =
+          new ReactivePgRedis(pool, env.otoroshiActorSystem, env, "otoroshi.entities", true, avoidJsonPath = true)
+        Seq(env.datastores.redis, withoutJsonPath).foreach { redis =>
+          val key = s"${env.storageRoot}:tests:quotes:${IdGenerator.uuid}"
+
+          redis.hset(s"$key:hash", "it's", "a 'value'").futureValue
+          redis.hgetall(s"$key:hash").futureValue.view.mapValues(_.utf8String).toMap mustBe Map("it's" -> "a 'value'")
+
+          redis.lpush(s"$key:list", "it's", "a 'value'", "'").futureValue
+          redis.ltrim(s"$key:list", 0, 10).futureValue mustBe true
+          redis.lrange(s"$key:list", 0, 10).futureValue.map(_.utf8String) mustBe Seq("it's", "a 'value'", "'")
+
+          redis.sadd(s"$key:set", "it's").futureValue
+          redis.sismember(s"$key:set", "it's").futureValue mustBe true
+          redis.smembers(s"$key:set").futureValue.map(_.utf8String) mustBe Seq("it's")
+
+          redis.del(s"$key:hash", s"$key:list", s"$key:set").futureValue
+        }
+      } finally {
+        pool.close()
+      }
+    }
+
+    // the rows a previous version wrote: the quotes of a raw value doubled, the jvalue of an updated entity doubled. The
+    // boot fixes the raw values once, and the jvalues each time
+    "fix the single quotes doubled by a previous version" in {
+      given env: Env = otoroshiComponents.env
+      val datastores = env.datastores.asInstanceOf[ReactivePgDataStores]
+      val store      = env.datastores.rawDataStore
+      val tenants    = env.datastores.tenantDataStore
+      val prefix     = s"${env.storageRoot}:tests:quotes:${IdGenerator.uuid}"
+      val doubled    = s"$prefix:doubled"
+      val twice      = s"$prefix:twice"
+      val odd        = s"$prefix:odd"
+      val updated    = Tenant(TenantId(s"tenant-quotes-${IdGenerator.uuid}"), "it's", "default-src 'self'", metadata = Map.empty)
+      // an entity read from its doubled jvalue and saved again: its value cannot be told apart from pairs of quotes
+      // written on purpose
+      val savedAgain = Tenant(TenantId(s"tenant-quotes-${IdGenerator.uuid}"), "it''s", "saved again", metadata = Map.empty)
+      val updatedKey = tenants.key(updated.id.value)
+
+      def insertRawValue(key: String, value: String): Unit =
+        runSql("insert into otoroshi.entities (key, type, value) values ($1, 'string', $2)", Tuple.of(key, value))
+      def doubleTheJsonValue(): Unit                       =
+        runSql(
+          "update otoroshi.entities set jvalue = $2::jsonb where key = $1",
+          Tuple.of(updatedKey, new JsonObject(Json.stringify(updated.json).replace("'", "''")))
+        )
+      def runTheMigrationAgain(): Unit                     =
+        runSql("delete from otoroshi.entities_migrations where name = $1", Tuple.of(ReactivePgRedis.DoubledQuotesMigration))
+
+      insertRawValue(doubled, "it''s ''quoted''")
+      insertRawValue(twice, "a '''' b")
+      insertRawValue(odd, "it's") // a run of one quote: not written doubled
+      tenants.set(updated).futureValue mustBe true
+      doubleTheJsonValue()
+      tenants.set(savedAgain).futureValue mustBe true
+      runTheMigrationAgain()
+
+      datastores.fixDoubledQuotes().futureValue
+      store.get(doubled).futureValue.map(_.utf8String) mustBe Some("it's 'quoted'")
+      store.get(twice).futureValue.map(_.utf8String) mustBe Some("a '' b")
+      store.get(odd).futureValue.map(_.utf8String) mustBe Some("it's")
+      entityColumns(updatedKey)._2 mustBe updated.json
+      tenants.findAll(force = true).futureValue.find(_.id.value == updated.id.value).map(_.json) mustBe Some(updated.json)
+      tenants.findById(savedAgain.id.value).futureValue.map(_.name) mustBe Some("it''s")
+
+      // the next boot: the raw values are not fixed twice, the jvalues are
+      doubleTheJsonValue()
+      datastores.fixDoubledQuotes().futureValue
+      store.get(twice).futureValue.map(_.utf8String) mustBe Some("a '' b")
+      entityColumns(updatedKey)._2 mustBe updated.json
+
+      store.del(Seq(doubled, twice, odd)).futureValue
+      tenants.delete(updated.id.value).futureValue
+      tenants.delete(savedAgain.id.value).futureValue
     }
   }
 }

@@ -12,7 +12,7 @@ import io.vertx.core.json.{JsonArray, JsonObject}
 import io.vertx.core.net.{ClientSSLOptions, NetClientOptions, PemKeyCertOptions, PemTrustOptions}
 import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
 import io.vertx.sqlclient.Pool
-import io.vertx.sqlclient.{PoolOptions, Row}
+import io.vertx.sqlclient.{PoolOptions, Row, RowSet, SqlConnection}
 import otoroshi.next.models.{
   ApiDataStore,
   ApiSubscriptionDataStore,
@@ -271,6 +271,23 @@ class ReactivePgDataStores(
     redis.setMissingEntityKind()
   }
 
+  // the migrations that run once, whatever the number of instances that boot on the database
+  private lazy val migrationsTable = s"${schemaDotTable}_migrations"
+
+  // fixes the single quotes previous versions doubled (see ReactivePgRedis.fixDoubledQuotes). A failure does not stop
+  // the boot: the migration runs again at the next one
+  def fixDoubledQuotes(): Future[Unit] = {
+    implicit val ec: scala.concurrent.ExecutionContext = reactivePgActorSystem.dispatcher
+    (for {
+      _     <- redis.fixDoubledQuotes(migrationsTable)
+      fixed <- redis.fixDoubledJsonValues()
+    } yield {
+      if (fixed > 0) logger.info(s"single quotes doubled by a previous version fixed in the jvalue of $fixed entities")
+    }).recover { case e: Throwable =>
+      logger.error("error while fixing the single quotes doubled by a previous version", e)
+    }
+  }
+
   def runSchemaCreation(): Unit = {
     implicit val ec: scala.concurrent.ExecutionContext = reactivePgActorSystem.dispatcher
     logger.info("Running database migrations ...")
@@ -314,7 +331,17 @@ class ReactivePgDataStores(
                    .execute()
                )
                .scala
+        _ <- client
+               .query(s"""
+           |create table if not exists $migrationsTable (
+           |  name text not null,
+           |  applied_at TIMESTAMPTZ default NOW(),
+           |  PRIMARY KEY (name)
+           |);
+           |""".stripMargin)
+               .executeAsync()
         _ <- if (testMode) redis.flushall() else FastFuture.successful(())
+        _ <- fixDoubledQuotes()
       } yield ()),
       5.minutes
     )
@@ -618,6 +645,11 @@ class ReactivePgDataStores(
   }
 }
 
+object ReactivePgRedis {
+  // the name of the migration that fixes the single quotes previous versions doubled, in the migrations table
+  val DoubledQuotesMigration: String = "fix-doubled-single-quotes"
+}
+
 class ReactivePgRedis(
     pool: Pool,
     system: ActorSystem,
@@ -678,10 +710,9 @@ class ReactivePgRedis(
   }
 
   def setEntityKind(key: String, kind: String, value: String): Future[Unit] = {
-    val jsonValue = value.replace("'", "''")
     queryOne(
       s"""update  $schemaDotTable set kind = $$1, jvalue = $$3::jsonb where key = $$2;""",
-      Seq(kind, key, new JsonObject(jsonValue))
+      Seq(kind, key, new JsonObject(value))
     ) { row =>
       None
     }.map(_ => ())
@@ -704,6 +735,113 @@ class ReactivePgRedis(
         .runWith(Sink.ignore)(using env.otoroshiMaterializer)
     }
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // single quotes doubled by previous versions
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // from 16.11.1 to 18.0.1, setBS doubled the single quotes of the values it bound, as in a sql literal, and they were
+  // stored doubled: the value of a raw key at each write, the jvalue of an entity at each update (its value was stored
+  // as it was). Reading an entity from the jvalue and saving it again wrote the doubled quotes to its value too
+
+  // a run of an odd number of single quotes, that doubling the quotes of a value cannot produce
+  private val oddQuoteRun = "(^|[^'])('')*'([^']|$)"
+
+  private def inTransaction[A](f: SqlConnection => Future[A]): Future[A] =
+    pool.getConnection.scala.flatMap { conn =>
+      conn
+        .begin()
+        .scala
+        .flatMap { tx =>
+          f(conn).flatMap(a => tx.commit().scala.map(_ => a)).recoverWith { case e =>
+            tx.rollback().scala.transformWith(_ => FastFuture.failed(e))
+          }
+        }
+        .andThen { case _ => conn.close() }
+    }
+
+  private def execute(conn: SqlConnection, query: String, params: Seq[AnyRef]): Future[RowSet[Row]] = {
+    if (debugQueries) logger.info(s"""query: "$query", params: "${params.mkString(", ")}"""")
+    conn.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray)).scala
+  }
+
+  // once, the row of the migration in the migrations table marks it: a raw value whose single quotes all come in pairs
+  // gets its quotes back, the bytes its last set was given. A raw value with a run of an odd number of quotes was not
+  // written doubled and is left as it is. The value of an entity cannot be told apart from a value holding pairs of
+  // quotes on purpose: it is left as it is, the keys of the entities whose value may be doubled are logged
+  def fixDoubledQuotes(migrationsTable: String): Future[Unit] =
+    inTransaction { conn =>
+      execute(
+        conn,
+        s"insert into $migrationsTable (name) values ($$1) on conflict (name) do nothing returning name;",
+        Seq(ReactivePgRedis.DoubledQuotesMigration)
+      ).flatMap { marked =>
+        if (marked.size() == 0) {
+          FastFuture.successful(Option.empty[(Int, Seq[String])])
+        } else {
+          for {
+            fixed    <- execute(
+                          conn,
+                          s"update $schemaDotTable set value = replace(value, $$1, $$2) where type = 'string' and (kind is null or kind = '') and strpos(value, $$1) > 0 and value !~ $$3;",
+                          Seq("''", "'", oddQuoteRun)
+                        )
+            suspects <- execute(
+                          conn,
+                          s"select key from $schemaDotTable where type = 'string' and kind <> '' and strpos(value, $$1) > 0 and value !~ $$2;",
+                          Seq("''", oddQuoteRun)
+                        )
+          } yield Some((fixed.rowCount(), suspects.asScala.toSeq.flatMap(_.optString("key"))))
+        }
+      }
+    }.map {
+      case None                    => ()
+      case Some((fixed, suspects)) =>
+        if (fixed > 0) logger.info(s"single quotes doubled by a previous version fixed in $fixed raw values")
+        if (suspects.nonEmpty) {
+          logger.warn(
+            s"${suspects.size} entities hold pairs of single quotes in their value: a previous version may have doubled them when they were read and saved again, check them: ${suspects
+                .take(100)
+                .mkString(", ")}${if (suspects.size > 100) ", ..." else ""}"
+          )
+        }
+    }
+
+  // at each boot, as it costs one scan of the entities: the jvalue of an entity is what preCompute makes of its value.
+  // It rewrites the jvalues an update doubled, the ones a previous version still running during a rolling upgrade
+  // wrote too
+  def fixDoubledJsonValues(): Future[Int] =
+    querySeq(
+      s"select key, kind, value, jvalue from $schemaDotTable where type = 'string' and kind <> '' and strpos(jvalue::text, $$1) > 0;",
+      Seq("''")
+    ) { row =>
+      for {
+        key    <- row.optString("key")
+        kind   <- row.optString("kind")
+        value  <- row.optString("value")
+        jvalue <- row.optJsObject("jvalue")
+      } yield (key, kind, value, jvalue)
+    }.flatMap { rows =>
+      Source(rows.toList)
+        .mapAsync(1) { case (key, kind, value, jvalue) =>
+          Try {
+            val expected = Json.parse(preCompute(kind, ByteString(value)))
+            (expected, new JsonObject(expected.stringify))
+          } match {
+            case Success((expected, json)) if expected != jvalue =>
+              // the value is checked again: an entity saved in between already has the right jvalue
+              queryRaw(
+                s"update $schemaDotTable set jvalue = $$2::jsonb where key = $$1 and value = $$3;",
+                Seq(key, json, value)
+              ) { _ =>
+                1
+              }
+            case Success(_)                                      => FastFuture.successful(0)
+            case Failure(e)                                      =>
+              logger.warn(s"the jvalue of '$key' cannot be computed from its value", e)
+              FastFuture.successful(0)
+          }
+        }
+        .runWith(Sink.fold(0)(_ + _))(using env.otoroshiMaterializer)
+    }
 
   def typ(key: String): Future[String] =
     measure("pg.ops.type") {
@@ -1003,12 +1141,12 @@ class ReactivePgRedis(
         .map(v => millisecondsToInterval(v))
         .map(ttl => s", ttl = $ttl, ttl_starting_at = NOW()")
         .getOrElse("")
+      // the values are bound as they are: a bound parameter is not a sql literal, its quotes must not be doubled
       matchesEntity(key, value) match {
-        case Some((kind, _jsonValue)) =>
-          val jsonValue = _jsonValue.replace("'", "''")
+        case Some((kind, jsonValue)) =>
           queryOne(
             s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value, kind, jvalue)
-             |values ($$1, 'string', $ttl, NOW(), $$2, '$kind', '$jsonValue'::jsonb)
+             |values ($$1, 'string', $ttl, NOW(), $$2, $$3, $$4::jsonb)
              |ON CONFLICT (key)
              |DO
              |  update set type = 'string', value = $$2$maybeTtlUpdate, kind = $$3, jvalue = $$4::jsonb;
@@ -1017,8 +1155,7 @@ class ReactivePgRedis(
           ) { _ =>
             true.some
           }.map(_.getOrElse(true))
-        case None                     =>
-          val sanitizedValue = value.utf8String.replace("'", "''")
+        case None                    =>
           queryOne(
             s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value)
              |values ($$1, 'string', $ttl, NOW(), $$2)
@@ -1026,7 +1163,7 @@ class ReactivePgRedis(
              |DO
              |  update set type = 'string', value = $$2${maybeTtlUpdate};
              |""".stripMargin,
-            Seq(key, sanitizedValue)
+            Seq(key, value.utf8String)
           ) { _ =>
             true.some
           }.map(_.getOrElse(true))
@@ -1233,8 +1370,8 @@ class ReactivePgRedis(
           case Some(arr) => {
             val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
             queryRaw(
-              s"""update $schemaDotTable set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""",
-              Seq(key)
+              s"""update $schemaDotTable set type = 'list', lvalue = $$2::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""",
+              Seq(key, new JsonArray(newArr))
             ) { _ =>
               true
             }
