@@ -1587,6 +1587,8 @@ then you can enable the kube-dns integration in the otoroshi kubernetes job
 
 Openshift DNS operator does not allow to customize DNS configuration a lot, so you will have to provide your own coredns deployment and declare it as a stub in the Openshift DNS operator. 
 
+If you would rather not touch the cluster DNS at all, see [Using ExternalName services](#using-externalname-services-no-dns-change) below.
+
 Here is an example of coredns deployment with otoroshi domain config
 
 ```yaml include=../../../../kubernetes/kustomize/components/coredns/coredns.yaml
@@ -1620,6 +1622,176 @@ don't forget to update the otoroshi `ClusterRole`
     - watch
     - update
 ```
+
+### Using ExternalName services (no DNS change)
+
+If you cannot or do not want to modify the cluster DNS (Openshift, managed clusters, restricted RBAC), you can make workloads call each other **through Otoroshi** using only standard kubernetes objects. No CoreDNS patch, no sidecar, no change to the calling code beyond the hostname it targets.
+
+For every service you want to expose through Otoroshi, you create a second Service of type `ExternalName` that points to Otoroshi. Callers use this alias instead of the real Service name.
+
+```
+api-a ──> api-b-oto.ns-b.svc ──CNAME──> otoroshi-service.otoroshi.svc ──> Otoroshi ──> api-b.ns-b.svc
+api-b ──> api-a-oto.ns-a.svc ──CNAME──> otoroshi-service.otoroshi.svc ──> Otoroshi ──> api-a.ns-a.svc
+```
+
+1. `api-a` sends an HTTP request to `http://api-b-oto.ns-b.svc/`.
+2. Cluster DNS resolves `api-b-oto.ns-b.svc` as a CNAME to `otoroshi-service.otoroshi.svc.cluster.local`, then to Otoroshi's ClusterIP. The connection lands on Otoroshi.
+3. The request still carries `Host: api-b-oto.ns-b.svc`. Otoroshi matches it against a Route whose frontend domain is that name.
+4. The Route forwards the request to the real Service, `api-b.ns-b.svc.cluster.local`, applying whatever plugins are configured (authentication, quotas, headers, logging, and so on).
+
+The real Service (`api-b`) is untouched: it keeps working for direct calls unless you block them (see [Enforcing the path through Otoroshi](#enforcing-the-path-through-otoroshi)).
+
+#### When to use it
+
+- You want Otoroshi features (API keys, rate limiting, audit, header injection, traffic stats) on **internal** calls, not only on ingress traffic.
+- You cannot or do not want to modify cluster DNS (managed clusters, Openshift, restricted RBAC).
+- You do not want to run a service mesh, or you need something that works today with plain manifests.
+- You want an opt-in migration: teams switch from `api-b` to `api-b-oto` one caller at a time.
+
+#### Setup
+
+Three pieces are needed per exposed service. The examples use `api-b` in namespace `ns-b`.
+
+**1. Make Otoroshi reachable on the port callers use**
+
+An `ExternalName` Service is only a DNS alias: **it does not remap ports**. If callers use `http://api-b-oto.ns-b.svc/` (port 80), then `otoroshi-service` must listen on port 80.
+
+```yaml
+# Patch on otoroshi-service (kustomize JSON patch)
+- op: add
+  path: /spec/ports/-
+  value:
+    name: http-80
+    port: 80
+    targetPort: http      # the Otoroshi container's HTTP port (8080 or 8081 depending on your setup)
+```
+
+Do the same for 443 if callers use HTTPS.
+
+**2. Create the ExternalName alias**
+
+Create it in the **same namespace as the target service**, so the alias reads naturally (`<service>-oto.<namespace>.svc`) and is owned by the team that owns the service.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-b-oto
+  namespace: ns-b
+spec:
+  type: ExternalName
+  externalName: otoroshi-service.otoroshi.svc.cluster.local
+```
+
+`kubectl get svc -n ns-b api-b-oto` shows `TYPE ExternalName` and no ClusterIP.
+
+**3. Declare the Otoroshi Route**
+
+The Route matches the alias name(s) and targets the real Service. It can be created in the UI, through the admin API, or as a `Route` custom resource synchronized by the Otoroshi CRD job.
+
+```yaml
+apiVersion: proxy.otoroshi.io/v1
+kind: Route
+metadata:
+  name: api-b
+  namespace: ns-b
+spec:
+  name: "api-b (via ExternalName)"
+  frontend:
+    domains:
+      - "api-b-oto.ns-b.svc"
+      - "api-b-oto.ns-b.svc.cluster.local"
+  backend:
+    targets:
+      - hostname: "api-b.ns-b.svc.cluster.local"
+        port: 80
+        tls: false
+  plugins:
+    - plugin: "cp:otoroshi.next.plugins.OverrideHost"
+      enabled: true
+      config: {}
+    - plugin: "cp:otoroshi.next.plugins.AdditionalHeadersIn"
+      enabled: true
+      config:
+        headers:
+          X-Via-Otoroshi: "route_api-b"
+```
+
+The CRD job syncs periodically (every 60 s by default), so allow up to a minute before the Route is active. Until then, calls to the alias reach Otoroshi and get a `404`.
+
+#### Hostnames and the `Host` header
+
+Otoroshi routes on the `Host` header, which is whatever name the caller typed. List **every form callers may use** in the Route's `frontend.domains`:
+
+| Caller uses | `Host` sent | Matched by the example Route |
+|---|---|---|
+| `api-b-oto.ns-b.svc` | `api-b-oto.ns-b.svc` | yes |
+| `api-b-oto.ns-b.svc.cluster.local` | `api-b-oto.ns-b.svc.cluster.local` | yes |
+| `api-b-oto.ns-b` | `api-b-oto.ns-b` | no, add it if needed |
+| `api-b-oto` (from inside `ns-b`) | `api-b-oto` | no, add it if needed |
+
+The recommended convention is to always call `<service>-oto.<namespace>.svc` and declare that name plus its `.cluster.local` variant.
+
+On the backend side, the `OverrideHost` plugin replaces the `Host` header with the target hostname (`api-b.ns-b.svc.cluster.local`). Keep it if the backend checks its own hostname; remove it if the backend should see the alias name.
+
+#### Enforcing the path through Otoroshi
+
+The alias is opt-in: nothing prevents a caller from using `api-b.ns-b.svc` directly and skipping Otoroshi. To make Otoroshi mandatory, restrict ingress on the backend pods to the `otoroshi` namespace:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: only-from-otoroshi
+  namespace: ns-b
+spec:
+  podSelector:
+    matchLabels: { app: api-b }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: otoroshi
+```
+
+After this, direct calls time out and calls through `api-b-oto` keep working. This requires a CNI that enforces NetworkPolicies (Openshift does natively; some local kind setups do not). Remember to also allow any other legitimate sources, such as the kubelet for HTTP probes if your CNI filters them, or monitoring.
+
+#### Verifying
+
+From a caller pod:
+
+```sh
+# DNS: the alias is a CNAME to Otoroshi
+nslookup api-b-oto.ns-b.svc.cluster.local
+
+# The call goes through Otoroshi and reaches api-b
+curl -s http://api-b-oto.ns-b.svc/
+
+# The IP actually contacted is Otoroshi's ClusterIP
+curl -sv http://api-b-oto.ns-b.svc/ -o /dev/null 2>&1 | grep Connected
+```
+
+With a header-injecting plugin like the one above, the response from an echo backend (`traefik/whoami`, for example) shows `X-Via-Otoroshi: route_api-b`, which proves the hop through Otoroshi.
+
+#### Limitations and caveats
+
+- **No port remapping.** The port the caller uses must exist on `otoroshi-service`. Use one well-known port (80 or 443) for all aliases and let the Route pick the backend port.
+- **HTTP(S) only.** Routing relies on the `Host` header (or SNI for TLS). Raw TCP, gRPC without a proper authority, or other non-HTTP protocols are not covered by this pattern.
+- **TLS.** If callers use `https://api-b-oto.ns-b.svc/`, Otoroshi must present a certificate valid for that name, and callers must trust its CA. Plain HTTP inside the cluster avoids this but leaves traffic unencrypted.
+- **One extra hop.** Every call goes through Otoroshi. Size and scale Otoroshi accordingly, since it becomes a dependency of internal traffic, not only of ingress.
+- **Two names per service.** Teams must adopt the `-oto` alias in their configuration. This is also what makes the migration incremental.
+- **Configuration drift.** The ExternalName, the Route and the NetworkPolicy are separate objects. Keep them in the same manifest or kustomization per service so they are created and deleted together.
+
+#### Compared to other approaches
+
+| Approach | Cluster DNS change | Per-pod sidecar | Code change | Enforcement |
+|---|---|---|---|---|
+| ExternalName alias (this section) | no | no | hostname only | NetworkPolicy |
+| CoreDNS rewrite of real names to Otoroshi | yes | no | none | NetworkPolicy |
+| Service mesh (sidecars) | no | yes | none | mesh policies |
+
+The ExternalName pattern is the least invasive option: it only uses namespaced objects that a service team can own, and it can be rolled back by deleting the alias.
 
 ## CRD validation in kubectl
 
