@@ -678,6 +678,33 @@ class PluginsTestSpec extends PluginsTestSpecBase {
     "Mock responses" in {
       new MockReponsesTests(this)
     }
+    "OpenAPI mock - examples and generated responses" in {
+      new OpenApiMockTests(this).responses()
+    }
+    "OpenAPI mock - stateful resources" in {
+      new OpenApiMockTests(this).stateful()
+    }
+    "OpenAPI mock - stateless mode" in {
+      new OpenApiMockTests(this).stateless()
+    }
+    "OpenAPI mock - spec sources" in {
+      new OpenApiMockTests(this).sources()
+    }
+    "OpenAPI mock - pass through" in {
+      new OpenApiMockTests(this).passThrough()
+    }
+    "OpenAPI mock - seed and state routes" in {
+      new OpenApiMockTests(this).seed()
+    }
+    "OpenAPI mock - read only" in {
+      new OpenApiMockTests(this).readOnly()
+    }
+    "OpenAPI mock - invalid seed" in {
+      new OpenApiMockTests(this).invalidSeed()
+    }
+    "OpenAPI mock - reset on change" in {
+      new OpenApiMockTests(this).resetOnChange()
+    }
     "Block non HTTPS traffic" in {
       new BlockNonHTTPsTrafficTests(this)
     }
